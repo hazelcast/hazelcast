@@ -52,11 +52,11 @@ public class DataFileWriter extends AbstractHazelcastWriter {
         for (Object o : stream) {
             Tuple t = (Tuple) o;
 
-            for (int i = 0; i < t.keySize(); i++) {
+            for (int i = 0; i < t.keyCount(); i++) {
                 sb.append(t.getKey(i).toString()).append(" ");
             }
 
-            for (int i = 0; i < t.valueSize(); i++) {
+            for (int i = 0; i < t.valueCount(); i++) {
                 sb.append(t.getValue(i).toString()).append(" ");
             }
 

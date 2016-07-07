@@ -14,15 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.impl.serialization;
+package com.hazelcast.jet.memory.binarystorage;
 
-import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+/**
+ * Specifies the order in which to iterate over sorted binary storage
+ */
+public enum SortOrder {
+    /**
+     * ascending order
+     */
+    ASC(1),
 
-import java.nio.ByteOrder;
+    /**
+     * descending order
+     */
+    DESC(0);
 
-public class JetObjectDataInput extends JetByteArrayObjectDataInput {
-    JetObjectDataInput(MemoryManager memoryManager, InternalSerializationService service, boolean useBigEndian) {
-        super(memoryManager, service, useBigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
+    private final byte code;
+
+    SortOrder(int code) {
+        this.code = (byte) code;
+    }
+
+    public byte code() {
+        return code;
     }
 }

@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.impl.serialization;
+package com.hazelcast.jet.memory.operation.aggregator;
 
-import java.nio.ByteOrder;
+/**
+ * Aggregator which also sorts data by key.
+ *
+ * @param <K> type of key
+ * @param <V> type of value
+ */
+public interface SortedAggregator<K, V> extends Aggregator<K, V> {
+    void prepareToSort();
 
-import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.jet.io.serialization.JetSerializationService;
-
-public class JetObjectDataOutput extends JetByteArrayObjectDataOutput {
-    JetObjectDataOutput(MemoryManager memoryManager, JetSerializationService service, boolean useBigEndian) {
-        super(memoryManager, service, useBigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
-    }
+    boolean sort();
 }

@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.serialization;
+package com.hazelcast.jet.memory.memoryblock;
 
 import com.hazelcast.internal.memory.MemoryManager;
 
 /**
- * This is factory interface to create JetDataInput instance
- * It lets us to de-serialize data directly from  memory managed by some MemoryManager.
+ * Chain of memory blocks inside a partition.
  */
-public interface JetInputFactory {
+public interface MemoryBlockChain extends MemoryManager {
+    int size();
 
-    /**
-     * @param memoryManager - memory manager to be used for de-serialization;
-     * @param service       - instance of serialization service;
-     * @param useBigEndian  - defines if big-endian would be used;
-     * @return JetDataInput object to read de-serialized data
-     */
-    JetDataInput createInput(MemoryManager memoryManager,
-                             JetSerializationService service,
-                             boolean useBigEndian);
+    void clear();
+
+    MemoryBlock current();
+
+    void setCurrent(int index);
+
+    boolean gotoNext();
+
+    MemoryBlock get(int index);
+
+    void add(MemoryBlock element);
+
+    boolean acquireNext(boolean useAux);
 }

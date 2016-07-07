@@ -16,82 +16,332 @@
 
 package com.hazelcast.jet.io.serialization;
 
+import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.internal.memory.MemoryManager;
+import com.hazelcast.internal.memory.impl.EndiannessUtil;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
+import static com.hazelcast.internal.memory.impl.EndiannessUtil.CUSTOM_ACCESS;
+import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+
 /**
- * Provides methods which let to access to serialized data
- * <p>
- * It works like a factory for the memory-blocks creating and returning pointer and sizes
- * It doesn't release memory, memory-releasing is responsibility of the external environment
+ * {@code JetDataOutput} backed by a {@code MemoryManager}-provided memory block. Allocates
+ * a new memory block for itself, then reallocates it to expand as needed. Never deallocates memory.
  */
-public interface JetDataOutput extends ObjectDataOutput {
+@SuppressWarnings("checkstyle:methodcount")
+public class JetDataOutput implements ObjectDataOutput {
 
-    /**
-     * @return address of the last serialized dataBlock
-     */
-    long getPointer();
+    public static final int UTF8_LENGTH_SCALE = 3;
 
-    /**
-     * @return written bytes into the dataBlock
-     */
-    long getWrittenSize();
+    protected long pos;
+    protected long bufSize;
+    protected long bufBase = NULL_ADDRESS;
+    private MemoryAccessor accessor;
+    private MemoryAllocator allocator;
 
-    /**
-     * @return real allocated size in bytes of the dataBlock
-     */
-    long getAllocatedSize();
+    private final boolean isBigEndian;
+    private final JetSerializationService service;
 
-    void write(long position, int b);
+    public JetDataOutput(MemoryManager memoryManager, JetSerializationService service, boolean isBigEndian) {
+        this.service = service;
+        this.isBigEndian = isBigEndian;
+        setMemoryManager(memoryManager);
+    }
 
-    void writeBoolean(long position, boolean v) throws IOException;
+    public void setMemoryManager(MemoryManager memoryManager) {
+        if (memoryManager != null) {
+            this.allocator = memoryManager.getAllocator();
+            this.accessor = memoryManager.getAccessor();
+        } else {
+            this.allocator = null;
+            this.accessor = null;
+        }
+    }
 
-    void writeZeroBytes(int count);
 
-    void writeByte(long position, int v) throws IOException;
+    // DataOutput implementation
 
-    void writeChar(long position, int v) throws IOException;
+    @Override
+    public void write(int b) {
+        ensureAvailable(1);
+        accessor.putByte(bufBase + (pos++), (byte) (b));
+    }
 
-    void writeDouble(long position, double v) throws IOException;
+    @Override
+    public void write(byte[] bytes) throws IOException {
+        ensureAvailable(bytes.length);
+        accessor.copyFromByteArray(bytes, 0, bufBase + pos, bytes.length);
+        pos += bytes.length;
+    }
 
-    void writeDouble(double v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public void write(byte[] b, int off, int len) {
+        if ((off < 0) || (len < 0) || ((off + len) > b.length)) {
+            throw new IndexOutOfBoundsException();
+        } else if (len == 0) {
+            return;
+        }
 
-    void writeDouble(long position, double v, ByteOrder byteOrder) throws IOException;
+        ensureAvailable(len);
+        accessor.copyFromByteArray(b, off, bufBase + pos, len);
+        pos += len;
+    }
 
-    void writeFloat(long position, float v) throws IOException;
+    @Override
+    public final void writeBoolean(final boolean v) throws IOException {
+        write(v ? 1 : 0);
+    }
 
-    void writeFloat(float v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public final void writeByte(final int v) throws IOException {
+        write(v);
+    }
 
-    void writeFloat(long position, float v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public final void writeBytes(final String s) throws IOException {
+        final int len = s.length();
+        ensureAvailable(len);
+        for (int i = 0; i < len; i++) {
+            accessor.putByte(bufBase + (pos++), (byte) s.charAt(i));
+        }
+    }
 
-    void writeInt(long position, int v) throws IOException;
+    @Override
+    public void writeChar(final int v) throws IOException {
+        ensureAvailable(CHAR_SIZE_IN_BYTES);
+        EndiannessUtil.writeChar(CUSTOM_ACCESS, accessor, bufBase + pos, (char) v, isBigEndian);
+        pos += CHAR_SIZE_IN_BYTES;
+    }
 
-    void writeInt(int v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public void writeChars(final String s) throws IOException {
+        final int len = s.length();
+        ensureAvailable(len * CHAR_SIZE_IN_BYTES);
+        for (int i = 0; i < len; i++) {
+            final int v = s.charAt(i);
+            EndiannessUtil.writeChar(CUSTOM_ACCESS, accessor, bufBase + pos, (char) v, isBigEndian);
+            pos += CHAR_SIZE_IN_BYTES;
+        }
+    }
 
-    void writeInt(long position, int v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public void writeDouble(final double v) throws IOException {
+        writeLong(Double.doubleToLongBits(v));
+    }
 
-    void writeLong(long position, long v) throws IOException;
+    @Override
+    public void writeFloat(final float v) throws IOException {
+        writeInt(Float.floatToIntBits(v));
+    }
 
-    void writeLong(long v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public void writeInt(final int v) throws IOException {
+        ensureAvailable(INT_SIZE_IN_BYTES);
+        EndiannessUtil.writeInt(CUSTOM_ACCESS, accessor, bufBase + pos, v, isBigEndian);
+        pos += INT_SIZE_IN_BYTES;
+    }
 
-    void writeLong(long position, long v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public void writeLong(final long v) throws IOException {
+        ensureAvailable(LONG_SIZE_IN_BYTES);
+        EndiannessUtil.writeLong(CUSTOM_ACCESS, accessor, bufBase + pos, v, isBigEndian);
+        pos += LONG_SIZE_IN_BYTES;
+    }
 
-    void writeShort(long position, int v) throws IOException;
+    @Override
+    public void writeShort(final int v) throws IOException {
+        ensureAvailable(SHORT_SIZE_IN_BYTES);
+        EndiannessUtil.writeShort(CUSTOM_ACCESS, accessor, bufBase + pos, (short) v, isBigEndian);
+        pos += SHORT_SIZE_IN_BYTES;
+    }
 
-    void writeShort(int v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public void writeUTF(final String str) throws IOException {
+        int len = (str != null) ? str.length() : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            ensureAvailable(UTF8_LENGTH_SCALE * len);
+            for (int i = 0; i < len; i++) {
+                pos += EndiannessUtil.writeUtf8Char(CUSTOM_ACCESS, accessor, bufBase + pos, str.charAt(i));
+            }
+        }
+    }
 
-    void writeShort(long position, int v, ByteOrder byteOrder) throws IOException;
+    @Override
+    public void writeByteArray(byte[] bytes) throws IOException {
+        int len = (bytes != null) ? bytes.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            write(bytes);
+        }
+    }
 
-    long position();
+    @Override
+    public void writeBooleanArray(boolean[] booleans) throws IOException {
+        int len = (booleans != null) ? booleans.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            for (boolean b : booleans) {
+                writeBoolean(b);
+            }
+        }
+    }
 
-    void position(long newPos);
+    @Override
+    public void writeCharArray(char[] chars) throws IOException {
+        int len = chars != null ? chars.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            for (char c : chars) {
+                writeChar(c);
+            }
+        }
+    }
 
-    void stepOn(long delta);
+    @Override
+    public void writeIntArray(int[] ints) throws IOException {
+        int len = ints != null ? ints.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            for (int i : ints) {
+                writeInt(i);
+            }
+        }
+    }
 
-    void setMemoryManager(MemoryManager memoryManager);
+    @Override
+    public void writeLongArray(long[] longs) throws IOException {
+        int len = longs != null ? longs.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            for (long l : longs) {
+                writeLong(l);
+            }
+        }
+    }
 
-    void clear();
+    @Override
+    public void writeDoubleArray(double[] doubles) throws IOException {
+        int len = doubles != null ? doubles.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            for (double d : doubles) {
+                writeDouble(d);
+            }
+        }
+    }
+
+    @Override
+    public void writeFloatArray(float[] floats) throws IOException {
+        int len = floats != null ? floats.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            for (float f : floats) {
+                writeFloat(f);
+            }
+        }
+    }
+
+    @Override
+    public void writeShortArray(short[] shorts) throws IOException {
+        int len = shorts != null ? shorts.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            for (short s : shorts) {
+                writeShort(s);
+            }
+        }
+    }
+
+    @Override
+    public void writeUTFArray(String[] strings) throws IOException {
+        int len = strings != null ? strings.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            for (String s : strings) {
+                writeUTF(s);
+            }
+        }
+    }
+
+    @Override
+    public void writeObject(Object object) throws IOException {
+        service.writeObject(this, object);
+    }
+
+    @Override
+    public void writeData(Data data) throws IOException {
+        byte[] payload = data != null ? data.toByteArray() : null;
+        writeByteArray(payload);
+    }
+
+    @Override
+    public byte toByteArray()[] {
+        throw new IllegalStateException("Not available for unified serialization");
+    }
+
+    @Override
+    public ByteOrder getByteOrder() {
+        return isBigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+    }
+
+    @Override
+    public String toString() {
+        return "JetByteArrayObjectDataOutput{"
+                + "size=" + (bufBase != NULL_ADDRESS ? bufSize : 0) + ", pos=" + pos + '}';
+    }
+
+
+
+    // Custom methods
+
+    public final long position() {
+        return pos;
+    }
+
+    public long baseAddress() {
+        return bufBase;
+    }
+
+    public long usedSize() {
+        return pos;
+    }
+
+    public long allocatedSize() {
+        return bufSize;
+    }
+
+    public void skip(long delta) {
+        ensureAvailable(delta);
+        pos += delta;
+    }
+
+    public void clear() {
+        pos = 0;
+        bufSize = 0;
+        bufBase = NULL_ADDRESS;
+    }
+
+    private void ensureAvailable(long len) {
+        if (bufBase == NULL_ADDRESS) {
+            bufBase = allocator.allocate(len);
+            bufSize = len;
+            return;
+        }
+        if (bufSize - pos >= len) {
+            return;
+        }
+        bufBase = allocator.reallocate(bufBase, bufSize, bufSize + len);
+        bufSize += len;
+    }
 }

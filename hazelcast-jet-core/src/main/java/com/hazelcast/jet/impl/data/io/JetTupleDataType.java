@@ -28,11 +28,9 @@ public final class JetTupleDataType implements DataType {
 
     private static final byte TYPE_ID = -4;
 
-    private final ObjectWriter<Tuple> objectWriter =
-            new JetTupleWriter();
+    private final ObjectWriter<Tuple> objectWriter = new JetTupleWriter();
 
-    private final ObjectReader<Tuple> objectReader =
-            new JetTupleReader(new DefaultJetTupleFactory());
+    private final ObjectReader<Tuple> objectReader = new JetTupleReader(new DefaultJetTupleFactory());
 
     private JetTupleDataType() {
     }

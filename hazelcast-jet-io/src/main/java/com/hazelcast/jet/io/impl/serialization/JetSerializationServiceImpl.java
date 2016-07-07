@@ -22,8 +22,6 @@ import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.jet.io.serialization.JetInputFactory;
-import com.hazelcast.jet.io.serialization.JetOutputFactory;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetDataOutput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
@@ -38,112 +36,110 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 public final class JetSerializationServiceImpl implements JetSerializationService {
-    private final JetInputFactory inputFactory = new JetInputOutputFactory();
-    private final JetOutputFactory outputFactory = new JetInputOutputFactory();
-    private final InternalSerializationService hazelcastSerialization = new DefaultSerializationServiceBuilder().build();
+    private final InternalSerializationService serService = new DefaultSerializationServiceBuilder().build();
 
     @Override
     public JetDataInput createObjectDataInput(MemoryManager memoryManager, boolean useBigEndian) {
-        return inputFactory.createInput(memoryManager, this, useBigEndian);
+        return new JetDataInput(memoryManager, this, useBigEndian);
     }
 
     @Override
     public JetDataOutput createObjectDataOutput(MemoryManager memoryManager, boolean useBigEndian) {
-        return outputFactory.createOutput(memoryManager, this, useBigEndian);
+        return new JetDataOutput(memoryManager, this, useBigEndian);
     }
 
     @Override
     public <B extends Data> B toData(Object obj) {
-        return hazelcastSerialization.toData(obj);
+        return serService.toData(obj);
     }
 
     @Override
     public <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
-        return hazelcastSerialization.toData(obj, strategy);
+        return serService.toData(obj, strategy);
     }
 
     @Override
     public byte[] toBytes(Object obj) {
-        return hazelcastSerialization.toBytes(obj);
+        return serService.toBytes(obj);
     }
 
     @Override
     public byte[] toBytes(Object obj, PartitioningStrategy strategy) {
-        return hazelcastSerialization.toBytes(obj, strategy);
+        return serService.toBytes(obj, strategy);
     }
 
     @Override
     public <T> T toObject(Object data) {
-        return hazelcastSerialization.toObject(data);
+        return serService.toObject(data);
     }
 
     @Override
     public void writeObject(ObjectDataOutput out, Object obj) {
-        hazelcastSerialization.writeObject(out, obj);
+        serService.writeObject(out, obj);
     }
 
     @Override
     public <T> T readObject(ObjectDataInput in) {
-        return hazelcastSerialization.readObject(in);
+        return serService.readObject(in);
     }
 
     @Override
     public void disposeData(Data data) {
-        hazelcastSerialization.disposeData(data);
+        serService.disposeData(data);
     }
 
     @Override
     public BufferObjectDataInput createObjectDataInput(byte[] data) {
-        return hazelcastSerialization.createObjectDataInput(data);
+        return serService.createObjectDataInput(data);
     }
 
     @Override
     public BufferObjectDataInput createObjectDataInput(Data data) {
-        return hazelcastSerialization.createObjectDataInput(data);
+        return serService.createObjectDataInput(data);
     }
 
     @Override
     public BufferObjectDataOutput createObjectDataOutput(int size) {
-        return hazelcastSerialization.createObjectDataOutput(size);
+        return serService.createObjectDataOutput(size);
     }
 
     @Override
     public BufferObjectDataOutput createObjectDataOutput() {
-        return hazelcastSerialization.createObjectDataOutput();
+        return serService.createObjectDataOutput();
     }
 
     @Override
     public PortableReader createPortableReader(Data data) throws IOException {
-        return hazelcastSerialization.createPortableReader(data);
+        return serService.createPortableReader(data);
     }
 
     @Override
     public PortableContext getPortableContext() {
-        return hazelcastSerialization.getPortableContext();
+        return serService.getPortableContext();
     }
 
     @Override
     public ClassLoader getClassLoader() {
-        return hazelcastSerialization.getClassLoader();
+        return serService.getClassLoader();
     }
 
     @Override
     public ManagedContext getManagedContext() {
-        return hazelcastSerialization.getManagedContext();
+        return serService.getManagedContext();
     }
 
     @Override
     public ByteOrder getByteOrder() {
-        return hazelcastSerialization.getByteOrder();
+        return serService.getByteOrder();
     }
 
     @Override
     public byte getVersion() {
-        return hazelcastSerialization.getVersion();
+        return serService.getVersion();
     }
 
     @Override
     public void dispose() {
-        hazelcastSerialization.dispose();
+        serService.dispose();
     }
 }
