@@ -2,7 +2,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapService;
@@ -38,7 +37,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
     }
 
     @Test
-    public void test_partitionLostListenerInvoked() {
+    public void test_partitionLostListenerInvoked() throws Exception {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(1);
         HazelcastInstance instance = instances.get(0);
 
@@ -71,20 +70,6 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
 
         assertEventEventually(listener1, internalEvent);
         assertEventEventually(listener2, internalEvent);
-    }
-
-    private void assertEventEventually(final EventCollectingMapPartitionLostListener listener, final IPartitionLostEvent internalEvent) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                List<MapPartitionLostEvent> events = listener.getEvents();
-                assertEquals(1, events.size());
-                MapPartitionLostEvent event = events.get(0);
-                assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
-                assertNotNull(event.toString());
-            }
-        });
     }
 
     @Test
@@ -146,5 +131,20 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         MapPartitionLostEventFilter filter = new MapPartitionLostEventFilter();
         assertEquals(new MapPartitionLostEventFilter(), filter);
         assertFalse(filter.eval(null));
+    }
+
+    private static void assertEventEventually(final EventCollectingMapPartitionLostListener listener,
+                                              final IPartitionLostEvent internalEvent) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                List<MapPartitionLostEvent> events = listener.getEvents();
+                assertEquals(1, events.size());
+                MapPartitionLostEvent event = events.get(0);
+                assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
+                assertNotNull(event.toString());
+            }
+        });
     }
 }
