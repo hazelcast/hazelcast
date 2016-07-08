@@ -58,8 +58,8 @@ public class MapSink implements SinkTap {
             int partitionId = localPartitions.get(i);
             writers[i] = new ShufflingWriter(
                     getPartitionWriter(containerDescriptor, partitionId),
-                    nodeEngine,
-                    containerDescriptor);
+                    nodeEngine
+            );
         }
         return writers;
     }

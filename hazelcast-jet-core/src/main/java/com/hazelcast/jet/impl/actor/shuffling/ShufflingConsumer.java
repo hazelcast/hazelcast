@@ -18,9 +18,8 @@ package com.hazelcast.jet.impl.actor.shuffling;
 
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.spi.NodeEngine;
@@ -29,13 +28,10 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 public class ShufflingConsumer implements ObjectConsumer {
     private final ObjectConsumer baseConsumer;
     private final NodeEngineImpl nodeEngine;
-    private final ContainerDescriptor containerDescriptor;
 
     public ShufflingConsumer(ObjectConsumer baseConsumer,
-                             NodeEngine nodeEngine,
-                             ContainerDescriptor containerDescriptor) {
+                             NodeEngine nodeEngine) {
         this.baseConsumer = baseConsumer;
-        this.containerDescriptor = containerDescriptor;
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
     }
 

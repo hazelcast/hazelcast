@@ -20,7 +20,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.processor.context.DefaultContainerContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.spi.NodeEngine;
@@ -54,7 +53,7 @@ public abstract class AbstractContainer
         this.stateMachine = stateMachineFactory.newStateMachine(name, this, nodeEngine, applicationContext);
         this.applicationContext = applicationContext;
         this.id = applicationContext.getContainerIDGenerator().incrementAndGet();
-        this.containerContext = new DefaultContainerContext(nodeEngine, applicationContext, this.id, vertex, tupleFactory);
+        this.containerContext = new ContainerContext(nodeEngine, applicationContext, this.id, vertex, tupleFactory);
     }
 
     @Override
