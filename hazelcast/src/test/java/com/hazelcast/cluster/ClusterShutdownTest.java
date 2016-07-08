@@ -9,6 +9,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.log4j.Level;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -19,8 +22,18 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClusterShutdownTest
-        extends HazelcastTestSupport {
+public class ClusterShutdownTest extends HazelcastTestSupport {
+
+    @Before
+    public void setUp() {
+        setLoggingLog4j();
+        setLogLevel(Level.TRACE);
+    }
+
+    @After
+    public void tearDown() {
+        resetLogLevel();
+    }
 
     @Test
     public void cluster_mustBeShutDown_by_singleMember_when_clusterState_ACTIVE() {
@@ -47,7 +60,14 @@ public class ClusterShutdownTest
         testClusterShutdownWithMultipleMembers(6, 6);
     }
 
-    private void testClusterShutdownWithSingleMember(final ClusterState clusterState) {
+    @Test
+    public void whenClusterIsAlreadyShutdown_thenLifecycleServiceShutdownShouldDoNothing() {
+        HazelcastInstance instance = testClusterShutdownWithSingleMember(ClusterState.ACTIVE);
+
+        instance.getLifecycleService().shutdown();
+    }
+
+    private HazelcastInstance testClusterShutdownWithSingleMember(ClusterState clusterState) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         HazelcastInstance[] instances = factory.newInstances();
 
@@ -58,9 +78,11 @@ public class ClusterShutdownTest
         hz1.getCluster().shutdown();
 
         assertNodesShutDownEventually(nodes);
+
+        return hz1;
     }
 
-    private void testClusterShutdownWithMultipleMembers(final int clusterSize, final int nodeCountToTriggerShutdown) {
+    private void testClusterShutdownWithMultipleMembers(int clusterSize, int nodeCountToTriggerShutdown) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         HazelcastInstance[] instances = factory.newInstances();
 
@@ -86,7 +108,7 @@ public class ClusterShutdownTest
         assertNodesShutDownEventually(nodes);
     }
 
-    private Node[] getNodes(HazelcastInstance[] instances) {
+    private static Node[] getNodes(HazelcastInstance[] instances) {
         Node[] nodes = new Node[instances.length];
         for (int i = 0; i < instances.length; i++) {
             nodes[i] = getNode(instances[i]);
@@ -94,7 +116,7 @@ public class ClusterShutdownTest
         return nodes;
     }
 
-    private void assertNodesShutDownEventually(Node[] nodes) {
+    private static void assertNodesShutDownEventually(Node[] nodes) {
         for (final Node node : nodes) {
             assertTrueEventually(new AssertTask() {
                 @Override
@@ -105,5 +127,4 @@ public class ClusterShutdownTest
             });
         }
     }
-
 }

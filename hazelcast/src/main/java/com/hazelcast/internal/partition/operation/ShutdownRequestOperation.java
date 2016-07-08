@@ -22,10 +22,10 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 
-public class ShutdownRequestOperation extends AbstractOperation implements MigrationCycleOperation {
+public class ShutdownRequestOperation extends Operation implements MigrationCycleOperation {
 
     public ShutdownRequestOperation() {
     }

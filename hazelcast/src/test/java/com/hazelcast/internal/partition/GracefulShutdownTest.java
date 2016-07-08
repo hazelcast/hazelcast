@@ -327,7 +327,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         // spin until node starts to shut down
         Node shuttingDownNode = getNode(shuttingDownInstance);
-        while (shuttingDownNode.isRunning()) ;
+        while (shuttingDownNode.isRunning());
 
         terminateInstance(instances[terminateIndex]);
 

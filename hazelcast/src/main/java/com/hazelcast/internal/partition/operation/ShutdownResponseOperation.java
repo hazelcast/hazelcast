@@ -22,10 +22,10 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 
-public class ShutdownResponseOperation extends AbstractOperation implements MigrationCycleOperation {
+public class ShutdownResponseOperation extends Operation implements MigrationCycleOperation {
 
     public ShutdownResponseOperation() {
     }
@@ -65,5 +65,4 @@ public class ShutdownResponseOperation extends AbstractOperation implements Migr
     public String getServiceName() {
         return InternalPartitionService.SERVICE_NAME;
     }
-
 }
