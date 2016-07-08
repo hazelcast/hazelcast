@@ -19,9 +19,9 @@ package com.hazelcast.jet.impl.actor.shuffling;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.ObjectActor;
-import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.spi.NodeEngine;
@@ -35,7 +35,7 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
                           ContainerContext containerContext) {
         super(baseActor);
         this.baseActor = baseActor;
-        this.objectConsumer = new ShufflingConsumer(baseActor, nodeEngine, containerContext);
+        this.objectConsumer = new ShufflingConsumer(baseActor, nodeEngine);
     }
 
     @Override

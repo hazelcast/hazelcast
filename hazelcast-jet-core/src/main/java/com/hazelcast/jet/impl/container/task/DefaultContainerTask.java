@@ -33,12 +33,12 @@ import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.DefaultProcessorContext;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.executor.Payload;
+import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -466,7 +466,6 @@ public class DefaultContainerTask extends AbstractTask
 
     private void completeTaskExecution(Throwable e) {
         try {
-            logger.info("completeTaskExecution=" + applicationContext.getName() + " with throwable " + e);
             this.taskProcessor.onClose();
         } finally {
             this.container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_COMPLETED, e);

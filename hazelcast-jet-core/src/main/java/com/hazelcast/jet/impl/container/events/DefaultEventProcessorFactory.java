@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.container.events;
 
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
+import com.hazelcast.jet.impl.container.ContainerContext;
 
 import java.util.IdentityHashMap;
 import java.util.Map;

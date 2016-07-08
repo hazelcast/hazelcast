@@ -100,7 +100,7 @@ public abstract class AbstractProcessingContainer extends
         this.vertex = vertex;
         this.tupleFactory = tupleFactory;
 
-        this.inputChannels = new ArrayList<DataChannel>();
+        this.inputChannels = new ArrayList<>();
         this.outputChannels = new ArrayList<DataChannel>();
         this.taskProcessorFactory =
                 (

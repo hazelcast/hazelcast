@@ -236,7 +236,6 @@ public class ApplicationMaster extends
     }
 
     private void addToExecutionMailBox(Object object) {
-        logger.info("add to execution mail box " + object);
         addToMailBox(object);
     }
 

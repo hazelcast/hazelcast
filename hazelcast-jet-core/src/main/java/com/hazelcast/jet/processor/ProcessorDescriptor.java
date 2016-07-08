@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.processor;
 
-import com.hazelcast.jet.impl.processor.descriptor.DefaultProcessorDescriptor;
-
 import java.io.Serializable;
 
 import static com.hazelcast.util.Preconditions.checkFalse;
@@ -26,17 +24,21 @@ import static com.hazelcast.util.Preconditions.checkFalse;
  * Descriptor with vertex properties
  * Used inside vertex construction
  */
-public abstract class ProcessorDescriptor implements Serializable {
+public class ProcessorDescriptor implements Serializable {
+
+    private final String clazz;
+    private final Object[] args;
+
     private int taskCount = 1;
 
     /**
      * Create a new descriptor with given Processor class and arguments
-     * @param clazz class for the processor
-     * @param args arguments for the processor
-     * @return the constructed descriptor
+     * @param clazz
+     * @param args
      */
-    public static ProcessorDescriptor create(Class<? extends ContainerProcessor> clazz, Object... args) {
-        return new DefaultProcessorDescriptor(clazz, args);
+    public ProcessorDescriptor(Class<? extends ContainerProcessor> clazz, Object... args) {
+        this.args = args;
+        this.clazz = clazz.getName();
     }
 
     /**
@@ -53,7 +55,7 @@ public abstract class ProcessorDescriptor implements Serializable {
      * Creates builder to construct instance of ProcessorDescriptor
      *
      * @param clazz class of the corresponding ContainerProcessor
-     * @param args arguments to be passed to the processor constructor
+     * @param args  arguments to be passed to the processor constructor
      * @return corresponding builder
      */
     public static Builder builder(Class<? extends ContainerProcessor> clazz, Object... args) {
@@ -70,12 +72,17 @@ public abstract class ProcessorDescriptor implements Serializable {
     /**
      * @return arguments which will be passed to construct ContainerProcessor
      */
-    public abstract Object[] getArgs();
+    public Object[] getArgs() {
+        return this.args;
+    }
+
 
     /**
      * @return class of the corresponding ContainerProcessor
      */
-    public abstract String getContainerProcessorClazz();
+    public String getContainerProcessorClazz() {
+        return this.clazz;
+    }
 
     /**
      * Builder class to construct ProcessorDescriptor instances
@@ -88,11 +95,12 @@ public abstract class ProcessorDescriptor implements Serializable {
 
         /**
          * Constructs a new builder with given class and arguments
+         *
          * @param clazz the class of the processor to use
-         * @param args the arguments for the processor
+         * @param args  the arguments for the processor
          */
         public Builder(Class<? extends ContainerProcessor> clazz, Object... args) {
-            processorDescriptor = ProcessorDescriptor.create(clazz, args);
+            processorDescriptor = new ProcessorDescriptor(clazz, args);
         }
 
         /**

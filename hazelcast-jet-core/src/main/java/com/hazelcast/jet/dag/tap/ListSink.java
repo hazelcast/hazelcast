@@ -52,8 +52,8 @@ public class ListSink implements SinkTap {
         return new DataWriter[]{
                 new ShufflingWriter(
                         new HazelcastListPartitionWriter(containerDescriptor, name),
-                        nodeEngine,
-                        containerDescriptor),
+                        nodeEngine
+                ),
         };
     }
 
