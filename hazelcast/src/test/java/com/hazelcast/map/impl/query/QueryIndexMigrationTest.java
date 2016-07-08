@@ -35,7 +35,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.IterableUtil;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -161,8 +160,6 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     /**
      * test for issue #359
      */
-    //Ignored due to : https://github.com/hazelcast/hazelcast/issues/6471
-    @Ignore
     @Test(timeout = MINUTE)
     public void testIndexCleanupOnMigration() throws Exception {
         int nodeCount = 6;
