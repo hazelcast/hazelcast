@@ -162,7 +162,9 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         logger.info(membersString());
         final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
-            connectionManager.destroyConnection(connection, null, newTargetDisconnectedExceptionCausedByMemberLeftEvent(member));
+            connectionManager.destroyConnection(connection,
+                    null,
+                    newTargetDisconnectedExceptionCausedByMemberLeftEvent(member, connection.toString()));
         }
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED,
                 Collections.unmodifiableSet(members));
@@ -195,7 +197,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                 Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
                     connectionManager.destroyConnection(connection, null,
-                            newTargetDisconnectedExceptionCausedByMemberLeftEvent(member));
+                            newTargetDisconnectedExceptionCausedByMemberLeftEvent(member, connection.toString()));
                 }
             }
         }
