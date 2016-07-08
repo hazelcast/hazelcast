@@ -2,7 +2,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.EntryAddedListener;
@@ -41,7 +40,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(1);
         HazelcastInstance instance = instances.get(0);
 
-        final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
+        final TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(0);
         instance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
 
         final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
@@ -58,8 +57,8 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         HazelcastInstance instance1 = instances.get(0);
         HazelcastInstance instance2 = instances.get(0);
 
-        final EventCollectingMapPartitionLostListener listener1 = new EventCollectingMapPartitionLostListener(0);
-        final EventCollectingMapPartitionLostListener listener2 = new EventCollectingMapPartitionLostListener(0);
+        final TestEventCollectingMapPartitionLostListener listener1 = new TestEventCollectingMapPartitionLostListener(0);
+        final TestEventCollectingMapPartitionLostListener listener2 = new TestEventCollectingMapPartitionLostListener(0);
         instance1.getMap(getIthMapName(0)).addPartitionLostListener(listener1);
         instance2.getMap(getIthMapName(0)).addPartitionLostListener(listener2);
 
@@ -77,7 +76,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(1);
         HazelcastInstance instance = instances.get(0);
 
-        final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
+        final TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(0);
         instance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
         instance.getMap(getIthMapName(0)).addEntryListener(mock(EntryAddedListener.class), true);
 
@@ -96,7 +95,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         HazelcastInstance survivingInstance = instances.get(0);
         HazelcastInstance terminatingInstance = instances.get(1);
 
-        final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
+        final TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(0);
         survivingInstance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
@@ -133,7 +132,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         assertFalse(filter.eval(null));
     }
 
-    private static void assertEventEventually(final EventCollectingMapPartitionLostListener listener,
+    private static void assertEventEventually(final TestEventCollectingMapPartitionLostListener listener,
                                               final IPartitionLostEvent internalEvent) {
         assertTrueEventually(new AssertTask() {
             @Override

@@ -7,7 +7,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.MapPartitionLostEvent;
-import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
+import com.hazelcast.map.TestEventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -92,7 +92,7 @@ public class ClientMapPartitionLostListenerTest {
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         warmUpPartitions(instance, client);
 
-        final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
+        final TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(0);
         client.getMap(mapName).addPartitionLostListener(listener);
 
         final MapService mapService = getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
@@ -102,7 +102,7 @@ public class ClientMapPartitionLostListenerTest {
         assertMapPartitionLostEventEventually(listener, partitionId);
     }
 
-    private void assertMapPartitionLostEventEventually(final EventCollectingMapPartitionLostListener listener,
+    private void assertMapPartitionLostEventEventually(final TestEventCollectingMapPartitionLostListener listener,
                                                        final int partitionId) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -134,7 +134,7 @@ public class ClientMapPartitionLostListenerTest {
 
         final HazelcastInstance other = getAddress(instance1).equals(clientOwnerAddress) ? instance2 : instance1;
 
-        final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
+        final TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(0);
         client.getMap(mapName).addPartitionLostListener(listener);
 
         assertRegistrationEventually(instance1, mapName, true);
