@@ -37,7 +37,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
     }
 
     @Test
-    public void test_partitionLostListenerInvoked() throws Exception {
+    public void test_partitionLostListenerInvoked() {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(1);
         HazelcastInstance instance = instances.get(0);
 
