@@ -150,7 +150,7 @@ public class TestPartitionUtils {
 
         private long[] replicaVersions;
 
-        public GetReplicaVersionsRunnable(Node node, int partitionId) {
+        GetReplicaVersionsRunnable(Node node, int partitionId) {
             this.node = node;
             this.partitionId = partitionId;
         }
@@ -168,7 +168,7 @@ public class TestPartitionUtils {
             latch.countDown();
         }
 
-        public long[] getReplicaVersions() throws InterruptedException {
+        long[] getReplicaVersions() throws InterruptedException {
             latch.await(30, TimeUnit.SECONDS);
             return replicaVersions;
         }

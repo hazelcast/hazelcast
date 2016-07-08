@@ -343,7 +343,6 @@ public class PartitionReplicaManager {
         return entries;
     }
 
-
     void reset() {
         for (int k = 0; k < replicaSyncRequests.length(); k++) {
             replicaSyncRequests.set(k, null);
