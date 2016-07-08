@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
+import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
-import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
 public class DestroyApplicationProcessor implements ContainerPayloadProcessor<Dummy> {
     private final ApplicationMaster applicationMaster;

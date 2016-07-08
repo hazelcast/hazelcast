@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.actor.ringbuffer;
 
+import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.RingBuffer;
 import com.hazelcast.jet.impl.data.BufferAware;
-import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

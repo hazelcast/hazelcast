@@ -21,9 +21,9 @@ import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.io.ObjectReaderFactory;
 import com.hazelcast.jet.io.ObjectWriterFactory;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.Serializable;

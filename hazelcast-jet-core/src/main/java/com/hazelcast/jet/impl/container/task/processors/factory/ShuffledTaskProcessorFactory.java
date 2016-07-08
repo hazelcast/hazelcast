@@ -17,15 +17,15 @@
 package com.hazelcast.jet.impl.container.task.processors.factory;
 
 
+import com.hazelcast.jet.container.ProcessorContext;
+import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.container.task.processors.shuffling.ShuffledReceiverConsumerTaskProcessor;
-import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.impl.container.task.processors.shuffling.ShuffledActorTaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.shuffling.ShuffledConsumerTaskProcessor;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.task.processors.shuffling.ShuffledReceiverConsumerTaskProcessor;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {

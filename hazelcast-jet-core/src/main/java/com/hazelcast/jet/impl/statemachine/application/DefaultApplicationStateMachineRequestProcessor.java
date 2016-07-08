@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.statemachine.application;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.application.ApplicationListener;
+import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 
 import java.util.ArrayList;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.statemachine.container.requests;
 
+import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
-import com.hazelcast.jet.impl.container.ContainerRequest;
 
 public class ContainerFinalizedRequest implements ContainerRequest<ProcessingContainerEvent, ProcessingContainer> {
     private final ProcessingContainer processingContainer;

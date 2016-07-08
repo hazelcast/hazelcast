@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.application.localization;
 
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
 import com.hazelcast.jet.impl.application.localization.classloader.ApplicationClassLoader;
 import com.hazelcast.jet.impl.application.localization.classloader.ResourceStream;
-import com.hazelcast.jet.config.ApplicationConfig;
 
 import java.io.IOException;
 import java.security.AccessController;

@@ -19,11 +19,11 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.data.io.SocketWriter;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.data.io.JetPacket;
+import com.hazelcast.jet.impl.data.io.SocketWriter;
+import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.nio.Address;
 
 import java.io.IOException;

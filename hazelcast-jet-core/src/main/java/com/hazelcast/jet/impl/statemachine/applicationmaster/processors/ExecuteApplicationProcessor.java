@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
-import com.hazelcast.jet.impl.container.ApplicationMaster;
-import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
+import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.application.ExecutorContext;
+import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecuteRequest;
-import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Iterator;

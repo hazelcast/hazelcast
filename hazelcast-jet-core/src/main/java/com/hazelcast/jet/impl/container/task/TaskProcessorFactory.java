@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.container.task;
 
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.impl.actor.ObjectConsumer;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.processor.ContainerProcessor;
 

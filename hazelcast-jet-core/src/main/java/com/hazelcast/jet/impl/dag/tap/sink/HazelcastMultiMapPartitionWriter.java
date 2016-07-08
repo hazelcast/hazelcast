@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.dag.tap.sink;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;

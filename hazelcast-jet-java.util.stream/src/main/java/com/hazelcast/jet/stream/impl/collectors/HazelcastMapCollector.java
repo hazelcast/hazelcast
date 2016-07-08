@@ -19,9 +19,9 @@ package com.hazelcast.jet.stream.impl.collectors;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.dag.tap.MapSink;
+import com.hazelcast.jet.dag.tap.SinkTap;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.dag.tap.SinkTap;
 import com.hazelcast.jet.stream.Distributed;
 
 import java.util.function.Function;

@@ -16,12 +16,11 @@
 
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
     private final MessageTaskFactory[] factories = new MessageTaskFactory[Short.MAX_VALUE];

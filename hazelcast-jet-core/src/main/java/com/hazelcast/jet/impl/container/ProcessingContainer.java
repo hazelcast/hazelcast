@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.container;
 
+import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
+import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
-import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.List;

@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.dag.tap.sink;
 
 
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
-import com.hazelcast.jet.impl.util.SettableFuture;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
+import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.logging.ILogger;

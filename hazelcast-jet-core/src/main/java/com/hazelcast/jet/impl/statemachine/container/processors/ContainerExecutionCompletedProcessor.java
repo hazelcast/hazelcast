@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
+import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
 import java.util.List;
 

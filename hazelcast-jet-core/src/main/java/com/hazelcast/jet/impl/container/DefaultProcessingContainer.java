@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.spi.NodeEngine;
 

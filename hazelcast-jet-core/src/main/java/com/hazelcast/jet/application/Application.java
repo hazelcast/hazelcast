@@ -18,10 +18,10 @@ package com.hazelcast.jet.application;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
-import com.hazelcast.jet.impl.application.LocalizationResourceType;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.impl.application.LocalizationResourceType;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
 
 import java.io.IOException;
 import java.io.InputStream;

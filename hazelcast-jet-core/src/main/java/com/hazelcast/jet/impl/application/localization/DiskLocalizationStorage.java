@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.impl.application.localization;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.application.localization.classloader.ResourceStream;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 
 public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
 

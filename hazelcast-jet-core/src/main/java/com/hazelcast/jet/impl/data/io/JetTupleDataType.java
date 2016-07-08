@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.data.io;
 
+import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.io.DataType;
 import com.hazelcast.jet.io.ObjectReader;
 import com.hazelcast.jet.io.ObjectWriter;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.data.tuple.JetTuple;
-import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 
 public final class JetTupleDataType implements DataType {
     public static final DataType INSTANCE = new JetTupleDataType();

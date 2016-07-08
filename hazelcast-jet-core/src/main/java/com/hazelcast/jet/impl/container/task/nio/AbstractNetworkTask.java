@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.container.task.nio;
 
+import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.jet.impl.data.io.NetworkTask;
 import com.hazelcast.jet.impl.executor.Payload;
-import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster.requests;
 
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.container.ContainerRequest;
+import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 
 public class ExecutionPlanReadyRequest implements ContainerRequest<ApplicationMasterEvent, Dummy> {
     @Override

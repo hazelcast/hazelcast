@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.data.tuple;
 
-import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.PartitionIdAware;
+import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategyAware;
 import com.hazelcast.nio.serialization.Data;

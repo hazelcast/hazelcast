@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.impl.actor.ComposedActor;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.executor.Task;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.executor.TaskContext;
+import com.hazelcast.jet.impl.actor.ComposedActor;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.nio.Address;
 
 import java.util.List;

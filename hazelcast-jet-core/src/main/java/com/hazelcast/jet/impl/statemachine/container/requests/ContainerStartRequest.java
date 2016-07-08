@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.statemachine.container.requests;
 
+import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
-import com.hazelcast.jet.impl.Dummy;
 
 /**
  * State-machine request which force start containers;

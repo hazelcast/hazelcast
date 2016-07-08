@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
 import com.hazelcast.jet.impl.container.ApplicationMaster;
-import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
+import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.logging.ILogger;
 
 public class ExecutionErrorProcessor implements ContainerPayloadProcessor<Throwable> {

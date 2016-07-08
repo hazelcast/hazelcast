@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.container.task.processors;
 
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")

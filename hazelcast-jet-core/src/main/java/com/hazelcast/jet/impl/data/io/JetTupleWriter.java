@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.data.io;
 
 
-import com.hazelcast.jet.io.impl.writers.TupleWriter;
 import com.hazelcast.jet.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.impl.writers.TupleWriter;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.nio.ObjectDataOutput;
 

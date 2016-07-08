@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.container.task.processors;
 
 
-import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
-import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.task.TaskProcessor;
+import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

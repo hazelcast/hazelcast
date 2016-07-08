@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.application.localization.classloader;
 
-import com.hazelcast.jet.impl.application.localization.LocalizationStorage;
 import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
+import com.hazelcast.jet.impl.application.localization.LocalizationStorage;
 import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.io.IOException;

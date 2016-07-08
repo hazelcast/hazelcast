@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster.requests;
 
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
-import com.hazelcast.jet.dag.DAG;
 
 public class ExecutionPlanBuilderRequest implements ContainerRequest<ApplicationMasterEvent, DAG> {
     private final DAG dag;

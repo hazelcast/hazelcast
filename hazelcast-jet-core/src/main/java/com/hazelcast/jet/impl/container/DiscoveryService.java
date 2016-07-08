@@ -18,12 +18,12 @@ package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.application.ApplicationService;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketReader;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketWriter;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.executor.Task;
-import com.hazelcast.jet.impl.application.ApplicationService;
 import com.hazelcast.jet.impl.operation.DiscoveryOperation;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
-import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
+import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.logging.ILogger;
 
 public class ContainerInterruptProcessor implements ContainerPayloadProcessor<Throwable> {

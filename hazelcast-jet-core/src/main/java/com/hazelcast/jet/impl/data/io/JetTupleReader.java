@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.data.io;
 
-import com.hazelcast.jet.io.impl.readers.TupleReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.io.impl.readers.TupleReader;
 
 public class JetTupleReader extends TupleReader {
     public JetTupleReader(JetTupleFactory defaultTupleFactory) {

@@ -17,18 +17,18 @@
 package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.executor.Payload;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 

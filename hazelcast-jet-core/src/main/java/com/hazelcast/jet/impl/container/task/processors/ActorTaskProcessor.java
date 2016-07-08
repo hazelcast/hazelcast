@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.container.task.processors;
 
-import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 public class ActorTaskProcessor extends ProducerTaskProcessor {

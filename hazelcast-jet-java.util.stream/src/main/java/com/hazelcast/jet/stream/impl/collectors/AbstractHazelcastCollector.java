@@ -18,9 +18,9 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.tap.SinkTap;
+import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;

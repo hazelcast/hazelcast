@@ -18,14 +18,14 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
-import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
 import com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.collectors.DistributedStringJoiner;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastGroupingMapCollector;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastListCollector;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastMapCollector;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastMergingMapCollector;
+import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
+import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
 import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
 
 import java.io.Serializable;

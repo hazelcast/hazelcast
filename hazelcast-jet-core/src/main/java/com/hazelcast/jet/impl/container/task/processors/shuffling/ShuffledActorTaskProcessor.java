@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.impl.container.task.processors.shuffling;
 
+import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
-import com.hazelcast.jet.impl.container.ContainerTask;
-import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.container.task.processors.ActorTaskProcessor;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.nio.Address;
