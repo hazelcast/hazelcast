@@ -55,32 +55,52 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
             }
 
             List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
-            for (Record record : records) {
-                // Should be a safe cast as we've looked up only SRV records.
-                SRVRecord srv = (SRVRecord) record;
-                InetAddress inetAddress = getAddress(srv);
 
-                if (inetAddress == null) {
-                    continue;
-                }
-
+            if (records.length > 0) {
+                // Get only the first record, because all of them have the same name
+                // Example:
+                // nslookup u219692-hazelcast.u219692-hazelcast.svc.cluster.local 172.30.0.1
+                //      Server:         172.30.0.1
+                //      Address:        172.30.0.1#53
+                //
+                //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
+                //      Address: 10.1.2.8
+                //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
+                //      Address: 10.1.5.28
+                //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
+                //      Address: 10.1.9.33
+                SRVRecord srv = (SRVRecord) records[0];
+                InetAddress[] inetAddress = getAllAdresses(srv);
                 int port = srv.getPort();
 
-                Address address = new Address(inetAddress, port);
-                discoveredNodes.add(new SimpleDiscoveryNode(address));
+                for (InetAddress i : inetAddress) {
+                    Address address = new Address(i, port);
+
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("Found node ip-address is: " + address);
+                    }
+                    discoveredNodes.add(new SimpleDiscoveryNode(address));
+                }
+            } else {
+                LOGGER.warning("Could not find any service for serviceDns '" + serviceDns + "' failed");
+                return Collections.emptyList();
             }
 
             return discoveredNodes;
+
         } catch (TextParseException e) {
+            throw new RuntimeException("Could not resolve services via DNS", e);
+        } catch (UnknownHostException e) {
             throw new RuntimeException("Could not resolve services via DNS", e);
         }
     }
 
-    private InetAddress getAddress(SRVRecord srv) {
+    private InetAddress[] getAllAdresses(SRVRecord srv) throws UnknownHostException {
         try {
-            return org.xbill.DNS.Address.getByName(srv.getTarget().canonicalize().toString(true));
+            return org.xbill.DNS.Address.getAllByName(srv.getTarget().canonicalize().toString(true));
         } catch (UnknownHostException e) {
-            return null;
+            LOGGER.severe("Parsing DNS records failed", e);
+            throw e;
         }
     }
 }
