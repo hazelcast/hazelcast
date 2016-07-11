@@ -17,25 +17,26 @@
 package com.hazelcast.jet.impl.executor;
 
 
-import com.hazelcast.jet.impl.executor.processor.ExecutorProcessor;
 import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
-public abstract class AbstractExecutor<T extends ExecutorProcessor> {
+public abstract class AbstractExecutor<T extends Worker> {
 
     protected final ILogger logger;
-    protected final T[] processors;
+    protected final List<T> workers;
 
     private final String name;
-    private final Thread[] workers;
+    private final Thread[] threads;
     private final int awaitingTimeOut;
     private final ThreadFactory threadFactory;
 
@@ -45,74 +46,74 @@ public abstract class AbstractExecutor<T extends ExecutorProcessor> {
 
         String hzName = nodeEngine.getHazelcastInstance().getName();
 
-        this.threadFactory = new JetThreadFactory(name + "-executor", hzName);
-        this.logger = nodeEngine.getLogger(getClass());
+        threadFactory = new JetThreadFactory(name + "-executor", hzName);
+        logger = nodeEngine.getLogger(getClass());
 
-        this.workers = new Thread[threadNum];
+        threads = new Thread[threadNum];
         this.awaitingTimeOut = awaitingTimeOut;
-        this.processors = createWorkingProcessors(threadNum);
+        //noinspection unchecked
+        workers = new ArrayList<>(threadNum);
 
-        for (int i = 0; i < this.workers.length; i++) {
-            this.processors[i] = createWorkingProcessor(threadNum);
-            this.workers[i] = worker(processors[i]);
+        for (int i = 0; i < threads.length; i++) {
+            T worker = createWorker();
+            workers.add(worker);
+            threads[i] = createThread(worker);
         }
 
         this.name = name;
     }
 
-    protected Thread worker(Runnable processor) {
-        return this.threadFactory.newThread(processor);
+    protected Thread createThread(Runnable runnable) {
+        return threadFactory.newThread(runnable);
     }
 
-    protected abstract T createWorkingProcessor(int threadNum);
-
-    protected abstract T[] createWorkingProcessors(int threadNum);
+    protected abstract T createWorker();
 
     /**
-     * Name of the executor;
+     * Name of the executor
      *
      * @return the name of the executor
      */
     public String getName() {
-        return this.name;
+        return name;
     }
 
     /**
-     * Synchronously shutdown executor;
+     * Synchronously shutdown executor
      */
     public void shutdown() {
-        for (ExecutorProcessor processor : this.processors) {
+        for (Worker worker : workers) {
             try {
-                processor.shutdown().get(this.awaitingTimeOut, TimeUnit.SECONDS);
+                worker.shutdown().get(awaitingTimeOut, TimeUnit.SECONDS);
             } catch (Exception e) {
                 throw JetUtil.reThrow(e);
             }
         }
     }
 
-    protected void startProcessors() {
-        for (ExecutorProcessor processor : this.processors) {
-            processor.start();
-        }
-    }
-
     protected void startWorkers() {
-        for (Thread worker : this.workers) {
+        for (Worker worker : workers) {
             worker.start();
         }
     }
 
+    protected void startThreads() {
+        for (Thread thread : threads) {
+            thread.start();
+        }
+    }
+
     /**
-     * Send wakeUp signal to all workers;
+     * Send wakeUp signal to all workers
      */
     public void wakeUp() {
-        for (ExecutorProcessor processor : this.processors) {
-            processor.wakeUp();
+        for (Worker worker : workers) {
+            worker.wakeUp();
         }
     }
 
     @Override
     public String toString() {
-        return this.name;
+        return name;
     }
 }

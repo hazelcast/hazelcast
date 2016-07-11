@@ -38,7 +38,7 @@ import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.DefaultProcessorContext;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.executor.Payload;
+import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -231,25 +231,25 @@ public class DefaultContainerTask extends AbstractTask
     }
 
     @Override
-    public boolean executeTask(Payload payload) {
+    public boolean execute(BooleanHolder didWorkHolder) {
         TaskProcessor processor = this.taskProcessor;
         boolean classLoaderChanged = false;
         ClassLoader classLoader = null;
 
-        if (this.contextClassLoader != null) {
+        if (contextClassLoader != null) {
             classLoader = Thread.currentThread().getContextClassLoader();
-            if (this.contextClassLoader != classLoader) {
+            if (contextClassLoader != classLoader) {
                 Thread.currentThread().setContextClassLoader(this.contextClassLoader);
                 classLoaderChanged = true;
             }
         }
 
         try {
-            if (this.interrupted.get()) {
+            if (interrupted.get()) {
                 try {
                     onInterrupt(processor);
                 } finally {
-                    this.container.handleTaskEvent(
+                    container.handleTaskEvent(
                             this,
                             TaskEvent.TASK_EXECUTION_COMPLETED,
                             getError()
@@ -263,10 +263,10 @@ public class DefaultContainerTask extends AbstractTask
             Throwable error = null;
 
             try {
-                result = process(payload, processor);
+                result = process(didWorkHolder, processor);
             } catch (Throwable e) {
                 result = false;
-                payload.set(false);
+                didWorkHolder.set(false);
                 error = e;
             }
 
@@ -336,27 +336,27 @@ public class DefaultContainerTask extends AbstractTask
 
     private void afterProcessing() {
         try {
-            this.processor.afterProcessing(this.processorContext);
+            processor.afterProcessing(this.processorContext);
         } catch (Throwable error) {
             handleProcessingError(error);
         }
     }
 
-    private boolean process(Payload payload, TaskProcessor processor) throws Exception {
-        if (!this.sendersFlushed) {
+    private boolean process(BooleanHolder didWorkHolder, TaskProcessor processor) throws Exception {
+        if (!sendersFlushed) {
             if (!checkIfSendersFlushed()) {
                 return true;
             }
         }
 
-        if (((this.containerFinalizationNotified) && (!this.finalizationStarted))) {
-            payload.set(false);
+        if (((containerFinalizationNotified) && (!finalizationStarted))) {
+            didWorkHolder.set(false);
             return true;
         }
 
         boolean success = processor.process();
         boolean activity = processor.consumed() || processor.produced();
-        payload.set(activity);
+        didWorkHolder.set(activity);
 
         if (((!activity) && (success))) {
             if (checkProducersClosed()) {

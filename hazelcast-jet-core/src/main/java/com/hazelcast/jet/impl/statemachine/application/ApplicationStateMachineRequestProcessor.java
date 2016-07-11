@@ -19,15 +19,16 @@ package com.hazelcast.jet.impl.statemachine.application;
 import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.application.ApplicationListener;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultApplicationStateMachineRequestProcessor implements StateMachineRequestProcessor<ApplicationEvent> {
+public class ApplicationStateMachineRequestProcessor implements StateMachineRequestProcessor<ApplicationEvent> {
     private final ApplicationContext applicationContext;
 
-    public DefaultApplicationStateMachineRequestProcessor(ApplicationContext applicationContext) {
+    public ApplicationStateMachineRequestProcessor(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
@@ -49,8 +50,8 @@ public class DefaultApplicationStateMachineRequestProcessor implements StateMach
     @Override
     public void processRequest(ApplicationEvent event, Object payload) throws Exception {
         if (event == ApplicationEvent.EXECUTION_START) {
-            this.applicationContext.getExecutorContext().getNetworkTaskContext().init();
-            this.applicationContext.getExecutorContext().getApplicationTaskContext().init();
+            applicationContext.getExecutorContext().getNetworkTasks().forEach(Task::init);
+            applicationContext.getExecutorContext().getProcessingTasks().forEach(Task::init);
         }
 
         if ((event == ApplicationEvent.EXECUTION_FAILURE)
@@ -65,7 +66,7 @@ public class DefaultApplicationStateMachineRequestProcessor implements StateMach
                     throw new CombinedJetException(listeners);
                 }
             } finally {
-                this.applicationContext.getExecutorContext().getNetworkTaskContext().destroy();
+                this.applicationContext.getExecutorContext().getNetworkTasks().forEach(Task::destroy);
             }
         }
     }

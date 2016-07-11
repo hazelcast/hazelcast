@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.impl.executor;
 
+import com.hazelcast.jet.impl.util.BooleanHolder;
+
 /**
- * Represents abstract task;
+ * Represents abstract task
  *
  * Tasks can be:
  *
@@ -35,7 +37,7 @@ package com.hazelcast.jet.impl.executor;
  *
  *
  *
- *      .....           -&gt;  Task -&gt;
+ *      .....           -&gt  Task -&gt
  *
  *
  *
@@ -49,7 +51,7 @@ package com.hazelcast.jet.impl.executor;
  *     Files,
  *     Hazelcast structures,
  *     HDFS,
- *     Previous RingBuffer with data from the previous container;
+ *     Previous RingBuffer with data from the previous container
  * </pre>
  */
 public interface Task {
@@ -59,43 +61,43 @@ public interface Task {
     void setThreadContextClassLoaders(ClassLoader classLoader);
 
     /**
-     * Init task, perform initialization actions before task being executed;
+     * Init task, perform initialization actions before task being executed
      * The strict rule is that this method will be executed synchronously on
-     * all nodes in cluster before any real task's  execution;
+     * all nodes in cluster before any real task's  execution
      */
     void init();
 
     /***
      * Will be invoked immediately before task was submitted into the executor,
-     * strictly from executor-thread;
+     * strictly from executor-thread
      */
     void beforeProcessing();
 
     /**
-     * Interrupts tasks execution;
+     * Interrupts tasks execution
      *
-     * @param error - the reason of the interruption;
+     * @param error - the reason of the interruption
      */
     void interrupt(Throwable error);
 
     /**
-     * Execute next iteration of task;
+     * Execute next iteration of task
      *
-     * @param payload - payload which holds execution useful activity;
-     * @return - true - if task should be executed again, false if task should be removed from executor;
+     * @param didWorkHolder flag to set to indicate that the task did something useful
+     * @return - true - if task should be executed again, false if task should be removed from executor
      * @throws Exception if any exception
      */
-    boolean executeTask(Payload payload) throws Exception;
+    boolean execute(BooleanHolder didWorkHolder) throws Exception;
 
     /**
-     * Performs finalization actions after execution;
-     * Task can be inited and executed again;
+     * Performs finalization actions after execution
+     * Task can be inited and executed again
      */
     void finalizeTask();
 
     /**
-     * Destroy task;
-     * Task can not be executed again after destroy;
+     * Destroy task
+     * Task can not be executed again after destroy
      */
     void destroy();
 }

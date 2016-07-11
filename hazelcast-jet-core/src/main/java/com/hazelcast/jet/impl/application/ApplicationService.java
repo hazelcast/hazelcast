@@ -25,7 +25,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketThreadAcceptor;
-import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
 import com.hazelcast.jet.impl.executor.BalancedExecutor;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.FinalizeApplicationRequest;
@@ -103,9 +102,7 @@ public class ApplicationService implements RemoteService {
         );
 
         List<Task> taskList = createAcceptorTask(nodeEngine);
-        this.acceptorExecutor.submitTaskContext(new ApplicationTaskContext(
-                taskList
-        ));
+        this.acceptorExecutor.submitTaskContext(taskList);
 
         addShutdownHook(nodeEngine);
     }

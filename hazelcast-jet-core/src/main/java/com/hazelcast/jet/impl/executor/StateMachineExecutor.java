@@ -16,30 +16,24 @@
 
 package com.hazelcast.jet.impl.executor;
 
-import com.hazelcast.jet.impl.executor.processor.StateMachineExecutorProcessor;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class StateMachineExecutor extends AbstractExecutor<StateMachineExecutorProcessor> {
+public class StateMachineExecutor extends AbstractExecutor<StateMachineWorker> {
     private final AtomicInteger taskAmount = new AtomicInteger(0);
     private volatile int lastAddedIdx = -1;
 
     public StateMachineExecutor(String name, int threadNum, int awaitingTimeOut, NodeEngine nodeEngine) {
         super(name, threadNum, awaitingTimeOut, nodeEngine);
 
+        startThreads();
         startWorkers();
-        startProcessors();
     }
 
     @Override
-    protected StateMachineExecutorProcessor createWorkingProcessor(int threadNum) {
-        return new StateMachineExecutorProcessor(threadNum, this.logger, this);
-    }
-
-    @Override
-    protected StateMachineExecutorProcessor[] createWorkingProcessors(int threadNum) {
-        return new StateMachineExecutorProcessor[threadNum];
+    protected StateMachineWorker createWorker() {
+        return new StateMachineWorker(this.logger);
     }
 
     /**
@@ -48,8 +42,8 @@ public class StateMachineExecutor extends AbstractExecutor<StateMachineExecutorP
      * @param task task to execute
      */
     public void addTask(Task task) {
-        this.lastAddedIdx = (this.lastAddedIdx + 1) % (this.processors.length);
-        this.processors[this.lastAddedIdx].consumeTask(task);
-        this.taskAmount.incrementAndGet();
+        lastAddedIdx = (this.lastAddedIdx + 1) % (this.workers.size());
+        workers.get(this.lastAddedIdx).consumeTask(task);
+        taskAmount.incrementAndGet();
     }
 }

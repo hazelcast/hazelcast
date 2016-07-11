@@ -20,16 +20,18 @@ import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.util.JetUtil;
+
+import java.util.List;
 
 public class DestroyApplicationProcessor implements ContainerPayloadProcessor<Dummy> {
     private final ApplicationMaster applicationMaster;
-    private final ApplicationTaskContext applicationTaskContext;
+    private final List<Task> networkTasks;
 
     public DestroyApplicationProcessor(ApplicationMaster applicationMaster) {
         this.applicationMaster = applicationMaster;
-        this.applicationTaskContext = applicationMaster.getApplicationContext().getExecutorContext().getNetworkTaskContext();
+        networkTasks = applicationMaster.getApplicationContext().getExecutorContext().getNetworkTasks();
     }
 
     @Override
@@ -49,7 +51,7 @@ public class DestroyApplicationProcessor implements ContainerPayloadProcessor<Du
                 throw JetUtil.reThrow(error);
             }
         } finally {
-            this.applicationTaskContext.destroy();
+            networkTasks.forEach(Task::destroy);
         }
     }
 }

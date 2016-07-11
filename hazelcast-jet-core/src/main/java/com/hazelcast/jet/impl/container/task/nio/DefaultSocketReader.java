@@ -27,7 +27,7 @@ import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
-import com.hazelcast.jet.impl.executor.Payload;
+import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -86,7 +86,7 @@ public class DefaultSocketReader
     }
 
     @Override
-    public boolean onExecute(Payload payload) throws Exception {
+    public boolean onExecute(BooleanHolder payload) throws Exception {
         if (checkInterrupted()) {
             return false;
         }
@@ -105,7 +105,7 @@ public class DefaultSocketReader
         return checkFinished();
     }
 
-    private boolean processRead(Payload payload) throws Exception {
+    private boolean processRead(BooleanHolder payload) throws Exception {
         if (!isFlushed()) {
             payload.set(false);
             return true;
@@ -120,7 +120,7 @@ public class DefaultSocketReader
         readSocket(payload);
 
         if (this.waitingForFinish) {
-            if ((!payload.produced()) && (isFlushed())) {
+            if ((!payload.get()) && (isFlushed())) {
                 this.finished = true;
             }
         }
@@ -147,7 +147,7 @@ public class DefaultSocketReader
         this.applicationContext.getApplicationMaster().notifyNetworkTaskFinished();
     }
 
-    private boolean readSocket(Payload payload) {
+    private boolean readSocket(BooleanHolder payload) {
         if ((this.socketChannel != null) && (this.socketChannel.isConnected())) {
             try {
                 SocketChannel socketChannel = this.socketChannel;
@@ -178,7 +178,7 @@ public class DefaultSocketReader
         }
     }
 
-    private boolean handleEmptyChannel(Payload payload, int readBytes) {
+    private boolean handleEmptyChannel(BooleanHolder payload, int readBytes) {
         if (readBytes < 0) {
             return false;
         }
@@ -344,10 +344,10 @@ public class DefaultSocketReader
 
         if (processingContainer == null) {
             this.logger.warning("No such container with containerId="
-                            + packet.getContainerId()
-                            + " jetPacket="
-                            + packet
-                            + ". Application will be interrupted."
+                    + packet.getContainerId()
+                    + " jetPacket="
+                    + packet
+                    + ". Application will be interrupted."
             );
 
             return JetPacket.HEADER_JET_DATA_NO_CONTAINER_FAILURE;
@@ -357,12 +357,12 @@ public class DefaultSocketReader
 
         if (containerTask == null) {
             this.logger.warning("No such task in container with containerId="
-                            + packet.getContainerId()
-                            + " taskId="
-                            + packet.getTaskID()
-                            + " jetPacket="
-                            + packet
-                            + ". Application will be interrupted."
+                    + packet.getContainerId()
+                    + " taskId="
+                    + packet.getTaskID()
+                    + " jetPacket="
+                    + packet
+                    + ". Application will be interrupted."
             );
 
             return JetPacket.HEADER_JET_DATA_NO_TASK_FAILURE;

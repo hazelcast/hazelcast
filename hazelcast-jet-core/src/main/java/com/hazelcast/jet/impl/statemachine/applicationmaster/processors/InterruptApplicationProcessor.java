@@ -29,15 +29,15 @@ public class InterruptApplicationProcessor implements ContainerPayloadProcessor<
 
     public InterruptApplicationProcessor(ApplicationMaster applicationMaster) {
         this.applicationMaster = applicationMaster;
-        this.secondToAwait = this.applicationMaster.getApplicationContext().getApplicationConfig().getSecondsToAwait();
+        secondToAwait = applicationMaster.getApplicationContext().getApplicationConfig().getSecondsToAwait();
     }
 
     @Override
     public void process(Dummy payload) throws Exception {
-        this.applicationMaster.registerInterruption();
+        applicationMaster.registerInterruption();
 
-        for (ProcessingContainer container : this.applicationMaster.containers()) {
-            container.handleContainerRequest(new ContainerInterruptRequest()).get(this.secondToAwait, TimeUnit.SECONDS);
+        for (ProcessingContainer container : applicationMaster.containers()) {
+            container.handleContainerRequest(new ContainerInterruptRequest()).get(secondToAwait, TimeUnit.SECONDS);
         }
     }
 }

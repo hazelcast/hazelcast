@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.executor;
+package com.hazelcast.jet.impl.util;
 
-/**
- * Represents abstract execution payload
- */
-public interface Payload {
-    /**
-     * Set marker to payload if last processing operation contained useful operations
-     *
-     * @param activity true it there were useful operations, false otherwise
-     */
-    void set(boolean activity);
+public class BooleanHolder {
 
-    /**
-     * @return true if there were useful operations, false otherwise
-     */
-    boolean produced();
+    private boolean bool;
+
+    public void set(boolean value) {
+        bool = value;
+    }
+
+    public boolean get() {
+        return bool;
+    }
 }

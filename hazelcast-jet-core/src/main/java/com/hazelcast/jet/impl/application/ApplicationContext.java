@@ -33,7 +33,7 @@ import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachine;
-import com.hazelcast.jet.impl.statemachine.application.DefaultApplicationStateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineRequestProcessor;
 import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.impl.IOContextImpl;
 import com.hazelcast.nio.Address;
@@ -112,7 +112,7 @@ public class ApplicationContext {
 
         this.applicationStateMachine = STATE_MACHINE_FACTORY.newStateMachine(
                 name,
-                new DefaultApplicationStateMachineRequestProcessor(this),
+                new ApplicationStateMachineRequestProcessor(this),
                 nodeEngine,
                 this
         );

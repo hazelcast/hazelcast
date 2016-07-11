@@ -67,12 +67,12 @@ public class DiscoveryService {
 
 
     private Map<Member, Address> findMembers() {
-        Map<Member, Address> memberMap = new HashMap<Member, Address>();
+        Map<Member, Address> memberMap = new HashMap<>();
 
         try {
-            for (Member member : this.nodeEngine.getClusterService().getMembers()) {
+            for (Member member : nodeEngine.getClusterService().getMembers()) {
                 if (!member.localMember()) {
-                    Future<Address> future = this.nodeEngine.getOperationService().invokeOnTarget(
+                    Future<Address> future = nodeEngine.getOperationService().invokeOnTarget(
                             ApplicationService.SERVICE_NAME,
                             new DiscoveryOperation(),
                             member.getAddress()
@@ -81,12 +81,12 @@ public class DiscoveryService {
                     Address remoteAddress = future.get();
 
                     memberMap.put(member, remoteAddress);
-                    this.hzToAddressMapping.put(member.getAddress(), remoteAddress);
+                    hzToAddressMapping.put(member.getAddress(), remoteAddress);
                 }
             }
 
-            this.hzToAddressMapping.put(
-                    this.nodeEngine.getLocalMember().getAddress(),
+            hzToAddressMapping.put(
+                    nodeEngine.getLocalMember().getAddress(),
                     applicationContext.getLocalJetAddress()
             );
 
@@ -99,7 +99,7 @@ public class DiscoveryService {
     private void registerIOTasks(Map<Member, Address> map) {
         List<Task> tasks = new ArrayList<Task>();
 
-        for (Member member : this.nodeEngine.getClusterService().getMembers()) {
+        for (Member member : nodeEngine.getClusterService().getMembers()) {
             if (!member.localMember()) {
                 Address jetAddress = map.get(member);
 
@@ -121,17 +121,17 @@ public class DiscoveryService {
                         socketWriter
                 );
 
-                this.socketWriters.put(jetAddress, socketWriter);
-                this.socketReaders.put(jetAddress, socketReader);
+                socketWriters.put(jetAddress, socketWriter);
+                socketReaders.put(jetAddress, socketReader);
             }
         }
 
         for (Task task : tasks) {
-            this.applicationContext.getExecutorContext().getNetworkTaskContext().addTask(task);
+            applicationContext.getExecutorContext().getNetworkTasks().add(task);
         }
 
-        for (Map.Entry<Address, SocketReader> readerEntry : this.socketReaders.entrySet()) {
-            for (Map.Entry<Address, SocketWriter> writerEntry : this.socketWriters.entrySet()) {
+        for (Map.Entry<Address, SocketReader> readerEntry : socketReaders.entrySet()) {
+            for (Map.Entry<Address, SocketWriter> writerEntry : socketWriters.entrySet()) {
                 SocketReader reader = readerEntry.getValue();
                 reader.assignWriter(writerEntry.getKey(), writerEntry.getValue());
             }
@@ -150,13 +150,13 @@ public class DiscoveryService {
      * @return discovered socket writers
      */
     public Map<Address, SocketWriter> getSocketWriters() {
-        return this.socketWriters;
+        return socketWriters;
     }
 
     /**
      * @return discovered socket readers
      */
     public Map<Address, SocketReader> getSocketReaders() {
-        return this.socketReaders;
+        return socketReaders;
     }
 }

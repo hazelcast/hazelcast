@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.jet.impl.data.io.NetworkTask;
-import com.hazelcast.jet.impl.executor.Payload;
+import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -44,37 +44,37 @@ public abstract class AbstractNetworkTask extends AbstractTask
     public AbstractNetworkTask(NodeEngine nodeEngine,
                                Address jetAddress) {
         this.jetAddress = jetAddress;
-        this.logger = nodeEngine.getLogger(getClass());
+        logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
     public void init() {
         closeSocket();
 
-        this.totalBytes = 0;
-        this.destroyed = false;
-        this.finished = false;
-        this.finalized = false;
-        this.interrupted = false;
-        this.waitingForFinish = false;
+        totalBytes = 0;
+        destroyed = false;
+        finished = false;
+        finalized = false;
+        interrupted = false;
+        waitingForFinish = false;
     }
 
     protected void stamp() {
-        this.lastExecutionTimeOut = System.currentTimeMillis();
-        this.inProgress = true;
+        lastExecutionTimeOut = System.currentTimeMillis();
+        inProgress = true;
     }
 
     protected void resetProgress() {
-        this.inProgress = false;
+        inProgress = false;
     }
 
     @Override
     public void interrupt(Throwable error) {
-        this.interrupted = true;
+        interrupted = true;
     }
 
     public void finalizeTask() {
-        this.finalized = true;
+        finalized = true;
     }
 
     @Override
@@ -82,16 +82,16 @@ public abstract class AbstractNetworkTask extends AbstractTask
         try {
             closeSocket();
         } finally {
-            this.finished = true;
-            this.finalized = true;
-            this.destroyed = true;
-            this.inProgress = false;
-            this.interrupted = true;
+            finished = true;
+            finalized = true;
+            destroyed = true;
+            inProgress = false;
+            interrupted = true;
         }
     }
 
     protected boolean checkFinished() {
-        if (this.finished) {
+        if (finished) {
             notifyAMTaskFinished();
             return false;
         }
@@ -103,18 +103,18 @@ public abstract class AbstractNetworkTask extends AbstractTask
 
     }
 
-    protected abstract boolean onExecute(Payload payload) throws Exception;
+    protected abstract boolean onExecute(BooleanHolder payload) throws Exception;
 
     @Override
-    public boolean executeTask(Payload payload) throws Exception {
+    public boolean execute(BooleanHolder didWorkHolder) throws Exception {
         stamp();
 
         try {
-            if (this.finalized) {
-                this.waitingForFinish = true;
+            if (finalized) {
+                waitingForFinish = true;
             }
 
-            return onExecute(payload);
+            return onExecute(didWorkHolder);
         } finally {
             resetProgress();
         }
@@ -122,22 +122,22 @@ public abstract class AbstractNetworkTask extends AbstractTask
 
     @Override
     public void closeSocket() {
-        if (this.socketChannel != null) {
+        if (socketChannel != null) {
             try {
-                this.socketChannel.close();
-                this.socketChannel = null;
+                socketChannel.close();
+                socketChannel = null;
             } catch (IOException e) {
-                this.logger.warning(e.getMessage(), e);
+                logger.warning(e.getMessage(), e);
             }
         }
     }
 
     public boolean inProgress() {
-        return this.inProgress;
+        return inProgress;
     }
 
     @Override
     public long lastTimeStamp() {
-        return this.lastExecutionTimeOut;
+        return lastExecutionTimeOut;
     }
 }

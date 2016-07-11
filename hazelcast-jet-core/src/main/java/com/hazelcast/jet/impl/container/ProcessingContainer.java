@@ -150,7 +150,7 @@ public class ProcessingContainer extends
                     new DefaultTaskContext(this.tasksCount, taskIndex, this.getApplicationContext())
             );
 
-            getApplicationContext().getExecutorContext().getApplicationTaskContext().addTask(containerTasks[taskIndex]);
+            getApplicationContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
             containerTasks[taskIndex].setThreadContextClassLoaders(
                     getApplicationContext().getLocalizationStorage().getClassLoader()
             );
