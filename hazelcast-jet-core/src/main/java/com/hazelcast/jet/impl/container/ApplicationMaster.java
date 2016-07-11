@@ -49,7 +49,6 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -61,8 +60,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ApplicationMaster extends
-        AbstractServiceContainer<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse> {
+public class ApplicationMaster
+        extends AbstractContainer<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse> {
 
     private static final InterruptedException APPLICATION_INTERRUPTED_EXCEPTION =
             new InterruptedException("Application has been interrupted");
@@ -95,7 +94,7 @@ public class ApplicationMaster extends
             ApplicationContext applicationContext,
             DiscoveryService discoveryService
     ) {
-        super(STATE_MACHINE_FACTORY, applicationContext.getNodeEngine(), applicationContext);
+        super(STATE_MACHINE_FACTORY, applicationContext.getNodeEngine(), applicationContext, null);
         this.discoveryService = discoveryService;
         this.applicationNameBytes = getNodeEngine().getSerializationService()
                 .toData(applicationContext.getName()).toByteArray();
@@ -251,7 +250,7 @@ public class ApplicationMaster extends
     /**
      * Handles some event during execution;
      *
-     * @param error corresponding error;
+     * @param reason corresponding error;
      */
     public void notifyExecutionError(Object reason) {
         for (MemberImpl member : getNodeEngine().getClusterService().getMemberImpls()) {
@@ -421,7 +420,7 @@ public class ApplicationMaster extends
     }
 
     private static ContainerPayloadProcessor getProcessor(ApplicationMasterEvent event,
-                                                         ApplicationMaster applicationMaster) {
+                                                          ApplicationMaster applicationMaster) {
         switch (event) {
             case SUBMIT_DAG:
                 return new ExecutionPlanBuilderProcessor(applicationMaster);

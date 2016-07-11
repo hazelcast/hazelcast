@@ -26,7 +26,6 @@ import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerE
 import com.hazelcast.jet.impl.container.task.TaskEvent;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptedRequest;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskEventCompletedProcessor extends AbstractEventProcessor {
