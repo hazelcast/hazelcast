@@ -8,8 +8,10 @@ import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -35,6 +37,9 @@ public class DelegatingMigrationAwareServiceTest {
 
     @Parameterized.Parameter(1)
     public PartitionMigrationEvent event;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private DelegatingMigrationAwareService delegatingMigrationAwareService;
 
@@ -98,7 +103,7 @@ public class DelegatingMigrationAwareServiceTest {
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
-        // then: count should be 0, regardles of replica indices involved in event
+        // then: count should be 0, regardless of replica indices involved in event
         assertEquals(0, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
     }
 
@@ -111,8 +116,53 @@ public class DelegatingMigrationAwareServiceTest {
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
-        // then: count should be 0, regardles of replica indices involved in event
+        // then: count should be 0, regardless of replica indices involved in event
         assertEquals(0, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+    }
+
+    @Test
+    public void commitMigration_invalidCount_throwsAssertionError() {
+        // when: invalid sequence of beforeMigration, commitMigration, commitMigration is executed
+        // and
+        try {
+            delegatingMigrationAwareService.commitMigration(event);
+        }
+        catch (RuntimeException e) {
+            // we do not care whether the wrapped service throws an exception
+        }
+
+        // on second commitMigration, if event involves partition owner assertion error is thrown
+        if (involvesPrimaryReplica(event)) {
+            expectedException.expect(AssertionError.class);
+        }
+        try {
+            delegatingMigrationAwareService.commitMigration(event);
+        }
+        catch (RuntimeException e) {
+            // we do not care whether the wrapped service throws an exception
+        }
+    }
+
+    @Test
+    public void rollbackMigration_invalidCount_throwsAssertionError() {
+        // when: invalid sequence of beforeMigration, rollbackMigration, rollbackMigration is executed
+        try {
+            delegatingMigrationAwareService.rollbackMigration(event);
+        }
+        catch (RuntimeException e) {
+            // we do not care whether the wrapped service throws an exception
+        }
+
+        // on second rollbackMigration, if event involves partition owner assertion error is thrown
+        if (involvesPrimaryReplica(event)) {
+            expectedException.expect(AssertionError.class);
+        }
+        try {
+            delegatingMigrationAwareService.rollbackMigration(event);
+        }
+        catch (RuntimeException e) {
+            // we do not care whether the wrapped service throws an exception
+        }
     }
 
     private boolean involvesPrimaryReplica(PartitionMigrationEvent event) {
