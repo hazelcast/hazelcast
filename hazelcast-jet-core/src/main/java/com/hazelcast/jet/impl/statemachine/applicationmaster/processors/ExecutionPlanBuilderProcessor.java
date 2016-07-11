@@ -26,7 +26,6 @@ import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.DataChannel;
-import com.hazelcast.jet.impl.container.DefaultProcessingContainer;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
@@ -35,7 +34,6 @@ import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
-
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +64,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
 
                     Supplier<ContainerProcessor> processorFactory = containerProcessorFactory(className, args);
 
-                    ProcessingContainer container = new DefaultProcessingContainer(
+                    ProcessingContainer container = new ProcessingContainer(
                             vertex,
                             processorFactory,
                             nodeEngine,
