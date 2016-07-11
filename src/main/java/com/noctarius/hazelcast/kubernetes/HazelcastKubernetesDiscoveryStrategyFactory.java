@@ -22,10 +22,9 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,11 +35,12 @@ public class HazelcastKubernetesDiscoveryStrategyFactory implements DiscoveryStr
     private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS;
 
     static {
-        List<PropertyDefinition> propertyDefinitions = new ArrayList<PropertyDefinition>();
-        propertyDefinitions.add(KubernetesProperties.SERVICE_DNS);
-        propertyDefinitions.add(KubernetesProperties.SERVICE_NAME);
-        propertyDefinitions.add(KubernetesProperties.NAMESPACE);
-        PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(propertyDefinitions);
+        PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(Arrays.asList(
+                KubernetesProperties.SERVICE_DNS,
+                KubernetesProperties.SERVICE_NAME,
+                KubernetesProperties.NAMESPACE,
+                KubernetesProperties.SERVICE_LABEL_NAME,
+                KubernetesProperties.SERVICE_LABEL_VALUE));
     }
 
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {

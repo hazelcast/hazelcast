@@ -23,6 +23,7 @@ import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import io.fabric8.kubernetes.api.model.EndpointAddress;
 import io.fabric8.kubernetes.api.model.EndpointSubset;
 import io.fabric8.kubernetes.api.model.Endpoints;
+import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -42,15 +43,19 @@ class ServiceEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
 
     private final String serviceName;
+    private final String serviceLabel;
+    private final String serviceLabelValue;
     private final String namespace;
 
     private final KubernetesClient client;
 
-    public ServiceEndpointResolver(ILogger logger, String serviceName, String namespace) {
+    public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, String serviceLabelValue, String namespace) {
         super(logger);
 
         this.serviceName = serviceName;
         this.namespace = namespace;
+        this.serviceLabel = serviceLabel;
+        this.serviceLabelValue = serviceLabelValue;
 
         String accountToken = getAccountToken();
         logger.info("Kubernetes Discovery: Bearer Token { " + accountToken + " }");
@@ -59,25 +64,48 @@ class ServiceEndpointResolver
     }
 
     List<DiscoveryNode> resolve() {
-        Endpoints endpoints = client.endpoints().inNamespace(namespace).withName(serviceName).get();
-        if (endpoints == null) {
-            return Collections.emptyList();
+        List<DiscoveryNode> result = Collections.EMPTY_LIST;
+        if (serviceName != null && !serviceName.isEmpty()) {
+            result = getSimpleDiscoveryNodes(client.endpoints().inNamespace(namespace).withName(serviceName).get());
         }
 
+        if (result.isEmpty() && serviceLabel != null && !serviceLabel.isEmpty()) {
+            result = getDiscoveryNodes(client.endpoints().inNamespace(namespace).withLabel(serviceLabel, serviceLabelValue).list());
+        }
+
+        return result.isEmpty() ? getNodesByNamespace() : result;
+
+    }
+
+    private List<DiscoveryNode> getNodesByNamespace() {
+        final EndpointsList endpointsInNamespace = client.endpoints().inNamespace(namespace).list();
+        if (endpointsInNamespace == null)
+            return Collections.emptyList();
+        return getDiscoveryNodes(endpointsInNamespace);
+    }
+
+    private List<DiscoveryNode> getDiscoveryNodes(EndpointsList endpointsInNamespace) {
+        if (endpointsInNamespace == null) return Collections.emptyList();
+        List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
+        for (Endpoints endpoints : endpointsInNamespace.getItems()) {
+            discoveredNodes.addAll(getSimpleDiscoveryNodes(endpoints));
+        }
+        return discoveredNodes;
+    }
+
+    private List<DiscoveryNode> getSimpleDiscoveryNodes(Endpoints endpoints) {
+        if (endpoints == null) return Collections.emptyList();
         List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
         for (EndpointSubset endpointSubset : endpoints.getSubsets()) {
             for (EndpointAddress endpointAddress : endpointSubset.getAddresses()) {
                 Map<String, Object> properties = endpointAddress.getAdditionalProperties();
-
                 String ip = endpointAddress.getIp();
                 InetAddress inetAddress = mapAddress(ip);
                 int port = getServicePort(properties);
-
                 Address address = new Address(inetAddress, port);
                 discoveredNodes.add(new SimpleDiscoveryNode(address, properties));
             }
         }
-
         return discoveredNodes;
     }
 
