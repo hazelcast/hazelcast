@@ -10,18 +10,30 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.FileNotFoundException;
-import java.io.UnsupportedEncodingException;
+import java.io.File;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class StartServerTest extends HazelcastTestSupport {
 
+    private File parent = new File("ports");
+    private File child = new File(parent, "hz.ports");
+
     @Before
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void setUp() {
+        parent.mkdir();
+    }
+
     @After
-    public void cleanup() {
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void tearDown() {
+        child.delete();
+        parent.delete();
+
         Hazelcast.shutdownAll();
     }
 
@@ -31,9 +43,12 @@ public class StartServerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMain() throws FileNotFoundException, UnsupportedEncodingException {
+    public void testMain() throws Exception {
+        System.setProperty("print.port", child.getName());
+
         StartServer.main(new String[]{});
 
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
+        assertTrue(child.exists());
     }
 }

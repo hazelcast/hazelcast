@@ -24,19 +24,22 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
+
 /**
- * Starts a Hazelcast server
+ * Starts a Hazelcast server.
  */
 public final class StartServer {
-
 
     private StartServer() {
     }
 
     /**
-     * Creates a server instance of Hazelcast
-     * If user pass print.port property, Server writes port number of the instance to file.
-     * The file name is the same as print.port property.
+     * Creates a server instance of Hazelcast.
+     * <p>
+     * If user sets the system property "print.port", the server writes the port number of the Hazelcast instance to a file.
+     * The file name is the same as the "print.port" property.
+     *
      * @param args none
      */
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
@@ -44,18 +47,15 @@ public final class StartServer {
         printMemberPort(hz);
     }
 
-    public static void printMemberPort(HazelcastInstance hz) throws FileNotFoundException, UnsupportedEncodingException {
-        if (System.getProperty("print.port") != null) {
+    private static void printMemberPort(HazelcastInstance hz) throws FileNotFoundException, UnsupportedEncodingException {
+        String printPort = System.getProperty("print.port");
+        if (printPort != null) {
             PrintWriter printWriter = null;
             try {
-                printWriter = new PrintWriter("ports" + File.separator + System.getProperty("print.port"), "UTF-8");
+                printWriter = new PrintWriter("ports" + File.separator + printPort, "UTF-8");
                 printWriter.println(hz.getCluster().getLocalMember().getAddress().getPort());
-            } catch (FileNotFoundException e) {
-                throw e;
             } finally {
-                if (printWriter != null) {
-                    printWriter.close();
-                }
+                closeResource(printWriter);
             }
         }
     }
