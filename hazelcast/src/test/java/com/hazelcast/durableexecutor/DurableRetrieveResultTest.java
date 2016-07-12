@@ -141,5 +141,4 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
             assertTrue(e.getCause() instanceof StaleTaskIdException);
         }
     }
-
 }

@@ -24,7 +24,8 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class DurableLongRunningTaskTest extends HazelcastTestSupport {
 
-    public static final int CALL_TIMEOUT = 1000;
+    private static final int CALL_TIMEOUT = 1000;
+
     private HazelcastInstance hz;
 
     @Before
@@ -49,10 +50,11 @@ public class DurableLongRunningTaskTest extends HazelcastTestSupport {
     }
 
     public static class SleepingCallable implements Callable<String>, Serializable {
+
         private final String response;
         private final int delayMs;
 
-        public SleepingCallable(String response, int delayMs) {
+        SleepingCallable(String response, int delayMs) {
             this.response = response;
             this.delayMs = delayMs;
         }

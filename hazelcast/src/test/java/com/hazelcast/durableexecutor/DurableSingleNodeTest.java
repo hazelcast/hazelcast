@@ -201,7 +201,7 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
 
-        // New tasks must be rejected
+        // new tasks must be rejected
         Callable<String> task = new BasicTestCallable();
         executor.submit(task);
     }
@@ -236,6 +236,7 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
 //    }
 
     static class LatchRunnable implements Runnable, Serializable {
+
         static CountDownLatch latch;
 
         @Override

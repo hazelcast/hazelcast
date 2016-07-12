@@ -32,15 +32,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -78,22 +75,6 @@ public class DurableSpecificSetupTest extends ExecutorServiceTestSupport {
         Future<Boolean> f = executor.submitToKeyOwner(new SleepingTask(3 * timeoutSeconds), key);
         Boolean result = f.get(1, MINUTES);
         assertTrue(result);
-    }
-
-    private static class SleepLatchRunnable implements Runnable, Serializable {
-        static CountDownLatch startLatch;
-        static CountDownLatch sleepLatch;
-
-        SleepLatchRunnable() {
-            startLatch = new CountDownLatch(1);
-            sleepLatch = new CountDownLatch(1);
-        }
-
-        @Override
-        public void run() {
-            startLatch.countDown();
-            assertOpenEventually(sleepLatch);
-        }
     }
 
     static class RunnableWithManagedContext implements Runnable, Serializable {

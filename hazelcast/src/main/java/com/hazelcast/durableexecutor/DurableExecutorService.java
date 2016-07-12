@@ -139,5 +139,4 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      * @return a Future representing pending completion of the task
      */
     DurableExecutorServiceFuture<?> submitToKeyOwner(Runnable task, Object key);
-
 }

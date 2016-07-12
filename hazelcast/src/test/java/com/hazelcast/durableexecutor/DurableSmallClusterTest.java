@@ -56,7 +56,7 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
         DurableExecutorService executorService = instances[1].getDurableExecutorService(randomString());
         BasicTestCallable task = new BasicTestCallable();
         String key = generateKeyOwnedBy(instances[0]);
-        ICompletableFuture<String> future = (ICompletableFuture<String>) executorService.submitToKeyOwner(task, key);
+        ICompletableFuture<String> future = executorService.submitToKeyOwner(task, key);
         CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
         future.andThen(callback);
         future.get();
@@ -93,7 +93,6 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
         assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(instances.length, callback.getNullResponseCount());
     }
-
 
     @Test
     public void submitToSeveralNodes_callable() throws Exception {
@@ -136,5 +135,4 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
         assertOpenEventually(callback.getResponseLatch());
         assertEquals(instances.length, callback.getSuccessResponseCount());
     }
-
 }

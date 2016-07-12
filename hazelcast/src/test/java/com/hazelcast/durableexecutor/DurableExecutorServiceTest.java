@@ -63,9 +63,8 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
-    public static final int NODE_COUNT = 3;
-
-    public static final int TASK_COUNT = 1000;
+    private static final int NODE_COUNT = 3;
+    private static final int TASK_COUNT = 1000;
 
     @Test
     public void test_registerCallback_beforeFutureIsCompletedOnOtherNode() throws ExecutionException, InterruptedException {
@@ -98,7 +97,6 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         String key = generateKeyOwnedBy(instance1);
         ICompletableFuture<String> future = executorService.submitToKeyOwner(task, key);
         assertEquals(BasicTestCallable.RESULT, future.get());
-        ;
 
         final CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
         future.andThen(callback);
@@ -216,11 +214,10 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testSubmitToKeyOwnerRunnable() throws InterruptedException {
-        final int k = NODE_COUNT;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
         HazelcastInstance[] instances = factory.newInstances();
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
-        final CountDownLatch responseLatch = new CountDownLatch(k);
+        final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
                 if (response == null) {
@@ -232,7 +229,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             public void onFailure(Throwable t) {
             }
         };
-        for (int i = 0; i < k; i++) {
+        for (int i = 0; i < NODE_COUNT; i++) {
             HazelcastInstance instance = instances[i];
             DurableExecutorService service = instance.getDurableExecutorService("testSubmitToKeyOwnerRunnable");
             Member localMember = instance.getCluster().getLocalMember();
@@ -243,7 +240,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         }
         assertOpenEventually(responseLatch);
         assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
-        assertEquals(k, nullResponseCount.get());
+        assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
     /* ############ submit callable ############ */
@@ -254,8 +251,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test(expected = NullPointerException.class)
     public void submitNullTask() throws Exception {
         DurableExecutorService executor = createSingleNodeDurableExecutorService("submitNullTask");
-        Callable c = null;
-        executor.submit(c);
+        executor.submit((Callable) null);
     }
 
     /**
@@ -528,7 +524,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         String key = generateKeyOwnedBy(hz2);
 
         DurableExecutorService executor = hz1.getDurableExecutorService("test");
-        Future<Boolean> f = executor.submitToKeyOwner(new SleepingTask(MILLISECONDS.toSeconds(callTimeoutMillis) * 3),key);
+        Future<Boolean> f = executor.submitToKeyOwner(new SleepingTask(MILLISECONDS.toSeconds(callTimeoutMillis) * 3), key);
 
         Boolean result = f.get(1, TimeUnit.MINUTES);
         assertTrue(result);
