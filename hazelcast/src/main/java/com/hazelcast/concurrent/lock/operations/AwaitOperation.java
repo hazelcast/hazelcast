@@ -60,6 +60,13 @@ public class AwaitOperation extends AbstractLockOperation
         }
     }
 
+    void runExpired() {
+        LockStoreImpl lockStore = getLockStore();
+        boolean locked = lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime);
+        assert locked : "Expired await operation should have acquired the lock!";
+        sendResponse(false);
+    }
+
     @Override
     public ConditionKey getWaitKey() {
         return new ConditionKey(namespace.getObjectName(), key, conditionId, getCallerUuid(), threadId);
