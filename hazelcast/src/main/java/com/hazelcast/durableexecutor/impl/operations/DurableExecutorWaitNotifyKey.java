@@ -41,9 +41,7 @@ public class DurableExecutorWaitNotifyKey extends AbstractWaitNotifyKey {
         }
 
         DurableExecutorWaitNotifyKey that = (DurableExecutorWaitNotifyKey) o;
-
-        return uniqueId == that.uniqueId;
-
+        return (uniqueId == that.uniqueId);
     }
 
     @Override
