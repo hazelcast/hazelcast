@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
-import com.hazelcast.jet.impl.executor.Payload;
+import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.nio.Address;
 
 import java.io.IOException;
@@ -84,7 +84,7 @@ public class DefaultSocketWriter
         this.memberEventSent = false;
     }
 
-    private boolean checkServicesQueue(Payload payload) {
+    private boolean checkServicesQueue(BooleanHolder payload) {
         if (
                 (this.lastFrameId < 0)
                         &&
@@ -112,7 +112,7 @@ public class DefaultSocketWriter
     }
 
     @Override
-    public boolean onExecute(Payload payload) throws Exception {
+    public boolean onExecute(BooleanHolder payload) throws Exception {
         if (this.destroyed) {
             closeSocket();
             return false;
@@ -132,7 +132,7 @@ public class DefaultSocketWriter
     }
 
 
-    private void process(Payload payload) throws Exception {
+    private void process(BooleanHolder payload) throws Exception {
         if (!checkServicesQueue(payload)) {
             return;
         }
@@ -159,7 +159,7 @@ public class DefaultSocketWriter
         processProducers(payload);
     }
 
-    private boolean processLastPacket(Payload payload) {
+    private boolean processLastPacket(BooleanHolder payload) {
         if (this.lastPacket != null) {
             if (!processPacket(this.lastPacket, payload)) {
                 return false;
@@ -186,7 +186,7 @@ public class DefaultSocketWriter
         return true;
     }
 
-    private boolean processProducers(Payload payload) throws Exception {
+    private boolean processProducers(BooleanHolder payload) throws Exception {
         if (this.lastFrameId >= 0) {
             if (!processFrames(payload)) {
                 return true;
@@ -239,7 +239,7 @@ public class DefaultSocketWriter
         this.lastProducedCount = 0;
     }
 
-    private boolean processFrames(Payload payload) {
+    private boolean processFrames(BooleanHolder payload) {
         for (int i = this.lastFrameId + 1; i < this.lastProducedCount; i++) {
             JetPacket packet = (JetPacket) this.currentFrames[i];
 
@@ -261,7 +261,7 @@ public class DefaultSocketWriter
         return true;
     }
 
-    private boolean processPacket(JetPacket packet, Payload payload) {
+    private boolean processPacket(JetPacket packet, BooleanHolder payload) {
         if (!writePacket(packet)) {
             writeToSocket(payload);
             this.lastPacket = packet;
@@ -290,7 +290,7 @@ public class DefaultSocketWriter
     }
 
 
-    private boolean writeToSocket(Payload payload) {
+    private boolean writeToSocket(BooleanHolder payload) {
         if (this.sendByteBuffer.position() > 0) {
             try {
                 this.sendByteBuffer.flip();

@@ -16,111 +16,109 @@
 
 package com.hazelcast.jet.impl.executor;
 
-import com.hazelcast.jet.impl.executor.processor.BalancedExecutorProcessor;
-import com.hazelcast.jet.impl.executor.processor.ExecutorProcessor;
 import com.hazelcast.spi.NodeEngine;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class BalancedExecutor extends AbstractExecutor<BalancedExecutorProcessor> {
-    private final AtomicReference<ExecutorProcessor> unBalancedProcessor = new AtomicReference<ExecutorProcessor>(null);
+/**
+ * Executor which allocates tasks initially by round-robin to each worker,
+ * and does load balancing afterwards. When a worker completed a task, it will be allocated other
+ * tasks from workers with more tasks in their queue.
+ */
+public class BalancedExecutor extends AbstractExecutor<BalancedWorker> {
+    private final AtomicReference<Worker> availableWorker = new AtomicReference<>(null);
 
     private final AtomicInteger taskCount = new AtomicInteger();
 
     public BalancedExecutor(String name, int threadNum, int awaitingTimeOut, NodeEngine nodeEngine) {
         super(name, threadNum, awaitingTimeOut, nodeEngine);
 
+        startThreads();
         startWorkers();
-        startProcessors();
     }
 
     @Override
-    protected BalancedExecutorProcessor[] createWorkingProcessors(int threadNum) {
-        return new BalancedExecutorProcessor[threadNum];
-    }
-
-    @Override
-    protected BalancedExecutorProcessor createWorkingProcessor(int threadNum) {
-        return new BalancedExecutorProcessor(threadNum, this.logger, this);
+    protected BalancedWorker createWorker() {
+        return new BalancedWorker(logger, this);
     }
 
     /**
-     * @return - true if executor is balanced, false -otherwise;
+     * Check if there are any available works to receive tasks that needs additional work
      */
-    public boolean isBalanced() {
-        return this.unBalancedProcessor.get() == null;
+    public boolean isAnyWorkerAvailable() {
+        return availableWorker.get() == null;
     }
 
     /**
-     * Set flag to executor - that it was balanced;
+     * Reset available worker
      */
-    public void setBalanced() {
-        this.unBalancedProcessor.set(null);
+    public void resetBalanced() {
+        availableWorker.set(null);
     }
 
     /**
-     * Submit tasks represented by taskContext to be executed;
+     * Submit tasks represented by taskContext to be executed
      *
-     * @param context - corresponding task-context;
      */
-    public void submitTaskContext(ApplicationTaskContext context) {
+    public void submitTaskContext(List<Task> tasks) {
         int idx = 0;
 
-        for (Task task : context.getTasks()) {
-            this.processors[idx].consumeTask(task);
-            this.taskCount.incrementAndGet();
-            idx = (idx + 1) % (this.processors.length);
+        for (Task task : tasks) {
+            workers.get(idx).consumeTask(task);
+            taskCount.incrementAndGet();
+            idx = (idx + 1) % (workers.size());
         }
 
         wakeUp();
     }
 
     /**
-     * @return - number of task in executor;
+     * @return number of task in executor
      */
     public int getTaskCount() {
-        return this.taskCount.get();
+        return taskCount.get();
     }
 
     /**
-     * Register processor which will be used to re-balance tasks among another threads;
+     * Register worker which will be used to re-balance tasks among another threads
      *
-     * @param taskProcessor - corresponding processor
-     * @return - true - processor has been successfully registered, false - otherwise;
+     * @param unbalancedWorker corresponding worker
+     * @return true worker has been successfully registered, false otherwise
      */
-    public boolean registerUnbalanced(BalancedExecutorProcessor taskProcessor) {
-        boolean result = this.unBalancedProcessor.compareAndSet(null, taskProcessor);
+    public boolean registerAvailable(BalancedWorker unbalancedWorker) {
+        boolean result = availableWorker.compareAndSet(null, unbalancedWorker);
 
         if (!result) {
             return false;
         }
 
-        BalancedExecutorProcessor maxLoadedProcessor = null;
+        BalancedWorker maxLoadedWorker = null;
 
-        for (BalancedExecutorProcessor processor : this.processors) {
-            if (processor == taskProcessor) {
+        for (BalancedWorker worker : workers) {
+            if (worker == unbalancedWorker) {
                 continue;
             }
 
-            if (maxLoadedProcessor == null) {
-                maxLoadedProcessor = processor;
-            } else if (maxLoadedProcessor.getWorkingTaskCount() < processor.getWorkingTaskCount()) {
-                maxLoadedProcessor = processor;
+            if (maxLoadedWorker == null) {
+                maxLoadedWorker = worker;
+            } else if (maxLoadedWorker.getWorkingTaskCount() < worker.getWorkingTaskCount()) {
+                maxLoadedWorker = worker;
             }
         }
 
-        if ((maxLoadedProcessor != null)
-                && (maxLoadedProcessor.getWorkingTaskCount() - taskProcessor.getWorkingTaskCount() > 2)) {
-            return maxLoadedProcessor.balanceWith(taskProcessor);
+        if ((maxLoadedWorker != null)
+                && (maxLoadedWorker.getWorkingTaskCount() - unbalancedWorker.getWorkingTaskCount() > 2)) {
+            return maxLoadedWorker.setAvailableWorker(unbalancedWorker);
         } else {
-            this.unBalancedProcessor.set(null);
+            this.availableWorker.set(null);
             return true;
         }
     }
 
     /**
-     * Will be invoked before task will be deleted from executor;
+     * Will be invoked before task will be deleted from executor
      */
     public void onTaskDeactivation() {
         this.taskCount.decrementAndGet();

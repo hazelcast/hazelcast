@@ -21,9 +21,9 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.RequestPayload;
 import com.hazelcast.jet.impl.container.task.AbstractTask;
-import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.util.BasicCompletableFuture;
+import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.NodeEngine;
@@ -105,12 +105,12 @@ public abstract class AbstractStateMachine
         }
 
         @Override
-        public boolean executeTask(Payload payload) {
+        public boolean execute(BooleanHolder didWorkHolder) {
             RequestPayload<Input, Output> requestHolder = this.requestsQueue.poll();
 
             try {
                 if (requestHolder == null) {
-                    payload.set(false);
+                    didWorkHolder.set(false);
                     return true;
                 }
 
@@ -154,7 +154,7 @@ public abstract class AbstractStateMachine
 
                 return true;
             } finally {
-                payload.set(this.requestsQueue.size() > 0);
+                didWorkHolder.set(this.requestsQueue.size() > 0);
             }
         }
     }

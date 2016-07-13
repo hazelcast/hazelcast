@@ -27,7 +27,7 @@ public class ExecutionErrorProcessor implements ContainerPayloadProcessor<Throwa
     private final ILogger logger;
 
     public ExecutionErrorProcessor(ApplicationMaster applicationMaster) {
-        this.logger = applicationMaster.getNodeEngine().getLogger(getClass());
+        logger = applicationMaster.getNodeEngine().getLogger(getClass());
         this.applicationMaster = applicationMaster;
     }
 
@@ -37,7 +37,7 @@ public class ExecutionErrorProcessor implements ContainerPayloadProcessor<Throwa
             logger.severe(error.getMessage(), error);
         }
 
-        for (ProcessingContainer container : this.applicationMaster.containers()) {
+        for (ProcessingContainer container : applicationMaster.containers()) {
             container.interrupt(error);
         }
     }

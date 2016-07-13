@@ -35,7 +35,6 @@ import com.hazelcast.jet.processor.ProcessorDescriptor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -98,8 +97,6 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
 
         Map<Vertex, ProcessingContainer> vertex2ContainerMap = new HashMap<Vertex, ProcessingContainer>(dag.getVertices().size());
 
-        List<ProcessingContainer> roots = new ArrayList<ProcessingContainer>();
-
         while (iterator.hasNext()) {
             Vertex vertex = iterator.next();
 
@@ -112,12 +109,8 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
 
             vertex2ContainerMap.put(vertex, next);
 
-            if (edges.size() == 0) {
-                roots.add(next);
-            } else {
-                for (Edge edge : edges) {
-                    join(vertex2ContainerMap.get(edge.getInputVertex()), edge, next);
-                }
+            for (Edge edge : edges) {
+                join(vertex2ContainerMap.get(edge.getInputVertex()), edge, next);
             }
         }
 

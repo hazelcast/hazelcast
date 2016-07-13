@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.application.ApplicationService;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.NetworkTask;
 import com.hazelcast.jet.impl.data.io.SocketReader;
-import com.hazelcast.jet.impl.executor.Payload;
+import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -79,7 +79,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
     }
 
     @Override
-    public boolean executeTask(Payload payload) throws Exception {
+    public boolean execute(BooleanHolder didWorkHolder) throws Exception {
         checkConnectivity();
 
         if (this.socketChannel != null) {
@@ -89,17 +89,17 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
                 ).order(ByteOrder.BIG_ENDIAN);
             }
 
-            return super.executeTask(payload);
+            return super.execute(didWorkHolder);
         }
 
         try {
             SocketChannel socketChannel = this.serverSocketChannel.accept();
 
             if (socketChannel != null) {
-                payload.set(true);
+                didWorkHolder.set(true);
                 this.socketChannel = socketChannel;
             } else {
-                payload.set(false);
+                didWorkHolder.set(false);
             }
         } catch (IOException e) {
             return true;

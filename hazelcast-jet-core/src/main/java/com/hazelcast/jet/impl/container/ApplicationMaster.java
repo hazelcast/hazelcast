@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.impl.data.io.JetPacket;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachine;
@@ -49,6 +50,7 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -96,9 +98,9 @@ public class ApplicationMaster
     ) {
         super(STATE_MACHINE_FACTORY, applicationContext.getNodeEngine(), applicationContext, null);
         this.discoveryService = discoveryService;
-        this.applicationNameBytes = getNodeEngine().getSerializationService()
+        applicationNameBytes = getNodeEngine().getSerializationService()
                 .toData(applicationContext.getName()).toByteArray();
-        this.logger = getNodeEngine().getLogger(ApplicationMaster.class);
+        logger = getNodeEngine().getLogger(ApplicationMaster.class);
     }
 
     @Override
@@ -115,9 +117,10 @@ public class ApplicationMaster
      * Handle event when some container has been completed;
      */
     public void handleContainerCompleted() {
-        if (this.containerCounter.incrementAndGet() >= this.containers.size()) {
+        if (containerCounter.incrementAndGet() >= containers.size()) {
             if (getNetworkTaskCount() > 0) {
-                this.getApplicationContext().getExecutorContext().getNetworkTaskContext().finalizeTasks();
+                List<Task> networkTasks = getApplicationContext().getExecutorContext().getNetworkTasks();
+                networkTasks.forEach(Task::finalizeTask);
             } else {
                 notifyCompletionFinished();
             }
@@ -131,15 +134,15 @@ public class ApplicationMaster
      */
     public void handleContainerInterrupted(Throwable error) {
         logger.info("handle container interrupted " + error);
-        this.interrupted = true;
-        this.interruptionError = error;
+        interrupted = true;
+        interruptionError = error;
         handleContainerCompleted();
     }
 
     private void notifyCompletionFinished() {
         try {
-            if (this.interrupted) {
-                notifyInterrupted(this.interruptionError);
+            if (interrupted) {
+                notifyInterrupted(interruptionError);
             } else {
                 try {
                     handleContainerRequest(new ExecutionCompletedRequest()).get(
@@ -156,9 +159,7 @@ public class ApplicationMaster
     }
 
     private int getNetworkTaskCount() {
-        return
-                this.getApplicationContext().getExecutorContext().
-                        getNetworkTaskContext().getTasks().length;
+        return getApplicationContext().getExecutorContext().getNetworkTasks().size();
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
@@ -175,8 +176,8 @@ public class ApplicationMaster
                         TimeUnit.SECONDS
                 );
             } finally {
-                if (this.interruptionFutureHolder.get() != null) {
-                    this.interruptionFutureHolder.get().setResult(true);
+                if (interruptionFutureHolder.get() != null) {
+                    interruptionFutureHolder.get().setResult(true);
                 }
             }
         } finally {
@@ -188,7 +189,7 @@ public class ApplicationMaster
      * Invoked by network task on task's finish
      */
     public void notifyNetworkTaskFinished() {
-        if (this.networkTaskCounter.incrementAndGet() >= getNetworkTaskCount()) {
+        if (networkTaskCounter.incrementAndGet() >= getNetworkTaskCount()) {
             notifyCompletionFinished();
         }
     }
@@ -197,18 +198,18 @@ public class ApplicationMaster
      * Register application execution;
      */
     public void registerExecution() {
-        this.interrupted = false;
-        this.interruptionError = null;
-        this.containerCounter.set(0);
-        this.networkTaskCounter.set(0);
-        this.executionMailBox.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
+        interrupted = false;
+        interruptionError = null;
+        containerCounter.set(0);
+        networkTaskCounter.set(0);
+        executionMailBox.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
     }
 
     /**
      * Register application interruption;
      */
     public void registerInterruption() {
-        this.interruptionFutureHolder.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
+        interruptionFutureHolder.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
     }
 
     /**
@@ -216,7 +217,7 @@ public class ApplicationMaster
      * execution has been completed;
      */
     public ICompletableFuture<Object> getExecutionMailBox() {
-        return this.executionMailBox.get();
+        return executionMailBox.get();
     }
 
     /**
@@ -224,14 +225,14 @@ public class ApplicationMaster
      * interruption has been completed;
      */
     public ICompletableFuture<Object> getInterruptionMailBox() {
-        return this.interruptionFutureHolder.get();
+        return interruptionFutureHolder.get();
     }
 
     /**
      * @return list of containers;
      */
     public List<ProcessingContainer> containers() {
-        return Collections.unmodifiableList(this.containers);
+        return Collections.unmodifiableList(containers);
     }
 
     private void addToExecutionMailBox(Object object) {
@@ -240,10 +241,10 @@ public class ApplicationMaster
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void addToMailBox(Object object) {
-        BasicCompletableFuture<Object> executionMailBox = this.executionMailBox.get();
+        BasicCompletableFuture<Object> mailbox = executionMailBox.get();
 
-        if (executionMailBox != null) {
-            executionMailBox.setResult(object);
+        if (mailbox != null) {
+            mailbox.setResult(object);
         }
     }
 
@@ -264,13 +265,13 @@ public class ApplicationMaster
 
     private void notifyClusterMembers(Object reason, MemberImpl member) {
         JetPacket jetPacket = new JetPacket(
-                this.applicationNameBytes,
+                applicationNameBytes,
                 toBytes(reason)
         );
 
         jetPacket.setHeader(JetPacket.HEADER_JET_EXECUTION_ERROR);
         Address jetAddress = getApplicationContext().getHzToJetAddressMapping().get(member.getAddress());
-        this.discoveryService.getSocketWriters().get(jetAddress).sendServicePacket(jetPacket);
+        discoveryService.getSocketWriters().get(jetAddress).sendServicePacket(jetPacket);
     }
 
     /**
@@ -293,10 +294,7 @@ public class ApplicationMaster
             Address initiator = packet.getRemoteMember();
 
             error = packet.toByteArray() == null
-                    ?
-                    new ApplicationException(initiator)
-                    :
-                    toException(initiator, (JetPacket) reason);
+                    ? new ApplicationException(initiator) : toException(initiator, (JetPacket) reason);
         } else if (reason instanceof Address) {
             error = new ApplicationException((Address) reason);
         } else if (reason instanceof Throwable) {
@@ -324,7 +322,7 @@ public class ApplicationMaster
      * Deploys network engine;
      */
     public void deployNetworkEngine() {
-        this.discoveryService.executeDiscovery();
+        discoveryService.executeDiscovery();
     }
 
     private byte[] toBytes(Object reason) {
@@ -347,10 +345,10 @@ public class ApplicationMaster
                                           ContainerContext containerContext,
                                           Address address,
                                           ShufflingReceiver receiver) {
-        ProcessingContainer processingContainer = this.containersCache.get(containerContext.getID());
+        ProcessingContainer processingContainer = containersCache.get(containerContext.getID());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
         containerTask.registerShufflingReceiver(address, receiver);
-        this.discoveryService.getSocketReaders().get(address).registerConsumer(receiver.getRingBufferActor());
+        discoveryService.getSocketReaders().get(address).registerConsumer(receiver.getRingBufferActor());
     }
 
     /**
@@ -365,24 +363,24 @@ public class ApplicationMaster
                                         ContainerContext containerContext,
                                         Address address,
                                         ShufflingSender sender) {
-        ProcessingContainer processingContainer = this.containersCache.get(containerContext.getID());
+        ProcessingContainer processingContainer = containersCache.get(containerContext.getID());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
         containerTask.registerShufflingSender(address, sender);
-        this.discoveryService.getSocketWriters().get(address).registerProducer(sender.getRingBufferActor());
+        discoveryService.getSocketWriters().get(address).registerProducer(sender.getRingBufferActor());
     }
 
     /**
      * @return map with containers;
      */
     public Map<Integer, ProcessingContainer> getContainersCache() {
-        return this.containersCache;
+        return containersCache;
     }
 
     /**
      * @return dag of the application;
      */
     public DAG getDag() {
-        return this.dag;
+        return dag;
     }
 
     /**
@@ -399,7 +397,7 @@ public class ApplicationMaster
      * @return processing container for the corresponding vertex;
      */
     public ProcessingContainer getContainerByVertex(Vertex vertex) {
-        return this.vertex2ContainerCache.get(vertex);
+        return vertex2ContainerCache.get(vertex);
     }
 
     /**
@@ -409,9 +407,9 @@ public class ApplicationMaster
      * @param container corresponding container;
      */
     public void registerContainer(Vertex vertex, ProcessingContainer container) {
-        this.containers.add(container);
-        this.vertex2ContainerCache.put(vertex, container);
-        this.containersCache.put(container.getID(), container);
+        containers.add(container);
+        vertex2ContainerCache.put(vertex, container);
+        containersCache.put(container.getID(), container);
     }
 
     @Override

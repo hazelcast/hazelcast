@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Collects exception from different nodes
@@ -30,11 +31,18 @@ public class CombinedJetException extends RuntimeException {
 
     /**
      * Create a combined JetException with multiple errors
+     *
      * @param errors list of errors
      */
     public CombinedJetException(List<Throwable> errors) {
         checkNotNull(errors);
+        checkTrue(errors.size() > 0, "errors should contain at least one error");
         this.errors = errors;
+    }
+
+    @Override
+    public String getMessage() {
+        return errors.get(0).getMessage();
     }
 
     /**
@@ -52,11 +60,12 @@ public class CombinedJetException extends RuntimeException {
      * @return first exception or null if there are no exceptions
      */
     public Throwable getCause() {
-        return errors.size() > 0 ? errors.get(0) : null;
+        return errors.get(0);
     }
 
     /**
      * Print stack trace of all the exceptions
+     *
      * @param s {@code PrintStream} to write exceptions to
      */
     public void printStackTrace(PrintStream s) {

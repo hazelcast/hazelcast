@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.executor.processor;
+package com.hazelcast.jet.impl.executor;
 
 
-import com.hazelcast.jet.impl.executor.StateMachineExecutor;
-import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class StateMachineExecutorProcessor extends ExecutorProcessor<StateMachineExecutor> {
+public class StateMachineWorker extends Worker {
     protected final List<Task> originTasks = new ArrayList<>();
 
-    public StateMachineExecutorProcessor(int threadNum, ILogger logger, StateMachineExecutor taskExecutor) {
-        super(threadNum, logger, taskExecutor);
+    public StateMachineWorker(ILogger logger) {
+        super(logger);
     }
 
     @Override
@@ -51,6 +49,7 @@ public class StateMachineExecutorProcessor extends ExecutorProcessor<StateMachin
         }
     }
 
+    @Override
     public void run() {
         this.workingThread = Thread.currentThread();
 
