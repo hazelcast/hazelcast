@@ -17,12 +17,12 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.PartitionContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -41,8 +41,6 @@ import java.util.Set;
  */
 public class ReplicationOperation extends AbstractOperation {
 
-    private static ILogger logger = Logger.getLogger(ReplicationOperation.class.getName());
-
     private SerializationService serializationService;
     private Map<String, Set<RecordMigrationInfo>> data;
     private Map<String, Long> versions;
@@ -59,6 +57,7 @@ public class ReplicationOperation extends AbstractOperation {
 
     @Override
     public void run() throws Exception {
+        ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("Moving partition -> " + getPartitionId()
                     + " to the new owner -> " + getNodeEngine().getThisAddress()
@@ -108,12 +107,10 @@ public class ReplicationOperation extends AbstractOperation {
         for (Map.Entry<String, Set<RecordMigrationInfo>> dataEntry : data.entrySet()) {
             Set<RecordMigrationInfo> recordSet = dataEntry.getValue();
             String name = dataEntry.getKey();
-            ReplicatedRecordStore store = service.getReplicatedRecordStore(name, true, getPartitionId());
+            AbstractReplicatedRecordStore store =
+                    (AbstractReplicatedRecordStore) service.getReplicatedRecordStore(name, true, getPartitionId());
             long version = versions.get(name);
-            for (RecordMigrationInfo record : recordSet) {
-                store.putRecord(record);
-            }
-            store.setVersion(version);
+            store.putRecords(recordSet, version);
             store.setLoaded(true);
         }
     }

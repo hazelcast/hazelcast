@@ -191,7 +191,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         long lastUpdateTime = replicatedMap.getReplicatedMapStats().getLastUpdateTime();
         assertTrue(lastUpdateTime >= startTime);
 
-        Thread.sleep(5);
+        sleepAtLeastMillis(5);
         replicatedMap.put(key, "value2");
         long lastUpdateTime2 = replicatedMap.getReplicatedMapStats().getLastUpdateTime();
         assertTrue(lastUpdateTime2 >= lastUpdateTime);

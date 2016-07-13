@@ -8,7 +8,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastMillis;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -105,7 +105,7 @@ public class ReplicatedRecordTest {
     @Test
     public void testGetUpdateTime() {
         long lastUpdateTime = replicatedRecord.getUpdateTime();
-        sleepMillis(100);
+        sleepAtLeastMillis(100);
 
         replicatedRecord.setValue("newValue", 0);
         assertTrue("replicatedRecord.getUpdateTime() should return a greater update time",
@@ -127,7 +127,7 @@ public class ReplicatedRecordTest {
     @Test
     public void getLastAccessTime() {
         long lastAccessTime = replicatedRecord.getLastAccessTime();
-        sleepMillis(100);
+        sleepAtLeastMillis(100);
 
         replicatedRecord.setValue("newValue", 0);
         assertTrue("replicatedRecord.getLastAccessTime() should return a greater access time",

@@ -32,6 +32,7 @@ import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;
 import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -78,10 +79,10 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
     @Test
     public void testMapMergePolicy() {
-        String mapName = randomMapName();
+        final String mapName = randomMapName();
         Config config = newConfig(testCase.getMergePolicyClassName(), mapName);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
         TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
         h2.getCluster().addMembershipListener(memberShipListener);
@@ -98,16 +99,22 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         ReplicatedMap<Object, Object> map1 = h1.getReplicatedMap(mapName);
         ReplicatedMap<Object, Object> map2 = h2.getReplicatedMap(mapName);
-        Map<Object, Object> expectedValues = testCase.populateMaps(map1, map2, h1);
+        final Map<Object, Object> expectedValues = testCase.populateMaps(map1, map2, h1);
 
         assertOpenEventually(lifeCycleListener.latch);
         assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
 
-        ReplicatedMap<Object, Object> mapTest = h1.getReplicatedMap(mapName);
-        for (Map.Entry<Object, Object> entry : expectedValues.entrySet()) {
-            assertEquals(entry.getValue(), mapTest.get(entry.getKey()));
-        }
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                ReplicatedMap<Object, Object> mapTest = h1.getReplicatedMap(mapName);
+                for (Map.Entry<Object, Object> entry : expectedValues.entrySet()) {
+                    assertEquals(entry.getValue(), mapTest.get(entry.getKey()));
+                }
+            }
+        });
     }
 
     private Config newConfig(String mergePolicy, String mapName) {
@@ -178,11 +185,11 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
                                                 HazelcastInstance instance) {
             map1.put("key1", "value");
             //prevent updating at the same time
-            sleepMillis(1);
+            sleepAtLeastSeconds(1);
             map2.put("key1", "LatestUpdatedValue");
             map2.put("key2", "value2");
             //prevent updating at the same time
-            sleepMillis(1);
+            sleepAtLeastSeconds(1);
             map1.put("key2", "LatestUpdatedValue2");
 
             Map<Object, Object> expectedValues = new HashMap<Object, Object>();

@@ -18,13 +18,12 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
@@ -33,11 +32,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
+import java.util.Set;
 
-import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.UPDATED;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -61,31 +59,42 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapBaseTes
 
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        warmUpPartitions(instance1, instance2);
 
         final String mapName = randomMapName();
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap(mapName);
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap(mapName);
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(mapName);
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(mapName);
 
-        final int operations = 100;
-        execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put(i, i);
+            public void run()
+                    throws Exception {
+                for (Map.Entry<String, String> entry : map1.entrySet()) {
+                    assertRecord(getReplicatedRecord(map1, entry.getKey()), startTime);
                 }
             }
-        }, ADDED, operations, 0.75, map1, map2);
+        });
 
-        for (Map.Entry<Integer, Integer> entry : map1.entrySet()) {
-            assertRecord(getReplicatedRecord(map1, entry.getKey()), startTime);
-        }
-
-        for (Map.Entry<Integer, Integer> entry : map2.entrySet()) {
-            assertRecord(getReplicatedRecord(map2, entry.getKey()), startTime);
-        }
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (Map.Entry<String, String> entry : map2.entrySet()) {
+                    assertRecord(getReplicatedRecord(map2, entry.getKey()), startTime);
+                }
+            }
+        });
     }
 
-    private void assertRecord(ReplicatedRecord<Integer, Integer> record, long startTime) {
+    private void assertRecord(ReplicatedRecord<String, String> record, long startTime) {
+        assertNotNull(record);
         long hits = record.getHits();
         long lastAccessTime = record.getLastAccessTime();
         long now = Clock.currentTimeMillis();
@@ -111,19 +120,17 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapBaseTes
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
-        final ReplicatedMap<Integer, Integer> map = instance1.getReplicatedMap(randomMapName());
-        final int operations = 100;
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map.put(i, i);
-                }
-            }
-        }, ADDED, operations, 1, map);
+        final ReplicatedMap<String, String> map = instance1.getReplicatedMap(randomMapName());
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        for (int i = 0; i < operations; i++) {
-            final ReplicatedRecord<Integer, Integer> replicatedRecord = getReplicatedRecord(map, i);
+        for (String key : keys) {
+            map.put(key, "bar");
+        }
+
+        for (String key : keys) {
+            final ReplicatedRecord<String, String> replicatedRecord = getReplicatedRecord(map, key);
+            assertNotNull(replicatedRecord);
             assertEquals(0, replicatedRecord.getHits());
         }
     }
@@ -142,25 +149,23 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapBaseTes
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
-        final ReplicatedMap<Integer, Integer> map = instance1.getReplicatedMap(randomMapName());
-        final int operations = 100;
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map.put(i, i);
-                }
-            }
-        }, ADDED, operations, 1, map);
+        final ReplicatedMap<String, String> map = instance1.getReplicatedMap(randomMapName());
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        for (int i = 0; i < operations; i++) {
-            map.containsKey(i);
+        for (String key : keys) {
+            map.put(key, "bar");
         }
 
-        for (int i = 0; i < operations; i++) {
-            final ReplicatedRecord<Integer, Integer> replicatedRecord = getReplicatedRecord(map, i);
+        for (String key : keys) {
+            map.containsKey(key);
+        }
+
+        for (String key : keys) {
+            final ReplicatedRecord<String, String> replicatedRecord = getReplicatedRecord(map, key);
+            assertNotNull(replicatedRecord);
             assertEquals(1, replicatedRecord.getHits());
-            assertTrue("Last access time should be set for " + i, replicatedRecord.getLastAccessTime() > 0);
+            assertTrue("Last access time should be set for " + key, replicatedRecord.getLastAccessTime() > 0);
         }
     }
 
@@ -178,38 +183,37 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapBaseTes
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        warmUpPartitions(instance1, instance2);
 
         final String mapName = randomMapName();
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap(mapName);
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap(mapName);
-        final int operations = 100;
-        execute(new Runnable() {
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(mapName);
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(mapName);
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+            map1.containsKey(key);
+        }
+
+        for (String key : keys) {
+            final ReplicatedRecord<String, String> replicatedRecord = getReplicatedRecord(map1, key);
+            assertNotNull(replicatedRecord);
+            assertEquals(1, replicatedRecord.getHits());
+            assertTrue("Last access time should be set for " + key, replicatedRecord.getLastAccessTime() > 0);
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put(i, i);
-                    map1.containsKey(i);
+            public void run() throws Exception {
+                for (String key : keys) {
+                    final ReplicatedRecord<String, String> replicatedRecord = getReplicatedRecord(map2, key);
+                    assertNotNull(replicatedRecord);
+                    assertEquals(0, replicatedRecord.getHits());
+                    assertTrue("Last access time should be set for " + key, replicatedRecord.getLastAccessTime() > 0);
                 }
             }
-        }, ADDED, operations, 1, map1, map2);
-
-        for (int i = 0; i < operations; i++) {
-            final ReplicatedRecord<Integer, Integer> replicatedRecord = getReplicatedRecord(map1, i);
-            assertEquals(1, replicatedRecord.getHits());
-            assertTrue("Last access time should be set for " + i, replicatedRecord.getLastAccessTime() > 0);
-        }
-
-        for (int i = 0; i < operations; i++) {
-            final ReplicatedRecord<Integer, Integer> replicatedRecord = getReplicatedRecord(map2, i);
-            assertEquals(0, replicatedRecord.getHits());
-            assertTrue("Last access time should be set for " + i, replicatedRecord.getLastAccessTime() > 0);
-        }
-    }
-
-    private void execute(final Runnable runnable, final EntryEventType type, final int operations,
-                         final double minExpectation, ReplicatedMap... maps) throws TimeoutException {
-        final WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(runnable, 60, type, operations, minExpectation, maps);
+        });
     }
 
     @Test
@@ -227,28 +231,22 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapBaseTes
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
-        final ReplicatedMap<Integer, Integer> map = instance1.getReplicatedMap(randomMapName());
-        final int operations = 100;
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map.put(i, i);
-                }
-            }
-        }, ADDED, operations, 1, map);
+        final ReplicatedMap<String, String> map = instance1.getReplicatedMap(randomMapName());
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map.put(i, i);
-                }
-            }
-        }, UPDATED, operations, 1, map);
+        for (String key : keys) {
+            map.put(key, "bar");
+        }
 
-        for (int i = 0; i < operations; i++) {
-            assertEquals(1, getReplicatedRecord(map, i).getHits());
+        for (String key : keys) {
+            map.put(key, "bar");
+        }
+
+        for (String key : keys) {
+            final ReplicatedRecord<String, String> record = getReplicatedRecord(map, key);
+            assertNotNull(record);
+            assertEquals(1, record.getHits());
         }
     }
 
@@ -266,32 +264,36 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapBaseTes
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        warmUpPartitions(instance1, instance2);
 
         final String mapName = randomMapName();
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap(mapName);
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap(mapName);
-        final int operations = 100;
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put(i, i);
-                }
-            }
-        }, ADDED, operations, 1, map1, map2);
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(mapName);
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(mapName);
 
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put(i, i + 1);
-                }
-            }
-        }, UPDATED, operations, 1, map1, map2);
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        for (int i = 0; i < operations; i++) {
-            assertEquals(1, getReplicatedRecord(map1, i).getHits());
-            assertEquals(0, getReplicatedRecord(map2, i).getHits());
+        for (String key : keys) {
+            map1.put(key, "bar");
         }
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    final ReplicatedRecord<String, String> record1 = getReplicatedRecord(map1, key);
+                    assertNotNull(record1);
+                    assertEquals(1, record1.getHits());
+                    final ReplicatedRecord<String, String> record2 = getReplicatedRecord(map2, key);
+                    assertNotNull(record2);
+                    assertEquals(0,  record2.getHits());
+                }
+            }
+        });
     }
 }

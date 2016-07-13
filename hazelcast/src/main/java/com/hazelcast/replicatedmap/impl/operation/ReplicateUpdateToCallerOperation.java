@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 public class ReplicateUpdateToCallerOperation extends AbstractOperation implements PartitionAwareOperation,
         IdentifiedDataSerializable {
 
-    private static ILogger logger = Logger.getLogger(ReplicateUpdateToCallerOperation.class.getName());
     private String name;
     private long callId;
     private Data dataKey;
@@ -64,6 +62,7 @@ public class ReplicateUpdateToCallerOperation extends AbstractOperation implemen
 
     @Override
     public void run() throws Exception {
+        ILogger logger = getLogger();
         ReplicatedMapService service = getService();
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, true, getPartitionId());
         long currentVersion = store.getVersion();
@@ -77,18 +76,17 @@ public class ReplicateUpdateToCallerOperation extends AbstractOperation implemen
         Object key = store.marshall(dataKey);
         Object value = store.marshall(dataValue);
         if (isRemove) {
-            store.remove(key);
+            store.removeWithVersion(key, updateVersion);
         } else {
-            store.put(key, value, ttl, TimeUnit.MILLISECONDS, true);
+            store.putWithVersion(key, value, ttl, TimeUnit.MILLISECONDS, true, updateVersion);
         }
-        store.setVersion(updateVersion);
-    }
 
+        publishEvent();
+    }
 
     @Override
     public void afterRun() throws Exception {
         notifyCaller();
-        publishEvent();
     }
 
     private void publishEvent() {

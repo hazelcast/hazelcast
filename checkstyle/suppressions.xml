@@ -214,6 +214,7 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/monitor/impl/LocalReplicatedMapStatsImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com/hazelcast/replicatedmap/impl/ReplicatedMapService"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/replicatedmap/impl/record/ReplicatedRecordStore"/>
 
     <!-- Aggregations -->
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/mapreduce/aggregation/Aggregations"/>

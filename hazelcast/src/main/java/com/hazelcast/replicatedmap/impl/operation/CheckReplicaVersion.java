@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.PartitionContainer;
@@ -41,10 +40,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  */
 public class CheckReplicaVersion extends AbstractOperation implements PartitionAwareOperation {
 
-    private static ILogger logger = Logger.getLogger(CheckReplicaVersion.class.getName());
-
     private Map<String, Long> versions;
-
 
     public CheckReplicaVersion() {
     }
@@ -62,6 +58,7 @@ public class CheckReplicaVersion extends AbstractOperation implements PartitionA
 
     @Override
     public void run() throws Exception {
+        final ILogger logger = getLogger();
         ReplicatedMapService service = getService();
         PartitionContainer container = service.getPartitionContainer(getPartitionId());
         ConcurrentMap<String, ReplicatedRecordStore> stores = container.getStores();
@@ -72,8 +69,8 @@ public class CheckReplicaVersion extends AbstractOperation implements PartitionA
             if (store == null) {
                 logger.finest("Missing store on the replica ! Owner version -> " + version);
                 requestDataFromOwner(name);
-            } else if (!version.equals(store.getVersion())) {
-                logger.finest("Version mismatch on the replica ! Owner version ->  " + version
+            } else if (store.isStale(version)) {
+                logger.finest("Stale replica! Owner version ->  " + version
                         + ", Replica version -> " + store.getVersion());
                 requestDataFromOwner(name);
             }

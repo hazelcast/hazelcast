@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -37,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class SyncReplicatedMapDataOperation<K, V> extends AbstractOperation {
 
-    private static ILogger logger = Logger.getLogger(SyncReplicatedMapDataOperation.class.getName());
 
     private String name;
     private Set<RecordMigrationInfo> recordSet;
@@ -54,8 +52,9 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractOperation {
 
     @Override
     public void run() throws Exception {
-        logger.finest("Carrying " + recordSet.size() + " records for partition -> " + getPartitionId()
-                + " from -> " + getCallerAddress() + ", to -> " + getNodeEngine().getThisAddress());
+        ILogger logger = getLogger();
+        logger.finest("Syncing " + recordSet.size() + " records and version: " + version + " for partition -> "
+                + getPartitionId() + " from -> " + getCallerAddress() + ", to -> " + getNodeEngine().getThisAddress());
         ReplicatedMapService service = getService();
         AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) service
                 .getReplicatedRecordStore(name, true, getPartitionId());
@@ -68,12 +67,13 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractOperation {
             if (oldRecord != null) {
                 replicatedRecord.setHits(oldRecord.getHits());
             }
-            newStorage.putInternal(key, replicatedRecord);
+            newStorage.put(key, replicatedRecord);
             if (record.getTtl() > 0) {
                 store.scheduleTtlEntry(record.getTtl(), key, value);
             }
         }
-        newStorage.setVersion(version);
+
+        newStorage.syncVersion(version);
         AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef = store.getStorageRef();
         storageRef.set(newStorage);
         store.setLoaded(true);

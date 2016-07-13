@@ -26,7 +26,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.util.ClockProperties;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -202,18 +202,18 @@ public class SystemClockChangeTest extends HazelcastTestSupport {
     }
 
     private void setClockOffset(long offset) {
-        System.setProperty(Clock.HAZELCAST_CLOCK_OFFSET, String.valueOf(offset));
+        System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, String.valueOf(offset));
     }
 
     private void setJumpingClock(long offset) {
-        System.setProperty(Clock.HAZELCAST_CLOCK_IMPL, JumpingSystemClock.class.getName());
-        System.setProperty(Clock.HAZELCAST_CLOCK_OFFSET, String.valueOf(offset));
+        System.setProperty(ClockProperties.HAZELCAST_CLOCK_IMPL, JumpingSystemClock.class.getName());
+        System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, String.valueOf(offset));
         System.setProperty(JumpingSystemClock.JUMP_AFTER_SECONDS_PROPERTY, String.valueOf(JUMP_AFTER_SECONDS));
     }
 
     private void resetClock() {
-        System.clearProperty(Clock.HAZELCAST_CLOCK_IMPL);
-        System.clearProperty(Clock.HAZELCAST_CLOCK_OFFSET);
+        System.clearProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
+        System.clearProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         System.clearProperty(JumpingSystemClock.JUMP_AFTER_SECONDS_PROPERTY);
     }
 
