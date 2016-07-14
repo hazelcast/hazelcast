@@ -18,7 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
@@ -52,7 +52,7 @@ public class ConsumerProducerTest extends JetTestSupport {
 
     @Test
     public void testFinalization_whenEmptyProducerWithNoConsumer() throws Exception {
-        final Application application = JetEngine.getApplication(instance, "emptyProducerNoConsumer");
+        final Job job = JetEngine.getJob(instance, "emptyProducerNoConsumer");
         DAG dag = new DAG();
 
         IList<String> sourceList = getList(instance);
@@ -61,13 +61,13 @@ public class ConsumerProducerTest extends JetTestSupport {
 
         dag.addVertex(producer);
 
-        application.submit(dag);
-        execute(application);
+        job.submit(dag);
+        execute(job);
     }
 
     @Test
     public void testFinalization_whenEmptyProducerWithConsumer() throws Exception {
-        final Application application = JetEngine.getApplication(instance, "emptyProducerWithConsumer");
+        final Job job = JetEngine.getJob(instance, "emptyProducerWithConsumer");
         DAG dag = new DAG();
 
         IList<String> sourceList = getList(instance);
@@ -82,15 +82,15 @@ public class ConsumerProducerTest extends JetTestSupport {
         dag.addVertex(consumer);
         dag.addEdge(new Edge("", producer, consumer));
 
-        application.submit(dag);
-        execute(application);
+        job.submit(dag);
+        execute(job);
 
         assertEquals(TASK_COUNT * NODE_COUNT, sinkList.size());
     }
 
     @Test
     public void testArrayProducer() throws Exception {
-        Application application = JetEngine.getApplication(instance, "arrayProducer");
+        Job job = JetEngine.getJob(instance, "arrayProducer");
 
         IList<Integer[]> sourceList = getList(instance);
         IList<Integer[]> sinkList = getList(instance);
@@ -107,9 +107,9 @@ public class ConsumerProducerTest extends JetTestSupport {
         vertex.addSink(new ListSink(sinkList));
 
         dag.addVertex(vertex);
-        application.submit(dag);
+        job.submit(dag);
 
-        execute(application);
+        execute(job);
 
         for (int i = 0; i < count; i++) {
             assertEquals(i, (int) sinkList.get(i)[0]);

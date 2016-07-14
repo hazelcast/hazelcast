@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.container.task.processors;
 
 
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
@@ -60,8 +60,8 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         this.containerContext = containerContext;
         this.consumersProcessor = new ConsumersProcessor(consumers);
         this.tupleInputStream = new DefaultObjectIOStream<Object>(DUMMY_CHUNK);
-        ApplicationConfig applicationConfig = containerContext.getConfig();
-        int tupleChunkSize = applicationConfig.getChunkSize();
+        JobConfig jobConfig = containerContext.getConfig();
+        int tupleChunkSize = jobConfig.getChunkSize();
         this.tupleOutputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
         reset();
     }

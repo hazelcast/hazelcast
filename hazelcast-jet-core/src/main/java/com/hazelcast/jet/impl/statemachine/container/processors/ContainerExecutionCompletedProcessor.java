@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
@@ -26,11 +26,11 @@ import java.util.List;
 
 public class ContainerExecutionCompletedProcessor implements ContainerPayloadProcessor<Dummy> {
     private final ProcessingContainer container;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
 
     public ContainerExecutionCompletedProcessor(ProcessingContainer container) {
         this.container = container;
-        this.applicationContext = container.getApplicationContext();
+        this.jobContext = container.getJobContext();
     }
 
     //payload - completed container
@@ -45,6 +45,6 @@ public class ContainerExecutionCompletedProcessor implements ContainerPayloadPro
             }
         }
 
-        this.applicationContext.getApplicationMaster().handleContainerCompleted();
+        this.jobContext.getJobManager().handleContainerCompleted();
     }
 }

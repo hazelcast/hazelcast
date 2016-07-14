@@ -1,1 +1,1 @@
-com.hazelcast.jet.impl.application.client.ApplicationClientProxyDescriptorProvider
+com.hazelcast.jet.impl.job.client.JobClientProxyDescriptorProvider

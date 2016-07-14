@@ -19,7 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
@@ -67,7 +67,7 @@ public class TapTest extends JetTestSupport {
 
     @Test
     public void testMapToList() throws Exception {
-        Application application = JetEngine.getApplication(instance, "mapToList");
+        Job job = JetEngine.getJob(instance, "mapToList");
         IMap<Integer, Integer> sourceMap = getMap(instance);
         IList<Integer> sinkList = getList(instance);
         fillMapWithInts(sourceMap, COUNT);
@@ -77,16 +77,16 @@ public class TapTest extends JetTestSupport {
         vertex.addSource(new MapSource(sourceMap));
         vertex.addSink(new ListSink(sinkList));
         dag.addVertex(vertex);
-        application.submit(dag);
+        job.submit(dag);
 
-        execute(application);
+        execute(job);
 
         assertEquals(COUNT, sinkList.size());
     }
 
     @Test
     public void testListToList() throws Exception {
-        Application application = JetEngine.getApplication(instance, "listToList");
+        Job job = JetEngine.getJob(instance, "listToList");
 
         IList<Integer> sourceList = getList(instance);
         fillListWithInts(sourceList, COUNT);
@@ -99,15 +99,15 @@ public class TapTest extends JetTestSupport {
         vertex.addSink(new ListSink(targetList));
         dag.addVertex(vertex);
 
-        application.submit(dag);
+        job.submit(dag);
 
-        execute(application);
+        execute(job);
         assertEquals(COUNT, targetList.size());
     }
 
     @Test
     public void testMapToMultipleSinks() throws Exception {
-        Application application = JetEngine.getApplication(instance, "multipleSinks");
+        Job job = JetEngine.getJob(instance, "multipleSinks");
 
         IMap<Integer, Integer> sourceMap = instance.getMap("sourceMap");
 
@@ -127,9 +127,9 @@ public class TapTest extends JetTestSupport {
         dag.addVertex(vertex1);
         dag.addVertex(vertex2);
         dag.addEdge(new Edge("edge", vertex1, vertex2));
-        application.submit(dag);
+        job.submit(dag);
 
-        execute(application);
+        execute(job);
 
         assertEquals(COUNT, sinkList.size());
         assertEquals(COUNT, sinkMap.size());
@@ -137,7 +137,7 @@ public class TapTest extends JetTestSupport {
 
     @Test
     public void testFileToFile() throws Exception {
-        Application application = JetEngine.getApplication(instance, "fileToFile");
+        Job job = JetEngine.getJob(instance, "fileToFile");
 
         File input = createInputFile();
         File output = File.createTempFile("output", null);
@@ -160,8 +160,8 @@ public class TapTest extends JetTestSupport {
                 .build();
         dag.addEdge(edge);
 
-        application.submit(dag);
-        execute(application);
+        job.submit(dag);
+        execute(job);
 
         List<String> files = Files.readAllLines(output.toPath());
         assertEquals(COUNT*NODE_COUNT, files.size());

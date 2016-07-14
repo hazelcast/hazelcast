@@ -36,7 +36,7 @@ import com.hazelcast.core.ICompletableFuture;
  * </pre>
  * <p>
  * Transition matrix lets to prevent appearance of inconsistent state, for example
- * execution of the application before DAG has been submit;
+ * execution of the job before DAG has been submit;
  *
  * @param <Input>  - input type of stateMachine's event;
  * @param <State>  - current state of the stateMachine;

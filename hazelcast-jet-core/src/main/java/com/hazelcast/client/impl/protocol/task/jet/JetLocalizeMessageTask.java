@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetLocalizeCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.application.localization.Chunk;
+import com.hazelcast.jet.impl.job.localization.Chunk;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.operation.LocalizationChunkOperation;
 import com.hazelcast.nio.Connection;
@@ -41,14 +41,14 @@ public class JetLocalizeMessageTask extends JetMessageTask<JetLocalizeCodec.Requ
 
 
     @Override
-    protected String getApplicationName() {
-        return this.parameters.name;
+    protected String getJobName() {
+        return parameters.name;
     }
 
     @Override
     protected JetOperation prepareOperation() {
-        Chunk chunk = this.serializationService.toObject(this.parameters.chunk);
-        return new LocalizationChunkOperation(getApplicationName(), chunk);
+        Chunk chunk = serializationService.toObject(this.parameters.chunk);
+        return new LocalizationChunkOperation(getJobName(), chunk);
     }
 
     @Override

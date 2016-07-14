@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 
 public class AcceptLocalizationOperation extends JetOperation {
     @SuppressWarnings("unused")
@@ -30,7 +30,7 @@ public class AcceptLocalizationOperation extends JetOperation {
 
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = getApplicationContext();
-        applicationContext.getLocalizationStorage().accept();
+        JobContext jobContext = getJobContext();
+        jobContext.getLocalizationStorage().accept();
     }
 }

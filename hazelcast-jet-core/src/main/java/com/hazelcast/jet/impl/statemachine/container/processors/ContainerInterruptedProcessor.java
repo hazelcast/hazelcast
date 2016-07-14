@@ -16,25 +16,25 @@
 
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
-import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.logging.ILogger;
 
 public class ContainerInterruptedProcessor implements ContainerPayloadProcessor<Throwable> {
     private final ProcessingContainer container;
-    private final ApplicationMaster applicationMaster;
+    private final JobManager jobManager;
     private final ILogger logger;
 
     public ContainerInterruptedProcessor(ProcessingContainer container) {
         this.container = container;
-        this.applicationMaster = container.getApplicationContext().getApplicationMaster();
-        this.logger = applicationMaster.getNodeEngine().getLogger(getClass());
+        this.jobManager = container.getJobContext().getJobManager();
+        this.logger = jobManager.getNodeEngine().getLogger(getClass());
     }
 
     @Override
     public void process(Throwable error) throws Exception {
-        logger.fine("this.applicationMaster.handleContainerInterrupted " + this.container.getVertex().getName());
-        this.applicationMaster.handleContainerInterrupted(error);
+        logger.fine("jobManager.handleContainerInterrupted " + container.getVertex().getName());
+        jobManager.handleContainerInterrupted(error);
     }
 }

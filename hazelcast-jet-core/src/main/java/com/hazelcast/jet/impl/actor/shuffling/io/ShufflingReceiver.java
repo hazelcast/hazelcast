@@ -18,12 +18,12 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
@@ -65,13 +65,13 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
         this.address = address;
         this.containerContext = containerContext;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
-        ApplicationContext applicationContext = containerContext.getApplicationContext();
-        ApplicationConfig applicationConfig = applicationContext.getApplicationConfig();
-        int chunkSize = applicationConfig.getChunkSize();
+        JobContext jobContext = containerContext.getJobContext();
+        JobConfig jobConfig = jobContext.getJobConfig();
+        int chunkSize = jobConfig.getChunkSize();
 
         this.ringBufferActor = new RingBufferActor(
                 nodeEngine,
-                containerContext.getApplicationContext(),
+                containerContext.getJobContext(),
                 containerTask,
                 containerContext.getVertex()
         );

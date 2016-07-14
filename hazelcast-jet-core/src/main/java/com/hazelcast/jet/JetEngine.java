@@ -17,64 +17,63 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.application.Application;
-import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.impl.application.ApplicationProxy;
-import com.hazelcast.jet.impl.application.ApplicationService;
-import com.hazelcast.jet.impl.application.client.ClientApplicationProxy;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.job.JobProxy;
+import com.hazelcast.jet.impl.job.JobService;
+import com.hazelcast.jet.impl.job.client.ClientJobProxy;
+import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.job.Job;
 
 /**
- * Utility class for creating new Jet Applications
+ * Utility class for creating new Jet Jobs
  */
 public final class JetEngine {
     private JetEngine() {
     }
 
-    private static void checkApplicationName(String applicationName) {
-        JetUtil.checkApplicationName(applicationName);
+    private static void checkJobName(String jobName) {
+        JetUtil.checkJobName(jobName);
     }
 
     /**
-     * Create a new application given a Hazelcast instance and name
+     * Create a new job given a Hazelcast instance and name
      *
      * @param hazelcastInstance Hazelcast instance to use
-     * @param name   name of the application
-     * @return a new Jet Application
+     * @param name              name of the job
+     * @return a new Jet job
      */
-    public static Application getApplication(HazelcastInstance hazelcastInstance,
-                                             String name) {
-        return getApplication(hazelcastInstance, name, null);
+    public static Job getJob(HazelcastInstance hazelcastInstance, String name) {
+        return getJob(hazelcastInstance, name, null);
     }
 
     /**
-     * Create a new application given a Hazelcast instance, name and application configuration
+     * Create a new job given a Hazelcast instance, name and job configuration
      *
      * @param hazelcastInstance Hazelcast instance to use
-     * @param name   name of the application
-     * @param applicationConfig configuration for the application
-     * @return a new Jet Application
+     * @param name              name of the job
+     * @param jobConfig         configuration for the job
+     * @return a new Jet job
      */
-    public static Application getApplication(HazelcastInstance hazelcastInstance,
-                                             String name,
-                                             ApplicationConfig applicationConfig) {
-        checkApplicationName(name);
+    public static Job getJob(HazelcastInstance hazelcastInstance,
+                             String name,
+                             JobConfig jobConfig) {
+        checkJobName(name);
 
-        Application application = hazelcastInstance.getDistributedObject(
-                ApplicationService.SERVICE_NAME,
+        Job job = hazelcastInstance.getDistributedObject(
+                JobService.SERVICE_NAME,
                 name
         );
 
-        // TODO: application init should be done in createDistributedObject
-        if (application.getApplicationState() == ApplicationState.NEW) {
-            if (application instanceof ApplicationProxy) {
-                ((ApplicationProxy) application).init(applicationConfig);
+        // TODO: job init should be done in createDistributedObject
+        if (job.getJobState() == JobState.NEW) {
+            if (job instanceof JobProxy) {
+                ((JobProxy) job).init(jobConfig);
             } else {
-                ((ClientApplicationProxy) application).init(applicationConfig);
+                ((ClientJobProxy) job).init(jobConfig);
             }
         }
 
-        return application;
+        return job;
     }
 }

@@ -17,13 +17,12 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public abstract class JetOperation extends Operation {
@@ -40,12 +39,10 @@ public abstract class JetOperation extends Operation {
 
     @Override
     public void beforeRun() throws Exception {
-
     }
 
     @Override
     public void afterRun() throws Exception {
-
     }
 
     @Override
@@ -53,7 +50,7 @@ public abstract class JetOperation extends Operation {
         return true;
     }
 
-    public String getApplicationName() {
+    public String getJobName() {
         return this.name;
     }
 
@@ -62,31 +59,31 @@ public abstract class JetOperation extends Operation {
         return this.result;
     }
 
-    protected ApplicationContext getApplicationContext() {
-        ApplicationService service = getService();
-        ApplicationContext applicationContext = service.getContext(getApplicationName());
+    protected JobContext getJobContext() {
+        JobService service = getService();
+        JobContext jobContext = service.getContext(getJobName());
 
-        if (applicationContext == null) {
-            throw new JetException("No application context found for applicationId=" + getApplicationName());
+        if (jobContext == null) {
+            throw new JetException("No job context found for job name -> " + getJobName());
         }
 
-        validateApplicationContext(applicationContext);
-        return applicationContext;
+        validateJobContext(jobContext);
+        return jobContext;
     }
 
-    protected void validateApplicationContext(ApplicationContext applicationContext) {
-        Address applicationOwner = getApplicationOwner();
-        if (!applicationContext.validateOwner(applicationOwner)) {
+    protected void validateJobContext(JobContext jobContext) {
+        Address jobOwner = getJobOwner();
+        if (!jobContext.validateOwner(jobOwner)) {
             throw new JetException(
-                    "Invalid applicationOwner for applicationId "
-                            + this.name
-                            + " applicationOwner=" + applicationOwner
-                            + " current=" + applicationContext.getOwner()
+                    "Invalid job owner for job name ->"
+                            + name
+                            + ", job owner -> " + jobOwner
+                            + ", current owner -> " + jobContext.getOwner()
             );
         }
     }
 
-    protected Address getApplicationOwner() {
+    protected Address getJobOwner() {
         Address address = getCallerAddress();
 
         if (address == null) {
@@ -99,13 +96,13 @@ public abstract class JetOperation extends Operation {
     public void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeObject(this.name);
+        out.writeObject(name);
     }
 
     @Override
     public void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.name = in.readObject();
+        name = in.readObject();
     }
 }

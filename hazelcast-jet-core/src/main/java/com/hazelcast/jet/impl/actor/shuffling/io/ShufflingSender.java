@@ -36,7 +36,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     private final Address address;
 
     private final int containerID;
-    private final byte[] applicationNameBytes;
+    private final byte[] jobNameBytes;
     private final RingBufferActor ringBufferActor;
     private final ChunkedOutputStream serializer;
     private final SenderObjectWriter senderObjectWriter;
@@ -54,14 +54,13 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         this.address = address;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         this.containerID = containerContext.getID();
-        String applicationName = containerContext.getApplicationContext().getName();
-        this.applicationNameBytes = ((InternalSerializationService) nodeEngine.getSerializationService())
-                .toBytes(applicationName);
+        String jobName = containerContext.getJobContext().getName();
+        this.jobNameBytes = ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(jobName);
         this.containerContext = containerContext;
 
         this.ringBufferActor = new RingBufferActor(
                 nodeEngine,
-                containerContext.getApplicationContext(),
+                containerContext.getJobContext(),
                 containerTask,
                 containerContext.getVertex()
         );
@@ -84,51 +83,46 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     @Override
     public int consumeChunk(ProducerInputStream<Object> chunk) throws Exception {
-        this.senderObjectWriter.write(
+        senderObjectWriter.write(
                 chunk,
-                this.dataOutputStream,
-                this.objectWriterFactory
+                dataOutputStream,
+                objectWriterFactory
         );
 
-        this.serializer.flushSender();
+        serializer.flushSender();
 
-        JetPacket packet = new JetPacket(
-                this.taskID,
-                this.containerID,
-                this.applicationNameBytes
-        );
+        JetPacket packet = new JetPacket(taskID, containerID, jobNameBytes);
 
         packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK_SENT);
-        this.ringBufferActor.consumeObject(packet);
+        ringBufferActor.consumeObject(packet);
 
         return chunk.size();
     }
 
     @Override
     public int flush() {
-        if (this.chunkBuffer.size() > 0) {
+        if (chunkBuffer.size() > 0) {
             try {
-                consumeChunk(this.chunkBuffer);
+                consumeChunk(chunkBuffer);
             } catch (Exception e) {
                 throw JetUtil.reThrow(e);
             }
-
-            this.chunkBuffer.reset();
+            chunkBuffer.reset();
         }
 
-        return this.ringBufferActor.flush();
+        return ringBufferActor.flush();
     }
 
     @Override
     public boolean isFlushed() {
-        boolean result = this.ringBufferActor.isFlushed();
+        boolean result = ringBufferActor.isFlushed();
         checkClosed(result);
         return result;
     }
 
     private void checkClosed(boolean result) {
-        if ((result) && (this.closed)) {
-            this.ringBufferActor.close();
+        if ((result) && (closed)) {
+            ringBufferActor.close();
         }
     }
 
@@ -139,9 +133,9 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     @Override
     protected void onOpen() {
-        this.closed = false;
-        this.isFlushed = true;
-        this.ringBufferActor.open();
+        closed = false;
+        isFlushed = true;
+        ringBufferActor.open();
     }
 
     @Override
@@ -165,8 +159,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     private void writePacket(JetPacket packet) {
         try {
-            this.ringBufferActor.consumeObject(packet);
-            this.ringBufferActor.flush();
+            ringBufferActor.consumeObject(packet);
+            ringBufferActor.flush();
         } catch (Exception e) {
             throw JetUtil.reThrow(e);
         }
@@ -174,23 +168,18 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     @Override
     public void close() {
-        if (!this.closed) {
+        if (!closed) {
             try {
-                JetPacket packet = new JetPacket(
-                        this.taskID,
-                        this.containerID,
-                        this.applicationNameBytes
-                );
-
+                JetPacket packet = new JetPacket(taskID, containerID, jobNameBytes);
                 packet.setHeader(JetPacket.HEADER_JET_SHUFFLER_CLOSED);
                 writePacket(packet);
             } finally {
-                this.closed = true;
+                closed = true;
             }
         }
     }
 
     public RingBufferActor getRingBufferActor() {
-        return this.ringBufferActor;
+        return ringBufferActor;
     }
 }

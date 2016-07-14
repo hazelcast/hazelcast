@@ -21,13 +21,13 @@ import java.io.Serializable;
 
 /**
  * Represents state of the abstract state-machine
- *
+ * <p>
  * Examples:
- *
+ * <p>
  * <pre>
- *     JET-application;
+ *     JET-job;
  *     JET-container;
- *     JET-application-master;
+ *     JET-job-manager;
  * </pre>
  */
 public interface StateMachineState extends Serializable {

@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.statemachine;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.RequestPayload;
 import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
@@ -43,7 +43,7 @@ public abstract class AbstractStateMachine
 
     private final ILogger logger;
     private final Map<State, Map<Input, State>> stateTransitionMatrix;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
     private final StateMachineRequestProcessor<Input> processor;
     private final BlockingQueue<RequestPayload<Input, Output>> eventsQueue =
             new LinkedBlockingDeque<>();
@@ -52,10 +52,10 @@ public abstract class AbstractStateMachine
                                    Map<State, Map<Input, State>> stateTransitionMatrix,
                                    StateMachineRequestProcessor<Input> processor,
                                    NodeEngine nodeEngine,
-                                   ApplicationContext applicationContext) {
+                                   JobContext jobContext) {
         this.name = name;
         this.processor = processor;
-        this.applicationContext = applicationContext;
+        this.jobContext = jobContext;
         this.stateTransitionMatrix = stateTransitionMatrix;
         this.logger = Logger.getLogger(StateMachine.class);
 
@@ -75,7 +75,7 @@ public abstract class AbstractStateMachine
 
     public <P> ICompletableFuture<Output> handleRequest(StateMachineRequest<Input, P> request) {
         BasicCompletableFuture<Output> future
-                = new BasicCompletableFuture<>(applicationContext.getNodeEngine(), logger);
+                = new BasicCompletableFuture<>(jobContext.getNodeEngine(), logger);
         RequestPayload<Input, Output> payload =
                 new RequestPayload<>(request.getContainerEvent(), future, request.getPayload());
 
@@ -93,8 +93,8 @@ public abstract class AbstractStateMachine
         return output;
     }
 
-    public ApplicationContext getApplicationContext() {
-        return this.applicationContext;
+    public JobContext getJobContext() {
+        return this.jobContext;
     }
 
     private class EventsProcessor extends AbstractTask {

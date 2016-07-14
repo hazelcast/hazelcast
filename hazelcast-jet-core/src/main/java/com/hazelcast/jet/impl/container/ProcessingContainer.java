@@ -24,7 +24,7 @@ import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ComposedActor;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
 import com.hazelcast.jet.impl.container.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
@@ -92,9 +92,9 @@ public class ProcessingContainer extends
     public ProcessingContainer(Vertex vertex,
                                Supplier<ContainerProcessor> containerProcessorFactory,
                                NodeEngine nodeEngine,
-                               ApplicationContext applicationContext,
+                               JobContext jobContext,
                                JetTupleFactory tupleFactory) {
-        super(vertex, STATE_MACHINE_FACTORY, nodeEngine, applicationContext, tupleFactory);
+        super(vertex, STATE_MACHINE_FACTORY, nodeEngine, jobContext, tupleFactory);
 
         this.vertex = vertex;
         this.tupleFactory = tupleFactory;
@@ -116,7 +116,7 @@ public class ProcessingContainer extends
         this.sourcesProducers = new ArrayList<ObjectProducer>();
         this.containerProcessorFactory = containerProcessorFactory;
         this.containerTasks = new ContainerTask[this.tasksCount];
-        this.awaitSecondsTimeOut = getApplicationContext().getApplicationConfig().getSecondsToAwait();
+        this.awaitSecondsTimeOut = getJobContext().getJobConfig().getSecondsToAwait();
         AtomicInteger readyForFinalizationTasksCounter = new AtomicInteger(0);
         readyForFinalizationTasksCounter.set(this.tasksCount);
 
@@ -147,12 +147,12 @@ public class ProcessingContainer extends
                     getVertex(),
                     this.taskProcessorFactory,
                     taskID,
-                    new DefaultTaskContext(this.tasksCount, taskIndex, this.getApplicationContext())
+                    new DefaultTaskContext(this.tasksCount, taskIndex, this.getJobContext())
             );
 
-            getApplicationContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
+            getJobContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
             containerTasks[taskIndex].setThreadContextClassLoaders(
-                    getApplicationContext().getLocalizationStorage().getClassLoader()
+                    getJobContext().getLocalizationStorage().getClassLoader()
             );
             this.containerTasksCache.put(taskID, containerTasks[taskIndex]);
         }
@@ -318,7 +318,7 @@ public class ProcessingContainer extends
 
     @Override
     protected void wakeUpExecutor() {
-        getApplicationContext().getExecutorContext().getDataContainerStateMachineExecutor().wakeUp();
+        getJobContext().getExecutorContext().getDataContainerStateMachineExecutor().wakeUp();
     }
 
     private void buildTaps() {

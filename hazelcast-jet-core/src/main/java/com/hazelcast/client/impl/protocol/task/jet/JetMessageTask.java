@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.permission.JetPermission;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -37,18 +37,18 @@ public abstract class JetMessageTask<P> extends AbstractMessageTask<P> implement
 
     @Override
     public String getServiceName() {
-        return ApplicationService.SERVICE_NAME;
+        return JobService.SERVICE_NAME;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new JetPermission(getApplicationName(), ActionConstants.ACTION_ALL);
+        return new JetPermission(getJobName(), ActionConstants.ACTION_ALL);
     }
 
 
     @Override
     public String getDistributedObjectName() {
-        return getApplicationName();
+        return getJobName();
     }
 
     @Override
@@ -69,7 +69,7 @@ public abstract class JetMessageTask<P> extends AbstractMessageTask<P> implement
         invocation.invoke();
     }
 
-    protected abstract String getApplicationName();
+    protected abstract String getJobName();
 
     protected abstract JetOperation prepareOperation();
 

@@ -44,7 +44,7 @@ public class TaskEventExecutionErrorProcessor extends AbstractEventProcessor {
                         TaskEvent event,
                         Throwable error) {
         try {
-            this.applicationMaster.notifyExecutionError(error);
+            this.jobManager.notifyExecutionError(error);
         } finally {
             invokeContainerListeners(ContainerListener.FAILURE_LISTENER_CALLER, error);
         }

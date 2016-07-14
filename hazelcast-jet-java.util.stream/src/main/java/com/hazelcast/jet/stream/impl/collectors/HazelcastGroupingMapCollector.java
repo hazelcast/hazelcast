@@ -34,7 +34,7 @@ import java.util.stream.Collector;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
-import static com.hazelcast.jet.stream.impl.StreamUtil.executeApplication;
+import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -85,7 +85,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
                 .build();
 
         combiner.addSink(new MapSink(mapName));
-        executeApplication(context, dag);
+        executeJob(context, dag);
         return target;
     }
 

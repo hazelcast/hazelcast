@@ -23,7 +23,6 @@ import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.spi.NodeEngine;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -36,26 +35,25 @@ public class ChunkedOutputStream extends OutputStream {
     private final byte[] buffer;
     private final int containerID;
     private final int shufflingBytesSize;
-    private final byte[] applicationNameBytes;
+    private final byte[] jobNameBytyes;
     private final RingBufferActor ringBufferActor;
 
     public ChunkedOutputStream(RingBufferActor ringBufferActor, ContainerContext containerContext, int taskID) {
         this.taskID = taskID;
         this.ringBufferActor = ringBufferActor;
-        this.shufflingBytesSize = containerContext.getApplicationContext().getApplicationConfig().getShufflingBatchSizeBytes();
+        this.shufflingBytesSize = containerContext.getJobContext().getJobConfig().getShufflingBatchSizeBytes();
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
-        String applicationName = containerContext.getApplicationContext().getName();
-        NodeEngine nodeEngine = containerContext.getApplicationContext().getNodeEngine();
-        this.applicationNameBytes =
-                ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(applicationName);
+        String jobName = containerContext.getJobContext().getName();
+        NodeEngine nodeEngine = containerContext.getJobContext().getNodeEngine();
+        this.jobNameBytyes = ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(jobName);
         this.containerID = containerContext.getID();
     }
 
     @Override
     public void write(int b) throws IOException {
-        this.buffer[BUFFER_OFFSET + this.bufferSize++] = (byte) b;
+        buffer[BUFFER_OFFSET + bufferSize++] = (byte) b;
 
-        if (this.bufferSize >= this.shufflingBytesSize) {
+        if (bufferSize >= shufflingBytesSize) {
             try {
                 flushBuffer();
             } catch (Exception e) {
@@ -71,25 +69,25 @@ public class ChunkedOutputStream extends OutputStream {
                 System.arraycopy(this.buffer, 0, buffer, 0, BUFFER_OFFSET + this.bufferSize);
 
                 JetPacket packet = new JetPacket(
-                        this.taskID,
-                        this.containerID,
-                        this.applicationNameBytes,
+                        taskID,
+                        containerID,
+                        jobNameBytyes,
                         buffer
                 );
 
                 packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK);
 
-                this.ringBufferActor.consumeObject(packet);
+                ringBufferActor.consumeObject(packet);
             }
         } finally {
-            Arrays.fill(this.buffer, (byte) 0);
-            this.bufferSize = 0;
+            Arrays.fill(buffer, (byte) 0);
+            bufferSize = 0;
         }
     }
 
     public void onOpen() {
-        this.bufferSize = 0;
-        Arrays.fill(this.buffer, (byte) 0);
+        bufferSize = 0;
+        Arrays.fill(buffer, (byte) 0);
     }
 
     public void flushSender() throws Exception {

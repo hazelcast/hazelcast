@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
 import com.hazelcast.spi.Operation;
 
-class ContainerRequestCallback implements ExecutionCallback<ApplicationMasterResponse> {
+class ContainerRequestCallback implements ExecutionCallback<JobManagerResponse> {
     private final Operation operation;
     private final String failureMsg;
     private final Runnable onSuccess;
@@ -32,7 +32,7 @@ class ContainerRequestCallback implements ExecutionCallback<ApplicationMasterRes
     }
 
     @Override
-    public void onResponse(ApplicationMasterResponse response) {
+    public void onResponse(JobManagerResponse response) {
         if (!response.isSuccess()) {
             operation.sendResponse(new IllegalStateException(failureMsg));
         } else {

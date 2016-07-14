@@ -17,10 +17,8 @@
 package com.hazelcast.jet.impl.dag.tap.sink;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.application.ApplicationListener;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
@@ -35,12 +33,7 @@ public class DataFileWriter extends AbstractHazelcastWriter {
         super(containerDescriptor, partitionID);
         this.fileOutputStream = fileOutputStream;
 
-        containerDescriptor.registerApplicationListener(new ApplicationListener() {
-            @Override
-            public void onApplicationExecuted(ApplicationContext applicationContext) {
-                closeFile();
-            }
-        });
+        containerDescriptor.registerJobListener(jobContext -> closeFile());
     }
 
     @Override
@@ -64,22 +57,22 @@ public class DataFileWriter extends AbstractHazelcastWriter {
         }
 
         if (sb.length() > 0) {
-            this.fileOutputStream.write(sb.toString());
-            this.fileOutputStream.flush();
+            fileOutputStream.write(sb.toString());
+            fileOutputStream.flush();
         }
     }
 
     private void checkFileOpen() {
-        if (this.closed) {
-            this.fileOutputStream.open();
-            this.closed = false;
+        if (closed) {
+            fileOutputStream.open();
+            closed = false;
         }
     }
 
     private void closeFile() {
-        if (!this.closed) {
-            this.fileOutputStream.close();
-            this.closed = true;
+        if (!closed) {
+            fileOutputStream.close();
+            closed = true;
         }
     }
 

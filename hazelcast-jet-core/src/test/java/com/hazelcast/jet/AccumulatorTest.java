@@ -18,7 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
@@ -59,19 +59,19 @@ public class AccumulatorTest extends JetTestSupport {
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
-        final Application application = JetEngine.getApplication(instance, "emptyProducerNoConsumer");
+        final Job job = JetEngine.getJob(instance, "emptyProducerNoConsumer");
         DAG dag = new DAG();
         Vertex vertex = createVertex("accumulator", AccumulatorProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
 
-        application.submit(dag);
+        job.submit(dag);
         try {
-            application.execute().get();
-            Accumulator accumulator = application.getAccumulators().get(AccumulatorProcessor.ACCUMULATOR_KEY);
+            job.execute().get();
+            Accumulator accumulator = job.getAccumulators().get(AccumulatorProcessor.ACCUMULATOR_KEY);
             assertEquals(COUNT, (long) accumulator.getLocalValue());
         } finally {
-            application.destroy();
+            job.destroy();
         }
     }
 

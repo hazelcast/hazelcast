@@ -20,12 +20,11 @@ package com.hazelcast.jet.impl.container.task.nio;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.nio.Address;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -40,9 +39,9 @@ public class DefaultSocketWriter
         extends AbstractNetworkTask implements SocketWriter {
     private final byte[] membersBytes;
     private final ByteBuffer sendByteBuffer;
-    private final byte[] applicationNameBytes;
+    private final byte[] jobNameBytes;
     private final InetSocketAddress inetSocketAddress;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
     private final List<RingBufferActor> producers = new ArrayList<RingBufferActor>();
     private final Queue<JetPacket> servicePackets = new ConcurrentLinkedQueue<JetPacket>();
 
@@ -53,27 +52,27 @@ public class DefaultSocketWriter
     private Object[] currentFrames;
     private boolean memberEventSent;
 
-    public DefaultSocketWriter(ApplicationContext applicationContext,
+    public DefaultSocketWriter(JobContext jobContext,
                                Address jetAddress) {
-        super(applicationContext.getNodeEngine(), jetAddress);
+        super(jobContext.getNodeEngine(), jetAddress);
 
         this.inetSocketAddress = new InetSocketAddress(jetAddress.getHost(), jetAddress.getPort());
 
-        this.sendByteBuffer = ByteBuffer.allocateDirect(applicationContext.getApplicationConfig().getTcpBufferSize())
+        this.sendByteBuffer = ByteBuffer.allocateDirect(jobContext.getJobConfig().getTcpBufferSize())
                 .order(ByteOrder.BIG_ENDIAN);
 
-        this.applicationContext = applicationContext;
+        this.jobContext = jobContext;
 
-        InternalSerializationService serializationService = (InternalSerializationService) applicationContext
+        InternalSerializationService serializationService = (InternalSerializationService) jobContext
                 .getNodeEngine().getSerializationService();
 
         this.membersBytes = serializationService
                 .toBytes(
-                applicationContext.getLocalJetAddress()
-        );
+                        jobContext.getLocalJetAddress()
+                );
 
-        this.applicationNameBytes = serializationService.toBytes(
-                applicationContext.getName()
+        this.jobNameBytes = serializationService.toBytes(
+                jobContext.getName()
         );
 
         reset();
@@ -81,47 +80,38 @@ public class DefaultSocketWriter
 
     public void init() {
         super.init();
-        this.memberEventSent = false;
+        memberEventSent = false;
     }
 
     private boolean checkServicesQueue(BooleanHolder payload) {
-        if (
-                (this.lastFrameId < 0)
-                        &&
-                        (this.sendByteBuffer.position() == 0)
-                        &&
-                        (this.lastPacket == null)
-                ) {
-            JetPacket packet = this.servicePackets.poll();
-
+        if (lastFrameId < 0 && sendByteBuffer.position() == 0 && lastPacket == null) {
+            JetPacket packet = servicePackets.poll();
             if (packet != null) {
                 if (!processPacket(packet, payload)) {
                     return false;
                 }
-
                 writeToSocket(payload);
             }
         }
-
         return true;
     }
 
     @Override
     protected void notifyAMTaskFinished() {
-        this.applicationContext.getApplicationMaster().notifyNetworkTaskFinished();
+        jobContext.getJobManager().notifyNetworkTaskFinished();
     }
 
     @Override
     public boolean onExecute(BooleanHolder payload) throws Exception {
-        if (this.destroyed) {
+        if (destroyed) {
             closeSocket();
             return false;
         }
 
-        if (this.interrupted) {
+        if (interrupted) {
             checkServicesQueue(payload);
             closeSocket();
-            this.finalized = true;
+            finalized = true;
             notifyAMTaskFinished();
             return false;
         }
@@ -141,11 +131,11 @@ public class DefaultSocketWriter
             return;
         }
 
-        if (!this.memberEventSent) {
-            JetPacket packet = new JetPacket(this.applicationNameBytes, this.membersBytes);
+        if (!memberEventSent) {
+            JetPacket packet = new JetPacket(jobNameBytes, membersBytes);
             packet.setHeader(JetPacket.HEADER_JET_MEMBER_EVENT);
-            this.lastPacket = packet;
-            this.memberEventSent = true;
+            lastPacket = packet;
+            memberEventSent = true;
         }
 
         if (!writeToSocket(payload)) {
@@ -160,8 +150,8 @@ public class DefaultSocketWriter
     }
 
     private boolean processLastPacket(BooleanHolder payload) {
-        if (this.lastPacket != null) {
-            if (!processPacket(this.lastPacket, payload)) {
+        if (lastPacket != null) {
+            if (!processPacket(lastPacket, payload)) {
                 return false;
             }
 
@@ -174,11 +164,11 @@ public class DefaultSocketWriter
     }
 
     private boolean processSocketChannel() throws IOException {
-        if ((this.socketChannel != null) && (!this.socketChannel.finishConnect())) {
+        if ((socketChannel != null) && (!socketChannel.finishConnect())) {
             return false;
         }
 
-        if ((this.socketChannel == null) || (!this.socketChannel.isConnected())) {
+        if ((socketChannel == null) || (!socketChannel.isConnected())) {
             connect();
             return false;
         }
@@ -187,21 +177,21 @@ public class DefaultSocketWriter
     }
 
     private boolean processProducers(BooleanHolder payload) throws Exception {
-        if (this.lastFrameId >= 0) {
+        if (lastFrameId >= 0) {
             if (!processFrames(payload)) {
                 return true;
             }
         } else {
-            int startFrom = this.waitingForFinish ? 0 : this.nextProducerIdx;
+            int startFrom = waitingForFinish ? 0 : nextProducerIdx;
 
             boolean activeProducer = false;
 
-            for (int i = startFrom; i < this.producers.size(); i++) {
-                ObjectProducer producer = this.producers.get(i);
+            for (int i = startFrom; i < producers.size(); i++) {
+                ObjectProducer producer = producers.get(i);
 
-                this.currentFrames = producer.produce();
+                currentFrames = producer.produce();
 
-                if (this.currentFrames == null) {
+                if (currentFrames == null) {
                     continue;
                 }
 
@@ -209,11 +199,11 @@ public class DefaultSocketWriter
 
                 payload.set(true);
 
-                this.lastFrameId = -1;
-                this.lastProducedCount = producer.lastProducedCount();
+                lastFrameId = -1;
+                lastProducedCount = producer.lastProducedCount();
 
                 if (!processFrames(payload)) {
-                    this.nextProducerIdx = (i + 1) % this.producers.size();
+                    nextProducerIdx = (i + 1) % producers.size();
                     return true;
                 }
             }
@@ -226,87 +216,85 @@ public class DefaultSocketWriter
     }
 
     private void checkTaskFinished(boolean activeProducer) throws IOException {
-        if ((!activeProducer) && (this.waitingForFinish)) {
-            this.finished = true;
+        if ((!activeProducer) && (waitingForFinish)) {
+            finished = true;
         }
     }
 
     private void reset() {
-        this.lastFrameId = -1;
-        this.lastPacket = null;
-        this.nextProducerIdx = 0;
-        this.currentFrames = null;
-        this.lastProducedCount = 0;
+        lastFrameId = -1;
+        lastPacket = null;
+        nextProducerIdx = 0;
+        currentFrames = null;
+        lastProducedCount = 0;
     }
 
     private boolean processFrames(BooleanHolder payload) {
-        for (int i = this.lastFrameId + 1; i < this.lastProducedCount; i++) {
-            JetPacket packet = (JetPacket) this.currentFrames[i];
+        for (int i = lastFrameId + 1; i < lastProducedCount; i++) {
+            JetPacket packet = (JetPacket) currentFrames[i];
 
             if (!processPacket(packet, payload)) {
-                this.lastPacket = packet;
-                this.lastFrameId = i;
+                lastPacket = packet;
+                lastFrameId = i;
                 return false;
             }
 
             if (!writeToSocket(payload)) {
-                this.lastFrameId = i;
+                lastFrameId = i;
                 return false;
             }
         }
 
-        this.lastPacket = null;
-        this.lastFrameId = -1;
-        this.lastProducedCount = 0;
+        lastPacket = null;
+        lastFrameId = -1;
+        lastProducedCount = 0;
         return true;
     }
 
     private boolean processPacket(JetPacket packet, BooleanHolder payload) {
         if (!writePacket(packet)) {
             writeToSocket(payload);
-            this.lastPacket = packet;
+            lastPacket = packet;
             return false;
         }
 
-        this.lastPacket = null;
+        lastPacket = null;
         return true;
     }
 
     private boolean writePacket(JetPacket packet) {
-        return packet.writeTo(this.sendByteBuffer);
+        return packet.writeTo(sendByteBuffer);
     }
 
 
     @Override
     public void closeSocket() {
-        if (this.socketChannel != null) {
+        if (socketChannel != null) {
             try {
-                this.socketChannel.close();
-                this.socketChannel = null;
+                socketChannel.close();
+                socketChannel = null;
             } catch (IOException e) {
-                this.logger.warning(e.getMessage(), e);
+                logger.warning(e.getMessage(), e);
             }
         }
     }
 
 
     private boolean writeToSocket(BooleanHolder payload) {
-        if (this.sendByteBuffer.position() > 0) {
+        if (sendByteBuffer.position() > 0) {
             try {
-                this.sendByteBuffer.flip();
-
-                SocketChannel socketChannel = this.socketChannel;
+                sendByteBuffer.flip();
 
                 if (socketChannel != null) {
-                    int bytesWritten = socketChannel.write(this.sendByteBuffer);
+                    int bytesWritten = socketChannel.write(sendByteBuffer);
                     payload.set(bytesWritten > 0);
                 }
 
-                if (this.sendByteBuffer.hasRemaining()) {
-                    this.sendByteBuffer.compact();
+                if (sendByteBuffer.hasRemaining()) {
+                    sendByteBuffer.compact();
                     return false;
                 } else {
-                    this.sendByteBuffer.clear();
+                    sendByteBuffer.clear();
                     return true;
                 }
             } catch (IOException e) {
@@ -318,21 +306,21 @@ public class DefaultSocketWriter
     }
 
     private void connect() throws IOException {
-        if (this.socketChannel != null) {
-            this.socketChannel.close();
+        if (socketChannel != null) {
+            socketChannel.close();
         }
-        this.socketChannel = SocketChannel.open(this.inetSocketAddress);
-        this.socketChannel.configureBlocking(false);
-        //this.socketChannel.socket().setSendBufferSize(1);
+        socketChannel = SocketChannel.open(inetSocketAddress);
+        socketChannel.configureBlocking(false);
+        //socketChannel.socket().setSendBufferSize(1);
     }
 
     @Override
     public void registerProducer(RingBufferActor ringBufferActor) {
-        this.producers.add(ringBufferActor);
+        producers.add(ringBufferActor);
     }
 
     @Override
     public void sendServicePacket(JetPacket jetPacket) {
-        this.servicePackets.offer(jetPacket);
+        servicePackets.offer(jetPacket);
     }
 }

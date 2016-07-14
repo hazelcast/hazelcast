@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.job.JobListener;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithReferenceStrategy;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithValueStrategy;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
@@ -54,22 +54,22 @@ public class RingBufferActor implements ObjectActor {
     private volatile boolean isClosed;
 
     public RingBufferActor(NodeEngine nodeEngine,
-                           ApplicationContext applicationContext,
+                           JobContext jobContext,
                            ContainerTask sourceTask,
                            Vertex vertex) {
-        this(nodeEngine, applicationContext, sourceTask, vertex, null, false);
+        this(nodeEngine, jobContext, sourceTask, vertex, null, false);
     }
 
     public RingBufferActor(NodeEngine nodeEngine,
-                           ApplicationContext applicationContext,
+                           JobContext jobContext,
                            ContainerTask sourceTask,
                            Vertex vertex,
                            Edge edge) {
-        this(nodeEngine, applicationContext, sourceTask, vertex, edge, true);
+        this(nodeEngine, jobContext, sourceTask, vertex, edge, true);
     }
 
     public RingBufferActor(NodeEngine nodeEngine,
-                           ApplicationContext applicationContext,
+                           JobContext jobContext,
                            ContainerTask sourceTask,
                            Vertex vertex,
                            Edge edge,
@@ -77,10 +77,10 @@ public class RingBufferActor implements ObjectActor {
         this.edge = edge;
         this.sourceTask = sourceTask;
         this.vertex = vertex;
-        ApplicationConfig applicationConfig = applicationContext.getApplicationConfig();
-        int objectChunkSize = applicationConfig.getChunkSize();
+        JobConfig jobConfig = jobContext.getJobConfig();
+        int objectChunkSize = jobConfig.getChunkSize();
         this.producerChunk = new Object[objectChunkSize];
-        int ringbufferSize = applicationConfig.getRingbufferSize();
+        int ringbufferSize = jobConfig.getRingbufferSize();
         this.flushBuffer = new DefaultObjectIOStream<Object>(new Object[objectChunkSize]);
         this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
         boolean byReference = edge == null || edge.getDataTransferringStrategy().byReference();
@@ -104,9 +104,9 @@ public class RingBufferActor implements ObjectActor {
         }
 
         if (registerListener) {
-            applicationContext.registerApplicationListener(new ApplicationListener() {
+            jobContext.registerJobListener(new JobListener() {
                 @Override
-                public void onApplicationExecuted(ApplicationContext applicationContext) {
+                public void onJobExecuted(JobContext jobContext) {
                     clear();
                 }
             });

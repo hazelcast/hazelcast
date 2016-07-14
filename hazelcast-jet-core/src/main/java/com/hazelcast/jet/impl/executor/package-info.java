@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides API for the application executor
+ * Provides API for the job executor
  */
 package com.hazelcast.jet.impl.executor;

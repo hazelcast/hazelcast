@@ -37,7 +37,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
-import static com.hazelcast.jet.stream.impl.StreamUtil.executeApplication;
+import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getTupleMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
@@ -99,7 +99,7 @@ public class Reducer {
         IList<T> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
         combiner.addSink(new ListSink(list));
 
-        executeApplication(context, dag);
+        executeJob(context, dag);
 
         if (list.size() == 0) {
             list.destroy();

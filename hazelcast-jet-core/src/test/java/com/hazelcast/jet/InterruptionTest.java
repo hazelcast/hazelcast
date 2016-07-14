@@ -18,7 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
@@ -68,7 +68,7 @@ public class InterruptionTest extends JetTestSupport {
     public void tesInterruptSlowApplication() throws Exception {
         int nodeCount = 2;
         HazelcastInstance instance = createCluster(factory, nodeCount);
-        final Application application = JetEngine.getApplication(instance, "testInterrupt");
+        final Job job = JetEngine.getJob(instance, "testInterrupt");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -76,25 +76,25 @@ public class InterruptionTest extends JetTestSupport {
         Vertex vertex = createVertex("vertex", SlowProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
-        application.submit(dag);
+        job.submit(dag);
 
         AtomicBoolean interrupted = new AtomicBoolean(false);
         new Thread(() -> {
             try {
                 SlowProcessor.latch.await();
-                application.interrupt().get();
+                job.interrupt().get();
                 interrupted.set(true);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }).start();
         try {
-            application.execute().get();
-            fail("The application was not interrupted");
+            job.execute().get();
+            fail("The job was not interrupted");
         } catch (ExecutionException e) {
             assertTrue(interrupted.get());
         } finally {
-            application.destroy();
+            job.destroy();
         }
     }
 
@@ -102,7 +102,7 @@ public class InterruptionTest extends JetTestSupport {
     public void testExceptionInProcessor_whenMultipleNodes() throws Exception {
         int nodeCount = 3;
         HazelcastInstance instance = createCluster(factory, nodeCount);
-        final Application application = JetEngine.getApplication(instance, "testExceptionMultipleNodes");
+        final Job job = JetEngine.getJob(instance, "testExceptionMultipleNodes");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -110,11 +110,11 @@ public class InterruptionTest extends JetTestSupport {
         Vertex vertex = createVertex("vertex", ExceptionProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
-        application.submit(dag);
+        job.submit(dag);
 
         try {
-            execute(application);
-            fail("The application should not execute successfully.");
+            execute(job);
+            fail("The job should not execute successfully.");
         } catch (ExecutionException e) {
             CombinedJetException ex = (CombinedJetException) e.getCause();
             List<Throwable> errors = ex.getErrors();
@@ -129,7 +129,7 @@ public class InterruptionTest extends JetTestSupport {
     @Test
     public void testExceptionInProcessor_whenSingleNode() throws Exception {
         HazelcastInstance instance = createCluster(factory, 1);
-        final Application application = JetEngine.getApplication(instance, "testExceptionSingleNode");
+        final Job job = JetEngine.getJob(instance, "testExceptionSingleNode");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -137,11 +137,11 @@ public class InterruptionTest extends JetTestSupport {
         Vertex vertex = createVertex("vertex", ExceptionProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
-        application.submit(dag);
+        job.submit(dag);
 
         try {
-            execute(application);
-            fail("The application should not execute successfully.");
+            execute(job);
+            fail("The job should not execute successfully.");
         } catch (ExecutionException e) {
             RuntimeException exception = (RuntimeException) e.getCause();
             assertEquals(ExceptionProcessor.ERROR_MESSAGE, exception.getCause().getMessage());

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.statemachine;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.ExecutorContext;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.ExecutorContext;
 import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
@@ -246,7 +246,7 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
             when(nodeEngine.getLogger(Matchers.any(Class.class))).thenReturn(mock(ILogger.class));
             when(nodeEngine.getExecutionService()).thenReturn(executionService);
 
-            ApplicationContext context = mock(ApplicationContext.class);
+            JobContext context = mock(JobContext.class);
             ExecutorContext executorContext = mock(ExecutorContext.class);
             when(context.getExecutorContext()).thenReturn(executorContext);
             when(context.getNodeEngine()).thenReturn(nodeEngine);

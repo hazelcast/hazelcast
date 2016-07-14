@@ -39,13 +39,13 @@ public class JetAcceptLocalizationMessageTask extends JetMessageTask<JetAcceptLo
     }
 
     @Override
-    protected String getApplicationName() {
-        return this.parameters.name;
+    protected String getJobName() {
+        return parameters.name;
     }
 
     @Override
     protected JetOperation prepareOperation() {
-        return new AcceptLocalizationOperation(getApplicationName());
+        return new AcceptLocalizationOperation(getJobName());
     }
 
     @Override

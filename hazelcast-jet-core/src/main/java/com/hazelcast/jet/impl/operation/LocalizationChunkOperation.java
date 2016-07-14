@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.localization.Chunk;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.localization.Chunk;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -39,8 +39,8 @@ public class LocalizationChunkOperation extends JetOperation {
 
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = getApplicationContext();
-        applicationContext.getLocalizationStorage().receiveFileChunk(this.chunk);
+        JobContext jobContext = getJobContext();
+        jobContext.getLocalizationStorage().receiveFileChunk(this.chunk);
     }
 
     @Override

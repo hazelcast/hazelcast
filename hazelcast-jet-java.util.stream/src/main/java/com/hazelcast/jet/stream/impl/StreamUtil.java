@@ -21,7 +21,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
@@ -85,19 +85,19 @@ public final class StreamUtil {
         return prefix + randomName();
     }
 
-    public static void executeApplication(StreamContext context, DAG dag) {
-        Application jetApplication = JetEngine.getApplication(context.getHazelcastInstance(), randomName());
+    public static void executeJob(StreamContext context, DAG dag) {
+        Job job = JetEngine.getJob(context.getHazelcastInstance(), randomName());
         try {
             Set<Class> classes = context.getClasses();
-            jetApplication.submit(dag, classes.toArray(new Class[classes.size()]));
+            job.submit(dag, classes.toArray(new Class[classes.size()]));
         } catch (IOException e) {
             throw reThrow(e);
         }
         try {
-            result(jetApplication.execute());
+            result(job.execute());
             context.getStreamListeners().forEach(Runnable::run);
         } finally {
-            jetApplication.destroy();
+            job.destroy();
         }
     }
 

@@ -17,13 +17,12 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.spi.NodeEngine;
-
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -46,9 +45,9 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  */
 public final class JetUtil {
     /**
-     * Represents maximal value for the length of JET-application
+     * Represents maximal value for the length of JET-job
      */
-    public static final int MAX_APPLICATION_NAME_SIZE = 32;
+    public static final int MAX_JOB_NAME_SIZE = 32;
 
     /**
      * Number of bytes in kilobyte
@@ -190,15 +189,15 @@ public final class JetUtil {
         return (object == null || object.length == 0);
     }
 
-    public static void checkApplicationName(String applicationName) {
+    public static void checkJobName(String jobName) {
         checkNotNull(
-                applicationName,
-                "Retrieving an application instance with a null name is not allowed!"
+                jobName,
+                "Retrieving an job instance with a null name is not allowed!"
         );
 
         checkTrue(
-                applicationName.length() <= MAX_APPLICATION_NAME_SIZE,
-                "Length of applicationName shouldn't be greater than " + MAX_APPLICATION_NAME_SIZE
+                jobName.length() <= MAX_JOB_NAME_SIZE,
+                "Length of jobName shouldn't be greater than " + MAX_JOB_NAME_SIZE
         );
     }
 
@@ -209,31 +208,31 @@ public final class JetUtil {
         return new JetConfig();
     }
 
-    public static ApplicationConfig resolveApplicationConfig(NodeEngine nodeEngine, String applicationName) {
-        ApplicationContext applicationContext = getApplicationContext(nodeEngine, applicationName);
-        if (applicationContext == null) {
+    public static JobConfig resolveJobConfig(NodeEngine nodeEngine, String jobName) {
+        JobContext jobContext = getJobContext(nodeEngine, jobName);
+        if (jobContext == null) {
             if (nodeEngine.getConfig() instanceof JetConfig) {
                 JetConfig config = (JetConfig) nodeEngine.getConfig();
-                return config.getApplicationConfig(applicationName);
+                return config.getJobConfig(jobName);
             }
-            return new ApplicationConfig();
+            return new JobConfig();
         } else {
-            return applicationContext.getApplicationConfig();
+            return jobContext.getJobConfig();
         }
     }
 
-    public static ApplicationConfig resolveApplicationConfig(final HazelcastClientInstanceImpl client,
-                                                             final String name) {
+    public static JobConfig resolveJobConfig(final HazelcastClientInstanceImpl client,
+                                             final String name) {
         if (client.getClientConfig() instanceof JetClientConfig) {
             JetClientConfig clientConfig = (JetClientConfig) client.getClientConfig();
-            return clientConfig.getApplicationConfig(name);
+            return clientConfig.getJobConfig(name);
         }
-        return new ApplicationConfig();
+        return new JobConfig();
     }
 
-    public static ApplicationContext getApplicationContext(NodeEngine nodeEngine, String applicationName) {
-        ApplicationService service = nodeEngine.getService(ApplicationService.SERVICE_NAME);
-        return service.getContext(applicationName);
+    public static JobContext getJobContext(NodeEngine nodeEngine, String jobName) {
+        JobService service = nodeEngine.getService(JobService.SERVICE_NAME);
+        return service.getContext(jobName);
     }
 
     public static List<Integer> getLocalPartitions(final NodeEngine nodeEngine) {

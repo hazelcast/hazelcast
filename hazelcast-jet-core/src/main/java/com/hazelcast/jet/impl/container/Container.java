@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.spi.NodeEngine;
@@ -51,9 +51,9 @@ public interface Container
     StateMachine<SI, SS, SO> getStateMachine();
 
     /**
-     * @return - JET-application context;
+     * @return - JET-job context;
      */
-    ApplicationContext getApplicationContext();
+    JobContext getJobContext();
 
     /**
      * @return - context of container;

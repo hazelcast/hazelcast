@@ -21,7 +21,6 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JetClientConfig extends ClientConfig {
 
     private static final ILogger LOGGER = Logger.getLogger(JetClientConfig.class);
-    private final Map<String, ApplicationConfig> appConfigs = new ConcurrentHashMap<>();
+    private final Map<String, JobConfig> appConfigs = new ConcurrentHashMap<>();
     private ConfigPatternMatcher matcher = new WildcardConfigPatternMatcher();
 
     /**
@@ -41,21 +40,22 @@ public class JetClientConfig extends ClientConfig {
     }
 
     /**
-     * Gets the configuration for a given application name
-     * @param name name of the application
-     * @return the configuration for the application
+     * Gets the configuration for a given job name
+     *
+     * @param name name of the job
+     * @return the configuration for the job
      */
-    public ApplicationConfig getApplicationConfig(String name) {
+    public JobConfig getJobConfig(String name) {
         return JetConfig.lookupConfig(matcher, LOGGER, appConfigs, name);
     }
 
     /**
-     * Sets the configuration for a given application
+     * Sets the configuration for a given job
      *
-     * @param config name of the application
-     * @return the configuration for the application
+     * @param config name of the job
+     * @return the configuration for the job
      */
-    public JetClientConfig addApplicationConfig(ApplicationConfig config) {
+    public JetClientConfig addJobConfig(JobConfig config) {
         appConfigs.put(config.getName(), config);
         return this;
     }

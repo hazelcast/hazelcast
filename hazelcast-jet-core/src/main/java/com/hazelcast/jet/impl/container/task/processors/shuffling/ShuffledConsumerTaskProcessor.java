@@ -18,13 +18,13 @@ package com.hazelcast.jet.impl.container.task.processors.shuffling;
 
 
 import com.hazelcast.jet.PartitionIdAware;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
@@ -130,8 +130,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private int chunkSize(ContainerContext containerContext) {
-        ApplicationConfig applicationConfig = containerContext.getApplicationContext().getApplicationConfig();
-        return applicationConfig.getChunkSize();
+        JobConfig jobConfig = containerContext.getJobContext().getJobConfig();
+        return jobConfig.getChunkSize();
     }
 
     private void initMarkers() {
@@ -146,16 +146,16 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void initSenders(ContainerContext containerContext, int taskID, boolean receiver) {
-        ApplicationMaster applicationMaster = containerContext.getApplicationContext().getApplicationMaster();
+        JobManager jobManager = containerContext.getJobContext().getJobManager();
 
-        ProcessingContainer processingContainer = applicationMaster.getContainerByVertex(containerContext.getVertex());
+        ProcessingContainer processingContainer = jobManager.getContainerByVertex(containerContext.getVertex());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
 
         if (!receiver) {
-            for (Address address : applicationMaster.getApplicationContext().getSocketWriters().keySet()) {
+            for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
                 ShufflingSender sender = new ShufflingSender(containerContext, taskID, containerTask, address);
                 this.senders.put(address, sender);
-                applicationMaster.registerShufflingSender(taskID, containerContext, address, sender);
+                jobManager.registerShufflingSender(taskID, containerContext, address, sender);
             }
         }
     }
@@ -164,8 +164,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                                            List<ObjectConsumer> nonPartitionedConsumers,
                                            Set<Address> nonPartitionedAddresses) {
 
-        ApplicationMaster applicationMaster = this.containerContext.getApplicationContext().getApplicationMaster();
-        Map<Address, Address> hzToJetAddressMapping = applicationMaster.getApplicationContext().getHzToJetAddressMapping();
+        JobManager jobManager = this.containerContext.getJobContext().getJobManager();
+        Map<Address, Address> hzToJetAddressMapping = jobManager.getJobContext().getHzToJetAddressMapping();
         List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
         for (ObjectConsumer consumer : this.shuffledConsumers) {
             ShufflingStrategy shufflingStrategy = consumer.getShufflingStrategy();
@@ -475,7 +475,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
 
         Address address = this.nodeEngine.getPartitionService().getPartitionOwner(objectPartitionId);
-        Address remoteJetAddress = containerContext.getApplicationContext().getHzToJetAddressMapping().get(address);
+        Address remoteJetAddress = containerContext.getJobContext().getHzToJetAddressMapping().get(address);
         DataWriter sender = this.senders.get(remoteJetAddress);
 
         if (sender != null) {
