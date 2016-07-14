@@ -22,12 +22,12 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.impl.container.JobManager;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketThreadAcceptor;
 import com.hazelcast.jet.impl.executor.BalancedExecutor;
 import com.hazelcast.jet.impl.executor.Task;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.FinalizeJobRequest;
+import com.hazelcast.jet.impl.statemachine.jobmanager.requests.FinalizeJobRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -116,15 +116,15 @@ public class JobService implements RemoteService {
         if (jobContext == null) {
             throw new JetException("No job with name " + objectName + " found.");
         }
-        ApplicationMaster applicationMaster = jobContext.getApplicationMaster();
-        ICompletableFuture<ApplicationMasterResponse> future =
-                applicationMaster.handleContainerRequest(new FinalizeJobRequest());
-        ApplicationMasterResponse response = uncheckedGet(future);
+        JobManager jobManager = jobContext.getJobManager();
+        ICompletableFuture<JobManagerResponse> future =
+                jobManager.handleContainerRequest(new FinalizeJobRequest());
+        JobManagerResponse response = uncheckedGet(future);
         if (response.isSuccess()) {
             jobContext.getLocalizationStorage().cleanUp();
             jobContext.getExecutorContext().getJobStateMachineExecutor().shutdown();
             jobContext.getExecutorContext().getDataContainerStateMachineExecutor().shutdown();
-            jobContext.getExecutorContext().getApplicationMasterStateMachineExecutor().shutdown();
+            jobContext.getExecutorContext().getJobManagerStateMachineExecutor().shutdown();
             jobContextMap.remove(objectName);
         } else {
             throw new JetException("Unable to finalize job " + objectName);

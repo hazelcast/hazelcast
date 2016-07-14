@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.container.events;
 
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerListenerCaller;
 import com.hazelcast.jet.impl.container.ContainerRequest;
@@ -40,7 +40,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected final ContainerContext containerContext;
     protected final JobContext jobContext;
     protected final AtomicInteger readyForFinalizationTasksCounter;
-    protected final ApplicationMaster applicationMaster;
+    protected final JobManager jobManager;
 
 
     protected AbstractEventProcessor(
@@ -57,7 +57,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         this.interruptedTasks = interruptedTasks;
         this.containerContext = containerContext;
         this.jobContext = containerContext.getJobContext();
-        this.applicationMaster = jobContext.getApplicationMaster();
+        this.jobManager = jobContext.getJobManager();
         this.readyForFinalizationTasksCounter = readyForFinalizationTasksCounter;
         this.logger = this.jobContext.getNodeEngine().getLogger(getClass());
     }

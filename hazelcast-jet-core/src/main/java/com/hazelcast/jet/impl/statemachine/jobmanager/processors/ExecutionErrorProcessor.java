@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.logging.ILogger;
 
 public class ExecutionErrorProcessor implements ContainerPayloadProcessor<Throwable> {
 
-    private final ApplicationMaster applicationMaster;
+    private final JobManager jobManager;
     private final ILogger logger;
 
-    public ExecutionErrorProcessor(ApplicationMaster applicationMaster) {
-        logger = applicationMaster.getNodeEngine().getLogger(getClass());
-        this.applicationMaster = applicationMaster;
+    public ExecutionErrorProcessor(JobManager jobManager) {
+        logger = jobManager.getNodeEngine().getLogger(getClass());
+        this.jobManager = jobManager;
     }
 
     @Override
@@ -37,7 +37,7 @@ public class ExecutionErrorProcessor implements ContainerPayloadProcessor<Throwa
             logger.severe(error.getMessage(), error);
         }
 
-        for (ProcessingContainer container : applicationMaster.containers()) {
+        for (ProcessingContainer container : jobManager.containers()) {
             container.interrupt(error);
         }
     }

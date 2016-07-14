@@ -14,7 +14,25 @@
  * limitations under the License.
  */
 
-/**
- * Provides API to work with application master
- */
-package com.hazelcast.jet.impl.container.applicationmaster;
+package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
+
+import com.hazelcast.jet.impl.container.ContainerRequest;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
+
+public class ExecutionErrorRequest implements ContainerRequest<JobManagerEvent, Throwable> {
+    private final Throwable error;
+
+    public ExecutionErrorRequest(Throwable error) {
+        this.error = error;
+    }
+
+    @Override
+    public JobManagerEvent getContainerEvent() {
+        return JobManagerEvent.EXECUTION_ERROR;
+    }
+
+    @Override
+    public Throwable getPayload() {
+        return this.error;
+    }
+}

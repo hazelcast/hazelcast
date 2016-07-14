@@ -14,28 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.container.applicationmaster;
+package com.hazelcast.jet.impl.container.jobmanager;
 
 import com.hazelcast.jet.impl.container.ContainerResponse;
 
 /**
- * Return application response;
- * SUCCESS - if application's execution was success;
- * FAILURE - if application's execution was not success;
+ * Return job response;
+ * SUCCESS - if job's execution was success;
+ * FAILURE - if job's execution was not success;
  */
-public interface ApplicationMasterResponse extends ContainerResponse {
-    ApplicationMasterResponse SUCCESS = new ApplicationMasterResponse() {
-        @Override
-        public boolean isSuccess() {
-            return true;
-        }
-    };
-    ApplicationMasterResponse FAILURE = new ApplicationMasterResponse() {
-        @Override
-        public boolean isSuccess() {
-            return false;
-        }
-    };
+public interface JobManagerResponse extends ContainerResponse {
+    JobManagerResponse SUCCESS = (JobManagerResponse) () -> true;
+    JobManagerResponse FAILURE = (JobManagerResponse) () -> false;
 
     /**
      * Indicates last state-machine transitions state;

@@ -38,9 +38,9 @@ public interface ContainerDescriptor {
     NodeEngine getNodeEngine();
 
     /**
-     * @return name of the application
+     * @return name of the job
      */
-    String getApplicationName();
+    String getJobName();
 
     /**
      * @return id of the container
@@ -53,7 +53,7 @@ public interface ContainerDescriptor {
     Vertex getVertex();
 
     /**
-     * @return DAG of JET-application
+     * @return DAG of JET-job
      */
     DAG getDAG();
 
@@ -63,7 +63,7 @@ public interface ContainerDescriptor {
     JetTupleFactory getTupleFactory();
 
     /**
-     * @return application of JET-config
+     * @return job of JET-config
      */
     JobConfig getConfig();
 
@@ -77,34 +77,34 @@ public interface ContainerDescriptor {
                                    ContainerListener containerListener);
 
     /**
-     * Performs registration of application listener
+     * Performs registration of job listener
      *
-     * @param jobListener corresponding application listener
+     * @param jobListener corresponding job listener
      */
-    void registerApplicationListener(JobListener jobListener);
+    void registerJobListener(JobListener jobListener);
 
     /**
-     * Set-up application variable
+     * Set-up job variable
      *
      * @param variableName name of the variable
      * @param variable     corresponding variable
      * @param <T>          type of the variable
      */
-    <T> void putApplicationVariable(String variableName, T variable);
+    <T> void putJobVariable(String variableName, T variable);
 
     /**
-     * Return variable registered on application-level
+     * Return variable registered on job-level
      *
      * @param variableName name of the variable
      * @param <T>          type of the variable
      * @return variable
      */
-    <T> T getApplicationVariable(String variableName);
+    <T> T getJobVariable(String variableName);
 
     /**
-     * @param variableName name of the application
+     * @param variableName name of the job
      */
-    void cleanApplicationVariable(String variableName);
+    void cleanJobVariable(String variableName);
 
     /**
      * @return factory to construct serialization-reader factories

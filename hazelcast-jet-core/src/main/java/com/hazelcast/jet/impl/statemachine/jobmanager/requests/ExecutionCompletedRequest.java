@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.requests;
+package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
 
 import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.container.ContainerRequest;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
 
-public class FinalizeJobRequest implements ContainerRequest<ApplicationMasterEvent, Dummy> {
+public class ExecutionCompletedRequest implements ContainerRequest<JobManagerEvent, Dummy> {
     @Override
-    public ApplicationMasterEvent getContainerEvent() {
-        return ApplicationMasterEvent.FINALIZE;
+    public JobManagerEvent getContainerEvent() {
+        return JobManagerEvent.EXECUTION_COMPLETED;
     }
 
     @Override
@@ -32,3 +32,4 @@ public class FinalizeJobRequest implements ContainerRequest<ApplicationMasterEve
         return Dummy.INSTANCE;
     }
 }
+

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.executor.Task;
@@ -33,13 +33,13 @@ import java.util.concurrent.TimeUnit;
 public class ExecuteJobProcessor implements ContainerPayloadProcessor<Dummy> {
     private final long secondsToAwait;
     private final ExecutorContext executorContext;
-    private final ApplicationMaster applicationMaster;
+    private final JobManager jobManager;
     private final JobContext jobContext;
     private final ILogger logger;
 
-    public ExecuteJobProcessor(ApplicationMaster applicationMaster) {
-        this.applicationMaster = applicationMaster;
-        jobContext = applicationMaster.getJobContext();
+    public ExecuteJobProcessor(JobManager jobManager) {
+        this.jobManager = jobManager;
+        jobContext = jobManager.getJobContext();
         secondsToAwait = jobContext.getJobConfig().getSecondsToAwait();
         executorContext = jobContext.getExecutorContext();
         logger = jobContext.getNodeEngine().getLogger(ExecuteJobProcessor.class);
@@ -47,7 +47,7 @@ public class ExecuteJobProcessor implements ContainerPayloadProcessor<Dummy> {
 
     @Override
     public void process(Dummy payload) throws Exception {
-        applicationMaster.registerExecution();
+        jobManager.registerExecution();
 
         startContainers();
 
@@ -77,11 +77,11 @@ public class ExecuteJobProcessor implements ContainerPayloadProcessor<Dummy> {
     }
 
     private void startContainers() throws Exception {
-        Iterator<Vertex> iterator = applicationMaster.getDag().getRevertedTopologicalVertexIterator();
+        Iterator<Vertex> iterator = jobManager.getDag().getRevertedTopologicalVertexIterator();
 
         while (iterator.hasNext()) {
             Vertex vertex = iterator.next();
-            ProcessingContainer processingContainer = applicationMaster.getContainerByVertex(vertex);
+            ProcessingContainer processingContainer = jobManager.getContainerByVertex(vertex);
             processingContainer.handleContainerRequest(new ContainerExecuteRequest()).get(secondsToAwait, TimeUnit.SECONDS);
         }
     }

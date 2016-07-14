@@ -26,31 +26,30 @@ import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.job.JobException;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.executor.Task;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.JobException;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachine;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.DestroyJobProcessor;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecuteJobProcessor;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionCompletedProcessor;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionErrorProcessor;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionPlanBuilderProcessor;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.InterruptJobProcessor;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionErrorRequest;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionInterruptedRequest;
+import com.hazelcast.jet.impl.statemachine.jobmanager.JobManagerStateMachine;
+import com.hazelcast.jet.impl.statemachine.jobmanager.processors.DestroyJobProcessor;
+import com.hazelcast.jet.impl.statemachine.jobmanager.processors.ExecuteJobProcessor;
+import com.hazelcast.jet.impl.statemachine.jobmanager.processors.ExecutionCompletedProcessor;
+import com.hazelcast.jet.impl.statemachine.jobmanager.processors.ExecutionErrorProcessor;
+import com.hazelcast.jet.impl.statemachine.jobmanager.processors.ExecutionPlanBuilderProcessor;
+import com.hazelcast.jet.impl.statemachine.jobmanager.processors.InterruptJobProcessor;
+import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionCompletedRequest;
+import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionErrorRequest;
+import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionInterruptedRequest;
 import com.hazelcast.jet.impl.util.BasicCompletableFuture;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -62,15 +61,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ApplicationMaster
-        extends AbstractContainer<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse> {
+public class JobManager
+        extends AbstractContainer<JobManagerEvent, JobManagerState, JobManagerResponse> {
 
-    private static final InterruptedException APPLICATION_INTERRUPTED_EXCEPTION =
-            new InterruptedException("Application has been interrupted");
+    private static final InterruptedException JOB_INTERRUPTED_EXCEPTION = new InterruptedException("Job has been interrupted");
 
-    private static final StateMachineFactory<ApplicationMasterEvent,
-            StateMachine<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse>>
-            STATE_MACHINE_FACTORY = ApplicationMasterStateMachine::new;
+    private static final StateMachineFactory<JobManagerEvent,
+            StateMachine<JobManagerEvent, JobManagerState, JobManagerResponse>>
+            STATE_MACHINE_FACTORY = JobManagerStateMachine::new;
 
     private final List<ProcessingContainer> containers = new CopyOnWriteArrayList<>();
     private final Map<Integer, ProcessingContainer> containersCache = new ConcurrentHashMap<>();
@@ -90,22 +88,18 @@ public class ApplicationMaster
     private volatile boolean interrupted;
     private volatile Throwable interruptionError;
     private volatile DAG dag;
-    private final byte[] applicationNameBytes;
+    private final byte[] jobNameBytes;
 
-    public ApplicationMaster(
-            JobContext jobContext,
-            DiscoveryService discoveryService
-    ) {
+    public JobManager(JobContext jobContext, DiscoveryService discoveryService) {
         super(STATE_MACHINE_FACTORY, jobContext.getNodeEngine(), jobContext, null);
         this.discoveryService = discoveryService;
-        applicationNameBytes = getNodeEngine().getSerializationService()
-                .toData(jobContext.getName()).toByteArray();
-        logger = getNodeEngine().getLogger(ApplicationMaster.class);
+        jobNameBytes = getNodeEngine().getSerializationService().toData(jobContext.getName()).toByteArray();
+        logger = getNodeEngine().getLogger(JobManager.class);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void processRequest(ApplicationMasterEvent event, Object payload) throws Exception {
+    public void processRequest(JobManagerEvent event, Object payload) throws Exception {
         ContainerPayloadProcessor processor = getProcessor(event, this);
 
         if (processor != null) {
@@ -167,7 +161,7 @@ public class ApplicationMaster
         logger.info("notify interrupted " + error);
 
         Throwable interruptionError =
-                error == null ? APPLICATION_INTERRUPTED_EXCEPTION : error;
+                error == null ? JOB_INTERRUPTED_EXCEPTION : error;
 
         try {
             try {
@@ -195,7 +189,7 @@ public class ApplicationMaster
     }
 
     /**
-     * Register application execution;
+     * Register job execution;
      */
     public void registerExecution() {
         interrupted = false;
@@ -206,14 +200,14 @@ public class ApplicationMaster
     }
 
     /**
-     * Register application interruption;
+     * Register job interruption;
      */
     public void registerInterruption() {
         interruptionFutureHolder.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
     }
 
     /**
-     * @return mailBox which is used to signal that application's;
+     * @return mailBox which is used to signal that job's;
      * execution has been completed;
      */
     public ICompletableFuture<Object> getExecutionMailBox() {
@@ -221,7 +215,7 @@ public class ApplicationMaster
     }
 
     /**
-     * @return mailBox which is used to signal that application's;
+     * @return mailBox which is used to signal that job's;
      * interruption has been completed;
      */
     public ICompletableFuture<Object> getInterruptionMailBox() {
@@ -265,7 +259,7 @@ public class ApplicationMaster
 
     private void notifyClusterMembers(Object reason, MemberImpl member) {
         JetPacket jetPacket = new JetPacket(
-                applicationNameBytes,
+                jobNameBytes,
                 toBytes(reason)
         );
 
@@ -275,7 +269,7 @@ public class ApplicationMaster
     }
 
     /**
-     * Notify all application's containers with some signal;
+     * Notify all job's containers with some signal;
      *
      * @param reason signal object;
      */
@@ -377,14 +371,14 @@ public class ApplicationMaster
     }
 
     /**
-     * @return dag of the application;
+     * @return dag of the job;
      */
     public DAG getDag() {
         return dag;
     }
 
     /**
-     * Set up dag for the corresponding application;
+     * Set up dag for the corresponding job;
      *
      * @param dag corresponding dag;
      */
@@ -414,24 +408,24 @@ public class ApplicationMaster
 
     @Override
     protected void wakeUpExecutor() {
-        getJobContext().getExecutorContext().getApplicationMasterStateMachineExecutor().wakeUp();
+        getJobContext().getExecutorContext().getJobManagerStateMachineExecutor().wakeUp();
     }
 
-    private static ContainerPayloadProcessor getProcessor(ApplicationMasterEvent event,
-                                                          ApplicationMaster applicationMaster) {
+    private static ContainerPayloadProcessor getProcessor(JobManagerEvent event,
+                                                          JobManager jobManager) {
         switch (event) {
             case SUBMIT_DAG:
-                return new ExecutionPlanBuilderProcessor(applicationMaster);
+                return new ExecutionPlanBuilderProcessor(jobManager);
             case EXECUTE:
-                return new ExecuteJobProcessor(applicationMaster);
+                return new ExecuteJobProcessor(jobManager);
             case INTERRUPT_EXECUTION:
-                return new InterruptJobProcessor(applicationMaster);
+                return new InterruptJobProcessor(jobManager);
             case EXECUTION_ERROR:
-                return new ExecutionErrorProcessor(applicationMaster);
+                return new ExecutionErrorProcessor(jobManager);
             case EXECUTION_COMPLETED:
                 return new ExecutionCompletedProcessor();
             case FINALIZE:
-                return new DestroyJobProcessor(applicationMaster);
+                return new DestroyJobProcessor(jobManager);
             default:
                 return null;
         }

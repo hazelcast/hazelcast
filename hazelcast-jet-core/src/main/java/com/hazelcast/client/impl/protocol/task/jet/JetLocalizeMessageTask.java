@@ -41,14 +41,14 @@ public class JetLocalizeMessageTask extends JetMessageTask<JetLocalizeCodec.Requ
 
 
     @Override
-    protected String getApplicationName() {
-        return this.parameters.name;
+    protected String getJobName() {
+        return parameters.name;
     }
 
     @Override
     protected JetOperation prepareOperation() {
-        Chunk chunk = this.serializationService.toObject(this.parameters.chunk);
-        return new LocalizationChunkOperation(getApplicationName(), chunk);
+        Chunk chunk = serializationService.toObject(this.parameters.chunk);
+        return new LocalizationChunkOperation(getJobName(), chunk);
     }
 
     @Override

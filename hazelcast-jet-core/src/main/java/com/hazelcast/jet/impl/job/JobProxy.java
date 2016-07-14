@@ -69,7 +69,7 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
 
     public void init(JobConfig config) {
         if (config == null) {
-            config = JetUtil.resolveApplicationConfig(getNodeEngine(), name);
+            config = JetUtil.resolveJobConfig(getNodeEngine(), name);
         }
         jobClusterService.init(config, jobStateMachine);
     }

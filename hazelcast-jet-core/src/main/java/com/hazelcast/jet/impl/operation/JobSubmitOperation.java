@@ -18,11 +18,11 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.impl.container.JobManager;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionPlanBuilderRequest;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionPlanReadyRequest;
+import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionPlanBuilderRequest;
+import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionPlanReadyRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
@@ -50,18 +50,18 @@ public class JobSubmitOperation extends AsyncJetOperation {
         JobContext jobContext = getJobContext();
         dag.validate();
 
-        ApplicationMaster applicationMaster = jobContext.getApplicationMaster();
+        JobManager jobManager = jobContext.getJobManager();
 
-        ICompletableFuture<ApplicationMasterResponse> builderFuture =
-                applicationMaster.handleContainerRequest(new ExecutionPlanBuilderRequest(this.dag));
+        ICompletableFuture<JobManagerResponse> builderFuture =
+                jobManager.handleContainerRequest(new ExecutionPlanBuilderRequest(this.dag));
 
         builderFuture.andThen(new ContainerRequestCallback(this, "Unable to submit DAG", () -> {
-            ICompletableFuture<ApplicationMasterResponse> readyFuture
-                    = applicationMaster.handleContainerRequest(new ExecutionPlanReadyRequest());
+            ICompletableFuture<JobManagerResponse> readyFuture
+                    = jobManager.handleContainerRequest(new ExecutionPlanReadyRequest());
 
             readyFuture.andThen(new ContainerRequestCallback(JobSubmitOperation.this,
                     "Unable to submit DAG", () -> {
-                applicationMaster.setDag(dag);
+                jobManager.setDag(dag);
                 sendResponse(true);
             }));
         }));

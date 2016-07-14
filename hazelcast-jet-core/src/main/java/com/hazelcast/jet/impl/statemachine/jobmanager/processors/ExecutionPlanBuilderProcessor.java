@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.jet.config.JobConfig;
@@ -23,7 +23,7 @@ import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
@@ -48,8 +48,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<DAG> {
     private final NodeEngine nodeEngine;
     private final JetTupleFactory tupleFactory;
-    private final ClassLoader applicationClassLoader;
-    private final ApplicationMaster applicationMaster;
+    private final ClassLoader jobClassLoader;
+    private final JobManager jobManager;
     private final JobContext jobContext;
     private final ILogger logger;
 
@@ -71,17 +71,17 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
                             tupleFactory
                     );
 
-                    applicationMaster.registerContainer(vertex, container);
+                    jobManager.registerContainer(vertex, container);
 
                     return container;
                 }
             };
 
-    public ExecutionPlanBuilderProcessor(ApplicationMaster applicationMaster) {
-        this.applicationMaster = applicationMaster;
-        this.nodeEngine = applicationMaster.getNodeEngine();
-        this.jobContext = applicationMaster.getJobContext();
-        this.applicationClassLoader = this.jobContext.getLocalizationStorage().getClassLoader();
+    public ExecutionPlanBuilderProcessor(JobManager jobManager) {
+        this.jobManager = jobManager;
+        this.nodeEngine = jobManager.getNodeEngine();
+        this.jobContext = jobManager.getJobContext();
+        this.jobClassLoader = this.jobContext.getLocalizationStorage().getClassLoader();
         this.tupleFactory = new DefaultJetTupleFactory();
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -120,11 +120,11 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
         long secondsToAwait =
                 jobConfig.getSecondsToAwait();
 
-        this.applicationMaster.deployNetworkEngine();
+        this.jobManager.deployNetworkEngine();
 
         logger.fine("Deployed network engine for DAG " + dag.getName());
 
-        for (ProcessingContainer container : this.applicationMaster.containers()) {
+        for (ProcessingContainer container : this.jobManager.containers()) {
             container.handleContainerRequest(new ContainerStartRequest()).get(secondsToAwait, TimeUnit.SECONDS);
         }
     }
@@ -167,7 +167,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
                 (Class<ContainerProcessor>) Class.forName(
                         className,
                         true,
-                        this.applicationClassLoader
+                        this.jobClassLoader
                 );
 
         int i = 0;

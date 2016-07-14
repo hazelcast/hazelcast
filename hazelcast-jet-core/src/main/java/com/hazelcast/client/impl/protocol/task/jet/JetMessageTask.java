@@ -42,13 +42,13 @@ public abstract class JetMessageTask<P> extends AbstractMessageTask<P> implement
 
     @Override
     public Permission getRequiredPermission() {
-        return new JetPermission(getApplicationName(), ActionConstants.ACTION_ALL);
+        return new JetPermission(getJobName(), ActionConstants.ACTION_ALL);
     }
 
 
     @Override
     public String getDistributedObjectName() {
-        return getApplicationName();
+        return getJobName();
     }
 
     @Override
@@ -69,7 +69,7 @@ public abstract class JetMessageTask<P> extends AbstractMessageTask<P> implement
         invocation.invoke();
     }
 
-    protected abstract String getApplicationName();
+    protected abstract String getJobName();
 
     protected abstract JetOperation prepareOperation();
 

@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.container.applicationmaster;
+package com.hazelcast.jet.impl.container.jobmanager;
 
 import com.hazelcast.jet.impl.container.ContainerState;
 
 /**
- * Represents state of the application master;
+ * Represents state of the job manager;
  */
-public enum ApplicationMasterState implements ContainerState {
+public enum JobManagerState implements ContainerState {
     /**
-     * Initial state of the applicationMaster
+     * Initial state of the job manager
      */
     NEW,
     /**
@@ -31,7 +31,7 @@ public enum ApplicationMasterState implements ContainerState {
      */
     DAG_SUBMITTED,
     /**
-     * State when applicationMaster is ready for execution;
+     * State when job manager is ready for execution;
      */
     READY_FOR_EXECUTION,
     /**
@@ -39,15 +39,15 @@ public enum ApplicationMasterState implements ContainerState {
      */
     INVALID_DAG,
     /**
-     * State to be during application's execution;
+     * State to be during job's execution;
      */
     EXECUTING,
     /**
-     * State during application's interrupting;
+     * State during job's interrupting;
      */
     EXECUTION_INTERRUPTING,
     /**
-     * State after application has been interrupted;
+     * State after job has been interrupted;
      */
     EXECUTION_INTERRUPTED,
     /**

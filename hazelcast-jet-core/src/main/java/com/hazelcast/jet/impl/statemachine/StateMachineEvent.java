@@ -24,9 +24,9 @@ import java.io.Serializable;
  * Examples of state-machines:
  *
  * <pre>
- *     Jet-application
+ *     Jet-job
  *     Jet-container
- *     Jet-application master
+ *     Jet-job manager
  * </pre>
  */
 public interface StateMachineEvent extends Serializable {

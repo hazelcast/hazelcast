@@ -20,7 +20,7 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
@@ -52,14 +52,14 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         super(producers, processor, containerContext, processorContext, senderConsumerProcessor, taskID);
         this.receiverConsumerProcessor = receiverConsumerProcessor;
         List<ObjectProducer> receivers = new ArrayList<ObjectProducer>();
-        ApplicationMaster applicationMaster = containerContext.getJobContext().getApplicationMaster();
-        ProcessingContainer processingContainer = applicationMaster.getContainerByVertex(containerContext.getVertex());
+        JobManager jobManager = containerContext.getJobContext().getJobManager();
+        ProcessingContainer processingContainer = jobManager.getContainerByVertex(containerContext.getVertex());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
 
-        for (Address address : applicationMaster.getJobContext().getSocketReaders().keySet()) {
+        for (Address address : jobManager.getJobContext().getSocketReaders().keySet()) {
             //Registration to the AppMaster
             ShufflingReceiver receiver = new ShufflingReceiver(containerContext, containerTask, address);
-            applicationMaster.registerShufflingReceiver(taskID, containerContext, address, receiver);
+            jobManager.registerShufflingReceiver(taskID, containerContext, address, receiver);
             receivers.add(receiver);
         }
 

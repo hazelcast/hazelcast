@@ -17,13 +17,13 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobProxy;
 import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.job.client.ClientJobProxy;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.job.Job;
 
 /**
  * Utility class for creating new Jet Jobs
@@ -37,23 +37,23 @@ public final class JetEngine {
     }
 
     /**
-     * Create a new application given a Hazelcast instance and name
+     * Create a new job given a Hazelcast instance and name
      *
      * @param hazelcastInstance Hazelcast instance to use
      * @param name              name of the job
-     * @return a new Jet Application
+     * @return a new Jet job
      */
     public static Job getJob(HazelcastInstance hazelcastInstance, String name) {
         return getJob(hazelcastInstance, name, null);
     }
 
     /**
-     * Create a new application given a Hazelcast instance, name and job configuration
+     * Create a new job given a Hazelcast instance, name and job configuration
      *
      * @param hazelcastInstance Hazelcast instance to use
-     * @param name              name of the application
-     * @param jobConfig configuration for the application
-     * @return a new Jet Application
+     * @param name              name of the job
+     * @param jobConfig         configuration for the job
+     * @return a new Jet job
      */
     public static Job getJob(HazelcastInstance hazelcastInstance,
                              String name,
@@ -65,7 +65,7 @@ public final class JetEngine {
                 name
         );
 
-        // TODO: application init should be done in createDistributedObject
+        // TODO: job init should be done in createDistributedObject
         if (job.getJobState() == JobState.NEW) {
             if (job instanceof JobProxy) {
                 ((JobProxy) job).init(jobConfig);

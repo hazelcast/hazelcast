@@ -22,7 +22,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.DiscoveryService;
 import com.hazelcast.jet.impl.data.io.JetTupleDataType;
 import com.hazelcast.jet.impl.data.io.SocketReader;
@@ -59,7 +59,7 @@ public class JobContext {
     private final NodeEngine nodeEngine;
     private final AtomicReference<Address> owner;
     private final AtomicInteger containerIdGenerator;
-    private final ApplicationMaster applicationMaster;
+    private final JobManager jobManager;
     private final LocalizationStorage localizationStorage;
     private final Map<Address, Address> hzToAddressMapping;
     private final JobConfig jobConfig;
@@ -117,12 +117,12 @@ public class JobContext {
 
         this.hzToAddressMapping = new HashMap<>();
         this.accumulators = new CopyOnWriteArrayList<>();
-        this.applicationMaster = createApplicationMaster(nodeEngine);
+        this.jobManager = createApplicationMaster(nodeEngine);
         this.ioContext = new IOContextImpl(JetTupleDataType.INSTANCE);
     }
 
-    private ApplicationMaster createApplicationMaster(NodeEngine nodeEngine) {
-        return new ApplicationMaster(
+    private JobManager createApplicationMaster(NodeEngine nodeEngine) {
+        return new JobManager(
                 this,
                 new DiscoveryService(this, nodeEngine, socketWriters, socketReaders, hzToAddressMapping)
         );
@@ -166,10 +166,10 @@ public class JobContext {
     }
 
     /**
-     * @return applicationMaster
+     * @return jobManager
      */
-    public ApplicationMaster getApplicationMaster() {
-        return applicationMaster;
+    public JobManager getJobManager() {
+        return jobManager;
     }
 
     /**
@@ -191,7 +191,7 @@ public class JobContext {
      *
      * @param jobListener corresponding listener
      */
-    public void registerApplicationListener(JobListener jobListener) {
+    public void registerJobListener(JobListener jobListener) {
         jobListeners.add(jobListener);
     }
 
@@ -220,7 +220,7 @@ public class JobContext {
      * @return direct acyclic graph corresponding to job
      */
     public DAG getDAG() {
-        return applicationMaster.getDag();
+        return jobManager.getDag();
     }
 
     /**

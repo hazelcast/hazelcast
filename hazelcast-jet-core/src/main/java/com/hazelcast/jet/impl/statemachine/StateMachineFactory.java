@@ -31,10 +31,10 @@ public interface StateMachineFactory
     /**
      * Creates new stateMachine
      *
-     * @param name               name of the corresponding state-machine
-     * @param processor          corresponding processor for transitions
-     * @param nodeEngine         Hazelcast NodeEngine
-     * @param jobContext Jet applicationContext
+     * @param name       name of the corresponding state-machine
+     * @param processor  corresponding processor for transitions
+     * @param nodeEngine Hazelcast NodeEngine
+     * @param jobContext Jet job context
      * @return corresponding state-machine
      */
     SM newStateMachine(String name,

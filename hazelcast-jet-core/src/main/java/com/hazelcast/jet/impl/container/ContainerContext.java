@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.container.ContainerListener;
@@ -27,8 +26,8 @@ import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.ObjectReaderFactory;
 import com.hazelcast.jet.io.ObjectWriterFactory;
+import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.spi.NodeEngine;
-
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -42,10 +41,10 @@ public class ContainerContext implements ContainerDescriptor {
     private final ConcurrentMap<String, Accumulator> accumulatorMap;
 
     public ContainerContext(NodeEngine nodeEngine,
-                                   JobContext jobContext,
-                                   int id,
-                                   Vertex vertex,
-                                   JetTupleFactory tupleFactory) {
+                            JobContext jobContext,
+                            int id,
+                            Vertex vertex,
+                            JetTupleFactory tupleFactory) {
         this.id = id;
         this.vertex = vertex;
         this.nodeEngine = nodeEngine;
@@ -57,24 +56,24 @@ public class ContainerContext implements ContainerDescriptor {
 
     @Override
     public NodeEngine getNodeEngine() {
-        return this.nodeEngine;
+        return nodeEngine;
     }
 
     /**
-         * @return - JET-application context;
-         */
+     * @return - JET-job context;
+     */
     public JobContext getJobContext() {
-        return this.jobContext;
+        return jobContext;
     }
 
     @Override
-    public String getApplicationName() {
-        return this.jobContext.getName();
+    public String getJobName() {
+        return jobContext.getName();
     }
 
     @Override
     public int getID() {
-        return this.id;
+        return id;
     }
 
     @Override
@@ -84,63 +83,63 @@ public class ContainerContext implements ContainerDescriptor {
 
     @Override
     public DAG getDAG() {
-        return this.jobContext.getDAG();
+        return jobContext.getDAG();
     }
 
     @Override
     public JetTupleFactory getTupleFactory() {
-        return this.tupleFactory;
+        return tupleFactory;
     }
 
     @Override
     public JobConfig getConfig() {
-        return this.jobContext.getJobConfig();
+        return jobContext.getJobConfig();
     }
 
     @Override
     public void registerContainerListener(String vertexName,
                                           ContainerListener containerListener) {
-        this.jobContext.registerContainerListener(vertexName, containerListener);
+        jobContext.registerContainerListener(vertexName, containerListener);
     }
 
     @Override
-    public void registerApplicationListener(JobListener jobListener) {
-        this.jobContext.registerApplicationListener(jobListener);
+    public void registerJobListener(JobListener jobListener) {
+        jobContext.registerJobListener(jobListener);
     }
 
     @Override
-    public <T> void putApplicationVariable(String variableName, T variable) {
-        this.jobContext.putJobVariable(variableName, variable);
+    public <T> void putJobVariable(String variableName, T variable) {
+        jobContext.putJobVariable(variableName, variable);
     }
 
     @Override
-    public <T> T getApplicationVariable(String variableName) {
-        return this.jobContext.getJobVariable(variableName);
+    public <T> T getJobVariable(String variableName) {
+        return jobContext.getJobVariable(variableName);
     }
 
-    public void cleanApplicationVariable(String variableName) {
-        this.jobContext.cleanJobVariable(variableName);
+    public void cleanJobVariable(String variableName) {
+        jobContext.cleanJobVariable(variableName);
     }
 
     @Override
     public ObjectReaderFactory getObjectReaderFactory() {
-        return this.jobContext.getIOContext().getObjectReaderFactory();
+        return jobContext.getIOContext().getObjectReaderFactory();
     }
 
     @Override
     public ObjectWriterFactory getObjectWriterFactory() {
-        return this.jobContext.getIOContext().getObjectWriterFactory();
+        return jobContext.getIOContext().getObjectWriterFactory();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key) {
-        return this.accumulatorMap.get(key);
+        return accumulatorMap.get(key);
     }
 
     @Override
     public <V, R extends Serializable> void setAccumulator(String key,
                                                            Accumulator<V, R> accumulator) {
-        this.accumulatorMap.put(key, accumulator);
+        accumulatorMap.put(key, accumulator);
     }
 }

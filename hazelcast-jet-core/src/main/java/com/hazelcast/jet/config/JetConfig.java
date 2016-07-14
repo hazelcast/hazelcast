@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -64,26 +63,29 @@ public class JetConfig extends Config {
     }
 
     /**
-     * Gets the configuration for a given application name
-     * @param name name of the application
-     * @return the configuration for the application
+     * Gets the configuration for a given job name
+     *
+     * @param name name of the job
+     * @return the configuration for the job
      */
-    public JobConfig getApplicationConfig(String name) {
+    public JobConfig getJobConfig(String name) {
         return lookupConfig(getConfigPatternMatcher(), LOGGER, appConfigs, name);
     }
 
     /**
-     * Sets the configuration for a given application
-     * @param config name of the application
-     * @return the configuration for the application
+     * Sets the configuration for a given job
+     *
+     * @param config name of the job
+     * @return the configuration for the job
      */
-    public JetConfig addApplicationConfig(JobConfig config) {
+    public JetConfig addJobConfig(JobConfig config) {
         appConfigs.put(config.getName(), config);
         return this;
     }
 
     /**
      * Gets the number of processing threads to use
+     *
      * @return the number of processing threads to use
      */
     public int getProcessingThreadCount() {
@@ -92,6 +94,7 @@ public class JetConfig extends Config {
 
     /**
      * Sets the number of processing threads to use
+     *
      * @param count the number of processing threads
      * @return the current configuration
      */
@@ -102,6 +105,7 @@ public class JetConfig extends Config {
 
     /**
      * Gets the number of I/O threads to use
+     *
      * @return the number of I/O threads
      */
     public int getIoThreadCount() {
@@ -110,6 +114,7 @@ public class JetConfig extends Config {
 
     /**
      * Sets the number of I/O threads to use
+     *
      * @param count the number of I/O threads
      * @return the current configuration
      */
@@ -120,6 +125,7 @@ public class JetConfig extends Config {
 
     /**
      * Gets the timeout to use when shutting down threads
+     *
      * @return the timeout in seconds
      */
     public int getShutdownTimeoutSeconds() {
@@ -128,6 +134,7 @@ public class JetConfig extends Config {
 
     /**
      * Sets the timeout to use when shutting down threads
+     *
      * @return the current configuration
      */
     public JetConfig setShutdownTimeoutSeconds(int seconds) {
@@ -137,6 +144,7 @@ public class JetConfig extends Config {
 
     /**
      * Gets the port which Jet listens on
+     *
      * @return the port which Jet listens on
      */
     public int getPort() {
@@ -145,6 +153,7 @@ public class JetConfig extends Config {
 
     /**
      * Sets the port which Jet listens on
+     *
      * @param port the port which Jet listens on
      * @return the current configuration
      */

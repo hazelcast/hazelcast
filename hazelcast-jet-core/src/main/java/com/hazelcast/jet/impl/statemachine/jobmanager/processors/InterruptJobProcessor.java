@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptRequest;
@@ -25,18 +25,18 @@ import java.util.concurrent.TimeUnit;
 
 public class InterruptJobProcessor implements ContainerPayloadProcessor<Dummy> {
     private final int secondToAwait;
-    private final ApplicationMaster applicationMaster;
+    private final JobManager jobManager;
 
-    public InterruptJobProcessor(ApplicationMaster applicationMaster) {
-        this.applicationMaster = applicationMaster;
-        secondToAwait = applicationMaster.getJobContext().getJobConfig().getSecondsToAwait();
+    public InterruptJobProcessor(JobManager jobManager) {
+        this.jobManager = jobManager;
+        secondToAwait = jobManager.getJobContext().getJobConfig().getSecondsToAwait();
     }
 
     @Override
     public void process(Dummy payload) throws Exception {
-        applicationMaster.registerInterruption();
+        jobManager.registerInterruption();
 
-        for (ProcessingContainer container : applicationMaster.containers()) {
+        for (ProcessingContainer container : jobManager.containers()) {
             container.handleContainerRequest(new ContainerInterruptRequest()).get(secondToAwait, TimeUnit.SECONDS);
         }
     }

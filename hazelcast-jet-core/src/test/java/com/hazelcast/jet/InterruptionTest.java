@@ -90,7 +90,7 @@ public class InterruptionTest extends JetTestSupport {
         }).start();
         try {
             job.execute().get();
-            fail("The application was not interrupted");
+            fail("The job was not interrupted");
         } catch (ExecutionException e) {
             assertTrue(interrupted.get());
         } finally {
@@ -114,7 +114,7 @@ public class InterruptionTest extends JetTestSupport {
 
         try {
             execute(job);
-            fail("The application should not execute successfully.");
+            fail("The job should not execute successfully.");
         } catch (ExecutionException e) {
             CombinedJetException ex = (CombinedJetException) e.getCause();
             List<Throwable> errors = ex.getErrors();
@@ -141,7 +141,7 @@ public class InterruptionTest extends JetTestSupport {
 
         try {
             execute(job);
-            fail("The application should not execute successfully.");
+            fail("The job should not execute successfully.");
         } catch (ExecutionException e) {
             RuntimeException exception = (RuntimeException) e.getCause();
             assertEquals(ExceptionProcessor.ERROR_MESSAGE, exception.getCause().getMessage());

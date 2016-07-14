@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetEventCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.JobEventOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
+import com.hazelcast.jet.impl.operation.JobEventOperation;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.nio.Connection;
 
@@ -30,8 +30,8 @@ public class JetEventMessageTask extends JetMessageTask<JetEventCodec.RequestPar
     }
 
     @Override
-    protected String getApplicationName() {
-        return this.parameters.name;
+    protected String getJobName() {
+        return parameters.name;
     }
 
     @Override
@@ -46,11 +46,8 @@ public class JetEventMessageTask extends JetMessageTask<JetEventCodec.RequestPar
 
     @Override
     protected JetOperation prepareOperation() {
-        JobEvent jobEvent = this.serializationService.toObject(this.parameters.event);
-        JobEventOperation operation = new JobEventOperation(
-                getApplicationName(), jobEvent
-        );
-        return operation;
+        JobEvent jobEvent = serializationService.toObject(parameters.event);
+        return new JobEventOperation(getJobName(), jobEvent);
     }
 
     @Override

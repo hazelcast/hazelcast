@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.requests;
+package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
 import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.container.ContainerRequest;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
 
-public class InterruptJobRequest implements ContainerRequest<ApplicationMasterEvent, Dummy> {
+public class InterruptJobRequest implements ContainerRequest<JobManagerEvent, Dummy> {
     @Override
-    public ApplicationMasterEvent getContainerEvent() {
-        return ApplicationMasterEvent.INTERRUPT_EXECUTION;
+    public JobManagerEvent getContainerEvent() {
+        return JobManagerEvent.INTERRUPT_EXECUTION;
     }
 
     @Override

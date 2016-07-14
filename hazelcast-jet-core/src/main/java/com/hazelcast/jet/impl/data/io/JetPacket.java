@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.OutboundFrame;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -69,48 +68,48 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     private int taskID;
     private int containerId;
     private Address remoteMember;
-    private byte[] applicationNameBytes;
+    private byte[] jobNameBytes;
 
     public JetPacket() {
 
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public JetPacket(byte[] applicationNameBytes, byte[] payload) {
-        this(-1, -1, applicationNameBytes, payload);
+    public JetPacket(byte[] jobNameBytes, byte[] payload) {
+        this(-1, -1, jobNameBytes, payload);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public JetPacket(byte[] applicationNameBytes) {
-        this(-1, -1, applicationNameBytes, null);
+    public JetPacket(byte[] jobNameBytes) {
+        this(-1, -1, jobNameBytes, null);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(int containerId,
-                     byte[] applicationNameBytes
+                     byte[] jobNameBytes
     ) {
-        this(-1, containerId, applicationNameBytes, null);
+        this(-1, containerId, jobNameBytes, null);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(int taskID,
                      int containerId,
-                     byte[] applicationNameBytes
+                     byte[] jobNameBytes
     ) {
-        this(taskID, containerId, applicationNameBytes, null);
+        this(taskID, containerId, jobNameBytes, null);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(int taskID,
                      int containerId,
-                     byte[] applicationNameBytes,
+                     byte[] jobNameBytes,
                      byte[] payload
     ) {
         this(payload, -1);
 
         this.taskID = taskID;
         this.containerId = containerId;
-        this.applicationNameBytes = applicationNameBytes;
+        this.jobNameBytes = jobNameBytes;
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -157,7 +156,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
             return false;
         }
 
-        if (!writeApplicationNameBytes(destination)) {
+        if (!writeJobNameBytes(destination)) {
             return false;
         }
 
@@ -167,11 +166,11 @@ public final class JetPacket extends HeapData implements OutboundFrame {
 
     private boolean writeApplicationNameBytesSize(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_APPLICATION_SIZE)) {
-            if (destination.remaining() < this.applicationNameBytes.length) {
+            if (destination.remaining() < this.jobNameBytes.length) {
                 return false;
             }
 
-            destination.putInt(this.applicationNameBytes.length);
+            destination.putInt(this.jobNameBytes.length);
             setPersistStatus(PERSIST_APPLICATION_SIZE);
         }
         return true;
@@ -208,11 +207,11 @@ public final class JetPacket extends HeapData implements OutboundFrame {
             return false;
         }
 
-        if (!readApplicationNameBytesSize(source)) {
+        if (!readJobNameBytesSize(source)) {
             return false;
         }
 
-        if (!readApplicationNameBytes(source)) {
+        if (!readJobNameBytes(source)) {
             return false;
         }
 
@@ -274,15 +273,15 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return true;
     }
 
-    // ========================= application ==========================
-    private boolean writeApplicationNameBytes(ByteBuffer destination) {
+    // ========================= job ==========================
+    private boolean writeJobNameBytes(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_APPLICATION)) {
-            if (this.applicationNameBytes.length > 0) {
-                if (destination.remaining() < this.applicationNameBytes.length) {
+            if (this.jobNameBytes.length > 0) {
+                if (destination.remaining() < this.jobNameBytes.length) {
                     return false;
                 }
 
-                destination.put(this.applicationNameBytes);
+                destination.put(this.jobNameBytes);
             }
 
             setPersistStatus(PERSIST_APPLICATION);
@@ -290,27 +289,27 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return true;
     }
 
-    private boolean readApplicationNameBytesSize(ByteBuffer source) {
+    private boolean readJobNameBytesSize(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_APPLICATION_SIZE)) {
             if (source.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
 
             int size = source.getInt();
-            this.applicationNameBytes = new byte[size];
+            this.jobNameBytes = new byte[size];
             setPersistStatus(PERSIST_APPLICATION_SIZE);
         }
 
         return true;
     }
 
-    private boolean readApplicationNameBytes(ByteBuffer source) {
+    private boolean readJobNameBytes(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_APPLICATION)) {
-            if (source.remaining() < this.applicationNameBytes.length) {
+            if (source.remaining() < this.jobNameBytes.length) {
                 return false;
             }
 
-            source.get(this.applicationNameBytes);
+            source.get(this.jobNameBytes);
 
             setPersistStatus(PERSIST_APPLICATION);
         }
@@ -355,8 +354,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public byte[] getApplicationNameBytes() {
-        return this.applicationNameBytes;
+    public byte[] getJobNameBytes() {
+        return this.jobNameBytes;
     }
 
     @Override
@@ -590,7 +589,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
             return false;
         }
 
-        return Arrays.equals(applicationNameBytes, jetPacket.applicationNameBytes);
+        return Arrays.equals(jobNameBytes, jetPacket.jobNameBytes);
     }
 
     @Override
@@ -604,7 +603,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         result = 31 * result + taskID;
         result = 31 * result + containerId;
         result = 31 * result + (remoteMember != null ? remoteMember.hashCode() : 0);
-        result = 31 * result + (applicationNameBytes != null ? Arrays.hashCode(applicationNameBytes) : 0);
+        result = 31 * result + (jobNameBytes != null ? Arrays.hashCode(jobNameBytes) : 0);
         return result;
     }
 }

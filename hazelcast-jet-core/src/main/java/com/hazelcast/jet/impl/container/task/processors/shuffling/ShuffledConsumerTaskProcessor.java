@@ -24,7 +24,7 @@ import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
@@ -146,16 +146,16 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void initSenders(ContainerContext containerContext, int taskID, boolean receiver) {
-        ApplicationMaster applicationMaster = containerContext.getJobContext().getApplicationMaster();
+        JobManager jobManager = containerContext.getJobContext().getJobManager();
 
-        ProcessingContainer processingContainer = applicationMaster.getContainerByVertex(containerContext.getVertex());
+        ProcessingContainer processingContainer = jobManager.getContainerByVertex(containerContext.getVertex());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
 
         if (!receiver) {
-            for (Address address : applicationMaster.getJobContext().getSocketWriters().keySet()) {
+            for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
                 ShufflingSender sender = new ShufflingSender(containerContext, taskID, containerTask, address);
                 this.senders.put(address, sender);
-                applicationMaster.registerShufflingSender(taskID, containerContext, address, sender);
+                jobManager.registerShufflingSender(taskID, containerContext, address, sender);
             }
         }
     }
@@ -164,8 +164,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                                            List<ObjectConsumer> nonPartitionedConsumers,
                                            Set<Address> nonPartitionedAddresses) {
 
-        ApplicationMaster applicationMaster = this.containerContext.getJobContext().getApplicationMaster();
-        Map<Address, Address> hzToJetAddressMapping = applicationMaster.getJobContext().getHzToJetAddressMapping();
+        JobManager jobManager = this.containerContext.getJobContext().getJobManager();
+        Map<Address, Address> hzToJetAddressMapping = jobManager.getJobContext().getHzToJetAddressMapping();
         List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
         for (ObjectConsumer consumer : this.shuffledConsumers) {
             ShufflingStrategy shufflingStrategy = consumer.getShufflingStrategy();

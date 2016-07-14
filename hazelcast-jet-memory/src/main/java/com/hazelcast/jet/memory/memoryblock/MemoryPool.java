@@ -19,7 +19,7 @@ package com.hazelcast.jet.memory.memoryblock;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Provides api to reserve and monitor memory used by JET application
+ * Provides api to reserve and monitor memory used by JET job
  */
 public class MemoryPool {
     private final long total;

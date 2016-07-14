@@ -20,8 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetInitCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.operation.JobInitOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
+import com.hazelcast.jet.impl.operation.JobInitOperation;
 import com.hazelcast.nio.Connection;
 
 public class JetInitMessageTask extends JetMessageTask<JetInitCodec.RequestParameters> {
@@ -30,8 +30,8 @@ public class JetInitMessageTask extends JetMessageTask<JetInitCodec.RequestParam
     }
 
     @Override
-    protected String getApplicationName() {
-        return this.parameters.name;
+    protected String getJobName() {
+        return parameters.name;
     }
 
     @Override
@@ -46,10 +46,8 @@ public class JetInitMessageTask extends JetMessageTask<JetInitCodec.RequestParam
 
     @Override
     protected JetOperation prepareOperation() {
-        JobConfig config = this.nodeEngine.getSerializationService().toObject(this.parameters.config);
-        JobInitOperation operation =
-                new JobInitOperation(getDistributedObjectName(), config);
-        return operation;
+        JobConfig config = nodeEngine.getSerializationService().toObject(this.parameters.config);
+        return new JobInitOperation(getDistributedObjectName(), config);
     }
 
     @Override

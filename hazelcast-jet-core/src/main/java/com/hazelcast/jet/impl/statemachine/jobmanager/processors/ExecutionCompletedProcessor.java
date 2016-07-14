@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.requests;
+package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerRequest;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
-public class ExecutionInterruptedRequest implements ContainerRequest<ApplicationMasterEvent, Dummy> {
+public class ExecutionCompletedProcessor implements ContainerPayloadProcessor<Dummy> {
     @Override
-    public ApplicationMasterEvent getContainerEvent() {
-        return ApplicationMasterEvent.EXECUTION_INTERRUPTED;
-    }
+    public void process(Dummy payload) throws Exception {
 
-    @Override
-    public Dummy getPayload() {
-        return Dummy.INSTANCE;
     }
 }

@@ -51,7 +51,7 @@ public interface Container
     StateMachine<SI, SS, SO> getStateMachine();
 
     /**
-     * @return - JET-application context;
+     * @return - JET-job context;
      */
     JobContext getJobContext();
 

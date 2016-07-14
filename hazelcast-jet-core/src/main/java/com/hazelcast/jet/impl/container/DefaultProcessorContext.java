@@ -44,96 +44,96 @@ public class DefaultProcessorContext implements ProcessorContext {
 
     @Override
     public NodeEngine getNodeEngine() {
-        return this.containerContext.getNodeEngine();
+        return containerContext.getNodeEngine();
     }
 
     @Override
-    public String getApplicationName() {
-        return this.containerContext.getApplicationName();
+    public String getJobName() {
+        return containerContext.getJobName();
     }
 
     @Override
     public int getID() {
-        return this.containerContext.getID();
+        return containerContext.getID();
     }
 
     @Override
     public Vertex getVertex() {
-        return this.containerContext.getVertex();
+        return containerContext.getVertex();
     }
 
     @Override
     public DAG getDAG() {
-        return this.containerContext.getDAG();
+        return containerContext.getDAG();
     }
 
     @Override
     public JetTupleFactory getTupleFactory() {
-        return this.containerContext.getTupleFactory();
+        return containerContext.getTupleFactory();
     }
 
     @Override
     public JobConfig getConfig() {
-        return this.containerContext.getConfig();
+        return containerContext.getConfig();
     }
 
     @Override
     public void registerContainerListener(String vertexName, ContainerListener containerListener) {
-        this.containerContext.registerContainerListener(vertexName, containerListener);
+        containerContext.registerContainerListener(vertexName, containerListener);
     }
 
     @Override
-    public void registerApplicationListener(JobListener jobListener) {
-        this.containerContext.registerApplicationListener(jobListener);
+    public void registerJobListener(JobListener jobListener) {
+        containerContext.registerJobListener(jobListener);
     }
 
     @Override
-    public <T> void putApplicationVariable(String variableName, T variable) {
-        this.containerContext.putApplicationVariable(variableName, variable);
+    public <T> void putJobVariable(String variableName, T variable) {
+        containerContext.putJobVariable(variableName, variable);
     }
 
     @Override
-    public <T> T getApplicationVariable(String variableName) {
-        return this.containerContext.getApplicationVariable(variableName);
+    public <T> T getJobVariable(String variableName) {
+        return containerContext.getJobVariable(variableName);
     }
 
     @Override
-    public void cleanApplicationVariable(String variableName) {
-        this.containerContext.cleanApplicationVariable(variableName);
+    public void cleanJobVariable(String variableName) {
+        containerContext.cleanJobVariable(variableName);
     }
 
     @Override
     public void registerDataType(DataType dataType) {
-        this.taskContext.registerDataType(dataType);
+        taskContext.registerDataType(dataType);
     }
 
     @Override
     public ObjectReaderFactory getObjectReaderFactory() {
-        return this.taskContext.getObjectReaderFactory();
+        return taskContext.getObjectReaderFactory();
     }
 
     @Override
     public ObjectWriterFactory getObjectWriterFactory() {
-        return this.taskContext.getObjectWriterFactory();
+        return taskContext.getObjectWriterFactory();
     }
 
     @Override
     public int getTaskCount() {
-        return this.taskContext.getTaskCount();
+        return taskContext.getTaskCount();
     }
 
     @Override
     public int getTaskNumber() {
-        return this.taskContext.getTaskNumber();
+        return taskContext.getTaskNumber();
     }
 
     @Override
     public <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key) {
-        return this.taskContext.getAccumulator(key);
+        return taskContext.getAccumulator(key);
     }
 
     @Override
     public <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator) {
-        this.taskContext.setAccumulator(key, accumulator);
+        taskContext.setAccumulator(key, accumulator);
     }
 }

@@ -19,11 +19,10 @@ package com.hazelcast.jet.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-
 import java.io.Serializable;
 
 /**
- * Abstract JET processor for application's execution
+ * Abstract JET processor for job's execution
  *
  * Should be implemented by user and will be used during container's execution
  *

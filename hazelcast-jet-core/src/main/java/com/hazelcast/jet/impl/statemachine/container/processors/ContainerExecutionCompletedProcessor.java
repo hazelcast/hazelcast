@@ -45,6 +45,6 @@ public class ContainerExecutionCompletedProcessor implements ContainerPayloadPro
             }
         }
 
-        this.jobContext.getApplicationMaster().handleContainerCompleted();
+        this.jobContext.getJobManager().handleContainerCompleted();
     }
 }

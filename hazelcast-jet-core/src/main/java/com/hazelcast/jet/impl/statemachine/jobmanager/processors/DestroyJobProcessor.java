@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.executor.Task;
@@ -25,12 +25,12 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import java.util.List;
 
 public class DestroyJobProcessor implements ContainerPayloadProcessor<Dummy> {
-    private final ApplicationMaster applicationMaster;
+    private final JobManager jobManager;
     private final List<Task> networkTasks;
 
-    public DestroyJobProcessor(ApplicationMaster applicationMaster) {
-        this.applicationMaster = applicationMaster;
-        networkTasks = applicationMaster.getJobContext().getExecutorContext().getNetworkTasks();
+    public DestroyJobProcessor(JobManager jobManager) {
+        this.jobManager = jobManager;
+        networkTasks = jobManager.getJobContext().getExecutorContext().getNetworkTasks();
     }
 
     @Override
@@ -38,7 +38,7 @@ public class DestroyJobProcessor implements ContainerPayloadProcessor<Dummy> {
         Throwable error = null;
 
         try {
-            for (ProcessingContainer container : applicationMaster.containers()) {
+            for (ProcessingContainer container : jobManager.containers()) {
                 try {
                     container.destroy();
                 } catch (Throwable e) {

@@ -55,11 +55,11 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
         if (packet.getHeader() == JetPacket.HEADER_JET_MEMBER_EVENT) {
             NodeEngine nodeEngine = this.jobService.getNodeEngine();
 
-            String applicationName = nodeEngine.getSerializationService().toObject(
-                    new HeapData(packet.getApplicationNameBytes())
+            String jobName = nodeEngine.getSerializationService().toObject(
+                    new HeapData(packet.getJobNameBytes())
             );
 
-            JobContext jobContext = this.jobService.getContext(applicationName);
+            JobContext jobContext = this.jobService.getContext(jobName);
 
             if (jobContext != null) {
                 Address address = jobContext.getNodeEngine().getSerializationService().toObject(

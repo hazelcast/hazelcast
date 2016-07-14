@@ -41,12 +41,12 @@ public class JetExecuteMessageTask
 
     @Override
     protected JetOperation prepareOperation() {
-        return new JobExecuteOperation(getApplicationName());
+        return new JobExecuteOperation(getJobName());
     }
 
     @Override
-    protected String getApplicationName() {
-        return this.parameters.name;
+    protected String getJobName() {
+        return parameters.name;
     }
 
     @Override

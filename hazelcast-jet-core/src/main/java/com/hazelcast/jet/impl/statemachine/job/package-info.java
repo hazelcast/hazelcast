@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides API for the application state-machine
+ * Provides API for the job state-machine
  */
 package com.hazelcast.jet.impl.statemachine.job;

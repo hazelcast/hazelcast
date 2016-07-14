@@ -69,7 +69,7 @@ public class ClientJobProxy extends ClientProxy implements Job {
 
     public void init(JobConfig config) {
         if (config == null) {
-            config = JetUtil.resolveApplicationConfig(getClient(), name);
+            config = JetUtil.resolveJobConfig(getClient(), name);
         }
         jobClusterService.init(config, jobStateMachine);
     }

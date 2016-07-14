@@ -104,7 +104,7 @@ public class RingBufferActor implements ObjectActor {
         }
 
         if (registerListener) {
-            jobContext.registerApplicationListener(new JobListener() {
+            jobContext.registerJobListener(new JobListener() {
                 @Override
                 public void onJobExecuted(JobContext jobContext) {
                     clear();

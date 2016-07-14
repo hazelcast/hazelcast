@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.impl.container.JobManager;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.InterruptJobRequest;
+import com.hazelcast.jet.impl.statemachine.jobmanager.requests.InterruptJobRequest;
 
 public class JobInterruptOperation extends AsyncJetOperation {
 
@@ -37,14 +37,14 @@ public class JobInterruptOperation extends AsyncJetOperation {
     public void run() throws Exception {
         JobContext jobContext = getJobContext();
 
-        ApplicationMaster applicationMaster = jobContext.getApplicationMaster();
-        ICompletableFuture<ApplicationMasterResponse> interruptFuture = applicationMaster.handleContainerRequest(
+        JobManager jobManager = jobContext.getJobManager();
+        ICompletableFuture<JobManagerResponse> interruptFuture = jobManager.handleContainerRequest(
                 new InterruptJobRequest()
         );
 
         interruptFuture.andThen(new ContainerRequestCallback(this,
                 "Unable interrupt job execution", () -> {
-            ICompletableFuture<Object> future = applicationMaster.getInterruptionMailBox();
+            ICompletableFuture<Object> future = jobManager.getInterruptionMailBox();
             future.andThen(new ExecutionCallback<Object>() {
                 @Override
                 public void onResponse(Object response) {

@@ -19,14 +19,14 @@ package com.hazelcast.jet.impl.container.task.nio;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
@@ -53,7 +53,7 @@ public class DefaultSocketReader
 
     private JetPacket packet;
     private volatile boolean socketAssigned;
-    private final byte[] applicationNameBytes;
+    private final byte[] jobNameBytes;
 
     public DefaultSocketReader(JobContext jobContext,
                                Address jetAddress) {
@@ -63,7 +63,7 @@ public class DefaultSocketReader
         this.jobContext = jobContext;
         InternalSerializationService serializationService =
                 (InternalSerializationService) jobContext.getNodeEngine().getSerializationService();
-        this.applicationNameBytes = serializationService.toBytes(this.jobContext.getName());
+        this.jobNameBytes = serializationService.toBytes(this.jobContext.getName());
         this.chunkSize = jobContext.getJobConfig().getChunkSize();
         this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
@@ -74,15 +74,14 @@ public class DefaultSocketReader
         this.socketAssigned = true;
         this.jobContext = null;
         this.chunkSize = JobConfig.DEFAULT_CHUNK_SIZE;
-        this.applicationNameBytes = null;
+        this.jobNameBytes = null;
         this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
     public void init() {
         super.init();
-
-        this.socketAssigned = false;
-        this.isBufferActive = false;
+        socketAssigned = false;
+        isBufferActive = false;
     }
 
     @Override
@@ -111,7 +110,7 @@ public class DefaultSocketReader
             return true;
         }
 
-        if (this.isBufferActive) {
+        if (isBufferActive) {
             if (!readBuffer()) {
                 return true;
             }
@@ -119,23 +118,23 @@ public class DefaultSocketReader
 
         readSocket(payload);
 
-        if (this.waitingForFinish) {
+        if (waitingForFinish) {
             if ((!payload.get()) && (isFlushed())) {
-                this.finished = true;
+                finished = true;
             }
         }
         return false;
     }
 
     private boolean checkInterrupted() {
-        if (this.destroyed) {
+        if (destroyed) {
             closeSocket();
             return true;
         }
 
-        if (this.interrupted) {
+        if (interrupted) {
             closeSocket();
-            this.finalized = true;
+            finalized = true;
             notifyAMTaskFinished();
             return true;
         }
@@ -144,25 +143,23 @@ public class DefaultSocketReader
 
     @Override
     protected void notifyAMTaskFinished() {
-        this.jobContext.getApplicationMaster().notifyNetworkTaskFinished();
+        jobContext.getJobManager().notifyNetworkTaskFinished();
     }
 
     private boolean readSocket(BooleanHolder payload) {
-        if ((this.socketChannel != null) && (this.socketChannel.isConnected())) {
+        if ((socketChannel != null) && (socketChannel.isConnected())) {
             try {
-                SocketChannel socketChannel = this.socketChannel;
-
                 if (socketChannel != null) {
-                    int readBytes = socketChannel.read(this.receiveBuffer);
+                    int readBytes = socketChannel.read(receiveBuffer);
 
                     if (readBytes <= 0) {
                         return handleEmptyChannel(payload, readBytes);
                     } else {
-                        this.totalBytes += readBytes;
+                        totalBytes += readBytes;
                     }
                 }
 
-                this.receiveBuffer.flip();
+                receiveBuffer.flip();
                 readBuffer();
                 payload.set(true);
             } catch (IOException e) {
@@ -188,37 +185,37 @@ public class DefaultSocketReader
     }
 
     protected boolean readBuffer() throws Exception {
-        while (this.receiveBuffer.hasRemaining()) {
-            if (this.packet == null) {
-                this.packet = new JetPacket();
+        while (receiveBuffer.hasRemaining()) {
+            if (packet == null) {
+                packet = new JetPacket();
             }
 
-            if (!this.packet.readFrom(this.receiveBuffer)) {
-                alignBuffer(this.receiveBuffer);
-                this.isBufferActive = false;
+            if (!packet.readFrom(receiveBuffer)) {
+                alignBuffer(receiveBuffer);
+                isBufferActive = false;
                 return true;
             }
 
             // False means this is threadAcceptor
-            if (!consumePacket(this.packet)) {
-                this.packet = null;
+            if (!consumePacket(packet)) {
+                packet = null;
                 return false;
             }
 
-            this.packet = null;
+            packet = null;
 
-            if (this.buffer.size() >= this.chunkSize) {
+            if (buffer.size() >= chunkSize) {
                 flush();
 
                 if (!isFlushed()) {
-                    this.isBufferActive = true;
+                    isBufferActive = true;
                     return false;
                 }
             }
         }
 
-        this.isBufferActive = false;
-        alignBuffer(this.receiveBuffer);
+        isBufferActive = false;
+        alignBuffer(receiveBuffer);
         flush();
         return isFlushed();
     }
@@ -234,13 +231,13 @@ public class DefaultSocketReader
     }
 
     protected boolean consumePacket(JetPacket packet) throws Exception {
-        this.buffer.consume(packet);
+        buffer.consume(packet);
         return true;
     }
 
     private void flush() throws Exception {
-        if (this.buffer.size() > 0) {
-            for (JetPacket packet : this.buffer) {
+        if (buffer.size() > 0) {
+            for (JetPacket packet : buffer) {
                 int header = resolvePacket(packet);
 
                 if (header > 0) {
@@ -248,22 +245,22 @@ public class DefaultSocketReader
                 }
             }
 
-            this.buffer.reset();
+            buffer.reset();
         }
     }
 
     private void sendResponse(JetPacket jetPacket, int header) throws Exception {
         jetPacket.reset();
         jetPacket.setHeader(header);
-        this.writers.get(this.jetAddress).sendServicePacket(jetPacket);
+        writers.get(jetAddress).sendServicePacket(jetPacket);
     }
 
     @Override
     public boolean isFlushed() {
         boolean isFlushed = true;
 
-        for (int i = 0; i < this.consumers.size(); i++) {
-            isFlushed &= this.consumers.get(i).isFlushed();
+        for (int i = 0; i < consumers.size(); i++) {
+            isFlushed &= consumers.get(i).isFlushed();
         }
 
         return isFlushed;
@@ -283,18 +280,18 @@ public class DefaultSocketReader
             throw JetUtil.reThrow(e);
         }
 
-        this.socketAssigned = true;
+        socketAssigned = true;
     }
 
     @Override
     public void registerConsumer(RingBufferActor ringBufferActor) {
-        this.consumers.add(ringBufferActor);
+        consumers.add(ringBufferActor);
     }
 
     @Override
     public void assignWriter(Address writeAddress,
                              SocketWriter socketWriter) {
-        this.writers.put(writeAddress, socketWriter);
+        writers.put(writeAddress, socketWriter);
     }
 
     public int resolvePacket(JetPacket packet) throws Exception {
@@ -309,8 +306,8 @@ public class DefaultSocketReader
                 return notifyShufflingReceiver(packet);
 
             case JetPacket.HEADER_JET_EXECUTION_ERROR:
-                packet.setRemoteMember(this.jetAddress);
-                this.jobContext.getApplicationMaster().notifyContainers(packet);
+                packet.setRemoteMember(jetAddress);
+                jobContext.getJobManager().notifyContainers(packet);
                 return 0;
 
             case JetPacket.HEADER_JET_DATA_NO_APP_FAILURE:
@@ -328,9 +325,9 @@ public class DefaultSocketReader
     }
 
     private void invalidateAll() throws Exception {
-        for (SocketWriter sender : this.writers.values()) {
+        for (SocketWriter sender : writers.values()) {
             JetPacket jetPacket = new JetPacket(
-                    this.applicationNameBytes
+                    jobNameBytes
             );
 
             jetPacket.setHeader(JetPacket.HEADER_JET_EXECUTION_ERROR);
@@ -339,15 +336,15 @@ public class DefaultSocketReader
     }
 
     private int notifyShufflingReceiver(JetPacket packet) throws Exception {
-        ApplicationMaster applicationMaster = this.jobContext.getApplicationMaster();
-        ProcessingContainer processingContainer = applicationMaster.getContainersCache().get(packet.getContainerId());
+        JobManager jobManager = jobContext.getJobManager();
+        ProcessingContainer processingContainer = jobManager.getContainersCache().get(packet.getContainerId());
 
         if (processingContainer == null) {
-            this.logger.warning("No such container with containerId="
+            logger.warning("No such container with containerId="
                     + packet.getContainerId()
                     + " jetPacket="
                     + packet
-                    + ". Application will be interrupted."
+                    + ". Job will be interrupted."
             );
 
             return JetPacket.HEADER_JET_DATA_NO_CONTAINER_FAILURE;
@@ -356,19 +353,19 @@ public class DefaultSocketReader
         ContainerTask containerTask = processingContainer.getTasksCache().get(packet.getTaskID());
 
         if (containerTask == null) {
-            this.logger.warning("No such task in container with containerId="
+            logger.warning("No such task in container with containerId="
                     + packet.getContainerId()
                     + " taskId="
                     + packet.getTaskID()
                     + " jetPacket="
                     + packet
-                    + ". Application will be interrupted."
+                    + ". Job will be interrupted."
             );
 
             return JetPacket.HEADER_JET_DATA_NO_TASK_FAILURE;
         }
 
-        containerTask.getShufflingReceiver(this.jetAddress).consume(packet);
+        containerTask.getShufflingReceiver(jetAddress).consume(packet);
         return 0;
     }
 }

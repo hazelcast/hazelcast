@@ -19,12 +19,11 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetInterruptCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.JobInterruptOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
+import com.hazelcast.jet.impl.operation.JobInterruptOperation;
 import com.hazelcast.nio.Connection;
 
-public class JetInterruptMessageTask
-        extends JetMessageTask<JetInterruptCodec.RequestParameters> {
+public class JetInterruptMessageTask extends JetMessageTask<JetInterruptCodec.RequestParameters> {
     public JetInterruptMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -40,13 +39,13 @@ public class JetInterruptMessageTask
     }
 
     @Override
-    protected String getApplicationName() {
-        return this.parameters.name;
+    protected String getJobName() {
+        return parameters.name;
     }
 
     @Override
     protected JetOperation prepareOperation() {
-        return new JobInterruptOperation(getApplicationName());
+        return new JobInterruptOperation(getJobName());
     }
 
     @Override

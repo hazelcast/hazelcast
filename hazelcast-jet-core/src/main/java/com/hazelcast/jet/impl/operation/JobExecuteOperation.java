@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.impl.container.ApplicationMaster;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.impl.container.JobManager;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecuteJobRequest;
+import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecuteJobRequest;
 
 
 public class JobExecuteOperation extends AsyncJetOperation {
@@ -37,18 +37,18 @@ public class JobExecuteOperation extends AsyncJetOperation {
     @Override
     public void run() throws Exception {
         JobContext jobContext = getJobContext();
-        ApplicationMaster applicationMaster = jobContext.getApplicationMaster();
+        JobManager jobManager = jobContext.getJobManager();
 
         getLogger().fine("ExecuteJobRequestOperation.run " + jobContext.getName());
 
-        ICompletableFuture<ApplicationMasterResponse> future = applicationMaster
+        ICompletableFuture<JobManagerResponse> future = jobManager
                 .handleContainerRequest(new ExecuteJobRequest());
 
         //Waiting for until all containers started
         future.andThen(new ContainerRequestCallback(this, "Unable to start containers", () -> {
 
             //Waiting for execution completion
-            final ICompletableFuture<Object> mailboxFuture = applicationMaster.getExecutionMailBox();
+            final ICompletableFuture<Object> mailboxFuture = jobManager.getExecutionMailBox();
             mailboxFuture.andThen(new ExecutionCallback<Object>() {
                 @Override
                 public void onResponse(Object o) {

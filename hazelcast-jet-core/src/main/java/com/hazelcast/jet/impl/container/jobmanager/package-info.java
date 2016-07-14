@@ -14,22 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.requests;
-
-
-import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerRequest;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
-
-public class ExecutionCompletedRequest implements ContainerRequest<ApplicationMasterEvent, Dummy> {
-    @Override
-    public ApplicationMasterEvent getContainerEvent() {
-        return ApplicationMasterEvent.EXECUTION_COMPLETED;
-    }
-
-    @Override
-    public Dummy getPayload() {
-        return Dummy.INSTANCE;
-    }
-}
-
+/**
+ * Provides API to work with job manager
+ */
+package com.hazelcast.jet.impl.container.jobmanager;

@@ -37,20 +37,18 @@ public class JetGetAccumulatorsMessageTask extends JetMessageTask<JetGetAccumula
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Data data = this.serializationService.toData(response);
+        Data data = serializationService.toData(response);
         return JetGetAccumulatorsCodec.encodeResponse(data);
     }
 
     @Override
-    protected String getApplicationName() {
-        return this.parameters.name;
+    protected String getJobName() {
+        return parameters.name;
     }
 
     @Override
     protected JetOperation prepareOperation() {
-        return new GetAccumulatorsOperation(
-                getApplicationName()
-        );
+        return new GetAccumulatorsOperation(getJobName());
     }
 
     @Override

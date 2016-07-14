@@ -34,7 +34,7 @@ public class ExecutorContext {
     private final BalancedExecutor processingExecutor;
     private final StateMachineExecutor jobStateMachineExecutor;
     private final List<Task> processingTasks;
-    private final StateMachineExecutor applicationMasterStateMachineExecutor;
+    private final StateMachineExecutor jobManagerStateMachineExecutor;
 
     public ExecutorContext(
             String name,
@@ -55,43 +55,43 @@ public class ExecutorContext {
         this.jobStateMachineExecutor =
                 new StateMachineExecutor(name + "-job-state_machine", 1, awaitingTimeOut, nodeEngine);
 
-        this.applicationMasterStateMachineExecutor =
-                new StateMachineExecutor(name + "-application-master-state_machine", 1, awaitingTimeOut, nodeEngine);
+        this.jobManagerStateMachineExecutor =
+                new StateMachineExecutor(name + "-job-manager-state_machine", 1, awaitingTimeOut, nodeEngine);
     }
 
     /**
      * @return executor for job state-machine
      */
     public StateMachineExecutor getJobStateMachineExecutor() {
-        return this.jobStateMachineExecutor;
+        return jobStateMachineExecutor;
     }
 
     /**
      * @return executor for processing container state-machine
      */
     public StateMachineExecutor getDataContainerStateMachineExecutor() {
-        return this.containerStateMachineExecutor;
+        return containerStateMachineExecutor;
     }
 
     /**
-     * @return executor for application-master state-machine
+     * @return executor for job manager state-machine
      */
-    public StateMachineExecutor getApplicationMasterStateMachineExecutor() {
-        return this.applicationMasterStateMachineExecutor;
+    public StateMachineExecutor getJobManagerStateMachineExecutor() {
+        return jobManagerStateMachineExecutor;
     }
 
     /**
      * @return shared executor to manage network specific tasks
      */
     public BalancedExecutor getNetworkExecutor() {
-        return this.networkExecutor;
+        return networkExecutor;
     }
 
     /**
      * @return shared executor to manage processing specific tasks
      */
     public BalancedExecutor getProcessingExecutor() {
-        return this.processingExecutor;
+        return processingExecutor;
     }
 
     /**

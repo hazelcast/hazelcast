@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.applicationmaster.requests;
+package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
-import com.hazelcast.jet.impl.Dummy;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.container.ContainerRequest;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
+import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
 
-public class ExecuteJobRequest implements ContainerRequest<ApplicationMasterEvent, Dummy> {
-    @Override
-    public ApplicationMasterEvent getContainerEvent() {
-        return ApplicationMasterEvent.EXECUTE;
+public class ExecutionPlanBuilderRequest implements ContainerRequest<JobManagerEvent, DAG> {
+    private final DAG dag;
+
+    public ExecutionPlanBuilderRequest(DAG dag) {
+        this.dag = dag;
     }
 
     @Override
-    public Dummy getPayload() {
-        return Dummy.INSTANCE;
+    public JobManagerEvent getContainerEvent() {
+        return JobManagerEvent.SUBMIT_DAG;
+    }
+
+    @Override
+    public DAG getPayload() {
+        return this.dag;
     }
 }

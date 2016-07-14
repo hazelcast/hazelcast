@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.container.applicationmaster;
+package com.hazelcast.jet.impl.container.jobmanager;
 
 import com.hazelcast.jet.impl.container.ContainerEvent;
 
 /**
- * Represents event for the applicationMaster;
+ * Represents event for the job manager;
  */
-public enum ApplicationMasterEvent implements ContainerEvent {
+public enum JobManagerEvent implements ContainerEvent {
     /**
      * Submit-dag event;
      */
@@ -35,11 +35,11 @@ public enum ApplicationMasterEvent implements ContainerEvent {
      */
     EXECUTION_PLAN_READY,
     /**
-     * Command to execute application;
+     * Command to execute job;
      */
     EXECUTE,
     /**
-     * Command to interrupt application;
+     * Command to interrupt job;
      */
     INTERRUPT_EXECUTION,
     /**
@@ -55,7 +55,7 @@ public enum ApplicationMasterEvent implements ContainerEvent {
      */
     EXECUTION_COMPLETED,
     /**
-     * Command to finalize application;
+     * Command to finalize job;
      */
     FINALIZE,
 }
