@@ -41,6 +41,12 @@ public class BeforeAwaitOperation extends AbstractLockOperation implements Notif
         this.conditionId = conditionId;
     }
 
+    public BeforeAwaitOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, long referenceId) {
+        super(namespace, key, threadId);
+        this.conditionId = conditionId;
+        setReferenceCallId(referenceId);
+    }
+
     @Override
     public void beforeRun() throws Exception {
         LockStoreImpl lockStore = getLockStore();

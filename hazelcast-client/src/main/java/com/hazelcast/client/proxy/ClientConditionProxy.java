@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ConditionAwaitCodec;
 import com.hazelcast.client.impl.protocol.codec.ConditionBeforeAwaitCodec;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientConditionProxy extends PartitionSpecificClientProxy implements ICondition {
 
     private final String conditionId;
+    private ClientLockReferenceIdGenerator referenceIdGenerator;
 
     public ClientConditionProxy(ClientLockProxy clientLockProxy, String name, ClientContext ctx) {
         super(LockService.SERVICE_NAME, clientLockProxy.getName());
@@ -76,13 +78,15 @@ public class ClientConditionProxy extends PartitionSpecificClientProxy implement
     }
 
     private void beforeAwait(long threadId) {
-        ClientMessage request = ConditionBeforeAwaitCodec.encodeRequest(conditionId, threadId, name);
+        ClientMessage request = ConditionBeforeAwaitCodec
+                .encodeRequest(conditionId, threadId, name, referenceIdGenerator.getNextReferenceId());
         invokeOnPartition(request);
     }
 
     private boolean doAwait(long time, TimeUnit unit, long threadId) throws InterruptedException {
         final long timeoutInMillis = unit.toMillis(time);
-        ClientMessage request = ConditionAwaitCodec.encodeRequest(conditionId, threadId, timeoutInMillis, name);
+        ClientMessage request = ConditionAwaitCodec
+                .encodeRequest(conditionId, threadId, timeoutInMillis, name, referenceIdGenerator.getNextReferenceId());
         ClientMessage response = invokeOnPartition(request);
         return ConditionAwaitCodec.decodeResponse(response).response;
     }
@@ -110,5 +114,9 @@ public class ClientConditionProxy extends PartitionSpecificClientProxy implement
         invokeOnPartition(request);
     }
 
-
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+        referenceIdGenerator = getClient().getLockReferenceIdGenerator();
+    }
 }

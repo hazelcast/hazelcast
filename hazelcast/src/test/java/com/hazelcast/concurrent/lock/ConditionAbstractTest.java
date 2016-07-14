@@ -240,6 +240,10 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
         allAwaited.await(1, TimeUnit.MINUTES);
 
         assertUnlockedEventually(lock, THIRTY_SECONDS);
+
+        // Make sure that all threads are waiting on condition await call
+        Thread.sleep(3000);
+
         signalAll(lock, condition);
         allFinished.await(1, TimeUnit.MINUTES);
         assertEquals(k * 2, count.get());
