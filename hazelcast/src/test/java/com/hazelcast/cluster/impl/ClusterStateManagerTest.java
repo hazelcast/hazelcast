@@ -67,9 +67,12 @@ public class ClusterStateManagerTest {
 
     @Before
     public void setup() {
+        NodeExtension nodeExtension = mock(NodeExtension.class);
+        when(nodeExtension.isStartCompleted()).thenReturn(true);
+
         when(node.getPartitionService()).thenReturn(partitionService);
         when(node.getClusterService()).thenReturn(clusterService);
-        when(node.getNodeExtension()).thenReturn(mock(NodeExtension.class));
+        when(node.getNodeExtension()).thenReturn(nodeExtension);
         when(node.getLogger(ClusterStateManager.class)).thenReturn(mock(ILogger.class));
 
         clusterStateManager = new ClusterStateManager(node, lock);
