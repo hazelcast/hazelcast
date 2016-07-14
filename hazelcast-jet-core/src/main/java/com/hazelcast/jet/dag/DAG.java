@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.dag;
 
-import com.hazelcast.jet.dag.tap.SinkTap;
-import com.hazelcast.jet.dag.tap.SourceTap;
+import com.hazelcast.jet.dag.sink.Sink;
+import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.impl.dag.TopologicalOrderIterator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -203,7 +203,7 @@ public class DAG implements DataSerializable {
     private void checkVerticesNames(Map<Vertex, Set<String>> inboundVertexMap, Map<Vertex, Set<String>> outboundVertexMap) {
         for (Map.Entry<Vertex, Set<String>> entry : inboundVertexMap.entrySet()) {
             Vertex vertex = entry.getKey();
-            for (SourceTap source : vertex.getSources()) {
+            for (Source source : vertex.getSources()) {
                 if (entry.getValue().contains(source.getName())) {
                     throw new IllegalStateException("Vertex: "
                             + vertex.getName()
@@ -216,7 +216,7 @@ public class DAG implements DataSerializable {
         // Check for valid OutputNames
         for (Map.Entry<Vertex, Set<String>> entry : outboundVertexMap.entrySet()) {
             Vertex vertex = entry.getKey();
-            for (SinkTap sink : vertex.getSinks()) {
+            for (Sink sink : vertex.getSinks()) {
                 if (entry.getValue().contains(sink.getName())) {
                     throw new IllegalStateException(
                             "Vertex: "
@@ -231,7 +231,7 @@ public class DAG implements DataSerializable {
 
     private void checkVertices(Map<String, AnnotatedVertex> vertexMap) {
         for (Vertex vertex : this.vertices.values()) {
-            for (SourceTap source : vertex.getSources()) {
+            for (Source source : vertex.getSources()) {
                 if (vertexMap.containsKey(source.getName())) {
                     throw new IllegalStateException("Vertex: "
                             + vertex.getName()
@@ -240,7 +240,7 @@ public class DAG implements DataSerializable {
                     );
                 }
             }
-            for (SinkTap sink : vertex.getSinks()) {
+            for (Sink sink : vertex.getSinks()) {
                 if (vertexMap.containsKey(sink.getName())) {
                     throw new IllegalStateException("Vertex: "
                             + vertex.getName()

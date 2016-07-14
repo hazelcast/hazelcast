@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.impl.dag.tap.source.HazelcastListPartitionReader;
+import com.hazelcast.jet.impl.dag.source.HazelcastListPartitionReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
 /**
  * A source which uses a Hazelcast {@code IList} as the input.
  */
-public class ListSource implements SourceTap {
+public class ListSource implements Source {
 
     private final String name;
 

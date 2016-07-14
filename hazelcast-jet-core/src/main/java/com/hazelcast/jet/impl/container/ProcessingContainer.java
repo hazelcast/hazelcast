@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.tap.SinkTap;
-import com.hazelcast.jet.dag.tap.SourceTap;
+import com.hazelcast.jet.dag.sink.Sink;
+import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
@@ -323,9 +323,9 @@ public class ProcessingContainer extends
 
     private void buildTaps() {
         if (getVertex().getSources().size() > 0) {
-            for (SourceTap sourceTap : getVertex().getSources()) {
+            for (Source source : getVertex().getSources()) {
                 List<DataReader> readers = Arrays.asList(
-                        sourceTap.getReaders(
+                        source.getReaders(
                                 getContainerContext(),
                                 getVertex(),
                                 this.tupleFactory
@@ -336,11 +336,11 @@ public class ProcessingContainer extends
             }
         }
 
-        List<SinkTap> sinks = getVertex().getSinks();
+        List<Sink> sinks = getVertex().getSinks();
 
-        for (SinkTap sinkTap : sinks) {
-            if (!sinkTap.isPartitioned()) {
-                List<DataWriter> writers = Arrays.asList(sinkTap.getWriters(
+        for (Sink sink : sinks) {
+            if (!sink.isPartitioned()) {
+                List<DataWriter> writers = Arrays.asList(sink.getWriters(
                         getNodeEngine(),
                         getContainerContext())
                 );
@@ -358,7 +358,7 @@ public class ProcessingContainer extends
                 }
             } else {
                 for (ContainerTask containerTask : getContainerTasks()) {
-                    List<DataWriter> writers = Arrays.asList(sinkTap.getWriters(
+                    List<DataWriter> writers = Arrays.asList(sink.getWriters(
                             getNodeEngine(),
                             getContainerContext())
                     );

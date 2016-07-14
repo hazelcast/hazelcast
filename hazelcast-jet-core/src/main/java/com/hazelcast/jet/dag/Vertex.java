@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.dag;
 
-import com.hazelcast.jet.dag.tap.SinkTap;
-import com.hazelcast.jet.dag.tap.SourceTap;
+import com.hazelcast.jet.dag.sink.Sink;
+import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
 
 import java.io.Serializable;
@@ -36,9 +36,9 @@ public class Vertex implements Serializable {
 
     private List<Edge> inputEdges = new ArrayList<Edge>();
     private List<Edge> outputEdges = new ArrayList<Edge>();
-    private List<SinkTap> sinks = new ArrayList<SinkTap>();
+    private List<Sink> sinks = new ArrayList<Sink>();
     private List<Vertex> inputVertices = new ArrayList<Vertex>();
-    private List<SourceTap> sources = new ArrayList<SourceTap>();
+    private List<Source> sources = new ArrayList<Source>();
     private List<Vertex> outputVertices = new ArrayList<Vertex>();
 
     /**
@@ -63,21 +63,21 @@ public class Vertex implements Serializable {
     }
 
     /**
-     * Add abstract source tap object to the vertex
+     * Add abstract source source object to the vertex
      *
-     * @param sourceTap corresponding source tap
+     * @param source corresponding source
      */
-    public void addSource(SourceTap sourceTap) {
-        this.sources.add(sourceTap);
+    public void addSource(Source source) {
+        this.sources.add(source);
     }
 
     /**
-     * Add abstract sink tap object to the vertex
+     * Add abstract sink object to the vertex
      *
-     * @param sinkTap corresponding sink tap
+     * @param sink corresponding sink
      */
-    public void addSink(SinkTap sinkTap) {
-        this.sinks.add(sinkTap);
+    public void addSink(Sink sink) {
+        this.sinks.add(sink);
     }
 
     /**
@@ -131,16 +131,16 @@ public class Vertex implements Serializable {
     }
 
     /**
-     * @return list of the input source taps
+     * @return list of the input sources
      */
-    public List<SourceTap> getSources() {
+    public List<Source> getSources() {
         return Collections.unmodifiableList(this.sources);
     }
 
     /**
-     * @return list of the output sink taps
+     * @return list of the output sinks
      */
-    public List<SinkTap> getSinks() {
+    public List<Sink> getSinks() {
         return Collections.unmodifiableList(this.sinks);
     }
 

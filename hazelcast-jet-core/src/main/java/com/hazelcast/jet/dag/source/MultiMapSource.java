@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.impl.dag.tap.source.HazelcastMultiMapPartitionReader;
+import com.hazelcast.jet.impl.dag.source.HazelcastMultiMapPartitionReader;
 
 /**
  * A source which uses a Hazelcast {@code MultiMap} as the input.

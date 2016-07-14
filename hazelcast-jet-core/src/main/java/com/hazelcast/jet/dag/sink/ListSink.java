@@ -14,58 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.sink;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.IList;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingWriter;
-import com.hazelcast.jet.impl.dag.tap.sink.HazelcastMapPartitionWriter;
-import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.impl.dag.sink.HazelcastListPartitionWriter;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.List;
-
 /**
- * A sink which uses a Hazelcast {@code IMap} as output.
+ * A sink which uses a Hazelcast {@code IList} as output.
  */
-public class MapSink implements SinkTap {
+public class ListSink implements Sink {
     private final String name;
 
     /**
-     * Constructs a sink with the given map name.
+     * Constructs a sink with the given list name.
      *
-     * @param name of the map to use as the output
+     * @param name of the list to use as the output
      */
-    public MapSink(String name) {
+    public ListSink(String name) {
         this.name = name;
     }
 
     /**
      * Constructs a sink with the given list instance.
      *
-     * @param map the map instance to be used as the output
+     * @param list the list instance to be used as the output
      */
-    public MapSink(IMap map) {
-        this(map.getName());
+    public ListSink(IList list) {
+        this(list.getName());
     }
 
     @Override
     public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerDescriptor containerDescriptor) {
-        List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
-        DataWriter[] writers = new DataWriter[localPartitions.size()];
-        for (int i = 0; i < localPartitions.size(); i++) {
-            int partitionId = localPartitions.get(i);
-            writers[i] = new ShufflingWriter(
-                    getPartitionWriter(containerDescriptor, partitionId),
-                    nodeEngine
-            );
-        }
-        return writers;
-    }
-
-    protected DataWriter getPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId) {
-        return new HazelcastMapPartitionWriter(containerDescriptor, partitionId, name);
+        return new DataWriter[]{
+                new ShufflingWriter(
+                        new HazelcastListPartitionWriter(containerDescriptor, name),
+                        nodeEngine
+                ),
+        };
     }
 
     @Override
@@ -75,6 +64,6 @@ public class MapSink implements SinkTap {
 
     @Override
     public String getName() {
-        return name;
+        return null;
     }
 }

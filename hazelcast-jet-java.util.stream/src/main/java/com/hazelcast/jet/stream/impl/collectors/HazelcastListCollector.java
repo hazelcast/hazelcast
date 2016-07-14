@@ -18,8 +18,8 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.dag.tap.ListSink;
-import com.hazelcast.jet.dag.tap.SinkTap;
+import com.hazelcast.jet.dag.sink.ListSink;
+import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.stream.Distributed;
@@ -50,7 +50,7 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ILi
     }
 
     @Override
-    protected SinkTap getSinkTap() {
+    protected Sink getSinkTap() {
         return new ListSink(listName);
     }
 

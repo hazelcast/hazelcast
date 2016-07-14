@@ -23,7 +23,7 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.tap.MapSource;
+import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.counters.LongCounter;

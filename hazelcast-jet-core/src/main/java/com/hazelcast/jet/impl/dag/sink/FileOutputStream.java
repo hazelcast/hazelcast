@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.dag.tap.sink;
+package com.hazelcast.jet.impl.dag.sink;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.JetUtil;

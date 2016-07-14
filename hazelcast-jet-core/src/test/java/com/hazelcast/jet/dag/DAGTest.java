@@ -18,8 +18,8 @@ package com.hazelcast.jet.dag;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.TestProcessors;
-import com.hazelcast.jet.dag.tap.FileSink;
-import com.hazelcast.jet.dag.tap.FileSource;
+import com.hazelcast.jet.dag.sink.FileSink;
+import com.hazelcast.jet.dag.source.FileSource;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
