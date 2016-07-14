@@ -14,36 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.data.DataReader;
+import com.hazelcast.jet.data.tuple.JetTupleFactory;
 
 import java.io.Serializable;
 
 /**
- * Abstract class which represents any sink tap
+ * Represents abstract source
  */
-public interface SinkTap extends Serializable {
-    /**
-     * Return writers for the corresponding tap
-     *
-     * @param nodeEngine          Hazelcast nodeEngine
-     * @param containerDescriptor descriptor of the container
-     * @return list of the data writers
-     */
-    DataWriter[] getWriters(NodeEngine nodeEngine,
-                            ContainerDescriptor containerDescriptor);
+public interface Source extends Serializable {
 
     /**
-     * Returns <tt>true</tt>if sink is partitioned.
-     * @return <tt>true</tt>if sink is partitioned
-     */
-    boolean isPartitioned();
-
-    /**
-     * @return name of the tap
+     * @return name of the source
      */
     String getName();
+
+    /**
+     * Array of the input readers
+     *
+     * @param containerDescriptor descriptor of the corresponding container
+     * @param vertex              corresponding vertex
+     * @param tupleFactory        factory for the tuple creation
+     * @return list of the input readers
+     */
+    DataReader[] getReaders(ContainerDescriptor containerDescriptor,
+                            Vertex vertex,
+                            JetTupleFactory tupleFactory);
+
 }

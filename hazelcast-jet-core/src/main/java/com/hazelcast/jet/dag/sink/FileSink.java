@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.sink;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.impl.dag.tap.sink.DataFileWriter;
-import com.hazelcast.jet.impl.dag.tap.sink.FileOutputStream;
+import com.hazelcast.jet.impl.dag.sink.DataFileWriter;
+import com.hazelcast.jet.impl.dag.sink.FileOutputStream;
 import com.hazelcast.spi.NodeEngine;
 
 /**
  *  A sink which uses a file as output.
  */
-public class FileSink implements SinkTap {
+public class FileSink implements Sink {
 
     private final String filename;
     private final FileOutputStream fileOutputStream;

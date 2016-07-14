@@ -18,13 +18,11 @@ package com.hazelcast.jet.dag;
 
 import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.tap.SinkTap;
-import com.hazelcast.jet.dag.tap.SourceTap;
+import com.hazelcast.jet.dag.sink.Sink;
+import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.processor.ContainerProcessor;
-import com.hazelcast.jet.processor.ProcessorDescriptor;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -109,7 +107,7 @@ public class VertexTest {
         Vertex vertex = createVertex("vertex", TestProcessors.Noop.class);
 
         final String sourceTapName = "sourceTapName";
-        SourceTap sourceTap = new SourceTap() {
+        Source source = new Source() {
             @Override
             public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, JetTupleFactory tupleFactory) {
                 return new DataReader[0];
@@ -120,10 +118,10 @@ public class VertexTest {
                 return sourceTapName;
             }
         };
-        vertex.addSource(sourceTap);
+        vertex.addSource(source);
 
         assertEquals(1, vertex.getSources().size());
-        assertEquals(sourceTap, vertex.getSources().get(0));
+        assertEquals(source, vertex.getSources().get(0));
     }
 
     @Test
@@ -131,7 +129,7 @@ public class VertexTest {
         Vertex vertex = createVertex("vertex", TestProcessors.Noop.class);
 
         final String sinkTapName = "sinkTapWithWriterStrategyName";
-        SinkTap sinkTap = new SinkTap() {
+        Sink sink = new Sink() {
             @Override
             public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerDescriptor containerDescriptor) {
                 return new DataWriter[0];
@@ -147,9 +145,9 @@ public class VertexTest {
                 return sinkTapName;
             }
         };
-        vertex.addSink(sinkTap);
+        vertex.addSink(sink);
 
         assertEquals(1, vertex.getSinks().size());
-        assertEquals(sinkTap, vertex.getSinks().get(0));
+        assertEquals(sink, vertex.getSinks().get(0));
     }
 }

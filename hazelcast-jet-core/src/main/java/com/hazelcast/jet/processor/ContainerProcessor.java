@@ -28,7 +28,7 @@ import java.io.Serializable;
  *
  * There are two phases of execution:
  * <pre>
- *      1) Read phase. When Jet reads data from all input producers (previous vertices or taps) and
+ *      1) Read phase. When Jet reads data from all input producers (previous vertices or sources) and
  *      can write or just collect somewhere input data
  *
  *      2) Finalization phase. When JET uses results of Read-phase (if it presents) and can write or not

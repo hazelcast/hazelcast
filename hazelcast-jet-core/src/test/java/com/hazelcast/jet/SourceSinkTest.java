@@ -19,41 +19,40 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.tap.FileSink;
-import com.hazelcast.jet.dag.tap.FileSource;
-import com.hazelcast.jet.dag.tap.ListSink;
-import com.hazelcast.jet.dag.tap.ListSource;
-import com.hazelcast.jet.dag.tap.MapSink;
-import com.hazelcast.jet.dag.tap.MapSource;
+import com.hazelcast.jet.dag.sink.FileSink;
+import com.hazelcast.jet.dag.sink.ListSink;
+import com.hazelcast.jet.dag.sink.MapSink;
+import com.hazelcast.jet.dag.source.FileSource;
+import com.hazelcast.jet.dag.source.ListSource;
+import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.strategy.SingleNodeShufflingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class TapTest extends JetTestSupport {
+public class SourceSinkTest extends JetTestSupport {
 
     private static final int COUNT = 10_000;
     private static final int NODE_COUNT = 3;
@@ -164,7 +163,7 @@ public class TapTest extends JetTestSupport {
         execute(job);
 
         List<String> files = Files.readAllLines(output.toPath());
-        assertEquals(COUNT*NODE_COUNT, files.size());
+        assertEquals(COUNT * NODE_COUNT, files.size());
     }
 
     private File createInputFile() throws IOException {

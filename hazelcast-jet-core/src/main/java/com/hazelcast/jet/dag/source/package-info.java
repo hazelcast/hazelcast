@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl;
-
-import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.stream.Distributed;
-
-public interface SourcePipeline<E_OUT> extends Pipeline<E_OUT> {
-    /**
-     * @return A function which will convert the output of this source from a Tuple to E_OUT
-     */
-    Distributed.Function<Tuple, E_OUT> fromTupleMapper();
-
-    Source getSourceTap();
-}
+/**
+ * Provides API to work with sources
+ */
+package com.hazelcast.jet.dag.source;

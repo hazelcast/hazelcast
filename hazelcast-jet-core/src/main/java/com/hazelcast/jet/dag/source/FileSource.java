@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.impl.dag.tap.source.DataFileReader;
+import com.hazelcast.jet.impl.dag.source.DataFileReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.io.File;
@@ -28,7 +28,7 @@ import java.io.File;
 /**
  * A source which uses a file as the input.
  */
-public class FileSource implements SourceTap {
+public class FileSource implements Source {
 
     private final String name;
 

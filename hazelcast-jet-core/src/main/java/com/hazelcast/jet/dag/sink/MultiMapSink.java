@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.sink;
 
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.impl.dag.tap.sink.HazelcastMultiMapPartitionWriter;
+import com.hazelcast.jet.impl.dag.sink.HazelcastMultiMapPartitionWriter;
 
 /**
  * A sink which uses a Hazelcast {@code MultiMap} as output.

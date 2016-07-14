@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.impl.dag.tap.source.HazelcastMapPartitionReader;
+import com.hazelcast.jet.impl.dag.source.HazelcastMapPartitionReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * A source which uses a Hazelcast {@code IMap} as the input.
  */
-public class MapSource implements SourceTap {
+public class MapSource implements Source {
 
     private final String name;
 

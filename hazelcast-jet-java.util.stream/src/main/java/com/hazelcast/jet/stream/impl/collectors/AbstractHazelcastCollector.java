@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.collectors;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.tap.SinkTap;
+import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -43,5 +43,5 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
 
     protected abstract <U extends T> Distributed.Function<U, Tuple> toTupleMapper();
 
-    protected abstract SinkTap getSinkTap();
+    protected abstract Sink getSinkTap();
 }

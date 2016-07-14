@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides API to work with taps
+ * Provides API to work with sinks
  */
-package com.hazelcast.jet.dag.tap;
+package com.hazelcast.jet.dag.sink;

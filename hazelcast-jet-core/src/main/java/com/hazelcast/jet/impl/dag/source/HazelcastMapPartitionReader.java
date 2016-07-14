@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.dag.tap.source;
+package com.hazelcast.jet.impl.dag.source;
 
 
 import com.hazelcast.config.InMemoryFormat;
