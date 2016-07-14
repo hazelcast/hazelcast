@@ -53,7 +53,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     public void whenShortTTLAndBigBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(20 * 1000 * 1000)
-                .setTimeToLiveSeconds(2);
+                .setTimeToLiveSeconds(3);
         test(ringbufferConfig);
     }
 
