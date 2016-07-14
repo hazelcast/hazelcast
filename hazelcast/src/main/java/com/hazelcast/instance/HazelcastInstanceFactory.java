@@ -298,7 +298,7 @@ public final class HazelcastInstanceFactory {
 
         INSTANCE_MAP.clear();
         OutOfMemoryErrorDispatcher.clearServers();
-        ManagementService.shutdownAll();
+        ManagementService.shutdownAll(instances);
         Collections.sort(instances, new Comparator<HazelcastInstanceProxy>() {
             public int compare(HazelcastInstanceProxy o1, HazelcastInstanceProxy o2) {
                 return o1.getName().compareTo(o2.getName());
@@ -337,7 +337,7 @@ public final class HazelcastInstanceFactory {
             future.get().original = null;
         }
         if (INSTANCE_MAP.size() == 0) {
-            ManagementService.shutdownAll();
+            ManagementService.shutdown(instance.getName());
         }
     }
 

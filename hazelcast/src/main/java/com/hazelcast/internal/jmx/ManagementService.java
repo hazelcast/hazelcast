@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.GroupProperty;
 
@@ -28,6 +29,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -101,10 +103,17 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
-    public static void shutdownAll() {
+    public static void shutdownAll(List<HazelcastInstanceProxy> instances) {
+        for (HazelcastInstanceProxy instance : instances) {
+            shutdown(instance.getName());
+        }
+    }
+
+    public static void shutdown(String instanceName) {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
-            Set<ObjectName> entries = mbs.queryNames(new ObjectName(DOMAIN + ":*"), null);
+            Set<ObjectName> entries = mbs.queryNames(new ObjectName(
+                    DOMAIN + ":instance=" + quote(instanceName) + ",*"), null);
             for (ObjectName name : entries) {
                 if (mbs.isRegistered(name)) {
                     mbs.unregisterMBean(name);
