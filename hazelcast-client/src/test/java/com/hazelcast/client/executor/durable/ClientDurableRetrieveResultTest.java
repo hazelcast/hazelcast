@@ -67,6 +67,20 @@ public class ClientDurableRetrieveResultTest {
     }
 
     @Test
+    public void testDisposeResult() throws ExecutionException, InterruptedException {
+        String name = randomString();
+        String key = generateKeyOwnedBy(instance1);
+
+        DurableExecutorService executorService = client.getDurableExecutorService(name);
+        BasicTestCallable task = new BasicTestCallable();
+        DurableExecutorServiceFuture<String> future = executorService.submitToKeyOwner(task, key);
+        future.get();
+        executorService.disposeResult(future.getTaskId());
+        Future<Object> f = executorService.retrieveResult(future.getTaskId());
+        assertNull(f.get());
+    }
+
+    @Test
     public void testRetrieveAndDispose_WhenClientDown() throws ExecutionException, InterruptedException {
         String name = randomString();
 

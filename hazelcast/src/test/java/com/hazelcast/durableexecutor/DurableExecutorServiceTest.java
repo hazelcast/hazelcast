@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
@@ -38,6 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -65,6 +67,63 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     private static final int NODE_COUNT = 3;
     private static final int TASK_COUNT = 1000;
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokeAll() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+        DurableExecutorService service = instance.getDurableExecutorService(randomString());
+        List<BasicTestCallable> callables = Collections.emptyList();
+        service.invokeAll(callables);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokeAll_WithTimeout() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+        DurableExecutorService service = instance.getDurableExecutorService(randomString());
+        List<BasicTestCallable> callables = Collections.emptyList();
+        service.invokeAll(callables, 1, TimeUnit.SECONDS);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokeAny() throws InterruptedException, ExecutionException {
+        HazelcastInstance instance = createHazelcastInstance();
+        DurableExecutorService service = instance.getDurableExecutorService(randomString());
+        List<BasicTestCallable> callables = Collections.emptyList();
+        service.invokeAny(callables);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokeAny_WithTimeout() throws InterruptedException, ExecutionException, TimeoutException {
+        HazelcastInstance instance = createHazelcastInstance();
+        DurableExecutorService service = instance.getDurableExecutorService(randomString());
+        List<BasicTestCallable> callables = Collections.emptyList();
+        service.invokeAny(callables, 1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testAwaitTermination() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+        DurableExecutorService service = instance.getDurableExecutorService(randomString());
+        assertFalse(service.awaitTermination(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testFullRingBuffer() throws InterruptedException {
+        String name = randomString();
+        String key = randomString();
+        Config config = new Config();
+        config.getDurableExecutorConfig(name).setCapacity(1);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        DurableExecutorService service = instance.getDurableExecutorService(name);
+        service.submitToKeyOwner(new SleepingTask(100), key);
+        DurableExecutorServiceFuture<String> future = service.submitToKeyOwner(new BasicTestCallable(), key);
+        try {
+            future.get();
+            fail();
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof RejectedExecutionException);
+        }
+    }
 
     @Test
     public void test_registerCallback_beforeFutureIsCompletedOnOtherNode() throws ExecutionException, InterruptedException {
@@ -162,11 +221,20 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         assertTrue("The task should have been initialized by the ManagedContext", initialized.get());
     }
 
-    static class RunnableWithManagedContext implements Runnable, Serializable {
+    @Test
+    public void testExecuteOnKeyOwner() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        String key = generateKeyOwnedBy(instance2);
+        String instanceName = instance2.getName();
+        ICountDownLatch latch = instance2.getCountDownLatch(instanceName);
+        latch.trySetCount(1);
 
-        @Override
-        public void run() {
-        }
+        DurableExecutorService durableExecutorService = instance1.getDurableExecutorService(randomString());
+        durableExecutorService.executeOnKeyOwner(new InstanceAsserterRunnable(instanceName), key);
+
+        latch.await(30, TimeUnit.SECONDS);
     }
 
     @Test
@@ -179,22 +247,6 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
         // if 'setHazelcastInstance' not called we expect a RuntimeException
         executor.submit(task).get();
-    }
-
-    static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware, Serializable {
-        private transient boolean initializeCalled = false;
-
-        @Override
-        public void run() {
-            if (!initializeCalled) {
-                throw new RuntimeException("The setHazelcastInstance should have been called");
-            }
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            initializeCalled = true;
-        }
     }
 
     @Test
@@ -243,8 +295,6 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
-    /* ############ submit callable ############ */
-
     /**
      * Submit a null task must raise a NullPointerException
      */
@@ -276,6 +326,8 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             assertEquals((long) (i + 1), future.get());
         }
     }
+
+    /* ############ submit callable ############ */
 
     @Test
     public void testSubmitToKeyOwnerCallable() throws Exception {
@@ -316,8 +368,6 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         assertOpenEventually(callback.getResponseLatch());
         assertEquals(NODE_COUNT, callback.getSuccessResponseCount());
     }
-
-    /* ############ future ############ */
 
     /**
      * Test the method isDone()
@@ -362,6 +412,8 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         assertResult(future, BasicTestCallable.RESULT);
     }
 
+    /* ############ future ############ */
+
     private void assertResult(Future future, Object expected) throws Exception {
         assertEquals(future.get(), expected);
         assertTrue(future.isDone());
@@ -392,7 +444,10 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
      */
     @Test
     public void testShutdownBehaviour() throws Exception {
-        DurableExecutorService executor = createSingleNodeDurableExecutorService("testShutdownBehaviour");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        DurableExecutorService executor = instance1.getDurableExecutorService("testShutdownBehaviour");
         // Fresh instance, is not shutting down
         assertFalse(executor.isShutdown());
         assertFalse(executor.isTerminated());
@@ -495,22 +550,6 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         //todo ali
     }
 
-    static class LatchRunnable implements Runnable, Serializable {
-
-        static CountDownLatch latch;
-        final int executionTime = 200;
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(executionTime);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            latch.countDown();
-        }
-    }
-
     @Test
     public void testLongRunningCallable() throws ExecutionException, InterruptedException, TimeoutException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -528,6 +567,71 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
         Boolean result = f.get(1, TimeUnit.MINUTES);
         assertTrue(result);
+    }
+
+    private static class InstanceAsserterRunnable implements Runnable, Serializable, HazelcastInstanceAware {
+
+        transient HazelcastInstance instance;
+
+        String instanceName;
+
+        public InstanceAsserterRunnable() {
+        }
+
+        public InstanceAsserterRunnable(String instanceName) {
+            this.instanceName = instanceName;
+        }
+
+        @Override
+        public void run() {
+            if (instanceName.equals(instance.getName())) {
+                instance.getCountDownLatch(instanceName).countDown();
+            }
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            instance = hazelcastInstance;
+        }
+    }
+
+    private static class RunnableWithManagedContext implements Runnable, Serializable {
+
+        @Override
+        public void run() {
+        }
+    }
+
+    static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware, Serializable {
+        private transient boolean initializeCalled = false;
+
+        @Override
+        public void run() {
+            if (!initializeCalled) {
+                throw new RuntimeException("The setHazelcastInstance should have been called");
+            }
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            initializeCalled = true;
+        }
+    }
+
+    static class LatchRunnable implements Runnable, Serializable {
+
+        static CountDownLatch latch;
+        final int executionTime = 200;
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(executionTime);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            latch.countDown();
+        }
     }
 
     static class ICountDownLatchAwaitCallable implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
