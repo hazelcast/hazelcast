@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
@@ -63,7 +64,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
             throw new NullPointerException("Target can not be null");
         }
         if (!isMember(target)) {
-            throw new IOException("Target :  " + target + " is not member. ");
+            throw new TargetNotMemberException("Target :  " + target + " is not member. ");
         }
         final Connection connection = getConnection(target);
         invokeOnConnection(invocation, (ClientConnection) connection);
