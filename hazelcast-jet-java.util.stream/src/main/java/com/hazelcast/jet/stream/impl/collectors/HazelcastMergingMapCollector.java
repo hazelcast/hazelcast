@@ -30,7 +30,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
-import static com.hazelcast.jet.stream.impl.StreamUtil.executeApplication;
+import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -81,7 +81,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
                 .build();
 
         combiner.addSink(new MapSink(mapName));
-        executeApplication(context, dag);
+        executeJob(context, dag);
         return target;
     }
 }

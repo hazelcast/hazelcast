@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 
 public class GetAccumulatorsOperation extends JetOperation {
 
@@ -30,7 +30,7 @@ public class GetAccumulatorsOperation extends JetOperation {
 
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = getApplicationContext();
-        this.result = applicationContext.getAccumulators();
+        JobContext jobContext = getJobContext();
+        this.result = jobContext.getAccumulators();
     }
 }

@@ -52,18 +52,18 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         super(producers, processor, containerContext, processorContext, senderConsumerProcessor, taskID);
         this.receiverConsumerProcessor = receiverConsumerProcessor;
         List<ObjectProducer> receivers = new ArrayList<ObjectProducer>();
-        ApplicationMaster applicationMaster = containerContext.getApplicationContext().getApplicationMaster();
+        ApplicationMaster applicationMaster = containerContext.getJobContext().getApplicationMaster();
         ProcessingContainer processingContainer = applicationMaster.getContainerByVertex(containerContext.getVertex());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
 
-        for (Address address : applicationMaster.getApplicationContext().getSocketReaders().keySet()) {
+        for (Address address : applicationMaster.getJobContext().getSocketReaders().keySet()) {
             //Registration to the AppMaster
             ShufflingReceiver receiver = new ShufflingReceiver(containerContext, containerTask, address);
             applicationMaster.registerShufflingReceiver(taskID, containerContext, address, receiver);
             receivers.add(receiver);
         }
 
-        int chunkSize = containerContext.getApplicationContext().getApplicationConfig().getChunkSize();
+        int chunkSize = containerContext.getJobContext().getJobConfig().getChunkSize();
         this.receivedTupleStream = new DefaultObjectIOStream<Object>(new Object[chunkSize]);
         this.receivers = receivers.toArray(new ObjectProducer[receivers.size()]);
     }

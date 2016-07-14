@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.statemachine.container;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
@@ -66,13 +66,13 @@ public class ProcessingContainerStateMachine extends
     public ProcessingContainerStateMachine(String name,
                                            StateMachineRequestProcessor<ProcessingContainerEvent> processor,
                                            NodeEngine nodeEngine,
-                                           ApplicationContext applicationContext) {
-        super(name, STATE_TRANSITION_MATRIX, processor, nodeEngine, applicationContext);
+                                           JobContext jobContext) {
+        super(name, STATE_TRANSITION_MATRIX, processor, nodeEngine, jobContext);
     }
 
     @Override
     protected StateMachineExecutor getExecutor() {
-        return getApplicationContext().getExecutorContext().getDataContainerStateMachineExecutor();
+        return getJobContext().getExecutorContext().getDataContainerStateMachineExecutor();
     }
 
     @Override

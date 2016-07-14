@@ -30,7 +30,7 @@ import com.hazelcast.jet.stream.impl.processor.AnyMatchProcessor;
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
-import static com.hazelcast.jet.stream.impl.StreamUtil.executeApplication;
+import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getTupleMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
@@ -76,7 +76,7 @@ public class Matcher {
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
         IList<Boolean> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
         vertex.addSink(new ListSink(list));
-        executeApplication(context, dag);
+        executeJob(context, dag);
         return list;
     }
 

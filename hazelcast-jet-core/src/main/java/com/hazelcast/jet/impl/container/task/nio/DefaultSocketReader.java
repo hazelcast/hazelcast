@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
@@ -46,7 +46,7 @@ public class DefaultSocketReader
 
     private final int chunkSize;
     private final Address jetAddress;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
     private final DefaultObjectIOStream<JetPacket> buffer;
     private final List<RingBufferActor> consumers = new ArrayList<RingBufferActor>();
     private final Map<Address, SocketWriter> writers = new HashMap<Address, SocketWriter>();
@@ -55,16 +55,16 @@ public class DefaultSocketReader
     private volatile boolean socketAssigned;
     private final byte[] applicationNameBytes;
 
-    public DefaultSocketReader(ApplicationContext applicationContext,
+    public DefaultSocketReader(JobContext jobContext,
                                Address jetAddress) {
-        super(applicationContext.getNodeEngine(), jetAddress);
+        super(jobContext.getNodeEngine(), jetAddress);
 
         this.jetAddress = jetAddress;
-        this.applicationContext = applicationContext;
+        this.jobContext = jobContext;
         InternalSerializationService serializationService =
-                (InternalSerializationService) applicationContext.getNodeEngine().getSerializationService();
-        this.applicationNameBytes = serializationService.toBytes(this.applicationContext.getName());
-        this.chunkSize = applicationContext.getApplicationConfig().getChunkSize();
+                (InternalSerializationService) jobContext.getNodeEngine().getSerializationService();
+        this.applicationNameBytes = serializationService.toBytes(this.jobContext.getName());
+        this.chunkSize = jobContext.getJobConfig().getChunkSize();
         this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
@@ -72,8 +72,8 @@ public class DefaultSocketReader
         super(nodeEngine, null);
         this.jetAddress = null;
         this.socketAssigned = true;
-        this.applicationContext = null;
-        this.chunkSize = ApplicationConfig.DEFAULT_CHUNK_SIZE;
+        this.jobContext = null;
+        this.chunkSize = JobConfig.DEFAULT_CHUNK_SIZE;
         this.applicationNameBytes = null;
         this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
@@ -144,7 +144,7 @@ public class DefaultSocketReader
 
     @Override
     protected void notifyAMTaskFinished() {
-        this.applicationContext.getApplicationMaster().notifyNetworkTaskFinished();
+        this.jobContext.getApplicationMaster().notifyNetworkTaskFinished();
     }
 
     private boolean readSocket(BooleanHolder payload) {
@@ -310,7 +310,7 @@ public class DefaultSocketReader
 
             case JetPacket.HEADER_JET_EXECUTION_ERROR:
                 packet.setRemoteMember(this.jetAddress);
-                this.applicationContext.getApplicationMaster().notifyContainers(packet);
+                this.jobContext.getApplicationMaster().notifyContainers(packet);
                 return 0;
 
             case JetPacket.HEADER_JET_DATA_NO_APP_FAILURE:
@@ -339,7 +339,7 @@ public class DefaultSocketReader
     }
 
     private int notifyShufflingReceiver(JetPacket packet) throws Exception {
-        ApplicationMaster applicationMaster = this.applicationContext.getApplicationMaster();
+        ApplicationMaster applicationMaster = this.jobContext.getApplicationMaster();
         ProcessingContainer processingContainer = applicationMaster.getContainersCache().get(packet.getContainerId());
 
         if (processingContainer == null) {

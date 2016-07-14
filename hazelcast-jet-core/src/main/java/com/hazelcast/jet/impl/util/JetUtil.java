@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.ByteArrayOutputStream;
@@ -190,7 +190,7 @@ public final class JetUtil {
         return (object == null || object.length == 0);
     }
 
-    public static void checkApplicationName(String applicationName) {
+    public static void checkJobName(String applicationName) {
         checkNotNull(
                 applicationName,
                 "Retrieving an application instance with a null name is not allowed!"
@@ -209,30 +209,30 @@ public final class JetUtil {
         return new JetConfig();
     }
 
-    public static ApplicationConfig resolveApplicationConfig(NodeEngine nodeEngine, String applicationName) {
-        ApplicationContext applicationContext = getApplicationContext(nodeEngine, applicationName);
-        if (applicationContext == null) {
+    public static JobConfig resolveApplicationConfig(NodeEngine nodeEngine, String applicationName) {
+        JobContext jobContext = getApplicationContext(nodeEngine, applicationName);
+        if (jobContext == null) {
             if (nodeEngine.getConfig() instanceof JetConfig) {
                 JetConfig config = (JetConfig) nodeEngine.getConfig();
                 return config.getApplicationConfig(applicationName);
             }
-            return new ApplicationConfig();
+            return new JobConfig();
         } else {
-            return applicationContext.getApplicationConfig();
+            return jobContext.getJobConfig();
         }
     }
 
-    public static ApplicationConfig resolveApplicationConfig(final HazelcastClientInstanceImpl client,
-                                                             final String name) {
+    public static JobConfig resolveApplicationConfig(final HazelcastClientInstanceImpl client,
+                                                     final String name) {
         if (client.getClientConfig() instanceof JetClientConfig) {
             JetClientConfig clientConfig = (JetClientConfig) client.getClientConfig();
             return clientConfig.getApplicationConfig(name);
         }
-        return new ApplicationConfig();
+        return new JobConfig();
     }
 
-    public static ApplicationContext getApplicationContext(NodeEngine nodeEngine, String applicationName) {
-        ApplicationService service = nodeEngine.getService(ApplicationService.SERVICE_NAME);
+    public static JobContext getApplicationContext(NodeEngine nodeEngine, String applicationName) {
+        JobService service = nodeEngine.getService(JobService.SERVICE_NAME);
         return service.getContext(applicationName);
     }
 

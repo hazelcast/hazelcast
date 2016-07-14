@@ -28,7 +28,7 @@ public class ContainerInterruptedProcessor implements ContainerPayloadProcessor<
 
     public ContainerInterruptedProcessor(ProcessingContainer container) {
         this.container = container;
-        this.applicationMaster = container.getApplicationContext().getApplicationMaster();
+        this.applicationMaster = container.getJobContext().getApplicationMaster();
         this.logger = applicationMaster.getNodeEngine().getLogger(getClass());
     }
 

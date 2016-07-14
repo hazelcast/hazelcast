@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.statemachine;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.spi.NodeEngine;
 
 /**
@@ -34,12 +34,12 @@ public interface StateMachineFactory
      * @param name               name of the corresponding state-machine
      * @param processor          corresponding processor for transitions
      * @param nodeEngine         Hazelcast NodeEngine
-     * @param applicationContext Jet applicationContext
+     * @param jobContext Jet applicationContext
      * @return corresponding state-machine
      */
     SM newStateMachine(String name,
                        StateMachineRequestProcessor<Input> processor,
                        NodeEngine nodeEngine,
-                       ApplicationContext applicationContext
+                       JobContext jobContext
     );
 }

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetLocalizeCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.application.localization.Chunk;
+import com.hazelcast.jet.impl.job.localization.Chunk;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.operation.LocalizationChunkOperation;
 import com.hazelcast.nio.Connection;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
@@ -95,13 +95,13 @@ public class ApplicationMasterStateMachine extends
     public ApplicationMasterStateMachine(String name,
                                          StateMachineRequestProcessor<ApplicationMasterEvent> processor,
                                          NodeEngine nodeEngine,
-                                         ApplicationContext applicationContext) {
-        super(name, STATE_TRANSITION_MATRIX, processor, nodeEngine, applicationContext);
+                                         JobContext jobContext) {
+        super(name, STATE_TRANSITION_MATRIX, processor, nodeEngine, jobContext);
     }
 
     @Override
     protected StateMachineExecutor getExecutor() {
-        return getApplicationContext().getExecutorContext().getApplicationMasterStateMachineExecutor();
+        return getJobContext().getExecutorContext().getApplicationMasterStateMachineExecutor();
     }
 
     @Override

@@ -26,8 +26,8 @@ import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.ApplicationException;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.JobException;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
@@ -36,12 +36,12 @@ import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachine;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.DestroyApplicationProcessor;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecuteApplicationProcessor;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.DestroyJobProcessor;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecuteJobProcessor;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionCompletedProcessor;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionErrorProcessor;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionPlanBuilderProcessor;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.InterruptApplicationProcessor;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.InterruptJobProcessor;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionErrorRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionInterruptedRequest;
@@ -93,13 +93,13 @@ public class ApplicationMaster
     private final byte[] applicationNameBytes;
 
     public ApplicationMaster(
-            ApplicationContext applicationContext,
+            JobContext jobContext,
             DiscoveryService discoveryService
     ) {
-        super(STATE_MACHINE_FACTORY, applicationContext.getNodeEngine(), applicationContext, null);
+        super(STATE_MACHINE_FACTORY, jobContext.getNodeEngine(), jobContext, null);
         this.discoveryService = discoveryService;
         applicationNameBytes = getNodeEngine().getSerializationService()
-                .toData(applicationContext.getName()).toByteArray();
+                .toData(jobContext.getName()).toByteArray();
         logger = getNodeEngine().getLogger(ApplicationMaster.class);
     }
 
@@ -119,7 +119,7 @@ public class ApplicationMaster
     public void handleContainerCompleted() {
         if (containerCounter.incrementAndGet() >= containers.size()) {
             if (getNetworkTaskCount() > 0) {
-                List<Task> networkTasks = getApplicationContext().getExecutorContext().getNetworkTasks();
+                List<Task> networkTasks = getJobContext().getExecutorContext().getNetworkTasks();
                 networkTasks.forEach(Task::finalizeTask);
             } else {
                 notifyCompletionFinished();
@@ -146,7 +146,7 @@ public class ApplicationMaster
             } else {
                 try {
                     handleContainerRequest(new ExecutionCompletedRequest()).get(
-                            getApplicationContext().getApplicationConfig().getSecondsToAwait(),
+                            getJobContext().getJobConfig().getSecondsToAwait(),
                             TimeUnit.SECONDS
                     );
                 } finally {
@@ -159,7 +159,7 @@ public class ApplicationMaster
     }
 
     private int getNetworkTaskCount() {
-        return getApplicationContext().getExecutorContext().getNetworkTasks().size();
+        return getJobContext().getExecutorContext().getNetworkTasks().size();
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
@@ -172,7 +172,7 @@ public class ApplicationMaster
         try {
             try {
                 handleContainerRequest(new ExecutionInterruptedRequest()).get(
-                        getApplicationContext().getApplicationConfig().getSecondsToAwait(),
+                        getJobContext().getJobConfig().getSecondsToAwait(),
                         TimeUnit.SECONDS
                 );
             } finally {
@@ -270,7 +270,7 @@ public class ApplicationMaster
         );
 
         jetPacket.setHeader(JetPacket.HEADER_JET_EXECUTION_ERROR);
-        Address jetAddress = getApplicationContext().getHzToJetAddressMapping().get(member.getAddress());
+        Address jetAddress = getJobContext().getHzToJetAddressMapping().get(member.getAddress());
         discoveryService.getSocketWriters().get(jetAddress).sendServicePacket(jetPacket);
     }
 
@@ -294,13 +294,13 @@ public class ApplicationMaster
             Address initiator = packet.getRemoteMember();
 
             error = packet.toByteArray() == null
-                    ? new ApplicationException(initiator) : toException(initiator, (JetPacket) reason);
+                    ? new JobException(initiator) : toException(initiator, (JetPacket) reason);
         } else if (reason instanceof Address) {
-            error = new ApplicationException((Address) reason);
+            error = new JobException((Address) reason);
         } else if (reason instanceof Throwable) {
             error = (Throwable) reason;
         } else {
-            error = new ApplicationException(reason, getNodeEngine().getLocalMember().getAddress());
+            error = new JobException(reason, getNodeEngine().getLocalMember().getAddress());
         }
 
         return error;
@@ -310,11 +310,11 @@ public class ApplicationMaster
         Object object = getNodeEngine().getSerializationService().toObject(new HeapData(packet.toByteArray()));
 
         if (object instanceof Throwable) {
-            return new CombinedJetException(Arrays.asList((Throwable) object, new ApplicationException(initiator)));
+            return new CombinedJetException(Arrays.asList((Throwable) object, new JobException(initiator)));
         } else if (object instanceof JetPacket) {
-            return new ApplicationException(initiator, (JetPacket) object);
+            return new JobException(initiator, (JetPacket) object);
         } else {
-            return new ApplicationException(object, initiator);
+            return new JobException(object, initiator);
         }
     }
 
@@ -414,7 +414,7 @@ public class ApplicationMaster
 
     @Override
     protected void wakeUpExecutor() {
-        getApplicationContext().getExecutorContext().getApplicationMasterStateMachineExecutor().wakeUp();
+        getJobContext().getExecutorContext().getApplicationMasterStateMachineExecutor().wakeUp();
     }
 
     private static ContainerPayloadProcessor getProcessor(ApplicationMasterEvent event,
@@ -423,15 +423,15 @@ public class ApplicationMaster
             case SUBMIT_DAG:
                 return new ExecutionPlanBuilderProcessor(applicationMaster);
             case EXECUTE:
-                return new ExecuteApplicationProcessor(applicationMaster);
+                return new ExecuteJobProcessor(applicationMaster);
             case INTERRUPT_EXECUTION:
-                return new InterruptApplicationProcessor(applicationMaster);
+                return new InterruptJobProcessor(applicationMaster);
             case EXECUTION_ERROR:
                 return new ExecutionErrorProcessor(applicationMaster);
             case EXECUTION_COMPLETED:
                 return new ExecutionCompletedProcessor();
             case FINALIZE:
-                return new DestroyApplicationProcessor(applicationMaster);
+                return new DestroyJobProcessor(applicationMaster);
             default:
                 return null;
         }

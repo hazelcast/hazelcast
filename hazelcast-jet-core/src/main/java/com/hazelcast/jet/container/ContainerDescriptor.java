@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.container;
 
-import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.job.JobListener;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
@@ -65,7 +65,7 @@ public interface ContainerDescriptor {
     /**
      * @return application of JET-config
      */
-    ApplicationConfig getConfig();
+    JobConfig getConfig();
 
     /**
      * Performs registration of container listener
@@ -79,9 +79,9 @@ public interface ContainerDescriptor {
     /**
      * Performs registration of application listener
      *
-     * @param applicationListener corresponding application listener
+     * @param jobListener corresponding application listener
      */
-    void registerApplicationListener(ApplicationListener applicationListener);
+    void registerApplicationListener(JobListener jobListener);
 
     /**
      * Set-up application variable

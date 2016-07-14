@@ -1,1 +1,1 @@
-com.hazelcast.jet.impl.application.ApplicationRemoteServiceDescriptorProvider
+com.hazelcast.jet.impl.job.JobRemoteServiceDescriptorProvider

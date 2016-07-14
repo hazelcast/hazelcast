@@ -25,7 +25,7 @@ import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.executeApplication;
+import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector<T, Object, R> {
 
@@ -35,7 +35,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
         DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag, null, toTupleMapper());
         vertex.addSink(getSinkTap());
-        executeApplication(context, dag);
+        executeJob(context, dag);
         return target;
     }
 

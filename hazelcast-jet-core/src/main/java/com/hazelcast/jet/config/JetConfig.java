@@ -49,7 +49,7 @@ public class JetConfig extends Config {
      */
     private static final int DEFAULT_IO_THREADS_COUNT = 5;
 
-    private final Map<String, ApplicationConfig> appConfigs = new ConcurrentHashMap<>();
+    private final Map<String, JobConfig> appConfigs = new ConcurrentHashMap<>();
 
     private int ioThreadCount = DEFAULT_IO_THREADS_COUNT;
     private int processingThreadCount;
@@ -68,7 +68,7 @@ public class JetConfig extends Config {
      * @param name name of the application
      * @return the configuration for the application
      */
-    public ApplicationConfig getApplicationConfig(String name) {
+    public JobConfig getApplicationConfig(String name) {
         return lookupConfig(getConfigPatternMatcher(), LOGGER, appConfigs, name);
     }
 
@@ -77,7 +77,7 @@ public class JetConfig extends Config {
      * @param config name of the application
      * @return the configuration for the application
      */
-    public JetConfig addApplicationConfig(ApplicationConfig config) {
+    public JetConfig addApplicationConfig(JobConfig config) {
         appConfigs.put(config.getName(), config);
         return this;
     }
@@ -153,11 +153,11 @@ public class JetConfig extends Config {
         return this;
     }
 
-    static ApplicationConfig lookupConfig(ConfigPatternMatcher matcher, ILogger logger,
-                                          Map<String, ApplicationConfig> patterns,
-                                          String name) {
+    static JobConfig lookupConfig(ConfigPatternMatcher matcher, ILogger logger,
+                                  Map<String, JobConfig> patterns,
+                                  String name) {
         String baseName = getBaseName(name);
-        ApplicationConfig candidate = patterns.get(baseName);
+        JobConfig candidate = patterns.get(baseName);
         if (candidate != null) {
             return candidate;
         }
@@ -166,10 +166,10 @@ public class JetConfig extends Config {
             return patterns.get(configPatternKey);
         }
 
-        ApplicationConfig defaultConf = patterns.get("default");
+        JobConfig defaultConf = patterns.get("default");
         if (defaultConf == null) {
             logger.finest("No configuration found for " + name + ", using system default config!");
-            return new ApplicationConfig();
+            return new JobConfig();
         }
         logger.finest("Using user supplied default config for " + name + ".");
         return defaultConf;

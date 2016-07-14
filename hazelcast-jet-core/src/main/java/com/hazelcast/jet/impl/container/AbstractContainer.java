@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.container;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.spi.NodeEngine;
@@ -33,27 +33,27 @@ public abstract class AbstractContainer
 
     private final NodeEngine nodeEngine;
     private final ContainerContext containerContext;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
     private final StateMachine<SI, SS, SO> stateMachine;
 
     public AbstractContainer(StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
                              NodeEngine nodeEngine,
-                             ApplicationContext applicationContext,
+                             JobContext jobContext,
                              JetTupleFactory tupleFactory) {
-        this(null, stateMachineFactory, nodeEngine, applicationContext, tupleFactory);
+        this(null, stateMachineFactory, nodeEngine, jobContext, tupleFactory);
     }
 
     public AbstractContainer(Vertex vertex,
                              StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
                              NodeEngine nodeEngine,
-                             ApplicationContext applicationContext,
+                             JobContext jobContext,
                              JetTupleFactory tupleFactory) {
         this.nodeEngine = nodeEngine;
-        String name = vertex == null ? applicationContext.getName() : vertex.getName();
-        this.stateMachine = stateMachineFactory.newStateMachine(name, this, nodeEngine, applicationContext);
-        this.applicationContext = applicationContext;
-        this.id = applicationContext.getContainerIDGenerator().incrementAndGet();
-        this.containerContext = new ContainerContext(nodeEngine, applicationContext, this.id, vertex, tupleFactory);
+        String name = vertex == null ? jobContext.getName() : vertex.getName();
+        this.stateMachine = stateMachineFactory.newStateMachine(name, this, nodeEngine, jobContext);
+        this.jobContext = jobContext;
+        this.id = jobContext.getContainerIDGenerator().incrementAndGet();
+        this.containerContext = new ContainerContext(nodeEngine, jobContext, this.id, vertex, tupleFactory);
     }
 
     @Override
@@ -77,9 +77,8 @@ public abstract class AbstractContainer
 
     protected abstract void wakeUpExecutor();
 
-    @Override
-    public ApplicationContext getApplicationContext() {
-        return applicationContext;
+    public JobContext getJobContext() {
+        return jobContext;
     }
 
     @Override
@@ -88,7 +87,7 @@ public abstract class AbstractContainer
     }
 
     public String getApplicationName() {
-        return applicationContext.getName();
+        return jobContext.getName();
     }
 
     @Override

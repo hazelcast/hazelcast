@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.impl.job.JobService;
 
 public class DiscoveryOperation extends JetOperation {
 
     @Override
     public void run() throws Exception {
-        ApplicationService applicationService = getService();
-        result = applicationService.getLocalJetAddress();
+        JobService jobService = getService();
+        result = jobService.getLocalJetAddress();
     }
 }

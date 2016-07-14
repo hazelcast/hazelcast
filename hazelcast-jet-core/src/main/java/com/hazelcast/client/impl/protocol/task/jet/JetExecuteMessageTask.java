@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.ApplicationExecuteOperation;
+import com.hazelcast.jet.impl.operation.JobExecuteOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
 
@@ -41,7 +41,7 @@ public class JetExecuteMessageTask
 
     @Override
     protected JetOperation prepareOperation() {
-        return new ApplicationExecuteOperation(getApplicationName());
+        return new JobExecuteOperation(getApplicationName());
     }
 
     @Override

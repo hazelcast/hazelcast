@@ -20,7 +20,7 @@ package com.hazelcast.jet.impl.container.task.nio;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.util.BooleanHolder;
@@ -42,7 +42,7 @@ public class DefaultSocketWriter
     private final ByteBuffer sendByteBuffer;
     private final byte[] applicationNameBytes;
     private final InetSocketAddress inetSocketAddress;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
     private final List<RingBufferActor> producers = new ArrayList<RingBufferActor>();
     private final Queue<JetPacket> servicePackets = new ConcurrentLinkedQueue<JetPacket>();
 
@@ -53,27 +53,27 @@ public class DefaultSocketWriter
     private Object[] currentFrames;
     private boolean memberEventSent;
 
-    public DefaultSocketWriter(ApplicationContext applicationContext,
+    public DefaultSocketWriter(JobContext jobContext,
                                Address jetAddress) {
-        super(applicationContext.getNodeEngine(), jetAddress);
+        super(jobContext.getNodeEngine(), jetAddress);
 
         this.inetSocketAddress = new InetSocketAddress(jetAddress.getHost(), jetAddress.getPort());
 
-        this.sendByteBuffer = ByteBuffer.allocateDirect(applicationContext.getApplicationConfig().getTcpBufferSize())
+        this.sendByteBuffer = ByteBuffer.allocateDirect(jobContext.getJobConfig().getTcpBufferSize())
                 .order(ByteOrder.BIG_ENDIAN);
 
-        this.applicationContext = applicationContext;
+        this.jobContext = jobContext;
 
-        InternalSerializationService serializationService = (InternalSerializationService) applicationContext
+        InternalSerializationService serializationService = (InternalSerializationService) jobContext
                 .getNodeEngine().getSerializationService();
 
         this.membersBytes = serializationService
                 .toBytes(
-                applicationContext.getLocalJetAddress()
+                jobContext.getLocalJetAddress()
         );
 
         this.applicationNameBytes = serializationService.toBytes(
-                applicationContext.getName()
+                jobContext.getName()
         );
 
         reset();
@@ -108,7 +108,7 @@ public class DefaultSocketWriter
 
     @Override
     protected void notifyAMTaskFinished() {
-        this.applicationContext.getApplicationMaster().notifyNetworkTaskFinished();
+        this.jobContext.getApplicationMaster().notifyNetworkTaskFinished();
     }
 
     @Override

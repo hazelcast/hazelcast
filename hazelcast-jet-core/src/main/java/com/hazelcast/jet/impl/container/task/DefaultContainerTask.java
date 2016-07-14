@@ -32,7 +32,7 @@ import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.DataChannel;
@@ -71,7 +71,7 @@ public class DefaultContainerTask extends AbstractTask
     private final ProcessingContainer container;
     private final ContainerProcessor processor;
     private final ContainerContext containerContext;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
     private final TaskProcessorFactory taskProcessorFactory;
     private final AtomicBoolean interrupted = new AtomicBoolean(false);
     private final AtomicInteger activeProducersCounter = new AtomicInteger(0);
@@ -104,8 +104,8 @@ public class DefaultContainerTask extends AbstractTask
         this.taskContext = taskContext;
         this.taskProcessorFactory = taskProcessorFactory;
         this.containerContext = container.getContainerContext();
-        this.applicationContext = container.getApplicationContext();
-        this.nodeEngine = container.getApplicationContext().getNodeEngine();
+        this.jobContext = container.getJobContext();
+        this.nodeEngine = container.getJobContext().getNodeEngine();
         Supplier<ContainerProcessor> processorFactory = container.getContainerProcessorFactory();
         this.processor = processorFactory == null ? null : processorFactory.get();
         this.processorContext = new DefaultProcessorContext(taskContext, this.containerContext);
@@ -147,7 +147,7 @@ public class DefaultContainerTask extends AbstractTask
         List<ObjectActor> actors = new ArrayList<ObjectActor>(targetContainer.getContainerTasks().length);
 
         for (int i = 0; i < targetContainer.getContainerTasks().length; i++) {
-            ObjectActor actor = new RingBufferActor(this.nodeEngine, this.applicationContext, this, this.vertex, edge);
+            ObjectActor actor = new RingBufferActor(this.nodeEngine, this.jobContext, this, this.vertex, edge);
 
             if (channel.isShuffled()) {
                 //output

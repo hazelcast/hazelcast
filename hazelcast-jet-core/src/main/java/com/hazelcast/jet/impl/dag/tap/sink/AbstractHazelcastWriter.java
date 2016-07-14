@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.dag.tap.sink;
 
 
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.ProducerInputStream;
@@ -98,10 +98,10 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         this.nodeEngine = containerDescriptor.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
         this.containerDescriptor = containerDescriptor;
-        ApplicationConfig applicationConfig = containerDescriptor.getConfig();
-        this.awaitInSecondsTime = applicationConfig.getSecondsToAwait();
+        JobConfig jobConfig = containerDescriptor.getConfig();
+        this.awaitInSecondsTime = jobConfig.getSecondsToAwait();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
-        int tupleChunkSize = applicationConfig.getChunkSize();
+        int tupleChunkSize = jobConfig.getChunkSize();
         this.chunkBuffer = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
         this.chunkInputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
         this.shufflingStrategy = null;

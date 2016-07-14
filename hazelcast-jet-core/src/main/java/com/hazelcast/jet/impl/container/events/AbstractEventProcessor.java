@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.container.events;
 
 
 import com.hazelcast.jet.container.ContainerListener;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerListenerCaller;
@@ -38,7 +38,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected final AtomicInteger interruptedTasks;
     protected final ContainerTask[] containerTasks;
     protected final ContainerContext containerContext;
-    protected final ApplicationContext applicationContext;
+    protected final JobContext jobContext;
     protected final AtomicInteger readyForFinalizationTasksCounter;
     protected final ApplicationMaster applicationMaster;
 
@@ -56,10 +56,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         this.containerTasks = containerTasks;
         this.interruptedTasks = interruptedTasks;
         this.containerContext = containerContext;
-        this.applicationContext = containerContext.getApplicationContext();
-        this.applicationMaster = applicationContext.getApplicationMaster();
+        this.jobContext = containerContext.getJobContext();
+        this.applicationMaster = jobContext.getApplicationMaster();
         this.readyForFinalizationTasksCounter = readyForFinalizationTasksCounter;
-        this.logger = this.applicationContext.getNodeEngine().getLogger(getClass());
+        this.logger = this.jobContext.getNodeEngine().getLogger(getClass());
     }
 
     protected <P> void handleContainerRequest(ContainerRequest<ProcessingContainerEvent, P> request) {
@@ -71,7 +71,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             T... error
     ) {
         List<ContainerListener> listeners =
-                this.applicationContext.
+                this.jobContext.
                         getContainerListeners().
                         get(this.containerContext.getVertex().getName());
 

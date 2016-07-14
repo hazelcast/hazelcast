@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.operation.ApplicationSubmitOperation;
+import com.hazelcast.jet.impl.operation.JobSubmitOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
 
@@ -47,7 +47,7 @@ public class JetSubmitMessageTask extends JetMessageTask<JetSubmitCodec.RequestP
     @Override
     protected JetOperation prepareOperation() {
         DAG dag = this.serializationService.toObject(this.parameters.dag);
-        return new ApplicationSubmitOperation(getApplicationName(), dag);
+        return new JobSubmitOperation(getApplicationName(), dag);
     }
 
     @Override

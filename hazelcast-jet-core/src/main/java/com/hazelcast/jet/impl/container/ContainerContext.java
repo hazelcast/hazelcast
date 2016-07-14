@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.job.JobListener;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.ObjectReaderFactory;
 import com.hazelcast.jet.io.ObjectWriterFactory;
 import com.hazelcast.spi.NodeEngine;
@@ -38,11 +38,11 @@ public class ContainerContext implements ContainerDescriptor {
     private final Vertex vertex;
     private final NodeEngine nodeEngine;
     private final JetTupleFactory tupleFactory;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
     private final ConcurrentMap<String, Accumulator> accumulatorMap;
 
     public ContainerContext(NodeEngine nodeEngine,
-                                   ApplicationContext applicationContext,
+                                   JobContext jobContext,
                                    int id,
                                    Vertex vertex,
                                    JetTupleFactory tupleFactory) {
@@ -50,9 +50,9 @@ public class ContainerContext implements ContainerDescriptor {
         this.vertex = vertex;
         this.nodeEngine = nodeEngine;
         this.tupleFactory = tupleFactory;
-        this.applicationContext = applicationContext;
+        this.jobContext = jobContext;
         this.accumulatorMap = new ConcurrentHashMap<String, Accumulator>();
-        applicationContext.registerAccumulators(this.accumulatorMap);
+        jobContext.registerAccumulators(this.accumulatorMap);
     }
 
     @Override
@@ -63,13 +63,13 @@ public class ContainerContext implements ContainerDescriptor {
     /**
          * @return - JET-application context;
          */
-    public ApplicationContext getApplicationContext() {
-        return this.applicationContext;
+    public JobContext getJobContext() {
+        return this.jobContext;
     }
 
     @Override
     public String getApplicationName() {
-        return this.applicationContext.getName();
+        return this.jobContext.getName();
     }
 
     @Override
@@ -84,7 +84,7 @@ public class ContainerContext implements ContainerDescriptor {
 
     @Override
     public DAG getDAG() {
-        return this.applicationContext.getDAG();
+        return this.jobContext.getDAG();
     }
 
     @Override
@@ -93,43 +93,43 @@ public class ContainerContext implements ContainerDescriptor {
     }
 
     @Override
-    public ApplicationConfig getConfig() {
-        return this.applicationContext.getApplicationConfig();
+    public JobConfig getConfig() {
+        return this.jobContext.getJobConfig();
     }
 
     @Override
     public void registerContainerListener(String vertexName,
                                           ContainerListener containerListener) {
-        this.applicationContext.registerContainerListener(vertexName, containerListener);
+        this.jobContext.registerContainerListener(vertexName, containerListener);
     }
 
     @Override
-    public void registerApplicationListener(ApplicationListener applicationListener) {
-        this.applicationContext.registerApplicationListener(applicationListener);
+    public void registerApplicationListener(JobListener jobListener) {
+        this.jobContext.registerApplicationListener(jobListener);
     }
 
     @Override
     public <T> void putApplicationVariable(String variableName, T variable) {
-        this.applicationContext.putApplicationVariable(variableName, variable);
+        this.jobContext.putJobVariable(variableName, variable);
     }
 
     @Override
     public <T> T getApplicationVariable(String variableName) {
-        return this.applicationContext.getApplicationVariable(variableName);
+        return this.jobContext.getJobVariable(variableName);
     }
 
     public void cleanApplicationVariable(String variableName) {
-        this.applicationContext.cleanApplicationVariable(variableName);
+        this.jobContext.cleanJobVariable(variableName);
     }
 
     @Override
     public ObjectReaderFactory getObjectReaderFactory() {
-        return this.applicationContext.getIOContext().getObjectReaderFactory();
+        return this.jobContext.getIOContext().getObjectReaderFactory();
     }
 
     @Override
     public ObjectWriterFactory getObjectWriterFactory() {
-        return this.applicationContext.getIOContext().getObjectWriterFactory();
+        return this.jobContext.getIOContext().getObjectWriterFactory();
     }
 
     @Override

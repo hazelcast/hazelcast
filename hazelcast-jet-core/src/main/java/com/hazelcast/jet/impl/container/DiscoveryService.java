@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketReader;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketWriter;
 import com.hazelcast.jet.impl.data.io.SocketReader;
@@ -45,7 +45,7 @@ import java.util.concurrent.Future;
 public class DiscoveryService {
     private final NodeEngine nodeEngine;
 
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
 
     private final Map<Address, SocketWriter> socketWriters;
 
@@ -53,7 +53,7 @@ public class DiscoveryService {
 
     private final Map<Address, Address> hzToAddressMapping;
 
-    public DiscoveryService(ApplicationContext applicationContext,
+    public DiscoveryService(JobContext jobContext,
                             NodeEngine nodeEngine,
                             Map<Address, SocketWriter> socketWriters,
                             Map<Address, SocketReader> socketReaders,
@@ -62,7 +62,7 @@ public class DiscoveryService {
         this.socketReaders = socketReaders;
         this.socketWriters = socketWriters;
         this.hzToAddressMapping = hzToAddressMapping;
-        this.applicationContext = applicationContext;
+        this.jobContext = jobContext;
     }
 
 
@@ -73,7 +73,7 @@ public class DiscoveryService {
             for (Member member : nodeEngine.getClusterService().getMembers()) {
                 if (!member.localMember()) {
                     Future<Address> future = nodeEngine.getOperationService().invokeOnTarget(
-                            ApplicationService.SERVICE_NAME,
+                            JobService.SERVICE_NAME,
                             new DiscoveryOperation(),
                             member.getAddress()
                     );
@@ -87,7 +87,7 @@ public class DiscoveryService {
 
             hzToAddressMapping.put(
                     nodeEngine.getLocalMember().getAddress(),
-                    applicationContext.getLocalJetAddress()
+                    jobContext.getLocalJetAddress()
             );
 
             return memberMap;
@@ -104,7 +104,7 @@ public class DiscoveryService {
                 Address jetAddress = map.get(member);
 
                 SocketReader socketReader = new DefaultSocketReader(
-                        applicationContext,
+                        jobContext,
                         jetAddress
                 );
 
@@ -113,7 +113,7 @@ public class DiscoveryService {
                 );
 
                 SocketWriter socketWriter = new DefaultSocketWriter(
-                        applicationContext,
+                        jobContext,
                         jetAddress
                 );
 
@@ -127,7 +127,7 @@ public class DiscoveryService {
         }
 
         for (Task task : tasks) {
-            applicationContext.getExecutorContext().getNetworkTasks().add(task);
+            jobContext.getExecutorContext().getNetworkTasks().add(task);
         }
 
         for (Map.Entry<Address, SocketReader> readerEntry : socketReaders.entrySet()) {

@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JetClientConfig extends ClientConfig {
 
     private static final ILogger LOGGER = Logger.getLogger(JetClientConfig.class);
-    private final Map<String, ApplicationConfig> appConfigs = new ConcurrentHashMap<>();
+    private final Map<String, JobConfig> appConfigs = new ConcurrentHashMap<>();
     private ConfigPatternMatcher matcher = new WildcardConfigPatternMatcher();
 
     /**
@@ -45,7 +45,7 @@ public class JetClientConfig extends ClientConfig {
      * @param name name of the application
      * @return the configuration for the application
      */
-    public ApplicationConfig getApplicationConfig(String name) {
+    public JobConfig getApplicationConfig(String name) {
         return JetConfig.lookupConfig(matcher, LOGGER, appConfigs, name);
     }
 
@@ -55,7 +55,7 @@ public class JetClientConfig extends ClientConfig {
      * @param config name of the application
      * @return the configuration for the application
      */
-    public JetClientConfig addApplicationConfig(ApplicationConfig config) {
+    public JetClientConfig addApplicationConfig(JobConfig config) {
         appConfigs.put(config.getName(), config);
         return this;
     }

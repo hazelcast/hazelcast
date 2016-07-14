@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.job.JobListener;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.counters.Accumulator;
@@ -73,7 +73,7 @@ public class DefaultProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public ApplicationConfig getConfig() {
+    public JobConfig getConfig() {
         return this.containerContext.getConfig();
     }
 
@@ -83,8 +83,8 @@ public class DefaultProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public void registerApplicationListener(ApplicationListener applicationListener) {
-        this.containerContext.registerApplicationListener(applicationListener);
+    public void registerApplicationListener(JobListener jobListener) {
+        this.containerContext.registerApplicationListener(jobListener);
     }
 
     @Override

@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.NetworkTask;
 import com.hazelcast.jet.impl.data.io.SocketReader;
@@ -37,36 +37,36 @@ import java.util.Collection;
 
 public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
     private final ServerSocketChannel serverSocketChannel;
-    private final ApplicationService applicationService;
+    private final JobService jobService;
 
     private long lastConnectionsTimeChecking = -1;
 
     public DefaultSocketThreadAcceptor(
-            ApplicationService applicationService,
+            JobService jobService,
             NodeEngine nodeEngine,
             ServerSocketChannel serverSocketChannel
     ) {
         super(nodeEngine);
         this.serverSocketChannel = serverSocketChannel;
-        this.applicationService = applicationService;
+        this.jobService = jobService;
     }
 
     protected boolean consumePacket(JetPacket packet) throws Exception {
         if (packet.getHeader() == JetPacket.HEADER_JET_MEMBER_EVENT) {
-            NodeEngine nodeEngine = this.applicationService.getNodeEngine();
+            NodeEngine nodeEngine = this.jobService.getNodeEngine();
 
             String applicationName = nodeEngine.getSerializationService().toObject(
                     new HeapData(packet.getApplicationNameBytes())
             );
 
-            ApplicationContext applicationContext = this.applicationService.getContext(applicationName);
+            JobContext jobContext = this.jobService.getContext(applicationName);
 
-            if (applicationContext != null) {
-                Address address = applicationContext.getNodeEngine().getSerializationService().toObject(
+            if (jobContext != null) {
+                Address address = jobContext.getNodeEngine().getSerializationService().toObject(
                         new HeapData(packet.toByteArray())
                 );
 
-                SocketReader reader = applicationContext.getSocketReaders().get(address);
+                SocketReader reader = jobContext.getSocketReaders().get(address);
                 reader.setSocketChannel(this.socketChannel, this.receiveBuffer, true);
                 this.socketChannel = null;
                 this.receiveBuffer = null;
@@ -85,7 +85,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
         if (this.socketChannel != null) {
             if (this.receiveBuffer == null) {
                 this.receiveBuffer = ByteBuffer.allocateDirect(
-                        ApplicationConfig.DEFAULT_TCP_BUFFER_SIZE
+                        JobConfig.DEFAULT_TCP_BUFFER_SIZE
                 ).order(ByteOrder.BIG_ENDIAN);
             }
 
@@ -113,7 +113,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
                 &&
                 (System.currentTimeMillis() - this.lastConnectionsTimeChecking
                         >=
-                        ApplicationConfig.DEFAULT_CONNECTIONS_CHECKING_INTERVAL_MS)
+                        JobConfig.DEFAULT_CONNECTIONS_CHECKING_INTERVAL_MS)
                 ) {
             checkSocketChannels();
             this.lastConnectionsTimeChecking = System.currentTimeMillis();
@@ -121,9 +121,9 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
     }
 
     private void checkSocketChannels() {
-        for (ApplicationContext applicationContext : this.applicationService.getApplicationContexts()) {
-            checkTasksActivity(applicationContext.getSocketReaders().values());
-            checkTasksActivity(applicationContext.getSocketWriters().values());
+        for (JobContext jobContext : this.jobService.getJobContextMap()) {
+            checkTasksActivity(jobContext.getSocketReaders().values());
+            checkTasksActivity(jobContext.getSocketWriters().values());
         }
     }
 
@@ -134,7 +134,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
                         &&
                         (System.currentTimeMillis() - networkTask.lastTimeStamp()
                                 >
-                                ApplicationConfig.DEFAULT_CONNECTIONS_SILENCE_TIMEOUT_MS)) {
+                                JobConfig.DEFAULT_CONNECTIONS_SILENCE_TIMEOUT_MS)) {
                     networkTask.closeSocket();
                 }
             }

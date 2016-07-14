@@ -17,12 +17,12 @@
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.DataChannel;
@@ -50,7 +50,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
     private final JetTupleFactory tupleFactory;
     private final ClassLoader applicationClassLoader;
     private final ApplicationMaster applicationMaster;
-    private final ApplicationContext applicationContext;
+    private final JobContext jobContext;
     private final ILogger logger;
 
     private final IFunction<Vertex, ProcessingContainer> containerProcessingCreator =
@@ -67,7 +67,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
                             vertex,
                             processorFactory,
                             nodeEngine,
-                            applicationContext,
+                            jobContext,
                             tupleFactory
                     );
 
@@ -80,8 +80,8 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
     public ExecutionPlanBuilderProcessor(ApplicationMaster applicationMaster) {
         this.applicationMaster = applicationMaster;
         this.nodeEngine = applicationMaster.getNodeEngine();
-        this.applicationContext = applicationMaster.getApplicationContext();
-        this.applicationClassLoader = this.applicationContext.getLocalizationStorage().getClassLoader();
+        this.jobContext = applicationMaster.getJobContext();
+        this.applicationClassLoader = this.jobContext.getLocalizationStorage().getClassLoader();
         this.tupleFactory = new DefaultJetTupleFactory();
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -116,9 +116,9 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
 
         logger.fine("Processed vertices for DAG " + dag.getName());
 
-        ApplicationConfig applicationConfig = this.applicationContext.getApplicationConfig();
+        JobConfig jobConfig = this.jobContext.getJobConfig();
         long secondsToAwait =
-                applicationConfig.getSecondsToAwait();
+                jobConfig.getSecondsToAwait();
 
         this.applicationMaster.deployNetworkEngine();
 

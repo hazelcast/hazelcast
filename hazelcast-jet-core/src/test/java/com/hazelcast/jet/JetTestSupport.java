@@ -20,7 +20,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
@@ -97,11 +97,11 @@ public class JetTestSupport extends HazelcastTestSupport {
         return createVertex(name, processorClass, TASK_COUNT);
     }
 
-    public static void execute(Application application) throws ExecutionException, InterruptedException {
+    public static void execute(Job job) throws ExecutionException, InterruptedException {
         try {
-            application.execute().get();
+            job.execute().get();
         } finally {
-            application.destroy();
+            job.destroy();
         }
     }
 

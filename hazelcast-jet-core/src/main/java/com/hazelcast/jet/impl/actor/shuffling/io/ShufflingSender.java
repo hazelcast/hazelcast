@@ -54,14 +54,14 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         this.address = address;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         this.containerID = containerContext.getID();
-        String applicationName = containerContext.getApplicationContext().getName();
+        String applicationName = containerContext.getJobContext().getName();
         this.applicationNameBytes = ((InternalSerializationService) nodeEngine.getSerializationService())
                 .toBytes(applicationName);
         this.containerContext = containerContext;
 
         this.ringBufferActor = new RingBufferActor(
                 nodeEngine,
-                containerContext.getApplicationContext(),
+                containerContext.getJobContext(),
                 containerTask,
                 containerContext.getVertex()
         );
