@@ -23,7 +23,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.nio.serialization.Portable;
@@ -33,7 +32,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -42,22 +40,19 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -128,15 +123,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < OPERATION_COUNT; i++) {
-                    map1.put("foo-" + i, "bar");
-                }
-            }
-        }, 60, EntryEventType.ADDED, OPERATION_COUNT, 1, map1, map2);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map1.put("foo-" + i, "bar");
+        }
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             assertEquals("bar", map1.get("foo-" + i));
@@ -178,15 +167,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < OPERATION_COUNT; i++) {
-                    map1.put("foo-" + i, "bar");
-                }
-            }
-        }, 60, EntryEventType.ADDED, OPERATION_COUNT, 1, map1, map2);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map1.put("foo-" + i, "bar");
+        }
 
         for (Map.Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
@@ -216,15 +199,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < OPERATION_COUNT; i++) {
-                    map1.put("foo-" + i, "bar");
-                }
-            }
-        }, 60, EntryEventType.ADDED, OPERATION_COUNT, 1, map1, map2);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map1.put("foo-" + i, "bar");
+        }
 
         for (Map.Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
@@ -236,22 +213,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             assertEquals("bar", entry.getValue());
         }
 
-        // TODO: should clear() be a synchronous operation? what happens on lost clear() message?
-        AtomicBoolean happened = new AtomicBoolean(false);
-        for (int i = 0; i < 10; i++) {
-            map1.clear();
-            sleepSeconds(1);
-            try {
-                assertEquals(0, map1.size());
-                assertEquals(0, map2.size());
-                happened.set(true);
-            } catch (AssertionError ignore) {
-                // ignore and retry
-            }
-            if (happened.get()) {
-                break;
-            }
-        }
+        map1.clear();
+        assertEquals(0, map1.size());
+        assertEquals(0, map2.size());
     }
 
     @Test
@@ -271,15 +235,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < OPERATION_COUNT; i++) {
-                    map1.put("foo-" + i, "bar");
-                }
-            }
-        }, 60, EntryEventType.ADDED, OPERATION_COUNT, 1, map1, map2);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map1.put("foo-" + i, "bar");
+        }
 
         for (Map.Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
@@ -290,29 +248,17 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             assertEquals("bar", entry.getValue());
         }
 
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < OPERATION_COUNT; i++) {
-                    map2.put("foo-" + i, "bar2");
-                }
-            }
-        }, 60, EntryEventType.UPDATED, OPERATION_COUNT, 1, map1, map2);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map2.put("foo-" + i, "bar2");
+        }
 
-        int map2Updated = 0;
         for (Map.Entry<String, String> entry : map2.entrySet()) {
-            if ("bar2".equals(entry.getValue())) {
-                map2Updated++;
-            }
-        }
-        int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
-            if ("bar2".equals(entry.getValue())) {
-                map1Updated++;
-            }
+            assertEquals("bar2", entry.getValue());
         }
 
-        assertMatchSuccessfulOperationQuota(1, OPERATION_COUNT, map1Updated, map2Updated);
+        for (Map.Entry<String, String> entry : map1.entrySet()) {
+            assertEquals("bar2", entry.getValue());
+        }
     }
 
     @Test
@@ -332,15 +278,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < OPERATION_COUNT; i++) {
-                    map1.put("foo-" + i, "bar");
-                }
-            }
-        }, 60, EntryEventType.ADDED, OPERATION_COUNT, 1, map1, map2);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map1.put("foo-" + i, "bar");
+        }
 
         for (Map.Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
@@ -350,31 +290,18 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < OPERATION_COUNT; i++) {
-                    map2.remove("foo-" + i);
-                }
-            }
-        }, 60, EntryEventType.REMOVED, OPERATION_COUNT, 1, map1, map2);
 
-        int map2Updated = 0;
         for (int i = 0; i < OPERATION_COUNT; i++) {
-            Object value = map2.get("foo-" + i);
-            if (value == null) {
-                map2Updated++;
-            }
-        }
-        int map1Updated = 0;
-        for (int i = 0; i < OPERATION_COUNT; i++) {
-            Object value = map1.get("foo-" + i);
-            if (value == null) {
-                map1Updated++;
-            }
+            map2.remove("foo-" + i);
         }
 
-        assertMatchSuccessfulOperationQuota(1, OPERATION_COUNT, map1Updated, map2Updated);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            assertNull(map2.get("foo-" + i));
+        }
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            assertNull(map1.get("foo-" + i));
+        }
     }
 
     @Test
@@ -394,22 +321,16 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, EntryEventType.ADDED, 100, 1, map1, map2);
-
-        assertMatchSuccessfulOperationQuota(1, map1.size(), map2.size());
+        assertEquals(testValues.length, map1.size());
+        assertEquals(testValues.length, map2.size());
     }
 
     @Test
@@ -429,30 +350,17 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < OPERATION_COUNT; i++) {
-                    map1.put("foo-" + i, "bar");
-                }
-            }
-        }, 60, EntryEventType.ADDED, OPERATION_COUNT, 1, map1, map2);
-
-        int map2Contains = 0;
         for (int i = 0; i < OPERATION_COUNT; i++) {
-            if (map2.containsKey("foo-" + i)) {
-                map2Contains++;
-            }
-        }
-        int map1Contains = 0;
-        for (int i = 0; i < OPERATION_COUNT; i++) {
-            if (map1.containsKey("foo-" + i)) {
-                map1Contains++;
-            }
+            map1.put("foo-" + i, "bar");
         }
 
-        assertMatchSuccessfulOperationQuota(1, OPERATION_COUNT, map1Contains, map2Contains);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            assertTrue(map2.containsKey("foo-" + i));
+        }
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            assertTrue(map1.containsKey("foo-" + i));
+        }
     }
 
     @Test
@@ -472,35 +380,22 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, EntryEventType.ADDED, testValues.length, 1, map1, map2);
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
 
-        int map2Contains = 0;
-        for (AbstractMap.SimpleEntry<Integer, Integer> testValue : testValues) {
-            if (map2.containsValue(testValue.getValue())) {
-                map2Contains++;
-            }
+        for (SimpleEntry<Integer, Integer> testValue : testValues) {
+            assertTrue(map2.containsValue(testValue.getValue()));
         }
         int map1Contains = 0;
-        for (AbstractMap.SimpleEntry<Integer, Integer> testValue : testValues) {
-            if (map1.containsValue(testValue.getValue())) {
-                map1Contains++;
-            }
+        for (SimpleEntry<Integer, Integer> testValue : testValues) {
+            assertTrue(map1.containsValue(testValue.getValue()));
         }
-
-        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     @Test
@@ -520,38 +415,22 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
 
-        final List<Integer> valuesTestValues = new ArrayList<Integer>(testValues.length);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                    valuesTestValues.add(entry.getValue());
-                }
-            }
-        }, 2, EntryEventType.ADDED, 100, 1, map1, map2);
-
-        List<Integer> values1 = copyToList(map1.values());
-        List<Integer> values2 = copyToList(map2.values());
-
-        int map1Contains = 0;
-        int map2Contains = 0;
-        for (Integer value : valuesTestValues) {
-            if (values2.contains(value)) {
-                map2Contains++;
-            }
-            if (values1.contains(value)) {
-                map1Contains++;
-            }
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
         }
 
-        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
+        Set<Integer> values1 = new HashSet<Integer>(map1.values());
+        Set<Integer> values2 = new HashSet<Integer>(map2.values());
+
+        for (SimpleEntry<Integer, Integer> e : testValues) {
+            assertTrue(values1.contains(e.getValue()));
+            assertTrue(values2.contains(e.getValue()));
+        }
     }
 
     @Test
@@ -571,38 +450,22 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
 
-        final List<Integer> keySetTestValues = new ArrayList<Integer>(testValues.length);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                    keySetTestValues.add(entry.getKey());
-                }
-            }
-        }, 2, EntryEventType.ADDED, 100, 1, map1, map2);
-
-        List<Integer> keySet1 = copyToList(map1.keySet());
-        List<Integer> keySet2 = copyToList(map2.keySet());
-
-        int map1Contains = 0;
-        int map2Contains = 0;
-        for (Integer value : keySetTestValues) {
-            if (keySet2.contains(value)) {
-                map2Contains++;
-            }
-            if (keySet1.contains(value)) {
-                map1Contains++;
-            }
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
         }
 
-        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
+        Set<Integer> keys1 = new HashSet<Integer>(map1.keySet());
+        Set<Integer> keys2 = new HashSet<Integer>(map2.keySet());
+
+        for (SimpleEntry<Integer, Integer> e : testValues) {
+            assertTrue(keys1.contains(e.getKey()));
+            assertTrue(keys2.contains(e.getKey()));
+        }
     }
 
     @Test
@@ -622,40 +485,26 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, EntryEventType.ADDED, 100, 1, map1, map2);
+        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
 
-        List<Entry<Integer, Integer>> entrySet1 = copyToList(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = copyToList(map2.entrySet());
+        Set<Entry<Integer, Integer>> entrySet1 = new HashSet<Entry<Integer, Integer>>(map1.entrySet());
+        Set<Entry<Integer, Integer>> entrySet2 = new HashSet<Entry<Integer, Integer>>(map2.entrySet());
 
-        int map2Contains = 0;
         for (Entry<Integer, Integer> entry : entrySet2) {
             Integer value = findValue(entry.getKey(), testValues);
-            if (entry.getValue().equals(value)) {
-                map2Contains++;
-            }
+            assertEquals(value, entry.getValue());
         }
 
-        int map1Contains = 0;
         for (Entry<Integer, Integer> entry : entrySet1) {
             Integer value = findValue(entry.getKey(), testValues);
-            if (entry.getValue().equals(value)) {
-                map1Contains++;
-            }
+            assertEquals(value, entry.getValue());
         }
-
-        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     @Test
@@ -767,8 +616,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         return config;
     }
 
-    private Integer findValue(int key, AbstractMap.SimpleEntry<Integer, Integer>[] values) {
-        for (AbstractMap.SimpleEntry<Integer, Integer> value : values) {
+    private Integer findValue(int key, SimpleEntry<Integer, Integer>[] values) {
+        for (SimpleEntry<Integer, Integer> value : values) {
             if (value.getKey().equals(key)) {
                 return value.getValue();
             }
@@ -776,57 +625,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         return null;
     }
 
-    private void assertMatchSuccessfulOperationQuota(double quota, int completeOps, int... values) {
-        float[] quotas = new float[values.length];
-        Object[] args = new Object[values.length + 1];
-        args[0] = quota;
-
-        for (int i = 0; i < values.length; i++) {
-            quotas[i] = (float) values[i] / completeOps;
-            args[i + 1] = quotas[i];
-        }
-
-        boolean success = true;
-        for (int i = 0; i < values.length; i++) {
-            if (quotas[i] < quota) {
-                success = false;
-                break;
-            }
-        }
-
-        if (!success) {
-            StringBuilder sb = new StringBuilder("Quote (%s) for updates not reached,");
-            for (int i = 0; i < values.length; i++) {
-                sb.append(" map").append(i + 1).append(": %s,");
-            }
-            sb.deleteCharAt(sb.length() - 1);
-            fail(String.format(sb.toString(), args));
-        }
-    }
-
     @SuppressWarnings("unchecked")
-    private AbstractMap.SimpleEntry<Integer, Integer>[] buildTestValues() {
+    private SimpleEntry<Integer, Integer>[] buildTestValues() {
         Random random = new Random();
-        AbstractMap.SimpleEntry<Integer, Integer>[] testValues = new AbstractMap.SimpleEntry[100];
+        SimpleEntry<Integer, Integer>[] testValues = new SimpleEntry[100];
         for (int i = 0; i < testValues.length; i++) {
-            testValues[i] = new AbstractMap.SimpleEntry<Integer, Integer>(random.nextInt(), random.nextInt());
+            testValues[i] = new SimpleEntry<Integer, Integer>(random.nextInt(), random.nextInt());
         }
         return testValues;
-    }
-
-    /**
-     * This method works around a bug in IBM's Java 6 J9 JVM where ArrayList's copy constructor
-     * is somehow broken and either includes nulls as values or copies not all elements.
-     * This is known to happen with a CHM (which is inside the ReplicatedMap implementation)<br>
-     * http://www-01.ibm.com/support/docview.wss?uid=swg1IV45453
-     * http://www-01.ibm.com/support/docview.wss?uid=swg1IV67555
-     */
-    private <V> List<V> copyToList(Collection<V> collection) {
-        List<V> values = new ArrayList<V>(collection.size());
-        for (V aCollection : collection) {
-            values.add(aCollection);
-        }
-        return values;
     }
 
     static class SamplePortable implements Portable {

@@ -14,9 +14,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import java.lang.reflect.Field;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
@@ -82,17 +85,6 @@ public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
         return service.getReplicatedRecordStore(map.getName(), false, key);
     }
 
-
-    @SuppressWarnings("unchecked")
-    protected AbstractMap.SimpleEntry<Integer, Integer>[] buildTestValues() {
-        Random random = new Random();
-        AbstractMap.SimpleEntry<Integer, Integer>[] testValues = new AbstractMap.SimpleEntry[100];
-        for (int i = 0; i < testValues.length; i++) {
-            testValues[i] = new AbstractMap.SimpleEntry<Integer, Integer>(random.nextInt(), random.nextInt());
-        }
-        return testValues;
-    }
-
     public List<ReplicatedMap> createMapOnEachInstance(HazelcastInstance[] instances, String replicatedMapName) {
         ArrayList<ReplicatedMap> maps = new ArrayList<ReplicatedMap>();
         for (int i = 0; i < instances.length; i++) {
@@ -110,4 +102,29 @@ public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
         }
         return keys;
     }
+
+    protected Set<String> generateRandomKeys(HazelcastInstance instance, int partitionCount) {
+        Set<String> keys = new HashSet<String>();
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            keys.add(generateKeyForPartition(instance, partitionId));
+        }
+
+        Set<Integer> partitionIds = new HashSet<Integer>();
+        for(String key : keys) {
+            assertTrue(partitionIds.add(getPartitionId(instance, key)));
+        }
+
+        return keys;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected AbstractMap.SimpleEntry<String, String>[] buildTestValues(Set<String> keys) {
+        AbstractMap.SimpleEntry<String, String>[] testValues = new AbstractMap.SimpleEntry[keys.size()];
+        int i = 0;
+        for (String key : keys) {
+            testValues[i++] = new AbstractMap.SimpleEntry<String, String>(key, key);
+        }
+        return testValues;
+    }
+
 }

@@ -4,7 +4,7 @@ import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.util.ClockProperties;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,7 +63,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_dontRescheduleEntryWithinSameSecond_postpone() {
-        System.setProperty(Clock.HAZELCAST_CLOCK_IMPL, StaticClock.class.getName());
+        System.setProperty(ClockProperties.HAZELCAST_CLOCK_IMPL, StaticClock.class.getName());
         try {
             final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                     new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, POSTPONE);
@@ -73,7 +73,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
             assertNotNull(scheduler.get(1));
             assertEquals(1, scheduler.size());
         } finally {
-            System.clearProperty(Clock.HAZELCAST_CLOCK_IMPL);
+            System.clearProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
         }
     }
 

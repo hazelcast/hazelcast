@@ -34,6 +34,8 @@ public interface ReplicatedRecordStore {
 
     Object remove(Object key);
 
+    Object removeWithVersion(Object key, long version);
+
     void evict(Object key);
 
     Object get(Object key);
@@ -41,6 +43,8 @@ public interface ReplicatedRecordStore {
     Object put(Object key, Object value);
 
     Object put(Object key, Object value, long ttl, TimeUnit timeUnit, boolean incrementHits);
+
+    Object putWithVersion(Object key, Object value, long ttl, TimeUnit timeUnit, boolean incrementHits, long version);
 
     boolean containsKey(Object key);
 
@@ -60,6 +64,8 @@ public interface ReplicatedRecordStore {
 
     void clear();
 
+    void clearWithVersion(long version);
+
     void reset();
 
     boolean isEmpty();
@@ -72,11 +78,11 @@ public interface ReplicatedRecordStore {
 
     long getVersion();
 
-    void setVersion(long version);
+    boolean isStale(long version);
 
     Iterator<ReplicatedRecord> recordIterator();
 
-    void putRecord(RecordMigrationInfo record);
+    void putRecords(Collection<RecordMigrationInfo> records, long version);
 
     InternalReplicatedMapStorage getStorage();
 

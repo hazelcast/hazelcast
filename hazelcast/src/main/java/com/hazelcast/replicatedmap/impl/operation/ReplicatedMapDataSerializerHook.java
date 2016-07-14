@@ -50,6 +50,8 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
     private static final int LEN = OP_GET + 1;
 
+    private static final DataSerializableFactory FACTORY = createFactoryInternal();
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -57,6 +59,10 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
+        return FACTORY;
+    }
+
+    private static DataSerializableFactory createFactoryInternal() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
         constructors[OP_CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
@@ -127,4 +133,5 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
         return new ArrayDataSerializableFactory(constructors);
     }
+
 }

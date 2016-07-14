@@ -24,20 +24,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
  */
 public final class Clock {
 
-    /**
-     * Clock offset property in milliseconds. When it is set to a non-zero value,
-     * {@link Clock#currentTimeMillis()} will return a shifted {@link System#currentTimeMillis()}
-     * time by the given offset value.
-     */
-    public static final String HAZELCAST_CLOCK_OFFSET = "com.hazelcast.clock.offset";
-
-    /**
-     * Classname of a {@link com.hazelcast.util.Clock.ClockImpl} implementation.
-     * When this property is set, {@link Clock#currentTimeMillis()}
-     * will call the <code>currentTimeMillis()</code> method of given <code>ClockImpl</code>.
-     */
-    public static final String HAZELCAST_CLOCK_IMPL = "com.hazelcast.clock.impl";
-
     private static final ClockImpl CLOCK;
 
     private Clock() {
@@ -53,7 +39,7 @@ public final class Clock {
     }
 
     private static ClockImpl initClock() {
-        String clockImplClassName = System.getProperty(HAZELCAST_CLOCK_IMPL);
+        String clockImplClassName = System.getProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
         if (clockImplClassName != null) {
             try {
                 return ClassLoaderUtil.newInstance(null, clockImplClassName);
@@ -62,7 +48,7 @@ public final class Clock {
             }
         }
 
-        String clockOffset = System.getProperty(HAZELCAST_CLOCK_OFFSET);
+        String clockOffset = System.getProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         long offset = 0L;
         if (clockOffset != null) {
             try {

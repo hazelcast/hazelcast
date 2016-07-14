@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class is meant to encapsulate the actual storage system and support automatic waiting for finishing load operations if
@@ -34,21 +33,32 @@ public class InternalReplicatedMapStorage<K, V> {
 
     private final ConcurrentMap<K, ReplicatedRecord<K, V>> storage =
             new ConcurrentHashMap<K, ReplicatedRecord<K, V>>(1000, 0.75f, 1);
-    private AtomicLong version = new AtomicLong();
+
+    private long version;
+
+    private boolean stale;
 
     public InternalReplicatedMapStorage() {
     }
 
     public long getVersion() {
-        return version.get();
+        return version;
+    }
+
+    public void syncVersion(long version) {
+        this.stale = false;
+        this.version = version;
     }
 
     public void setVersion(long version) {
-        this.version.set(version);
+        if (!stale) {
+            stale = (version != (this.version + 1));
+        }
+        this.version = version;
     }
 
-    public void incrementVersion() {
-        version.incrementAndGet();
+    public long incrementVersion() {
+        return version++;
     }
 
     public ReplicatedRecord<K, V> get(Object key) {
@@ -56,17 +66,10 @@ public class InternalReplicatedMapStorage<K, V> {
     }
 
     public ReplicatedRecord<K, V> put(K key, ReplicatedRecord<K, V> replicatedRecord) {
-        version.incrementAndGet();
         return storage.put(key, replicatedRecord);
     }
-
-    public ReplicatedRecord<K, V> putInternal(K key, ReplicatedRecord<K, V> replicatedRecord) {
-        return storage.put(key, replicatedRecord);
-    }
-
 
     public boolean remove(K key, ReplicatedRecord<K, V> replicatedRecord) {
-        version.incrementAndGet();
         return storage.remove(key, replicatedRecord);
     }
 
@@ -87,13 +90,7 @@ public class InternalReplicatedMapStorage<K, V> {
     }
 
     public void clear() {
-        version.incrementAndGet();
         storage.clear();
-    }
-
-    public void reset() {
-        storage.clear();
-        version.set(0);
     }
 
     public boolean isEmpty() {
@@ -109,6 +106,10 @@ public class InternalReplicatedMapStorage<K, V> {
             count++;
         }
         return count;
+    }
+
+    public boolean isStale(long version) {
+        return stale || version > this.version;
     }
 
 }

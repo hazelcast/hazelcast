@@ -124,33 +124,37 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         nodeEngine.getExecutionService().getGlobalTaskScheduler().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
-                if (clusterService.getSize() == 1) {
-                    return;
-                }
-                Collection<Address> addresses = new ArrayList<Address>(getMemberAddresses(DATA_MEMBER_SELECTOR));
-                addresses.remove(nodeEngine.getThisAddress());
-                for (int i = 0; i < partitionContainers.length; i++) {
-                    Address thisAddress = nodeEngine.getThisAddress();
-                    InternalPartition partition = partitionService.getPartition(i, false);
-                    Address ownerAddress = partition.getOwnerOrNull();
-                    if (!thisAddress.equals(ownerAddress)) {
-                        continue;
-                    }
-                    PartitionContainer partitionContainer = partitionContainers[i];
-                    if (partitionContainer.isEmpty()) {
-                        continue;
-                    }
-                    for (Address address : addresses) {
-                        CheckReplicaVersion checkReplicaVersion = new CheckReplicaVersion(partitionContainer);
-                        checkReplicaVersion.setPartitionId(i);
-                        checkReplicaVersion.setValidateTarget(false);
-                        operationService.createInvocationBuilder(SERVICE_NAME, checkReplicaVersion, address)
-                                .setTryCount(INVOCATION_TRY_COUNT)
-                                .invoke();
-                    }
-                }
+                triggerAntiEntropy();
             }
         }, 0, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    }
+
+    public void triggerAntiEntropy() {
+        if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
+            return;
+        }
+        Collection<Address> addresses = new ArrayList<Address>(getMemberAddresses(DATA_MEMBER_SELECTOR));
+        addresses.remove(nodeEngine.getThisAddress());
+        for (int i = 0; i < partitionContainers.length; i++) {
+            Address thisAddress = nodeEngine.getThisAddress();
+            InternalPartition partition = partitionService.getPartition(i, false);
+            Address ownerAddress = partition.getOwnerOrNull();
+            if (!thisAddress.equals(ownerAddress)) {
+                continue;
+            }
+            PartitionContainer partitionContainer = partitionContainers[i];
+            if (partitionContainer.isEmpty()) {
+                continue;
+            }
+            for (Address address : addresses) {
+                CheckReplicaVersion checkReplicaVersion = new CheckReplicaVersion(partitionContainer);
+                checkReplicaVersion.setPartitionId(i);
+                checkReplicaVersion.setValidateTarget(false);
+                operationService.createInvocationBuilder(SERVICE_NAME, checkReplicaVersion, address)
+                        .setTryCount(INVOCATION_TRY_COUNT)
+                        .invoke();
+            }
+        }
     }
 
     @Override
@@ -328,6 +332,10 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         if (config.isLiteMember()) {
+            return null;
+        }
+
+        if (event.getReplicaIndex() > 0) {
             return null;
         }
 

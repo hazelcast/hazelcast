@@ -89,15 +89,20 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
 
     @Override
     public void destroy() {
-        storageRef.get().clear();
+        InternalReplicatedMapStorage storage = storageRef.getAndSet(new InternalReplicatedMapStorage<K, V>());
+        if (storage != null) {
+            storage.clear();
+        }
     }
 
+    @Override
     public long getVersion() {
         return storageRef.get().getVersion();
     }
 
-    public void setVersion(long version) {
-        storageRef.get().setVersion(version);
+    @Override
+    public boolean isStale(long version) {
+        return storageRef.get().isStale(version);
     }
 
     public Set<ReplicatedRecord> getRecords() {

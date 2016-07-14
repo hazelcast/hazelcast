@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ClockProperties;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,7 @@ class JumpingSystemClock extends Clock.ClockImpl {
     private final long jumpOffset;
 
     public JumpingSystemClock() {
-        String clockOffset = System.getProperty(Clock.HAZELCAST_CLOCK_OFFSET);
+        String clockOffset = System.getProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         String jumpAfterSeconds = System.getProperty(JUMP_AFTER_SECONDS_PROPERTY);
         try {
             jumpOffset = Long.parseLong(clockOffset);

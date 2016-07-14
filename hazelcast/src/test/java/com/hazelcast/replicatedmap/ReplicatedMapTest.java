@@ -21,21 +21,18 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.WatchedOperationExecutor;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -48,16 +45,16 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(value = {QuickTest.class, ParallelTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ReplicatedMapTest extends ReplicatedMapBaseTest {
 
     @Test
@@ -104,26 +101,23 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar");
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar", map1.get(key));
+                    assertEquals("bar", map2.get(key));
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
-
-        for (Entry<String, String> entry : map2.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
-
-        for (Entry<String, String> entry : map1.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
+        });
     }
 
     @Test
@@ -140,30 +134,29 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
         final Map<String, String> mapTest = new HashMap<String, String>();
-        for (int i = 0; i < 100; i++) {
-            mapTest.put("foo-" + i, "bar");
+        for (String key : keys) {
+            mapTest.put(key, "bar");
         }
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        map1.putAll(mapTest);
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                map1.putAll(mapTest);
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar", map1.get(key));
+                    assertEquals("bar", map2.get(key));
+                }
             }
-        }, 60, EntryEventType.ADDED, map1, map2);
-
-        for (Entry<String, String> entry : map2.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
-        for (Entry<String, String> entry : map1.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
+        });
     }
 
     @Test
@@ -185,42 +178,34 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar");
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar", map1.get(key));
+                    assertEquals("bar", map2.get(key));
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+        });
 
-        for (Entry<String, String> entry : map2.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
+        map1.clear();
 
-        for (Entry<String, String> entry : map1.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
-
-        final AtomicBoolean happened = new AtomicBoolean(false);
-        for (int i = 0; i < 10; i++) {
-            map1.clear();
-            Thread.sleep(1000);
-            try {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
                 assertEquals(0, map1.size());
                 assertEquals(0, map2.size());
-                happened.set(true);
-            } catch (AssertionError ignore) {
-                // ignore and retry
             }
-            if (happened.get()) {
-                break;
-            }
-        }
+        });
     }
 
     @Test
@@ -242,61 +227,38 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar", 10, TimeUnit.MINUTES);
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar", 10, TimeUnit.MINUTES);
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar", map1.get(key));
+                    ReplicatedRecord<String, String> record = getReplicatedRecord(map1, key);
+                    assertNotNull(record);
+                    assertNotEquals(0, record.getTtlMillis());
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+        });
 
-        // Give a bit of time to process last batch of updates
-        TimeUnit.SECONDS.sleep(2);
-
-        Set<Entry<String, String>> map2entries = map2.entrySet();
-        for (Entry<String, String> entry : map2entries) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-
-            ReplicatedRecord<String, String> record = getReplicatedRecord(map2, entry.getKey());
-            assertNotEquals(0, record.getTtlMillis());
-
-            // Kill the record by setting timeout
-            record.setValue(record.getValue(), 1);
-        }
-
-        Set<Entry<String, String>> map1entries = map1.entrySet();
-        for (Entry<String, String> entry : map1entries) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-
-            ReplicatedRecord<String, String> record = getReplicatedRecord(map1, entry.getKey());
-            assertNotEquals(0, record.getTtlMillis());
-
-            // Kill the record by setting timeout
-            record.setValue(record.getValue(), 1);
-        }
-
-        TimeUnit.SECONDS.sleep(1);
-
-        int map2Updated = 0;
-        for (Entry<String, String> entry : map2entries) {
-            if (map2.get(entry.getKey()) == null) {
-                map2Updated++;
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar", map2.get(key));
+                    ReplicatedRecord<String, String> record = getReplicatedRecord(map2, key);
+                    assertNotNull(record);
+                    assertNotEquals(0, record.getTtlMillis());
+                }
             }
-        }
-
-        int map1Updated = 0;
-        for (Entry<String, String> entry : map1entries) {
-            if (map1.get(entry.getKey()) == null) {
-                map1Updated++;
-            }
-        }
-
-        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
+        });
     }
 
     @Test
@@ -318,49 +280,38 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar");
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar", map1.get(key));
+                    assertEquals("bar", map2.get(key));
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+        });
 
-        for (Entry<String, String> entry : map2.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
-        for (Entry<String, String> entry : map1.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
+        for (String key : keys) {
+            map2.put(key, "bar2");
         }
 
-        executor.execute(new Runnable() {
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map2.put("foo-" + i, "bar2");
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar2", map1.get(key));
+                    assertEquals("bar2", map2.get(key));
                 }
             }
-        }, 60, EntryEventType.UPDATED, operations, 1, map1, map2);
-
-        int map2Updated = 0;
-        for (Entry<String, String> entry : map2.entrySet()) {
-            if ("bar2".equals(entry.getValue())) {
-                map2Updated++;
-            }
-        }
-        int map1Updated = 0;
-        for (Entry<String, String> entry : map1.entrySet()) {
-            if ("bar2".equals(entry.getValue())) {
-                map1Updated++;
-            }
-        }
-
-        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
+        });
     }
 
     @Test
@@ -382,51 +333,53 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar");
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar", map1.get(key));
+                    assertEquals("bar", map2.get(key));
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+        });
 
-        for (Entry<String, String> entry : map2.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
-        for (Entry<String, String> entry : map1.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
+        for (String key : keys) {
+            map2.put(key, "bar2", 10, TimeUnit.MINUTES);
         }
 
-        executor.execute(new Runnable() {
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map2.put("foo-" + i, "bar", 10, TimeUnit.MINUTES);
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar2", map1.get(key));
+                    ReplicatedRecord<String, String> record = getReplicatedRecord(map1, key);
+                    assertNotNull(record);
+                    assertTrue(record.getTtlMillis() > 0);
                 }
             }
-        }, 60, EntryEventType.UPDATED, operations, 1, map1, map2);
+        });
 
-        int map2Updated = 0;
-        for (Entry<String, String> entry : map2.entrySet()) {
-            ReplicatedRecord record = getReplicatedRecord(map2, entry.getKey());
-            if (record.getTtlMillis() > 0) {
-                map2Updated++;
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar2", map2.get(key));
+                    ReplicatedRecord<String, String> record = getReplicatedRecord(map2, key);
+                    assertNotNull(record);
+                    assertTrue(record.getTtlMillis() > 0);
+                }
             }
-        }
-        int map1Updated = 0;
-        for (Entry<String, String> entry : map1.entrySet()) {
-            ReplicatedRecord record = getReplicatedRecord(map1, entry.getKey());
-            if (record.getTtlMillis() > 0) {
-                map1Updated++;
-            }
-        }
-
-        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
+        });
     }
 
     @Test
@@ -479,7 +432,6 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             @Override
             public void run()
                     throws Exception {
-
                 Set<Integer> keys = new HashSet<Integer>(map.keySet());
                 assertFalse(keys.contains(1));
             }
@@ -499,7 +451,6 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             @Override
             public void run()
                     throws Exception {
-
                 Set<Entry<Integer, Integer>> entries = map.entrySet();
                 for (Entry<Integer, Integer> entry : entries) {
                     if (entry.getKey().equals(1)) {
@@ -519,50 +470,38 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar");
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertEquals("bar", map1.get(key));
+                    assertEquals("bar", map2.get(key));
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+        });
 
-        for (Entry<String, String> entry : map2.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
+        for (String key : keys) {
+            map2.remove(key);
         }
-        for (Entry<String, String> entry : map1.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
-        executor.execute(new Runnable() {
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map2.remove("foo-" + i);
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertFalse(map1.containsKey(key));
+                    assertFalse(map2.containsKey(key));
                 }
             }
-        }, 60, EntryEventType.REMOVED, operations, 1, map1, map2);
-
-        int map2Updated = 0;
-        for (int i = 0; i < operations; i++) {
-            Object value = map2.get("foo-" + i);
-            if (value == null) {
-                map2Updated++;
-            }
-        }
-        int map1Updated = 0;
-        for (int i = 0; i < operations; i++) {
-            Object value = map1.get("foo-" + i);
-            if (value == null) {
-                map1Updated++;
-            }
-        }
-
-        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
+        });
     }
 
     @Test
@@ -575,31 +514,35 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         testSize(buildConfig(InMemoryFormat.BINARY));
     }
 
+
     private void testSize(Config config) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+        final SimpleEntry<String, String>[] testValues = buildTestValues(keys);
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            final ReplicatedMap<String, String> map = i < half ? map1 : map2;
+            final SimpleEntry<String, String> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    final AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
+            public void run()
+                    throws Exception {
+                assertEquals(keys.size(), map1.size());
+                assertEquals(keys.size(), map2.size());
             }
-        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
-
-        assertMatchSuccessfulOperationQuota(1, map1.size(), map2.size());
+        });
     }
 
     @Test
@@ -621,31 +564,23 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar");
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertTrue(map1.containsKey(key));
+                    assertTrue(map2.containsKey(key));
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
-
-        int map2Contains = 0;
-        for (int i = 0; i < operations; i++) {
-            if (map2.containsKey("foo-" + i)) {
-                map2Contains++;
-            }
-        }
-        int map1Contains = 0;
-        for (int i = 0; i < operations; i++) {
-            if (map1.containsKey("foo-" + i)) {
-                map1Contains++;
-            }
-        }
-
-        assertMatchSuccessfulOperationQuota(1, operations, map1Contains, map2Contains);
+        });
     }
 
     @Test
@@ -671,38 +606,28 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        int half = keys.size() / 2, i = 0;
+        for (String key : keys) {
+            final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
+            map.put(key, key);
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    final AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
+                    assertTrue(map1.containsValue(key));
+                    assertTrue(map2.containsValue(key));
                 }
             }
-        }, 60, EntryEventType.ADDED, testValues.length, 1, map1, map2);
-
-        int map2Contains = 0;
-        for (AbstractMap.SimpleEntry<Integer, Integer> testValue : testValues) {
-            if (map2.containsValue(testValue.getValue())) {
-                map2Contains++;
-            }
-        }
-        int map1Contains = 0;
-        for (AbstractMap.SimpleEntry<Integer, Integer> testValue : testValues) {
-            if (map1.containsValue(testValue.getValue())) {
-                map1Contains++;
-            }
-        }
-
-        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
+        });
     }
 
     @Test
@@ -736,41 +661,26 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        final List<Integer> valuesTestValues = new ArrayList<Integer>(testValues.length);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    final AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                    valuesTestValues.add(entry.getValue());
-                }
-            }
-        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
-
-        List<Integer> values1 = copyToList(map1.values());
-        List<Integer> values2 = copyToList(map2.values());
-
-        int map1Contains = 0;
-        int map2Contains = 0;
-        for (Integer value : valuesTestValues) {
-            if (values2.contains(value)) {
-                map2Contains++;
-            }
-            if (values1.contains(value)) {
-                map1Contains++;
-            }
+        int half = keys.size() / 2, i = 0;
+        for (String key : keys) {
+            final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
+            map.put(key, key);
         }
 
-        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(keys, new HashSet<String>(map1.values()));
+                assertEquals(keys, new HashSet<String>(map2.values()));
+            }
+        });
     }
 
     @Test
@@ -789,41 +699,26 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        final List<Integer> keySetTestValues = new ArrayList<Integer>(testValues.length);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    final AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                    keySetTestValues.add(entry.getKey());
-                }
-            }
-        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
-
-        List<Integer> keySet1 = copyToList(map1.keySet());
-        List<Integer> keySet2 = copyToList(map2.keySet());
-
-        int map1Contains = 0;
-        int map2Contains = 0;
-        for (Integer value : keySetTestValues) {
-            if (keySet2.contains(value)) {
-                map2Contains++;
-            }
-            if (keySet1.contains(value)) {
-                map1Contains++;
-            }
+        int half = keys.size() / 2, i = 0;
+        for (String key : keys) {
+            final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
+            map.put(key, key);
         }
 
-        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(keys, new HashSet<String>(map1.keySet()));
+                assertEquals(keys, new HashSet<String>(map2.keySet()));
+            }
+        });
     }
 
     @Test
@@ -842,53 +737,36 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        final AbstractMap.SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        int half = keys.size() / 2, i = 0;
+        for (String key : keys) {
+            final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
+            map.put(key, key);
+        }
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap<Integer, Integer> map = i < half ? map1 : map2;
-                    final AbstractMap.SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
+            public void run()
+                    throws Exception {
+                List<Entry<String, String>> entrySet1 = new ArrayList<Entry<String, String>>(map1.entrySet());
+                List<Entry<String, String>> entrySet2 = new ArrayList<Entry<String, String>>(map2.entrySet());
+                assertEquals(keys.size(), entrySet1.size());
+                assertEquals(keys.size(), entrySet2.size());
+
+                for (Entry<String, String> e : entrySet1) {
+                    assertTrue(keys.contains(e.getKey()));
+                }
+
+                for (Entry<String, String> e : entrySet2) {
+                    assertTrue(keys.contains(e.getKey()));
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
-
-        List<Entry<Integer, Integer>> entrySet1 = copyToList(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = copyToList(map2.entrySet());
-
-        int map2Contains = 0;
-        for (Entry<Integer, Integer> entry : entrySet2) {
-            System.out.println("Entry: " + entry);
-            Integer value = findValue(entry.getKey(), testValues);
-            if (value.equals(entry.getValue())) {
-                map2Contains++;
-            }
-        }
-
-        int map1Contains = 0;
-        for (Entry<Integer, Integer> entry : entrySet1) {
-            Integer value = findValue(entry.getKey(), testValues);
-            if (value.equals(entry.getValue())) {
-                map1Contains++;
-            }
-        }
-
-        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
-    }
-
-    private Integer findValue(int key, AbstractMap.SimpleEntry<Integer, Integer>[] values) {
-        for (AbstractMap.SimpleEntry<Integer, Integer> value : values) {
-            if (value.getKey().equals(key)) {
-                return value.getValue();
-            }
-        }
-        return null;
+        });
     }
 
     @Test
@@ -910,19 +788,15 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        SimpleEntryListener listener = new SimpleEntryListener(1, 0);
-        map2.addEntryListener(listener, "foo-18");
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar");
-                }
-            }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+        SimpleEntryListener listener = new SimpleEntryListener(1, 0);
+        map2.addEntryListener(listener, keys.iterator().next());
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
 
         assertOpenEventually(listener.addLatch);
     }
@@ -946,22 +820,18 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
         SimpleEntryListener listener = new SimpleEntryListener(0, 100);
         map2.addEntryListener(listener);
 
         SimpleEntryListener listenerKey = new SimpleEntryListener(0, 1);
-        map1.addEntryListener(listenerKey, "foo-54");
+        map1.addEntryListener(listenerKey, keys.iterator().next());
 
-        final int operations = 100;
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map1.put("foo-" + i, "bar", 3, TimeUnit.SECONDS);
-                }
-            }
-        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+        for (String key : keys) {
+            map1.put(key, "bar", 3, TimeUnit.SECONDS);
+        }
 
         assertOpenEventually(listener.evictLatch);
         assertOpenEventually(listenerKey.evictLatch);
@@ -987,7 +857,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         }
     }
 
-    @Test(expected = java.lang.IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void putNullKey() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
@@ -995,7 +865,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         map1.put(null, 1);
     }
 
-    @Test(expected = java.lang.IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void removeNullKey() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
@@ -1011,7 +881,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         assertFalse(map1.removeEntryListener("2"));
     }
 
-    @Test(expected = java.lang.IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void removeNullListener() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
@@ -1038,26 +908,12 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         assertEquals(0, objects.size());
     }
 
-    /**
-     * This method works around a bug in IBM's Java 6 J9 JVM where ArrayList's copy constructor
-     * is somehow broken and either includes nulls as values or copies not all elements.
-     * This is known to happen with a CHM (which is inside the ReplicatedMap implementation)<br>
-     * http://www-01.ibm.com/support/docview.wss?uid=swg1IV45453
-     * http://www-01.ibm.com/support/docview.wss?uid=swg1IV67555
-     */
-    private <V> List<V> copyToList(Collection<V> collection) {
-        List<V> values = new ArrayList<V>();
-        for (V value : collection) {
-            values.add(value);
-        }
-        return values;
-    }
-
     class DescendingComparator implements Comparator<Integer> {
 
         @Override
         public int compare(Integer o1, Integer o2) {
-            return o1.equals(o2) ? 0 : o1 > o2 ? -1 : 1;
+            return o1 == o2 ? 0 : o1 > o2 ? -1 : 1;
         }
     }
+
 }

@@ -54,6 +54,7 @@ public class LazyIteratorTest
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
             TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, -1));
+            TEST_DATA_SIMPLE.incrementVersion();
         }
         TEST_DATA_TOMBS = new InternalReplicatedMapStorage<String, Integer>();
         for (int i = 0; i < 100; i++) {
@@ -61,6 +62,7 @@ public class LazyIteratorTest
             Integer value = i % 2 == 0 ? i : null;
             ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, -1);
             TEST_DATA_TOMBS.put(key, record);
+            TEST_DATA_TOMBS.incrementVersion();
         }
     }
 
@@ -591,6 +593,11 @@ public class LazyIteratorTest
         }
 
         @Override
+        public Object removeWithVersion(Object key, long version) {
+            return null;
+        }
+
+        @Override
         public void evict(Object key) {
 
         }
@@ -607,6 +614,11 @@ public class LazyIteratorTest
 
         @Override
         public Object put(Object key, Object value, long ttl, TimeUnit timeUnit, boolean incrementHits) {
+            return null;
+        }
+
+        @Override
+        public Object putWithVersion(Object key, Object value, long ttl, TimeUnit timeUnit, boolean incrementHits, long version) {
             return null;
         }
 
@@ -655,6 +667,11 @@ public class LazyIteratorTest
         }
 
         @Override
+        public void clearWithVersion(long version) {
+
+        }
+
+        @Override
         public void reset() {
 
         }
@@ -684,8 +701,8 @@ public class LazyIteratorTest
         }
 
         @Override
-        public void setVersion(long version) {
-
+        public boolean isStale(long version) {
+            return false;
         }
 
         @Override
@@ -694,7 +711,7 @@ public class LazyIteratorTest
         }
 
         @Override
-        public void putRecord(RecordMigrationInfo record) {
+        public void putRecords(Collection<RecordMigrationInfo> records, long version) {
 
         }
 
@@ -727,6 +744,7 @@ public class LazyIteratorTest
         public boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy) {
             return false;
         }
+
     }
 
 }
