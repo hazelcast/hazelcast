@@ -24,8 +24,11 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.DefaultNodeExtension;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
@@ -39,6 +42,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.mocknetwork.MockNodeContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
@@ -64,6 +68,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
@@ -327,6 +332,35 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, instances[1]);
         assertClusterSizeEventually(3, instances[2]);
         assertClusterState(ClusterState.ACTIVE, instances);
+    }
+
+    @Test
+    public void changeClusterState_shouldFail_whenStartupIsNotCompleted() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        final AtomicBoolean startupDone = new AtomicBoolean(false);
+
+        HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(),
+                new MockNodeContext(factory.getRegistry(), new Address("127.0.0.1", 5555)) {
+                    @Override
+                    public NodeExtension createNodeExtension(Node node) {
+                        return new DefaultNodeExtension(node) {
+                            @Override
+                            public boolean isStartCompleted() {
+                                return startupDone.get() && super.isStartCompleted();
+                            }
+                        };
+                    }
+                });
+
+        try {
+            instance.getCluster().changeClusterState(ClusterState.FROZEN);
+            fail("Should not be able to change cluster state when startup is not completed yet!");
+        } catch (IllegalStateException expected) {
+        }
+
+        startupDone.set(true);
+        instance.getCluster().changeClusterState(ClusterState.FROZEN);
     }
 
     @Test

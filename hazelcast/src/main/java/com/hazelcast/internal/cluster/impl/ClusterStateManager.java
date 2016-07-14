@@ -139,6 +139,10 @@ public class ClusterStateManager {
         Preconditions.checkNotNull(newState);
         clusterServiceLock.lock();
         try {
+            if (!node.getNodeExtension().isStartCompleted()) {
+                throw new IllegalStateException("Can not lock cluster state! Startup is not completed yet!");
+            }
+
             checkMigrationsAndPartitionStateVersion(newState, partitionStateVersion);
 
             final ClusterStateLock currentLock = getStateLock();

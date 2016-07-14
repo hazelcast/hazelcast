@@ -30,12 +30,12 @@ import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 
 import java.nio.channels.ServerSocketChannel;
 
-class MockNodeContext implements NodeContext {
+public class MockNodeContext implements NodeContext {
 
     private final TestNodeRegistry registry;
     private final Address thisAddress;
 
-    MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
+    protected MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
         this.registry = registry;
         this.thisAddress = thisAddress;
     }
