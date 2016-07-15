@@ -22,7 +22,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
@@ -34,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -117,7 +117,7 @@ class ClusterMergeTask implements Runnable {
         // execute merge tasks
         Collection<Future> futures = new LinkedList<Future>();
         for (Runnable task : tasks) {
-            Future f = node.nodeEngine.getExecutionService().submit("hz:system", task);
+            Future f = node.nodeEngine.getExecutionService().submit(SYSTEM_EXECUTOR, task);
             futures.add(f);
         }
         long callTimeoutMillis = node.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
@@ -136,14 +136,14 @@ class ClusterMergeTask implements Runnable {
             throws ExecutionException, InterruptedException, TimeoutException {
 
         isNotNull(timeUnit, "timeUnit");
-        long deadline = Clock.currentTimeMillis() + timeUnit.toMillis(timeout);
+        long totalTimeoutMs = timeUnit.toMillis(timeout);
         while (true) {
-            long localTimeoutMs = Math.min(MIN_WAIT_ON_FUTURE_TIMEOUT_MILLIS, deadline);
+            long timeoutStepMs = Math.min(MIN_WAIT_ON_FUTURE_TIMEOUT_MILLIS, totalTimeoutMs);
             try {
-                return future.get(localTimeoutMs, TimeUnit.MILLISECONDS);
+                return future.get(timeoutStepMs, TimeUnit.MILLISECONDS);
             } catch (TimeoutException t) {
-                deadline -= localTimeoutMs;
-                if (deadline <= 0) {
+                totalTimeoutMs -= timeoutStepMs;
+                if (totalTimeoutMs <= 0) {
                     throw t;
                 }
                 if (!node.isRunning()) {
