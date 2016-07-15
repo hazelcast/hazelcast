@@ -48,6 +48,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -78,9 +81,9 @@ public class MemberListTest {
         final HazelcastInstance h3 = instanceList.get(2);
 
         // All three nodes join into one cluster
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         // This simulates each node reading from the other nodes in the list at regular intervals
         // This prevents the heart beat code from timing out
@@ -109,11 +112,7 @@ public class MemberListTest {
                                 e.printStackTrace();
                             }
                         }
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        sleepSeconds(2);
                     }
                 }
             });
@@ -124,16 +123,16 @@ public class MemberListTest {
         n3.clusterService.removeAddress(h1.getCluster().getLocalMember().getAddress(), null);
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
-        Thread.sleep(30 * 1000);
+        sleepSeconds(30);
 
         doingWork.set(false);
         for (Thread t : workThreads) {
             t.join();
         }
 
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
+        assertClusterSize(3, h1);
+        assertClusterSize(3, h2);
+        assertClusterSize(3, h3);
     }
 
     private static class PingCallable implements Callable<String>, Serializable {
@@ -159,9 +158,9 @@ public class MemberListTest {
         final MemberImpl m3 = (MemberImpl) h3.getCluster().getLocalMember();
 
         // All three nodes join into one cluster
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         final Node n2 = TestUtil.getNode(h2);
 
@@ -174,15 +173,19 @@ public class MemberListTest {
         n2.setMasterAddress(m2.getAddress());
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
-        Thread.sleep(30 * 1000);
+        sleepSeconds(30);
 
-        assertEquals(m1, h1.getCluster().getMembers().iterator().next());
-        assertEquals(m1, h2.getCluster().getMembers().iterator().next());
-        assertEquals(m1, h3.getCluster().getMembers().iterator().next());
+        assertMasterEquals(m1, h1);
+        assertMasterEquals(m1, h2);
+        assertMasterEquals(m1, h3);
 
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
+        assertClusterSize(3, h1);
+        assertClusterSize(3, h2);
+        assertClusterSize(3, h3);
+    }
+
+    private void assertMasterEquals(Member master, HazelcastInstance hz) {
+        assertEquals(master, hz.getCluster().getMembers().iterator().next());
     }
 
     /*
@@ -200,9 +203,9 @@ public class MemberListTest {
         final MemberImpl m2 = (MemberImpl) h2.getCluster().getLocalMember();
 
         // All three nodes join into one cluster
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         final Node n2 = TestUtil.getNode(h2);
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
@@ -212,15 +215,15 @@ public class MemberListTest {
         n2.clusterService.updateMembers(members);
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
-        Thread.sleep(30 * 1000);
+        sleepSeconds(30);
 
-        assertEquals(m1, h1.getCluster().getMembers().iterator().next());
-        assertEquals(m1, h2.getCluster().getMembers().iterator().next());
-        assertEquals(m1, h3.getCluster().getMembers().iterator().next());
+        assertMasterEquals(m1, h1);
+        assertMasterEquals(m1, h2);
+        assertMasterEquals(m1, h3);
 
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
+        assertClusterSize(3, h1);
+        assertClusterSize(3, h2);
+        assertClusterSize(3, h3);
     }
 
     @Test
@@ -232,44 +235,45 @@ public class MemberListTest {
         final HazelcastInstance h4 = instanceList.get(3);
         final HazelcastInstance h5 = instanceList.get(4);
 
-        assertEquals(5, h1.getCluster().getMembers().size());
-        assertEquals(5, h2.getCluster().getMembers().size());
-        assertEquals(5, h3.getCluster().getMembers().size());
-        assertEquals(5, h4.getCluster().getMembers().size());
-        assertEquals(5, h5.getCluster().getMembers().size());
+        assertClusterSizeEventually(5, h1);
+        assertClusterSizeEventually(5, h2);
+        assertClusterSizeEventually(5, h3);
+        assertClusterSizeEventually(5, h4);
+        assertClusterSizeEventually(5, h5);
 
         // Need to wait for at least as long as PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS
-        Thread.sleep(15 * 1000);
+        sleepSeconds(15);
 
         Member master = h1.getCluster().getLocalMember();
-        assertEquals(master, h2.getCluster().getMembers().iterator().next());
-        assertEquals(master, h3.getCluster().getMembers().iterator().next());
-        assertEquals(master, h4.getCluster().getMembers().iterator().next());
-        assertEquals(master, h5.getCluster().getMembers().iterator().next());
+        assertMasterEquals(master, h2);
+        assertMasterEquals(master, h3);
+        assertMasterEquals(master, h4);
+        assertMasterEquals(master, h5);
 
         h1.shutdown();
 
-        assertEquals(4, h2.getCluster().getMembers().size());
-        assertEquals(4, h3.getCluster().getMembers().size());
-        assertEquals(4, h4.getCluster().getMembers().size());
-        assertEquals(4, h5.getCluster().getMembers().size());
+        assertClusterSizeEventually(4, h2);
+        assertClusterSizeEventually(4, h3);
+        assertClusterSizeEventually(4, h4);
+        assertClusterSizeEventually(4, h5);
 
         master = h2.getCluster().getLocalMember();
-        assertEquals(master, h2.getCluster().getMembers().iterator().next());
-        assertEquals(master, h3.getCluster().getMembers().iterator().next());
-        assertEquals(master, h4.getCluster().getMembers().iterator().next());
-        assertEquals(master, h5.getCluster().getMembers().iterator().next());
+        assertMasterEquals(master, h2);
+        assertMasterEquals(master, h3);
+        assertMasterEquals(master, h4);
+        assertMasterEquals(master, h5);
 
-        Thread.sleep(10 * 1000);
+        sleepSeconds(10);
 
-        assertEquals(4, h2.getCluster().getMembers().size());
-        assertEquals(4, h3.getCluster().getMembers().size());
-        assertEquals(4, h4.getCluster().getMembers().size());
-        assertEquals(4, h5.getCluster().getMembers().size());
-        assertEquals(master, h2.getCluster().getMembers().iterator().next());
-        assertEquals(master, h3.getCluster().getMembers().iterator().next());
-        assertEquals(master, h4.getCluster().getMembers().iterator().next());
-        assertEquals(master, h5.getCluster().getMembers().iterator().next());
+        assertClusterSize(4, h2);
+        assertClusterSize(4, h3);
+        assertClusterSize(4, h4);
+        assertClusterSize(4, h5);
+
+        assertMasterEquals(master, h2);
+        assertMasterEquals(master, h3);
+        assertMasterEquals(master, h4);
+        assertMasterEquals(master, h5);
     }
 
     private static List<HazelcastInstance> buildInstances(int instanceCount, int basePort) {
