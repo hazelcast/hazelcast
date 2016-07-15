@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.container.jobmanager;
 
-import com.hazelcast.jet.impl.container.ContainerState;
+import com.hazelcast.jet.impl.statemachine.StateMachineState;
 
 /**
  * Represents state of the job manager;
  */
-public enum JobManagerState implements ContainerState {
+public enum JobManagerState implements StateMachineState {
     /**
      * Initial state of the job manager
      */

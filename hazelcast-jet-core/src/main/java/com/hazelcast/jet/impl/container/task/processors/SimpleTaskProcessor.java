@@ -31,7 +31,6 @@ public class SimpleTaskProcessor implements TaskProcessor {
     protected boolean finalizationStarted;
     protected boolean producersWriteFinished;
     private final ContainerProcessor processor;
-    private final ContainerContext containerContext;
     private final DefaultObjectIOStream tupleInputStream;
     private final DefaultObjectIOStream tupleOutputStream;
     private boolean finalized;
@@ -43,59 +42,47 @@ public class SimpleTaskProcessor implements TaskProcessor {
         checkNotNull(processor);
         this.processor = processor;
         this.processorContext = processorContext;
-        this.containerContext = containerContext;
-        this.tupleInputStream = new DefaultObjectIOStream<Object>(DUMMY_CHUNK);
-        this.tupleOutputStream = new DefaultObjectIOStream<Object>(DUMMY_CHUNK);
+        this.tupleInputStream = new DefaultObjectIOStream<>(DUMMY_CHUNK);
+        this.tupleOutputStream = new DefaultObjectIOStream<>(DUMMY_CHUNK);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public boolean process() throws Exception {
-        if (!this.finalizationStarted) {
-            if (this.producersWriteFinished) {
+        if (!finalizationStarted) {
+            if (producersWriteFinished) {
                 return true;
             }
-
-            this.processor.process(
-                    this.tupleInputStream,
-                    this.tupleOutputStream,
-                    null,
-                    this.processorContext
-            );
-
+            processor.process(tupleInputStream, tupleOutputStream, null, processorContext);
             return true;
         } else {
-            this.finalized = this.processor.finalizeProcessor(
-                    this.tupleOutputStream,
-                    this.processorContext
-            );
-
+            finalized = processor.finalizeProcessor(tupleOutputStream, processorContext);
             return true;
         }
     }
 
     @Override
     public boolean isFinalized() {
-        return this.finalized;
+        return finalized;
     }
 
     @Override
     public void reset() {
-        this.finalized = false;
-        this.tupleInputStream.reset();
-        this.tupleOutputStream.reset();
-        this.finalizationStarted = false;
-        this.producersWriteFinished = false;
+        finalized = false;
+        tupleInputStream.reset();
+        tupleOutputStream.reset();
+        finalizationStarted = false;
+        producersWriteFinished = false;
     }
 
     @Override
     public void startFinalization() {
-        this.finalizationStarted = true;
+        finalizationStarted = true;
     }
 
     @Override
     public void onProducersWriteFinished() {
-        this.producersWriteFinished = true;
+        producersWriteFinished = true;
     }
 
     @Override

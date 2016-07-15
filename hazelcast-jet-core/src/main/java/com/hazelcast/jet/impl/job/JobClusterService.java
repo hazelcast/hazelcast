@@ -98,7 +98,7 @@ public abstract class JobClusterService<Payload> {
      * @return awaiting Future
      */
     public Future execute(JobStateMachine jobStateMachine) {
-        return this.executorService.submit(new OperationExecutor(
+        return executorService.submit(new OperationExecutor(
                 JobEvent.EXECUTION_START,
                 JobEvent.EXECUTION_SUCCESS,
                 JobEvent.EXECUTION_FAILURE,
@@ -113,7 +113,7 @@ public abstract class JobClusterService<Payload> {
      * @return awaiting Future
      */
     public Future interrupt(JobStateMachine jobStateMachine) {
-        return this.executorService.submit(new OperationExecutor(
+        return executorService.submit(new OperationExecutor(
                 JobEvent.INTERRUPTION_START,
                 JobEvent.INTERRUPTION_SUCCESS,
                 JobEvent.INTERRUPTION_FAILURE,
@@ -129,7 +129,7 @@ public abstract class JobClusterService<Payload> {
      * @return awaiting Future
      */
     public Future destroy(JobStateMachine jobStateMachine) {
-        return this.executorService.submit(new OperationExecutor(
+        return executorService.submit(new OperationExecutor(
                 JobEvent.FINALIZATION_START,
                 JobEvent.FINALIZATION_SUCCESS,
                 JobEvent.FINALIZATION_FAILURE,
@@ -164,11 +164,7 @@ public abstract class JobClusterService<Payload> {
 
         try {
             for (Member member : members) {
-                Callable callable =
-                        createInvocation(
-                                member,
-                                this::createAccumulatorsInvoker
-                        );
+                Callable callable = createInvocation(member, this::createAccumulatorsInvoker);
 
                 Map<String, Accumulator> memberResponse = readAccumulatorsResponse(callable);
 
@@ -177,7 +173,6 @@ public abstract class JobClusterService<Payload> {
                     Accumulator accumulator = entry.getValue();
 
                     Accumulator collector = cache.get(key);
-
                     if (collector == null) {
                         cache.put(key, accumulator);
                     } else {
@@ -261,21 +256,16 @@ public abstract class JobClusterService<Payload> {
         return getJobConfig().getSecondsToAwait();
     }
 
-    protected int getLocalizationChunkSize() {
+    private int getLocalizationChunkSize() {
         return getJobConfig().getChunkSize();
     }
 
-    protected List<Future> invokeInCluster(Supplier<Payload> operationFactory) {
+    private List<Future> invokeInCluster(Supplier<Payload> operationFactory) {
         Set<Member> members = getMembers();
-        List<Future> futureList = new ArrayList<>(
-                members.size()
-        );
+        List<Future> futureList = new ArrayList<>(members.size());
 
         for (Member member : members) {
-            futureList.add(
-                    this.executorService.submit(
-                            createInvocation(member, operationFactory)
-                    ));
+            futureList.add(executorService.submit(createInvocation(member, operationFactory)));
         }
 
         return futureList;

@@ -20,6 +20,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.StateMachineState;
 import com.hazelcast.spi.NodeEngine;
 
 /**
@@ -27,8 +28,8 @@ import com.hazelcast.spi.NodeEngine;
  * Containers:
  * <p/>
  * <pre>
- *     1) Application master;
- *     2) Data processing container;
+ *     1) Job Manager;
+ *     2) Processing container;
  * </pre>
  *
  * @param <SI> - type of the input container state-machine event;
@@ -37,9 +38,8 @@ import com.hazelcast.spi.NodeEngine;
  */
 public interface Container
         <SI extends ContainerEvent,
-                SS extends ContainerState,
-                SO extends ContainerResponse> extends
-        StateMachineRequestProcessor<SI> {
+                SS extends StateMachineState,
+                SO extends ContainerResponse> extends StateMachineRequestProcessor<SI> {
     /**
      * @return - Hazelcast nodeEngine object;
      */

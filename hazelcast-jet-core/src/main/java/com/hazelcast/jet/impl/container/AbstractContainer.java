@@ -22,11 +22,12 @@ import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
+import com.hazelcast.jet.impl.statemachine.StateMachineState;
 import com.hazelcast.spi.NodeEngine;
 
 public abstract class AbstractContainer
         <SI extends ContainerEvent,
-                SS extends ContainerState,
+                SS extends StateMachineState,
                 SO extends ContainerResponse>
         implements Container<SI, SS, SO> {
     private final int id;
@@ -58,18 +59,18 @@ public abstract class AbstractContainer
 
     @Override
     public NodeEngine getNodeEngine() {
-        return this.nodeEngine;
+        return nodeEngine;
     }
 
     @Override
     public StateMachine<SI, SS, SO> getStateMachine() {
-        return this.stateMachine;
+        return stateMachine;
     }
 
     @Override
     public <P> ICompletableFuture<SO> handleContainerRequest(ContainerRequest<SI, P> request) {
         try {
-            return this.stateMachine.handleRequest(request);
+            return stateMachine.handleRequest(request);
         } finally {
             wakeUpExecutor();
         }
@@ -84,10 +85,6 @@ public abstract class AbstractContainer
     @Override
     public ContainerContext getContainerContext() {
         return containerContext;
-    }
-
-    public String getApplicationName() {
-        return jobContext.getName();
     }
 
     @Override
