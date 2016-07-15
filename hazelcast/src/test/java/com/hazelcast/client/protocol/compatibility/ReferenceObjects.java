@@ -60,6 +60,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.RetryableIOException;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -209,7 +210,7 @@ public class ReferenceObjects {
     public static Xid anXid = new SerializableXID(1, aString.getBytes(), aString.getBytes());
     public static List<Map.Entry<Data, Data>> aListOfEntry = Collections.<Map.Entry<Data, Data>>singletonList(new AbstractMap.SimpleEntry<Data, Data>(aData, aData));
 
-    public static Throwable[] throwables = {new CacheException(aString),
+    public static Throwable[] throwables_1_0 = {new CacheException(aString),
             new CacheLoaderException(aString),
             new CacheWriterException(aString),
             new EntryProcessorException(aString),
@@ -263,7 +264,6 @@ public class ReferenceObjects {
             new SecurityException(aString),
             new SocketException(aString),
             new StaleSequenceException(aString, 1),
-            new StaleTaskIdException(aString),
             new TargetDisconnectedException(aString),
             new TargetNotMemberException(aString),
             new TimeoutException(aString),
@@ -289,4 +289,16 @@ public class ReferenceObjects {
             new OutOfMemoryError(aString),
             new StackOverflowError(aString),
             new NativeOutOfMemoryError(aString)};
+
+    public static Throwable[] throwables_1_1 = {
+            new StaleTaskIdException(aString),
+            new ServiceNotFoundException(aString)
+    };
+
+    public static Map<String, Throwable[]> throwables = new HashMap<String, Throwable[]>();
+
+    static {
+        throwables.put("1.0", throwables_1_0);
+        throwables.put("1.1", throwables_1_1);
+    }
 }

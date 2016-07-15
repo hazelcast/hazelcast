@@ -21,9 +21,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.nio.serialization.compatibility.BinaryCompatibilityTest;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -38,22 +40,23 @@ import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqu
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(NightlyTest.class)
 public class ErrorCodecCompatibilityTest {
 
     private static Map<String, byte[]> dataMap = new HashMap<String, byte[]>();
     private static ClientExceptionFactory clientExceptionFactory = new ClientExceptionFactory(true);
     //OPTIONS
-    private static Throwable[] throwables = ReferenceObjects.throwables;
-    private static float[] versions = {1};
+    private static Map<String, Throwable[]> throwables = ReferenceObjects.throwables;
+    private static String[] versions = {"1.0", "1.1"};
 
     @Parameterized.Parameter(0)
     public Throwable throwable;
     @Parameterized.Parameter(1)
-    public float version;
+    public String version;
 
     @BeforeClass
     public static void init() throws IOException {
-        for (float version : versions) {
+        for (String version : versions) {
             String fileName = createFileName(version);
             InputStream input = BinaryCompatibilityTest.class.getResourceAsStream("/" + fileName);
             DataInputStream inputStream = new DataInputStream(input);
@@ -72,15 +75,15 @@ public class ErrorCodecCompatibilityTest {
         return version + "-" + throwable.getClass().getSimpleName();
     }
 
-    private static String createFileName(float version) {
+    private static String createFileName(String version) {
         return version + ".protocol.errorCodec.compatibility.binary";
     }
 
     @Parameterized.Parameters(name = "throwable:{0}, version:{1}")
     public static Iterable<Object[]> parameters() {
         LinkedList<Object[]> parameters = new LinkedList<Object[]>();
-        for (Throwable throwable : throwables) {
-            for (float version : versions) {
+        for (String version : versions) {
+            for (Throwable throwable : throwables.get(version)) {
                 parameters.add(new Object[]{throwable, version});
             }
         }

@@ -23,39 +23,40 @@ import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 
 /**
  * This class is used for generating the binary file to be committed at the beginning of
  * introducing a new serialization service. Change version field and run this class once.
  * Then move the created files to resources directory.
  * <p/>
- * mv *binary src/test/resources/
+ * mv *binary hazelcast/src/test/resources/
  */
 public class ErrorCodecFileGenerator {
 
-    //DONT FORGET TO CHANGE VERSION ACCORDINGLY
-    public static final float VERSION = 1;
-
     public static void main(String[] args) throws IOException {
-        Throwable[] throwables = ReferenceObjects.throwables;
-        String fileName = createFileName();
-        OutputStream out = new FileOutputStream(fileName);
-        DataOutputStream outputStream = new DataOutputStream(out);
+        Map<String, Throwable[]> allThrowables = ReferenceObjects.throwables;
         ClientExceptionFactory clientExceptionFactory = new ClientExceptionFactory(true);
-        for (Throwable throwable : throwables) {
-            outputStream.writeUTF(createObjectKey(throwable));
-            ClientMessage clientMessage = clientExceptionFactory.createExceptionMessage(throwable);
-            outputStream.writeInt(clientMessage.getFrameLength());
-            outputStream.write(clientMessage.buffer().byteArray(), 0, clientMessage.getFrameLength());
+        for (String version: allThrowables.keySet()) {
+            String fileName = createFileName(version);
+            OutputStream out = new FileOutputStream(fileName);
+            DataOutputStream outputStream = new DataOutputStream(out);
+            Throwable[] throwables = allThrowables.get(version);
+            for (Throwable throwable : throwables) {
+                outputStream.writeUTF(createObjectKey(throwable, version));
+                ClientMessage clientMessage = clientExceptionFactory.createExceptionMessage(throwable);
+                outputStream.writeInt(clientMessage.getFrameLength());
+                outputStream.write(clientMessage.buffer().byteArray(), 0, clientMessage.getFrameLength());
+            }
+            outputStream.close();
         }
-        outputStream.close();
     }
 
-    private static String createObjectKey(Object object) {
-        return VERSION + "-" + object.getClass().getSimpleName();
+    private static String createObjectKey(Object object, String version) {
+        return version + "-" + object.getClass().getSimpleName();
     }
 
-    private static String createFileName() {
-        return VERSION + ".protocol.errorCodec.compatibility.binary";
+    private static String createFileName(String version) {
+        return version + ".protocol.errorCodec.compatibility.binary";
     }
 }
