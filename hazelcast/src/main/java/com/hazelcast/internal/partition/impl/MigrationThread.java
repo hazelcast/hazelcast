@@ -81,7 +81,7 @@ class MigrationThread extends Thread implements Runnable {
 
             migrating |= runnable instanceof MigrationManager.MigrateTask;
             processTask(runnable);
-            if (partitionMigrationInterval > 0) {
+            if (migrating && partitionMigrationInterval > 0) {
                 Thread.sleep(partitionMigrationInterval);
             }
         }
