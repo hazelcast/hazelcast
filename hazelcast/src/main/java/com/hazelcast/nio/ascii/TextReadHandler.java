@@ -62,7 +62,7 @@ public class TextReadHandler implements ReadHandler {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 
-    private static final int CAPACITY = 500;
+    private static final int CAPACITY = 5000;
 
     static {
         MAP_COMMAND_PARSERS.put("get", new GetCommandParser());
