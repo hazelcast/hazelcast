@@ -46,15 +46,12 @@ public class JobEventOperation extends JetOperation {
         JobContext context = getJobContext();
 
         synchronized (context) {
-            JobStateMachine jobStateMachine =
-                    context.getJobStateMachine();
+            JobStateMachine jobStateMachine = context.getJobStateMachine();
 
             JobConfig config = context.getJobConfig();
             long secondsToAwait = config.getSecondsToAwait();
 
-            Future future = jobStateMachine.handleRequest(
-                    new JobStateMachineRequest(this.jobEvent)
-            );
+            Future future = jobStateMachine.handleRequest(new JobStateMachineRequest(this.jobEvent));
 
             context.getExecutorContext().getJobStateMachineExecutor().wakeUp();
             future.get(secondsToAwait, TimeUnit.SECONDS);

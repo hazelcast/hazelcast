@@ -64,8 +64,8 @@ public class ProducerTaskProcessor implements TaskProcessor {
         this.containerContext = containerContext;
         JobConfig jobConfig = containerContext.getJobContext().getJobConfig();
         int tupleChunkSize = jobConfig.getChunkSize();
-        this.objectInputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
-        this.tupleOutputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
+        this.objectInputStream = new DefaultObjectIOStream<>(new Object[tupleChunkSize]);
+        this.tupleOutputStream = new DefaultObjectIOStream<>(new Object[tupleChunkSize]);
     }
 
     public boolean onChunk(ProducerInputStream inputStream) throws Exception {
@@ -73,23 +73,21 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     protected void checkFinalization() {
-        if ((this.finalizationStarted) && (this.finalizationFinished)) {
-            this.finalized = true;
-            this.finalizationStarted = false;
-            this.finalizationFinished = false;
+        if (finalizationStarted && finalizationFinished) {
+            finalized = true;
+            finalizationStarted = false;
+            finalizationFinished = false;
             resetProducers();
         }
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean process() throws Exception {
-        int producersCount = this.producers.length;
+        int producersCount = producers.length;
 
-        if (this.finalizationStarted) {
-            this.finalizationFinished = this.processor.finalizeProcessor(
-                    this.tupleOutputStream,
-                    this.processorContext
-            );
+        if (finalizationStarted) {
+            finalizationFinished = processor.finalizeProcessor(tupleOutputStream, processorContext);
 
             return !processOutputStream();
         } else if (this.pendingProducer != null) {
@@ -125,17 +123,17 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
             if (!processProducer(producer)) {
                 this.produced = true;
-                this.nextProducerIdx = (idx + 1) % producersCount;
+                nextProducerIdx = (idx + 1) % producersCount;
                 return true;
             }
         }
 
-        if ((!produced) && (this.producersWriteFinished)) {
-            this.producingReadFinished = true;
+        if ((!produced) && (producersWriteFinished)) {
+            producingReadFinished = true;
         }
 
         if (producersCount > 0) {
-            this.nextProducerIdx = (lastIdx + 1) % producersCount;
+            nextProducerIdx = (lastIdx + 1) % producersCount;
             this.produced = produced;
         } else {
             this.produced = false;
@@ -145,42 +143,37 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     private int startFrom() {
-        return this.producersWriteFinished ? 0 : this.nextProducerIdx;
+        return producersWriteFinished ? 0 : nextProducerIdx;
     }
 
     private boolean processProducer(ObjectProducer producer) throws Exception {
-        if (!this.processor.process(
-                this.objectInputStream,
-                this.tupleOutputStream,
-                producer.getName(),
-                this.processorContext
-        )) {
-            this.pendingProducer = producer;
+        if (!processor.process(objectInputStream, tupleOutputStream, producer.getName(), processorContext)) {
+            pendingProducer = producer;
         } else {
-            this.pendingProducer = null;
+            pendingProducer = null;
         }
 
         if (!processOutputStream()) {
-            this.produced = true;
+            produced = true;
             return false;
         }
 
-        this.tupleOutputStream.reset();
-        return this.pendingProducer == null;
+        tupleOutputStream.reset();
+        return pendingProducer == null;
     }
 
 
     private boolean processOutputStream() throws Exception {
-        if (this.tupleOutputStream.size() == 0) {
+        if (tupleOutputStream.size() == 0) {
             checkFinalization();
             return true;
         } else {
-            if (!onChunk(this.tupleOutputStream)) {
-                this.produced = true;
+            if (!onChunk(tupleOutputStream)) {
+                produced = true;
                 return false;
             } else {
                 checkFinalization();
-                this.tupleOutputStream.reset();
+                tupleOutputStream.reset();
                 return true;
             }
         }
@@ -188,24 +181,24 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
     @Override
     public boolean produced() {
-        return this.produced;
+        return produced;
     }
 
 
     @Override
     public boolean isFinalized() {
-        return this.finalized;
+        return finalized;
     }
 
     @Override
     public void reset() {
         resetProducers();
 
-        this.finalized = false;
-        this.finalizationStarted = false;
-        this.producersWriteFinished = false;
-        this.producingReadFinished = false;
-        this.pendingProducer = null;
+        finalized = false;
+        finalizationStarted = false;
+        producersWriteFinished = false;
+        producingReadFinished = false;
+        pendingProducer = null;
     }
 
     @Override
@@ -213,7 +206,6 @@ public class ProducerTaskProcessor implements TaskProcessor {
         for (ObjectProducer producer : this.producers) {
             producer.open();
         }
-
         reset();
     }
 
@@ -226,24 +218,24 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
     @Override
     public void startFinalization() {
-        this.finalizationStarted = true;
+        finalizationStarted = true;
     }
 
     @Override
     public void onProducersWriteFinished() {
-        this.producersWriteFinished = true;
+        producersWriteFinished = true;
     }
 
     @Override
     public boolean producersReadFinished() {
-        return this.producingReadFinished;
+        return producingReadFinished;
     }
 
     private void resetProducers() {
-        this.produced = false;
-        this.nextProducerIdx = 0;
-        this.tupleOutputStream.reset();
-        this.objectInputStream.reset();
+        produced = false;
+        nextProducerIdx = 0;
+        tupleOutputStream.reset();
+        objectInputStream.reset();
     }
 
     @Override

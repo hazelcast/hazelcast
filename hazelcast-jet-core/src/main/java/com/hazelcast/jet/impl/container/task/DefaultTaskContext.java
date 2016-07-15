@@ -18,14 +18,13 @@ package com.hazelcast.jet.impl.container.task;
 
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.executor.TaskContext;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.data.io.JetTupleDataType;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.DataType;
 import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.ObjectReaderFactory;
 import com.hazelcast.jet.io.ObjectWriterFactory;
 import com.hazelcast.jet.io.impl.IOContextImpl;
-
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,37 +47,37 @@ public class DefaultTaskContext implements TaskContext {
 
     @Override
     public int getTaskCount() {
-        return this.taskCount;
+        return taskCount;
     }
 
     @Override
     public int getTaskNumber() {
-        return this.taskNumber;
+        return taskNumber;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key) {
-        return this.accumulatorMap.get(key);
+        return accumulatorMap.get(key);
     }
 
     @Override
     public <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator) {
-        this.accumulatorMap.put(key, accumulator);
+        accumulatorMap.put(key, accumulator);
     }
 
     @Override
     public void registerDataType(DataType dataType) {
-        this.ioContext.registerDataType(dataType);
+        ioContext.registerDataType(dataType);
     }
 
     @Override
     public ObjectReaderFactory getObjectReaderFactory() {
-        return this.ioContext.getObjectReaderFactory();
+        return ioContext.getObjectReaderFactory();
     }
 
     @Override
     public ObjectWriterFactory getObjectWriterFactory() {
-        return this.ioContext.getObjectWriterFactory();
+        return ioContext.getObjectWriterFactory();
     }
 }

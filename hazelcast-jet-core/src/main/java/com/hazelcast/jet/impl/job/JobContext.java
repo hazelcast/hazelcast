@@ -103,10 +103,7 @@ public class JobContext {
 
         );
 
-        this.localizationStorage = LocalizationStorageFactory.getLocalizationStorage(
-                this,
-                name
-        );
+        this.localizationStorage = LocalizationStorageFactory.getLocalizationStorage(this, name);
 
         this.jobStateMachine = STATE_MACHINE_FACTORY.newStateMachine(
                 name,

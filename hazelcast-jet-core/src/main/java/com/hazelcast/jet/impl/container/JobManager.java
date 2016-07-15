@@ -64,7 +64,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class JobManager
         extends AbstractContainer<JobManagerEvent, JobManagerState, JobManagerResponse> {
 
-    private static final InterruptedException JOB_INTERRUPTED_EXCEPTION = new InterruptedException("Job has been interrupted");
+    @SuppressWarnings("ThrowableInstanceNeverThrown")
+    private static final InterruptedException JOB_INTERRUPTED_EXCEPTION =
+            new InterruptedException("Job has been interrupted");
 
     private static final StateMachineFactory<JobManagerEvent,
             StateMachine<JobManagerEvent, JobManagerState, JobManagerResponse>>
@@ -249,10 +251,10 @@ public class JobManager
      */
     public void notifyExecutionError(Object reason) {
         for (MemberImpl member : getNodeEngine().getClusterService().getMemberImpls()) {
-            if (!member.localMember()) {
-                notifyClusterMembers(reason, member);
-            } else {
+            if (member.localMember()) {
                 notifyContainers(reason);
+            } else {
+                notifyClusterMembers(reason, member);
             }
         }
     }
@@ -275,9 +277,7 @@ public class JobManager
      */
     public void notifyContainers(Object reason) {
         Throwable error = getError(reason);
-        handleContainerRequest(
-                new ExecutionErrorRequest(error)
-        );
+        handleContainerRequest(new ExecutionErrorRequest(error));
     }
 
     private Throwable getError(Object reason) {

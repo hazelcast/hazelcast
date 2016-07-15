@@ -74,8 +74,7 @@ public abstract class AbstractStateMachine
     }
 
     public <P> ICompletableFuture<Output> handleRequest(StateMachineRequest<Input, P> request) {
-        BasicCompletableFuture<Output> future
-                = new BasicCompletableFuture<>(jobContext.getNodeEngine(), logger);
+        BasicCompletableFuture<Output> future = new BasicCompletableFuture<>(jobContext.getNodeEngine(), logger);
         RequestPayload<Input, Output> payload =
                 new RequestPayload<>(request.getContainerEvent(), future, request.getPayload());
 

@@ -43,7 +43,6 @@ import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalized
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -57,8 +56,7 @@ import static java.util.stream.Collectors.toList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ProcessingContainer extends
-        AbstractContainer<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse>
-        implements Container<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse> {
+        AbstractContainer<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse> {
 
     private static final StateMachineFactory<ProcessingContainerEvent,
             StateMachine<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse>>
@@ -66,8 +64,7 @@ public class ProcessingContainer extends
 
     private final Vertex vertex;
 
-    private final Map<Integer, ContainerTask> containerTasksCache =
-            new ConcurrentHashMap<Integer, ContainerTask>();
+    private final Map<Integer, ContainerTask> containerTasksCache = new ConcurrentHashMap<>();
 
     private final int tasksCount;
 
@@ -93,17 +90,13 @@ public class ProcessingContainer extends
 
     public ProcessingContainer(
             Vertex vertex, Supplier<ContainerProcessor> containerProcessorFactory, NodeEngine nodeEngine,
-            JobContext jobContext, JetTupleFactory tupleFactory
-    ) {
+            JobContext jobContext, JetTupleFactory tupleFactory) {
         super(vertex, STATE_MACHINE_FACTORY, nodeEngine, jobContext, tupleFactory);
         this.vertex = vertex;
         this.tupleFactory = tupleFactory;
         this.inputChannels = new ArrayList<>();
         this.outputChannels = new ArrayList<>();
-        this.taskProcessorFactory =
-                (!vertex.getSinks().isEmpty()
-                    || vertex.hasOutputShuffler() && nodeEngine.getClusterService().getMembers().size() > 1)
-                ? new ShuffledTaskProcessorFactory()
+        this.taskProcessorFactory = isShuffled(vertex, nodeEngine) ? new ShuffledTaskProcessorFactory()
                 : new DefaultTaskProcessorFactory();
         this.tasksCount = vertex.getDescriptor().getTaskCount();
         this.sourcesProducers = new ArrayList<>();
@@ -117,19 +110,20 @@ public class ProcessingContainer extends
         this.eventProcessorFactory = new DefaultEventProcessorFactory(completedTasks, interruptedTasks,
                 readyForFinalizationTasksCounter, this.containerTasks, this.getContainerContext(), this);
         buildTasks();
-        buildTaps();
+        buildSources();
+        buildSinks();
     }
 
     private void buildTasks() {
         ContainerTask[] containerTasks = getContainerTasks();
         for (int taskIndex = 0; taskIndex < this.tasksCount; taskIndex++) {
-            int taskID = this.taskIdGenerator.incrementAndGet();
-            containerTasks[taskIndex] = new DefaultContainerTask(this, getVertex(), this.taskProcessorFactory,
-                    taskID, new DefaultTaskContext(this.tasksCount, taskIndex, this.getJobContext()));
+            int taskID = taskIdGenerator.incrementAndGet();
+            containerTasks[taskIndex] = new DefaultContainerTask(this, getVertex(), taskProcessorFactory,
+                    taskID, new DefaultTaskContext(tasksCount, taskIndex, getJobContext()));
             getJobContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
             containerTasks[taskIndex].setThreadContextClassLoaders(
                     getJobContext().getLocalizationStorage().getClassLoader());
-            this.containerTasksCache.put(taskID, containerTasks[taskIndex]);
+            containerTasksCache.put(taskID, containerTasks[taskIndex]);
         }
     }
 
@@ -158,14 +152,14 @@ public class ProcessingContainer extends
      * @return - user-level container processing factory;
      */
     public final Supplier<ContainerProcessor> getContainerProcessorFactory() {
-        return this.containerProcessorFactory;
+        return containerProcessorFactory;
     }
 
     /**
      * @return - tasks of the container;
      */
     public ContainerTask[] getContainerTasks() {
-        return this.containerTasks;
+        return containerTasks;
     }
 
     /**
@@ -174,42 +168,42 @@ public class ProcessingContainer extends
      * @return - cache of container's tasks;
      */
     public Map<Integer, ContainerTask> getTasksCache() {
-        return this.containerTasksCache;
+        return containerTasksCache;
     }
 
     /**
      * @return - vertex for the corresponding container;
      */
     public Vertex getVertex() {
-        return this.vertex;
+        return vertex;
     }
 
     /**
      * @return - list of the input channels;
      */
     public List<DataChannel> getInputChannels() {
-        return this.inputChannels;
+        return inputChannels;
     }
 
     /**
      * @return - list of the output channels;
      */
     public List<DataChannel> getOutputChannels() {
-        return this.outputChannels;
+        return outputChannels;
     }
 
     /**
      * Adds input channel for container.
      */
     public void addInputChannel(DataChannel channel) {
-        this.inputChannels.add(channel);
+        inputChannels.add(channel);
     }
 
     /**
      * Adds output channel for container.
      */
     public void addOutputChannel(DataChannel channel) {
-        this.outputChannels.add(channel);
+        outputChannels.add(channel);
     }
 
     /**
@@ -220,10 +214,10 @@ public class ProcessingContainer extends
         if (taskCount == 0) {
             throw new IllegalStateException("No containerTasks for container");
         }
-        List<ObjectProducer> producers = new ArrayList<ObjectProducer>(this.sourcesProducers);
+        List<ObjectProducer> producers = new ArrayList<>(sourcesProducers);
         List<ObjectProducer>[] tasksProducers = new List[taskCount];
         for (int taskIdx = 0; taskIdx < getContainerTasks().length; taskIdx++) {
-            tasksProducers[taskIdx] = new ArrayList<ObjectProducer>();
+            tasksProducers[taskIdx] = new ArrayList<>();
         }
         int taskId = 0;
         for (ObjectProducer producer : producers) {
@@ -238,9 +232,9 @@ public class ProcessingContainer extends
     private void startTask(List<ObjectProducer> producers, int taskIdx) {
         for (DataChannel channel : getInputChannels()) {
             producers.addAll(channel.getActors()
-                                    .stream()
-                                    .map(actor -> actor.getParties()[taskIdx])
-                                    .collect(toList()));
+                    .stream()
+                    .map(actor -> actor.getParties()[taskIdx])
+                    .collect(toList()));
         }
         getContainerTasks()[taskIdx].start(producers);
     }
@@ -263,10 +257,11 @@ public class ProcessingContainer extends
 
     /**
      * Interrupts the execution of containers.
+     *
      * @param error the error that's causing the interruption
      */
     public void interrupt(Throwable error) {
-        for (ContainerTask task : this.containerTasks) {
+        for (ContainerTask task : containerTasks) {
             task.interrupt(error);
         }
     }
@@ -276,33 +271,63 @@ public class ProcessingContainer extends
         getJobContext().getExecutorContext().getDataContainerStateMachineExecutor().wakeUp();
     }
 
-    private void buildTaps() {
-        if (!getVertex().getSources().isEmpty()) {
-            for (Source source : getVertex().getSources()) {
-                List<DataReader> readers = Arrays.asList(
-                        source.getReaders(getContainerContext(), getVertex(), this.tupleFactory));
-                this.sourcesProducers.addAll(readers);
-            }
-        }
+    private boolean isShuffled(Vertex vertex, NodeEngine nodeEngine) {
+        return (hasOutputShuffler(vertex) && clusterHasMultipleMembers(nodeEngine)) || hasSink(vertex);
+    }
+
+    private boolean clusterHasMultipleMembers(NodeEngine nodeEngine) {
+        return nodeEngine.getClusterService().getMembers().size() > 1;
+    }
+
+    private boolean hasOutputShuffler(Vertex vertex) {
+        return vertex.hasOutputShuffler();
+    }
+
+    private boolean hasSink(Vertex vertex) {
+        return vertex.getSinks().size() > 0;
+    }
+
+    private void buildSinks() {
         List<Sink> sinks = getVertex().getSinks();
         for (Sink sink : sinks) {
             if (sink.isPartitioned()) {
                 for (ContainerTask containerTask : getContainerTasks()) {
-                    List<DataWriter> writers = Arrays.asList(sink.getWriters(getNodeEngine(), getContainerContext()));
+                    List<DataWriter> writers = getDataWriters(sink);
                     containerTask.registerSinkWriters(writers);
                 }
             } else {
-                List<DataWriter> writers = Arrays.asList(sink.getWriters(getNodeEngine(), getContainerContext()));
+                List<DataWriter> writers = getDataWriters(sink);
                 int i = 0;
+
                 for (ContainerTask containerTask : getContainerTasks()) {
                     List<DataWriter> sinkWriters = new ArrayList<>(sinks.size());
-                    if (writers.size() < i - 1) {
+                    if (writers.size() >= i - 1) {
+                        sinkWriters.add(writers.get(i++));
+                        containerTask.registerSinkWriters(sinkWriters);
+                    } else {
                         break;
                     }
-                    sinkWriters.add(writers.get(i++));
-                    containerTask.registerSinkWriters(sinkWriters);
                 }
             }
         }
+    }
+
+    private void buildSources() {
+        if (getVertex().getSources().size() > 0) {
+            for (Source source : getVertex().getSources()) {
+                List<DataReader> readers = getDataReaders(source);
+                sourcesProducers.addAll(readers);
+            }
+        }
+    }
+
+    private List<DataReader> getDataReaders(Source source) {
+        return Arrays.asList(
+                source.getReaders(getContainerContext(), getVertex(), tupleFactory)
+        );
+    }
+
+    private List<DataWriter> getDataWriters(Sink sink) {
+        return Arrays.asList(sink.getWriters(getNodeEngine(), getContainerContext()));
     }
 }

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.container.processingcontainer;
 
-import com.hazelcast.jet.impl.container.ContainerState;
+import com.hazelcast.jet.impl.statemachine.StateMachineState;
 
-public enum ProcessingContainerState implements ContainerState {
+public enum ProcessingContainerState implements StateMachineState {
     NEW,
     INTERRUPTING,
     AWAITING,

@@ -35,7 +35,6 @@ import com.hazelcast.jet.impl.job.JobClusterService;
 import com.hazelcast.jet.impl.job.localization.Chunk;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -43,8 +42,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 
-public class ClientJobClusterService
-        extends JobClusterService<ClientMessage> {
+public class ClientJobClusterService extends JobClusterService<ClientMessage> {
     private final HazelcastClientInstanceImpl client;
 
     public ClientJobClusterService(
@@ -58,57 +56,42 @@ public class ClientJobClusterService
     @Override
     public ClientMessage createInitJobInvoker(JobConfig config) {
         return JetInitCodec.encodeRequest(
-                this.name,
-                this.client.getSerializationService().toData(
-                        config == null ? new JobConfig() : config
-                )
-        );
+                name, client.getSerializationService().toData(config == null ? new JobConfig() : config));
     }
 
     @Override
     public ClientMessage createInterruptInvoker() {
-        return JetInterruptCodec.encodeRequest(this.name);
+        return JetInterruptCodec.encodeRequest(name);
     }
 
     @Override
     public ClientMessage createExecutionInvoker() {
-        return JetExecuteCodec.encodeRequest(this.name);
+        return JetExecuteCodec.encodeRequest(name);
     }
 
     @Override
     public ClientMessage createAccumulatorsInvoker() {
-        return JetGetAccumulatorsCodec.encodeRequest(this.name);
+        return JetGetAccumulatorsCodec.encodeRequest(name);
     }
 
     @Override
     public ClientMessage createSubmitInvoker(DAG dag) {
-        return JetSubmitCodec.encodeRequest(
-                this.name,
-                this.client.getSerializationService().toData(dag)
-        );
+        return JetSubmitCodec.encodeRequest(name, client.getSerializationService().toData(dag));
     }
 
     @Override
     public ClientMessage createLocalizationInvoker(Chunk chunk) {
-        return JetLocalizeCodec.encodeRequest(
-                this.name,
-                this.client.getSerializationService().toData(chunk)
-        );
+        return JetLocalizeCodec.encodeRequest(name, client.getSerializationService().toData(chunk));
     }
 
     @Override
     public ClientMessage createAcceptedLocalizationInvoker() {
-        return JetAcceptLocalizationCodec.encodeRequest(
-                this.name
-        );
+        return JetAcceptLocalizationCodec.encodeRequest(name);
     }
 
     @Override
     public ClientMessage createEventInvoker(JobEvent jobEvent) {
-        return JetEventCodec.encodeRequest(
-                this.name,
-                this.client.getSerializationService().toData(jobEvent)
-        );
+        return JetEventCodec.encodeRequest(name, client.getSerializationService().toData(jobEvent));
     }
 
     @Override
@@ -124,16 +107,12 @@ public class ClientJobClusterService
     @Override
     protected <T> Callable<T> createInvocation(Member member,
                                                Supplier<ClientMessage> factory) {
-        return new ClientJobInvocation<T>(
-                factory.get(),
-                member.getAddress(),
-                this.client
-        );
+        return new ClientJobInvocation<T>(factory.get(), member.getAddress(), client);
     }
 
     @Override
     protected <T> T toObject(Data data) {
-        return this.client.getSerializationService().toObject(data);
+        return client.getSerializationService().toObject(data);
     }
 
     @Override

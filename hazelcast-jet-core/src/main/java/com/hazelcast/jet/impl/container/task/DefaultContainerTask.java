@@ -27,17 +27,16 @@ import com.hazelcast.jet.impl.actor.DefaultComposedActor;
 import com.hazelcast.jet.impl.actor.ObjectActor;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.DefaultProcessorContext;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.logging.ILogger;
@@ -57,6 +56,7 @@ import java.util.function.Supplier;
 public class DefaultContainerTask extends AbstractTask
         implements ContainerTask {
 
+    @SuppressWarnings("ThrowableInstanceNeverThrown")
     private static final InterruptedException INTERRUPTED_EXCEPTION =
             new InterruptedException("Execution has been interrupted");
 
@@ -114,32 +114,25 @@ public class DefaultContainerTask extends AbstractTask
 
     @Override
     public void start(List<? extends ObjectProducer> producers) {
-        if ((producers != null) && (producers.size() > 0)) {
+        if (producers != null && !producers.isEmpty()) {
             for (ObjectProducer producer : producers) {
                 this.producers.add(producer);
-
-                producer.registerCompletionHandler(new ProducerCompletionHandler() {
-                    @Override
-                    public void onComplete(ObjectProducer producer) {
-                        handleProducerCompleted(producer);
-                    }
-                });
+                producer.registerCompletionHandler(this::handleProducerCompleted);
             }
         }
-
         onStart();
     }
 
     @Override
     public void interrupt(Throwable error) {
-        if (this.interrupted.compareAndSet(false, true)) {
+        if (interrupted.compareAndSet(false, true)) {
             this.error = error;
         }
     }
 
     @Override
     public void registerSinkWriters(List<DataWriter> sinkWriters) {
-        this.consumers.addAll(sinkWriters);
+        consumers.addAll(sinkWriters);
     }
 
     @Override
@@ -147,83 +140,75 @@ public class DefaultContainerTask extends AbstractTask
         List<ObjectActor> actors = new ArrayList<ObjectActor>(targetContainer.getContainerTasks().length);
 
         for (int i = 0; i < targetContainer.getContainerTasks().length; i++) {
-            ObjectActor actor = new RingBufferActor(this.nodeEngine, this.jobContext, this, this.vertex, edge);
+            ObjectActor actor = new RingBufferActor(nodeEngine, jobContext, this, vertex, edge);
 
             if (channel.isShuffled()) {
                 //output
-                actor = new ShufflingActor(actor, this.nodeEngine, this.containerContext);
+                actor = new ShufflingActor(actor, nodeEngine, containerContext);
             }
-
             actors.add(actor);
         }
 
-        ComposedActor composed = new DefaultComposedActor(this, actors, this.vertex, edge, this.containerContext);
-        this.consumers.add(composed);
+        ComposedActor composed = new DefaultComposedActor(this, actors, vertex, edge, containerContext);
+        consumers.add(composed);
 
         return composed;
     }
 
     @Override
     public void handleProducerCompleted(ObjectProducer actor) {
-        this.activeProducersCounter.decrementAndGet();
+        activeProducersCounter.decrementAndGet();
     }
 
     @Override
     public void registerShufflingReceiver(Address address, ShufflingReceiver receiver) {
-        this.shufflingReceivers.put(address, receiver);
-
-        receiver.registerCompletionHandler(new ProducerCompletionHandler() {
-            @Override
-            public void onComplete(ObjectProducer producer) {
-                activeReceiversCounter.decrementAndGet();
-            }
-        });
+        shufflingReceivers.put(address, receiver);
+        receiver.registerCompletionHandler(producer -> activeReceiversCounter.decrementAndGet());
     }
 
     @Override
     public TaskContext getTaskContext() {
-        return this.taskContext;
+        return taskContext;
     }
 
     @Override
     public ShufflingReceiver getShufflingReceiver(Address endPoint) {
-        return this.shufflingReceivers.get(endPoint);
+        return shufflingReceivers.get(endPoint);
     }
 
     @Override
     public Vertex getVertex() {
-        return this.containerContext.getVertex();
+        return containerContext.getVertex();
     }
 
     @Override
     public void startFinalization() {
-        this.finalizationStarted = true;
+        finalizationStarted = true;
     }
 
     @Override
     public void registerShufflingSender(Address address, ShufflingSender sender) {
-        this.shufflingSenders.put(address, sender);
+        shufflingSenders.put(address, sender);
     }
 
     @Override
     public void init() {
-        this.error = null;
-        this.taskProcessor.onOpen();
-        this.interrupted.set(false);
-        this.sendersClosed = false;
-        this.receiversClosed = false;
-        this.sendersFlushed = false;
-        this.producersClosed = false;
-
-        this.activeProducersCounter.set(this.producers.size());
-        this.activeReceiversCounter.set(this.shufflingReceivers.values().size());
-        this.finalizedReceiversCounter.set(this.shufflingReceivers.values().size());
+        error = null;
+        taskProcessor.onOpen();
+        interrupted.set(false);
+        sendersClosed = false;
+        receiversClosed = false;
+        sendersFlushed = false;
+        producersClosed = false;
+        activeProducersCounter.set(producers.size());
+        activeReceiversCounter.set(shufflingReceivers.values().size());
+        finalizedReceiversCounter.set(shufflingReceivers.values().size());
     }
 
     @Override
     public void beforeProcessing() {
         try {
-            this.processor.beforeProcessing(this.processorContext);
+            processor.beforeProcessing(processorContext);
         } catch (Throwable error) {
             afterProcessing();
             handleProcessingError(error);
@@ -249,13 +234,8 @@ public class DefaultContainerTask extends AbstractTask
                 try {
                     onInterrupt(processor);
                 } finally {
-                    container.handleTaskEvent(
-                            this,
-                            TaskEvent.TASK_EXECUTION_COMPLETED,
-                            getError()
-                    );
+                    container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_COMPLETED, getError());
                 }
-
                 return false;
             }
 
@@ -280,35 +260,31 @@ public class DefaultContainerTask extends AbstractTask
     }
 
     private Throwable getError() {
-        return this.error != null ? this.error : INTERRUPTED_EXCEPTION;
+        return error != null ? error : INTERRUPTED_EXCEPTION;
     }
 
     private void onInterrupt(TaskProcessor processor) {
         try {
             processor.reset();
-            this.taskProcessor.onClose();
-            for (ShufflingSender shufflingSender : this.shufflingSenders.values()) {
-                shufflingSender.close();
-            }
-
-            for (ShufflingReceiver shufflingReceiver : this.shufflingReceivers.values()) {
-                shufflingReceiver.close();
-            }
+            taskProcessor.onClose();
+            shufflingSenders.values().forEach(ShufflingSender::close);
+            shufflingReceivers.values().forEach(ShufflingReceiver::close);
         } finally {
             afterProcessing();
         }
     }
 
     private void handleResult(boolean result, Throwable e) {
-        if (!result) {
-            try {
-                afterProcessing();
-            } finally {
-                if (e == null) {
-                    completeTaskExecution();
-                } else {
-                    handleProcessingError(e);
-                }
+        if (result) {
+            return;
+        }
+        try {
+            afterProcessing();
+        } finally {
+            if (e == null) {
+                completeTaskExecution();
+            } else {
+                handleProcessingError(e);
             }
         }
     }
@@ -317,26 +293,25 @@ public class DefaultContainerTask extends AbstractTask
         ObjectProducer[] producers = this.producers.toArray(new ObjectProducer[this.producers.size()]);
         ObjectConsumer[] consumers = this.consumers.toArray(new ObjectConsumer[this.consumers.size()]);
 
-        this.taskProcessor = this.taskProcessorFactory.getTaskProcessor(
+        taskProcessor = taskProcessorFactory.getTaskProcessor(
                 producers,
                 consumers,
-                this.containerContext,
-                this.processorContext,
-                this.processor,
-                this.vertex,
-                this.taskID
+                containerContext,
+                processorContext,
+                processor,
+                vertex,
+                taskID
         );
 
-        this.finalizationStarted = false;
-        this.containerFinalizationNotified = false;
-        int size = this.shufflingSenders.values().size();
-        this.sendersArray =
-                this.shufflingSenders.values().toArray(new ShufflingSender[size]);
+        finalizationStarted = false;
+        containerFinalizationNotified = false;
+        int size = shufflingSenders.values().size();
+        sendersArray = shufflingSenders.values().toArray(new ShufflingSender[size]);
     }
 
     private void afterProcessing() {
         try {
-            processor.afterProcessing(this.processorContext);
+            processor.afterProcessing(processorContext);
         } catch (Throwable error) {
             handleProcessingError(error);
         }
@@ -377,7 +352,7 @@ public class DefaultContainerTask extends AbstractTask
     private boolean handleProcessorInProgress(TaskProcessor processor) {
         if (processor.producersReadFinished()) {
             notifyFinalizationStarted();
-            if (this.finalizationStarted) {
+            if (finalizationStarted) {
                 processor.startFinalization();
             }
         }
@@ -390,16 +365,15 @@ public class DefaultContainerTask extends AbstractTask
             return true;
         }
 
-        if (!this.sendersClosed) {
+        if (!sendersClosed) {
             for (ShufflingSender sender : this.sendersArray) {
                 sender.close();
             }
-
-            this.sendersClosed = true;
+            sendersClosed = true;
             return true;
         }
 
-        if (this.receiversClosed) {
+        if (receiversClosed) {
             return false;
         }
 
@@ -412,34 +386,35 @@ public class DefaultContainerTask extends AbstractTask
     }
 
     private boolean checkProducersClosed() {
-        if ((!this.producersClosed) && (this.activeProducersCounter.get() <= 0)) {
-            this.producersClosed = true;
-            return true;
+        if (producersClosed || activeProducersCounter.get() > 0) {
+            return false;
         }
+        producersClosed = true;
+        return true;
 
-        return false;
     }
 
     private boolean checkReceiversClosed() {
-        if (((!this.receiversClosed) && (this.activeReceiversCounter.get() <= 0))) {
-            this.receiversClosed = true;
-            return true;
+        if (receiversClosed || activeReceiversCounter.get() > 0) {
+            return false;
         }
+        receiversClosed = true;
+        return true;
 
-        return false;
     }
 
     private void notifyFinalizationStarted() {
-        if (!this.containerFinalizationNotified) {
-            this.container.handleTaskEvent(this, TaskEvent.TASK_READY_FOR_FINALIZATION);
-            this.containerFinalizationNotified = true;
+        if (containerFinalizationNotified) {
+            return;
         }
+        container.handleTaskEvent(this, TaskEvent.TASK_READY_FOR_FINALIZATION);
+        containerFinalizationNotified = true;
     }
 
     private boolean checkIfSendersFlushed() {
         boolean success = true;
 
-        for (ShufflingSender sender : this.sendersArray) {
+        for (ShufflingSender sender : sendersArray) {
             success &= sender.isFlushed();
         }
 
@@ -465,9 +440,9 @@ public class DefaultContainerTask extends AbstractTask
 
     private void completeTaskExecution(Throwable e) {
         try {
-            this.taskProcessor.onClose();
+            taskProcessor.onClose();
         } finally {
-            this.container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_COMPLETED, e);
+            container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_COMPLETED, e);
         }
     }
 }

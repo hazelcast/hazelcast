@@ -67,10 +67,10 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     }
 
     private void checkFinalization() {
-        if ((this.finalizationStarted) && (this.finalizationFinished)) {
-            this.finalized = true;
-            this.finalizationStarted = false;
-            this.finalizationFinished = false;
+        if (finalizationStarted && finalizationFinished) {
+            finalized = true;
+            finalizationStarted = false;
+            finalizationFinished = false;
             resetConsumers();
         }
     }
@@ -78,40 +78,20 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public boolean process() throws Exception {
-        if (this.tupleOutputStream.size() > 0) {
-            boolean success = onChunk(this.tupleOutputStream);
-
-            if (success) {
-                this.tupleOutputStream.reset();
-                checkFinalization();
-            }
-
-            return success;
+        if (tupleOutputStream.size() > 0) {
+            return consumeChunkAndResetOutputIfSuccess();
         } else {
-            if (!this.finalizationStarted) {
-                if (this.producersWriteFinished) {
+            if (finalizationStarted) {
+                finalizationFinished = processor.finalizeProcessor(tupleOutputStream, processorContext);
+            } else {
+                if (producersWriteFinished) {
                     return true;
                 }
-
-                this.processor.process(
-                        this.tupleInputStream,
-                        this.tupleOutputStream,
-                        null,
-                        this.processorContext
-                );
-            } else {
-                this.finalizationFinished = this.processor.finalizeProcessor(this.tupleOutputStream, this.processorContext);
+                processor.process(tupleInputStream, tupleOutputStream, null, processorContext);
             }
 
-            if (this.tupleOutputStream.size() > 0) {
-                boolean success = onChunk(this.tupleOutputStream);
-
-                if (success) {
-                    this.tupleOutputStream.reset();
-                    checkFinalization();
-                }
-
-                return success;
+            if (tupleOutputStream.size() > 0) {
+                return consumeChunkAndResetOutputIfSuccess();
             } else {
                 checkFinalization();
             }
@@ -120,13 +100,25 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private boolean consumeChunkAndResetOutputIfSuccess() throws Exception {
+        boolean success = onChunk(tupleOutputStream);
+
+        if (success) {
+            tupleOutputStream.reset();
+            checkFinalization();
+        }
+
+        return success;
+    }
+
     @Override
     public boolean onChunk(ProducerInputStream<Object> inputStream) throws Exception {
         this.consumed = false;
 
         if (inputStream.size() > 0) {
-            boolean success = this.consumersProcessor.process(inputStream);
-            boolean consumed = this.consumersProcessor.isConsumed();
+            boolean success = consumersProcessor.process(inputStream);
+            boolean consumed = consumersProcessor.isConsumed();
 
             if (success) {
                 resetConsumers();
@@ -141,42 +133,39 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     @Override
     public boolean consumed() {
-        return this.consumed;
+        return consumed;
     }
 
     @Override
     public boolean isFinalized() {
-        return this.finalized;
+        return finalized;
     }
 
     @Override
     public void reset() {
         resetConsumers();
-
-        this.finalizationStarted = false;
-        this.finalizationFinished = false;
-        this.producersWriteFinished = false;
-        this.finalized = false;
+        finalizationStarted = false;
+        finalizationFinished = false;
+        producersWriteFinished = false;
+        finalized = false;
     }
 
     private void resetConsumers() {
-        this.consumed = false;
-        this.tupleOutputStream.reset();
-        this.consumersProcessor.reset();
+        consumed = false;
+        tupleOutputStream.reset();
+        consumersProcessor.reset();
     }
 
     public void onOpen() {
         for (ObjectConsumer consumer : consumers) {
             consumer.open();
         }
-
         reset();
     }
 
     @Override
     public void onClose() {
         reset();
-
         for (ObjectConsumer consumer : consumers) {
             if (!consumer.isShuffled()) {
                 consumer.close();
@@ -186,12 +175,12 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     @Override
     public void startFinalization() {
-        this.finalizationStarted = true;
+        finalizationStarted = true;
     }
 
     @Override
     public void onProducersWriteFinished() {
-        this.producersWriteFinished = true;
+        producersWriteFinished = true;
     }
 
     @Override
