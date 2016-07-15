@@ -19,28 +19,27 @@ package com.hazelcast.jet.memory.multimap;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.util.sort.QuickSorter;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
+import com.hazelcast.jet.memory.util.JetIoUtil;
+
+import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.KEY_SIZE;
 
 /**
  * Quick sorter implementation for JET openAddressing storage
  */
 public class HsaQuickSorter extends QuickSorter {
-    private final int slotSize;
     private final TupleMultimapHsa multimap;
-    private final byte[] temporaryBuffer;
     private Comparator comparator;
 
-    private long pivotKeySize;
     private long pivotKeyAddress;
-    private MemoryAccessor memoryAccessor;
+    private long pivotKeySize;
+    private MemoryAccessor mem;
 
     public HsaQuickSorter(TupleMultimapHsa multimap) {
         this.multimap = multimap;
-        this.slotSize = JetHashSlotArray.KEY_SIZE;
-        this.temporaryBuffer = new byte[JetHashSlotArray.KEY_SIZE];
     }
 
     public void setMemoryAccessor(MemoryAccessor memoryAccessor) {
-        this.memoryAccessor = memoryAccessor;
+        this.mem = memoryAccessor;
     }
 
     public void setComparator(Comparator comparator) {
@@ -49,10 +48,10 @@ public class HsaQuickSorter extends QuickSorter {
 
     @Override
     protected void loadPivot(long index) {
-        long slotAddress = loadByIndex(index);
-        long recordAddress = multimap.addrOfFirstTupleAt(slotAddress);
-        pivotKeyAddress = multimap.addrOfKeyBlockAt(recordAddress);
-        pivotKeySize = multimap.sizeOfKeyBlockAt(recordAddress);
+        long slotAddress = addrOfSlotAt(index);
+        long tupleAddress = multimap.addrOfFirstTupleAt(slotAddress);
+        pivotKeyAddress = JetIoUtil.addressOfKeyBlockAt(tupleAddress);
+        pivotKeySize = multimap.sizeOfKeyBlockAt(tupleAddress);
     }
 
     @Override
@@ -67,22 +66,22 @@ public class HsaQuickSorter extends QuickSorter {
 
     @Override
     protected void swap(long index1, long index2) {
-        long leftSlotAddress = loadByIndex(index1);
-        long rightSlotAddress = loadByIndex(index2);
-        memoryAccessor.copyToByteArray(rightSlotAddress, temporaryBuffer, 0, temporaryBuffer.length);
-        memoryAccessor.copyMemory(leftSlotAddress, rightSlotAddress, slotSize);
-        memoryAccessor.copyFromByteArray(temporaryBuffer, 0, leftSlotAddress, temporaryBuffer.length);
+        final long addrOfSlot1 = addrOfSlotAt(index1);
+        final long addrOfSlot2 = addrOfSlotAt(index2);
+        final long tmp = mem.getLong(addrOfSlot1);
+        mem.putLong(addrOfSlot1, mem.getLong(addrOfSlot2));
+        mem.putLong(addrOfSlot2, tmp);
     }
 
     private int compareWithPivot(long index) {
-        long keySlot = loadByIndex(index);
-        long recordAddress = multimap.addrOfFirstTupleAt(keySlot);
-        long keyAddress = multimap.addrOfKeyBlockAt(recordAddress);
-        long keySize = multimap.sizeOfKeyBlockAt(recordAddress);
-        return comparator.compare(memoryAccessor, memoryAccessor, keyAddress, keySize, pivotKeyAddress, pivotKeySize);
+        long keySlot = addrOfSlotAt(index);
+        long tupleAddress = multimap.addrOfFirstTupleAt(keySlot);
+        long keyAddress = JetIoUtil.addressOfKeyBlockAt(tupleAddress);
+        long keySize = multimap.sizeOfKeyBlockAt(tupleAddress);
+        return comparator.compare(mem, mem, keyAddress, keySize, pivotKeyAddress, pivotKeySize);
     }
 
-    private long loadByIndex(long index) {
-        return multimap.getHashSlotArray().address() + slotSize * index;
+    private long addrOfSlotAt(long index) {
+        return multimap.getHashSlotArray().address() + KEY_SIZE * index;
     }
 }

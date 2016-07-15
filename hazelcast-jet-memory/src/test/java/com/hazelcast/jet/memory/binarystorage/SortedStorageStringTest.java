@@ -88,7 +88,7 @@ public class SortedStorageStringTest extends BaseMemoryTest {
     private void sortedTest(SortedStorage blobMap, MemoryBlock memoryBlock, int cnt, int value_cnt) {
         JetDataOutput output = serializationService.createObjectDataOutput(memoryBlock, true);
         JetDataInput input = serializationService.createObjectDataInput(memoryBlock, true);
-        Tuple tuple = new Tuple2<>();
+        Tuple2<String, String> tuple = new Tuple2<>();
         long t = System.currentTimeMillis();
         for (int idx = 1; idx <= cnt; idx++) {
             putEntry(idx, output, blobMap, value_cnt);
@@ -111,14 +111,14 @@ public class SortedStorageStringTest extends BaseMemoryTest {
         for (SlotAddressCursor cursor = blobMap.slotCursor(SortOrder.DESC); cursor.advance();) {
             long slotAddress = cursor.slotAddress();
             iterationsCount++;
-            int value = 0;
+            int valueCount = 0;
             for (TupleAddressCursor tupleCursor = blobMap.tupleCursor(slotAddress); tupleCursor.advance();) {
                 long tupleAddress = tupleCursor.tupleAddress();
-                value++;
+                valueCount++;
                 JetIoUtil.readTuple(input, tupleAddress, tuple, ioContext, memoryBlock.getAccessor());
             }
-            assertEquals(treeMapIterator.next(), tuple.getKey(0));
-            assertEquals(value_cnt, value);
+            assertEquals(treeMapIterator.next(), tuple.get0());
+            assertEquals(value_cnt, valueCount);
         }
         assertEquals(iterationsCount, cnt);
         System.out.println(memoryBlock.getUsedBytes() / (1024 * 1024));

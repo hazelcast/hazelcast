@@ -32,8 +32,8 @@ import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.job.Job;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.strategy.SingleNodeShufflingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -177,14 +177,13 @@ public class SourceSinkTest extends JetTestSupport {
         return input;
     }
 
-    public static class Parser implements ContainerProcessor<Tuple<Integer, String>, Tuple<Integer, Integer>> {
-
+    public static class Parser implements ContainerProcessor<Tuple2<Integer, String>, Tuple2<Integer, Integer>> {
         @Override
-        public boolean process(ProducerInputStream<Tuple<Integer, String>> inputStream,
-                               ConsumerOutputStream<Tuple<Integer, Integer>> outputStream,
+        public boolean process(ProducerInputStream<Tuple2<Integer, String>> inputStream,
+                               ConsumerOutputStream<Tuple2<Integer, Integer>> outputStream,
                                String sourceName, ProcessorContext processorContext) throws Exception {
-            for (Tuple<Integer, String> tuple : inputStream) {
-                int val = Integer.parseInt(tuple.getValue(0));
+            for (Tuple2<Integer, String> tuple : inputStream) {
+                int val = Integer.parseInt(tuple.get1());
                 outputStream.consume(new JetTuple2<>(val, val));
             }
             return true;

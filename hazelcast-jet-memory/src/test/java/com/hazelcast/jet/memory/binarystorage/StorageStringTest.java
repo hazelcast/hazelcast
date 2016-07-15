@@ -59,12 +59,12 @@ public class StorageStringTest extends BaseMemoryTest {
         openAddressingBaseTest(nativeMemoryBlock, 100_000, 10);
     }
 
-    public void openAddressingBaseTest(MemoryBlock memoryBlock, int keysCount, int valueCount) {
+    public void openAddressingBaseTest(MemoryBlock memoryBlock, int keyCount, int valueCount) {
         Storage blobMap = new HashStorage(
                 memoryBlock, new StringComparator(memoryBlock.getAccessor()).getHasher(),
                 addr -> { }, 1 << 10, 0.5f);
         blobMap.setMemoryBlock(memoryBlock);
-        test(blobMap, memoryBlock, keysCount, valueCount);
+        test(blobMap, memoryBlock, keyCount, valueCount);
     }
 
     @Test

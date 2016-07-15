@@ -17,10 +17,10 @@
 package com.hazelcast.jet.memory.binarystorage;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.util.hashslot.HashSlotArray;
 import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.serialization.JetDataOutput;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursorImpl;
@@ -31,11 +31,14 @@ import com.hazelcast.jet.memory.multimap.TupleMultimapHsa;
 
 import java.util.function.LongConsumer;
 
+import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.jet.memory.binarystorage.FetchMode.CREATE_IF_ABSENT;
 import static com.hazelcast.jet.memory.binarystorage.FetchMode.CREATE_OR_APPEND;
 import static com.hazelcast.jet.memory.binarystorage.FetchMode.JUST_GET;
 import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.DEFAULT_INITIAL_CAPACITY;
 import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.FIRST_FOOTER_SIZE_BYTES;
+import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.OTHER_FOOTER_SIZE_BYTES;
 import static com.hazelcast.jet.memory.util.JetIoUtil.writeTuple;
 
 /**
@@ -70,7 +73,7 @@ public class HashStorage implements Storage {
     }
 
     @Override
-    public long addrOfHeadTuple(long slotAddress) {
+    public long addrOfFirstTuple(long slotAddress) {
         return multimap.addrOfFirstTupleAt(slotAddress);
     }
 
@@ -121,7 +124,7 @@ public class HashStorage implements Storage {
 
     @Override
     public long gotoNew() {
-        return multimap.getHashSlotArray().gotoNew();
+        return ((HashSlotArray) multimap.getHashSlotArray()).gotoNew();
     }
 
     @Override
@@ -130,9 +133,9 @@ public class HashStorage implements Storage {
     }
 
     @Override
-    public void insertTuple(Tuple tuple, IOContext ioContext, JetDataOutput output) {
+    public void insertTuple(Tuple2 tuple, IOContext ioContext, JetDataOutput output) {
         writeTuple(tuple, output, ioContext, memoryBlock);
-        output.skip(TupleMultimapHsa.FOOTER_SIZE_BYTES);
+        output.skip(TupleMultimapHsa.FIRST_FOOTER_SIZE_BYTES);
         final long slotAddr = multimap.fetchSlot(output.baseAddress(), memoryBlock.getAccessor(), null, CREATE_OR_APPEND);
         adjustAllocatedSizeAsNeeded(slotAddr);
     }
@@ -176,8 +179,10 @@ public class HashStorage implements Storage {
     }
 
     private void adjustAllocatedSizeAsNeeded(long slotAddr) {
+        // negative slotAddr => slot already existed => currently inserted tuple is not the first one in the slot
+        // => reduce allocated size by the difference between the size of first tuple's footer and other tuple's footer
         if (slotAddr < 0) {
-            memoryBlock.getAllocator().free(MemoryAllocator.NULL_ADDRESS, TupleMultimapHsa.FOOTER_DELTA);
+            memoryBlock.getAllocator().free(NULL_ADDRESS, FIRST_FOOTER_SIZE_BYTES - OTHER_FOOTER_SIZE_BYTES);
         }
     }
 }

@@ -31,7 +31,7 @@ import org.junit.Before;
 //@RunWith(HazelcastSerialClassRunner.class)
 //@Category(QuickTest.class)
 public class SimpleJoinerTest extends BaseMemoryTest {
-    private Aggregator<String, Integer> aggregator;
+    private Aggregator aggregator;
     private IOContext ioContext = new IOContextImpl();
 
 
@@ -66,7 +66,6 @@ public class SimpleJoinerTest extends BaseMemoryTest {
                 binaryFunctor,
                 "",
                 1024,//spillingChunkSize
-                1024,//bloomFilterSizeInBytes
                 false,
                 true
         );

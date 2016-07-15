@@ -17,15 +17,15 @@
 package com.hazelcast.jet.memory.operation.joiner;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
 import com.hazelcast.jet.memory.operation.aggregator.JoinAggregator;
 import com.hazelcast.jet.memory.operation.aggregator.PartitionedAggregator;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.InMemoryCursor;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.SpillingCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
 import com.hazelcast.jet.memory.spilling.DefaultSpiller;
 
 /**
@@ -125,22 +125,18 @@ import com.hazelcast.jet.memory.spilling.DefaultSpiller;
  * <p>
  * <p>
  * No sorting performed for this type of aggregation;
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public class PartitionedJoiner<K, V> extends PartitionedAggregator<K, V> implements JoinAggregator<K, V> {
+public class PartitionedJoiner extends PartitionedAggregator implements JoinAggregator {
 
     @SuppressWarnings({
             "checkstyle:parameternumber"
     })
     public PartitionedJoiner(
-            int partitionCount, int spillingBufferSize, int bloomFilterSizeInBytes, IOContext ioContext,
-            Comparator comparator, MemoryContext memoryContext, MemoryChainingRule memoryChainingRule,
-            Tuple tuple, String spillingDirectory, int spillingChunkSize,
-            boolean spillToDisk, boolean useBigEndian
+            int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 tuple, String spillingDirectory,
+            int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        super(partitionCount, spillingBufferSize, bloomFilterSizeInBytes, ioContext, comparator, memoryContext,
+        super(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
                 memoryChainingRule, tuple, spillingDirectory, spillingChunkSize, spillToDisk,
                 useBigEndian);
     }
@@ -169,15 +165,15 @@ public class PartitionedJoiner<K, V> extends PartitionedAggregator<K, V> impleme
         assert source == 0;
     }
 
-    private class DefaultJoinerCursor implements TupleCursor<K, V> {
+    private class DefaultJoinerCursor implements TupleCursor {
         private final TupleCursor memoryCursor;
         private final TupleCursor spillingCursor;
         private boolean spillingCursorDone;
 
         public DefaultJoinerCursor() {
-            this.spillingCursor = new SpillingCursor<>(serviceMemoryBlock, temporaryMemoryBlock, accumulator,
+            this.spillingCursor = new SpillingCursor(serviceMemoryBlock, temporaryMemoryBlock, accumulator,
                     spiller, destTuple, partitions, header, ioContext, useBigEndian);
-            this.memoryCursor = new InMemoryCursor<>(serviceKeyValueStorage, serviceMemoryBlock,
+            this.memoryCursor = new InMemoryCursor(serviceKeyValueStorage, serviceMemoryBlock,
                     temporaryMemoryBlock, accumulator, destTuple, partitions, header, ioContext, useBigEndian);
         }
 
@@ -202,7 +198,7 @@ public class PartitionedJoiner<K, V> extends PartitionedAggregator<K, V> impleme
         }
 
         @Override
-        public Tuple<K, V> asTuple() {
+        public Tuple2 asTuple() {
             return (spillingCursorDone ? memoryCursor : spillingCursor).asTuple();
         }
     }

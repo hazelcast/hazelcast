@@ -21,7 +21,7 @@ import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -53,11 +53,11 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
     private final Set<Characteristics> characteristics;
     private final Distributed.Function<A, R> finisher;
 
-    public DistributedCollectorImpl(Distributed.Supplier<A> supplier,
-                                    Distributed.BiConsumer<A, T> accumulator,
-                                    Distributed.BinaryOperator<A> combiner,
-                                    Distributed.Function<A, R> finisher,
-                                    Set<Characteristics> characteristics) {
+    public DistributedCollectorImpl(
+            Distributed.Supplier<A> supplier, Distributed.BiConsumer<A, T> accumulator,
+            Distributed.BinaryOperator<A> combiner, Distributed.Function<A, R> finisher,
+            Set<Characteristics> characteristics
+    ) {
         this.supplier = supplier;
         this.accumulator = accumulator;
         this.combiner = combiner;
@@ -65,10 +65,10 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         this.characteristics = characteristics;
     }
 
-    public DistributedCollectorImpl(Distributed.Supplier<A> supplier,
-                                    Distributed.BiConsumer<A, T> accumulator,
-                                    Distributed.BinaryOperator<A> combiner,
-                                    Set<Characteristics> characteristics) {
+    public DistributedCollectorImpl(
+            Distributed.Supplier<A> supplier, Distributed.BiConsumer<A, T> accumulator,
+            Distributed.BinaryOperator<A> combiner, Set<Characteristics> characteristics
+    ) {
         this(supplier, accumulator, combiner, castingIdentity(), characteristics);
     }
 
@@ -79,7 +79,6 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
         IList<R> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
         combiner.addSink(new ListSink(list));
-
         executeJob(context, dag);
         R result = list.get(0);
         list.destroy();
@@ -88,7 +87,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     static <T, R> Vertex buildAccumulator(DAG dag, Pipeline<T> upstream, Supplier<R> supplier,
                                           BiConsumer<R, ? super T> accumulator) {
-        Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Tuple2, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
         Vertex accumulatorVertex = vertexBuilder(CollectorAccumulatorProcessor.class)
                 .addToDAG(dag)
@@ -139,7 +138,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         }
     }
 
-    protected static <T, U extends T> Distributed.Function<U, Tuple> toTupleMapper() {
+    protected static <T, U extends T> Distributed.Function<U, Tuple2> toTupleMapper() {
         return o -> new JetTuple2<Object, T>(0, o);
     }
 

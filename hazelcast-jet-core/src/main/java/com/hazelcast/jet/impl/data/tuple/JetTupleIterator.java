@@ -21,16 +21,16 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Iterator;
 
-public class JetTupleIterator<R, K, V> implements Iterator<JetTuple<K, V>> {
+public class JetTupleIterator<R> implements Iterator<JetTuple> {
     private final Iterator<R> iterator;
-    private final JetTupleConvertor<R, K, V> convertor;
+    private final JetTupleConverter<R> convertor;
     private final SerializationService serializationService;
 
-    public JetTupleIterator(Iterator<R> iterator,
-                            JetTupleConvertor<R, K, V> convertor,
-                            SerializationService serializationService) {
+    public JetTupleIterator(
+            Iterator<R> iterator, JetTupleConverter<R> converter, SerializationService serializationService
+    ) {
         this.iterator = iterator;
-        this.convertor = convertor;
+        this.convertor = converter;
         this.serializationService = serializationService;
     }
 
@@ -39,12 +39,13 @@ public class JetTupleIterator<R, K, V> implements Iterator<JetTuple<K, V>> {
         return iterator.hasNext();
     }
 
+    @Override
     public void remove() {
-        throw new IllegalStateException("not supported exception");
+        throw new UnsupportedOperationException("remove");
     }
 
     @Override
-    public JetTuple<K, V> next() {
+    public JetTuple next() {
         return convertor.convert(iterator.next(), serializationService);
     }
 }

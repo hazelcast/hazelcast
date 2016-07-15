@@ -16,16 +16,13 @@
 
 package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 
 /**
  * Cursor over a range of tuples.
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public interface TupleCursor<K, V> {
+public interface TupleCursor {
     void reset(Comparator comparator);
 
     boolean advance();
@@ -35,5 +32,5 @@ public interface TupleCursor<K, V> {
      * the returned object is valid only until {@code advance} or {@code reset} is
      * called on this cursor.
      */
-    Tuple<K, V> asTuple();
+    Tuple2 asTuple();
 }

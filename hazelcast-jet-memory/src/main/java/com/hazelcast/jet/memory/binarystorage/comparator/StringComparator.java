@@ -17,10 +17,8 @@
 package com.hazelcast.jet.memory.binarystorage.comparator;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.memory.impl.EndiannessUtil;
 import com.hazelcast.jet.memory.binarystorage.Hasher;
 
-import static com.hazelcast.internal.memory.impl.EndiannessUtil.CUSTOM_ACCESS;
 import static com.hazelcast.jet.memory.binarystorage.comparator.LexicographicBitwiseComparator.lexicographicBlobCompare;
 import static com.hazelcast.util.HashUtil.MurmurHash3_x64_64_direct;
 
@@ -28,8 +26,7 @@ import static com.hazelcast.util.HashUtil.MurmurHash3_x64_64_direct;
  * Compares blobs byte for byte. A blob is assumed to have a header which tells its size.
  */
 public class StringComparator implements Comparator, Hasher {
-    public static final int LENGTH_OFFSET = 5;
-    public static final int PAYLOAD_OFFSET = 9;
+    public static final int PAYLOAD_OFFSET = 5;
     private MemoryAccessor mem;
     private Hasher partitionHasher = new PartitionHasher();
 
@@ -49,10 +46,9 @@ public class StringComparator implements Comparator, Hasher {
     public int compare(MemoryAccessor leftAccessor, MemoryAccessor rightAccessor,
                        long leftAddress, long leftSize, long rightAddress, long rightSize
     ) {
-        int leftLength = EndiannessUtil.readInt(CUSTOM_ACCESS, leftAccessor, leftAddress + LENGTH_OFFSET, true);
-        int rightLength = EndiannessUtil.readInt(CUSTOM_ACCESS, rightAccessor, rightAddress + LENGTH_OFFSET, true);
         return lexicographicBlobCompare(leftAccessor, rightAccessor,
-                leftAddress + PAYLOAD_OFFSET, leftLength, rightAddress + PAYLOAD_OFFSET, rightLength);
+                leftAddress + PAYLOAD_OFFSET, leftSize - PAYLOAD_OFFSET,
+                rightAddress + PAYLOAD_OFFSET, rightSize - PAYLOAD_OFFSET);
     }
 
     @Override
@@ -74,7 +70,7 @@ public class StringComparator implements Comparator, Hasher {
 
     @Override
     public long hash(MemoryAccessor memoryAccessor, long address, long length) {
-        return MurmurHash3_x64_64_direct(memoryAccessor, address, 3, (int) (length - 3));
+        return MurmurHash3_x64_64_direct(memoryAccessor, address, PAYLOAD_OFFSET, (int) (length - PAYLOAD_OFFSET));
     }
 
     private class PartitionHasher implements Hasher {

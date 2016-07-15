@@ -24,7 +24,7 @@ import java.io.Flushable;
 import java.io.IOException;
 
 /**
- * Provides methods to write key-value storage to disk storage
+ * Provides methods to save memory storage to disk
  * <p>
  * Storage format is:
  * <p>
@@ -53,13 +53,13 @@ public class SpillingKeyValueWriter implements Flushable {
         dataOutput.writeLong(recordCount);
     }
 
-    public void writeRecord(MemoryBlock sourceBlock, final long recordAddress) {
-        final MemoryAccessor accessor = sourceBlock.getAccessor();
-        long keySize = JetIoUtil.sizeOfKeyBlockAt(recordAddress, accessor);
-        long valueSize = JetIoUtil.sizeOfValueBlockAt(recordAddress, accessor);
-        long keyAddress = JetIoUtil.addressOfKeyBlockAt(recordAddress);
-        long valueAddress = JetIoUtil.addrOfValueBlockAt(recordAddress, accessor);
-        writeRecord(sourceBlock, keySize, valueSize, keyAddress, valueAddress);
+    public void writeRecord(MemoryBlock mBlock, long tupleAddress) {
+        final MemoryAccessor mem = mBlock.getAccessor();
+        long keySize = JetIoUtil.sizeOfKeyBlockAt(tupleAddress, mem);
+        long valueSize = JetIoUtil.sizeOfValueBlockAt(tupleAddress, mem);
+        long keyAddress = JetIoUtil.addressOfKeyBlockAt(tupleAddress);
+        long valueAddress = JetIoUtil.addrOfValueBlockAt(tupleAddress, mem);
+        writeRecord(mBlock, keySize, valueSize, keyAddress, valueAddress);
     }
 
     public void writeRecord(MemoryBlock sourceBlock, long keySize, long valueSize, long keyAddress, long valueAddress) {

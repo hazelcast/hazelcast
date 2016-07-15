@@ -40,7 +40,7 @@ public class StorageHeader {
      *
      * @return address of the storage;
      */
-    public long getBaseStorageAddress() {
+    public long baseAddress() {
         checkNotNull(memoryBlock);
         return memoryBlock.getAccessor().getLong(headerAddress);
     }

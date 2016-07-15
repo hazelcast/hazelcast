@@ -18,8 +18,8 @@ package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryAllocator;
-import com.hazelcast.jet.memory.binarystorage.SortedStorage;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
+import com.hazelcast.jet.memory.binarystorage.SortedStorage;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
@@ -39,11 +39,11 @@ public class InputsCursor {
 
     private int inputsCount;
     private long[] keySize;
-    private long[] hashCode;
+    private long[] hashCodes;
     private long[] valueSize;
     private int[] sources;
     private int[] partitionId;
-    private long[] recordsCount;
+    private long[] tupleCounts;
     private long[] recordAddresses;
     private long[] keyAddress;
     private long[] valueAddress;
@@ -67,7 +67,7 @@ public class InputsCursor {
         initCells();
         for (int i = 0; i < memoryInput.size(); i++) {
             storageHeader.setMemoryBlock(memoryInput.get(i));
-            storageAddresses[i + 1] = storageHeader.getBaseStorageAddress();
+            storageAddresses[i + 1] = storageHeader.baseAddress();
         }
     }
 
@@ -86,12 +86,12 @@ public class InputsCursor {
         }
         if (slotAddress != MemoryAllocator.NULL_ADDRESS) {
             slotAddresses[inputId] = slotAddress;
-            hashCode[inputId] = storage.getSlotHashCode(slotAddress);
-            recordsCount[inputId] = storage.tupleCountAt(slotAddress);
+            hashCodes[inputId] = storage.getSlotHashCode(slotAddress);
+            tupleCounts[inputId] = storage.tupleCountAt(slotAddress);
             return true;
         } else {
-            hashCode[inputId] = 0;
-            recordsCount[inputId] = 0;
+            hashCodes[inputId] = 0;
+            tupleCounts[inputId] = 0;
             slotAddresses[inputId] = MemoryAllocator.NULL_ADDRESS;
             return false;
         }
@@ -133,7 +133,7 @@ public class InputsCursor {
     }
 
     public long recordsCount(int inputId) {
-        return recordsCount[inputId];
+        return tupleCounts[inputId];
     }
 
     public long recordAddress(int inputId) {
@@ -149,7 +149,7 @@ public class InputsCursor {
     }
 
     public long getHashCode(int inputId) {
-        return hashCode[inputId];
+        return hashCodes[inputId];
     }
 
     public MemoryBlock getMemoryBlock(int inputId) {
@@ -169,7 +169,7 @@ public class InputsCursor {
         long recordAddress = recordAddresses[inputId];
         return recordAddress != MemoryAllocator.NULL_ADDRESS
                 ? storage.addrOfNextTuple(recordAddress)
-                : storage.addrOfHeadTuple(slotAddresses[inputId]);
+                : storage.addrOfFirstTuple(slotAddresses[inputId]);
     }
 
     private void storageGotoInput(int inputId) {
@@ -181,10 +181,10 @@ public class InputsCursor {
     private void initCells() {
         sources = reuseIfPossible(sources, 0);
         keySize = reuseIfPossible(keySize, 0L);
-        hashCode = reuseIfPossible(hashCode, 0L);
+        hashCodes = reuseIfPossible(hashCodes, 0L);
         valueSize = reuseIfPossible(valueSize, 0L);
         partitionId = reuseIfPossible(partitionId, 0);
-        recordsCount = reuseIfPossible(recordsCount, 0);
+        tupleCounts = reuseIfPossible(tupleCounts, 0);
         keyAddress = reuseIfPossible(keyAddress, MemoryAllocator.NULL_ADDRESS);
         valueAddress = reuseIfPossible(valueAddress, MemoryAllocator.NULL_ADDRESS);
         recordAddresses = reuseIfPossible(recordAddresses, MemoryAllocator.NULL_ADDRESS);
@@ -195,7 +195,7 @@ public class InputsCursor {
 
     private boolean readSourceFromDisk() {
         if (diskInput.segmentAdvance()) {
-            recordsCount[0] = diskInput.getRecordCountInCurrentSegment();
+            tupleCounts[0] = diskInput.getRecordCountInCurrentSegment();
             return true;
         }
         return false;

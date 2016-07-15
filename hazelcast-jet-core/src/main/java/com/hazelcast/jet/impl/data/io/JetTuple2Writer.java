@@ -16,11 +16,18 @@
 
 package com.hazelcast.jet.impl.data.io;
 
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.io.impl.readers.TupleReader;
 
-public class JetTupleReader extends TupleReader {
-    public JetTupleReader(JetTupleFactory defaultTupleFactory) {
-        super(defaultTupleFactory);
+import com.hazelcast.jet.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.impl.writers.Tuple2Writer;
+import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
+
+public class JetTuple2Writer extends Tuple2Writer {
+    @Override
+    public void writeType(Tuple2 object, ObjectDataOutput objectDataOutput, ObjectWriterFactory objectWriterFactory)
+    throws IOException {
+        objectDataOutput.writeByte(JetTupleDataType.INSTANCE.getTypeID());
     }
 }

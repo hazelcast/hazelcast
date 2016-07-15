@@ -17,7 +17,7 @@
 package com.hazelcast.jet;
 
 /**
- * General Jet-exception
+ * General Jet exception
  */
 public class JetException extends RuntimeException {
     /**

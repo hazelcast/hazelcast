@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.io;
 
-import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.io.impl.readers.BooleanReader;
 import com.hazelcast.jet.io.impl.readers.CharReader;
 import com.hazelcast.jet.io.impl.readers.DoubleReader;
@@ -25,7 +24,7 @@ import com.hazelcast.jet.io.impl.readers.ShortReader;
 import com.hazelcast.jet.io.impl.readers.ByteReader;
 import com.hazelcast.jet.io.impl.readers.IntReader;
 import com.hazelcast.jet.io.impl.readers.LongReader;
-import com.hazelcast.jet.io.impl.readers.TupleReader;
+import com.hazelcast.jet.io.impl.readers.Tuple2Reader;
 import com.hazelcast.jet.io.impl.readers.StringReader;
 import com.hazelcast.jet.io.impl.writers.StringWriter;
 import com.hazelcast.jet.io.impl.writers.BooleanWriter;
@@ -36,13 +35,14 @@ import com.hazelcast.jet.io.impl.writers.ShortWriter;
 import com.hazelcast.jet.io.impl.writers.ByteWriter;
 import com.hazelcast.jet.io.impl.writers.IntWriter;
 import com.hazelcast.jet.io.impl.writers.LongWriter;
-import com.hazelcast.jet.io.impl.writers.TupleWriter;
+import com.hazelcast.jet.io.impl.writers.Tuple2Writer;
 import com.hazelcast.jet.io.impl.readers.NullObjectReader;
 import com.hazelcast.jet.io.impl.writers.NullObjectWriter;
 import com.hazelcast.jet.io.tuple.DefaultTupleFactory;
 import com.hazelcast.jet.io.impl.readers.DefaultObjectReader;
 import com.hazelcast.jet.io.impl.writers.DefaultObjectWriter;
 
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.util.IdentityHashMap;
@@ -59,7 +59,7 @@ public enum Types implements DataType {
     INT((byte) -6, Integer.class, new IntWriter(), new IntReader()),
     LONG((byte) -5, Long.class, new LongWriter(), new LongReader()),
     // -4 Reserved for JetTuple
-    TUPLE((byte) -3, Tuple.class, new TupleWriter(), new TupleReader(new DefaultTupleFactory())),
+    TUPLE2((byte) -3, Tuple2.class, new Tuple2Writer(), new Tuple2Reader(new DefaultTupleFactory())),
     STRING((byte) -2,
             String.class,
             new StringWriter(),

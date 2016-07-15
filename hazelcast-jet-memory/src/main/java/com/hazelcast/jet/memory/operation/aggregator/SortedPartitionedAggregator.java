@@ -17,9 +17,9 @@
 package com.hazelcast.jet.memory.operation.aggregator;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.memory.TupleFetcher;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.Partition;
+import com.hazelcast.jet.memory.TupleFetcher;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
 import com.hazelcast.jet.memory.binarystorage.SortedHashStorage;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
@@ -28,9 +28,9 @@ import com.hazelcast.jet.memory.memoryblock.DefaultMemoryBlockChain;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.SortedTupleCursor;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.InputsCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.SortedTupleCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
 import com.hazelcast.jet.memory.operation.aggregator.sorter.IteratingHeapSorter;
 import com.hazelcast.jet.memory.operation.aggregator.sorter.MemoryBlockSorter;
 import com.hazelcast.jet.memory.operation.aggregator.sorter.Sorter;
@@ -157,15 +157,11 @@ import static com.hazelcast.jet.memory.Partition.newSortedPartition;
  *              -   Partitions merge sorting with last spilled block and spilling to another block
  * <p>
  *          Iterate over spilled and merged to memory blocks
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public class SortedPartitionedAggregator<K, V>
-        extends PartitionedAggregatorBase<K, V> implements SortedAggregator<K, V>
-{
+public class SortedPartitionedAggregator
+extends PartitionedAggregatorBase implements SortedAggregator {
     private final InputsCursor inputsCursor;
-    private final TupleCursor<K, V> cursor;
+    private final TupleCursor cursor;
     private final Sorter<InputsCursor, SpillingKeyValueWriter> spillingSorter;
     private final Spiller spiller;
     private final MemoryBlockChain sortedMemoryBlockChain = new DefaultMemoryBlockChain();
@@ -178,7 +174,7 @@ public class SortedPartitionedAggregator<K, V>
     public SortedPartitionedAggregator(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
             MemoryContext memoryContext, MemoryChainingRule memoryChainingRule,
-            Tuple<K, V> destTuple, String spillingDirectory, SortOrder sortOrder,
+            Tuple2 destTuple, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         this(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext, memoryChainingRule,
@@ -190,7 +186,7 @@ public class SortedPartitionedAggregator<K, V>
     })
     public SortedPartitionedAggregator(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple<K, V> destTuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 destTuple,
             Accumulator accumulator, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
@@ -219,15 +215,15 @@ public class SortedPartitionedAggregator<K, V>
     }
 
     @Override
-    public TupleCursor<K, V> cursor() {
+    public TupleCursor cursor() {
         inputsCursor.setInputs(spiller().openSpillFileCursor(), sortedMemoryBlockChain);
         cursor.reset(getComparator());
         return cursor;
     }
 
     @Override
-    protected TupleCursor<K, V> newResultCursor() {
-        return new SortedTupleCursor<>(serviceMemoryBlock, temporaryMemoryBlock, memoryDiskMergeSorter,
+    protected TupleCursor newResultCursor() {
+        return new SortedTupleCursor(serviceMemoryBlock, temporaryMemoryBlock, memoryDiskMergeSorter,
                 accumulator, destTuple, partitions, header, ioContext, inputsCursor,
                 useBigEndian);
     }

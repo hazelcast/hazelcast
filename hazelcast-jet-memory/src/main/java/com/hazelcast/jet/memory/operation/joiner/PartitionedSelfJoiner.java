@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation.joiner;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
@@ -31,12 +31,12 @@ public class PartitionedSelfJoiner extends PartitionedAggregator implements Join
 
     @SuppressWarnings("checkstyle:parameternumber")
     public PartitionedSelfJoiner(
-            int partitionCount, int spillingBufferSize, int bloomFilterSizeInBytes, IOContext ioContext,
+            int partitionCount, int spillingBufferSize, IOContext ioContext,
             Comparator comparator, MemoryContext memoryContext, MemoryChainingRule memoryChainingRule,
-            Tuple tuple, String spillingDirectory, int spillingChunkSize,
+            Tuple2 tuple, String spillingDirectory, int spillingChunkSize,
             boolean spillToDisk, boolean useBigEndian
     ) {
-        super(partitionCount, spillingBufferSize, bloomFilterSizeInBytes, ioContext, comparator, memoryContext,
+        super(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
                 memoryChainingRule, tuple, spillingDirectory, spillingChunkSize, spillToDisk,
                 useBigEndian);
     }

@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.dag.source;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,22 +30,18 @@ import java.io.LineNumberReader;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 
-public class FileIterator implements Iterator<Tuple<Integer, String>> {
+public class FileIterator implements Iterator<Tuple2<Integer, String>> {
     private String line;
     private LineNumberReader raf;
     private boolean hasNext = true;
     private ByteCountingInputStream byteCountingStream;
     private int lineNumber;
 
-    public FileIterator(File file,
-                        long start,
-                        long end) {
+    public FileIterator(File file, long start, long end) {
         try {
             this.byteCountingStream = new ByteCountingInputStream(new FileInputStream(file), end);
             this.raf = new LineNumberReader(new BufferedReader(
-                    new InputStreamReader(byteCountingStream, Charset.forName("UTF-8"))
-            ));
-
+                    new InputStreamReader(byteCountingStream, Charset.forName("UTF-8"))));
             if (start > 0) {
                 if (byteCountingStream.skip(start) < 0) {
                     throw new JetException("Can't read from file inputStream");
@@ -98,7 +94,7 @@ public class FileIterator implements Iterator<Tuple<Integer, String>> {
     }
 
     @Override
-    public Tuple<Integer, String> next() {
+    public Tuple2<Integer, String> next() {
         if (!hasNext()) {
             throw new IllegalStateException("Iterator closed");
         }

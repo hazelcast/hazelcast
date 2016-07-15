@@ -17,13 +17,13 @@
 package com.hazelcast.jet.memory.operation.aggregator.sorter;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
-import com.hazelcast.jet.memory.binarystorage.SortedStorage;
+import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
+import com.hazelcast.jet.memory.binarystorage.SortedStorage;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
 import com.hazelcast.jet.memory.memoryblock.DefaultMemoryBlockChain;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
-import com.hazelcast.jet.memory.Partition;
 
 /**
  * This is abstract implementation of chain of the blocks;
@@ -121,10 +121,10 @@ public class MemoryBlockSorter implements Sorter<Partition[], MemoryBlockChain> 
         for (int blockIdx = memoryBlockId; blockIdx < partition.getMemoryBlockChain().size(); blockIdx++) {
             MemoryBlock memoryBlock = partition.getMemoryBlockChain().get(blockIdx);
             storageHeader.setMemoryBlock(memoryBlock);
-            if (storageHeader.getBaseStorageAddress() != MemoryAllocator.NULL_ADDRESS) {
+            if (storageHeader.baseAddress() != MemoryAllocator.NULL_ADDRESS) {
                 memoryBlockId = blockIdx + 1;
                 sortedStorage.setMemoryBlock(memoryBlock);
-                sortedStorage.gotoAddress(storageHeader.getBaseStorageAddress());
+                sortedStorage.gotoAddress(storageHeader.baseAddress());
                 if (sortedStorage.count() > 0) {
                     resultChain.add(memoryBlock);
                 }

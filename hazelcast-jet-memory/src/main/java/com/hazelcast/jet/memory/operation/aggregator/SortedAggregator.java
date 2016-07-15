@@ -18,11 +18,8 @@ package com.hazelcast.jet.memory.operation.aggregator;
 
 /**
  * Aggregator which also sorts data by key.
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public interface SortedAggregator<K, V> extends Aggregator<K, V> {
+public interface SortedAggregator extends Aggregator {
     void prepareToSort();
 
     boolean sort();

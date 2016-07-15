@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
 import com.hazelcast.jet.memory.multimap.TupleMultimapHsa;
 
-import static com.hazelcast.jet.memory.multimap.JetHashSlotArray.toSlotAddr;
+import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.toSlotAddr;
 
 /**
  * Javadoc pending.

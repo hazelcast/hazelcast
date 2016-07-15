@@ -16,77 +16,82 @@
 
 package com.hazelcast.jet.io.tuple;
 
+import com.hazelcast.jet.io.JetIoException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class Tuple2<K, V> implements Tuple<K, V> {
-    protected K key;
-    protected V value;
+public class Tuple2<T0, T1> implements Tuple {
+    protected T0 c0;
+    protected T1 c1;
 
     public Tuple2() {
-
     }
 
-    public Tuple2(K k, V v) {
-        this.key = k;
-        this.value = v;
+    public Tuple2(T0 c0, T1 c1) {
+        this.c0 = c0;
+        this.c1 = c1;
     }
 
-    @Override
-    public K getKey(int index) {
-        assert index == 0 : "Tuple2.getKey() called with index > 0: " + index;
-        return key;
+    public T0 get0() {
+        return c0;
     }
 
-    @Override
-    public V getValue(int index) {
-        assert index == 0 : "Tuple2.getValue() called with index > 0: " + index;
-        return value;
+    public T1 get1() {
+        return c1;
     }
 
-    @Override
-    public int keyCount() {
-        return 1;
+    public void set0(T0 c0) {
+        this.c0 = c0;
     }
 
-    @Override
-    public int valueCount() {
-        return 1;
+    public void set1(T1 c1) {
+        this.c1 = c1;
     }
 
     @Override
-    public void setKey(int index, K key) {
-        assert index == 0 : "Tuple2.setKey() called with index > 0: " + index;
-        this.key = key;
+    public <T> T get(int index) {
+        final Object result = index == 0 ? c0
+                            : index == 1 ? c1
+                            : error("Attempt to access component at index " + index);
+        return (T) result;
     }
 
     @Override
-    public void setValue(int index, V value) {
-        assert index == 0 : "Tuple2.setValue() called with index > 0: " + index;
-        this.value = value;
+    public void set(int index, Object value) {
+        if (index == 0) {
+            this.c0 = (T0) value;
+        } else if (index == 1) {
+            this.c1 = (T1) value;
+        } else {
+            error("Attempt to set a component at index " + index);
+        }
     }
 
     @Override
-    public K[] cloneKeys() {
-        throw new IllegalStateException("Not supported");
+    public int size() {
+        return 2;
     }
 
     @Override
-    public V[] cloneValues() {
+    public Object[] toArray() {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(key);
-        out.writeObject(value);
+        out.writeObject(c0);
+        out.writeObject(c1);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = in.readObject();
-        value = in.readObject();
+        c0 = in.readObject();
+        c1 = in.readObject();
+    }
+
+    private static Object error(String msg) {
+        throw new JetIoException(msg);
     }
 }

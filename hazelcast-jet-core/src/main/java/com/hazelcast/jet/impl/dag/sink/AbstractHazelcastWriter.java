@@ -136,11 +136,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     @Override
     public int flush() {
         try {
-            if (this.chunkBuffer.size() > 0) {
-                return consumeChunk(this.chunkBuffer);
-            } else {
-                return 0;
-            }
+            return chunkBuffer.size() > 0 ? consumeChunk(chunkBuffer) : 0;
         } catch (Exception e) {
             throw JetUtil.reThrow(e);
         }
@@ -157,6 +153,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         return this.nodeEngine;
     }
 
+    @Override
     public void close() {
         if (!isClosed()) {
             try {
@@ -176,6 +173,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
     }
 
+    @Override
     public void open() {
         this.future.reset();
         this.isFlushed = true;

@@ -20,7 +20,7 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.HashMap;
@@ -28,53 +28,49 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collector;
 
-public class GroupingAccumulatorProcessor<K, V, A, R> implements ContainerProcessor<Tuple<K, V>, Tuple<K, A>> {
+public class GroupingAccumulatorProcessor<K, V, A, R> implements ContainerProcessor<Tuple2<K, V>, Tuple2<K, A>> {
 
     private final Map<K, A> cache = new HashMap<>();
     private final Collector<V, A, R> collector;
     private Iterator<Map.Entry<K, A>> finalizationIterator;
 
     public GroupingAccumulatorProcessor(Collector<V, A, R> collector) {
-
         this.collector = collector;
     }
 
     @Override
-    public boolean process(ProducerInputStream<Tuple<K, V>> inputStream,
-                           ConsumerOutputStream<Tuple<K, A>> outputStream,
+    public boolean process(ProducerInputStream<Tuple2<K, V>> inputStream,
+                           ConsumerOutputStream<Tuple2<K, A>> outputStream,
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
-        for (Tuple<K, V> input : inputStream) {
-            A value = this.cache.get(input.getKey(0));
+        for (Tuple2<K, V> input : inputStream) {
+            A value = this.cache.get(input.get0());
             if (value == null) {
                 value = collector.supplier().get();
-                this.cache.put(input.getKey(0), value);
+                this.cache.put(input.get0(), value);
             }
-            collector.accumulator().accept(value, input.getValue(0));
+            collector.accumulator().accept(value, input.get1());
         }
         return true;
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<K, A>> outputStream,
+    public boolean finalizeProcessor(ConsumerOutputStream<Tuple2<K, A>> outputStream,
                                      ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
         try {
             if (finalizationIterator == null) {
                 this.finalizationIterator = this.cache.entrySet().iterator();
             }
-
             int idx = 0;
             while (this.finalizationIterator.hasNext()) {
                 Map.Entry<K, A> next = this.finalizationIterator.next();
                 outputStream.consume(new JetTuple2<>(next.getKey(), next.getValue()));
-
                 if (idx == processorContext.getConfig().getChunkSize() - 1) {
                     break;
                 }
                 idx++;
             }
-
             finalized = !this.finalizationIterator.hasNext();
         } finally {
             if (finalized) {

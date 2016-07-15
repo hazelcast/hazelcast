@@ -25,42 +25,15 @@ import com.hazelcast.jet.strategy.CalculationStrategy;
 public interface JetTupleFactory extends TupleFactory {
 
     /**
-     * Will create tuple with 1-element key part and 1-element value part
+     * Returns a new 2-tuple.
      *
-     * @param k                   value of the key part
-     * @param v                   value of the value part
+     * @param c0                  component 0
+     * @param c1                  component 1
      * @param partitionId         partitionId
      * @param calculationStrategy calculation strategy to be used inside the tuple hash calculation
-     * @param <K>                 type of the key part
-     * @param <V>                 value of the key part
+     * @param <T0>                type of component 0
+     * @param <T1>                value of component 1
      * @return constructed tuple
      */
-    <K, V> JetTuple<K, V> tuple(K k, V v, int partitionId, CalculationStrategy calculationStrategy);
-
-
-    /**
-     * Will create tuple with 1-element key part and multi-element value part
-     *
-     * @param k                   value of the key part
-     * @param v                   value of the value part
-     * @param <K>                 type of the key part
-     * @param <V>                 value of the key part
-     * @param partitionId         partitionId of the data in key part
-     * @param calculationStrategy calculation strategy to be used inside the tuple hash calculation
-     * @return constructed tuple
-     */
-    <K, V> JetTuple<K, V> tuple(K k, V[] v, int partitionId, CalculationStrategy calculationStrategy);
-
-    /**
-     * Will create tuple with multi-element key part and multi-element value part
-     *
-     * @param k                   value of the key part
-     * @param v                   value of the value part
-     * @param <K>                 type of the key part
-     * @param <V>                 value of the key part
-     * @param partitionId         partitionId of the data in key part
-     * @param calculationStrategy calculation strategy to be used inside the tuple hash calculation
-     * @return constructed tuple
-     */
-    <K, V> JetTuple<K, V> tuple(K[] k, V[] v, int partitionId, CalculationStrategy calculationStrategy);
+    <T0, T1> JetTuple2<T0, T1> tuple2(T0 c0, T1 c1, int partitionId, CalculationStrategy calculationStrategy);
 }

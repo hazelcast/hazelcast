@@ -19,7 +19,6 @@ package com.hazelcast.jet.memory.operation.aggregator;
 
 import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.impl.IOContextImpl;
-import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
@@ -88,11 +87,11 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
         );
     }
 
-    private void insertElements(Tuple<String, String> tuple, int start, int end)
+    private void insertElements(Tuple2<String, String> tuple, int start, int end)
     throws Exception {
         for (int i = end; i >= start; i--) {
-            tuple.setKey(0, String.valueOf(i));
-            tuple.setValue(0, String.valueOf(i));
+            tuple.set0(String.valueOf(i));
+            tuple.set1(String.valueOf(i));
             if (!aggregator.accept(tuple)) {
                 doSpilling(i);
                 aggregator.accept(tuple);
@@ -103,7 +102,6 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     private void doSpilling(int index) {
         long t = System.currentTimeMillis();
         System.out.println("Start spilling i=" + index);
-
         aggregator.startSpilling();
         while (!aggregator.spillNextChunk()) {
         }
@@ -115,7 +113,7 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     public void testString2String() throws Exception {
         initAggregator(new StringComparator());
 
-        Tuple<String, String> tuple = new Tuple2<String, String>();
+        Tuple2<String, String> tuple = new Tuple2<>();
 
         int CNT = 10_000_000;
         long t = System.currentTimeMillis();
@@ -128,12 +126,12 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
         System.out.println("SortingTime=" + (System.currentTimeMillis() - t));
         long time = System.currentTimeMillis();
         String previous = null; int iterations_count = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple tt = cursor.asTuple();
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Tuple2<String, String> tt = (Tuple2) cursor.asTuple();
             if (previous != null) {
-                Assert.assertTrue("iterations_count=" + iterations_count, ((String) tt.getKey(0)).compareTo(previous) > 0);
+                Assert.assertTrue("iterations_count=" + iterations_count, ((String) tt.get0()).compareTo(previous) > 0);
             }
-            previous = (String) tt.getKey(0);
+            previous = (String) tt.get0();
             iterations_count++;
         }
         assertEquals(CNT, iterations_count);
@@ -143,7 +141,7 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringMultiValue() throws Exception {
         initAggregator(new StringComparator());
-        Tuple<String, String> tuple = new Tuple2<>();
+        Tuple2<String, String> tuple = new Tuple2<>();
         int VALUES_CNT = 10;
         int KEYS_CNT = 1_000_000;
 
@@ -152,9 +150,9 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
         long t = System.currentTimeMillis();
 
         for (int i = 1; i <= KEYS_CNT; i++) {
-            tuple.setKey(0, String.valueOf(i));
+            tuple.set0(String.valueOf(i));
             for (int ii = 0; ii < VALUES_CNT; ii++) {
-                tuple.setValue(0, String.valueOf(ii));
+                tuple.set1(String.valueOf(ii));
                 if (!aggregator.accept(tuple)) {
                     doSpilling(i);
                     aggregator.accept(tuple);
@@ -171,12 +169,12 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
         int value_offset = 0;
         String previous = null;
         int iterations_count = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            final Tuple<String, Integer> tt = cursor.asTuple();
-            final String key = tt.getKey(0);
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            final Tuple2<String, Integer> tt = (Tuple2) cursor.asTuple();
+            final String key = tt.get0();
             if (value_offset == 0) {
                 if (previous != null) {
-                    Assert.assertTrue(tt.getKey(0).compareTo(previous) > 0);
+                    Assert.assertTrue(tt.get0().compareTo(previous) > 0);
                 }
                 previous = key;
                 value_offset++;
@@ -208,13 +206,12 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     }
 
     private void testAccumulator(int keyCount, int valuesCount) throws Exception {
-        Tuple<String, Integer> tuple = new Tuple2<>();
-
+        Tuple2<String, Integer> tuple = new Tuple2<>();
         long t = System.currentTimeMillis();
         for (int i = 1; i <= keyCount; i++) {
-            tuple.setKey(0, String.valueOf(i));
+            tuple.set0(String.valueOf(i));
             for (int ii = 0; ii < valuesCount; ii++) {
-                tuple.setValue(0, 1);
+                tuple.set1(1);
                 if (!aggregator.accept(tuple)) {
                     doSpilling(i);
                     aggregator.accept(tuple);
@@ -233,14 +230,13 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
         time = System.currentTimeMillis();
         String previous = null;
         int iterations_count = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple tt = cursor.asTuple();
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Tuple2<String, Integer> tt = (Tuple2) cursor.asTuple();
             if (previous != null) {
-                Assert.assertTrue(((String) tt.getKey(0)).compareTo(previous) > 0);
+                Assert.assertTrue(tt.get0().compareTo(previous) > 0);
             }
-
-            assertEquals(valuesCount, tt.getValue(0));
-            previous = (String) tt.getKey(0);
+            assertEquals(valuesCount, (int) tt.get1());
+            previous = tt.get0();
             iterations_count++;
         }
 

@@ -17,153 +17,155 @@
 package com.hazelcast.jet.memory.multimap;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.jet.memory.binarystorage.FetchMode;
 import com.hazelcast.jet.memory.binarystorage.Hasher;
-import com.hazelcast.jet.memory.binarystorage.ObjectHolder;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.util.JetIoUtil;
 import com.hazelcast.jet.memory.util.Util;
-import com.hazelcast.nio.Bits;
 
 import java.util.function.LongConsumer;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.jet.memory.binarystorage.FetchMode.CREATE_OR_APPEND;
 import static com.hazelcast.jet.memory.binarystorage.FetchMode.JUST_GET;
-import static com.hazelcast.jet.memory.multimap.JetHashSlotArray.KEY_SIZE;
-import static com.hazelcast.jet.memory.multimap.JetHashSlotArray.toSlotAddr;
 import static com.hazelcast.jet.memory.util.JetIoUtil.getByte;
 import static com.hazelcast.jet.memory.util.JetIoUtil.getLong;
 import static com.hazelcast.jet.memory.util.JetIoUtil.putByte;
 import static com.hazelcast.jet.memory.util.JetIoUtil.putLong;
 import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfTupleAt;
+import static com.hazelcast.jet.memory.util.Util.BYTE_0;
+import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 
 /**
  * A multimap in native memory whose value is a linked list of tuples. Based on the {@code HashSlotArray}
- * abstraction.
+ * structure.
  */
 public class TupleMultimapHsa {
+    public static final int KEY_SIZE = 8;
     public static final int DEFAULT_INITIAL_CAPACITY = 2048;
     public static final float DEFAULT_LOAD_FACTOR = 0.5f;
 
-    public static final int FOOTER_SIZE_BYTES = 35;
-    public static final int FOOTER_DELTA = FOOTER_SIZE_BYTES - Bits.LONG_SIZE_IN_BYTES - Bits.SHORT_SIZE_IN_BYTES;
+    /** Size of the first tuple's footer */
+    public static final int FIRST_FOOTER_SIZE_BYTES =
+            // next tuple           last tuple           tuple count          hash code            marker
+            LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES;
+    /** Size of all other tuples' footer */
+    //                                                   next tuple
+    public static final int OTHER_FOOTER_SIZE_BYTES = LONG_SIZE_IN_BYTES;
+    /** Address of the next tuple is stored at this offset within the footer. Size: 8 bytes. */
     public static final int NEXT_TUPLE_OFFSET = 0;
-    public static final int PREV_TUPLE_OFFSET = 8;
+    /** Address of the previous tuple is stored at this offset within the footer. Size: 8 bytes.  */
+    public static final int LAST_TUPLE_OFFSET = 8;
+    /** Tuple count is stored at this offset within the footer. Size: 8 bytes.  */
     public static final int TUPLE_COUNT_OFFSET = 16;
+    /** Tuple's hash code is stored at this offset within the footer. Only the first tuple has this field.
+     *  Size: 8 bytes. */
     public static final int HASH_CODE_OFFSET = 24;
+    /** Tuple marker is stored at this offset within the footer. Only the first tuple has this field.
+     *  Size: 1 byte. */
     public static final int MARKER_OFFSET = 32;
 
     private final Hasher defaultHasher;
-    private final ObjectHolder<Hasher> hasherHolder;
-    private final ObjectHolder<MemoryAccessor> memoryAccessorHolder;
-    private final long slotSize;
-    private final CompactionState sourceContext;
-    private final CompactionState targetContext;
-    private JetHashSlotArray hsa;
-    private MemoryAccessor accessor;
-    private Runnable layoutListener;
+    private final CompactionState sourceCompactionState;
+    private final CompactionState targetCompactionState;
+    private final JetHashSlotArray hsa;
+    private MemoryAccessor mem;
+    private Runnable slotAddedListener;
 
     public TupleMultimapHsa(MemoryBlock memoryBlock, Hasher defaultHasher, LongConsumer hsaResizeListener,
                             int initialCapacity, float loadFactor
     ) {
         assert Util.isPositivePowerOfTwo(initialCapacity);
         this.defaultHasher = defaultHasher;
-        this.hasherHolder = new ObjectHolder<>();
-        this.memoryAccessorHolder = new ObjectHolder<>();
-        this.sourceContext = new CompactionState();
-        this.targetContext = new CompactionState();
-        this.hsa = new JetHashSlotArray(
-                NULL_ADDRESS, defaultHasher, hasherHolder, memoryAccessorHolder,
-                hsaResizeListener, HASH_CODE_OFFSET, initialCapacity, loadFactor);
+        this.sourceCompactionState = new CompactionState();
+        this.targetCompactionState = new CompactionState();
+        this.hsa = new JetHashSlotArray(hsaResizeListener, initialCapacity, loadFactor);
         if (memoryBlock != null) {
-            this.accessor = memoryBlock.getAccessor();
+            this.mem = memoryBlock.getAccessor();
             this.hsa.setMemoryManager(memoryBlock.getAuxMemoryManager());
             this.hsa.gotoNew();
         }
-        this.slotSize = KEY_SIZE;
+    }
+
+    public static long toSlotAddr(long rawHsaAddr) {
+        return rawHsaAddr - KEY_SIZE;
     }
 
     public void setMemoryManager(MemoryManager memMgr) {
-        accessor = memMgr.getAccessor();
+        mem = memMgr.getAccessor();
         hsa.setMemoryManager(memMgr);
     }
 
     public long slotHashCode(long slotAddress) {
         long tupleAddress = addrOfFirstTupleAt(slotAddress);
-        long tupleSize = JetIoUtil.sizeOfTupleAt(tupleAddress, accessor);
-        return getLong(tupleAddress, tupleSize + HASH_CODE_OFFSET, accessor);
+        long tupleSize = JetIoUtil.sizeOfTupleAt(tupleAddress, mem);
+        return getLong(tupleAddress, tupleSize + HASH_CODE_OFFSET, mem);
     }
 
     public void setSlotHashCode(long slotAddress, long hashCode) {
         long tupleAddress = addrOfFirstTupleAt(slotAddress);
-        long tupleSize = JetIoUtil.sizeOfTupleAt(tupleAddress, accessor);
-        JetIoUtil.putLong(tupleAddress, tupleSize + HASH_CODE_OFFSET, hashCode, accessor);
-    }
-
-    public long addrOfKeyBlockAt(long tupleAddress) {
-        return JetIoUtil.addressOfKeyBlockAt(tupleAddress);
+        long tupleSize = JetIoUtil.sizeOfTupleAt(tupleAddress, mem);
+        JetIoUtil.putLong(tupleAddress, tupleSize + HASH_CODE_OFFSET, hashCode, mem);
     }
 
     public long sizeOfKeyBlockAt(long tupleAddress) {
-        return JetIoUtil.sizeOfKeyBlockAt(tupleAddress, accessor);
+        return JetIoUtil.sizeOfKeyBlockAt(tupleAddress, mem);
     }
 
     public byte slotMarker(long slotAddress) {
         long recordAddress = addrOfFirstTupleAt(slotAddress);
-        long recordSize = JetIoUtil.sizeOfTupleAt(recordAddress, accessor);
-        return getByte(recordAddress, recordSize + MARKER_OFFSET, accessor);
+        long recordSize = JetIoUtil.sizeOfTupleAt(recordAddress, mem);
+        return getByte(recordAddress, recordSize + MARKER_OFFSET, mem);
     }
 
     public void markSlot(long slotAddress, byte marker) {
         long recordAddress = addrOfFirstTupleAt(slotAddress);
-        long recordSize = JetIoUtil.sizeOfTupleAt(recordAddress, accessor);
-        putByte(recordAddress, recordSize + MARKER_OFFSET, marker, accessor);
+        long recordSize = JetIoUtil.sizeOfTupleAt(recordAddress, mem);
+        putByte(recordAddress, recordSize + MARKER_OFFSET, marker, mem);
     }
 
     public long tupleCountAt(long slotAddress) {
         long addrOfFirstTuple = addrOfFirstTupleAt(slotAddress);
-        long sizeOfFirstTuple = JetIoUtil.sizeOfTupleAt(addrOfFirstTuple, accessor);
-        return getLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, accessor);
+        long sizeOfFirstTuple = JetIoUtil.sizeOfTupleAt(addrOfFirstTuple, mem);
+        return getLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, mem);
     }
 
     public long addrOfFirstTupleAt(long slotAddress) {
-        return accessor.getLong(slotAddress);
+        return mem.getLong(slotAddress);
     }
 
     /**
      * @return abs(return value) is the address of the slot where the tuple was inserted. It is positive
      * if a new slot was assigned, negative otherwise.
      */
-    public long fetchSlot(long tupleAddress, final MemoryAccessor ma, Hasher hasher, FetchMode fetchMode) {
-        hasherHolder.set(hasher);
-        memoryAccessorHolder.set(ma);
+    public long fetchSlot(long tupleAddress, MemoryAccessor mem, Hasher hasher, FetchMode fetchMode) {
+        hsa.setHasher(hasher != null ? hasher : defaultHasher);
+        hsa.setLocalMemoryAccessor(mem);
         try {
             if (fetchMode == JUST_GET) {
                 final long rawHsaAddr = hsa.get(tupleAddress);
                 return rawHsaAddr == NULL_ADDRESS ? NULL_ADDRESS : toSlotAddr(rawHsaAddr);
             }
-            long hsaResult = hsa.ensure(tupleAddress);
+            final long hsaResult = hsa.ensure(tupleAddress);
             assert hsaResult != 0;
             final long slotAddress = hsaResult > 0 ? toSlotAddr(hsaResult) : -toSlotAddr(-hsaResult);
             if (slotAddress > 0) {
-                onSlotCreated(slotAddress, tupleAddress);
-                if (layoutListener != null) {
-                    layoutListener.run();
+                initializeFirstFooter(tupleAddress);
+                if (slotAddedListener != null) {
+                    slotAddedListener.run();
                 }
             } else if (fetchMode == CREATE_OR_APPEND) {
-                onSlotUpdated(-slotAddress, tupleAddress);
+                updateFooters(-slotAddress, tupleAddress);
             }
             return slotAddress;
         } finally {
-            memoryAccessorHolder.set(accessor);
-            hasherHolder.set(defaultHasher);
+            hsa.setHasher(defaultHasher);
+            hsa.setLocalMemoryAccessor(null);
         }
     }
-    public HashSlotArray8byteKey getHashSlotArray() {
+    public JetHashSlotArray getHashSlotArray() {
         return hsa;
     }
 
@@ -175,96 +177,91 @@ public class TupleMultimapHsa {
         hsa.gotoAddress(baseAddress);
     }
 
-    public void setSlotCreationListener(Runnable listener) {
-        this.layoutListener = listener;
+    public void setSlotAddedListener(Runnable listener) {
+        this.slotAddedListener = listener;
     }
 
     public void compact() {
-        sourceContext.reset();
-        targetContext.reset();
+        sourceCompactionState.reset();
+        targetCompactionState.reset();
         compactSlotArray();
     }
 
     public long addrOfNextTuple(long tupleAddress) {
-        return getLong(tupleAddress, sizeOfTupleAt(tupleAddress, accessor) + NEXT_TUPLE_OFFSET, accessor);
+        return getLong(tupleAddress, sizeOfTupleAt(tupleAddress, mem) + NEXT_TUPLE_OFFSET, mem);
     }
 
-    private void onSlotCreated(long slotAddress, long recordAddress) {
-        long recordSize = sizeOfTupleAt(recordAddress, accessor);
-        putLong(recordAddress, recordSize + PREV_TUPLE_OFFSET, recordAddress, accessor);
-        putLong(recordAddress, recordSize + NEXT_TUPLE_OFFSET, MemoryAllocator.NULL_ADDRESS, accessor);
-        putLong(recordAddress, recordSize + HASH_CODE_OFFSET, hsa.getLastHashCode(), accessor);
-        putLong(recordAddress, recordSize + TUPLE_COUNT_OFFSET, 1, accessor);
-        markSlot(slotAddress, Util.B_ZERO);
+    private void initializeFirstFooter(long tupleAddress) {
+        long tupleSize = sizeOfTupleAt(tupleAddress, mem);
+        putLong(tupleAddress, tupleSize + NEXT_TUPLE_OFFSET, NULL_ADDRESS, mem);
+        putLong(tupleAddress, tupleSize + LAST_TUPLE_OFFSET, tupleAddress, mem);
+        putLong(tupleAddress, tupleSize + TUPLE_COUNT_OFFSET, 1, mem);
+        putLong(tupleAddress, tupleSize + HASH_CODE_OFFSET, hsa.getLastHashCode(), mem);
+        putByte(tupleAddress, tupleSize + MARKER_OFFSET, BYTE_0, mem);
     }
 
-    private void onSlotUpdated(long slotAddress, long tupleAddress) {
+    private void updateFooters(long slotAddress, long tupleAddress) {
         long addrOfFirstTuple = addrOfFirstTupleAt(slotAddress);
-        long sizeOfFirstTuple = sizeOfTupleAt(addrOfFirstTuple, accessor);
-        long addrOfPrevTuple = getLong(addrOfFirstTuple, sizeOfFirstTuple + PREV_TUPLE_OFFSET, accessor);
-        long tupleCount = getLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, accessor);
-        long tupleSize = sizeOfTupleAt(tupleAddress, accessor);
-        putLong(addrOfFirstTuple, sizeOfFirstTuple + PREV_TUPLE_OFFSET, tupleAddress, accessor);
-        putLong(addrOfPrevTuple, sizeOfTupleAt(addrOfPrevTuple, accessor) + NEXT_TUPLE_OFFSET,
-                tupleAddress, accessor);
-        putLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, tupleCount + 1, accessor);
-        putLong(tupleAddress, tupleSize + NEXT_TUPLE_OFFSET, MemoryAllocator.NULL_ADDRESS, accessor);
+        long sizeOfFirstTuple = sizeOfTupleAt(addrOfFirstTuple, mem);
+        long addrOfLastTuple = getLong(addrOfFirstTuple, sizeOfFirstTuple + LAST_TUPLE_OFFSET, mem);
+        long tupleCount = getLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, mem);
+        long tupleSize = sizeOfTupleAt(tupleAddress, mem);
+        putLong(addrOfFirstTuple, sizeOfFirstTuple + LAST_TUPLE_OFFSET, tupleAddress, mem);
+        putLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, tupleCount + 1, mem);
+        putLong(addrOfLastTuple, sizeOfTupleAt(addrOfLastTuple, mem) + NEXT_TUPLE_OFFSET, tupleAddress, mem);
+        putLong(tupleAddress, tupleSize + NEXT_TUPLE_OFFSET, NULL_ADDRESS, mem);
     }
 
 
     private void compactSlotArray() {
         long baseAddress = hsa.address();
-        for (long slotNumber = 0; slotNumber < hsa.capacity(); slotNumber++) {
-            boolean isAssigned = hsa.isSlotAssigned(baseAddress, slotNumber);
-            CompactionState contextToUpdate = isAssigned ? sourceContext : targetContext;
-            boolean needToUpdateContext = !isAssigned || (targetContext.slotsCount > 0);
-            boolean needToCopy = !isAssigned && targetContext.slotsCount > 0L && sourceContext.slotsCount > 0L;
-            boolean isLastSlot = isLastSlot(slotNumber);
-            needToCopy = needToCopy || isLastSlot;
+        for (long slotIndex = 0; slotIndex < hsa.capacity(); slotIndex++) {
+            boolean isAssigned = hsa.isSlotAssigned(baseAddress, slotIndex);
+            CompactionState stateToUpdate = isAssigned ? sourceCompactionState : targetCompactionState;
+            boolean needToUpdateState = !isAssigned || targetCompactionState.slotCount > 0;
+            boolean isLastSlot = slotIndex == hsa.capacity() - 1;
+            boolean needToCopy = isLastSlot
+                    || !isAssigned && targetCompactionState.slotCount > 0L && sourceCompactionState.slotCount > 0L;
             if (isLastSlot) {
-                updateContext(baseAddress, slotNumber, contextToUpdate);
-                needToUpdateContext = false;
+                updateState(baseAddress, slotIndex, stateToUpdate);
+                needToUpdateState = false;
             }
             if (needToCopy) {
                 copySlots();
             }
-            if (needToUpdateContext) {
-                updateContext(baseAddress, slotNumber, contextToUpdate);
+            if (needToUpdateState) {
+                updateState(baseAddress, slotIndex, stateToUpdate);
             }
         }
     }
 
-    private void updateContext(long baseAddress, long slotNumber, CompactionState compactionState) {
-        if (compactionState.chunkAddress == NULL_ADDRESS) {
-            compactionState.chunkAddress = hsa.slotBaseAddress(baseAddress, slotNumber);
-            compactionState.slotNumber = slotNumber;
+    private void updateState(long baseAddress, long slotIndex, CompactionState cState) {
+        if (cState.slotAddress == NULL_ADDRESS) {
+            cState.slotAddress = hsa.slotBaseAddress(baseAddress, slotIndex);
+            cState.slotIndex = slotIndex;
         }
-        compactionState.slotsCount++;
+        cState.slotCount++;
     }
 
     private void copySlots() {
-        long slotsToCopy = sourceContext.slotsCount;
-        accessor.copyMemory(sourceContext.chunkAddress, targetContext.chunkAddress, slotsToCopy * slotSize);
-        long newTargetSlotNumber = targetContext.slotNumber + sourceContext.slotsCount;
-        targetContext.chunkAddress = hsa.slotBaseAddress(hsa.address(), newTargetSlotNumber);
-        targetContext.slotNumber = newTargetSlotNumber;
-        targetContext.slotsCount = Math.abs(sourceContext.slotsCount - targetContext.slotsCount);
-        sourceContext.reset();
-    }
-
-    private boolean isLastSlot(long slotNumber) {
-        return slotNumber == hsa.capacity() - 1;
+        long slotsToCopy = sourceCompactionState.slotCount;
+        mem.copyMemory(sourceCompactionState.slotAddress, targetCompactionState.slotAddress, slotsToCopy * KEY_SIZE);
+        long newTargetSlotNumber = targetCompactionState.slotIndex + sourceCompactionState.slotCount;
+        targetCompactionState.slotAddress = hsa.slotBaseAddress(hsa.address(), newTargetSlotNumber);
+        targetCompactionState.slotIndex = newTargetSlotNumber;
+        targetCompactionState.slotCount = Math.abs(sourceCompactionState.slotCount - targetCompactionState.slotCount);
+        sourceCompactionState.reset();
     }
 
     private static class CompactionState {
-        long slotsCount;
-        long slotNumber;
-        long chunkAddress;
+        long slotCount;
+        long slotIndex;
+        long slotAddress;
 
         void reset() {
-            slotsCount = 0L;
-            slotNumber = 0L;
-            chunkAddress = NULL_ADDRESS;
+            slotCount = 0L;
+            slotIndex = 0L;
+            slotAddress = NULL_ADDRESS;
         }
     }
 }

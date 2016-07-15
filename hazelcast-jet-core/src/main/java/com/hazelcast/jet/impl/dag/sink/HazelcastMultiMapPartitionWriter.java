@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -32,9 +32,7 @@ import java.util.Collection;
 public class HazelcastMultiMapPartitionWriter extends AbstractHazelcastWriter {
     private final MultiMapContainer container;
 
-    public HazelcastMultiMapPartitionWriter(ContainerDescriptor containerDescriptor,
-                                            int partitionId,
-                                            String name) {
+    public HazelcastMultiMapPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId, String name) {
         super(containerDescriptor, partitionId);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         MultiMapService service = nodeEngine.getService(MultiMapService.SERVICE_NAME);
@@ -44,18 +42,14 @@ public class HazelcastMultiMapPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            Object object = chunk.get(i);
-            if (object instanceof JetTuple) {
-                JetTuple tuple = (JetTuple) object;
-                Data dataKey = tuple.getKeyData(getNodeEngine());
-                Collection<MultiMapRecord> coll = this.container.getMultiMapValueOrNull(dataKey).getCollection(false);
-                long recordId = this.container.nextId();
-
-                for (int idx = 0; idx < tuple.valueCount(); idx++) {
-                    Data dataValue = getNodeEngine().getSerializationService().toData(tuple.getValue(idx));
-                    MultiMapRecord record = new MultiMapRecord(recordId, dataValue);
-                    coll.add(record);
-                }
+            JetTuple2<Object, Object[]> tuple = (JetTuple2) chunk.get(i);
+            Data dataKey = tuple.getComponentData(0, null, getNodeEngine());
+            Collection<MultiMapRecord> coll = this.container.getMultiMapValueOrNull(dataKey).getCollection(false);
+            long recordId = this.container.nextId();
+            for (Object value : tuple.get1()) {
+                Data dataValue = getNodeEngine().getSerializationService().toData(value);
+                MultiMapRecord record = new MultiMapRecord(recordId, dataValue);
+                coll.add(record);
             }
         }
     }

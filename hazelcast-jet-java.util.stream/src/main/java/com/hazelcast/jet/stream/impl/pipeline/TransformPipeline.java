@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
@@ -47,7 +47,7 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
 
     @Override
     public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function toTupleMapper) {
-        Distributed.Function<Tuple, ?> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Tuple2, ?> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
 
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
         Vertex vertex = vertexBuilder(TransformProcessor.class)

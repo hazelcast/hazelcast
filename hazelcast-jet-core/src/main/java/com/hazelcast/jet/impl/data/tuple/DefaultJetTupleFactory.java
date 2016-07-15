@@ -22,33 +22,19 @@ import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 
 public class DefaultJetTupleFactory implements JetTupleFactory {
+
     @Override
-    public <K, V> JetTuple<K, V> tuple(K k, V v) {
-        return new JetTuple2<K, V>(k, v);
+    public <T0, T1> JetTuple2<T0, T1> tuple2(T0 k, T1 v) {
+        return new JetTuple2<>(k, v);
     }
 
     @Override
-    public <K, V> JetTuple<K, V> tuple(K k, V v, int partitionID, CalculationStrategy calculationStrategy) {
-        return new JetTuple2<K, V>(k, v, partitionID, calculationStrategy);
+    public <T0, T1> JetTuple2<T0, T1> tuple2(T0 c0, T1 c1, int partitionID, CalculationStrategy calculationStrategy) {
+        return new JetTuple2<>(c0, c1, partitionID, calculationStrategy);
     }
 
     @Override
-    public <K, V> JetTuple<K, V> tuple(K k, V[] v) {
-        return new DefaultJetTuple<K, V>(k, v);
-    }
-
-    @Override
-    public <K, V> JetTuple<K, V> tuple(K k, V[] v, int partitionId, CalculationStrategy calculationStrategy) {
-        return new DefaultJetTuple<K, V>(k, v, partitionId, calculationStrategy);
-    }
-
-    @Override
-    public <K, V> JetTuple<K, V> tuple(K[] k, V[] v) {
-        return new DefaultJetTuple<K, V>(k, v);
-    }
-
-    @Override
-    public <K, V> JetTuple<K, V> tuple(K[] k, V[] v, int partitionID, CalculationStrategy calculationStrategy) {
-        return new DefaultJetTuple<K, V>(k, v, partitionID, calculationStrategy);
+    public JetTuple tuple(Object[] components) {
+        return new DefaultJetTuple(components, -1, null);
     }
 }

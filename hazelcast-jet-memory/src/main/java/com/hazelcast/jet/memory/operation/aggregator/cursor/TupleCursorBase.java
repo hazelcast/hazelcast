@@ -20,7 +20,7 @@ import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.impl.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.TupleFetcher;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
@@ -30,11 +30,8 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 
 /**
  * Base class for tuple cursor implementations.
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public abstract class TupleCursorBase<K, V> implements TupleCursor<K, V> {
+public abstract class TupleCursorBase implements TupleCursor {
 
     protected final IOContext ioContext;
     protected final boolean useBigEndian;
@@ -42,16 +39,16 @@ public abstract class TupleCursorBase<K, V> implements TupleCursor<K, V> {
     protected final JetDataInput dataInput;
     protected final Accumulator accumulator;
     protected final MemoryBlock serviceMemoryBlock;
-    protected final Tuple<K, V> destTuple;
+    protected final Tuple2 destTuple;
     protected final MemoryBlock temporaryMemoryBlock;
     protected final Partition[] partitions;
-    protected final TupleFetcher<K, V> tupleFetcher;
+    protected final TupleFetcher tupleFetcher;
 
     protected Comparator comparator;
 
     protected TupleCursorBase(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock, Accumulator accumulator,
-            Tuple<K, V> destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
+            Tuple2 destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
             boolean useBigEndian
     ) {
         this.header = header;
@@ -64,11 +61,11 @@ public abstract class TupleCursorBase<K, V> implements TupleCursor<K, V> {
         this.temporaryMemoryBlock = temporaryMemoryBlock;
         JetSerializationService jetSerializationService = new JetSerializationServiceImpl();
         this.dataInput = jetSerializationService.createObjectDataInput(null, useBigEndian);
-        this.tupleFetcher = new TupleFetcher<>(ioContext, this.destTuple, useBigEndian);
+        this.tupleFetcher = new TupleFetcher(ioContext, this.destTuple, useBigEndian);
     }
 
     @Override
-    public Tuple<K, V> asTuple() {
+    public Tuple2 asTuple() {
         return tupleFetcher.tuple();
     }
 

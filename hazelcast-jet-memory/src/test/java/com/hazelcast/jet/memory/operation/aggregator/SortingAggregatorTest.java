@@ -85,11 +85,11 @@ public class SortingAggregatorTest extends BaseMemoryTest {
         );
     }
 
-    private void insertElements(Tuple<String, String> tuple, int start, int end
+    private void insertElements(Tuple2<String, String> tuple, int start, int end
     ) throws Exception {
         for (int i = end; i >= start; i--) {
-            tuple.setKey(0, String.valueOf(i));
-            tuple.setValue(0, String.valueOf(i));
+            tuple.set0(String.valueOf(i));
+            tuple.set1(String.valueOf(i));
             if (!aggregator.accept(tuple)) {
                 throw new JetMemoryException("Not enough memory (spilling is turned off)");
             }
@@ -99,13 +99,13 @@ public class SortingAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2String() throws Exception {
         initAggregator(new StringComparator());
-        Tuple<String, String> tuple = new Tuple2<>();
+        Tuple2<String, String> tuple = new Tuple2<>();
         int CNT = 1_000_000;
         long t = System.currentTimeMillis();
         insertElements(tuple, 1, CNT);
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         t = System.currentTimeMillis();
-        final SortedAggregator<String, Integer> aggregator = this.aggregator;
+        final SortedAggregator aggregator = this.aggregator;
         aggregator.prepareToSort();
         while (!aggregator.sort()) {
         }
@@ -113,10 +113,10 @@ public class SortingAggregatorTest extends BaseMemoryTest {
         long time = System.currentTimeMillis();
         String previous = null;
         int iterations_count = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple<String, Integer> tt = cursor.asTuple();
-            assertTrue(previous == null || tt.getKey(0).compareTo(previous) > 0);
-            previous = tt.getKey(0);
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Tuple2<String, Integer> tt = (Tuple2<String, Integer>) cursor.asTuple();
+            assertTrue(previous == null || tt.get0().compareTo(previous) > 0);
+            previous = tt.get0();
             iterations_count++;
         }
         Assert.assertEquals(CNT, iterations_count);
@@ -126,16 +126,16 @@ public class SortingAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringMultiValue() throws Exception {
         initAggregator(new StringComparator());
-        Tuple<String, String> tuple = new Tuple2<String, String>();
+        Tuple2<String, String> tuple = new Tuple2<>();
         int KEYS_CNT = 100_000;
         int VALUES_CNT = 10;
         byte[] markers = new byte[KEYS_CNT];
         Arrays.fill(markers, (byte) 0);
         long t = System.currentTimeMillis();
         for (int i = 1; i <= 100_000; i++) {
-            tuple.setKey(0, String.valueOf(i));
+            tuple.set0(String.valueOf(i));
             for (int ii = 0; ii < 10; ii++) {
-                tuple.setValue(0, String.valueOf(ii));
+                tuple.set1(String.valueOf(ii));
                 if (!aggregator.accept(tuple)) {
                     throw new JetMemoryException("Not enough memory (spilling is turned off)");
                 }
@@ -150,12 +150,12 @@ public class SortingAggregatorTest extends BaseMemoryTest {
         int value_offset = 0;
         String previous = null;
         int iterations_count = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple<String, Integer> tt = cursor.asTuple();
-            String key = tt.getKey(0);
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Tuple2<String, Integer> tt = (Tuple2<String, Integer>) cursor.asTuple();
+            String key = tt.get0();
             if (value_offset == 0) {
                 if (previous != null) {
-                    assertTrue(((String) tt.getKey(0)).compareTo(previous) > 0);
+                    assertTrue(tt.get0().compareTo(previous) > 0);
                 }
                 previous = key;
                 value_offset++;
@@ -189,16 +189,16 @@ public class SortingAggregatorTest extends BaseMemoryTest {
     }
 
     private void testAccumulator() throws Exception {
-        Tuple<String, Integer> tuple = new Tuple2<String, Integer>();
+        Tuple2<String, Integer> tuple = new Tuple2<String, Integer>();
 
         int KEYS_CNT = 100_000;
         Integer VALUES_CNT = 10;
 
         long t = System.currentTimeMillis();
         for (int i = 1; i <= KEYS_CNT; i++) {
-            tuple.setKey(0, String.valueOf(i));
+            tuple.set0(String.valueOf(i));
             for (int ii = 0; ii < VALUES_CNT; ii++) {
-                tuple.setValue(0, 1);
+                tuple.set1(1);
                 aggregator.accept(tuple);
             }
         }
@@ -215,13 +215,13 @@ public class SortingAggregatorTest extends BaseMemoryTest {
         time = System.currentTimeMillis();
         String previous = null;
         int iterations_count = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple<String, Integer> tt = cursor.asTuple();
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Tuple2<String, Integer> tt = (Tuple2<String, Integer>) cursor.asTuple();
             if (previous != null) {
-                assertTrue(tt.getKey(0).compareTo(previous) > 0);
+                assertTrue(tt.get0().compareTo(previous) > 0);
             }
-            Assert.assertEquals("Iteration=" + iterations_count + " " + tt.getKey(0), VALUES_CNT, tt.getValue(0));
-            previous = tt.getKey(0);
+            Assert.assertEquals("Iteration=" + iterations_count + " " + tt.get0(), VALUES_CNT, tt.get1());
+            previous = tt.get0();
             iterations_count++;
         }
         Assert.assertEquals(KEYS_CNT, iterations_count);

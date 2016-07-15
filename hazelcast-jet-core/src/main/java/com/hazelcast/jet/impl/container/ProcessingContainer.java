@@ -22,9 +22,7 @@ import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.impl.actor.ComposedActor;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
 import com.hazelcast.jet.impl.container.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
@@ -36,6 +34,7 @@ import com.hazelcast.jet.impl.container.task.TaskEvent;
 import com.hazelcast.jet.impl.container.task.TaskProcessorFactory;
 import com.hazelcast.jet.impl.container.task.processors.factory.DefaultTaskProcessorFactory;
 import com.hazelcast.jet.impl.container.task.processors.factory.ShuffledTaskProcessorFactory;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachine;
@@ -44,6 +43,7 @@ import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalized
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +52,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+
+import static java.util.stream.Collectors.toList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ProcessingContainer extends
@@ -89,71 +91,44 @@ public class ProcessingContainer extends
 
     private final AtomicInteger taskIdGenerator = new AtomicInteger(0);
 
-    public ProcessingContainer(Vertex vertex,
-                               Supplier<ContainerProcessor> containerProcessorFactory,
-                               NodeEngine nodeEngine,
-                               JobContext jobContext,
-                               JetTupleFactory tupleFactory) {
+    public ProcessingContainer(
+            Vertex vertex, Supplier<ContainerProcessor> containerProcessorFactory, NodeEngine nodeEngine,
+            JobContext jobContext, JetTupleFactory tupleFactory
+    ) {
         super(vertex, STATE_MACHINE_FACTORY, nodeEngine, jobContext, tupleFactory);
-
         this.vertex = vertex;
         this.tupleFactory = tupleFactory;
-
         this.inputChannels = new ArrayList<>();
-        this.outputChannels = new ArrayList<DataChannel>();
+        this.outputChannels = new ArrayList<>();
         this.taskProcessorFactory =
-                (
-                        (vertex.hasOutputShuffler() && (nodeEngine.getClusterService().getMembers().size() > 1))
-                                ||
-                                (vertex.getSinks().size() > 0)
-                )
-                        ?
-                        new ShuffledTaskProcessorFactory()
-                        :
-                        new DefaultTaskProcessorFactory();
-
+                (!vertex.getSinks().isEmpty()
+                    || vertex.hasOutputShuffler() && nodeEngine.getClusterService().getMembers().size() > 1)
+                ? new ShuffledTaskProcessorFactory()
+                : new DefaultTaskProcessorFactory();
         this.tasksCount = vertex.getDescriptor().getTaskCount();
-        this.sourcesProducers = new ArrayList<ObjectProducer>();
+        this.sourcesProducers = new ArrayList<>();
         this.containerProcessorFactory = containerProcessorFactory;
         this.containerTasks = new ContainerTask[this.tasksCount];
         this.awaitSecondsTimeOut = getJobContext().getJobConfig().getSecondsToAwait();
         AtomicInteger readyForFinalizationTasksCounter = new AtomicInteger(0);
         readyForFinalizationTasksCounter.set(this.tasksCount);
-
         AtomicInteger completedTasks = new AtomicInteger(0);
         AtomicInteger interruptedTasks = new AtomicInteger(0);
-
-        this.eventProcessorFactory = new DefaultEventProcessorFactory(
-                completedTasks,
-                interruptedTasks,
-                readyForFinalizationTasksCounter,
-                this.containerTasks,
-                this.getContainerContext(),
-                this
-        );
-
+        this.eventProcessorFactory = new DefaultEventProcessorFactory(completedTasks, interruptedTasks,
+                readyForFinalizationTasksCounter, this.containerTasks, this.getContainerContext(), this);
         buildTasks();
         buildTaps();
     }
 
     private void buildTasks() {
         ContainerTask[] containerTasks = getContainerTasks();
-
         for (int taskIndex = 0; taskIndex < this.tasksCount; taskIndex++) {
             int taskID = this.taskIdGenerator.incrementAndGet();
-
-            containerTasks[taskIndex] = new DefaultContainerTask(
-                    this,
-                    getVertex(),
-                    this.taskProcessorFactory,
-                    taskID,
-                    new DefaultTaskContext(this.tasksCount, taskIndex, this.getJobContext())
-            );
-
+            containerTasks[taskIndex] = new DefaultContainerTask(this, getVertex(), this.taskProcessorFactory,
+                    taskID, new DefaultTaskContext(this.tasksCount, taskIndex, this.getJobContext()));
             getJobContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
             containerTasks[taskIndex].setThreadContextClassLoaders(
-                    getJobContext().getLocalizationStorage().getClassLoader()
-            );
+                    getJobContext().getLocalizationStorage().getClassLoader());
             this.containerTasksCache.put(taskID, containerTasks[taskIndex]);
         }
     }
@@ -175,12 +150,8 @@ public class ProcessingContainer extends
      * @param event         - task's event;
      * @param error         - corresponding error;
      */
-    public void handleTaskEvent(ContainerTask containerTask,
-                                TaskEvent event,
-                                Throwable error) {
-        this.eventProcessorFactory.getEventProcessor(event).process(
-                containerTask, event, error
-        );
+    public void handleTaskEvent(ContainerTask containerTask, TaskEvent event, Throwable error) {
+        this.eventProcessorFactory.getEventProcessor(event).process(containerTask, event, error);
     }
 
     /**
@@ -228,49 +199,37 @@ public class ProcessingContainer extends
     }
 
     /**
-     * Add input channel for container;
-     *
-     * @param channel - corresponding channel;
+     * Adds input channel for container.
      */
     public void addInputChannel(DataChannel channel) {
         this.inputChannels.add(channel);
     }
 
     /**
-     * Add output channel for container;
-     *
-     * @param channel - corresponding channel;
+     * Adds output channel for container.
      */
     public void addOutputChannel(DataChannel channel) {
         this.outputChannels.add(channel);
     }
 
     /**
-     * Starts containers execution;
-     *
-     * @throws Exception if any exception
+     * Starts execution of containers
      */
     public void start() {
         int taskCount = getContainerTasks().length;
-
         if (taskCount == 0) {
             throw new IllegalStateException("No containerTasks for container");
         }
-
         List<ObjectProducer> producers = new ArrayList<ObjectProducer>(this.sourcesProducers);
         List<ObjectProducer>[] tasksProducers = new List[taskCount];
-
         for (int taskIdx = 0; taskIdx < getContainerTasks().length; taskIdx++) {
             tasksProducers[taskIdx] = new ArrayList<ObjectProducer>();
         }
-
         int taskId = 0;
-
         for (ObjectProducer producer : producers) {
             tasksProducers[taskId].add(producer);
             taskId = (taskId + 1) % taskCount;
         }
-
         for (int taskIdx = 0; taskIdx < getContainerTasks().length; taskIdx++) {
             startTask(tasksProducers[taskIdx], taskIdx);
         }
@@ -278,11 +237,11 @@ public class ProcessingContainer extends
 
     private void startTask(List<ObjectProducer> producers, int taskIdx) {
         for (DataChannel channel : getInputChannels()) {
-            for (ComposedActor composedSourceTaskActor : channel.getActors()) {
-                producers.add(composedSourceTaskActor.getParties()[taskIdx]);
-            }
+            producers.addAll(channel.getActors()
+                                    .stream()
+                                    .map(actor -> actor.getParties()[taskIdx])
+                                    .collect(toList()));
         }
-
         getContainerTasks()[taskIdx].start(producers);
     }
 
@@ -290,25 +249,21 @@ public class ProcessingContainer extends
     @SuppressWarnings("unchecked")
     public void processRequest(ProcessingContainerEvent event, Object payload) throws Exception {
         ContainerPayloadProcessor processor = ContainerPayloadFactory.getProcessor(event, this);
-
         if (processor != null) {
             processor.process(payload);
         }
     }
 
     /**
-     * Destroys container;
-     *
-     * @throws Exception if any exception
+     * Destroys the containers.
      */
     public void destroy() throws Exception {
         handleContainerRequest(new ContainerFinalizedRequest(this)).get(this.awaitSecondsTimeOut, TimeUnit.SECONDS);
     }
 
     /**
-     * Interrupt container's execution
-     *
-     * @param error - corresponding error;
+     * Interrupts the execution of containers.
+     * @param error the error that's causing the interruption
      */
     public void interrupt(Throwable error) {
         for (ContainerTask task : this.containerTasks) {
@@ -322,48 +277,30 @@ public class ProcessingContainer extends
     }
 
     private void buildTaps() {
-        if (getVertex().getSources().size() > 0) {
+        if (!getVertex().getSources().isEmpty()) {
             for (Source source : getVertex().getSources()) {
                 List<DataReader> readers = Arrays.asList(
-                        source.getReaders(
-                                getContainerContext(),
-                                getVertex(),
-                                this.tupleFactory
-                        )
-                );
-
+                        source.getReaders(getContainerContext(), getVertex(), this.tupleFactory));
                 this.sourcesProducers.addAll(readers);
             }
         }
-
         List<Sink> sinks = getVertex().getSinks();
-
         for (Sink sink : sinks) {
-            if (!sink.isPartitioned()) {
-                List<DataWriter> writers = Arrays.asList(sink.getWriters(
-                        getNodeEngine(),
-                        getContainerContext())
-                );
-                int i = 0;
-
+            if (sink.isPartitioned()) {
                 for (ContainerTask containerTask : getContainerTasks()) {
-                    List<DataWriter> sinkWriters = new ArrayList<DataWriter>(sinks.size());
-
-                    if (writers.size() >= i - 1) {
-                        sinkWriters.add(writers.get(i++));
-                        containerTask.registerSinkWriters(sinkWriters);
-                    } else {
-                        break;
-                    }
+                    List<DataWriter> writers = Arrays.asList(sink.getWriters(getNodeEngine(), getContainerContext()));
+                    containerTask.registerSinkWriters(writers);
                 }
             } else {
+                List<DataWriter> writers = Arrays.asList(sink.getWriters(getNodeEngine(), getContainerContext()));
+                int i = 0;
                 for (ContainerTask containerTask : getContainerTasks()) {
-                    List<DataWriter> writers = Arrays.asList(sink.getWriters(
-                            getNodeEngine(),
-                            getContainerContext())
-                    );
-
-                    containerTask.registerSinkWriters(writers);
+                    List<DataWriter> sinkWriters = new ArrayList<>(sinks.size());
+                    if (writers.size() < i - 1) {
+                        break;
+                    }
+                    sinkWriters.add(writers.get(i++));
+                    containerTask.registerSinkWriters(sinkWriters);
                 }
             }
         }

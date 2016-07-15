@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 public class DataFileWriter extends AbstractHazelcastWriter {
@@ -27,35 +27,23 @@ public class DataFileWriter extends AbstractHazelcastWriter {
 
     private boolean closed = true;
 
-    public DataFileWriter(ContainerDescriptor containerDescriptor,
-                          int partitionID,
-                          FileOutputStream fileOutputStream) {
+    public DataFileWriter(ContainerDescriptor containerDescriptor, int partitionID, FileOutputStream fileOutputStream) {
         super(containerDescriptor, partitionID);
         this.fileOutputStream = fileOutputStream;
-
         containerDescriptor.registerJobListener(jobContext -> closeFile());
     }
 
     @Override
     protected void processChunk(ProducerInputStream stream) {
         checkFileOpen();
-
         StringBuilder sb = new StringBuilder();
-
         for (Object o : stream) {
-            Tuple t = (Tuple) o;
-
-            for (int i = 0; i < t.keyCount(); i++) {
-                sb.append(t.getKey(i).toString()).append(" ");
+            Tuple2 t = (Tuple2) o;
+            for (int i = 0; i < 2; i++) {
+                sb.append(t.get(i).toString()).append(" ");
             }
-
-            for (int i = 0; i < t.valueCount(); i++) {
-                sb.append(t.getValue(i).toString()).append(" ");
-            }
-
             sb.append("\r\n");
         }
-
         if (sb.length() > 0) {
             fileOutputStream.write(sb.toString());
             fileOutputStream.flush();

@@ -18,10 +18,7 @@ package com.hazelcast.jet.memory.operation.aggregator;
 
 /**
  * Aggregator which also performs a join operation
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public interface JoinAggregator<K, V> extends Aggregator<K, V> {
+public interface JoinAggregator extends Aggregator {
     void setSource(short source);
 }

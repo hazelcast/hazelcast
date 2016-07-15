@@ -17,24 +17,18 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 
 import java.io.File;
 
-public class DataFileReader extends AbstractHazelcastReader<Tuple<Integer, String>> {
+public class DataFileReader extends AbstractHazelcastReader<Tuple2<Integer, String>> {
     private final long end;
     private final long start;
 
-    public DataFileReader(ContainerDescriptor containerDescriptor,
-                          Vertex vertex,
-                          int partitionId,
-                          JetTupleFactory tupleFactory,
-                          String name,
-                          long start,
-                          long end
+    public DataFileReader(ContainerDescriptor containerDescriptor, int partitionId,
+                          JetTupleFactory tupleFactory, String name, long start, long end
     ) {
         super(containerDescriptor, name, partitionId, tupleFactory, ByReferenceDataTransferringStrategy.INSTANCE);
         this.end = end;

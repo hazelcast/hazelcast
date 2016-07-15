@@ -18,8 +18,8 @@ package com.hazelcast.jet.memory.operation.aggregator.sorter;
 
 import com.hazelcast.jet.memory.binarystorage.ObjectHolder;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
-import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
+import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.InputsCursor;
 import com.hazelcast.jet.memory.spilling.SpillingKeyValueWriter;

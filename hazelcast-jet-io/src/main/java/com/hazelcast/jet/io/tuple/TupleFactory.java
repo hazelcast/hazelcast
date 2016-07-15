@@ -17,41 +17,16 @@
 package com.hazelcast.jet.io.tuple;
 
 /**
- * Factory to create tuple;
+ * A factory of tuples.
  */
 public interface TupleFactory {
     /**
-     * Will create tuple with 1-element key part and 1-element value part;
-     *
-     * @param k   - value of the key part;
-     * @param v-  value of the value part;
-     * @param <K> - type of the key part;
-     * @param <V> - value of the key part;
-     * @return - constructed tuple;
+     * Returns a new 2-tuple (a pair) with the given components.
      */
-    <K, V> Tuple<K, V> tuple(K k, V v);
-
+     <T0, T1> Tuple2<T0, T1> tuple2(T0 c0, T1 c1);
 
     /**
-     * Will create tuple with 1-element key part and multi-element value part
-     *
-     * @param k   - value of the key part
-     * @param v-  values of the value part
-     * @param <K> - type of the key part
-     * @param <V> - value of the key part
-     * @return - constructed tuple;
+     * Returns a new tuple with the components provided in the argument array.
      */
-    <K, V> Tuple<K, V> tuple(K k, V[] v);
-
-
-    /**
-     * Will create tuple with multi-element key part and multi-element value part;
-     *
-     * @param k   - values of the key part;
-     * @param v-  values of the value part;
-     * @param <K> - type of the key part;
-     * @param <V> - value of the key part;
-     * @return - constructed tuple;
-     */
-    <K, V> Tuple<K, V> tuple(K[] k, V[] v);
+     Tuple tuple(Object[] components);
 }

@@ -22,29 +22,25 @@ import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.impl.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 
 import java.io.IOException;
 
+import static com.hazelcast.jet.memory.util.JetIoUtil.addrOfValueBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.addressOfKeyBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfKeyBlockAt;
-import static com.hazelcast.jet.memory.util.JetIoUtil.addrOfValueBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
 
 /**
  * Deserializes data held by a {@code MemoryManager} and puts it into a {@code Tuple}.
- * @param <K> type of key
- * @param <V> type of value
  */
-public class TupleFetcher<K, V> {
-    protected final Tuple<K, V> tuple;
-
+public class TupleFetcher {
+    protected final Tuple2 tuple;
     private final IOContext ioContext;
-
     private final JetDataInput dataInput;
 
-    public TupleFetcher(IOContext ioContext, Tuple<K, V> tuple, boolean useBigEndian) {
+    public TupleFetcher(IOContext ioContext, Tuple2 tuple, boolean useBigEndian) {
         this.ioContext = ioContext;
         this.tuple = tuple;
         JetSerializationService jetSerializationService = new JetSerializationServiceImpl();
@@ -55,25 +51,20 @@ public class TupleFetcher<K, V> {
         dataInput.setMemoryManager(memoryBlock);
         final MemoryAccessor accessor = memoryBlock.getAccessor();
         dataInput.reset(addressOfKeyBlockAt(recordAddress), sizeOfKeyBlockAt(recordAddress, accessor));
-        readTupleComponents(true);
+        tuple.set0(readObject());
         dataInput.reset(addrOfValueBlockAt(recordAddress, accessor), sizeOfValueBlockAt(recordAddress, accessor));
-        readTupleComponents(false);
+        tuple.set1(readObject());
     }
 
-    public Tuple<K, V> tuple() {
+    public Tuple2 tuple() {
         return tuple;
     }
 
-    private void readTupleComponents(boolean isReadingKeys) {
+    private Object readObject() {
         try {
-            int elementsCount = dataInput.readInt();
-            for (int i = 0; i < elementsCount; i++) {
-                byte typeId = dataInput.readByte();
-
-                Object element = ioContext.getDataType(typeId).getObjectReader()
-                                          .read(dataInput, ioContext.getObjectReaderFactory());
-                tuple.set(isReadingKeys, i, element);
-            }
+            byte typeId = dataInput.readByte();
+            return ioContext.getDataType(typeId).getObjectReader()
+                            .read(dataInput, ioContext.getObjectReaderFactory());
         } catch (IOException e) {
             throw new JetMemoryException(e);
         }

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation.joiner;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
@@ -33,7 +33,7 @@ public class SortedPartitionedJoiner extends SortedPartitionedAggregator impleme
     @SuppressWarnings("checkstyle:parameternumber")
     public SortedPartitionedJoiner(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple tuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 tuple,
             String spillingDirectory, SortOrder sortOrder, int spillingChunkSize, boolean spillToDisk,
             boolean useBigEndian
     ) {

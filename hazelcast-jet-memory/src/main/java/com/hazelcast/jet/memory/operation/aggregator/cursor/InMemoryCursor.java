@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.binarystorage.Storage;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
@@ -35,11 +35,8 @@ import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 
 /**
  * Cursor over in-memory tuples.
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public class InMemoryCursor<K, V> extends TupleCursorBase<K, V> {
+public class InMemoryCursor extends TupleCursorBase {
     private final Storage serviceKeyValueStorage;
     private long hashCode;
     private int nextPartitionId;
@@ -56,7 +53,7 @@ public class InMemoryCursor<K, V> extends TupleCursorBase<K, V> {
 
     public InMemoryCursor(
             Storage serviceKeyValueStorage, MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock,
-            Accumulator accumulator, Tuple<K, V> destTuple, Partition[] partitions, StorageHeader header,
+            Accumulator accumulator, Tuple2 destTuple, Partition[] partitions, StorageHeader header,
             IOContext ioContext, boolean useBigEndian
     ) {
         super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destTuple, partitions, header, ioContext,
@@ -123,7 +120,7 @@ public class InMemoryCursor<K, V> extends TupleCursorBase<K, V> {
         for (int idx = nextMemoryBlockIdx; idx < memoryBlockChain.size(); idx++) {
             nextMemoryBlock = memoryBlockChain.get(idx);
             header.setMemoryBlock(memoryBlock);
-            if (header.getBaseStorageAddress() == NULL_ADDRESS) {
+            if (header.baseAddress() == NULL_ADDRESS) {
                 continue;
             }
             initMemoryBlock(nextMemoryBlock);
@@ -131,7 +128,7 @@ public class InMemoryCursor<K, V> extends TupleCursorBase<K, V> {
             if (slotAddress != NULL_ADDRESS) {
                 long tupleAddress = nextMemoryBlock.getAccessor().getLong(slotAddress);
                 long tupleSize = JetIoUtil.sizeOfTupleAt(tupleAddress, nextMemoryBlock.getAccessor());
-                JetIoUtil.putByte(tupleAddress, tupleSize + TupleMultimapHsa.MARKER_OFFSET, Util.B_ONE,
+                JetIoUtil.putByte(tupleAddress, tupleSize + TupleMultimapHsa.MARKER_OFFSET, Util.BYTE_1,
                         nextMemoryBlock.getAccessor()
                 );
                 tupleCursor = storage.tupleCursor(slotAddress);
@@ -152,19 +149,19 @@ public class InMemoryCursor<K, V> extends TupleCursorBase<K, V> {
 
     private void initMemoryBlock(MemoryBlock memoryBlock) {
         storage.setMemoryBlock(memoryBlock);
-        storage.gotoAddress(header.getBaseStorageAddress());
+        storage.gotoAddress(header.baseAddress());
     }
 
     private boolean advanceToUnmarkedSlot() {
         while (slotCursor.advance()) {
             long slotAddress = slotCursor.slotAddress();
-            recordAddress = storage.addrOfHeadTuple(slotAddress);
-            if (storage.getSlotMarker(slotAddress) == Util.B_ONE) {
+            recordAddress = storage.addrOfFirstTuple(slotAddress);
+            if (storage.getSlotMarker(slotAddress) == Util.BYTE_1) {
                 continue;
             }
             hashCode = storage.getSlotHashCode(slotAddress);
             tupleCursor = storage.tupleCursor(slotAddress);
-            storage.markSlot(slotAddress, Util.B_ONE);
+            storage.markSlot(slotAddress, Util.BYTE_1);
             nextMemoryBlockIdx = memoryBlockIdx;
             return true;
         }
@@ -179,7 +176,7 @@ public class InMemoryCursor<K, V> extends TupleCursorBase<K, V> {
             memoryBlock = memoryBlockChain.get(memoryBlockIdx);
             storage = partitions[partition.getPartitionId()].getStorage();
             header.setMemoryBlock(memoryBlock);
-            if (header.getBaseStorageAddress() == NULL_ADDRESS) {
+            if (header.baseAddress() == NULL_ADDRESS) {
                 memoryBlockIdx++;
                 continue;
             }
@@ -221,13 +218,13 @@ public class InMemoryCursor<K, V> extends TupleCursorBase<K, V> {
             final MemoryBlock mBlock = memoryBlockChain.get(blockIdx);
             header.setMemoryBlock(mBlock);
             serviceKeyValueStorage.setMemoryBlock(mBlock);
-            serviceKeyValueStorage.gotoAddress(header.getBaseStorageAddress());
+            serviceKeyValueStorage.gotoAddress(header.baseAddress());
             final long slotAddress = serviceKeyValueStorage.addrOfSlotWithSameKey(
                     baseTupleAddress, memoryBlock.getAccessor());
             if (slotAddress == NULL_ADDRESS) {
                 continue;
             }
-            serviceKeyValueStorage.markSlot(slotAddress, Util.B_ONE);
+            serviceKeyValueStorage.markSlot(slotAddress, Util.BYTE_1);
             final TupleAddressCursor cursor = serviceKeyValueStorage.tupleCursor(slotAddress);
             consumeTupleCursor(cursor, baseValueAddress, baseValueSize, mBlock);
         }

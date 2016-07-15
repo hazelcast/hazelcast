@@ -24,159 +24,65 @@ import java.util.Arrays;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class DefaultTuple<K, V> implements Tuple<K, V> {
-    protected Object[] data;
-
-    protected int keySize;
-    protected int valueSize;
+public class DefaultTuple implements Tuple {
+    protected Object[] store;
 
     public DefaultTuple() {
     }
 
-    public DefaultTuple(K key, V value) {
-        checkNotNull(key);
-        checkNotNull(value);
-        this.data = new Object[2];
-        this.keySize = 1;
-        this.valueSize = 1;
-        this.data[0] = key;
-        this.data[1] = value;
+    public DefaultTuple(Object c0, Object c1) {
+        checkNotNull(c0);
+        checkNotNull(c1);
+        this.store = new Object[2];
+        store[0] = c0;
+        store[1] = c1;
     }
 
-    public DefaultTuple(K[] keys, V value) {
-        checkNotNull(keys);
-        checkNotNull(value);
-
-        this.data = new Object[keys.length + 1];
-        this.keySize = keys.length;
-        this.valueSize = 1;
-        System.arraycopy(keys, 0, this.data, 0, keys.length);
-        this.data[this.keySize] = value;
+    public DefaultTuple(Object[] components) {
+        checkNotNull(components);
+        this.store = components.clone();
     }
 
-    public DefaultTuple(K key, V[] values) {
-        checkNotNull(key);
-        checkNotNull(values);
-
-        this.data = new Object[1 + values.length];
-        this.keySize = 1;
-        this.valueSize = values.length;
-        data[0] = key;
-        System.arraycopy(values, 0, this.data, this.keySize, values.length);
+    @Override
+    public Object get(int index) {
+        return store[index];
     }
 
-    public DefaultTuple(K[] keys, V[] values) {
-        checkNotNull(keys);
-        checkNotNull(values);
+    @Override
+    public int size() {
+        return store.length;
+    }
 
-        this.data = new Object[keys.length + values.length];
-        this.keySize = keys.length;
-        this.valueSize = values.length;
-        System.arraycopy(keys, 0, this.data, 0, keys.length);
-        System.arraycopy(values, 0, this.data, this.keySize, values.length);
+    @Override
+    public void set(int index, Object value) {
+        store[index] = value;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public K getKey(int index) {
-        checkKeyIndex(index);
-        return (K) data[index];
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public V getValue(int index) {
-        checkValueIndex(index);
-        return (V) data[this.keySize + index];
-    }
-
-    @Override
-    public int keyCount() {
-        return this.keySize;
-    }
-
-    @Override
-    public int valueCount() {
-        return this.valueSize;
-    }
-
-    @Override
-    public void setKey(int index, K value) {
-        checkKeyIndex(index);
-        this.data[index] = value;
-    }
-
-    @Override
-    public void setValue(int index, V value) {
-        checkValueIndex(index);
-        this.data[this.keySize + index] = value;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public K[] cloneKeys() {
-        Object[] result = new Object[this.keySize];
-        System.arraycopy(this.data, 0, result, 0, this.keySize);
-        return (K[]) result;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public V[] cloneValues() {
-        Object[] result = new Object[this.valueSize];
-        System.arraycopy(this.data, this.keySize, result, 0, this.valueSize);
-        return (V[]) result;
+    public Object[] toArray() {
+        return store.clone();
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(this.data);
-        out.writeInt(this.keySize);
-        out.writeInt(this.valueSize);
+        out.writeObject(store);
+        out.writeInt(store.length);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.data = in.readObject();
-        this.keySize = in.readInt();
-        this.valueSize = in.readInt();
+        store = in.readObject();
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || o.getClass() != DefaultTuple.class) {
-            return false;
-        }
-        DefaultTuple<?, ?> tuple = (DefaultTuple<?, ?>) o;
-        if (keySize != tuple.keySize) {
-            return false;
-        }
-        if (valueSize != tuple.valueSize) {
-            return false;
-        }
-        return Arrays.equals(data, tuple.data);
+        return this == o
+                || o != null && o.getClass() == DefaultTuple.class && Arrays.equals(store, ((DefaultTuple) o).store);
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(data);
-        result = 31 * result + keySize;
-        result = 31 * result + valueSize;
-        return result;
-    }
-
-    protected void checkKeyIndex(int index) {
-        if ((index < 0) || (index >= this.keySize)) {
-            throw new IllegalStateException("Invalid index for tupleKey");
-        }
-    }
-
-    protected void checkValueIndex(int index) {
-        if ((index < 0) || (index >= this.valueSize)) {
-            throw new IllegalStateException("Invalid index for tupleValue");
-        }
+        return Arrays.hashCode(store);
     }
 }

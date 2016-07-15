@@ -17,23 +17,22 @@
 package com.hazelcast.jet.memory.util;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetDataOutput;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.nio.Bits;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.memory.util.Util.B_ZERO;
+import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
+import static com.hazelcast.jet.memory.util.Util.BYTE_0;
 
 /**
  * Utility methods related to I/O
  */
 public final class JetIoUtil {
-    public static final int KEY_BLOCK_SIZE_OFFSET = 0;
     public static final int KEY_BLOCK_OFFSET = 8;
 
     private JetIoUtil() {
@@ -44,109 +43,95 @@ public final class JetIoUtil {
     }
 
     public static long sizeOfKeyBlockAt(long tupleAddress, MemoryAccessor memoryAccessor) {
-        return getLong(tupleAddress, KEY_BLOCK_SIZE_OFFSET, memoryAccessor);
+        return getLong(tupleAddress, 0, memoryAccessor);
     }
 
     public static long addrOfValueBlockAt(long tupleAddress, MemoryAccessor memoryAccessor) {
         long keySize = sizeOfKeyBlockAt(tupleAddress, memoryAccessor);
-        return tupleAddress + (2 * Bits.LONG_SIZE_IN_BYTES) + keySize;
+        return tupleAddress + offsetOfValueSizeField(keySize) + Bits.LONG_SIZE_IN_BYTES;
     }
 
     public static long sizeOfValueBlockAt(long tupleAddress, MemoryAccessor memoryAccessor) {
         long keySize = sizeOfKeyBlockAt(tupleAddress, memoryAccessor);
-        return getLong(tupleAddress, Bits.LONG_SIZE_IN_BYTES + keySize, memoryAccessor);
+        return getLong(tupleAddress, offsetOfValueSizeField(keySize), memoryAccessor);
     }
 
     public static long sizeOfTupleAt(long tupleAddress, MemoryAccessor memoryAccessor) {
-        final long keySize = getLong(tupleAddress, KEY_BLOCK_SIZE_OFFSET, memoryAccessor);
-        final long valueSize = getLong(tupleAddress, Bits.LONG_SIZE_IN_BYTES + keySize, memoryAccessor);
-        return keySize + valueSize + (2 * Bits.LONG_SIZE_IN_BYTES);
+        final long keySize = getLong(tupleAddress, 0, memoryAccessor);
+        final long valueSize = getLong(tupleAddress, offsetOfValueSizeField(keySize), memoryAccessor);
+        return Bits.LONG_SIZE_IN_BYTES + keySize + Bits.LONG_SIZE_IN_BYTES + valueSize;
     }
 
-    public static void writeTuple(Tuple source, JetDataOutput output, IOContext ioContext, MemoryManager memoryManager) {
+    public static void writeTuple(Tuple2 tuple, JetDataOutput output, IOContext ioContext, MemoryManager memoryManager) {
         output.clear();
         output.setMemoryManager(memoryManager);
-        writeElements(true, source, output, ioContext, memoryManager.getAccessor());
-        writeElements(false, source, output, ioContext, memoryManager.getAccessor());
+        try {
+            for (int i = 0; i < 2; i++) {
+                // Remember position of the size field
+                final long initialPos = output.position();
+                // Reserve space for the size field before its value is known
+                output.skip(Bits.LONG_SIZE_IN_BYTES);
+                // Remember initial block size, to calculate the size of what this iteration wrote
+                final long initialSize = output.usedSize();
+                final Object component = tuple.get(i);
+                ioContext.getDataType(component).getObjectWriter()
+                         .write(component, output, ioContext.getObjectWriterFactory());
+                memoryManager.getAccessor().putLong(output.baseAddress() + initialPos, output.usedSize() - initialSize);
+            }
+        } catch (IOException e) {
+            throw Util.rethrow(e);
+        }
     }
 
     public static void readTuple(
-            JetDataInput input, long tupleAddress, Tuple destination, IOContext ioContext, MemoryAccessor memoryAccessor
+            JetDataInput input, long tupleAddress, Tuple2 tuple, IOContext ioContext, MemoryAccessor memoryAccessor
     ) {
         input.reset(tupleAddress, sizeOfTupleAt(tupleAddress, memoryAccessor));
-        readElements(ioContext, input, destination, true);
-        readElements(ioContext, input, destination, false);
+        try {
+            for (int i = 0; i < 2; i++) {
+                // Skip the size field
+                input.readLong();
+                byte typeID = input.readByte();
+                final Object o = ioContext.getDataType(typeID).getObjectReader()
+                                          .read(input, ioContext.getObjectReaderFactory());
+                tuple.set(i, o);
+            }
+        } catch (IOException e) {
+            throw Util.rethrow(e);
+        }
     }
-
-    @SuppressWarnings("unchecked")
-    public static void writeObject(Object object, IOContext ioContext, JetDataOutput output) throws IOException {
-        ioContext.getDataType(object).getObjectWriter().write(object, output, ioContext.getObjectWriterFactory());
-    }
-
 
     public static long getLong(long base, long offset, MemoryAccessor memoryAccessor) {
-        if (base == MemoryAllocator.NULL_ADDRESS) {
-            return MemoryAllocator.NULL_ADDRESS;
+        if (base == NULL_ADDRESS) {
+            return NULL_ADDRESS;
         }
         return memoryAccessor.getLong(base + offset);
     }
 
+
     public static void putLong(long base, long offset, long value, MemoryAccessor memoryAccessor) {
-        if (base == MemoryAllocator.NULL_ADDRESS) {
+        if (base == NULL_ADDRESS) {
             return;
         }
         memoryAccessor.putLong(base + offset, value);
     }
 
     public static byte getByte(long base, long offset, MemoryAccessor memoryAccessor) {
-        if (base == MemoryAllocator.NULL_ADDRESS) {
-            return B_ZERO;
+        if (base == NULL_ADDRESS) {
+            return BYTE_0;
         }
         return memoryAccessor.getByte(base + offset);
     }
 
     public static void putByte(long base, long offset, byte value, MemoryAccessor memoryAccessor) {
-        if (base == MemoryAllocator.NULL_ADDRESS) {
+        if (base == NULL_ADDRESS) {
             return;
         }
         memoryAccessor.putByte(base + offset, value);
     }
 
-    private static  void writeElements(
-            boolean doKeys, Tuple tuple, JetDataOutput output, IOContext ioContext, MemoryAccessor memoryAccessor
-    ) {
-        // Remember position of the size field
-        final long initialPos = output.position();
-        // Reserve space for the size field before its value is known
-        output.skip(Bits.LONG_SIZE_IN_BYTES);
-        // Remember initial block size, to calculate the size of what this call wrote
-        final long initialSize = output.usedSize();
-        final int elementCount = doKeys ? tuple.keyCount() : tuple.valueCount();
-        try {
-            output.writeInt(elementCount);
-            for (int i = 0; i < elementCount; i++) {
-                writeObject(tuple.get(doKeys, i), ioContext, output);
-            }
-        } catch (IOException e) {
-            throw Util.rethrow(e);
-        }
-        memoryAccessor.putLong(output.baseAddress() + initialPos, output.usedSize() - initialSize);
+    private static long offsetOfValueSizeField(long keySize) {
+        return KEY_BLOCK_OFFSET + keySize;
     }
 
-    private static void readElements(IOContext ioContext, JetDataInput input, Tuple tuple, boolean copyKeys) {
-        // Skip the size field
-        try {
-            input.readLong();
-            int elementCount = input.readInt();
-            for (int i = 0; i < elementCount; i++) {
-                byte typeID = input.readByte();
-                final Object o = ioContext.getDataType(typeID)
-                                          .getObjectReader()
-                                          .read(input, ioContext.getObjectReaderFactory());
-                tuple.set(copyKeys, i, o);
-            }
-        } catch (IOException e) {
-            throw Util.rethrow(e);
-        }
-    }
 }

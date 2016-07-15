@@ -57,7 +57,7 @@ public class FileSource implements Source {
             long end = i < chunkCount - 1 ? chunks[i + 1] : file.length();
 
             int partitionId = i % containerDescriptor.getNodeEngine().getPartitionService().getPartitionCount();
-            readers[i] = new DataFileReader(containerDescriptor, vertex, partitionId, tupleFactory, name, start, end);
+            readers[i] = new DataFileReader(containerDescriptor, partitionId, tupleFactory, name, start, end);
         }
         return readers;
     }

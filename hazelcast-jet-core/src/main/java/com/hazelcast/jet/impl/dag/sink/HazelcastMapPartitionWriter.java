@@ -21,7 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -38,9 +38,7 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     private final RecordStore recordStore;
     private final CalculationStrategy calculationStrategy;
 
-    public HazelcastMapPartitionWriter(ContainerDescriptor containerDescriptor,
-                                       int partitionId,
-                                       String name) {
+    public HazelcastMapPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId, String name) {
         super(containerDescriptor, partitionId);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
@@ -50,46 +48,32 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
         this.mapConfig = nodeEngine.getConfig().getMapConfig(name);
         this.recordStore = mapServiceContext.getPartitionContainer(getPartitionId()).getRecordStore(name);
         PartitioningStrategy partitioningStrategy = mapContainer.getPartitioningStrategy();
-
         if (partitioningStrategy == null) {
             partitioningStrategy = StringPartitioningStrategy.INSTANCE;
         }
-
-        this.calculationStrategy = new CalculationStrategyImpl(
-                DefaultHashingStrategy.INSTANCE,
-                partitioningStrategy,
-                containerDescriptor
-        );
+        this.calculationStrategy = new CalculationStrategyImpl(DefaultHashingStrategy.INSTANCE,
+                partitioningStrategy, containerDescriptor);
     }
 
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            JetTuple tuple = (JetTuple) chunk.get(i);
-
-            Object dataKey;
-            Object dataValue;
-
-            dataKey = tuple.getKeyData(this.calculationStrategy, getNodeEngine());
-
-            if (mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY) {
-                dataValue = tuple.getValueData(this.calculationStrategy, getNodeEngine());
-            } else {
-                dataValue = tuple.valueCount() == 1 ? tuple.getValue(0) : tuple.cloneValues();
-            }
-
-            this.recordStore.put((Data) dataKey, dataValue, -1);
+            JetTuple2 tuple = (JetTuple2) chunk.get(i);
+            final Data keyData = tuple.getComponentData(0, calculationStrategy, getNodeEngine());
+            final Object valueData = mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY
+                    ? tuple.getComponentData(1, calculationStrategy, getNodeEngine()) : tuple.get1();
+            this.recordStore.put(keyData, valueData, -1);
         }
     }
 
     @Override
     protected void onOpen() {
-        this.recordStore.clear();
+        recordStore.clear();
     }
 
     @Override
     public PartitioningStrategy getPartitionStrategy() {
-        return this.calculationStrategy.getPartitioningStrategy();
+        return calculationStrategy.getPartitioningStrategy();
     }
 
     @Override

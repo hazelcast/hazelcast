@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.source;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -39,8 +39,8 @@ public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
     }
 
     @Override
-    public Distributed.Function<Tuple, E> fromTupleMapper() {
-        return t -> (E) t.getValue(0);
+    public Distributed.Function<Tuple2, E> fromTupleMapper() {
+        return t -> (E) t.get1();
     }
 
     @Override

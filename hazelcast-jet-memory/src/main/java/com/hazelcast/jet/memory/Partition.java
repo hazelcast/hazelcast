@@ -24,10 +24,10 @@ import com.hazelcast.jet.memory.memoryblock.DefaultMemoryBlockChain;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
-import java.util.function.LongConsumer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.LongConsumer;
 
 /**
  * Holds a slice of a multimap, based on the key's hashcode.

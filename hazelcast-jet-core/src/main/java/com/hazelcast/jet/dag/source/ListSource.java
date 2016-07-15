@@ -53,10 +53,9 @@ public class ListSource implements Source {
     public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, JetTupleFactory tupleFactory) {
         int partitionId = HazelcastListPartitionReader.getPartitionId(containerDescriptor.getNodeEngine(), this.name);
         if (JetUtil.isPartitionLocal(containerDescriptor.getNodeEngine(), partitionId)) {
-            HazelcastListPartitionReader reader
-                    = new HazelcastListPartitionReader(containerDescriptor, name, tupleFactory);
-
-            return new DataReader[]{reader};
+            HazelcastListPartitionReader reader =
+                    new HazelcastListPartitionReader(containerDescriptor, name, tupleFactory);
+            return new DataReader[] {reader};
         }
         return new DataReader[0];
     }

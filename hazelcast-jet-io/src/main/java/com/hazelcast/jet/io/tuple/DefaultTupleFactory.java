@@ -18,17 +18,12 @@ package com.hazelcast.jet.io.tuple;
 
 public class DefaultTupleFactory implements TupleFactory {
     @Override
-    public <K, V> Tuple<K, V> tuple(K k, V v) {
-        return new Tuple2<K, V>(k, v);
+    public <T0, T1> Tuple2<T0, T1> tuple2(T0 c0, T1 c1) {
+        return new Tuple2<>(c0, c1);
     }
 
     @Override
-    public <K, V> Tuple<K, V> tuple(K k, V[] v) {
-        return new DefaultTuple<K, V>(k, v);
-    }
-
-    @Override
-    public <K, V> Tuple<K, V> tuple(K[] k, V[] v) {
-        return new DefaultTuple<K, V>(k, v);
+    public Tuple tuple(Object[] components) {
+        return new DefaultTuple(components);
     }
 }

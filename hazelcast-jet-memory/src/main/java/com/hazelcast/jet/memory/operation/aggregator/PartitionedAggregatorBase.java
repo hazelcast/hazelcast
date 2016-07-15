@@ -21,7 +21,7 @@ import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.impl.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataOutput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.JetMemoryException;
 import com.hazelcast.jet.memory.JetOutOfMemoryException;
 import com.hazelcast.jet.memory.Partition;
@@ -36,8 +36,8 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
-import com.hazelcast.jet.memory.spilling.Spiller;
 import com.hazelcast.jet.memory.spilling.SpillFileCursor;
+import com.hazelcast.jet.memory.spilling.Spiller;
 import com.hazelcast.jet.memory.util.JetIoUtil;
 import com.hazelcast.jet.memory.util.Util;
 import com.hazelcast.nio.IOUtil;
@@ -45,21 +45,18 @@ import com.hazelcast.nio.IOUtil;
 import java.io.File;
 import java.util.function.LongConsumer;
 
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.FOOTER_SIZE_BYTES;
+import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.FIRST_FOOTER_SIZE_BYTES;
 import static com.hazelcast.jet.memory.operation.aggregator.AggregatorState.AGGREGATING;
 import static com.hazelcast.jet.memory.operation.aggregator.AggregatorState.SPILLING;
+import static com.hazelcast.jet.memory.util.JetIoUtil.addrOfValueBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.addressOfKeyBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfKeyBlockAt;
-import static com.hazelcast.jet.memory.util.JetIoUtil.addrOfValueBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
 
 /**
  * Base class for partitioned aggregators.
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public abstract class PartitionedAggregatorBase<K, V> implements Aggregator<K, V> {
+public abstract class PartitionedAggregatorBase implements Aggregator {
     protected final boolean useBigEndian;
     protected final int spillingBufferSize;
     protected final int spillingChunkSize;
@@ -75,7 +72,7 @@ public abstract class PartitionedAggregatorBase<K, V> implements Aggregator<K, V
     protected final Partition[] partitions;
     protected final StorageHeader header;
     protected final LongConsumer hsaResizeListener;
-    protected final Tuple<K, V> destTuple;
+    protected final Tuple2 destTuple;
     protected SpillFileCursor spillFileCursor;
 
     private final boolean spillToDisk;
@@ -87,7 +84,7 @@ public abstract class PartitionedAggregatorBase<K, V> implements Aggregator<K, V
     @SuppressWarnings({"checkstyle:parameternumber", "checkstyle:executablestatementcount"})
     protected PartitionedAggregatorBase(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple<K, V> destTuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 destTuple,
             Accumulator accumulator, String spillPathname, int spillingChunkSize, boolean spillToDisk,
             boolean useBigEndian
     ) {
@@ -164,7 +161,7 @@ public abstract class PartitionedAggregatorBase<K, V> implements Aggregator<K, V
     }
 
     @Override
-    public boolean accept(Tuple<K, V> tuple) {
+    public boolean accept(Tuple2 tuple) {
         try {
             writeTuple(tuple, getComparator());
         } catch (JetOutOfMemoryException exception) {
@@ -217,7 +214,7 @@ public abstract class PartitionedAggregatorBase<K, V> implements Aggregator<K, V
 
     protected abstract Spiller spiller();
 
-    protected abstract TupleCursor<K, V> newResultCursor();
+    protected abstract TupleCursor newResultCursor();
 
     private void resetBlocks() {
         for (Partition partition : partitions) {
@@ -259,7 +256,7 @@ public abstract class PartitionedAggregatorBase<K, V> implements Aggregator<K, V
         return true;
     }
 
-    private void writeTuple(Tuple tuple, Comparator comparator) {
+    private void writeTuple(Tuple2 tuple, Comparator comparator) {
         serviceMemoryBlock.reset();
         JetIoUtil.writeTuple(tuple, jetDataOutput, ioContext, serviceMemoryBlock);
         long serviceTupleAddress = jetDataOutput.baseAddress();
@@ -269,26 +266,24 @@ public abstract class PartitionedAggregatorBase<K, V> implements Aggregator<K, V
         );
         final long tupleSize = jetDataOutput.usedSize();
         final int partitionId = (int) (partitionHash & partitionHashMask);
+
+        // Set up the context for the current method call in this object and collaborators
         currentPartition = partitions[partitionId];
         final Storage storage = currentPartition.getStorage();
         final MemoryBlock memoryBlock = currentPartition.getMemoryBlockChain().current();
         header.setMemoryBlock(memoryBlock);
         storage.setMemoryBlock(memoryBlock);
         jetDataOutput.setMemoryManager(memoryBlock);
-        final long tupleAddress = memoryBlock.getAllocator().allocate(tupleSize + FOOTER_SIZE_BYTES);
+
+        final long tupleAddress = memoryBlock.getAllocator().allocate(tupleSize + FIRST_FOOTER_SIZE_BYTES);
         memoryBlock.copyFrom(serviceMemoryBlock, serviceTupleAddress, tupleAddress, tupleSize);
         if (accumulator != null && accumulator.isAssociative()) {
-            assert tuple.valueCount() == 1;
             accumulate(tupleAddress, tupleSize, partitionHash, storage, comparator, memoryBlock);
         } else {
-            insertTuple(tupleAddress, partitionHash, comparator, storage);
-        }
-    }
-
-    private void insertTuple(long tupleAddress, long hashCode, Comparator comparator, Storage storage) {
-        long slotAddress = storage.insertTuple(tupleAddress, comparator);
-        if (slotAddress > 0) {
-            storage.setSlotHashCode(slotAddress, hashCode);
+            final long slotAddress = storage.insertTuple(tupleAddress, comparator);
+            if (slotAddress > 0) {
+                storage.setSlotHashCode(slotAddress, partitionHash);
+            }
         }
     }
 
@@ -301,13 +296,13 @@ public abstract class PartitionedAggregatorBase<K, V> implements Aggregator<K, V
             return;
         }
         slotAddress = -slotAddress;
-        long oldRecordAddress = storage.addrOfHeadTuple(slotAddress);
-        final MemoryAccessor accessor = memoryBlock.getAccessor();
-        long oldValueAddress = addrOfValueBlockAt(oldRecordAddress, accessor);
-        long oldValueSize = sizeOfValueBlockAt(oldRecordAddress, accessor);
-        long valueAddress = addrOfValueBlockAt(tupleAddress, accessor);
-        long valueSize = sizeOfValueBlockAt(tupleAddress, accessor);
-        accumulator.accept(accessor, oldValueAddress, oldValueSize, valueAddress, valueSize, useBigEndian);
-        memoryBlock.getAllocator().free(tupleAddress, tupleSize + FOOTER_SIZE_BYTES);
+        long addrOfHeadTuple = storage.addrOfFirstTuple(slotAddress);
+        final MemoryAccessor mem = memoryBlock.getAccessor();
+        long addrOfHeadValue = addrOfValueBlockAt(addrOfHeadTuple, mem);
+        long sizeOfHeadValue = sizeOfValueBlockAt(addrOfHeadTuple, mem);
+        long addrOfValue = addrOfValueBlockAt(tupleAddress, mem);
+        long sizeOfValue = sizeOfValueBlockAt(tupleAddress, mem);
+        accumulator.accept(mem, addrOfHeadValue, sizeOfHeadValue, addrOfValue, sizeOfValue, useBigEndian);
+        memoryBlock.getAllocator().free(tupleAddress, tupleSize + FIRST_FOOTER_SIZE_BYTES);
     }
 }

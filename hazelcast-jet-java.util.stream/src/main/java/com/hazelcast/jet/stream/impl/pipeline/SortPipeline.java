@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
@@ -39,16 +39,15 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
     private final Comparator<? super T> comparator;
 
-    public SortPipeline(Pipeline<T> upstream,
-                        StreamContext context, Comparator<? super T> comparator) {
+    public SortPipeline(Pipeline<T> upstream, StreamContext context, Comparator<? super T> comparator) {
         super(context, true, upstream);
         this.comparator = comparator;
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple2> toTupleMapper) {
         boolean isFirstVertex = upstream instanceof SourcePipeline;
-        Distributed.Function<Tuple, T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Tuple2, T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         Vertex vertex = vertexBuilder(SortProcessor.class)
                 .name("sorter")
                 .addToDAG(dag)

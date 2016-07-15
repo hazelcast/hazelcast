@@ -14,23 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.memory.operation.aggregator;
-
-import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.io.tuple.Tuple2;
-import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
-import com.hazelcast.jet.memory.spilling.Spillable;
-import com.hazelcast.nio.Disposable;
+package com.hazelcast.jet.io;
 
 /**
- * Aggregates data from a sequence of tuples supplied to the {@link #accept(Tuple)} method.
+ * Jet IO module exception.
  */
-public interface Aggregator extends Spillable, Disposable {
-
-    void setComparator(Comparator comparator);
-
-    boolean accept(Tuple2 tuple);
-
-    TupleCursor cursor();
+public class JetIoException extends RuntimeException {
+    public JetIoException(String message) {
+        super(message);
+    }
 }

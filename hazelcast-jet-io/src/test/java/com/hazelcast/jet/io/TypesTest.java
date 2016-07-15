@@ -52,7 +52,7 @@ public class TypesTest {
                 {(short) 0, Types.SHORT},
                 {"string", Types.STRING},
                 {null, Types.NULL},
-                {new Tuple2<>(0, 0), Types.TUPLE},
+                {new Tuple2<>(0, 0), Types.TUPLE2},
                 {new Object(), Types.OBJECT}
         });
     }

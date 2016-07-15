@@ -19,7 +19,7 @@ package com.hazelcast.jet.memory.operation.aggregator.cursor;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.binarystorage.Storage;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
@@ -40,11 +40,8 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
 
 /**
  * Cursor over tuples that were spilled to disk.
- *
- * @param <K> type of key
- * @param <V> type of value
  */
-public class SpillingCursor<K, V> extends TupleCursorBase<K, V> {
+public class SpillingCursor extends TupleCursorBase {
     private final Spiller spiller;
     private long[] lookedUpSlots;
     private int lookedUpSlotIdx;
@@ -61,7 +58,7 @@ public class SpillingCursor<K, V> extends TupleCursorBase<K, V> {
     })
     public SpillingCursor(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock, Accumulator accumulator,
-            Spiller spiller, Tuple<K, V> destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
+            Spiller spiller, Tuple2 destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
             boolean useBigEndian
     ) {
         super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destTuple, partitions, header, ioContext,
@@ -141,17 +138,17 @@ public class SpillingCursor<K, V> extends TupleCursorBase<K, V> {
         for (int idx = 0; idx < memoryBlockChain.size(); idx++) {
             MemoryBlock mBlock = memoryBlockChain.get(idx);
             header.setMemoryBlock(mBlock);
-            if (header.getBaseStorageAddress() == MemoryAllocator.NULL_ADDRESS) {
+            if (header.baseAddress() == MemoryAllocator.NULL_ADDRESS) {
                 continue;
             }
             storage.setMemoryBlock(mBlock);
-            storage.gotoAddress(header.getBaseStorageAddress());
+            storage.gotoAddress(header.baseAddress());
             long slotAddress = storage.addrOfSlotWithSameKey(TOP_OFFSET, serviceMemoryBlock.getAccessor());
             if (slotAddress == MemoryAllocator.NULL_ADDRESS) {
                 continue;
             }
             lookedUpSlots[idx] = slotAddress;
-            storage.markSlot(slotAddress, Util.B_ONE);
+            storage.markSlot(slotAddress, Util.BYTE_1);
         }
     }
 
@@ -180,7 +177,7 @@ public class SpillingCursor<K, V> extends TupleCursorBase<K, V> {
             MemoryBlock memoryBlock = memoryBlockChain.get(idx);
             header.setMemoryBlock(memoryBlock);
             storage.setMemoryBlock(memoryBlock);
-            storage.gotoAddress(header.getBaseStorageAddress());
+            storage.gotoAddress(header.baseAddress());
             for (TupleAddressCursor cursor = storage.tupleCursor(slotAddress); cursor.advance();) {
                 long recordAddress = cursor.tupleAddress();
                 final MemoryAccessor accessor = memoryBlock.getAccessor();

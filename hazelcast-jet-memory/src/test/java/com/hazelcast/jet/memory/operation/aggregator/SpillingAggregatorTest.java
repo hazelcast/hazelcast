@@ -46,7 +46,7 @@ import java.util.Arrays;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SpillingAggregatorTest extends BaseMemoryTest {
-    private Aggregator<String, Integer> aggregator;
+    private Aggregator aggregator;
     private IOContext ioContext = new IOContextImpl();
 
     protected long blockSize() {
@@ -91,7 +91,6 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
                 binaryAccumulator,
                 Files.createTempDirectory("hazelcast-jet-spilling").toString(),
                 65536,//spillingChunkSize
-                1024,//bloomFilterSizeInBytes
                 true,
                 true
         );
@@ -105,7 +104,7 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         int VALUES_CNT = 1;
         int[] markers = new int[CNT];
         Arrays.fill(markers, (byte) 0);
-        Tuple<String, String> tuple = new Tuple2<String, String>();
+        Tuple2<String, String> tuple = new Tuple2<>();
         long t = System.currentTimeMillis();
         for (int i = 0; i < VALUES_CNT; i++) {
             insertElements(tuple, 1, CNT, i);
@@ -114,18 +113,18 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         int iterations_cnt = 0;
         String lastKey = "";
         int value_idx = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple tt = cursor.asTuple();
-            if (!lastKey.equals(tt.getKey(0))) {
-                if (!(lastKey.equals(""))) {
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Tuple2<String, String> tt = (Tuple2<String, String>) cursor.asTuple();
+            if (!lastKey.equals(tt.get0())) {
+                if (!(lastKey.isEmpty())) {
                     Assert.assertEquals(value_idx, VALUES_CNT);
                 }
-                lastKey = (String) tt.getKey(0);
+                lastKey = tt.get0();
                 value_idx = 1;
             } else {
                 value_idx++;
             }
-            markers[Integer.valueOf((String) tt.getKey(0)) - 1] += 1;
+            markers[Integer.valueOf(tt.get0()) - 1] += 1;
             iterations_cnt++;
         }
         Assert.assertEquals(value_idx, VALUES_CNT);
@@ -143,7 +142,7 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         initAggregator(new StringComparator(), new IntSumAccumulator());
         int CNT = 500_000;
         int VALUES_CNT = 20;
-        Tuple<String, String> tuple = new Tuple2<>();
+        Tuple2<String, Integer> tuple = new Tuple2<>();
         long t = System.currentTimeMillis();
         for (int i = 0; i < VALUES_CNT; i++) {
             insertElementsWithOneValue(tuple, 1, CNT, i);
@@ -151,9 +150,9 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         }
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         int iterations_cnt = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple tt = cursor.asTuple();
-            Assert.assertEquals(VALUES_CNT, tt.getValue(0));
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Tuple2<String, Integer> tt = (Tuple2) cursor.asTuple();
+            Assert.assertEquals(VALUES_CNT, (int) tt.get1());
             iterations_cnt++;
         }
         Assert.assertEquals(CNT, iterations_cnt);
@@ -165,7 +164,7 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         initAggregator(new StringComparator(), new NonAssociativeSumAccumulator());
         int CNT = 2_000_000;
         int VALUES_CNT = 2;
-        Tuple<String, String> tuple = new Tuple2<>();
+        Tuple2<String, Integer> tuple = new Tuple2<>();
         long t = System.currentTimeMillis();
         for (int i = 0; i < VALUES_CNT; i++) {
             insertElementsWithOneValue(tuple, 1, CNT, i);
@@ -173,32 +172,31 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         }
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         int iterations_cnt = 0;
-        for (TupleCursor<String, Integer> cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple tt = cursor.asTuple();
-            Assert.assertEquals(VALUES_CNT, tt.getValue(0));
+        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Tuple2<String, Integer> tt = (Tuple2<String, Integer>) cursor.asTuple();
+            Assert.assertEquals(VALUES_CNT, (int) tt.get1());
             iterations_cnt++;
         }
         Assert.assertEquals(CNT, iterations_cnt);
     }
 
-    private void insertElementsWithOneValue(Tuple tuple, int start, int elementsCount, int step
-    ) throws Exception {
+    private void insertElementsWithOneValue(Tuple2<String, Integer> tuple, int start, int elementsCount, int step)
+    throws Exception {
         for (int i = start; i <= elementsCount; i++) {
-            tuple.setKey(0, String.valueOf(i));
-            tuple.setValue(0, 1);
+            tuple.set0(String.valueOf(i));
+            tuple.set1(1);
             insertNewRecord(tuple, elementsCount, step, i);
         }
     }
 
-    private void insertNewRecord(Tuple tuple, int elementsCount, int step, int i
-    ) throws Exception {
+    private void insertNewRecord(Tuple2 tuple, int elementsCount, int step, int i) throws Exception {
         boolean result = aggregator.accept(tuple);
         if (!result) {
             long t = System.currentTimeMillis();
             System.out.println("Start spilling i=" + i);
             aggregator.startSpilling();
-            do {
-            } while (!aggregator.spillNextChunk());
+            while (!aggregator.spillNextChunk()) {
+            }
             aggregator.finishSpilling();
             aggregator.accept(tuple);
             System.out.println("Spilled " + elementsCount
@@ -210,12 +208,11 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         }
     }
 
-    private void insertElements(
-            Tuple<String, String> tuple, int start, int elementsCount, int step
-    ) throws Exception {
+    private void insertElements(Tuple2<String, String> tuple, int start, int elementsCount, int step)
+    throws Exception {
         for (int i = start; i <= elementsCount; i++) {
-            tuple.setKey(0, String.valueOf(i));
-            tuple.setValue(0, String.valueOf(i));
+            tuple.set0(String.valueOf(i));
+            tuple.set1(String.valueOf(i));
             insertNewRecord(tuple, elementsCount, step, i);
         }
     }

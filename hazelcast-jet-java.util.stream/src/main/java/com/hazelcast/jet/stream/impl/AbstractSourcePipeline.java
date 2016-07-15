@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
@@ -33,7 +33,7 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<E_OUT, Tuple> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<E_OUT, Tuple2> toTupleMapper) {
         if (downstreamVertex == null) {
             downstreamVertex = vertexBuilder(PassthroughProcessor.class)
                     .addToDAG(dag)

@@ -24,8 +24,8 @@ import java.util.concurrent.ExecutionException;
  * Utilite methods.
  */
 public final class Util {
-    public static final byte B_ZERO = 0;
-    public static final byte B_ONE = 1;
+    public static final byte BYTE_0 = 0;
+    public static final byte BYTE_1 = 1;
 
     private Util() {
     }

@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -37,19 +37,14 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
     private final ListContainer listContainer;
     private final CalculationStrategy calculationStrategy;
 
-    public HazelcastListPartitionWriter(ContainerDescriptor containerDescriptor,
-                                        String name) {
-        super(containerDescriptor,
-                getPartitionId(name, containerDescriptor.getNodeEngine()));
+    public HazelcastListPartitionWriter(ContainerDescriptor containerDescriptor, String name) {
+        super(containerDescriptor, getPartitionId(name, containerDescriptor.getNodeEngine()));
         this.name = name;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         ListService service = nodeEngine.getService(ListService.SERVICE_NAME);
         this.listContainer = service.getOrCreateContainer(name, false);
         this.calculationStrategy = new CalculationStrategyImpl(
-                DefaultHashingStrategy.INSTANCE,
-                getPartitionStrategy(),
-                containerDescriptor
-        );
+                DefaultHashingStrategy.INSTANCE, getPartitionStrategy(), containerDescriptor);
     }
 
     private static int getPartitionId(String name, NodeEngine nodeEngine) {
@@ -60,27 +55,18 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            JetTuple tuple = (JetTuple) chunk.get(i);
-
+            final JetTuple2 tuple = (JetTuple2) chunk.get(i);
             if (tuple == null) {
                 continue;
             }
-
-            if (!this.listContainer.hasEnoughCapacity(chunk.size())) {
+            if (!listContainer.hasEnoughCapacity(chunk.size())) {
                 throw new IllegalStateException("IList " + name + " capacity exceeded");
             }
-
-            if (!(tuple.getKey(0) instanceof Number)) {
-                throw new IllegalStateException("Key for IList tuple should be Integer");
+            if (!(tuple.get(0) instanceof Number)) {
+                throw new IllegalStateException("The key of an IList tuple should be a number");
             }
-
-            this.listContainer.add(tuple.getValueData(this.calculationStrategy, getNodeEngine()));
+            this.listContainer.add(tuple.getComponentData(1, calculationStrategy, getNodeEngine()));
         }
-    }
-
-    @Override
-    protected void onOpen() {
-
     }
 
     @Override

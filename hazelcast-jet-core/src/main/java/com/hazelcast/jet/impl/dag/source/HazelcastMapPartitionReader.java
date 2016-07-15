@@ -22,9 +22,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.data.tuple.JetTupleConvertor;
+import com.hazelcast.jet.impl.data.tuple.JetTupleConverter;
 import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
@@ -39,59 +40,42 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<JetTuple<K, V>> {
+public class HazelcastMapPartitionReader extends AbstractHazelcastReader<JetTuple> {
     private final MapConfig mapConfig;
     private final CalculationStrategy calculationStrategy;
 
-    private final JetTupleConvertor<Record, K, V> tupleConverter = new JetTupleConvertor<Record, K, V>() {
+    private final JetTupleConverter<Record> tupleConverter = new JetTupleConverter<Record>() {
         @Override
-        public JetTuple<K, V> convert(Record record, SerializationService ss) {
-            Object value;
-
-            if (mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY) {
-                value = ss.toObject(record.getValue());
-            } else {
-                value = record.getValue();
-            }
-
-            return tupleFactory.tuple(
-                    ss.<K>toObject(record.getKey()),
-                    (V) value,
-                    getPartitionId(),
-                    calculationStrategy
-            );
+        public JetTuple2 convert(Record record, SerializationService ss) {
+            final Object value = mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY
+                    ? ss.toObject(record.getValue()) : record.getValue();
+            return tupleFactory.tuple2(ss.toObject(record.getKey()), value, getPartitionId(), calculationStrategy);
         }
     };
 
-    public HazelcastMapPartitionReader(ContainerDescriptor containerDescriptor,
-                                       String name,
-                                       int partitionId,
-                                       JetTupleFactory tupleFactory) {
+    public HazelcastMapPartitionReader(
+            ContainerDescriptor containerDescriptor, String name, int partitionId, JetTupleFactory tupleFactory
+    ) {
         super(containerDescriptor, name, partitionId, tupleFactory, ByReferenceDataTransferringStrategy.INSTANCE);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
-
         this.mapConfig = nodeEngine.getConfig().getMapConfig(name);
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         PartitioningStrategy partitioningStrategy = mapContainer.getPartitioningStrategy();
         partitioningStrategy = partitioningStrategy == null ? StringPartitioningStrategy.INSTANCE : partitioningStrategy;
-
         this.calculationStrategy = new CalculationStrategyImpl(
-                DefaultHashingStrategy.INSTANCE,
-                partitioningStrategy,
-                this.containerDescriptor
-        );
+                DefaultHashingStrategy.INSTANCE, partitioningStrategy, this.containerDescriptor);
     }
 
     @Override
     public void onOpen() {
-        NodeEngineImpl nei = (NodeEngineImpl) this.nodeEngine;
-        SerializationService ss = nei.getSerializationService();
-        MapService mapService = nei.getService(MapService.SERVICE_NAME);
-        PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
-        RecordStore recordStore = partitionContainer.getRecordStore(getName());
-        this.iterator = new JetTupleIterator<Record, K, V>(recordStore.iterator(), tupleConverter, ss);
+        final NodeEngineImpl nei = (NodeEngineImpl) this.nodeEngine;
+        final SerializationService ss = nei.getSerializationService();
+        final MapService mapService = nei.getService(MapService.SERVICE_NAME);
+        final PartitionContainer pc = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
+        final RecordStore<Record> recordStore = pc.getRecordStore(getName());
+        this.iterator = new JetTupleIterator<>(recordStore.iterator(), tupleConverter, ss);
     }
 
     @Override
@@ -101,6 +85,5 @@ public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<J
 
     @Override
     protected void onClose() {
-
     }
 }

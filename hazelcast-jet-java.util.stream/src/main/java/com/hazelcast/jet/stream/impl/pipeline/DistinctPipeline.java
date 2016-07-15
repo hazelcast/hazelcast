@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
@@ -38,10 +38,9 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple> toTupleMapper) {
-        Distributed.Function<T, Tuple> keyMapper = m -> new JetTuple2<>(m, m);
-        Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
-
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple2> toTupleMapper) {
+        Distributed.Function<T, Tuple2> keyMapper = m -> new JetTuple2<>(m, m);
+        Distributed.Function<Tuple2, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         if (upstream.isOrdered()) {
             Vertex distinct = vertexBuilder(DistinctProcessor.class)
                     .addToDAG(dag)
@@ -49,7 +48,6 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
                     .taskCount(1)
                     .build();
             Vertex previous = upstream.buildDAG(dag, distinct, keyMapper);
-
             if (previous != distinct) {
                 edgeBuilder(previous, distinct)
                         .addToDAG(dag)

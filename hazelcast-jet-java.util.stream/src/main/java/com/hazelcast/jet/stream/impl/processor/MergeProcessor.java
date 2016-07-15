@@ -20,7 +20,7 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.HashMap;
@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 
-public class MergeProcessor<K, V> implements ContainerProcessor<Tuple<K, V>, Tuple<K, V>> {
+public class MergeProcessor<K, V> implements ContainerProcessor<Tuple2<K, V>, Tuple2<K, V>> {
 
     private final BinaryOperator<V> merger;
     private final Map<K, V> cache = new HashMap<>();
@@ -39,22 +39,22 @@ public class MergeProcessor<K, V> implements ContainerProcessor<Tuple<K, V>, Tup
     }
 
     @Override
-    public boolean process(ProducerInputStream<Tuple<K, V>> inputStream,
-                           ConsumerOutputStream<Tuple<K, V>> outputStream,
+    public boolean process(ProducerInputStream<Tuple2<K, V>> inputStream,
+                           ConsumerOutputStream<Tuple2<K, V>> outputStream,
                            String sourceName, ProcessorContext processorContext) throws Exception {
-        for (Tuple<K, V> input : inputStream) {
-            V value = this.cache.get(input.getKey(0));
+        for (Tuple2<K, V> input : inputStream) {
+            V value = this.cache.get(input.get0());
             if (value == null) {
-                this.cache.put(input.getKey(0), input.getValue(0));
+                this.cache.put(input.get0(), input.get1());
             } else {
-                this.cache.put(input.getKey(0), this.merger.apply(value, input.getValue(0)));
+                this.cache.put(input.get0(), this.merger.apply(value, input.get1()));
             }
         }
         return true;
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<K, V>> outputStream,
+    public boolean finalizeProcessor(ConsumerOutputStream<Tuple2<K, V>> outputStream,
                                      ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
         try {
@@ -66,13 +66,11 @@ public class MergeProcessor<K, V> implements ContainerProcessor<Tuple<K, V>, Tup
             while (this.finalizationIterator.hasNext()) {
                 Map.Entry<K, V> next = this.finalizationIterator.next();
                 outputStream.consume(new JetTuple2<>(next.getKey(), next.getValue()));
-
                 if (idx == processorContext.getConfig().getChunkSize() - 1) {
                     break;
                 }
                 idx++;
             }
-
             finalized = !this.finalizationIterator.hasNext();
         } finally {
             if (finalized) {

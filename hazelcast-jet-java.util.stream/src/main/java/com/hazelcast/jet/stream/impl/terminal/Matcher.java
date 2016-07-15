@@ -21,7 +21,7 @@ import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -45,19 +45,17 @@ public class Matcher {
 
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
         DAG dag = new DAG();
-        Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Tuple2, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         Vertex vertex = vertexBuilder(AnyMatchProcessor.class)
                 .addToDAG(dag)
                 .args(fromTupleMapper, toTupleMapper(), predicate)
                 .build();
-
         Vertex previous = upstream.buildDAG(dag, vertex, toTupleMapper());
         if (previous != vertex) {
             edgeBuilder(previous, vertex)
                     .addToDAG(dag)
                     .build();
         }
-
         IList<Boolean> results = execute(dag, vertex);
         boolean result = anyMatch(results);
         results.destroy();
@@ -80,7 +78,7 @@ public class Matcher {
         return list;
     }
 
-    private <T, U extends T> Distributed.Function<U, Tuple> toTupleMapper() {
+    private <T, U extends T> Distributed.Function<U, Tuple2> toTupleMapper() {
         return  o -> new JetTuple2<Object, T>(0, o);
     }
 

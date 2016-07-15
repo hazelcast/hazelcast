@@ -28,6 +28,7 @@ import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -91,35 +92,28 @@ public class ConsumerProducerTest extends JetTestSupport {
     @Test
     public void testArrayProducer() throws Exception {
         Job job = JetEngine.getJob(instance, "arrayProducer");
-
         IList<Integer[]> sourceList = getList(instance);
         IList<Integer[]> sinkList = getList(instance);
-
         DAG dag = new DAG();
-
         int count = 10;
         for (int i = 0; i < count; i++) {
-            sourceList.add(new Integer[]{i});
+            sourceList.add(new Integer[] {i});
         }
-
         Vertex vertex = createVertex("vertex", TestProcessors.Noop.class, 1);
         vertex.addSource(new ListSource(sourceList));
         vertex.addSink(new ListSink(sinkList));
-
         dag.addVertex(vertex);
         job.submit(dag);
-
         execute(job);
-
         for (int i = 0; i < count; i++) {
             assertEquals(i, (int) sinkList.get(i)[0]);
         }
     }
 
-    public static class FinalizingProcessor implements ContainerProcessor<Tuple<Integer, String>, Tuple<Integer, String>> {
-
+    public static class FinalizingProcessor
+            implements ContainerProcessor<Tuple2<Integer, String>, Tuple2<Integer, String>> {
         @Override
-        public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Integer, String>> outputStream,
+        public boolean finalizeProcessor(ConsumerOutputStream<Tuple2<Integer, String>> outputStream,
                                          ProcessorContext processorContext) throws Exception {
             outputStream.consume(new JetTuple2<>(0, "empty"));
             return true;

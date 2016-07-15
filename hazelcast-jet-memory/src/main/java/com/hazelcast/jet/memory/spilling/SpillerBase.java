@@ -36,7 +36,7 @@ abstract class SpillerBase {
 
     protected final SpillFileCursor spillFileCursor;
 
-    protected final SpillingKeyValueWriter kvWriter;
+    protected final SpillingKeyValueWriter recordWriter;
 
     protected final SpillFileReader input;
 
@@ -48,7 +48,7 @@ abstract class SpillerBase {
         this.baseDir = baseDir;
         this.useBigEndian = useBigEndian;
         this.spillFileCursor = new SpillFileCursor();
-        this.kvWriter = new SpillingKeyValueWriter();
+        this.recordWriter = new SpillingKeyValueWriter();
         this.input = new SpillFileReader(bufferSize, useBigEndian);
         this.output = new SpillFileWriter(bufferSize, useBigEndian);
     }
@@ -74,7 +74,7 @@ abstract class SpillerBase {
             input.close();
             output.close();
             spillFileCursor.close();
-            kvWriter.close();
+            recordWriter.close();
         }
         delete(activeFile);
         if (!tempFile.renameTo(activeFile)) {

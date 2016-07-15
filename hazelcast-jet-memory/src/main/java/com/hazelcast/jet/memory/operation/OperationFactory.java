@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
@@ -40,13 +40,12 @@ public final class OperationFactory {
     @SuppressWarnings({
             "checkstyle:parameternumber"
     })
-    public static <K, V> Aggregator<K, V> getAggregator(
+    public static Aggregator getAggregator(
             MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple<K, V> destTuple,
-            String spillingDirectory, int spillingChunkSize, int bloomFilterSizeInBytes,
-            boolean spillToDisk, boolean useBigEndian
+            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple2 destTuple,
+            String spillingDirectory, int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        return new PartitionedAggregator<>(partitionCount, spillingBufferSize, bloomFilterSizeInBytes, ioContext,
+        return new PartitionedAggregator(partitionCount, spillingBufferSize, ioContext,
                 comparator, memoryContext, memoryChainingRule, destTuple, spillingDirectory,
                 spillingChunkSize, spillToDisk, useBigEndian);
     }
@@ -54,13 +53,13 @@ public final class OperationFactory {
     @SuppressWarnings({
             "checkstyle:parameternumber"
     })
-    public static <K, V> Aggregator getAggregator(
+    public static Aggregator getAggregator(
             MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple<K, V> destTuple,
-            Accumulator accumulator, String spillingDirectory, int spillingChunkSize,
-            int bloomFilterSizeInBytes, boolean spillToDisk, boolean useBigEndian
+            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple2 destTuple,
+            Accumulator accumulator, String spillingDirectory,
+            int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        return new PartitionedAggregator<>(partitionCount, spillingBufferSize, bloomFilterSizeInBytes, ioContext,
+        return new PartitionedAggregator(partitionCount, spillingBufferSize, ioContext,
                 comparator, memoryContext, memoryChainingRule, destTuple, accumulator,
                 spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
     }
@@ -68,13 +67,13 @@ public final class OperationFactory {
     @SuppressWarnings({
             "checkstyle:parameternumber"
     })
-    public static <K, V> SortedAggregator getSortedAggregator(
+    public static SortedAggregator getSortedAggregator(
             MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple<K, V> destTuple,
+            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple2 destTuple,
             String spillingDirectory, SortOrder sortOrder, int spillingChunkSize,
             boolean spillToDisk, boolean useBigEndian
     ) {
-        return new SortedPartitionedAggregator<>(partitionCount, spillingBufferSize, ioContext, comparator,
+        return new SortedPartitionedAggregator(partitionCount, spillingBufferSize, ioContext, comparator,
                 memoryContext, memoryChainingRule, destTuple, spillingDirectory, sortOrder,
                 spillingChunkSize, spillToDisk, useBigEndian);
     }
@@ -82,13 +81,13 @@ public final class OperationFactory {
     @SuppressWarnings({
             "checkstyle:parameternumber"
     })
-    public static <K, V> SortedAggregator getSortedAggregator(
+    public static SortedAggregator getSortedAggregator(
             MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple<K, V> destTuple,
+            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple2 destTuple,
             Accumulator binaryFunctor, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        return new SortedPartitionedAggregator<>(partitionCount, spillingBufferSize, ioContext, comparator,
+        return new SortedPartitionedAggregator(partitionCount, spillingBufferSize, ioContext, comparator,
                 memoryContext, memoryChainingRule, destTuple, binaryFunctor, spillingDirectory,
                 sortOrder, spillingChunkSize, spillToDisk, useBigEndian);
     }
@@ -98,13 +97,11 @@ public final class OperationFactory {
     })
     public static  JoinAggregator getJoiner(
             MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple tuple,
-            String spillingDirectory, int spillingChunkSize, int bloomFilterSizeInBytes,
-            boolean spillToDisk, boolean useBigEndian
+            int partitionCount, int spillingBufferSize, Comparator comparator, Tuple2 tuple,
+            String spillingDirectory, int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        return new PartitionedJoiner(partitionCount, spillingBufferSize, bloomFilterSizeInBytes, ioContext,
-                comparator, memoryContext, memoryChainingRule, tuple,
-                spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
+        return new PartitionedJoiner(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
+                memoryChainingRule, tuple, spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
     }
 
 //    @SuppressWarnings({

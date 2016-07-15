@@ -19,54 +19,19 @@ package com.hazelcast.jet.io.tuple;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * A record consisting (conceptually) of an array of keys and an array of values.
- *
- * @param <K> key type
- * @param <V> value type
+ * A general, untyped tuple.
  */
-public interface Tuple<K, V> extends DataSerializable {
+public interface Tuple extends DataSerializable {
 
-    /**
-     * Returns the key at the given index. May return {@code null}. Allowed range for the index
-     * is {@code 0 .. (keyCount - 1)}.
-     */
-    K getKey(int index);
+    /** Assigns the given object to the component at the given index. */
+    void set(int index, Object o);
 
-    /**
-     * Returns the value at the given index. May return {@code null}. Allowed range for the index
-     * is {@code 0 .. (valueCount - 1)}.
-     */
-    V getValue(int index);
+    /** Gets the component at the given index. */
+    <T> T get(int index);
 
-    /** Returns the size of the key array. */
-    int keyCount();
+    /** Returns the number of components in this tuple. */
+    int size();
 
-    /** Returns the size of the value array. */
-    int valueCount();
-
-    /** Puts the given object into the given key slot. */
-    void setKey(int index, K key);
-
-    /** Puts the given object into the given value slot. */
-    void setValue(int index, V value);
-
-    /** Puts the given object into the given key or value slot. */
-    default void set(boolean isKey, int index, Object o) {
-        if (isKey) {
-            setKey(index, (K) o);
-        } else {
-            setValue(index, (V) o);
-        }
-    }
-
-    /** Gets the key or value at the given index */
-    default Object get(boolean isKey, int index) {
-        return isKey ? getKey(index) : getValue(index);
-    }
-
-    /** Returns a shallow clone of the key array. */
-    K[] cloneKeys();
-
-    /** Returns a shallow clone of the value array. */
-    V[] cloneValues();
+    /** Returns an array of this tuple's components. */
+    Object[] toArray();
 }

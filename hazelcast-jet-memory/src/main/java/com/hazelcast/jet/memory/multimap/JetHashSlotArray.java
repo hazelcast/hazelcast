@@ -24,10 +24,12 @@ import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
 import com.hazelcast.internal.util.hashslot.impl.HashSlotArrayBase;
 import com.hazelcast.jet.memory.binarystorage.Hasher;
-import com.hazelcast.jet.memory.binarystorage.ObjectHolder;
 import com.hazelcast.jet.memory.util.JetIoUtil;
 
 import java.util.function.LongConsumer;
+
+import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
+import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.HASH_CODE_OFFSET;
 
 /**
  * Open-addressed hashtable with {@code long}-typed slots. Assumes a specific implementation of memory
@@ -42,46 +44,45 @@ import java.util.function.LongConsumer;
  * marks the beginning of free space.
  * </li></ol>
  */
-public final class JetHashSlotArray extends HashSlotArrayBase implements HashSlotArray8byteKey {
-    public static final int KEY_SIZE = 8;
+final class JetHashSlotArray extends HashSlotArrayBase implements HashSlotArray8byteKey {
 
     private long lastHashCode;
-    private final int hashCodeOffset;
-    private final Hasher defaultHasher;
     private final HashSlotCursor8byteKey cursor;
-    private final ObjectHolder<Hasher> hasherHolder;
     private final LongConsumer hsaResizeListener;
-    private final ObjectHolder<MemoryAccessor> memoryAccessorHolder;
+    private Hasher hasher;
+    private MemoryAccessor localMem;
 
-    public JetHashSlotArray(
-            long nullSentinel, Hasher defaultHasher, ObjectHolder<Hasher> hasherHolder,
-            ObjectHolder<MemoryAccessor> memoryAccessorHolder, LongConsumer hsaResizeListener,
-            int hashCodeOffset, int initialCapacity, float loadFactor
-    ) {
-        super(nullSentinel, 0L, null, null, KEY_SIZE, 0, initialCapacity, loadFactor);
-        this.defaultHasher = defaultHasher;
-        this.hasherHolder = hasherHolder;
-        this.memoryAccessorHolder = memoryAccessorHolder;
-        this.hashCodeOffset = hashCodeOffset;
+    JetHashSlotArray(LongConsumer hsaResizeListener, int initialCapacity, float loadFactor) {
+        super(NULL_ADDRESS, 0L, null, null, TupleMultimapHsa.KEY_SIZE, 0, initialCapacity, loadFactor);
         this.cursor = new Cursor();
         this.hsaResizeListener = hsaResizeListener;
     }
 
-    public long slotBaseAddress(long baseAddress, long slotNumber) {
+    void setMemoryManager(MemoryManager memMgr) {
+        assert memMgr != null : "Attempt to set null memory manager";
+        setMemMgr(memMgr);
+    }
+
+    void setLocalMemoryAccessor(MemoryAccessor mem) {
+        this.localMem = mem;
+    }
+
+    void setHasher(Hasher hasher) {
+        assert hasher != null : "Attempt to set null hasher";
+        this.hasher = hasher;
+    }
+
+
+    long slotBaseAddress(long baseAddress, long slotNumber) {
         return super.slotBase(baseAddress, slotNumber);
     }
 
-    public long getLastHashCode() {
+    long getLastHashCode() {
         return lastHashCode;
     }
 
-    public boolean isSlotAssigned(long baseAddress, long slot) {
+    boolean isSlotAssigned(long baseAddress, long slot) {
         return super.isAssigned(baseAddress, slot);
-    }
-
-    // broaden access level of protected method
-    public void setMemoryManager(MemoryManager memoryManager) {
-        setMemMgr(memoryManager);
     }
 
     /**
@@ -122,14 +123,14 @@ public final class JetHashSlotArray extends HashSlotArrayBase implements HashSlo
     }
 
     @Override
-    protected boolean equal(long leftKey1, long leftKey2, long rightKey1, long rightKey2) {
-        MemoryAccessor leftMemoryAccessor = mem();
-        MemoryAccessor rightMemoryAccessor = memoryAccessorHolder.get(leftMemoryAccessor);
-        return hasherHolder.get(defaultHasher).equal(leftMemoryAccessor, rightMemoryAccessor,
+    protected boolean equal(long leftKey1, long ignoredLeftKey2, long rightKey1, long ignoredRightKey2) {
+        MemoryAccessor leftMem = mem();
+        MemoryAccessor rightMem = resolveMem();
+        return hasher.equal(leftMem, rightMem,
                 JetIoUtil.addressOfKeyBlockAt(leftKey1),
-                JetIoUtil.sizeOfKeyBlockAt(leftKey1, leftMemoryAccessor),
+                JetIoUtil.sizeOfKeyBlockAt(leftKey1, leftMem),
                 JetIoUtil.addressOfKeyBlockAt(rightKey1),
-                JetIoUtil.sizeOfKeyBlockAt(leftKey2, leftMemoryAccessor)
+                JetIoUtil.sizeOfKeyBlockAt(rightKey1, rightMem)
         );
     }
 
@@ -151,22 +152,22 @@ public final class JetHashSlotArray extends HashSlotArrayBase implements HashSlo
     }
 
     @Override
-    protected long keyHash(long record, long ignore) {
-        final MemoryAccessor memoryAccessor = memoryAccessorHolder.get(mem());
-        long keyAddress = JetIoUtil.addressOfKeyBlockAt(record);
-        long keySize = JetIoUtil.sizeOfKeyBlockAt(record, memoryAccessor);
-        lastHashCode = hasherHolder.get(defaultHasher).hash(memoryAccessor, keyAddress, keySize);
+    protected long keyHash(long tupleAddress, long ignored) {
+        final MemoryAccessor mem = resolveMem();
+        final long keyAddress = JetIoUtil.addressOfKeyBlockAt(tupleAddress);
+        final long keySize = JetIoUtil.sizeOfKeyBlockAt(tupleAddress, mem);
+        lastHashCode = hasher.hash(mem, keyAddress, keySize);
         return lastHashCode;
     }
 
     @Override
     protected long slotHash(long baseAddress, long slot) {
-        long slotAddress = slotBase(baseAddress, slot);
-        long recordAddress = mem().getLong(slotAddress);
-        return mem().getLong(recordAddress + JetIoUtil.sizeOfTupleAt(recordAddress, mem()) + hashCodeOffset);
+        long headTupleAddress = mem().getLong(slotBase(baseAddress, slot));
+        return mem().getLong(headTupleAddress + JetIoUtil.sizeOfTupleAt(headTupleAddress, mem()) + HASH_CODE_OFFSET);
     }
 
-    public static long toSlotAddr(long rawHsaAddr) {
-        return rawHsaAddr - KEY_SIZE;
+    private MemoryAccessor resolveMem() {
+        return localMem != null ? localMem : mem();
     }
+
 }

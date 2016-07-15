@@ -23,7 +23,6 @@ import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.multimap.HsaQuickSorter;
-import com.hazelcast.jet.memory.multimap.JetHashSlotArray;
 import com.hazelcast.jet.memory.multimap.TupleMultimapHsa;
 
 import java.util.function.LongConsumer;
@@ -32,6 +31,7 @@ import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.jet.memory.binarystorage.SortOrder.ASC;
 import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.DEFAULT_INITIAL_CAPACITY;
 import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.KEY_SIZE;
 
 /**
  * Hashtable-based binary key-value storage which can be iterated over in a given sort order.
@@ -69,7 +69,7 @@ public class SortedHashStorage extends HashStorage implements SortedStorage {
         this.sortedSlotCursor = new SortedSlotCursor();
         this.comparator = comparator;
         this.reverseComparator = new ReverseComparator(comparator);
-        getMultimap().setSlotCreationListener(() -> currentSortOrder = null);
+        getMultimap().setSlotAddedListener(() -> currentSortOrder = null);
     }
 
     @Override
@@ -92,13 +92,13 @@ public class SortedHashStorage extends HashStorage implements SortedStorage {
         }
         return order == currentSortOrder
                 ? hsa.address()
-                : hsa.address() + ((sortedCount - 1) * JetHashSlotArray.KEY_SIZE);
+                : hsa.address() + ((sortedCount - 1) * KEY_SIZE);
     }
 
     @Override
     public long addrOfNextSlot(long slotAddress, SortOrder order) {
         assert currentSortOrder != null : "Attempt to call next() on yet-unsorted storage";
-        final int slotSize = JetHashSlotArray.KEY_SIZE;
+        final int slotSize = KEY_SIZE;
         return nullIfInvalid(slotAddress + (order == currentSortOrder ? slotSize : -slotSize), getMultimap());
     }
 
@@ -137,7 +137,7 @@ public class SortedHashStorage extends HashStorage implements SortedStorage {
     private static long nullIfInvalid(long address, TupleMultimapHsa layout) {
         final HashSlotArray hsa = layout.getHashSlotArray();
         final long allocAddress = hsa.address();
-        final int slotLength = JetHashSlotArray.KEY_SIZE;
+        final int slotLength = KEY_SIZE;
         return address >= allocAddress && address <= allocAddress + (hsa.size() - 1) * slotLength
                 ? address : NULL_ADDRESS;
     }

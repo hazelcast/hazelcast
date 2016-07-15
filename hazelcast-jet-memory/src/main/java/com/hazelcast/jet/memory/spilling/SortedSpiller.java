@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.memory.spilling;
 
-import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
-import com.hazelcast.jet.memory.operation.aggregator.sorter.Sorter;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.InputsCursor;
 import com.hazelcast.jet.memory.Partition;
+import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.InputsCursor;
+import com.hazelcast.jet.memory.operation.aggregator.sorter.Sorter;
 import com.hazelcast.jet.memory.util.Util;
 
 import java.io.File;
@@ -69,7 +69,7 @@ public class SortedSpiller extends SpillerBase implements Spiller {
             input.setInput(new FileInputStream(activeFile));
             output.setOutput(new FileOutputStream(tempFile));
             spillFileCursor.open(input);
-            kvWriter.open(output);
+            recordWriter.open(output);
         } catch (FileNotFoundException e) {
             throw Util.rethrow(e);
         }
@@ -82,7 +82,7 @@ public class SortedSpiller extends SpillerBase implements Spiller {
                 return true;
             }
             inputsCursor.setInputs(openSpillFileCursor(), sortedMemoryBlockChain);
-            spillingSorter.resetTo(inputsCursor, kvWriter);
+            spillingSorter.resetTo(inputsCursor, recordWriter);
             storageSorted = true;
         }
 

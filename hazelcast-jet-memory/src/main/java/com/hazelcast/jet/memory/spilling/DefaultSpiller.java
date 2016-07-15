@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
+import static com.hazelcast.jet.memory.util.Util.BYTE_1;
 
 /**
  * Default implementation of Spiller.
@@ -48,7 +49,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
     private final MemoryBlock serviceMemoryBlock;
     private final int chunkSize;
 
-    private MemoryBlock recordMemoryBlock;
+    private MemoryBlock tupleMemoryBlock;
     private MemoryBlock nextTupleMemoryBlock;
     private MemoryBlock memoryBlock;
     private MemoryBlock nextMemoryBlock;
@@ -63,8 +64,8 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
 
     private boolean haveSpilledDataToWrite = true;
     private boolean haveMemoryDataToWrite = true;
-    private boolean haveRecordToSpill = true;
-    private boolean haveNextRecordsToSpill = true;
+    private boolean haveTupleToSpill = true;
+    private boolean haveNextTuplesToSpill = true;
     private boolean haveActiveSpilledSource;
     private boolean slotsLookedUp;
     private boolean mergingDone;
@@ -96,7 +97,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             input.setInput(new FileInputStream(activeFile));
             output.setOutput(new FileOutputStream(tempFile));
             spillFileCursor.open(input);
-            kvWriter.open(output);
+            recordWriter.open(output);
         } catch (FileNotFoundException e) {
             throw Util.rethrow(e);
         }
@@ -121,10 +122,10 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         while (memoryBlockIdx < partition.getMemoryBlockChain().size()) {
             memoryBlock = partition.getMemoryBlockChain().get(memoryBlockIdx);
             storageHeader.setMemoryBlock(memoryBlock);
-            if (storageHeader.getBaseStorageAddress() != NULL_ADDRESS) {
+            if (storageHeader.baseAddress() != NULL_ADDRESS) {
                 currentStorage = partition.getStorage();
                 currentStorage.setMemoryBlock(memoryBlock);
-                currentStorage.gotoAddress(storageHeader.getBaseStorageAddress());
+                currentStorage.gotoAddress(storageHeader.baseAddress());
                 slotCursor = currentStorage.slotCursor();
                 memoryBlockIdx++;
                 resetSpillingFlags();
@@ -160,8 +161,8 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
     }
 
     private void resetSpillingFlags() {
-        haveRecordToSpill = false;
-        haveNextRecordsToSpill = false;
+        haveTupleToSpill = false;
+        haveNextTuplesToSpill = false;
     }
 
     private void spillNextChunkForMerge() {
@@ -189,9 +190,9 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         boolean hasMore = true;
         int spilledCount = 0;
         for (; spilledCount < chunkSize; spilledCount++) {
-            if (!spillRecordFromIterator()) {
-                haveRecordToSpill = false;
-                if (!spillRecordFromNextIterator() && !findRecordFromNextBlock() && !spillSlots()) {
+            if (!spillTupleFromCursor()) {
+                haveTupleToSpill = false;
+                if (!spillTupleFromNextIterator() && !findRecordFromNextBlock() && !spillSlots()) {
                     hasMore = false;
                     memoryBlock = null;
                     break;
@@ -215,7 +216,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             }
             blockIndex++;
         }
-        kvWriter.writeRecord(memoryBlock, tupleAddress);
+        recordWriter.writeRecord(memoryBlock, tupleAddress);
         initStorage(memoryBlock);
     }
 
@@ -241,8 +242,8 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             nextTupleCursor = null;
             if (slotAddress != NULL_ADDRESS) {
                 currentStorage.setMemoryBlock(nextMemoryBlock);
-                currentStorage.gotoAddress(storageHeader.getBaseStorageAddress());
-                currentStorage.markSlot(slotAddress, Util.B_ONE);
+                currentStorage.gotoAddress(storageHeader.baseAddress());
+                currentStorage.markSlot(slotAddress, BYTE_1);
                 nextTupleCursor = currentStorage.tupleCursor(slotAddress);
                 nextTupleMemoryBlock = nextMemoryBlock;
                 if (nextTupleCursor.advance()) {
@@ -253,13 +254,13 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             }
             nextBlockIndex++;
         }
-        haveNextRecordsToSpill = false;
+        haveNextTuplesToSpill = false;
         return false;
     }
 
     private void flushWriter() {
         try {
-            kvWriter.flush();
+            recordWriter.flush();
         } catch (IOException e) {
             throw Util.rethrow(e);
         }
@@ -294,7 +295,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             return;
         }
         long recordsCount = spillFileCursor.getRecordCountInCurrentSegment();
-        long memoryRecordCount = findSlotsInCurrentPartitionWithSameKey(0, serviceMemoryBlock, MemoryBlock.TOP_OFFSET);
+        long memoryRecordCount = findTuplesInCurrentPartitionWithSameKey(0, serviceMemoryBlock, MemoryBlock.TOP_OFFSET);
         nextMemoryBlock = null;
         if (memoryRecordCount > 0) {
             recordsCount += memoryRecordCount;
@@ -302,7 +303,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         } else {
             haveMemoryDataToWrite = false;
         }
-        kvWriter.writeSegmentHeader(0, recordsCount);
+        recordWriter.writeSegmentHeader(0, recordsCount);
         nextTupleCursor = null;
         slotsLookedUp = true;
         lookedUpSlotIndex = 0;
@@ -319,7 +320,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             if (slotAddress != NULL_ADDRESS) {
                 MemoryBlock memoryBlock = partition.getMemoryBlockChain().get(idx);
                 storageHeader.setMemoryBlock(memoryBlock);
-                if (storageHeader.getBaseStorageAddress() != NULL_ADDRESS) {
+                if (storageHeader.baseAddress() != NULL_ADDRESS) {
                     //2. Apply accumulator
                     accumulateOverIterator(spilledValueAddress, spilledValueSize, slotAddress, memoryBlock);
                 }
@@ -327,7 +328,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         }
 
         //3. Spill record after calculation;
-        kvWriter.writeRecord(serviceMemoryBlock, MemoryBlock.TOP_OFFSET);
+        recordWriter.writeRecord(serviceMemoryBlock, MemoryBlock.TOP_OFFSET);
         return true;
     }
 
@@ -335,7 +336,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             long spilledValueAddress, long spilledValueSize, long slotAddress, MemoryBlock memoryBlock
     ) {
         currentStorage.setMemoryBlock(memoryBlock);
-        currentStorage.gotoAddress(storageHeader.getBaseStorageAddress());
+        currentStorage.gotoAddress(storageHeader.baseAddress());
         for (TupleAddressCursor cursor = currentStorage.tupleCursor(slotAddress); cursor.advance();) {
             long recordAddress = cursor.tupleAddress();
             MemoryAccessor accessor = memoryBlock.getAccessor();
@@ -346,32 +347,33 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         }
     }
 
-    private long findSlotsInCurrentPartitionWithSameKey(int startBlockIdx, MemoryBlock recordMBlock, long offset) {
-        MemoryBlockChain memoryBlockChain = partition.getMemoryBlockChain();
-        long recordCount = 0;
+    private long findTuplesInCurrentPartitionWithSameKey(
+            int startBlockIdx, MemoryBlock tupleMemBlock, long tupleAddress) {
+        final MemoryBlockChain chain = partition.getMemoryBlockChain();
+        long tupleCount = 0;
         Arrays.fill(addrsOfSlotsWithSameKey, NULL_ADDRESS);
-        for (int blockIdx = startBlockIdx; blockIdx < memoryBlockChain.size(); blockIdx++) {
-            final MemoryBlock memoryBlock = memoryBlockChain.get(blockIdx);
-            storageHeader.setMemoryBlock(memoryBlock);
-            long storageAddress = storageHeader.getBaseStorageAddress();
+        for (int blockIdx = startBlockIdx; blockIdx < chain.size(); blockIdx++) {
+            final MemoryBlock mBlock = chain.get(blockIdx);
+            storageHeader.setMemoryBlock(mBlock);
+            long storageAddress = storageHeader.baseAddress();
             if (storageAddress == NULL_ADDRESS) {
                 continue;
             }
             currentStorage.gotoAddress(storageAddress);
-            currentStorage.setMemoryBlock(memoryBlock);
-            long slotAddress = currentStorage.addrOfSlotWithSameKey(offset, recordMBlock.getAccessor());
+            currentStorage.setMemoryBlock(mBlock);
+            long slotAddress = currentStorage.addrOfSlotWithSameKey(tupleAddress, tupleMemBlock.getAccessor());
             if (slotAddress == NULL_ADDRESS) {
                 continue;
             }
-            currentStorage.markSlot(slotAddress, Util.B_ONE);
-            recordCount += currentStorage.tupleCountAt(slotAddress);
+            currentStorage.markSlot(slotAddress, BYTE_1);
+            tupleCount += currentStorage.tupleCountAt(slotAddress);
             addrsOfSlotsWithSameKey[blockIdx] = slotAddress;
         }
-        return recordCount;
+        return tupleCount;
     }
 
     private boolean spillLookedUpSlotsForMerge() {
-        spillNextRecord();
+        spillNextTuple();
         if (nextTupleCursor != null) {
             return false;
         }
@@ -389,12 +391,12 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             }
             nextMemoryBlock = partition.getMemoryBlockChain().get(index);
             storageHeader.setMemoryBlock(nextMemoryBlock);
-            currentStorage.gotoAddress(storageHeader.getBaseStorageAddress());
+            currentStorage.gotoAddress(storageHeader.baseAddress());
             currentStorage.setMemoryBlock(nextMemoryBlock);
             nextTupleCursor = currentStorage.tupleCursor(slotAddress);
             nextTupleMemoryBlock = nextMemoryBlock;
             if (nextTupleCursor.advance()) {
-                spillNextRecord();
+                spillNextTuple();
             } else {
                 nextTupleCursor = null;
             }
@@ -416,7 +418,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         haveSpilledDataToWrite = true;
         slotAddress = NULL_ADDRESS;
         hashCode = spillFileCursor.getHashCode();
-        kvWriter.writeSlotHeader(spillFileCursor.getPartitionId(), spillFileCursor.getHashCode(), 1);
+        recordWriter.writeSlotHeader(spillFileCursor.getPartitionId(), spillFileCursor.getHashCode(), 1);
         if (!hasAssociativeAccumulator()) {
             return false;
         }
@@ -426,8 +428,8 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         if (!readSpilledRecordForMerge()) {
             return true;
         }
-        findSlotsInCurrentPartitionWithSameKey(0, serviceMemoryBlock, MemoryBlock.TOP_OFFSET);
-        kvWriter.writeSegmentHeader(0, 1);
+        findTuplesInCurrentPartitionWithSameKey(0, serviceMemoryBlock, MemoryBlock.TOP_OFFSET);
+        recordWriter.writeSegmentHeader(0, 1);
         calculateAndSpillForMerge();
         Arrays.fill(addrsOfSlotsWithSameKey, NULL_ADDRESS);
         return false;
@@ -454,7 +456,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         long valueSize = JetIoUtil.sizeOfValueBlockAt(recAddr, accessor);
         long keyAddress = JetIoUtil.addressOfKeyBlockAt(recAddr);
         long valueAddress = JetIoUtil.addrOfValueBlockAt(recAddr, accessor);
-        kvWriter.writeRecord(serviceMemoryBlock, keySize, valueSize, keyAddress, valueAddress);
+        recordWriter.writeRecord(serviceMemoryBlock, keySize, valueSize, keyAddress, valueAddress);
     }
 
     private long gotoNextUnmarkedSlot() {
@@ -466,9 +468,9 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
             }
             slotAddress = slotCursor.slotAddress();
             hashCode = currentStorage.getSlotHashCode(slotAddress);
-        } while (currentStorage.getSlotMarker(slotAddress) == Util.B_ONE);
+        } while (currentStorage.getSlotMarker(slotAddress) == BYTE_1);
         tupleCursor = currentStorage.tupleCursor(slotAddress);
-        recordMemoryBlock = memoryBlock;
+        tupleMemoryBlock = memoryBlock;
         return slotAddress;
     }
 
@@ -480,27 +482,27 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         if (gotoNextUnmarkedSlot() == NULL_ADDRESS) {
             return false;
         }
-        haveRecordToSpill = true;
-        haveNextRecordsToSpill = true;
-        kvWriter.writeSlotHeader(partition.getPartitionId(), hashCode, 1);
-        long headRecordAddress = currentStorage.addrOfHeadTuple(slotAddress);
-        long recordsCount = findSlotsInCurrentPartitionWithSameKey(memoryBlockIdx, memoryBlock, headRecordAddress);
+        recordWriter.writeSlotHeader(partition.getPartitionId(), hashCode, 1);
+        long addrOfFirstTuple = currentStorage.addrOfFirstTuple(slotAddress);
+        long tupleCount = findTuplesInCurrentPartitionWithSameKey(memoryBlockIdx, memoryBlock, addrOfFirstTuple);
         initStorage(memoryBlock);
         if (hasAssociativeAccumulator()) {
-            kvWriter.writeSegmentHeader(0, 1);
-            tupleAddress = headRecordAddress;
+            haveTupleToSpill = false;
+            haveNextTuplesToSpill = false;
+            recordWriter.writeSegmentHeader(0, 1);
+            tupleAddress = addrOfFirstTuple;
             accumulateAndWrite();
-            haveRecordToSpill = false;
-            haveNextRecordsToSpill = false;
         } else {
-            kvWriter.writeSegmentHeader(0, recordsCount + currentStorage.tupleCountAt(slotAddress));
+            haveTupleToSpill = true;
+            haveNextTuplesToSpill = true;
+            recordWriter.writeSegmentHeader(0, tupleCount + currentStorage.tupleCountAt(slotAddress));
             tupleCursor.reset(slotAddress, 0);
         }
         return true;
     }
 
-    private boolean spillRecordFromIterator() {
-        if (!haveRecordToSpill || tupleCursor == null || !tupleCursor.advance()) {
+    private boolean spillTupleFromCursor() {
+        if (!haveTupleToSpill || tupleCursor == null || !tupleCursor.advance()) {
             tupleCursor = null;
             return false;
         }
@@ -508,24 +510,24 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         nextMemoryBlock = null;
         nextTupleCursor = null;
         nextBlockIndex = memoryBlockIdx;
-        kvWriter.writeRecord(recordMemoryBlock, tupleAddress);
+        recordWriter.writeRecord(tupleMemoryBlock, tupleAddress);
         return true;
     }
 
-    private boolean spillRecordFromNextIterator() {
-        if (haveNextRecordsToSpill && nextTupleCursor != null) {
-            spillNextRecord();
+    private boolean spillTupleFromNextIterator() {
+        if (haveNextTuplesToSpill && nextTupleCursor != null) {
+            spillNextTuple();
             return true;
         }
         return false;
     }
 
-    private void spillNextRecord() {
-        kvWriter.writeRecord(nextTupleMemoryBlock, nextTupleCursor.tupleAddress());
+    private void spillNextTuple() {
+        recordWriter.writeRecord(nextTupleMemoryBlock, nextTupleCursor.tupleAddress());
     }
 
     private boolean findRecordFromNextBlock() {
-        return haveNextRecordsToSpill && checkAccumulatorAndAddresses() && findNextBlock();
+        return haveNextTuplesToSpill && checkAccumulatorAndAddresses() && findNextBlock();
     }
 
     private boolean checkAccumulatorAndAddresses() {
@@ -539,7 +541,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
     private void initStorage(MemoryBlock memoryBlock) {
         storageHeader.setMemoryBlock(memoryBlock);
         currentStorage.setMemoryBlock(memoryBlock);
-        currentStorage.gotoAddress(storageHeader.getBaseStorageAddress());
+        currentStorage.gotoAddress(storageHeader.baseAddress());
     }
 
     private void resetVariables() {
@@ -551,7 +553,7 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
         memoryBlock = null;
         slotsLookedUp = false;
         nextMemoryBlock = null;
-        recordMemoryBlock = null;
+        tupleMemoryBlock = null;
         slotCursor = null;
         tupleCursor = null;
         nextTupleMemoryBlock = null;

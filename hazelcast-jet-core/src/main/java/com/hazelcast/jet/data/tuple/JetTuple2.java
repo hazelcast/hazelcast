@@ -16,9 +16,12 @@
 
 package com.hazelcast.jet.data.tuple;
 
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.strategy.CalculationStrategy;
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,70 +34,51 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Jet Tuple implementation
  *
- * @param <K> type of keys
- * @param <V> type of value
+ * @param <T0> type of component 0
+ * @param <T1> type of component 1
  */
-public class JetTuple2<K, V> extends Tuple2<K, V> implements JetTuple<K, V> {
+public class JetTuple2<T0, T1> extends Tuple2<T0, T1> implements JetTuple {
     private int partitionId;
     private final CalculationStrategy calculationStrategy;
 
     /**
-     * Constructs a tuple with the given key and value
-     * @param key the key
-     * @param value the value
+     * Creates a tuple with the given components, partition ID -1, and no CalculationStrategy.
      */
-    public JetTuple2(K key, V value) {
-        this(key, value, -1, null);
+    public JetTuple2(T0 c0, T1 c1) {
+        this(c0, c1, -1, null);
     }
 
     /**
-     * Constructs a tuple with the given key, value, partition id and calculation strategy
-     * @param key the key
-     * @param value the value
-     * @param partitionId the partition id
-     * @param calculationStrategy the calculation strategy
+     * Creates a tuple with the given components, partition ID and CalculationStrategy.
      */
-    public JetTuple2(K key,
-              V value,
-              int partitionId,
-              CalculationStrategy calculationStrategy) {
-        super(key, value);
+    public JetTuple2(T0 c0, T1 c1, int partitionId, CalculationStrategy calculationStrategy) {
+        super(c0, c1);
         this.partitionId = partitionId;
         this.calculationStrategy = calculationStrategy;
     }
 
     @Override
-    public Data getKeyData(NodeEngine nodeEngine) {
-        checkNotNull(this.calculationStrategy);
-        return getKeyData(this.calculationStrategy, nodeEngine);
+    public Data getComponentData(NodeEngine nodeEngine) {
+        checkNotNull(calculationStrategy);
+        return getComponentData(calculationStrategy, nodeEngine);
     }
 
     @Override
-    public Data getValueData(NodeEngine nodeEngine) {
-        checkNotNull(this.calculationStrategy);
-        return getValueData(this.calculationStrategy, nodeEngine);
+    public Data getComponentData(CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
+        BufferObjectDataOutput output =
+                ((InternalSerializationService) nodeEngine.getSerializationService()).createObjectDataOutput();
+        try {
+            output.writeObject(c0);
+            output.writeObject(c1);
+        } catch (IOException e) {
+            throw JetUtil.reThrow(e);
+        }
+        return new HeapData(output.toByteArray());
     }
 
     @Override
-    public Data getKeyData(CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
-        return toData(this.key, calculationStrategy.getPartitioningStrategy(), nodeEngine);
-    }
-
-    @Override
-    public Data getValueData(CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
-        return toData(this.value, calculationStrategy.getPartitioningStrategy(), nodeEngine);
-    }
-
-    @Override
-    public Data getKeyData(int index, CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
-        assert index == 0;
-        return nodeEngine.getSerializationService().toData(key, calculationStrategy.getPartitioningStrategy());
-    }
-
-    @Override
-    public Data getValueData(int index, CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
-        assert index == 0;
-        return nodeEngine.getSerializationService().toData(value, calculationStrategy.getPartitioningStrategy());
+    public Data getComponentData(int index, CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
+        return nodeEngine.getSerializationService().toData(get(index), calculationStrategy.getPartitioningStrategy());
     }
 
     @Override
@@ -112,10 +96,6 @@ public class JetTuple2<K, V> extends Tuple2<K, V> implements JetTuple<K, V> {
     @Override
     public CalculationStrategy getCalculationStrategy() {
         return calculationStrategy;
-    }
-
-    private Data toData(Object obj, PartitioningStrategy partitioningStrategy, NodeEngine nodeEngine) {
-        return nodeEngine.getSerializationService().toData(obj, partitioningStrategy);
     }
 
     @Override

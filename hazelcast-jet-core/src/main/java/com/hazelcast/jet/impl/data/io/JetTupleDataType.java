@@ -21,16 +21,16 @@ import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.io.DataType;
 import com.hazelcast.jet.io.ObjectReader;
 import com.hazelcast.jet.io.ObjectWriter;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 
 public final class JetTupleDataType implements DataType {
     public static final DataType INSTANCE = new JetTupleDataType();
 
     private static final byte TYPE_ID = -4;
 
-    private final ObjectWriter<Tuple> objectWriter = new JetTupleWriter();
+    private final ObjectWriter<Tuple2> objectWriter = new JetTuple2Writer();
 
-    private final ObjectReader<Tuple> objectReader = new JetTupleReader(new DefaultJetTupleFactory());
+    private final ObjectReader<Tuple2> objectReader = new JetTuple2Reader(new DefaultJetTupleFactory());
 
     private JetTupleDataType() {
     }

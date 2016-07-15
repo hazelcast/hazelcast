@@ -30,8 +30,8 @@ public class IntSumAccumulator extends IntAccumulator {
 
     @Override
     public long toDataAddress(long address) {
-        //               ElementsCount            Value type
-        return address + Bits.INT_SIZE_IN_BYTES + Bits.BYTE_SIZE_IN_BYTES;
+        //                    Value type
+        return address + Bits.BYTE_SIZE_IN_BYTES;
     }
 
     @Override

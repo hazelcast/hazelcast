@@ -21,7 +21,7 @@ import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -60,35 +60,29 @@ public class Reducer {
         return this.<U>execute(dag, combinerVertex).get();
     }
 
-    private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
-                                     BinaryOperator<T> combiner) {
+    private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
         Vertex combinerVertex = vertexBuilder(CombinerProcessor.class)
                 .addToDAG(dag)
                 .args(defaultFromTupleMapper(), toTupleMapper())
                 .args(combiner, Distributed.Function.<T>identity())
                 .taskCount(1)
                 .build();
-
         edgeBuilder(accumulatorVertex, combinerVertex)
                 .addToDAG(dag)
                 .shuffling(true)
                 .shufflingStrategy(new IListBasedShufflingStrategy(randomName()))
                 .build();
-
         return combinerVertex;
     }
 
-    public <T> Optional<T> reduce(Pipeline<T> upstream,
-                                  BinaryOperator<T> operator) {
-
+    public <T> Optional<T> reduce(Pipeline<T> upstream, BinaryOperator<T> operator) {
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, operator, Optional.empty());
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, operator);
         return this.<T>execute(dag, combinerVertex);
     }
 
-    public <T> T reduce(Pipeline<T> upstream,
-                        T identity, BinaryOperator<T> accumulator) {
+    public <T> T reduce(Pipeline<T> upstream, T identity, BinaryOperator<T> accumulator) {
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, accumulator, Optional.of(identity));
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, accumulator);
@@ -98,10 +92,8 @@ public class Reducer {
     private <T> Optional<T> execute(DAG dag, Vertex combiner) {
         IList<T> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
         combiner.addSink(new ListSink(list));
-
         executeJob(context, dag);
-
-        if (list.size() == 0) {
+        if (list.isEmpty()) {
             list.destroy();
             return Optional.empty();
         }
@@ -111,10 +103,10 @@ public class Reducer {
     }
 
 
-    private <T, U> Vertex buildMappingAccumulator(DAG dag, Pipeline<? extends T> upstream, U identity,
-                                                  BiFunction<U, ? super T, U> accumulator) {
-
-        Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+    private <T, U> Vertex buildMappingAccumulator(
+            DAG dag, Pipeline<? extends T> upstream, U identity, BiFunction<U, ? super T, U> accumulator
+    ) {
+        Distributed.Function<Tuple2, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         Vertex accumulatorVertex = vertexBuilder(AccumulatorProcessor.class)
                 .addToDAG(dag)
                 .args(fromTupleMapper, toTupleMapper())
@@ -127,14 +119,13 @@ public class Reducer {
                     .addToDAG(dag)
                     .build();
         }
-
         return accumulatorVertex;
     }
 
-    private <T> Vertex buildAccumulator(DAG dag, Pipeline<? extends T> upstream,
-                                        BinaryOperator<T> accumulator,
-                                        Optional<T> identity) {
-        Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+    private <T> Vertex buildAccumulator(
+            DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, Optional<T> identity
+    ) {
+        Distributed.Function<Tuple2, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity, fromTupleMapper);
         dag.addVertex(accumulatorVertex);
 
@@ -147,23 +138,23 @@ public class Reducer {
         return accumulatorVertex;
     }
 
-    private <T> Vertex getAccumulatorVertex(BinaryOperator<T> accumulator,
-                                            Optional<T> identity,
-                                            Function<Tuple, ? extends T> fromTupleMapper) {
-        if (identity.isPresent()) {
-            return vertexBuilder(AccumulatorProcessor.class)
-                    .args(fromTupleMapper, toTupleMapper())
-                    .args(accumulator, identity.get())
-                    .build();
-        } else {
-            return vertexBuilder(CombinerProcessor.class)
-                    .args(fromTupleMapper, toTupleMapper())
-                    .args(accumulator, Distributed.Function.<T>identity())
-                    .build();
-        }
+    private <T> Vertex getAccumulatorVertex(
+            BinaryOperator<T> accumulator, Optional<T> identity, Function<Tuple2, ? extends T> fromTupleMapper
+    ) {
+        return identity.isPresent()
+                ?
+                vertexBuilder(AccumulatorProcessor.class)
+                        .args(fromTupleMapper, toTupleMapper())
+                        .args(accumulator, identity.get())
+                        .build()
+                :
+                vertexBuilder(CombinerProcessor.class)
+                        .args(fromTupleMapper, toTupleMapper())
+                        .args(accumulator, Distributed.Function.<T>identity())
+                        .build();
     }
 
-    private <T, U extends T> Distributed.Function<U, Tuple> toTupleMapper() {
+    private <T, U extends T> Distributed.Function<U, Tuple2> toTupleMapper() {
         return o -> new JetTuple2<Object, T>(0, o);
     }
 }

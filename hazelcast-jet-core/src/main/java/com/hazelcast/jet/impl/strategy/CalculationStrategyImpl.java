@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.strategy;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
 
@@ -69,34 +69,21 @@ public class CalculationStrategyImpl implements CalculationStrategy {
     @Override
     @SuppressWarnings("unchecked")
     public int hash(Object object) {
-        Object partitionKey;
-
-        if (object instanceof JetTuple) {
-            partitionKey = ((JetTuple) object).getKeyData(this, this.containerDescriptor.getNodeEngine());
-        } else {
-            partitionKey = this.partitioningStrategy.getPartitionKey(object);
-        }
-
-        return this.hashingStrategy.hash(object, partitionKey, this.containerDescriptor);
+        final Object partitionKey = object instanceof JetTuple2
+                ? ((JetTuple2) object).getComponentData(0, this, containerDescriptor.getNodeEngine())
+                : partitioningStrategy.getPartitionKey(object);
+        return hashingStrategy.hash(object, partitionKey, containerDescriptor);
     }
 
     @Override
+    @SuppressWarnings("checkstyle:innerassignment")
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        CalculationStrategyImpl that = (CalculationStrategyImpl) o;
-
-        if (!hashingStrategyClass.equals(that.hashingStrategyClass)) {
-            return false;
-        }
-
-        return partitioningStrategyClass.equals(that.partitioningStrategyClass);
+        final CalculationStrategyImpl that;
+        return this == o
+                || o != null
+                   && getClass() == o.getClass()
+                   && this.hashingStrategyClass.equals((that = (CalculationStrategyImpl) o).hashingStrategyClass)
+                   && this.partitioningStrategyClass.equals(that.partitioningStrategyClass);
     }
 
     @Override
