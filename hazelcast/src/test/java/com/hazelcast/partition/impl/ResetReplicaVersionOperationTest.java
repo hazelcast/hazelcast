@@ -39,7 +39,7 @@ public class ResetReplicaVersionOperationTest {
         final long[] versions = {6, 5, 4, 3, 2, 1};
         final long[] updatedVersions = {-1, 5, 4, 3, 2, 1};
 
-        testResetReplicaVersionOperation(1, 1, versions, updatedVersions, MEMBER_REMOVED, false);
+        testResetReplicaVersionOperation(1, 1, versions, updatedVersions, MEMBER_REMOVED);
     }
 
     @Test
@@ -48,15 +48,7 @@ public class ResetReplicaVersionOperationTest {
         final long[] versions = {6, 5, 4, 3, 2, 1};
         final long[] updatedVersions = {-1, 5, 4, 3, 2, 1};
 
-        testResetReplicaVersionOperation(1, 1, versions, updatedVersions, ASSIGNMENT, false);
-    }
-
-    @Test
-    public void test_notSetSyncWaitingFlag_whenAssignmentsAreDone()
-            throws Exception {
-        final long[] versions = {6, 5, 4, 3, 2, 1};
-
-        testResetReplicaVersionOperation(1, 1, versions, versions, ASSIGNMENT, true);
+        testResetReplicaVersionOperation(1, 1, versions, updatedVersions, ASSIGNMENT);
     }
 
     @Test
@@ -65,7 +57,7 @@ public class ResetReplicaVersionOperationTest {
         final long[] versions = {6, -1, -1, 3, 2, 1};
         final long[] updatedVersions = {-1, -1, -1, 3, 2, 1};
 
-        testResetReplicaVersionOperation(1, 1, versions, updatedVersions, MEMBER_REMOVED, false);
+        testResetReplicaVersionOperation(1, 1, versions, updatedVersions, MEMBER_REMOVED);
     }
 
     @Test
@@ -74,14 +66,13 @@ public class ResetReplicaVersionOperationTest {
         final long[] versions = {6, -1, -1, 3, 2, 1};
         final long[] updatedVersions = {-1, 0, 0, 3, 2, 1};
 
-        testResetReplicaVersionOperation(1, 1, versions, updatedVersions, ASSIGNMENT, false);
+        testResetReplicaVersionOperation(1, 1, versions, updatedVersions, ASSIGNMENT);
     }
 
     private void testResetReplicaVersionOperation(final int partitionId, final int replicaIndex, final long[] versions,
-                                                  final long[] updatedVersions, final PartitionReplicaChangeReason reason,
-                                                  final boolean initialAssignment)
+                                                  final long[] updatedVersions, final PartitionReplicaChangeReason reason)
             throws Exception {
-        final ResetReplicaVersionOperation operation = createOperation(partitionId, replicaIndex, reason, initialAssignment);
+        final ResetReplicaVersionOperation operation = createOperation(partitionId, replicaIndex, reason);
 
         when(partitionService.getPartitionReplicaVersions(partitionId)).thenReturn(versions);
 
@@ -92,9 +83,8 @@ public class ResetReplicaVersionOperationTest {
     }
 
     private ResetReplicaVersionOperation createOperation(final int partitionId, final int replicaIndex,
-                                                         final PartitionReplicaChangeReason reason,
-                                                         final boolean initialAssignment) {
-        final ResetReplicaVersionOperation operation = new ResetReplicaVersionOperation(reason, initialAssignment);
+                                                         final PartitionReplicaChangeReason reason) {
+        final ResetReplicaVersionOperation operation = new ResetReplicaVersionOperation(reason);
         operation.setReplicaIndex(replicaIndex);
         operation.setPartitionId(partitionId);
         operation.setNodeEngine(nodeEngine);

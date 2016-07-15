@@ -18,10 +18,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.getNode;
 import static com.hazelcast.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.test.HazelcastTestSupport.getPartitionService;
 
 public class TestPartitionUtils {
 
@@ -138,6 +140,34 @@ public class TestPartitionUtils {
             replicaAddresses.add(partition.getReplicaAddress(i));
         }
         return replicaAddresses;
+    }
+
+    /** we have this method because {@link InternalPartitionService#isMemberStateSafe()} considers only the 1st replica */
+    public static boolean areAllReplicasInSyncState(final HazelcastInstance instance) {
+        final List<Future> futures = new ArrayList<Future>();
+        final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
+        for (InternalPartition partition : partitionService.getPartitions()) {
+            for (int replicaIndex = 1; replicaIndex < InternalPartition.MAX_REPLICA_COUNT; replicaIndex++) {
+                Future future = partitionService.invokeCheckReplicaSyncOperationIfOwnPartition(partition.getPartitionId(), replicaIndex);
+                if (future != null) {
+                    futures.add(future);
+                }
+            }
+        }
+        if (futures.isEmpty()) {
+            return true;
+        }
+        for (Future future : futures) {
+            try {
+                boolean sync = (Boolean) future.get(10, TimeUnit.SECONDS);
+                if (!sync) {
+                    return false;
+                }
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static class GetReplicaVersionsRunnable implements PartitionSpecificRunnable {

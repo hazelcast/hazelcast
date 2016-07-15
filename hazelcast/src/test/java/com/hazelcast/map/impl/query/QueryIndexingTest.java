@@ -4,12 +4,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.mock.MockUtil;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -25,9 +25,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.test.TestPartitionUtils.areAllReplicasInSyncState;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -64,11 +66,23 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         nodeFactory.shutdownAll();
     }
 
+    private void waitForAllAllReplicasSafeState() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertTrue(areAllReplicasInSyncState(h1));
+                assertTrue(areAllReplicasInSyncState(h2));
+            }
+        });
+    }
+
     @Test
     public void testResultsHaveNullFields_whenPredicateTestsForNull() {
         IMap<Integer, Employee> map = h1.getMap("employees");
         map.putAll(employees);
-        waitAllForSafeState();
+
+        waitForAllAllReplicasSafeState();
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
 
@@ -86,7 +100,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         map.addIndex("city", true);
 
         map.putAll(employees);
-        waitAllForSafeState();
+        waitForAllAllReplicasSafeState();
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
         assertEquals(count / 2, matchingEntries.size());
@@ -112,8 +126,6 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     private static Config newConfig() {
         Config conf = new Config();
         conf.getMapConfig("employees").setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
-        // disabling replication since we don't use backups in this test
-        conf.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, "0");
         return conf;
     }
 

@@ -174,6 +174,8 @@ public interface InternalPartitionService extends CoreService {
 
     void clearPartitionReplicaVersions(int partitionId);
 
+    void clearPartitionReplicaVersionsExceptSyncWaitingReplicas(int partitionId);
+
     com.hazelcast.core.PartitionService getPartitionServiceProxy();
 
     int getPartitionStateVersion();

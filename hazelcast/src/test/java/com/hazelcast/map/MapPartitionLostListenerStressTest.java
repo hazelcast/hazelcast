@@ -1,10 +1,15 @@
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestPartitionUtils;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -13,8 +18,13 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.instance.GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS;
+import static com.hazelcast.map.nearcache.NearCacheLocalImmediateInvalidateTest.mapName;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -170,4 +180,78 @@ public class MapPartitionLostListenerStressTest
             }
         }
     }
+
+    /*
+        This test works as follows:
+        It starts a second node and kills it just after a partition is migrated to it.
+        It also disables anti-entropy to prevent the first node sync its backup from the second node.
+     */
+    @Test
+    public void testPartitionLostListenerOnNodeJoin() throws Exception {
+        final Config config1 = new Config();
+        config1.setProperty(PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
+        final HazelcastInstance instance1 = hazelcastInstanceFactory.newHazelcastInstance(config1);
+
+        final IMap<Integer, Integer> map = instance1.getMap(mapName);
+        final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(1);
+        map.addPartitionLostListener(listener);
+
+        for (int i = 0; i < getMapEntryCount(); i++) {
+            map.put(i, i);
+        }
+
+        final AtomicInteger migratedPartitionId = new AtomicInteger(-1);
+        final MigrationListener migrationListener = new MigrationListener() {
+            @Override
+            public void migrationStarted(MigrationEvent migrationEvent) {
+
+            }
+
+            @Override
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                if (migrationEvent.getOldOwner().getAddress().equals(getAddress(instance1))) {
+                    migratedPartitionId.compareAndSet(-1, migrationEvent.getPartitionId());
+                }
+            }
+
+            @Override
+            public void migrationFailed(MigrationEvent migrationEvent) {
+
+            }
+        };
+
+        instance1.getPartitionService().addMigrationListener(migrationListener);
+
+        final Thread thread2 = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                final Config config2 = new Config();
+                config2.setProperty(PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
+                final HazelcastInstance instance2 = hazelcastInstanceFactory.newHazelcastInstance(config2);
+
+                assertTrueEventually(new AssertTask() {
+                    @Override
+                    public void run()
+                            throws Exception {
+                        final int partitionId = migratedPartitionId.get();
+                        assertNotEquals(-1, partitionId);
+                        final long[] versions = TestPartitionUtils.getReplicaVersions(instance1, partitionId);
+                        assertEquals(-1, versions[0]);
+                    }
+                });
+
+                instance2.getLifecycleService().terminate();
+            }
+        });
+
+        thread2.start();
+        thread2.join();
+
+        assertClusterSizeEventually(1, instance1);
+
+        assertTrue(map.size() < getMapEntryCount());
+        assertFalse(listener.getEvents().isEmpty());
+    }
+
 }

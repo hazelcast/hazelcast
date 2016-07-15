@@ -1262,17 +1262,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
         final int replicaIndex = 1;
         final List<Future> futures = new ArrayList<Future>();
-        final Address thisAddress = node.getThisAddress();
         for (InternalPartitionImpl partition : partitions) {
-            final Address owner = partition.getOwnerOrNull();
-            if (thisAddress.equals(owner)) {
-                if (partition.getReplicaAddress(replicaIndex) != null) {
-                    final int partitionId = partition.getPartitionId();
-                    final long replicaVersion = getCurrentReplicaVersion(replicaIndex, partitionId);
-                    final Operation operation = createReplicaSyncStateOperation(replicaVersion, partitionId);
-                    final Future future = invoke(operation, replicaIndex, partitionId);
-                    futures.add(future);
-                }
+            Future future = invokeCheckReplicaSyncOperationIfOwnPartition(partition.getPartitionId(), replicaIndex);
+            if (future != null) {
+                futures.add(future);
             }
         }
         if (futures.isEmpty()) {
@@ -1285,6 +1278,18 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
         return true;
+    }
+
+    public Future invokeCheckReplicaSyncOperationIfOwnPartition(final int partitionId, final int replicaIndex) {
+        final InternalPartitionImpl partition = partitions[partitionId];
+        final Address owner = partition.getOwnerOrNull();
+        if (nodeEngine.getThisAddress().equals(owner) && partition.getReplicaAddress(replicaIndex) != null) {
+            final long replicaVersion = getCurrentReplicaVersion(replicaIndex, partitionId);
+            final Operation operation = createReplicaSyncStateOperation(replicaVersion, partitionId);
+            return invoke(operation, replicaIndex, partitionId);
+        }
+
+        return null;
     }
 
     private long getCurrentReplicaVersion(int replicaIndex, int partitionId) {
@@ -1531,6 +1536,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     @Override
     public void clearPartitionReplicaVersions(int partitionId) {
         replicaVersions[partitionId].clear();
+    }
+
+    public void clearPartitionReplicaVersionsExceptSyncWaitingReplicas(int partitionId) {
+        replicaVersions[partitionId].clearExceptSyncWaitingReplicaIndices();
     }
 
     // called in operation threads
@@ -2172,17 +2181,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             final Address oldAddress = event.getOldAddress();
             final PartitionReplicaChangeReason reason = event.getReason();
 
-            final boolean initialAssignment = event.getOldAddress() == null;
-
             if (replicaIndex > 0) {
                 // backup replica owner changed!
                 if (thisAddress.equals(oldAddress)) {
                     clearPartition(partitionId, replicaIndex);
                 } else if (thisAddress.equals(newAddress)) {
-                    synchronizePartition(partitionId, replicaIndex, reason, initialAssignment);
+                    synchronizePartition(partitionId, replicaIndex, reason);
                 }
             } else {
-                if (!initialAssignment && thisAddress.equals(newAddress)) {
+                if (event.getOldAddress() != null && thisAddress.equals(newAddress)) {
                     // it is possible that I might become owner while waiting for sync request from the previous owner.
                     // I should check whether if have failed to get backups from the owner and lost the partition for
                     // some backups.
@@ -2221,8 +2228,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             nodeEngine.getOperationService().executeOperation(op);
         }
 
-        private void synchronizePartition(int partitionId, int replicaIndex,
-                                          PartitionReplicaChangeReason reason, boolean initialAssignment) {
+        private void synchronizePartition(int partitionId, int replicaIndex, PartitionReplicaChangeReason reason) {
             // if not initialized yet, no need to sync, since this is the initial partition assignment
             if (partitionService.initialized) {
                 long delayMillis = 0L;
@@ -2233,15 +2239,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     delayMillis = (long) (REPLICA_SYNC_RETRY_DELAY + (Math.random() * DEFAULT_REPLICA_SYNC_DELAY));
                 }
 
-                resetReplicaVersion(partitionId, replicaIndex, reason, initialAssignment);
+                resetReplicaVersion(partitionId, replicaIndex, reason);
                 partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex, delayMillis);
             }
         }
 
-        private void resetReplicaVersion(int partitionId, int replicaIndex,
-                                         PartitionReplicaChangeReason reason, boolean initialAssignment) {
+        private void resetReplicaVersion(int partitionId, int replicaIndex, PartitionReplicaChangeReason reason) {
             NodeEngine nodeEngine = partitionService.nodeEngine;
-            ResetReplicaVersionOperation op = new ResetReplicaVersionOperation(reason, initialAssignment);
+            ResetReplicaVersionOperation op = new ResetReplicaVersionOperation(reason);
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)
                     .setNodeEngine(nodeEngine).setService(partitionService);
             nodeEngine.getOperationService().executeOperation(op);

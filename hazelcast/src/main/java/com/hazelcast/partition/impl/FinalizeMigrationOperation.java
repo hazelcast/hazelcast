@@ -59,9 +59,9 @@ final class FinalizeMigrationOperation extends AbstractOperation
         }
 
         if (endpoint == MigrationEndpoint.SOURCE && success) {
-            partitionService.clearPartitionReplicaVersions(partitionId);
+            partitionService.clearPartitionReplicaVersionsExceptSyncWaitingReplicas(partitionId);
         } else if (endpoint == MigrationEndpoint.DESTINATION && !success) {
-            partitionService.clearPartitionReplicaVersions(partitionId);
+            partitionService.clearPartitionReplicaVersionsExceptSyncWaitingReplicas(partitionId);
         }
 
         partitionService.removeActiveMigration(partitionId);
