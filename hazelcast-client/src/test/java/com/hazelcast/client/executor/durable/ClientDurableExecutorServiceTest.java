@@ -18,9 +18,14 @@ package com.hazelcast.client.executor.durable;
 
 import com.hazelcast.client.executor.tasks.FailingCallable;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.durableexecutor.DurableExecutorServiceFuture;
+import com.hazelcast.executor.ExecutorServiceTestSupport.BasicTestCallable;
+import com.hazelcast.executor.ExecutorServiceTestSupport.SleepingTask;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -35,10 +40,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -47,10 +55,13 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientDurableExecutorServiceTest {
+
+    private static final String SINGLE_TASK = "singleTask";
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
@@ -63,11 +74,63 @@ public class ClientDurableExecutorServiceTest {
 
     @Before
     public void setup() throws IOException {
-        instance = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
+        Config config = new Config();
+        DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(SINGLE_TASK + "*");
+        durableExecutorConfig.setCapacity(1);
+
+        instance = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokeAll() throws InterruptedException {
+        DurableExecutorService service = client.getDurableExecutorService(randomString());
+        List<BasicTestCallable> callables = Collections.emptyList();
+        service.invokeAll(callables);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokeAll_WithTimeout() throws InterruptedException {
+        DurableExecutorService service = client.getDurableExecutorService(randomString());
+        List<BasicTestCallable> callables = Collections.emptyList();
+        service.invokeAll(callables, 1, TimeUnit.SECONDS);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokeAny() throws InterruptedException, ExecutionException {
+        DurableExecutorService service = client.getDurableExecutorService(randomString());
+        List<BasicTestCallable> callables = Collections.emptyList();
+        service.invokeAny(callables);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokeAny_WithTimeout() throws InterruptedException, ExecutionException, TimeoutException {
+        DurableExecutorService service = client.getDurableExecutorService(randomString());
+        List<BasicTestCallable> callables = Collections.emptyList();
+        service.invokeAny(callables, 1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testAwaitTermination() throws InterruptedException {
+        DurableExecutorService service = client.getDurableExecutorService(randomString());
+        assertFalse(service.awaitTermination(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testFullRingBuffer() throws InterruptedException {
+        String key = randomString();
+        DurableExecutorService service = client.getDurableExecutorService(SINGLE_TASK + randomString());
+        service.submitToKeyOwner(new SleepingTask(100), key);
+        DurableExecutorServiceFuture<String> future = service.submitToKeyOwner(new BasicTestCallable(), key);
+        try {
+            future.get();
+            fail();
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof RejectedExecutionException);
+        }
     }
 
     @Test
@@ -134,7 +197,6 @@ public class ClientDurableExecutorServiceTest {
         });
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
-
 
     @Test(expected = IllegalStateException.class)
     public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {

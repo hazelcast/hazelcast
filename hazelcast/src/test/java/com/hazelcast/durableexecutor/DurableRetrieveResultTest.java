@@ -39,11 +39,26 @@ import static org.junit.Assert.fail;
 public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
 
     @Test
+    public void testDisposeResult() throws ExecutionException, InterruptedException {
+        String key = randomString();
+        String name = randomString();
+        HazelcastInstance instance = createHazelcastInstance();
+        DurableExecutorService executorService = instance.getDurableExecutorService(name);
+        BasicTestCallable task = new BasicTestCallable();
+        DurableExecutorServiceFuture<String> future = executorService.submitToKeyOwner(task, key);
+        future.get();
+        executorService.disposeResult(future.getTaskId());
+        Future<Object> f = executorService.retrieveResult(future.getTaskId());
+        assertNull(f.get());
+    }
+
+    @Test
     public void testRetrieveAndDispose_WhenSubmitterMemberDown() throws ExecutionException, InterruptedException {
         String name = randomString();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
         String key = generateKeyOwnedBy(instance2);
 
         DurableExecutorService executorService = instance1.getDurableExecutorService(name);
@@ -63,9 +78,10 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
     @Test
     public void testRetrieveAndDispose_WhenOwnerMemberDown() throws ExecutionException, InterruptedException {
         String name = randomString();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
         String key = generateKeyOwnedBy(instance1);
 
         DurableExecutorService executorService = instance1.getDurableExecutorService(name);
@@ -85,9 +101,10 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
     @Test
     public void testRetrieve_WhenSubmitterMemberDown() throws ExecutionException, InterruptedException {
         String name = randomString();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
         String key = generateKeyOwnedBy(instance2);
 
         DurableExecutorService executorService = instance1.getDurableExecutorService(name);
@@ -104,9 +121,10 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
     @Test
     public void testRetrieve_WhenOwnerMemberDown() throws ExecutionException, InterruptedException {
         String name = randomString();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
         String key = generateKeyOwnedBy(instance1);
 
         DurableExecutorService executorService = instance1.getDurableExecutorService(name);
@@ -124,7 +142,7 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
     public void testRetrieve_WhenResultOverwritten() throws ExecutionException, InterruptedException {
         String name = randomString();
         Config config = new Config();
-        config.getDurableExecutorConfig(name).setCapacity(1);
+        config.getDurableExecutorConfig(name).setCapacity(1).setDurability(0);
         HazelcastInstance instance = createHazelcastInstance(config);
         DurableExecutorService executorService = instance.getDurableExecutorService(name);
         DurableExecutorServiceFuture<String> future = executorService.submitToKeyOwner(new BasicTestCallable(), name);
