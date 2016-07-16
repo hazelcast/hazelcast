@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.io.tuple.Tuple2;
 
@@ -27,10 +26,8 @@ public class DataFileReader extends AbstractHazelcastReader<Tuple2<Integer, Stri
     private final long end;
     private final long start;
 
-    public DataFileReader(ContainerDescriptor containerDescriptor, int partitionId,
-                          JetTupleFactory tupleFactory, String name, long start, long end
-    ) {
-        super(containerDescriptor, name, partitionId, tupleFactory, ByReferenceDataTransferringStrategy.INSTANCE);
+    public DataFileReader(ContainerDescriptor containerDescriptor, int partitionId, String name, long start, long end) {
+        super(containerDescriptor, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         this.end = end;
         this.start = start;
     }

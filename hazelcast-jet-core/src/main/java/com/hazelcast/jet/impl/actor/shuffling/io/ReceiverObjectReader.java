@@ -16,34 +16,26 @@
 
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
-import com.hazelcast.jet.io.ObjectReader;
-import com.hazelcast.jet.io.ObjectReaderFactory;
+import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
 
 public class ReceiverObjectReader {
     private final ObjectDataInput objectDataInput;
-    private final ObjectReaderFactory objectReaderFactory;
+    private final IOContext ioContext;
 
-    public ReceiverObjectReader(ObjectDataInput objectDataInput,
-                                ObjectReaderFactory objectReaderFactory) {
+    public ReceiverObjectReader(ObjectDataInput objectDataInput, IOContext ioContext) {
         this.objectDataInput = objectDataInput;
-        this.objectReaderFactory = objectReaderFactory;
+        this.ioContext = ioContext;
     }
 
     public int read(Object[] dataChunkBuffer, int dataChunkLength) throws IOException {
         int dataChunkIndex = 0;
-
         while (dataChunkIndex < dataChunkLength) {
-            byte typeId = this.objectDataInput.readByte();
-            ObjectReader objectReader = this.objectReaderFactory.getReader(typeId);
-            dataChunkBuffer[dataChunkIndex++] = objectReader.read(
-                    this.objectDataInput,
-                    this.objectReaderFactory
-            );
+            dataChunkBuffer[dataChunkIndex++] =
+                    ioContext.lookupDataType(objectDataInput.readByte()).read(objectDataInput, ioContext);
         }
-
         return dataChunkIndex;
     }
 }

@@ -19,7 +19,6 @@ package com.hazelcast.jet.dag.source;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.dag.source.DataFileReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
@@ -42,7 +41,7 @@ public class FileSource implements Source {
     }
 
     @Override
-    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, JetTupleFactory tupleFactory) {
+    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
         File file = new File(this.name);
         int chunkCount = vertex.getDescriptor().getTaskCount();
         long[] chunks = JetUtil.splitFile(file, chunkCount);
@@ -57,7 +56,7 @@ public class FileSource implements Source {
             long end = i < chunkCount - 1 ? chunks[i + 1] : file.length();
 
             int partitionId = i % containerDescriptor.getNodeEngine().getPartitionService().getPartitionCount();
-            readers[i] = new DataFileReader(containerDescriptor, partitionId, tupleFactory, name, start, end);
+            readers[i] = new DataFileReader(containerDescriptor, partitionId, name, start, end);
         }
         return readers;
     }

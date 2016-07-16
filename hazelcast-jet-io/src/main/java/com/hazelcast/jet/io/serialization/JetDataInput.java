@@ -20,7 +20,6 @@ import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.io.impl.serialization.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 

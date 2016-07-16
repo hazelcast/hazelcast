@@ -22,12 +22,10 @@ import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.io.ObjectReaderFactory;
-import com.hazelcast.jet.io.ObjectWriterFactory;
 import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.spi.NodeEngine;
+
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,21 +34,17 @@ public class ContainerContext implements ContainerDescriptor {
     private final int id;
     private final Vertex vertex;
     private final NodeEngine nodeEngine;
-    private final JetTupleFactory tupleFactory;
     private final JobContext jobContext;
     private final ConcurrentMap<String, Accumulator> accumulatorMap;
 
-    public ContainerContext(NodeEngine nodeEngine,
-                            JobContext jobContext,
-                            int id,
-                            Vertex vertex,
-                            JetTupleFactory tupleFactory) {
+    public ContainerContext(
+            NodeEngine nodeEngine, JobContext jobContext, int id, Vertex vertex
+    ) {
         this.id = id;
         this.vertex = vertex;
         this.nodeEngine = nodeEngine;
-        this.tupleFactory = tupleFactory;
         this.jobContext = jobContext;
-        this.accumulatorMap = new ConcurrentHashMap<String, Accumulator>();
+        this.accumulatorMap = new ConcurrentHashMap<>();
         jobContext.registerAccumulators(this.accumulatorMap);
     }
 
@@ -87,11 +81,6 @@ public class ContainerContext implements ContainerDescriptor {
     }
 
     @Override
-    public JetTupleFactory getTupleFactory() {
-        return tupleFactory;
-    }
-
-    @Override
     public JobConfig getConfig() {
         return jobContext.getJobConfig();
     }
@@ -119,16 +108,6 @@ public class ContainerContext implements ContainerDescriptor {
 
     public void cleanJobVariable(String variableName) {
         jobContext.cleanJobVariable(variableName);
-    }
-
-    @Override
-    public ObjectReaderFactory getObjectReaderFactory() {
-        return jobContext.getIOContext().getObjectReaderFactory();
-    }
-
-    @Override
-    public ObjectWriterFactory getObjectWriterFactory() {
-        return jobContext.getIOContext().getObjectWriterFactory();
     }
 
     @Override

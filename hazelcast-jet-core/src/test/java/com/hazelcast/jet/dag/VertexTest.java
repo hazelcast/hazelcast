@@ -22,7 +22,6 @@ import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -109,7 +108,7 @@ public class VertexTest {
         final String sourceTapName = "sourceTapName";
         Source source = new Source() {
             @Override
-            public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, JetTupleFactory tupleFactory) {
+            public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
                 return new DataReader[0];
             }
 

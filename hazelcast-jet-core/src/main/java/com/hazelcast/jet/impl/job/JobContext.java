@@ -34,7 +34,7 @@ import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachineRequestProcessor;
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.impl.IOContextImpl;
+import com.hazelcast.jet.io.IOContextImpl;
 import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;

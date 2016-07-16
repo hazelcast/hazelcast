@@ -16,14 +16,11 @@
 
 package com.hazelcast.jet.container;
 
-import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
-import com.hazelcast.jet.io.ObjectReaderFactory;
-import com.hazelcast.jet.io.ObjectWriterFactory;
+import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.Serializable;
@@ -56,11 +53,6 @@ public interface ContainerDescriptor {
      * @return DAG of JET-job
      */
     DAG getDAG();
-
-    /**
-     * @return factory to construct tuples
-     */
-    JetTupleFactory getTupleFactory();
 
     /**
      * @return job of JET-config
@@ -105,16 +97,6 @@ public interface ContainerDescriptor {
      * @param variableName name of the job
      */
     void cleanJobVariable(String variableName);
-
-    /**
-     * @return factory to construct serialization-reader factories
-     */
-    ObjectReaderFactory getObjectReaderFactory();
-
-    /**
-     * @return factory to construct serialization-writer factories
-     */
-    ObjectWriterFactory getObjectWriterFactory();
 
     /**
      * Return accumulator to collect statistics

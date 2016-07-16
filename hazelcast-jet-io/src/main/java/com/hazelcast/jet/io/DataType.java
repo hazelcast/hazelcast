@@ -16,15 +16,13 @@
 
 package com.hazelcast.jet.io;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
+
 /**
  * Interface to represent dataType
- * Examples:
- * <pre>
- *      IntDataType
- *      LongDataType
- *      ....
- *      StringDataType
- * </pre>
  */
 public interface DataType {
     /**
@@ -40,15 +38,15 @@ public interface DataType {
     /**
      * @return - id of the dataType
      */
-    byte getTypeID();
+    byte typeId();
 
     /**
-     * @return - writer to serialize object
+     * Write type and entries of the object;
      */
-    ObjectWriter getObjectWriter();
+    void write(Object o, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException;
 
     /**
-     * @return - reader to de-serialize object
+     * Read object from the binary source represented by objectDataInput;
      */
-    ObjectReader getObjectReader();
+    Object read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException;
 }

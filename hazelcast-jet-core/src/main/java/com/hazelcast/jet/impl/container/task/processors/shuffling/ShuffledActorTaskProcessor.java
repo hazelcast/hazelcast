@@ -58,7 +58,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
 
         for (Address address : jobManager.getJobContext().getSocketReaders().keySet()) {
             //Registration to the AppMaster
-            ShufflingReceiver receiver = new ShufflingReceiver(containerContext, containerTask, address);
+            ShufflingReceiver receiver = new ShufflingReceiver(containerContext, containerTask);
             jobManager.registerShufflingReceiver(taskID, containerContext, address, receiver);
             receivers.add(receiver);
         }

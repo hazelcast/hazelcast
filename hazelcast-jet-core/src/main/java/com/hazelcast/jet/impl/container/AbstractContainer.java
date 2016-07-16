@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
@@ -37,24 +36,21 @@ public abstract class AbstractContainer
     private final JobContext jobContext;
     private final StateMachine<SI, SS, SO> stateMachine;
 
-    public AbstractContainer(StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
-                             NodeEngine nodeEngine,
-                             JobContext jobContext,
-                             JetTupleFactory tupleFactory) {
-        this(null, stateMachineFactory, nodeEngine, jobContext, tupleFactory);
+    protected AbstractContainer(StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
+                                NodeEngine nodeEngine, JobContext jobContext
+    ) {
+        this(null, stateMachineFactory, nodeEngine, jobContext);
     }
 
-    public AbstractContainer(Vertex vertex,
-                             StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
-                             NodeEngine nodeEngine,
-                             JobContext jobContext,
-                             JetTupleFactory tupleFactory) {
+    protected AbstractContainer(Vertex vertex, StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
+                                NodeEngine nodeEngine, JobContext jobContext
+    ) {
         this.nodeEngine = nodeEngine;
         String name = vertex == null ? jobContext.getName() : vertex.getName();
         this.stateMachine = stateMachineFactory.newStateMachine(name, this, nodeEngine, jobContext);
         this.jobContext = jobContext;
         this.id = jobContext.getContainerIDGenerator().incrementAndGet();
-        this.containerContext = new ContainerContext(nodeEngine, jobContext, this.id, vertex, tupleFactory);
+        this.containerContext = new ContainerContext(nodeEngine, jobContext, this.id, vertex);
     }
 
     @Override

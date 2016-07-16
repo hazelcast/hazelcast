@@ -24,27 +24,17 @@ public interface IOContext {
      * @param typeID - identifier of type;
      * @return - object which represents type;
      */
-    DataType getDataType(byte typeID);
+    DataType lookupDataType(byte typeID);
 
     /**
      * @param object - object;
      * @return - object which represents type of @param object;
      */
-    DataType getDataType(Object object);
+    DataType resolveDataType(Object object);
 
     /**
      * @param dataType -
      */
     void registerDataType(DataType dataType);
-
-    /**
-     * @return - factory to construct objectReader
-     */
-    ObjectReaderFactory getObjectReaderFactory();
-
-    /**
-     * @return - factory to construct objectWriter
-     */
-    ObjectWriterFactory getObjectWriterFactory();
 }
 

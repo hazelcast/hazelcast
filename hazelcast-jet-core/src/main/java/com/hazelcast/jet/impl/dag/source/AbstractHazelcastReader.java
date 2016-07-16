@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.dag.source;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataReader;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
@@ -37,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractHazelcastReader<V> implements DataReader {
     protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
-    protected final JetTupleFactory tupleFactory;
     protected final ContainerDescriptor containerDescriptor;
     protected final ILogger logger;
     protected long position;
@@ -108,15 +106,12 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
     private final List<ProducerCompletionHandler> completionHandlers;
     private volatile boolean isReadRequested;
 
-    public AbstractHazelcastReader(ContainerDescriptor containerDescriptor,
-                                   String name,
-                                   int partitionId,
-                                   JetTupleFactory tupleFactory,
-                                   DataTransferringStrategy dataTransferringStrategy
+    public AbstractHazelcastReader(
+            ContainerDescriptor containerDescriptor, String name, int partitionId,
+            DataTransferringStrategy dataTransferringStrategy
     ) {
         this.name = name;
         this.partitionId = partitionId;
-        this.tupleFactory = tupleFactory;
         this.containerDescriptor = containerDescriptor;
         this.nodeEngine = containerDescriptor.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());

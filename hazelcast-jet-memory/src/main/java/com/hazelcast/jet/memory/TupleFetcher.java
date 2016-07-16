@@ -19,7 +19,7 @@ package com.hazelcast.jet.memory;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.impl.serialization.JetSerializationServiceImpl;
+import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
 import com.hazelcast.jet.io.tuple.Tuple2;
@@ -63,8 +63,7 @@ public class TupleFetcher {
     private Object readObject() {
         try {
             byte typeId = dataInput.readByte();
-            return ioContext.getDataType(typeId).getObjectReader()
-                            .read(dataInput, ioContext.getObjectReaderFactory());
+            return ioContext.lookupDataType(typeId).read(dataInput, ioContext);
         } catch (IOException e) {
             throw new JetMemoryException(e);
         }

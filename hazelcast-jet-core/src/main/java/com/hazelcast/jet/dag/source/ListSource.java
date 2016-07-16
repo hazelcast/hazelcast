@@ -20,7 +20,6 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.dag.source.HazelcastListPartitionReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
@@ -50,11 +49,11 @@ public class ListSource implements Source {
     }
 
     @Override
-    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, JetTupleFactory tupleFactory) {
+    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
         int partitionId = HazelcastListPartitionReader.getPartitionId(containerDescriptor.getNodeEngine(), this.name);
         if (JetUtil.isPartitionLocal(containerDescriptor.getNodeEngine(), partitionId)) {
             HazelcastListPartitionReader reader =
-                    new HazelcastListPartitionReader(containerDescriptor, name, tupleFactory);
+                    new HazelcastListPartitionReader(containerDescriptor, name);
             return new DataReader[] {reader};
         }
         return new DataReader[0];

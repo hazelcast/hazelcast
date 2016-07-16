@@ -44,10 +44,8 @@ public class ChunkedInputStream extends InputStream {
             if (this.iterator == null) {
                 this.iterator = this.packetStream.iterator();
             }
-
             this.buffer = this.iterator.next().toByteArray();
         }
-
         try {
             if (this.bufferIdx == this.buffer.length - BUFFER_OFFSET - 1) {
                 try {

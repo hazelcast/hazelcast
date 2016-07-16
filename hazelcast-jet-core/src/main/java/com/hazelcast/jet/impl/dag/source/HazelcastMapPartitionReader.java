@@ -23,7 +23,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.JetTupleConverter;
 import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
@@ -49,14 +48,12 @@ public class HazelcastMapPartitionReader extends AbstractHazelcastReader<JetTupl
         public JetTuple2 convert(Record record, SerializationService ss) {
             final Object value = mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY
                     ? ss.toObject(record.getValue()) : record.getValue();
-            return tupleFactory.tuple2(ss.toObject(record.getKey()), value, getPartitionId(), calculationStrategy);
+            return new JetTuple2<>(ss.toObject(record.getKey()), value, getPartitionId(), calculationStrategy);
         }
     };
 
-    public HazelcastMapPartitionReader(
-            ContainerDescriptor containerDescriptor, String name, int partitionId, JetTupleFactory tupleFactory
-    ) {
-        super(containerDescriptor, name, partitionId, tupleFactory, ByReferenceDataTransferringStrategy.INSTANCE);
+    public HazelcastMapPartitionReader(ContainerDescriptor containerDescriptor, String name, int partitionId) {
+        super(containerDescriptor, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         this.mapConfig = nodeEngine.getConfig().getMapConfig(name);
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);

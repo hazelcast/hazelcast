@@ -65,7 +65,7 @@ public class InterruptionTest extends JetTestSupport {
     }
 
     @Test
-    public void tesInterruptSlowApplication() throws Exception {
+    public void testInterruptSlowApplication() throws Exception {
         int nodeCount = 2;
         HazelcastInstance instance = createCluster(factory, nodeCount);
         final Job job = JetEngine.getJob(instance, "testInterrupt");

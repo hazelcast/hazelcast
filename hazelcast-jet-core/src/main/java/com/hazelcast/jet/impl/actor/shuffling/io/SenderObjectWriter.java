@@ -17,41 +17,22 @@
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.ObjectWriter;
-import com.hazelcast.jet.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class SenderObjectWriter implements ObjectWriter<ProducerInputStream<Object>> {
-    private final ObjectWriterFactory objectWriterFactory;
+public class SenderObjectWriter {
+    private final IOContext ioContext;
 
-    public SenderObjectWriter(ObjectWriterFactory objectWriterFactory) {
-        this.objectWriterFactory = objectWriterFactory;
+    public SenderObjectWriter(IOContext ioContext) {
+        this.ioContext = ioContext;
     }
 
-    @Override
-    public void writeType(ProducerInputStream<Object> object,
-                          ObjectDataOutput objectDataOutput,
-                          ObjectWriterFactory objectWriterFactory) throws IOException {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    @Override
-    public void writePayload(ProducerInputStream<Object> object,
-                             ObjectDataOutput objectDataOutput,
-                             ObjectWriterFactory objectWriterFactory) throws IOException {
-        write(object, objectDataOutput, objectWriterFactory);
-    }
-
-    @Override
-    public void write(ProducerInputStream<Object> inputStream,
-                      ObjectDataOutput objectDataOutput,
-                      ObjectWriterFactory objectWriterFactory) throws IOException {
+    public void write(ProducerInputStream<Object> inputStream, ObjectDataOutput objectDataOutput) throws IOException {
         objectDataOutput.writeInt(inputStream.size());
-
         for (Object object : inputStream) {
-            this.objectWriterFactory.getWriter(object).write(object, objectDataOutput, objectWriterFactory);
+            ioContext.resolveDataType(object).write(object, objectDataOutput, ioContext);
         }
     }
 }

@@ -93,7 +93,7 @@ public class JobManager
     private final byte[] jobNameBytes;
 
     public JobManager(JobContext jobContext, DiscoveryService discoveryService) {
-        super(STATE_MACHINE_FACTORY, jobContext.getNodeEngine(), jobContext, null);
+        super(STATE_MACHINE_FACTORY, jobContext.getNodeEngine(), jobContext);
         this.discoveryService = discoveryService;
         jobNameBytes = getNodeEngine().getSerializationService().toData(jobContext.getName()).toByteArray();
         logger = getNodeEngine().getLogger(JobManager.class);

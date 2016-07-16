@@ -17,20 +17,18 @@
 package com.hazelcast.jet.impl.data.io;
 
 import com.hazelcast.jet.data.tuple.JetTuple;
-import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
+import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.io.DataType;
-import com.hazelcast.jet.io.ObjectReader;
-import com.hazelcast.jet.io.ObjectWriter;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 public final class JetTupleDataType implements DataType {
+    public static final byte TYPE_ID = -4;
+
     public static final DataType INSTANCE = new JetTupleDataType();
-
-    private static final byte TYPE_ID = -4;
-
-    private final ObjectWriter<Tuple2> objectWriter = new JetTuple2Writer();
-
-    private final ObjectReader<Tuple2> objectReader = new JetTuple2Reader(new DefaultJetTupleFactory());
 
     private JetTupleDataType() {
     }
@@ -41,17 +39,26 @@ public final class JetTupleDataType implements DataType {
     }
 
     @Override
-    public byte getTypeID() {
+    public byte typeId() {
         return TYPE_ID;
     }
 
     @Override
-    public ObjectWriter getObjectWriter() {
-        return objectWriter;
+    public void write(Object o, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        objectDataOutput.writeByte(TYPE_ID);
+        for (int i = 0; i < 2; i++) {
+            final Object component = ((JetTuple) o).get(i);
+            ioContext.resolveDataType(component).write(component, objectDataOutput, ioContext);
+        }
     }
 
     @Override
-    public ObjectReader getObjectReader() {
-        return objectReader;
+    public Object read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        return new JetTuple2<>(readComponent(objectDataInput, ioContext), readComponent(objectDataInput, ioContext));
+    }
+
+    private static Object readComponent(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        final byte typeID = objectDataInput.readByte();
+        return ioContext.lookupDataType(typeID).read(objectDataInput, ioContext);
     }
 }

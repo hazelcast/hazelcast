@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.impl.serialization;
+package com.hazelcast.jet.io.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.internal.serialization.PortableContext;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
-import com.hazelcast.jet.io.serialization.JetSerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.PortableContext;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;

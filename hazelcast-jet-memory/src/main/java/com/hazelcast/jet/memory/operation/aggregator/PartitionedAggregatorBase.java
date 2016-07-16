@@ -18,7 +18,7 @@ package com.hazelcast.jet.memory.operation.aggregator;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.impl.serialization.JetSerializationServiceImpl;
+import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataOutput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
 import com.hazelcast.jet.io.tuple.Tuple2;

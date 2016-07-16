@@ -20,7 +20,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.dag.source.HazelcastMapPartitionReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
@@ -52,19 +51,18 @@ public class MapSource implements Source {
     }
 
     @Override
-    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, JetTupleFactory tupleFactory) {
+    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
         List<Integer> localPartitions = JetUtil.getLocalPartitions(containerDescriptor.getNodeEngine());
         DataReader[] readers = new DataReader[localPartitions.size()];
         for (int i = 0; i < localPartitions.size(); i++) {
             int partitionId = localPartitions.get(i);
-            readers[i] = getReader(containerDescriptor, tupleFactory, partitionId);
+            readers[i] = getReader(containerDescriptor, partitionId);
         }
         return readers;
     }
 
-    protected DataReader getReader(ContainerDescriptor containerDescriptor,
-                                   JetTupleFactory tupleFactory, int partitionId) {
-        return new HazelcastMapPartitionReader(containerDescriptor, name, partitionId, tupleFactory);
+    protected DataReader getReader(ContainerDescriptor containerDescriptor, int partitionId) {
+        return new HazelcastMapPartitionReader(containerDescriptor, name, partitionId);
     }
 
     @Override

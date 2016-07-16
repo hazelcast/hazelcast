@@ -23,13 +23,12 @@ import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.data.io.JetPacket;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -40,52 +39,37 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
 
     private final ObjectDataInput in;
-
     private final ContainerContext containerContext;
-
     private final List<ProducerCompletionHandler> handlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
     private final ChunkedInputStream chunkReceiver;
     private final RingBufferActor ringBufferActor;
     private final DefaultObjectIOStream<JetPacket> packetBuffers;
-    private final Address address;
-    private volatile int lastProducedCount;
-    private volatile int dataChunkLength = -1;
+    private final ReceiverObjectReader receiverObjectReader;
+
     private Object[] dataChunkBuffer;
-    private volatile boolean closed;
-    private volatile boolean finalized;
     private Object[] packets;
     private int lastPacketIdx;
     private int lastProducedPacketsCount;
 
-    private ReceiverObjectReader receiverObjectReader;
+    private volatile boolean closed;
+    private volatile int lastProducedCount;
+    private volatile int dataChunkLength = -1;
+    private volatile boolean finalized;
 
-    public ShufflingReceiver(ContainerContext containerContext,
-                             ContainerTask containerTask,
-                             Address address) {
-        this.address = address;
+
+    public ShufflingReceiver(ContainerContext containerContext, ContainerTask containerTask) {
         this.containerContext = containerContext;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         JobContext jobContext = containerContext.getJobContext();
         JobConfig jobConfig = jobContext.getJobConfig();
         int chunkSize = jobConfig.getChunkSize();
-
-        this.ringBufferActor = new RingBufferActor(
-                nodeEngine,
-                containerContext.getJobContext(),
-                containerTask,
-                containerContext.getVertex()
-        );
-
-        this.packetBuffers = new DefaultObjectIOStream<JetPacket>(new JetPacket[chunkSize]);
+        this.ringBufferActor = new RingBufferActor(nodeEngine, containerContext.getJobContext(), containerTask,
+                containerContext.getVertex());
+        this.packetBuffers = new DefaultObjectIOStream<>(new JetPacket[chunkSize]);
         this.chunkReceiver = new ChunkedInputStream(this.packetBuffers);
-        this.in = new ObjectDataInputStream(
-                this.chunkReceiver,
-                (InternalSerializationService) nodeEngine.getSerializationService()
-        );
-        this.receiverObjectReader = new ReceiverObjectReader(
-                this.in,
-                containerTask.getTaskContext().getObjectReaderFactory()
-        );
+        this.in = new ObjectDataInputStream(this.chunkReceiver,
+                (InternalSerializationService) nodeEngine.getSerializationService());
+        this.receiverObjectReader = new ReceiverObjectReader(this.in, containerTask.getTaskContext().getIoContext());
     }
 
     @Override
@@ -114,39 +98,31 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
         if (this.closed) {
             return null;
         }
-
         if (this.packets != null) {
             return processPackets();
         }
-
         this.packets = this.ringBufferActor.produce();
         this.lastProducedPacketsCount = this.ringBufferActor.lastProducedCount();
-
         if ((JetUtil.isEmpty(this.packets))) {
             if (this.finalized) {
                 close();
                 handleProducerCompleted();
             }
-
             return null;
         }
-
         return processPackets();
     }
 
     private Object[] processPackets() throws Exception {
         for (int i = this.lastPacketIdx; i < this.lastProducedPacketsCount; i++) {
             JetPacket packet = (JetPacket) this.packets[i];
-
             if (packet.getHeader() == JetPacket.HEADER_JET_DATA_CHUNK_SENT) {
                 deserializePackets();
-
                 if (i == this.lastProducedPacketsCount - 1) {
                     reset();
                 } else {
                     this.lastPacketIdx = i + 1;
                 }
-
                 return this.dataChunkBuffer;
             } else if (packet.getHeader() == JetPacket.HEADER_JET_SHUFFLER_CLOSED) {
                 this.finalized = true;
@@ -154,7 +130,6 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
                 this.packetBuffers.consume(packet);
             }
         }
-
         reset();
         return null;
     }
@@ -163,7 +138,6 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
         this.packets = null;
         this.lastPacketIdx = 0;
         this.lastProducedPacketsCount = 0;
-
     }
 
     private void deserializePackets() throws IOException {
@@ -171,13 +145,11 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
             this.dataChunkLength = this.in.readInt();
             this.dataChunkBuffer = new Object[this.dataChunkLength];
         }
-
         try {
             this.lastProducedCount = this.receiverObjectReader.read(this.dataChunkBuffer, this.dataChunkLength);
         } finally {
             this.dataChunkLength = -1;
         }
-
         this.packetBuffers.reset();
     }
 
