@@ -38,7 +38,7 @@ import static org.junit.Assert.fail;
 public class DurableExecutorConfigTest {
 
     @Test
-    public void testReadOnly() throws IllegalAccessException, InstantiationException {
+    public void testReadOnly() throws Exception {
         Config config = new Config();
         DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(randomString());
         DurableExecutorConfig readOnly = durableExecutorConfig.getAsReadOnly();
@@ -57,7 +57,7 @@ public class DurableExecutorConfigTest {
         }
     }
 
-    private static Object newParameter(Method method) throws IllegalAccessException, InstantiationException {
+    private static Object newParameter(Method method) throws Exception {
         Class<?>[] parameterTypes = method.getParameterTypes();
         assertEquals(1, parameterTypes.length);
         Class<?> parameterType = parameterTypes[0];

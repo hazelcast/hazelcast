@@ -65,7 +65,8 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void submitNullTask_expectFailure() throws Exception {
+    @SuppressWarnings("ConstantConditions")
+    public void submitNullTask_expectFailure() {
         executor.submit((Callable<?>) null);
     }
 
@@ -77,10 +78,10 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void executionCallback_notifiedOnSuccess() throws Exception {
-        final Callable<String> task = new BasicTestCallable();
+    public void executionCallback_notifiedOnSuccess() {
         final CountDownLatch latch = new CountDownLatch(1);
-        final ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
+        Callable<String> task = new BasicTestCallable();
+        ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
             public void onResponse(String response) {
                 latch.countDown();
             }
@@ -93,10 +94,10 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void executionCallback_notifiedOnFailure() throws Exception {
-        final FailingTestTask task = new FailingTestTask();
+    public void executionCallback_notifiedOnFailure() {
         final CountDownLatch latch = new CountDownLatch(1);
-        final ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
+        FailingTestTask task = new FailingTestTask();
+        ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
             public void onResponse(String response) {
             }
 
@@ -134,16 +135,16 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test
     public void issue292() throws Exception {
-        final BlockingQueue<Member> qResponse = new ArrayBlockingQueue<Member>(1);
+        final BlockingQueue<Member> responseQueue = new ArrayBlockingQueue<Member>(1);
         executor.submit(new MemberCheck()).andThen(new ExecutionCallback<Member>() {
             public void onResponse(Member response) {
-                qResponse.offer(response);
+                responseQueue.offer(response);
             }
 
             public void onFailure(Throwable t) {
             }
         });
-        assertNotNull(qResponse.poll(10, TimeUnit.SECONDS));
+        assertNotNull(responseQueue.poll(10, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 10000)
@@ -163,11 +164,11 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     }
 
     /**
-     * Shutdown-related method behaviour when the cluster is running
+     * Shutdown-related method behaviour when the cluster is running.
      */
     @Test
-    public void shutdownBehaviour() throws Exception {
-        // Fresh instance, is not shutting down
+    public void shutdownBehaviour() {
+        // fresh instance, is not shutting down
         assertFalse(executor.isShutdown());
         assertFalse(executor.isTerminated());
         executor.shutdown();
@@ -193,9 +194,9 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
      * Shutting down the cluster should act as the ExecutorService shutdown
      */
     @Test(expected = RejectedExecutionException.class)
-    public void clusterShutdown() throws Exception {
+    public void clusterShutdown() {
         shutdownNodeFactory();
-        Thread.sleep(2000);
+        sleepSeconds(2);
 
         assertNotNull(executor);
         assertTrue(executor.isShutdown());
@@ -206,34 +207,35 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
         executor.submit(task);
     }
 
-//    @Test
-//    public void executorServiceStats() throws InterruptedException, ExecutionException {
-//        final int k = 10;
-//        LatchRunnable.latch = new CountDownLatch(k);
-//        final LatchRunnable r = new LatchRunnable();
-//        for (int i = 0; i < k; i++) {
-//            executor.execute(r);
-//        }
-//        assertOpenEventually(LatchRunnable.latch);
-//        final Future<Boolean> f = executor.submit(new SleepingTask(10));
-//        f.cancel(true);
-//        try {
-//            f.get();
-//        } catch (CancellationException ignored) {
-//        }
-//
-//        assertTrueEventually(new AssertTask() {
-//            @Override
-//            public void run()
-//                    throws Exception {
-//                final LocalExecutorStats stats = executor.getLocalExecutorStats();
-//                assertEquals(k + 1, stats.getStartedTaskCount());
-//                assertEquals(k, stats.getCompletedTaskCount());
-//                assertEquals(0, stats.getPendingTaskCount());
-//                assertEquals(1, stats.getCancelledTaskCount());
-//            }
-//        });
-//    }
+    // FIXME as soon as executor.getLocalExecutorStats() is implemented
+    //@Test
+    //public void executorServiceStats() throws Exception {
+    //    final int executeCount = 10;
+    //    LatchRunnable.latch = new CountDownLatch(executeCount);
+    //    final LatchRunnable r = new LatchRunnable();
+    //    for (int i = 0; i < executeCount; i++) {
+    //        executor.execute(r);
+    //    }
+    //    assertOpenEventually(LatchRunnable.latch);
+    //    final Future<Boolean> future = executor.submit(new SleepingTask(10));
+    //    future.cancel(true);
+    //    try {
+    //        future.get();
+    //    } catch (CancellationException ignored) {
+    //    }
+    //
+    //    assertTrueEventually(new AssertTask() {
+    //        @Override
+    //        public void run()
+    //                throws Exception {
+    //            final LocalExecutorStats stats = executor.getLocalExecutorStats();
+    //            assertEquals(executeCount + 1, stats.getStartedTaskCount());
+    //            assertEquals(executeCount, stats.getCompletedTaskCount());
+    //            assertEquals(0, stats.getPendingTaskCount());
+    //            assertEquals(1, stats.getCancelledTaskCount());
+    //        }
+    //    });
+    //}
 
     static class LatchRunnable implements Runnable, Serializable {
 

@@ -46,7 +46,7 @@ public class DurableSpecificSetupTest extends ExecutorServiceTestSupport {
     @Test
     public void managedContext_mustInitializeRunnable() throws Exception {
         final AtomicBoolean initialized = new AtomicBoolean();
-        final Config config = new Config()
+        Config config = new Config()
                 .addDurableExecutorConfig(new DurableExecutorConfig("test").setPoolSize(1))
                 .setManagedContext(new ManagedContext() {
                     @Override
@@ -72,8 +72,8 @@ public class DurableSpecificSetupTest extends ExecutorServiceTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         String key = generateKeyOwnedBy(hz2);
         DurableExecutorService executor = hz1.getDurableExecutorService(randomString());
-        Future<Boolean> f = executor.submitToKeyOwner(new SleepingTask(3 * timeoutSeconds), key);
-        Boolean result = f.get(1, MINUTES);
+        Future<Boolean> future = executor.submitToKeyOwner(new SleepingTask(3 * timeoutSeconds), key);
+        Boolean result = future.get(1, MINUTES);
         assertTrue(result);
     }
 

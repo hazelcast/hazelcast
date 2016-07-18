@@ -77,16 +77,16 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void submitToKeyOwner_runnable() throws Exception {
+    public void submitToKeyOwner_runnable() {
         NullResponseCountingCallback callback = new NullResponseCountingCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
             DurableExecutorService service = instance.getDurableExecutorService("testSubmitToKeyOwnerRunnable");
             Member localMember = instance.getCluster().getLocalMember();
+            String uuid = localMember.getUuid();
+            Runnable runnable = new IncrementAtomicLongIfMemberUUIDNotMatchRunnable(uuid, "testSubmitToKeyOwnerRunnable");
             int key = findNextKeyForMember(instance, localMember);
-            service.submitToKeyOwner(
-                    new IncrementAtomicLongIfMemberUUIDNotMatchRunnable(localMember.getUuid(), "testSubmitToKeyOwnerRunnable"),
-                    key).andThen(callback);
+            service.submitToKeyOwner(runnable, key).andThen(callback);
         }
 
         assertOpenEventually(callback.getResponseLatch());
@@ -122,7 +122,7 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test(timeout = TEST_TIMEOUT)
-    public void submitToKeyOwner_callable_withCallback() throws Exception {
+    public void submitToKeyOwner_callable_withCallback() {
         BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
