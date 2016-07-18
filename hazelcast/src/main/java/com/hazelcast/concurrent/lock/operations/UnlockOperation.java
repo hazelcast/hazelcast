@@ -25,7 +25,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
@@ -83,12 +82,11 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
     @Override
     public void afterRun() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        AwaitOperation awaitResponse = lockStore.pollExpiredAwaitOp(key);
-        if (awaitResponse != null) {
-            OperationService operationService = getNodeEngine().getOperationService();
-            operationService.runOperationOnCallingThread(awaitResponse);
+        AwaitOperation awaitOperation = lockStore.pollExpiredAwaitOp(key);
+        if (awaitOperation != null) {
+            awaitOperation.runExpired();
         }
-        shouldNotify = awaitResponse == null;
+        shouldNotify = awaitOperation == null;
     }
 
     @Override
