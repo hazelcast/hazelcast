@@ -43,16 +43,22 @@ public class TargetDisconnectedException extends RetryableHazelcastException {
         super(message, cause);
     }
 
-
     public static Exception newTargetDisconnectedExceptionCausedByHeartBeat(Address memberAddress,
                                                                             String connectionString,
                                                                             long lastHeartbeatMillis,
+                                                                            long lastReadMillis,
                                                                             Throwable cause) {
         String msg = format(
-                "Disconnecting from member %s due to heartbeat problems. Current time: %s. Last heartbeat: %s. Connection %s",
+                "Disconnecting from member %s due to heartbeat problems. "
+                        + "Current time: %s. "
+                        + "Last heartbeat: %s. "
+                        + "Last read: %s. "
+                        + "Connection %s",
                 memberAddress,
                 timeToString(System.currentTimeMillis()),
-                (lastHeartbeatMillis == 0) ? "never" : timeToString(lastHeartbeatMillis), connectionString);
+                (lastHeartbeatMillis == 0) ? "never" : timeToString(lastHeartbeatMillis),
+                (lastReadMillis == 0) ? "never" : timeToString(lastReadMillis),
+                connectionString);
         return new TargetDisconnectedException(msg, cause);
     }
 
