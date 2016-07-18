@@ -16,18 +16,16 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.executor.TaskContext;
 import com.hazelcast.jet.io.DataType;
-import com.hazelcast.jet.io.ObjectReaderFactory;
-import com.hazelcast.jet.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.Serializable;
@@ -68,11 +66,6 @@ public class DefaultProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public JetTupleFactory getTupleFactory() {
-        return containerContext.getTupleFactory();
-    }
-
-    @Override
     public JobConfig getConfig() {
         return containerContext.getConfig();
     }
@@ -108,13 +101,8 @@ public class DefaultProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public ObjectReaderFactory getObjectReaderFactory() {
-        return taskContext.getObjectReaderFactory();
-    }
-
-    @Override
-    public ObjectWriterFactory getObjectWriterFactory() {
-        return taskContext.getObjectWriterFactory();
+    public IOContext getIoContext() {
+        return taskContext.getIoContext();
     }
 
     @Override

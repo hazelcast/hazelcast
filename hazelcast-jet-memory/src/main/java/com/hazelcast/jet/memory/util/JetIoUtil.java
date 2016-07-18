@@ -74,8 +74,7 @@ public final class JetIoUtil {
                 // Remember initial block size, to calculate the size of what this iteration wrote
                 final long initialSize = output.usedSize();
                 final Object component = tuple.get(i);
-                ioContext.getDataType(component).getObjectWriter()
-                         .write(component, output, ioContext.getObjectWriterFactory());
+                ioContext.resolveDataType(component).write(component, output, ioContext);
                 memoryManager.getAccessor().putLong(output.baseAddress() + initialPos, output.usedSize() - initialSize);
             }
         } catch (IOException e) {
@@ -92,8 +91,7 @@ public final class JetIoUtil {
                 // Skip the size field
                 input.readLong();
                 byte typeID = input.readByte();
-                final Object o = ioContext.getDataType(typeID).getObjectReader()
-                                          .read(input, ioContext.getObjectReaderFactory());
+                final Object o = ioContext.lookupDataType(typeID).read(input, ioContext);
                 tuple.set(i, o);
             }
         } catch (IOException e) {

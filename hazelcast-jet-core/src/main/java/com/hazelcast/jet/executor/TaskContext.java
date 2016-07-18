@@ -18,14 +18,12 @@ package com.hazelcast.jet.executor;
 
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.io.DataType;
-import com.hazelcast.jet.io.ObjectReaderFactory;
-import com.hazelcast.jet.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.IOContext;
 
 import java.io.Serializable;
 
 /**
- * Represents task context
- * Holds task's information
+ * Represents task context. Holds task's information.
  */
 public interface TaskContext {
     /**
@@ -66,12 +64,7 @@ public interface TaskContext {
     void registerDataType(DataType dataType);
 
     /**
-     * @return factory to create objectReaders
+     * @return the IO context
      */
-    ObjectReaderFactory getObjectReaderFactory();
-
-    /**
-     * @return factory to create objectWriters
-     */
-    ObjectWriterFactory getObjectWriterFactory();
+    IOContext getIoContext();
 }

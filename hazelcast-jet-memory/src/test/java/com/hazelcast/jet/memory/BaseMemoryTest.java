@@ -1,8 +1,8 @@
 package com.hazelcast.jet.memory;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.impl.IOContextImpl;
-import com.hazelcast.jet.io.impl.serialization.JetSerializationServiceImpl;
+import com.hazelcast.jet.io.IOContextImpl;
+import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetDataOutput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;

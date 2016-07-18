@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.dag.source;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.JetTupleConverter;
 import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
@@ -60,14 +59,12 @@ public class HazelcastMultiMapPartitionReader extends AbstractHazelcastReader<Je
                     for (int idx = 0; idx < list.size(); idx++) {
                         values[idx] = list.get(0).getObject();
                     }
-                    return tupleFactory.tuple2(key, values, getPartitionId(), calculationStrategy);
+                    return new JetTuple2<>(key, values, getPartitionId(), calculationStrategy);
                 }
             };
 
-    public HazelcastMultiMapPartitionReader(
-            ContainerDescriptor containerDescriptor, String name, int partitionId, JetTupleFactory tupleFactory
-    ) {
-        super(containerDescriptor, name, partitionId, tupleFactory, ByReferenceDataTransferringStrategy.INSTANCE);
+    public HazelcastMultiMapPartitionReader(ContainerDescriptor containerDescriptor, String name, int partitionId) {
+        super(containerDescriptor, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         this.calculationStrategy = new CalculationStrategyImpl(
                 DefaultHashingStrategy.INSTANCE, StringAndPartitionAwarePartitioningStrategy.INSTANCE,
                 containerDescriptor);

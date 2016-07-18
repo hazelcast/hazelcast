@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.impl.serialization;
+package com.hazelcast.jet.io.serialization;
 
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.Bits;

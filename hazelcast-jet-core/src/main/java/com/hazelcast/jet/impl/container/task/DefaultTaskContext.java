@@ -22,9 +22,8 @@ import com.hazelcast.jet.impl.data.io.JetTupleDataType;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.DataType;
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.ObjectReaderFactory;
-import com.hazelcast.jet.io.ObjectWriterFactory;
-import com.hazelcast.jet.io.impl.IOContextImpl;
+import com.hazelcast.jet.io.IOContextImpl;
+
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -72,12 +71,7 @@ public class DefaultTaskContext implements TaskContext {
     }
 
     @Override
-    public ObjectReaderFactory getObjectReaderFactory() {
-        return ioContext.getObjectReaderFactory();
-    }
-
-    @Override
-    public ObjectWriterFactory getObjectWriterFactory() {
-        return ioContext.getObjectWriterFactory();
+    public IOContext getIoContext() {
+        return ioContext;
     }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation.aggregator;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.impl.IOContextImpl;
+import com.hazelcast.jet.io.IOContextImpl;
 import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.JetMemoryException;

@@ -29,36 +29,36 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Category(QuickTest.class)
-public class TypesTest {
+public class PredefinedTypeTest {
 
     private Object object;
-    private Types type;
+    private PredefinedType predefinedType;
 
-    public TypesTest(Object object, Types type) {
+    public PredefinedTypeTest(Object object, PredefinedType type) {
         this.object = object;
-        this.type = type;
+        this.predefinedType = type;
     }
 
     @Parameterized.Parameters(name = "object={0}, type={1}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                {true, Types.BOOLEAN},
-                {(byte) 0, Types.BYTE},
-                {'c', Types.CHAR},
-                {0.0d, Types.DOUBLE},
-                {0.0f, Types.FLOAT},
-                {0, Types.INT},
-                {0L, Types.LONG},
-                {(short) 0, Types.SHORT},
-                {"string", Types.STRING},
-                {null, Types.NULL},
-                {new Tuple2<>(0, 0), Types.TUPLE2},
-                {new Object(), Types.OBJECT}
+                {true, PredefinedType.BOOLEAN},
+                {(byte) 0, PredefinedType.BYTE},
+                {'c', PredefinedType.CHAR},
+                {0.0d, PredefinedType.DOUBLE},
+                {0.0f, PredefinedType.FLOAT},
+                {0, PredefinedType.INT},
+                {0L, PredefinedType.LONG},
+                {(short) 0, PredefinedType.SHORT},
+                {"string", PredefinedType.STRING},
+                {null, PredefinedType.NULL},
+                {new Tuple2<>(0, 0), PredefinedType.TUPLE2},
+                {new Object(), PredefinedType.OBJECT}
         });
     }
 
     @Test
     public void testGetDataType() {
-        assertEquals(type, Types.getDataType(object));
+        assertEquals(predefinedType, PredefinedType.getDataType(object));
     }
 }

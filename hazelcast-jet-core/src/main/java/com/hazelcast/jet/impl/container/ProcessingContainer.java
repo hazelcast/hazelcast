@@ -21,7 +21,6 @@ import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
 import com.hazelcast.jet.impl.container.events.EventProcessorFactory;
@@ -43,6 +42,7 @@ import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalized
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,8 +70,6 @@ public class ProcessingContainer extends
 
     private final int awaitSecondsTimeOut;
 
-    private final JetTupleFactory tupleFactory;
-
     private final ContainerTask[] containerTasks;
 
     private final List<DataChannel> inputChannels;
@@ -90,10 +88,10 @@ public class ProcessingContainer extends
 
     public ProcessingContainer(
             Vertex vertex, Supplier<ContainerProcessor> containerProcessorFactory, NodeEngine nodeEngine,
-            JobContext jobContext, JetTupleFactory tupleFactory) {
-        super(vertex, STATE_MACHINE_FACTORY, nodeEngine, jobContext, tupleFactory);
+            JobContext jobContext
+    ) {
+        super(vertex, STATE_MACHINE_FACTORY, nodeEngine, jobContext);
         this.vertex = vertex;
-        this.tupleFactory = tupleFactory;
         this.inputChannels = new ArrayList<>();
         this.outputChannels = new ArrayList<>();
         this.taskProcessorFactory = isShuffled(vertex, nodeEngine) ? new ShuffledTaskProcessorFactory()
@@ -322,9 +320,7 @@ public class ProcessingContainer extends
     }
 
     private List<DataReader> getDataReaders(Source source) {
-        return Arrays.asList(
-                source.getReaders(getContainerContext(), getVertex(), tupleFactory)
-        );
+        return Arrays.asList(source.getReaders(getContainerContext(), getVertex()));
     }
 
     private List<DataWriter> getDataWriters(Sink sink) {

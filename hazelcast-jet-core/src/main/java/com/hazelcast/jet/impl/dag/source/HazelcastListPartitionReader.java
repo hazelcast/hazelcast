@@ -22,7 +22,6 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.JetTupleConverter;
 import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
@@ -44,16 +43,13 @@ public class HazelcastListPartitionReader extends AbstractHazelcastReader<JetTup
     private final JetTupleConverter<CollectionItem> tupleConverter = new JetTupleConverter<CollectionItem>() {
         @Override
         public JetTuple2 convert(CollectionItem item, SerializationService ss) {
-            return tupleFactory.tuple2(item.getItemId(), ss.toObject(item.getValue()),
-                    getPartitionId(), calculationStrategy);
+            return new JetTuple2<>(item.getItemId(), ss.toObject(item.getValue()), getPartitionId(), calculationStrategy);
         }
     };
 
-    public HazelcastListPartitionReader(
-            ContainerDescriptor containerDescriptor, String name, JetTupleFactory tupleFactory
-    ) {
+    public HazelcastListPartitionReader(ContainerDescriptor containerDescriptor, String name) {
         super(containerDescriptor, name, getPartitionId(containerDescriptor.getNodeEngine(), name),
-                tupleFactory, ByReferenceDataTransferringStrategy.INSTANCE);
+                ByReferenceDataTransferringStrategy.INSTANCE);
         this.calculationStrategy = new CalculationStrategyImpl(
                 DefaultHashingStrategy.INSTANCE, StringAndPartitionAwarePartitioningStrategy.INSTANCE,
                 containerDescriptor);

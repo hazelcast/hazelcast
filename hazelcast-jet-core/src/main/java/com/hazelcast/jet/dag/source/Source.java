@@ -19,7 +19,6 @@ package com.hazelcast.jet.dag.source;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
-import com.hazelcast.jet.data.tuple.JetTupleFactory;
 
 import java.io.Serializable;
 
@@ -38,11 +37,8 @@ public interface Source extends Serializable {
      *
      * @param containerDescriptor descriptor of the corresponding container
      * @param vertex              corresponding vertex
-     * @param tupleFactory        factory for the tuple creation
      * @return list of the input readers
      */
-    DataReader[] getReaders(ContainerDescriptor containerDescriptor,
-                            Vertex vertex,
-                            JetTupleFactory tupleFactory);
+    DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex);
 
 }
