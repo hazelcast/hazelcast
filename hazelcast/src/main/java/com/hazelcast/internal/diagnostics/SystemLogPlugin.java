@@ -75,11 +75,11 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
      */
     private static final long PERIOD_MILLIS = SECONDS.toMillis(1);
 
-    private final boolean logPartitions;
-    private final Address thisAddress;
-    private final HazelcastInstance hazelcastInstance;
-    private final ConnectionListenable connectionObservable;
     private final Queue<Object> logQueue = new ConcurrentLinkedQueue<Object>();
+    private final ConnectionListenable connectionObservable;
+    private final HazelcastInstance hazelcastInstance;
+    private final Address thisAddress;
+    private final boolean logPartitions;
     private final boolean enabled;
 
     public SystemLogPlugin(NodeEngineImpl nodeEngine) {
@@ -191,7 +191,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         }
         writer.endSection();
 
-        // ending the outer section.
+        // ending the outer section
         writer.endSection();
     }
 
@@ -217,6 +217,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     private void render(DiagnosticsLogWriter writer, ConnectionEvent event) {
         if (event.added) {
             writer.startSection("ConnectionAdded");

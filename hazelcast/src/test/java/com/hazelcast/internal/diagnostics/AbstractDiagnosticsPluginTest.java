@@ -9,6 +9,10 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 
     protected DiagnosticsLogWriter logWriter = new MultiLineDiagnosticsLogWriter();
 
+    protected void clean() {
+        logWriter.clean();
+    }
+
     protected String getContent() {
         return logWriter.sb.toString();
     }
