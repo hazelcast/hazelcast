@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
+import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -55,8 +56,10 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     public void run() throws Exception {
         try {
             Object[] responses;
-            if (operationFactory instanceof PartitionAwareOperationFactory) {
-                responses = executePartitionAwareOperations();
+
+            PartitionAwareOperationFactory partitionAware = getPartitionAwareFactoryOrNull();
+            if (partitionAware != null) {
+                responses = executePartitionAwareOperations(partitionAware);
             } else {
                 responses = executeOperations();
             }
@@ -65,6 +68,22 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         } catch (Exception e) {
             getLogger(getNodeEngine()).severe(e);
         }
+    }
+
+    private PartitionAwareOperationFactory getPartitionAwareFactoryOrNull() {
+        if (operationFactory instanceof PartitionAwareOperationFactory) {
+            return ((PartitionAwareOperationFactory) operationFactory);
+        }
+
+
+        if (operationFactory instanceof OperationFactoryWrapper) {
+            OperationFactory factory = ((OperationFactoryWrapper) operationFactory).getOperationFactory();
+            if (factory instanceof PartitionAwareOperationFactory) {
+                return ((PartitionAwareOperationFactory) factory);
+            }
+        }
+
+        return null;
     }
 
     private Object[] executeOperations() {
@@ -80,30 +99,30 @@ public final class PartitionIteratingOperation extends Operation implements Iden
                     .setReplicaIndex(getReplicaIndex())
                     .setOperationResponseHandler(responseQueue)
                     .setServiceName(getServiceName())
-                    .setService(getService());
+                    .setService(getService())
+                    .setCallerUuid(extractCallerUuid());
 
-            setCallerUuid(operation);
             OperationAccessor.setCallerAddress(operation, getCallerAddress());
             nodeEngine.getOperationService().execute(operation);
         }
         return responses;
     }
 
-    private void setCallerUuid(Operation operation) {
+    private String extractCallerUuid() {
         // Clients callerUUID can be set already. See OperationFactoryWrapper usage.
-        if (operation.getCallerUuid() != null) {
-            return;
+        if (operationFactory instanceof OperationFactoryWrapper) {
+            return ((OperationFactoryWrapper) operationFactory).getUuid();
         }
 
-        operation.setCallerUuid(getCallerUuid());
+        // Members UUID
+        return getCallerUuid();
     }
 
-    private Object[] executePartitionAwareOperations() {
-        PartitionAwareOperationFactory operationFactory = (PartitionAwareOperationFactory) this.operationFactory;
-        operationFactory.init(getNodeEngine());
+    private Object[] executePartitionAwareOperations(PartitionAwareOperationFactory partitionAwareFactory) {
+        partitionAwareFactory.init(getNodeEngine());
 
         NodeEngine nodeEngine = getNodeEngine();
-        int[] operationFactoryPartitions = operationFactory.getPartitions();
+        int[] operationFactoryPartitions = partitionAwareFactory.getPartitions();
         partitions = operationFactoryPartitions == null ? partitions : operationFactoryPartitions;
         Object[] responses = new Object[partitions.length];
 
@@ -112,15 +131,16 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             responses[i] = responseQueue;
 
             int partition = partitions[i];
-            Operation operation = operationFactory.createPartitionOperation(partition);
+            Operation operation = partitionAwareFactory.createPartitionOperation(partition);
+
             operation.setNodeEngine(nodeEngine)
                     .setPartitionId(partition)
                     .setReplicaIndex(getReplicaIndex())
                     .setOperationResponseHandler(responseQueue)
                     .setServiceName(getServiceName())
-                    .setService(getService());
+                    .setService(getService())
+                    .setCallerUuid(extractCallerUuid());
 
-            setCallerUuid(operation);
             OperationAccessor.setCallerAddress(operation, getCallerAddress());
             nodeEngine.getOperationService().execute(operation);
         }
