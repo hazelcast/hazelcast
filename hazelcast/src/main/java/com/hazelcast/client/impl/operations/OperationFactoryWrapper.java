@@ -54,4 +54,12 @@ public final class OperationFactoryWrapper implements OperationFactory {
         uuid = in.readUTF();
         opFactory = in.readObject();
     }
+
+    public OperationFactory getOperationFactory() {
+        return opFactory;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
 }

@@ -21,8 +21,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -34,8 +37,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -117,6 +123,55 @@ public class ClientEntryProcessorTest extends HazelcastTestSupport {
         String member1Value = member1Map.get(member1Key);
 
         assertEquals("newValue", member1Value);
+    }
+
+
+    @Test
+    public void test_executeOnEntriesWithPredicate_usesIndexes_whenIndexesAvailable() {
+        IMap<Integer, Integer> map = client.getMap("test");
+        map.addIndex("__key", true);
+
+        for (int i = 0; i < 10; i++) {
+            map.put(i, i);
+        }
+
+        IndexedTestPredicate predicate = new IndexedTestPredicate();
+        map.executeOnEntries(new EP(), predicate);
+
+
+        assertTrue("isIndexed method of IndexAwarePredicate should be called", IndexedTestPredicate.INDEX_CALLED.get());
+    }
+
+    public static final class EP extends AbstractEntryProcessor {
+        @Override
+        public Object process(Map.Entry entry) {
+            return null;
+        }
+    }
+
+
+    /**
+     * This predicate is used to check whether or not {@link IndexAwarePredicate#isIndexed} method is called.
+     */
+    private static class IndexedTestPredicate implements IndexAwarePredicate {
+
+        public static final AtomicBoolean INDEX_CALLED = new AtomicBoolean(false);
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            return null;
+        }
+
+        @Override
+        public boolean isIndexed(QueryContext queryContext) {
+            INDEX_CALLED.set(true);
+            return true;
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            return false;
+        }
     }
 
 
