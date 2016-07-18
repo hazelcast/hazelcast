@@ -82,6 +82,12 @@ The following are the issues solved for 3.7-RC (Release Candidate) release.
 
 - `MapAttributeConfig` cannot be loaded in an OSGi environment. [8482]
 - Using Hazelcast out of the box with no configuration creates a Peer-to-Peer cluster. As soon as the configuration file `hazelcast.xml` is created by the user, in which only the logging type is set, Hazelcast does not create a cluster but starts in standalone mode. [8481]
+- Portable EntryProcessor is not being called on portable objects. [8365]
+- In Hazelcast Hibernate modules, there is no JCache dependencies in the classpath. When Hazelcast is upgraded to 3.7-SNAPSHOT, `java.lang.NoClassDefFoundError: javax/cache/Cache` error is thrown when mocking HazelcastInstance. [8352]
+- The method `QueryableEntry.serializationService` throws `NullPointerException` when MapReduce is run with extractable entries. Mapping phase of the MapReduce for Portable data formats should be fixed. [8346]
+- There is an error when configuring Replicated Map. The return of the method `getConfig` in `ReplicatedMapMBean` should be fixed. [8298]
+- TransactionalMap's `removeIfSame` test fails. [8238]
+- Distributed Executor Service does not take `ExecutorConfig.isStatisticsEnabled` into account. [8223]
 
 *3.7-EA Fixes*
 
