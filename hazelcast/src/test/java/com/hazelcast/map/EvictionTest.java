@@ -959,7 +959,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final HazelcastInstance joinerNode = factory.newHazelcastInstance(config);
 
         // 2. Wait for expiration on owner node.
-        assertOpenEventually(evictedEntryCounterLatch);
+        assertOpenEventually(evictedEntryCounterLatch, 240);
 
         // 3. Shutdown owner.
         initialNode.shutdown();
