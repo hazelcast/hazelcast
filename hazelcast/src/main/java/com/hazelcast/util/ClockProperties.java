@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 /**
- * Utility class to set system parameters for the clock implementation
+ * Utility class to set system parameters for the clock implementation.
  */
 public final class ClockProperties {
 
@@ -33,7 +33,5 @@ public final class ClockProperties {
     public static final String HAZELCAST_CLOCK_IMPL = "com.hazelcast.clock.impl";
 
     private ClockProperties() {
-
     }
-
 }
