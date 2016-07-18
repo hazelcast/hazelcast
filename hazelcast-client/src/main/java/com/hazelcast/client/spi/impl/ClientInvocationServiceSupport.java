@@ -222,6 +222,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                         connection.getRemoteEndpoint(),
                         connection.toString(),
                         connection.getLastHeartbeatMillis(),
+                        connection.lastReadTimeMillis(),
                         connection.getCloseCause());
                 invocation.notifyException(ex);
             }

@@ -251,6 +251,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                     clientConnection.getRemoteEndpoint(),
                     clientConnection.toString(),
                     clientConnection.getLastHeartbeatMillis(),
+                    clientConnection.lastReadTimeMillis(),
                     clientConnection.getCloseCause());
             connectionManager.destroyConnection(connection, null, ex);
         }
