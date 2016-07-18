@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -100,6 +101,12 @@ public final class TcpIpConnection implements Connection {
         }
     }
 
+    @Probe
+    private int getConnectionType() {
+        ConnectionType t = type;
+        return t == null ? -1 : t.ordinal();
+    }
+
     public TcpIpConnectionManager getConnectionManager() {
         return connectionManager;
     }
@@ -163,7 +170,7 @@ public final class TcpIpConnection implements Connection {
         Socket socket = socketChannel.socket();
         SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
         SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return getType() + "#" + localSocketAddress + "->" + remoteSocketAddress;
+        return localSocketAddress + "->" + remoteSocketAddress;
     }
 
     public void setSendBufferSize(int size) throws SocketException {
@@ -179,6 +186,7 @@ public final class TcpIpConnection implements Connection {
         final ConnectionType t = type;
         return (t != null) && t != ConnectionType.NONE && t.isClient();
     }
+
 
     /**
      * Starts this connection.
