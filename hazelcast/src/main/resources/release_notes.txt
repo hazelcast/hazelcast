@@ -76,6 +76,13 @@ The following are the other improvements performed to solve the enhancement issu
 
 The following are the issues solved for Hazelcast 3.7 and 3.7.x releases.
 
+*3.7-RC Fixes*
+
+This section lists the fixed issues for 3.7-EA release.
+
+- `MapAttributeConfig` cannot be loaded in an OSGi environment. [8482]
+- Using Hazelcast out of the box with no configuration creates a Peer-to-Peer cluster. As soon as the configuration file `hazelcast.xml` is created by the user, in which only the logging type is set, Hazelcast does not create a cluster but starts in standalone mode. [8481]
+
 *3.7-EA Fixes*
 
 This section lists the fixed issues for 3.7-EA release.
