@@ -33,7 +33,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-class MockNodeContext implements NodeContext {
+public class MockNodeContext implements NodeContext {
 
     private final CopyOnWriteArrayList<Address> joinAddresses;
     private final ConcurrentMap<Address, NodeEngineImpl> nodes;

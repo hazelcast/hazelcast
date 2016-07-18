@@ -17,6 +17,7 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Joiner;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.AddAndGetOperation;
 import com.hazelcast.config.Config;
@@ -24,9 +25,15 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.DefaultNodeExtension;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeContext;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.Operation;
@@ -38,6 +45,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.Transaction;
@@ -53,6 +61,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.lang.reflect.Field;
+import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -62,6 +71,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
@@ -250,6 +260,51 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                 assertClusterState(ClusterState.ACTIVE, instances[0], instances[1]);
             }
         });
+    }
+
+    @Test
+    public void changeClusterState_shouldFail_whenStartupIsNotCompleted() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        TestNodeRegistry registry = factory.getRegistry();
+        final NodeContext nodeContext = registry.createNodeContext(new Address("127.0.0.1", 5555));
+
+        final AtomicBoolean startupDone = new AtomicBoolean(false);
+        HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(),
+                new NodeContext() {
+                    @Override
+                    public AddressPicker createAddressPicker(Node node) {
+                        return nodeContext.createAddressPicker(node);
+                    }
+
+                    @Override
+                    public Joiner createJoiner(Node node) {
+                        return nodeContext.createJoiner(node);
+                    }
+
+                    @Override
+                    public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
+                        return nodeContext.createConnectionManager(node, serverSocketChannel);
+                    }
+
+                    @Override
+                    public NodeExtension createNodeExtension(Node node) {
+                        return new DefaultNodeExtension(node) {
+                            @Override
+                            public boolean isStartCompleted() {
+                                return startupDone.get() && super.isStartCompleted();
+                            }
+                        };
+                    }
+                });
+
+        try {
+            instance.getCluster().changeClusterState(ClusterState.FROZEN);
+            fail("Should not be able to change cluster state when startup is not completed yet!");
+        } catch (IllegalStateException expected) {
+        }
+
+        startupDone.set(true);
+        instance.getCluster().changeClusterState(ClusterState.FROZEN);
     }
 
     @Test
