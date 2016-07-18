@@ -5,6 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.impl.ReplicaSyncInfo;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.util.scheduler.ScheduledEntry;
@@ -19,14 +20,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.test.TestPartitionUtils.areAllReplicasInSyncState;
 import static com.hazelcast.test.TestPartitionUtils.getAllReplicaAddresses;
 import static com.hazelcast.test.TestPartitionUtils.getOngoingReplicaSyncRequests;
 import static com.hazelcast.test.TestPartitionUtils.getOwnedReplicaVersions;
 import static com.hazelcast.test.TestPartitionUtils.getScheduledReplicaSyncRequests;
+import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory hazelcastInstanceFactory;
+    protected TestHazelcastInstanceFactory hazelcastInstanceFactory;
 
     protected abstract int getNodeCount();
 
@@ -59,8 +62,18 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
     }
 
     final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp(int nodeCount) {
-        List<HazelcastInstance> instances = createInstances(nodeCount);
+        final List<HazelcastInstance> instances = createInstances(nodeCount);
         warmUpPartitions(instances);
+        waitAllForSafeState(instances);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (HazelcastInstance instance : instances) {
+                    assertTrue(areAllReplicasInSyncState(instance));
+                }
+            }
+        });
         Collections.shuffle(instances);
         return instances;
     }

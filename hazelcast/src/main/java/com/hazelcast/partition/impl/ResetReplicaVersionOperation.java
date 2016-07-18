@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartition;
@@ -33,11 +34,8 @@ final class ResetReplicaVersionOperation extends AbstractOperation
 
     private final PartitionReplicaChangeReason reason;
 
-    private final boolean initialAssignment;
-
-    public ResetReplicaVersionOperation(PartitionReplicaChangeReason reason, boolean initialAssignment) {
+    public ResetReplicaVersionOperation(PartitionReplicaChangeReason reason) {
         this.reason = reason;
-        this.initialAssignment = initialAssignment;
     }
 
     @Override
@@ -49,24 +47,21 @@ final class ResetReplicaVersionOperation extends AbstractOperation
         // version array, we need to clone it here
         versions = Arrays.copyOf(versions, InternalPartition.MAX_BACKUP_COUNT);
 
-        final int replicaIndex = getReplicaIndex();
-        final boolean setWaitingSyncFlag = !initialAssignment;
+        int replicaIndex = getReplicaIndex();
+        versions[replicaIndex - 1] = InternalPartition.SYNC_WAITING;
 
-        if (setWaitingSyncFlag) {
-            versions[replicaIndex - 1] = InternalPartition.SYNC_WAITING;
+        ILogger logger = getLogger();
+        if (logger.isFinestEnabled()) {
+            logger.finest("SYNC_WAITING flag is set. partitionId=" + partitionId + " replicaIndex="
+                + replicaIndex + " replicaVersions=" + Arrays.toString(versions) + " reason=" + reason);
+        }
 
-            if (getLogger().isFinestEnabled()) {
-                getLogger().finest("SYNC_WAITING flag is set. partitionId=" + partitionId + " replicaIndex="
-                        + replicaIndex + " replicaVersions=" + Arrays.toString(versions));
-            }
+        if (reason == PartitionReplicaChangeReason.ASSIGNMENT) {
+            resetSyncWaitingVersionsAfterReplicaIndex(versions, replicaIndex);
 
-            if (reason == PartitionReplicaChangeReason.ASSIGNMENT) {
-                resetSyncWaitingVersionsAfterReplicaIndex(versions, replicaIndex);
-
-                if (getLogger().isFinestEnabled()) {
-                    getLogger().finest("SYNC_WAITING flags after replica index are reset. partitionId="
-                            + partitionId + " replicaIndex=" + replicaIndex  + " replicaVersions=" + Arrays.toString(versions));
-                }
+            if (logger.isFinestEnabled()) {
+                logger.finest("SYNC_WAITING flags after replica index are reset. partitionId="
+                        + partitionId + " replicaIndex=" + replicaIndex  + " replicaVersions=" + Arrays.toString(versions));
             }
         }
 

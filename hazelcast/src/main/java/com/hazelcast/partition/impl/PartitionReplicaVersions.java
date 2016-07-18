@@ -73,6 +73,14 @@ final class PartitionReplicaVersions {
         }
     }
 
+    void clearExceptSyncWaitingReplicaIndices() {
+        for (int i = 0; i < versions.length; i++) {
+            if (versions[i] != InternalPartition.SYNC_WAITING) {
+                versions[i] = 0;
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{partitionId=" + partitionId + ", versions=" + Arrays.toString(versions) + '}';
