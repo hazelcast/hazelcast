@@ -33,7 +33,6 @@ public final class Clock {
         return CLOCK.currentTimeMillis();
     }
 
-
     static {
         CLOCK = initClock();
     }
