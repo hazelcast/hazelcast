@@ -51,8 +51,7 @@ public class ClientLoggingService implements LoggingService {
     private final BuildInfo buildInfo;
     private final String clientName;
 
-    public ClientLoggingService(String groupName, String loggingType, BuildInfo buildInfo,
-                                String clientName) {
+    public ClientLoggingService(String groupName, String loggingType, BuildInfo buildInfo, String clientName) {
         this.groupName = groupName;
         this.clientName = clientName;
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
@@ -78,6 +77,7 @@ public class ClientLoggingService implements LoggingService {
     }
 
     private class DefaultLogger extends AbstractLogger {
+
         final String name;
         final ILogger logger;
 
@@ -93,16 +93,15 @@ public class ClientLoggingService implements LoggingService {
 
         @Override
         public void log(Level level, String message, Throwable thrown) {
-            boolean loggable = logger.isLoggable(level);
-            if (loggable) {
-                String logMessage = clientName
-                        + " [" + groupName + "] [" + buildInfo.getVersion() + "] " + message;
+            if (logger.isLoggable(level)) {
+                String logMessage = clientName + " [" + groupName + "] [" + buildInfo.getVersion() + "] " + message;
                 logger.log(level, logMessage, thrown);
             }
         }
 
+        @Override
         public void log(LogEvent logEvent) {
-            //unsued
+            // unused
         }
 
         @Override
