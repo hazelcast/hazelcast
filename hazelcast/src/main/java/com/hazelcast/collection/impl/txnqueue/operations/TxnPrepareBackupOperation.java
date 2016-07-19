@@ -47,7 +47,7 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         for (long itemId : itemIds) {
             boolean remove = CollectionTxnUtil.isRemove(itemId);
             queueContainer.txnEnsureBackupReserve(Math.abs(itemId), transactionId, remove);

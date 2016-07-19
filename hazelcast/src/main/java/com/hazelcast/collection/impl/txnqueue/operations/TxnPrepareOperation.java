@@ -47,7 +47,7 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         for (long itemId : itemIds) {
             queueContainer.txnCheckReserve(Math.abs(itemId));
         }

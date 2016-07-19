@@ -44,7 +44,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.addAllBackup(dataMap);
     }
 

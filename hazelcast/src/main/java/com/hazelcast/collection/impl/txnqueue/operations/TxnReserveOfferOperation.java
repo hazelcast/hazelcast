@@ -46,7 +46,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         if (queueContainer.hasEnoughCapacity(txSize + 1)) {
             response = queueContainer.txnOfferReserve(transactionId);
         }
@@ -54,13 +54,13 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         return queueContainer.getOfferWaitNotifyKey();
     }
 
     @Override
     public boolean shouldWait() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         return getWaitTimeout() != 0 && !queueContainer.hasEnoughCapacity(txSize + 1);
     }
 

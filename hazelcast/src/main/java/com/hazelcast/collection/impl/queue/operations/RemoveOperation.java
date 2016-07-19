@@ -47,7 +47,7 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         itemId = queueContainer.remove(data);
         response = itemId != -1;
     }
@@ -78,7 +78,7 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
+        return getContainer().getOfferWaitNotifyKey();
     }
 
     @Override

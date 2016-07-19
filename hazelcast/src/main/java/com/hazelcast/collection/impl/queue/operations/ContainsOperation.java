@@ -44,7 +44,7 @@ public class ContainsOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         response = queueContainer.contains(dataList);
     }
 

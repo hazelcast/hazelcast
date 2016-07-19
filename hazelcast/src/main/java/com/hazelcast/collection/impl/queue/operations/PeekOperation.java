@@ -36,7 +36,7 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
 
     @Override
     public void run() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         QueueItem item = queueContainer.peek();
         response = item != null ? item.getData() : null;
     }

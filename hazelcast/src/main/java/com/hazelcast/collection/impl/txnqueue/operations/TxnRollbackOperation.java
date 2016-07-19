@@ -50,7 +50,7 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         for (long itemId : itemIds) {
             if (CollectionTxnUtil.isRemove(itemId)) {
                 response = queueContainer.txnRollbackPoll(itemId, false);
@@ -80,7 +80,7 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
 
         if (CollectionTxnUtil.isRemove(shouldNotify)) {
             return queueContainer.getOfferWaitNotifyKey();

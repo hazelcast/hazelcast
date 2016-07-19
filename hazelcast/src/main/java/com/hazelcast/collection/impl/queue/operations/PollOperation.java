@@ -44,7 +44,7 @@ public final class PollOperation extends QueueBackupAwareOperation
 
     @Override
     public void run() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         item = queueContainer.poll();
         if (item != null) {
             response = item.getData();
@@ -79,17 +79,17 @@ public final class PollOperation extends QueueBackupAwareOperation
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
+        return getContainer().getOfferWaitNotifyKey();
     }
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        return getOrCreateContainer().getPollWaitNotifyKey();
+        return getContainer().getPollWaitNotifyKey();
     }
 
     @Override
     public boolean shouldWait() {
-        return getWaitTimeout() != 0 && getOrCreateContainer().size() == 0;
+        return getWaitTimeout() != 0 && getContainer().size() == 0;
     }
 
     @Override

@@ -50,7 +50,7 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         dataMap = queueContainer.drain(maxSize);
         response = new SerializableList(new ArrayList<Data>(dataMap.values()));
     }
@@ -81,7 +81,7 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
+        return getContainer().getOfferWaitNotifyKey();
     }
 
     @Override

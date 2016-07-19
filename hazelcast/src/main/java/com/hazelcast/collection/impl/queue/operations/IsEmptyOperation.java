@@ -34,7 +34,7 @@ public class IsEmptyOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         response = queueContainer.size() == 0;
     }
 

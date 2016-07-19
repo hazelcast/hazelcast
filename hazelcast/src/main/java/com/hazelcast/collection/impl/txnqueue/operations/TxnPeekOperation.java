@@ -46,7 +46,7 @@ public class TxnPeekOperation extends QueueOperation implements BlockingOperatio
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         response = queueContainer.txnPeek(itemId, transactionId);
     }
 
@@ -79,14 +79,14 @@ public class TxnPeekOperation extends QueueOperation implements BlockingOperatio
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         return queueContainer.getPollWaitNotifyKey();
     }
 
 
     @Override
     public boolean shouldWait() {
-        final QueueContainer queueContainer = getOrCreateContainer();
+        final QueueContainer queueContainer = getContainer();
         return getWaitTimeout() != 0 && itemId == -1 && queueContainer.size() == 0;
     }
 
