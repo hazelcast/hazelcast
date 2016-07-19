@@ -36,6 +36,8 @@ import java.util.concurrent.Future;
 import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMIT_FAILED;
 import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
@@ -95,13 +97,14 @@ final class TransactionProxy {
             if (state != ACTIVE) {
                 throw new TransactionNotActiveException("Transaction is not active");
             }
+            state = COMMITTING;
             checkThread();
             checkTimeout();
             ClientMessage request = TransactionCommitCodec.encodeRequest(txnId, threadId);
             invoke(request);
             state = COMMITTED;
         } catch (Exception e) {
-            state = ROLLING_BACK;
+            state = COMMIT_FAILED;
             throw ExceptionUtil.rethrow(e);
         } finally {
             TRANSACTION_EXISTS.set(null);
@@ -113,10 +116,7 @@ final class TransactionProxy {
             if (state == NO_TXN || state == ROLLED_BACK) {
                 throw new IllegalStateException("Transaction is not active");
             }
-            if (state == ROLLING_BACK) {
-                state = ROLLED_BACK;
-                return;
-            }
+            state = ROLLING_BACK;
             checkThread();
             try {
                 ClientMessage request = TransactionRollbackCodec.encodeRequest(txnId, threadId);
