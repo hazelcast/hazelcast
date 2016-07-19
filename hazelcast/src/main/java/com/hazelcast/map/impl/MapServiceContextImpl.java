@@ -595,7 +595,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void removeMapContainer(MapContainer mapContainer) {
-        mapContainers.remove(mapContainer.getName(), mapContainer);
+    public boolean removeMapContainer(MapContainer mapContainer) {
+        return mapContainers.remove(mapContainer.getName(), mapContainer);
     }
 }
