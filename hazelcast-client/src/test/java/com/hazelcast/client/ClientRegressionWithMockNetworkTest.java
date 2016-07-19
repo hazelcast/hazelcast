@@ -262,15 +262,11 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
         hazelcastFactory.newHazelcastClient(clientConfig);
 
-        Thread.sleep(100);
-
         instance.shutdown();
-
-        Thread.sleep(800);
 
         hazelcastFactory.newHazelcastInstance();
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
     }
 
 
