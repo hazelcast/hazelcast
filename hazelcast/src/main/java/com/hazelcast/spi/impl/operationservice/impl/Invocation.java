@@ -89,7 +89,7 @@ import static java.util.logging.Level.WARNING;
  * Using the {@link InvocationFuture}, one can wait for the completion of an invocation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class Invocation implements OperationResponseHandler, Runnable {
+public abstract class Invocation implements OperationResponseHandler {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
@@ -284,11 +284,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             context.invocationRegistry.deregister(this);
             notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
-    }
-
-    @Override
-    public void run() {
-        doInvoke(false);
     }
 
     private boolean engineActive() {
@@ -519,7 +514,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                 context.executionService.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
                 return;
             }
-            Invocation.this.run();
+            doInvoke(false);
         }
     }
 
