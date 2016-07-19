@@ -161,7 +161,9 @@ public class PartitionContainer {
         }
 
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        mapServiceContext.removeMapContainer(mapContainer);
+        if (mapServiceContext.removeMapContainer(mapContainer)) {
+            mapContainer.onDestroy();
+        }
         PartitioningStrategyFactory.removePartitioningStrategyFromCache(mapContainer.getName());
     }
 
