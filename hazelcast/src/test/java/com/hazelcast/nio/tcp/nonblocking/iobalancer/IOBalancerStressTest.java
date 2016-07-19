@@ -32,25 +32,23 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class IOBalancerStressTest extends HazelcastTestSupport {
-    private static final int TEST_DURATION_SECONDS = 30;
 
     @Before
     @After
@@ -73,8 +71,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = instance1.getMap(randomMapName());
 
-        long deadLine = System.currentTimeMillis() + TEST_DURATION_SECONDS * 1000;
-        for (int i = 0; System.currentTimeMillis() < deadLine && map.size() < 1000; i++) {
+        for (int i = 0; map.size() < 10000; i++) {
             map.put(i % 1000, i);
         }
 
