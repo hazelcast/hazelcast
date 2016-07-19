@@ -146,8 +146,9 @@ public class ClientMapTest extends HazelcastTestSupport {
         String id = map.addEntryListener(listener, true);
 
         map.put("key1", new GenericEvent("value1"), 2, TimeUnit.SECONDS);
-        assertTrue("latch.await() took longer than 10 seconds", latch.await(10, TimeUnit.SECONDS));
-        assertTrue("nullLatch.await() tool longer than 1 second", nullLatch.await(1, TimeUnit.SECONDS));
+
+        assertOpenEventually(latch);
+        assertOpenEventually(nullLatch);
 
         map.removeEntryListener(id);
         map.put("key2", new GenericEvent("value2"));
