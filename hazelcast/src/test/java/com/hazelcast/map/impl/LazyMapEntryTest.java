@@ -55,7 +55,7 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_init() throws Exception {
+    public void test_init() {
         Data keyData = serializationService.toData("keyData");
         Data valueData = serializationService.toData("valueData");
         entry.init(serializationService, keyData, valueData, null);
@@ -68,7 +68,7 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_init_doesNotSerializeObject() throws Exception {
+    public void test_init_doesNotSerializeObject() {
         Data key = serializationService.toData("keyData");
         MyObject value = new MyObject();
 
@@ -77,9 +77,8 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
         assertEquals(0, value.serializedCount);
     }
 
-
     @Test
-    public void test_init_doesNotDeserializeObject() throws Exception {
+    public void test_init_doesNotDeserializeObject() {
         MyObject keyObject = new MyObject();
         MyObject valueObject = new MyObject();
 
@@ -94,9 +93,8 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
         assertEquals(0, valueObject.deserializedCount);
     }
 
-
     @Test
-    public void testLazyDeserializationWorks() throws Exception {
+    public void testLazyDeserializationWorks() {
         MyObject keyObject = new MyObject();
         MyObject valueObject = new MyObject();
 
@@ -142,5 +140,4 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
                     + '}';
         }
     }
-
 }

@@ -53,5 +53,4 @@ public class MapStatisticsAwareServiceTest extends HazelcastTestSupport {
 
         hz.shutdown();
     }
-
 }

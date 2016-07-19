@@ -34,17 +34,17 @@ public class MapConfigValidatorTest {
      * Not supported in open source version, so test is expected to throw exception.
      */
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkInMemoryFormat_NATIVE() throws Exception {
+    public void test_checkInMemoryFormat_NATIVE() {
         checkInMemoryFormat(InMemoryFormat.NATIVE);
     }
 
     @Test
-    public void test_checkInMemoryFormat_OBJECT() throws Exception {
+    public void test_checkInMemoryFormat_OBJECT() {
         checkInMemoryFormat(InMemoryFormat.OBJECT);
     }
 
     @Test
-    public void test_checkInMemoryFormat_BINARY() throws Exception {
+    public void test_checkInMemoryFormat_BINARY() {
         checkInMemoryFormat(InMemoryFormat.BINARY);
     }
 }

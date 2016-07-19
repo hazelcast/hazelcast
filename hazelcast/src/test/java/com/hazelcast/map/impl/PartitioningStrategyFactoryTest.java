@@ -34,12 +34,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import static com.hazelcast.map.impl.PartitioningStrategyFactory.getPartitioningStrategy;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 
-/**
- *
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
@@ -53,8 +52,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenConfigNull_getPartitioningStrategy_returnsNull()
-            throws Exception {
+    public void whenConfigNull_getPartitioningStrategy_returnsNull() {
         HazelcastInstance hz = createHazelcastInstance();
         NodeEngine nodeEngine = getNodeEngineImpl(hz);
         PartitioningStrategy partitioningStrategy = getPartitioningStrategy(nodeEngine, "map", null);
@@ -62,8 +60,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenPartitioningStrategyDefined_getPartitioningStrategy_returnsSameInstance()
-            throws Exception {
+    public void whenPartitioningStrategyDefined_getPartitioningStrategy_returnsSameInstance() {
         HazelcastInstance hz = createHazelcastInstance();
         NodeEngine nodeEngine = getNodeEngineImpl(hz);
         PartitioningStrategy configuredPartitioningStrategy = new StringPartitioningStrategy();
@@ -73,8 +70,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenPartitioningStrategyClassDefined_getPartitioningStrategy_returnsNewInstance()
-            throws Exception {
+    public void whenPartitioningStrategyClassDefined_getPartitioningStrategy_returnsNewInstance() {
         HazelcastInstance hz = createHazelcastInstance();
         NodeEngine nodeEngine = getNodeEngineImpl(hz);
         PartitioningStrategyConfig cfg = new PartitioningStrategyConfig();
@@ -86,8 +82,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     // when a partitioning strategy has already been cached, then another invocation to obtain the partitioning
     // strategy for the same map name retrieves the same instance
     @Test
-    public void whenStrategyForMapAlreadyDefined_getPartitioningStrategy_returnsSameInstance()
-            throws Exception {
+    public void whenStrategyForMapAlreadyDefined_getPartitioningStrategy_returnsSameInstance() {
         HazelcastInstance hz = createHazelcastInstance();
         NodeEngine nodeEngine = getNodeEngineImpl(hz);
         PartitioningStrategyConfig cfg = new PartitioningStrategyConfig();
@@ -102,9 +97,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     // then the exception is rethrown (the same if it is a RuntimeException, otherwise it is peeled,
     // see ExceptionUtil.rethrow for all the details).
     @Test
-    public void whenStrategyInstantiationThrowsException_getSamePartitioningStrategy_rethrowsException()
-            throws Exception {
-        HazelcastInstance hz = createHazelcastInstance();
+    public void whenStrategyInstantiationThrowsException_getSamePartitioningStrategy_rethrowsException() {
         NodeEngine nodeEngine = mock(NodeEngine.class);
         RuntimeException e = new RuntimeException("expected exception");
         Mockito.when(nodeEngine.getConfigClassLoader()).thenThrow(e);
@@ -114,8 +107,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
 
         // while attempting to get partitioning strategy, exception will be thrown
         expectedException.expect(new IsSame<RuntimeException>(e));
-        PartitioningStrategy partitioningStrategy = getPartitioningStrategy(nodeEngine,
+        getPartitioningStrategy(nodeEngine,
                 "whenStrategyInstantiationThrowsException_getSamePartitioningStrategy_rethrowsException", cfg);
     }
-
 }

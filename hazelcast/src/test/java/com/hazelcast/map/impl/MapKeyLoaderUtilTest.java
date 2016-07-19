@@ -9,10 +9,11 @@ import static com.hazelcast.map.impl.MapKeyLoader.Role.SENDER;
 import static com.hazelcast.map.impl.MapKeyLoader.Role.SENDER_BACKUP;
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("ConstantConditions")
 public class MapKeyLoaderUtilTest {
 
     @Test
-    public void assingRole_SENDER() {
+    public void assignRole_SENDER() {
         boolean isPartitionOwner = true;
         boolean isMapNamePartition = true;
         boolean isMapNamePartitionFirstReplica = false;
@@ -23,7 +24,7 @@ public class MapKeyLoaderUtilTest {
     }
 
     @Test
-    public void assingRole_SENDER_BACKUP() {
+    public void assignRole_SENDER_BACKUP() {
         boolean isPartitionOwner = false;
         boolean isMapNamePartition = true;
         boolean isMapNamePartitionFirstReplica = true;
@@ -34,7 +35,7 @@ public class MapKeyLoaderUtilTest {
     }
 
     @Test
-    public void assingRole_NOT_SENDER_BACKUP() {
+    public void assignRole_NOT_SENDER_BACKUP() {
         boolean isPartitionOwner = false;
         boolean isMapNamePartition = true;
         boolean isMapNamePartitionFirstReplica = false;
@@ -45,7 +46,7 @@ public class MapKeyLoaderUtilTest {
     }
 
     @Test
-    public void assingRole_RECEIVER_insignificantFlagFalse() {
+    public void assignRole_RECEIVER_insignificantFlagFalse() {
         boolean isPartitionOwner = true;
         boolean isMapNamePartition = false;
         boolean insignificant = false;
@@ -56,7 +57,7 @@ public class MapKeyLoaderUtilTest {
     }
 
     @Test
-    public void assingRole_RECEIVER_insignificantFlagTrue() {
+    public void assignRole_RECEIVER_insignificantFlagTrue() {
         boolean isPartitionOwner = true;
         boolean isMapNamePartition = false;
         boolean insignificant = true;
@@ -67,7 +68,7 @@ public class MapKeyLoaderUtilTest {
     }
 
     @Test
-    public void assingRole_NONE_insignificantFlagFalse() {
+    public void assignRole_NONE_insignificantFlagFalse() {
         boolean isPartitionOwner = false;
         boolean isMapNamePartition = false;
         boolean insignificant = false;
@@ -78,7 +79,7 @@ public class MapKeyLoaderUtilTest {
     }
 
     @Test
-    public void assingRole_NONE_insignificantFlagTrue() {
+    public void assignRole_NONE_insignificantFlagTrue() {
         boolean isPartitionOwner = false;
         boolean isMapNamePartition = false;
         boolean insignificant = true;
@@ -89,7 +90,7 @@ public class MapKeyLoaderUtilTest {
     }
 
     @Test
-    public void assingRole_NONE_impossibleCombination() {
+    public void assignRole_NONE_impossibleCombination() {
         boolean isPartitionOwner = false;
         boolean isMapNamePartition = false;
         boolean insignificant = true;
@@ -98,5 +99,4 @@ public class MapKeyLoaderUtilTest {
 
         assertEquals(NONE, role);
     }
-
 }

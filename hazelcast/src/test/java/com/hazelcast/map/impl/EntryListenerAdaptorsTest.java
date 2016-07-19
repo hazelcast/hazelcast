@@ -12,7 +12,6 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EntryListenerAdaptorsTest {
@@ -29,12 +28,11 @@ public class EntryListenerAdaptorsTest {
      *
      * @see EntryListener
      */
-
     @Test
-    public void test_createListenerAdapters() throws Exception {
+    public void test_createListenerAdapters() {
         TestEntryListener listener = new TestEntryListener();
         ListenerAdapter[] listenerAdapters = EntryListenerAdaptors.createListenerAdapters(listener);
-        for (ListenerAdapter listenerAdapter : listenerAdapters) {
+        for (ListenerAdapter<?> listenerAdapter : listenerAdapters) {
             // just pass null to trigger corresponding listener method calls.
             listenerAdapter.onEvent(null);
         }
@@ -48,7 +46,6 @@ public class EntryListenerAdaptorsTest {
         assertEquals(msg, listener.mapEvictedCalled, 1);
     }
 
-
     private class TestEntryListener implements EntryListener {
 
         int entryAddedCalled;
@@ -58,36 +55,30 @@ public class EntryListenerAdaptorsTest {
         int mapClearedCalled;
         int mapEvictedCalled;
 
-
         @Override
         public void entryAdded(EntryEvent event) {
             entryAddedCalled++;
         }
-
 
         @Override
         public void entryEvicted(EntryEvent event) {
             entryEvictedCalled++;
         }
 
-
         @Override
         public void entryRemoved(EntryEvent event) {
             entryRemovedCalled++;
         }
-
 
         @Override
         public void entryUpdated(EntryEvent event) {
             entryUpdatedCalled++;
         }
 
-
         @Override
         public void mapCleared(MapEvent event) {
             mapClearedCalled++;
         }
-
 
         @Override
         public void mapEvicted(MapEvent event) {

@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 public class RecordStoreTest extends HazelcastTestSupport {
 
     @Test
-    public void testRecordStoreResetWithClearingIndexes() throws Exception {
+    public void testRecordStoreResetWithClearingIndexes() {
         IMap<Object, Object> map = testRecordStoreReset();
         Indexes indexes = getIndexService(map);
         indexes.clearIndexes();
@@ -57,12 +57,11 @@ public class RecordStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRecordStoreResetWithoutClearingIndexes() throws Exception {
+    public void testRecordStoreResetWithoutClearingIndexes() {
         IMap<Object, Object> map = testRecordStoreReset();
         Collection<Object> values = map.values(Predicates.equal("name", "tom"));
         assertFalse(values.isEmpty());
     }
-
 
     private IMap<Object, Object> testRecordStoreReset() {
         String mapName = randomName();
@@ -79,7 +78,6 @@ public class RecordStoreTest extends HazelcastTestSupport {
         assertNull(map.get(key));
         return map;
     }
-
 
     private DefaultRecordStore getRecordStore(IMap<Object, Object> map, int key) {
         MapServiceContext mapServiceContext = getMapServiceContext((MapProxyImpl) map);
@@ -98,9 +96,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
     }
 
     private MapServiceContext getMapServiceContext(MapProxyImpl map) {
-        MapProxyImpl mapProxy = map;
-        MapService mapService = (MapService) mapProxy.getService();
+        MapService mapService = (MapService) map.getService();
         return mapService.getMapServiceContext();
     }
-
 }
