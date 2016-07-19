@@ -279,6 +279,10 @@ public class MapContainer {
     public InterceptorRegistry getInterceptorRegistry() {
         return interceptorRegistry;
     }
+
+    // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
+    public void onDestroy() {
+    }
 }
 
 

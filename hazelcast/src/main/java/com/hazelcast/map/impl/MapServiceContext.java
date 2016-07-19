@@ -142,6 +142,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
 
-    void removeMapContainer(MapContainer mapContainer);
+    boolean removeMapContainer(MapContainer mapContainer);
 
 }
