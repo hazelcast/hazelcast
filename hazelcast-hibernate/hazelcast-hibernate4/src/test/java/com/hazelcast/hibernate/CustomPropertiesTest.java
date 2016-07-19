@@ -76,10 +76,9 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         assertTrue(clientConfig.getNetworkConfig().isSmartRouting());
         assertTrue(clientConfig.getNetworkConfig().isRedoOperation());
         factory.newHazelcastInstance(config);
-        assertEquals(2, hz.getCluster().getMembers().size());
+        assertClusterSizeEventually(2, hz);
         main.shutdown();
-        Thread.sleep(1000 * 1); // let client to reconnect
-        assertEquals(1, hz.getCluster().getMembers().size());
+        assertClusterSizeEventually(1, hz);
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
         session.save(new DummyEntity(1L, "dummy", 0, new Date()));
