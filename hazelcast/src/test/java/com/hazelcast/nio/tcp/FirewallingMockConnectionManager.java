@@ -39,21 +39,31 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
     }
 
     @Override
-    public Connection getOrConnect(Address address, boolean silent) {
+    public Connection getOrConnect(Address address) {
         Connection connection = getConnection(address);
-        if (connection != null) {
+        if (connection != null && connection.isAlive()) {
             return connection;
         }
         if (blockedAddresses.contains(address)) {
-            connection = new DroppingConnection(address);
+            connection = new DroppingConnection(address, this);
             registerConnection(address, connection);
             return connection;
+        } else {
+            return super.getOrConnect(address);
         }
-        return super.getOrConnect(address, silent);
+    }
+
+    @Override
+    public Connection getOrConnect(Address address, boolean silent) {
+        return getOrConnect(address);
     }
 
     public void block(Address address) {
         blockedAddresses.add(address);
+        Connection connection = getConnection(address);
+        if (connection != null) {
+            connection.close("Blocked by connection manager", null);
+        }
     }
 
     public void unblock(Address address) {

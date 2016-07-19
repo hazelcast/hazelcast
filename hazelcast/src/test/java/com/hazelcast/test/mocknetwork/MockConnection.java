@@ -17,10 +17,10 @@
 
 package com.hazelcast.test.mocknetwork;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
@@ -39,7 +39,7 @@ public class MockConnection implements Connection {
 
     private final Address remoteEndpoint;
 
-    volatile Connection localConnection;
+    volatile MockConnection localConnection;
 
     private volatile boolean live = true;
 
@@ -115,8 +115,12 @@ public class MockConnection implements Connection {
         }
         live = false;
 
-        MockConnectionManager connectionManager = (MockConnectionManager)nodeEngine.getNode().connectionManager;
-        connectionManager.destroyConnection(this);
+        if (localConnection != null) {
+            NodeEngineImpl localNodeEngine = localConnection.nodeEngine;
+            Node localNode = localNodeEngine.getNode();
+            MockConnectionManager connectionManager = (MockConnectionManager) localNode.connectionManager;
+            connectionManager.destroyConnection(this);
+        }
     }
 
     @Override

@@ -47,7 +47,7 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
             return connection;
         }
         if (blockedAddresses.contains(address)) {
-            connection = new DroppingConnection(address);
+            connection = new DroppingConnection(address, this);
             registerConnection(address, connection);
             return connection;
         }
