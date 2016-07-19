@@ -4,17 +4,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.Member;
 import com.hazelcast.spi.impl.SplitBrainTestSupport;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertWaitingOperationCountEventually;
-import static com.hazelcast.test.HazelcastTestSupport.generateKeyOwnedBy;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
-public class TestRecoveryAfterSplitBrain extends SplitBrainTestSupport {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class WaitNotifySplitBrainTest extends SplitBrainTestSupport {
 
     private static final int POLLERS_COUNT = 1000;
     private String queueName;

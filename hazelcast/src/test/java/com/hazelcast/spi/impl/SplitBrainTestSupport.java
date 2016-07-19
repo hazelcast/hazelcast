@@ -2,24 +2,13 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.DefaultNodeContext;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.FirewallingTcpIpConnectionManager;
-import com.hazelcast.spi.impl.waitnotifyservice.impl.TestRecoveryAfterSplitBrain;
+import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
-import org.junit.After;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.nio.channels.ServerSocketChannel;
-
-import static com.hazelcast.instance.TestUtil.getNode;
-import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
-import static com.hazelcast.test.HazelcastTestSupport.closeConnectionBetween;
-import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 
 /**
  * A support class for high-level split-brain tests.
@@ -28,11 +17,11 @@ import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
  * Tests are supposed to subclass this class and use its hooks to be notified about state transitions.
  * See {@link #onBeforeSplitBrainCreated()}, {@link #onAfterSplitBrainCreated()} and {@link #onAfterSplitBrainHealed()}
  *
- * The current implementation always isolate the 1st member of the cluster, but it should be simple to customer this
- * class to support additional scenarios too.
+ * The current implementation always isolate the 1st member of the cluster, but it should be simple to customize this
+ * class to support mode advanced split-brain scenarios.
  *
  */
-public abstract class SplitBrainTestSupport {
+public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     private static final int DEFAULT_CLUSTER_SIZE = 3;
     private HazelcastInstance[] instances;
@@ -40,22 +29,15 @@ public abstract class SplitBrainTestSupport {
     @Before
     public final void setUp() {
         final Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "30");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "30");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
 
         int clusterSize = clusterSize();
         instances = new HazelcastInstance[clusterSize];
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         for (int i = 0; i < clusterSize; i++) {
-            HazelcastInstance hz = HazelcastInstanceFactory.newHazelcastInstance(config, "test-" + i,
-                    new TestRecoveryAfterSplitBrain.FirewallingNodeContext());
+            HazelcastInstance hz = factory.newHazelcastInstance(config);
             instances[i] = hz;
-        }
-    }
-
-    @After
-    public final void tearDown() {
-        for (HazelcastInstance hz : instances) {
-            hz.getLifecycleService().terminate();
         }
     }
 
@@ -102,7 +84,7 @@ public abstract class SplitBrainTestSupport {
 
     private void createSplitBrain() {
         HazelcastInstance isolatedInstance = instances[0];
-        FirewallingTcpIpConnectionManager isolatedCM = getFireWalledConnectionManager(isolatedInstance);
+        FirewallingMockConnectionManager isolatedCM = getFireWalledConnectionManager(isolatedInstance);
         for (int i = 1; i < instances.length; i++) {
             HazelcastInstance currentInstance = instances[i];
             Node currentNode = getNode(currentInstance);
@@ -112,7 +94,7 @@ public abstract class SplitBrainTestSupport {
         Node isolatedNode = getNode(isolatedInstance);
         for (int i = 1; i < instances.length; i++) {
             HazelcastInstance currentInstance = instances[i];
-            FirewallingTcpIpConnectionManager currentCM = getFireWalledConnectionManager(currentInstance);
+            FirewallingMockConnectionManager currentCM = getFireWalledConnectionManager(currentInstance);
             currentCM.block(isolatedNode.getThisAddress());
         }
 
@@ -131,7 +113,7 @@ public abstract class SplitBrainTestSupport {
 
     private void healSplitBrain() {
         HazelcastInstance isolatedInstance = instances[0];
-        FirewallingTcpIpConnectionManager isolatedCM = getFireWalledConnectionManager(isolatedInstance);
+        FirewallingMockConnectionManager isolatedCM = getFireWalledConnectionManager(isolatedInstance);
         for (int i = 1; i < instances.length; i++) {
             HazelcastInstance currentInstance = instances[i];
             Node currentNode = getNode(currentInstance);
@@ -141,7 +123,7 @@ public abstract class SplitBrainTestSupport {
         Node isolatedNode = getNode(isolatedInstance);
         for (int i = 1; i < instances.length; i++) {
             HazelcastInstance currentInstance = instances[i];
-            FirewallingTcpIpConnectionManager currentCM = getFireWalledConnectionManager(currentInstance);
+            FirewallingMockConnectionManager currentCM = getFireWalledConnectionManager(currentInstance);
             currentCM.unblock(isolatedNode.getThisAddress());
         }
 
@@ -151,21 +133,8 @@ public abstract class SplitBrainTestSupport {
         waitAllForSafeState(instances);
     }
 
-    private static FirewallingTcpIpConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
-        return (FirewallingTcpIpConnectionManager) getNode(hz).getConnectionManager();
-    }
-
-    public static class FirewallingNodeContext extends DefaultNodeContext {
-        @Override
-        public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-            NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-            return new FirewallingTcpIpConnectionManager(
-                    node.loggingService,
-                    node.getHazelcastThreadGroup(),
-                    ioService,
-                    node.nodeEngine.getMetricsRegistry(),
-                    serverSocketChannel);
-        }
+    private static FirewallingMockConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
+        return (FirewallingMockConnectionManager) getNode(hz).getConnectionManager();
     }
 
 }
