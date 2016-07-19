@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMIT_FAILED;
 import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
@@ -102,16 +104,18 @@ public class XATransactionProxy {
             if (!onePhase && state != PREPARED) {
                 throw new TransactionException("Transaction is not prepared");
             }
+            state = COMMITTING;
             ClientMessage request = XATransactionCommitCodec.encodeRequest(txnId, onePhase);
             invoke(request);
             state = COMMITTED;
         } catch (Exception e) {
-            state = ROLLING_BACK;
+            state = COMMIT_FAILED;
             throw ExceptionUtil.rethrow(e);
         }
     }
 
     void rollback() {
+        state = ROLLING_BACK;
         try {
             ClientMessage request = XATransactionRollbackCodec.encodeRequest(txnId);
             invoke(request);
