@@ -1467,10 +1467,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return true;
         }
 
-        int queueSize = migrationQueue.size();
-        if (queueSize != 0) {
+        final boolean hasMigrationTasks = migrationQueue.hasMigrationTasks();
+        if (hasMigrationTasks) {
             if (logger.isLoggable(level)) {
-                logger.log(level, "Waiting for cluster migration tasks: " + queueSize);
+                logger.log(level, "Waiting for cluster migration tasks");
             }
             return true;
         }
