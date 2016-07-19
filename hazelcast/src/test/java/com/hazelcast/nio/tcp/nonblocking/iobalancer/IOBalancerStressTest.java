@@ -76,7 +76,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instance1.getMap(randomMapName());
 
         long deadLine = System.currentTimeMillis() + TEST_DURATION_SECONDS * 1000;
-        for (int i = 0; System.currentTimeMillis() < deadLine; i++) {
+        for (int i = 0; System.currentTimeMillis() < deadLine && map.size() < 1000; i++) {
             map.put(i % 1000, i);
         }
 
