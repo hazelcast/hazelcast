@@ -32,6 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -210,10 +211,11 @@ public class ClientSemaphoreTest {
                 }
             }
         }.start();
-        Thread.sleep(1000);
+
+        sleepSeconds(1);
         semaphore.release(2);
 
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         assertEquals(1, semaphore.availablePermits());
     }
 
@@ -236,7 +238,7 @@ public class ClientSemaphoreTest {
         }.start();
 
         semaphore.release(2);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         assertEquals(1, semaphore.availablePermits());
     }
 }
