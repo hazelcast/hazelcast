@@ -30,6 +30,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionOptions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -48,7 +50,7 @@ import static org.junit.Assert.fail;
 public class ClientTxnTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private HazelcastInstance hz;
+    private HazelcastInstance client;
     private HazelcastInstance server;
 
     @Before
@@ -67,7 +69,7 @@ public class ClientTxnTest extends HazelcastTestSupport {
                 return members[0];
             }
         });
-        hz = hazelcastFactory.newHazelcastClient(config);
+        client = hazelcastFactory.newHazelcastClient(config);
         hazelcastFactory.newHazelcastInstance();
     }
 
@@ -79,11 +81,11 @@ public class ClientTxnTest extends HazelcastTestSupport {
     @Test
     public void testTxnRollback() throws Exception {
         final String queueName = randomString();
-        final TransactionContext context = hz.newTransactionContext();
+        final TransactionContext context = client.newTransactionContext();
         CountDownLatch txnRollbackLatch = new CountDownLatch(1);
         final CountDownLatch memberRemovedLatch = new CountDownLatch(1);
 
-        hz.getCluster().addMembershipListener(new MembershipAdapter() {
+        client.getCluster().addMembershipListener(new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 memberRemovedLatch.countDown();
@@ -108,7 +110,7 @@ public class ClientTxnTest extends HazelcastTestSupport {
         assertOpenEventually(txnRollbackLatch);
         assertOpenEventually(memberRemovedLatch);
 
-        final IQueue<Object> q = hz.getQueue(queueName);
+        final IQueue<Object> q = client.getQueue(queueName);
         assertNull(q.poll());
         assertEquals(0, q.size());
     }
@@ -116,7 +118,7 @@ public class ClientTxnTest extends HazelcastTestSupport {
     @Test
     public void testTxnRollbackOnServerCrash() throws Exception {
         final String queueName = randomString();
-        final TransactionContext context = hz.newTransactionContext();
+        final TransactionContext context = client.newTransactionContext();
         CountDownLatch txnRollbackLatch = new CountDownLatch(1);
         final CountDownLatch memberRemovedLatch = new CountDownLatch(1);
 
@@ -125,7 +127,7 @@ public class ClientTxnTest extends HazelcastTestSupport {
         final TransactionalQueue queue = context.getQueue(queueName);
 
         queue.offer(randomString());
-        hz.getCluster().addMembershipListener(new MembershipAdapter() {
+        client.getCluster().addMembershipListener(new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 memberRemovedLatch.countDown();
@@ -144,8 +146,28 @@ public class ClientTxnTest extends HazelcastTestSupport {
         assertOpenEventually(txnRollbackLatch);
         assertOpenEventually(memberRemovedLatch);
 
-        final IQueue<Object> q = hz.getQueue(queueName);
+        final IQueue<Object> q = client.getQueue(queueName);
         assertNull(q.poll());
         assertEquals(0, q.size());
+    }
+
+    @Test
+    public void testRollbackOnTimeout() {
+        String name = randomString();
+        IQueue<Object> queue = client.getQueue(name);
+        queue.offer(randomString());
+
+        TransactionOptions options = new TransactionOptions().setTimeout(3, TimeUnit.SECONDS);
+        TransactionContext context = client.newTransactionContext(options);
+        context.beginTransaction();
+        try {
+            context.getQueue(name).take();
+            sleepAtLeastSeconds(5);
+            context.commitTransaction();
+            fail();
+        } catch (Exception e) {
+            context.rollbackTransaction();
+        }
+        assertEquals("Queue size should be 1", 1, queue.size());
     }
 }

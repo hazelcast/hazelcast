@@ -21,6 +21,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -35,6 +36,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.xa.XAResource;
@@ -47,10 +49,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -95,6 +100,33 @@ public class ClientXATest {
         cleanAtomikosLogs();
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testRollbackOnTimeout() throws Exception {
+        Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        String name = randomString();
+        IQueue<Object> queue = client.getQueue(name);
+        queue.offer(randomString());
+
+        HazelcastXAResource xaResource = client.getXAResource();
+
+        tm.setTransactionTimeout(3);
+        tm.begin();
+        Transaction transaction = tm.getTransaction();
+        transaction.enlistResource(xaResource);
+        TransactionContext context = xaResource.getTransactionContext();
+        try {
+            context.getQueue(name).take();
+            sleepAtLeastSeconds(5);
+            tm.commit();
+            fail();
+        } catch (RollbackException ignored) {
+            // Transaction already rolled-back due to timeout, no need to call tm.rollback explicitly
+        }
+        assertEquals("Queue size should be 1", 1, queue.size());
     }
 
     @Test
