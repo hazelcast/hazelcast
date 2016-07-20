@@ -5,11 +5,12 @@ to the full descriptions of the issues at https://github.com/hazelcast/hazelcast
 
 1. New Features
 
-- Custom Eviction Policies: You can implement and use your own eviction policy. Please refer to the Custom Eviction Policy section.
-- Discovery SPI Implementation for Microsoft Azure Services: Hazelcast members can be discovered within your Azure resource group. You can add this implementation as a plugin to your projects. Please refer to Hazelcast-Azure plugin.
-- Hazelcast CLI with Scripting: A command line interface that supports scripting. You can automate cluster operations such as start, stop, and force start using shell scripting. Please refer to Hazelcast CLI plugin page.
-- Hazelcast for OpenShift: Hazelcast members on OpenShift can discover each other.
-- Alignment of WAN Replication Clusters: This feature provides a mechanism to align or realign distributed objects in the clusters connected through WAN. WAN replication mirrors changes from a map or cache in one cluster to another. It was maintaining the alignment but was not attaining. Now when the receiving cluster is empty and the sending cluster is not, objects are aligned. And if changes have been dropped for any reason, realignment is attained.
+- Custom Eviction Policies: You can implement and use your own eviction policy. Please refer to the Custom Eviction Policy section in Hazelcast Reference Manual.
+- Discovery SPI Implementation for Microsoft Azure Services: Hazelcast members can be discovered within your Azure resource group. You can add this implementation as a plugin to your projects. Please refer to Hazelcast-Azure plugin page on hazelcast.org/plugins.
+- Hazelcast CLI with Scripting: A command line interface that supports scripting. You can automate cluster operations such as start, stop, and force start using shell scripting. Please refer to Hazelcast CLI plugin page on hazelcast.org/plugins.
+- Hazelcast for OpenShift and CloudFoundry: Hazelcast members on OpenShift and CloudFoundry can discover each other. Please refer to Hazelcast OpenShift on https://hub.docker.com/r/hazelcast/openshift and Hazelcast CloudFoundry on https://github.com/hazelcast/hazelcast-cloudfoundry.
+- Alignment of WAN Replication Clusters: This feature provides a mechanism to align or realign distributed objects in the clusters connected through WAN. WAN replication mirrors changes from a map or cache in one cluster to another. It was maintaining the alignment but was not attaining. Now when the receiving cluster is empty and the sending cluster is not, objects are aligned. And if changes have been dropped for any reason, realignment is attained. Please refer to the Synchronizing WAN Target Cluster section in Hazelcast Reference Manual.
+- Fault Tolerant Executor Service: This new data structure is introduced to guarantee that no execution tasks will be lost when a member goes down. Please refer to the Durable Executor Service section in Hazelcast Reference Manual. 
 
 2. Enhancements
 
