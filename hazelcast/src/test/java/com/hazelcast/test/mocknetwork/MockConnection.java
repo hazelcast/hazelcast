@@ -116,11 +116,17 @@ public class MockConnection implements Connection {
         live = false;
 
         if (localConnection != null) {
+            //this is a member-to-member connection
             NodeEngineImpl localNodeEngine = localConnection.nodeEngine;
             Node localNode = localNodeEngine.getNode();
             MockConnectionManager connectionManager = (MockConnectionManager) localNode.connectionManager;
             connectionManager.destroyConnection(this);
+        } else {
+            //this is a client-member connection. we need to notify NodeEngine about a client connection being closed.
+            MockConnectionManager connectionManager = (MockConnectionManager) nodeEngine.getNode().connectionManager;
+            connectionManager.destroyConnection(this);
         }
+
     }
 
     @Override
