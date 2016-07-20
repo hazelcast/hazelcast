@@ -39,7 +39,7 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
     }
 
     @Override
-    public Connection getOrConnect(Address address) {
+    public synchronized Connection getOrConnect(Address address) {
         Connection connection = getConnection(address);
         if (connection != null && connection.isAlive()) {
             return connection;
@@ -54,11 +54,11 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
     }
 
     @Override
-    public Connection getOrConnect(Address address, boolean silent) {
+    public synchronized Connection getOrConnect(Address address, boolean silent) {
         return getOrConnect(address);
     }
 
-    public void block(Address address) {
+    public synchronized void block(Address address) {
         blockedAddresses.add(address);
         Connection connection = getConnection(address);
         if (connection != null) {
@@ -66,7 +66,7 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
         }
     }
 
-    public void unblock(Address address) {
+    public synchronized void unblock(Address address) {
         blockedAddresses.remove(address);
         Connection connection = getConnection(address);
         if (connection instanceof DroppingConnection) {
