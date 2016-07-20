@@ -25,5 +25,6 @@ public enum ClientType {
     CPP,
     PYTHON,
     RUBY,
+    NODEJS,
     OTHER
 }

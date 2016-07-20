@@ -202,6 +202,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
             connection.setType(ConnectionType.PYTHON_CLIENT);
         } else if (ClientTypes.RUBY.equals(type)) {
             connection.setType(ConnectionType.RUBY_CLIENT);
+        } else if (ClientTypes.NODEJS.equals(type)) {
+            connection.setType(ConnectionType.NODEJS_CLIENT);
         } else {
             clientEngine.getLogger(getClass()).info("Unknown client type: " + type);
             connection.setType(ConnectionType.BINARY_CLIENT);

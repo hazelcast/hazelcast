@@ -54,6 +54,11 @@ public final class ClientTypes {
      */
     public static final String RUBY = "RBY";
 
+    /**
+     * Node.JS client protocol id
+     */
+    public static final String NODEJS = "NJS";
+
     private ClientTypes() {
     }
 }
