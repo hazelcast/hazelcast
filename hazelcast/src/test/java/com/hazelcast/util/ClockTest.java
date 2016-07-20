@@ -17,18 +17,62 @@
 package com.hazelcast.util;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClockTest extends HazelcastTestSupport {
+public class ClockTest extends AbstractClockTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
+    @After
+    public void tearDown() {
+        shutdownIsolatedNode();
+        resetClock();
+    }
 
     @Test
     public void testConstructor() {
         assertUtilityConstructor(Clock.class);
+    }
+
+    @Test
+    public void testCurrentTimeMillis() {
+        assertTrue(Clock.currentTimeMillis() > 0);
+    }
+
+    @Test
+    public void test_whenConfiguringClockOffset_thenSystemOffsetClockIsCreated() {
+        System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, "15");
+        startIsolatedNode();
+
+        assertTrue(getClusterTime(isolatedNode) > 0);
+    }
+
+    @Test
+    public void test_whenConfiguringInvalidClockOffset_thenExceptionIsThrown() {
+        System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, "InvalidNumber");
+
+        expectedException.expectCause(new RootCauseMatcher(NumberFormatException.class));
+
+        startIsolatedNode();
+    }
+
+    @Test
+    public void test_whenConfiguringNonExistingClockImpl_thenExceptionIsThrown() {
+        System.setProperty(ClockProperties.HAZELCAST_CLOCK_IMPL, "NonExistingClockImpl");
+
+        expectedException.expectCause(new RootCauseMatcher(ClassNotFoundException.class));
+
+        startIsolatedNode();
     }
 }

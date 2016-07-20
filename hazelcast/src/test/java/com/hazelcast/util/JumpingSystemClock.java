@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
-
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ClockProperties;
-import com.hazelcast.util.ExceptionUtil;
+package com.hazelcast.util;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author mdogan 18/12/14
- */
 class JumpingSystemClock extends Clock.ClockImpl {
 
-    public static final String JUMP_AFTER_SECONDS_PROPERTY = "com.hazelcast.clock.jump.after";
+    static final String JUMP_AFTER_SECONDS_PROPERTY = "com.hazelcast.clock.jump.after";
 
     private final long jumpAfter;
     private final long jumpOffset;
