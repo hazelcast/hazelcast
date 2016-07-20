@@ -347,7 +347,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         new Thread() {
             public void run() {
                 try {
-                    if (mm.tryLock(key, 4, TimeUnit.SECONDS)) {
+                    if (mm.tryLock(key, 10, TimeUnit.SECONDS)) {
                         tryLockSuccess.countDown();
                     }
                 } catch (InterruptedException e) {
