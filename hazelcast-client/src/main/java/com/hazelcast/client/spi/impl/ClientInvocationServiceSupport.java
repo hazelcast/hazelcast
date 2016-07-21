@@ -34,6 +34,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
@@ -48,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
-import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartBeat;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncResponseHandler.getIdleStrategy;
 
 
@@ -200,7 +200,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 if (connection == null) {
                     continue;
                 }
-                if (connection.isHeartBeating()) {
+
+                if (connection.isAlive()) {
                     continue;
                 }
 
@@ -218,11 +219,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 }
 
                 iter.remove();
-                Exception ex = newTargetDisconnectedExceptionCausedByHeartBeat(
-                        connection.getRemoteEndpoint(),
-                        connection.toString(),
-                        connection.getLastHeartbeatMillis(),
-                        connection.lastReadTimeMillis(),
+                TargetDisconnectedException ex = new TargetDisconnectedException(
+                        "Aborting invocation due to closed connection:" + connection + ". reason:" + connection.getCloseReason(),
                         connection.getCloseCause());
                 invocation.notifyException(ex);
             }
