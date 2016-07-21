@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.spi;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -26,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class OperationSerializationTest extends HazelcastTestSupport {
 
-    public static final String DUMMY_SERVICE_NAME = "foobar";
+    private static final String DUMMY_SERVICE_NAME = "foobar";
 
     private InternalSerializationService serializationService;
 
@@ -45,7 +61,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         test_partitionId(Integer.MAX_VALUE, true);
     }
 
-    public void test_partitionId(int partitionId, boolean is32bit) {
+    private void test_partitionId(int partitionId, boolean is32bit) {
         Operation op = new DummyOperation();
         op.setPartitionId(partitionId);
         assertEquals(partitionId, op.getPartitionId());
@@ -62,7 +78,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         test_replicaIndex(3, true);
     }
 
-    public void test_replicaIndex(int replicaIndex, boolean isReplicaIndexSet) {
+    private void test_replicaIndex(int replicaIndex, boolean isReplicaIndexSet) {
         Operation op = new DummyOperation();
         op.setReplicaIndex(replicaIndex);
         assertEquals(replicaIndex, op.getReplicaIndex());
@@ -78,11 +94,11 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         test_callTimeout(100, false);
         test_callTimeout(-1, false);
         test_callTimeout(Integer.MAX_VALUE, false);
-        test_callTimeout(Integer.MAX_VALUE + 1l, true);
+        test_callTimeout(Integer.MAX_VALUE + 1L, true);
         test_callTimeout(Long.MAX_VALUE, true);
     }
 
-    public void test_callTimeout(long callTimeout, boolean callTimeout64Bits) {
+    private void test_callTimeout(long callTimeout, boolean callTimeout64Bits) {
         Operation op = new DummyOperation();
         op.setCallTimeout(callTimeout);
         assertEquals(callTimeout, op.getCallTimeout());
@@ -115,7 +131,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         test_waitTimeout(1, true);
     }
 
-    public void test_waitTimeout(long waitTimeout, boolean waitTimeoutSet) {
+    private void test_waitTimeout(long waitTimeout, boolean waitTimeoutSet) {
         Operation op = new DummyOperation();
         op.setWaitTimeout(waitTimeout);
         assertEquals(waitTimeout, op.getWaitTimeout());
@@ -132,7 +148,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         test_callerUuid("foofbar", true);
     }
 
-    public void test_callerUuid(String callerUuid, boolean callerUuidSet) {
+    private void test_callerUuid(String callerUuid, boolean callerUuidSet) {
         Operation op = new DummyOperation();
         op.setCallerUuid(callerUuid);
         assertEquals(callerUuid, op.getCallerUuid());
@@ -150,7 +166,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         assertSerializationCloneEquals(op);
     }
 
-    public void assertSerializationCloneEquals(Operation expected) {
+    private void assertSerializationCloneEquals(Operation expected) {
         Operation actual = copy(expected);
         assertEquals("caller uuid does not match", expected.getCallerUuid(), actual.getCallerUuid());
         assertEquals("call timeout does not match", expected.getCallTimeout(), actual.getCallTimeout());
@@ -189,11 +205,6 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         assertTrue("service name should be set", copy.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
     }
 
-    public void assertCopy(String expected, String actual) {
-        assertEquals(expected, actual);
-        assertNotSame(expected, actual);
-    }
-
     private Operation copy(Operation op) {
         try {
             BufferObjectDataOutput out = serializationService.createObjectDataOutput(1000);
@@ -210,7 +221,13 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         }
     }
 
+    private static void assertCopy(String expected, String actual) {
+        assertEquals(expected, actual);
+        assertNotSame(expected, actual);
+    }
+
     private static class DummyOperation extends Operation {
+
         public DummyOperation() {
         }
 
@@ -220,8 +237,8 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         }
     }
 
-
     private static class OperationWithServiceNameOverride extends Operation {
+
         public OperationWithServiceNameOverride() {
         }
 
