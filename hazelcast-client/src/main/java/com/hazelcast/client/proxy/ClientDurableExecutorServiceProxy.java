@@ -270,7 +270,6 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
     private static final class ClientDurableExecutorServiceCompletedFuture<T> implements DurableExecutorServiceFuture<T> {
 
         private final Object result;
-
         private final Executor executor;
 
         private ClientDurableExecutorServiceCompletedFuture(Object result, Executor executor) {

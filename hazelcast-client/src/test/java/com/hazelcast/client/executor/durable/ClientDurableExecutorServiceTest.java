@@ -33,10 +33,13 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -48,6 +51,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -64,6 +68,9 @@ public class ClientDurableExecutorServiceTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -83,31 +90,39 @@ public class ClientDurableExecutorServiceTest {
         hazelcastFactory.terminateAll();
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testInvokeAll() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
+
+        expectedException.expect(UnsupportedOperationException.class);
         service.invokeAll(callables);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testInvokeAll_WithTimeout() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
+
+        expectedException.expect(UnsupportedOperationException.class);
         service.invokeAll(callables, 1, TimeUnit.SECONDS);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testInvokeAny() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
+
+        expectedException.expect(UnsupportedOperationException.class);
         service.invokeAny(callables);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testInvokeAny_WithTimeout() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
+
+        expectedException.expect(UnsupportedOperationException.class);
         service.invokeAny(callables, 1, TimeUnit.SECONDS);
     }
 
@@ -118,17 +133,59 @@ public class ClientDurableExecutorServiceTest {
     }
 
     @Test
-    public void testFullRingBuffer() throws Exception {
+    public void test_whenRingBufferIsFull_thenThrowRejectedExecutionException() throws Exception {
         String key = randomString();
         DurableExecutorService service = client.getDurableExecutorService(SINGLE_TASK + randomString());
         service.submitToKeyOwner(new SleepingTask(100), key);
         DurableExecutorServiceFuture<String> future = service.submitToKeyOwner(new BasicTestCallable(), key);
+
+        expectedException.expect(new RootCauseMatcher(RejectedExecutionException.class));
+        future.get();
+    }
+
+    @Test
+    public void test_whenRingBufferIsFull_thenClientDurableExecutorServiceCompletedFutureIsReturned() throws Exception {
+        final AtomicBoolean onResponse = new AtomicBoolean();
+        final CountDownLatch onFailureLatch = new CountDownLatch(1);
+
+        String key = randomString();
+        DurableExecutorService service = client.getDurableExecutorService(SINGLE_TASK + randomString());
+        service.submitToKeyOwner(new SleepingTask(100), key);
+        DurableExecutorServiceFuture<String> future = service.submitToKeyOwner(new BasicTestCallable(), key);
+        future.andThen(new ExecutionCallback<String>() {
+            @Override
+            public void onResponse(String response) {
+                onResponse.set(true);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                onFailureLatch.countDown();
+            }
+        });
+
         try {
-            future.get();
-            fail();
-        } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof RejectedExecutionException);
+            future.get(1, TimeUnit.HOURS);
+            fail("We expected that future.get() throws an ExecutionException!");
+        } catch (ExecutionException ignored) {
         }
+
+        // assert TaskId
+        try {
+            future.getTaskId();
+            fail("We expected that future.getTaskId() throws an IllegalStateException!");
+        } catch (IllegalStateException ignored) {
+        }
+
+        // assert states of ClientDurableExecutorServiceCompletedFuture
+        assertFalse(future.cancel(false));
+        assertFalse(future.cancel(true));
+        assertFalse(future.isCancelled());
+        assertTrue(future.isDone());
+
+        // assert that onFailure() has been called and not onResponse()
+        onFailureLatch.await();
+        assertFalse(onResponse.get());
     }
 
     @Test
@@ -171,11 +228,12 @@ public class ClientDurableExecutorServiceTest {
         });
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test
     public void testSubmitFailingCallableException() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         Future<String> failingFuture = service.submit(new FailingCallable());
 
+        expectedException.expect(ExecutionException.class);
         failingFuture.get();
     }
 
@@ -196,16 +254,13 @@ public class ClientDurableExecutorServiceTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {
+    @Test
+    public void testSubmitFailingCallableReasonExceptionCause() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
-        Future<String> failingFuture = service.submit(new FailingCallable());
+        Future<String> future = service.submit(new FailingCallable());
 
-        try {
-            failingFuture.get();
-        } catch (ExecutionException e) {
-            throw e.getCause();
-        }
+        expectedException.expect(new RootCauseMatcher(IllegalStateException.class));
+        future.get();
     }
 
     @Test
@@ -213,6 +268,7 @@ public class ClientDurableExecutorServiceTest {
         String name = randomString();
         DurableExecutorService service = client.getDurableExecutorService(name);
         SerializedCounterCallable counterCallable = new SerializedCounterCallable();
+
         Future future = service.submitToKeyOwner(counterCallable, name);
         assertEquals(2, future.get());
     }
