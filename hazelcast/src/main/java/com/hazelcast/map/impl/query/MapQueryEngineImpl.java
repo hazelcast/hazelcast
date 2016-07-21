@@ -524,9 +524,14 @@ public class MapQueryEngineImpl implements MapQueryEngine {
                 continue;
             }
 
-            Collection<Integer> tmpPartitionIds = queryResult.getPartitionIds();
-            if (tmpPartitionIds != null) {
-                partitionIds.removeAll(tmpPartitionIds);
+            Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
+            if (queriedPartitionIds != null) {
+                if (!partitionIds.containsAll(queriedPartitionIds)) {
+                    // results for at least one partition have already been added, so discard these results
+                    // see https://github.com/hazelcast/hazelcast/issues/6471
+                    continue;
+                }
+                partitionIds.removeAll(queriedPartitionIds);
                 for (QueryResultRow row : queryResult.getRows()) {
                     Object key = toObject(row.getKey());
                     Object value = toObject(row.getValue());
@@ -550,6 +555,12 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             }
             Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
             if (queriedPartitionIds != null) {
+                if (!partitionIds.containsAll(queriedPartitionIds)) {
+                    // do not take into account results that contain partition IDs already removed from partitionIds collection
+                    // as this means that we will count results from a single partition twice
+                    // see also https://github.com/hazelcast/hazelcast/issues/6471
+                    continue;
+                }
                 partitionIds.removeAll(queriedPartitionIds);
                 result.addAllRows(queryResult.getRows());
             }
