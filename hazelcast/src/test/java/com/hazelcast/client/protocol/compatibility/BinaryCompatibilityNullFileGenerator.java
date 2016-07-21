@@ -1925,7 +1925,7 @@ public class BinaryCompatibilityNullFileGenerator {
         }
 
         {
-            ClientMessage clientMessage = ConditionAwaitCodec.encodeRequest(aString, aLong, aLong, aString);
+            ClientMessage clientMessage = ConditionAwaitCodec.encodeRequest(aString, aLong, aLong, aString, aLong);
             outputStream.writeInt(clientMessage.getFrameLength());
             outputStream.write(clientMessage.buffer().byteArray(), 0, clientMessage.getFrameLength());
         }
@@ -1936,7 +1936,7 @@ public class BinaryCompatibilityNullFileGenerator {
         }
 
         {
-            ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeRequest(aString, aLong, aString);
+            ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeRequest(aString, aLong, aString, aLong);
             outputStream.writeInt(clientMessage.getFrameLength());
             outputStream.write(clientMessage.buffer().byteArray(), 0, clientMessage.getFrameLength());
         }

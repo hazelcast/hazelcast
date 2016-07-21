@@ -2478,13 +2478,14 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aBoolean, params.response));
         }
         {
-            ClientMessage clientMessage = ConditionAwaitCodec.encodeRequest(aString, aLong, aLong, aString);
+            ClientMessage clientMessage = ConditionAwaitCodec.encodeRequest(aString, aLong, aLong, aString, aLong);
             ConditionAwaitCodec.RequestParameters params = ConditionAwaitCodec
                     .decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aLong, params.timeout));
             assertTrue(isEqual(aString, params.lockName));
+            assertTrue(isEqual(aLong, params.referenceId));
         }
         {
             ClientMessage clientMessage = ConditionAwaitCodec.encodeResponse(aBoolean);
@@ -2493,12 +2494,13 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aBoolean, params.response));
         }
         {
-            ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeRequest(aString, aLong, aString);
+            ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeRequest(aString, aLong, aString, aLong);
             ConditionBeforeAwaitCodec.RequestParameters params = ConditionBeforeAwaitCodec
                     .decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aString, params.lockName));
+            assertTrue(isEqual(aLong, params.referenceId));
         }
         {
             ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeResponse();

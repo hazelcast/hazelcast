@@ -3003,11 +3003,16 @@ public class ClientCompatibilityNullTest_1_0 {
         }
 
         {
-            ClientMessage clientMessage = ConditionAwaitCodec.encodeRequest(aString, aLong, aLong, aString);
+            ClientMessage clientMessage = ConditionAwaitCodec.encodeRequest(aString, aLong, aLong, aString, aLong);
             int length = inputStream.readInt();
-            byte[] bytes = new byte[length];
+            // Since the test is generated for protocol version (1.0) which is earlier than latest change in the message
+            // (version 1.2), only the bytes after frame length fields are compared
+            int frameLength = clientMessage.getFrameLength();
+            assertTrue(frameLength >= length);
+            inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+            byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -3019,11 +3024,16 @@ public class ClientCompatibilityNullTest_1_0 {
         }
 
         {
-            ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeRequest(aString, aLong, aString);
+            ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeRequest(aString, aLong, aString, aLong);
             int length = inputStream.readInt();
-            byte[] bytes = new byte[length];
+            // Since the test is generated for protocol version (1.0) which is earlier than latest change in the message
+            // (version 1.2), only the bytes after frame length fields are compared
+            int frameLength = clientMessage.getFrameLength();
+            assertTrue(frameLength >= length);
+            inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+            byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -5768,7 +5778,3 @@ public class ClientCompatibilityNullTest_1_0 {
 
     }
 }
-
-
-
-

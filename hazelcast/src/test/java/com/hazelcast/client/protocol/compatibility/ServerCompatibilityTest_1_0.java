@@ -2806,6 +2806,7 @@ public class ServerCompatibilityTest_1_0 {
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aLong, params.timeout));
             assertTrue(isEqual(aString, params.lockName));
+            assertFalse(params.referenceIdExist);
         }
         {
             ClientMessage clientMessage = ConditionAwaitCodec.encodeResponse(aBoolean);
@@ -2823,6 +2824,7 @@ public class ServerCompatibilityTest_1_0 {
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aLong, params.threadId));
             assertTrue(isEqual(aString, params.lockName));
+            assertFalse(params.referenceIdExist);
         }
         {
             ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeResponse();
