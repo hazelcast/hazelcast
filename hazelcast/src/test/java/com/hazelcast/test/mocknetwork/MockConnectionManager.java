@@ -45,7 +45,7 @@ public class MockConnectionManager implements ConnectionManager {
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
 
-    private final ConcurrentMap<Address, MockConnection> mapConnections = new ConcurrentHashMap<Address, MockConnection>(10);
+    private final ConcurrentMap<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(10);
     private final TestNodeRegistry registry;
     private final Node node;
 
@@ -70,16 +70,17 @@ public class MockConnectionManager implements ConnectionManager {
 
     @Override
     public Connection getOrConnect(Address address) {
-        MockConnection conn = mapConnections.get(address);
+        Connection conn = mapConnections.get(address);
         if (live && (conn == null || !conn.isAlive())) {
             Node otherNode = registry.getNode(address);
             if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
                 MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.getNodeEngine());
-                conn = new MockConnection(node.getThisAddress(), address, otherNode.getNodeEngine());
-                conn.localConnection = thisConnection;
-                thisConnection.localConnection = conn;
-                mapConnections.put(address, conn);
-                logger.info("Created connection to endpoint: " + address + ", connection: " + conn);
+                MockConnection mockConn = new MockConnection(node.getThisAddress(), address, otherNode.getNodeEngine());
+                mockConn.localConnection = thisConnection;
+                thisConnection.localConnection = mockConn;
+                mapConnections.put(address, mockConn);
+                logger.info("Created connection to endpoint: " + address + ", connection: " + mockConn);
+                return mockConn;
             }
         }
         return conn;
@@ -128,7 +129,7 @@ public class MockConnectionManager implements ConnectionManager {
                 });
             }
         }
-        for (MockConnection connection : mapConnections.values()) {
+        for (Connection connection : mapConnections.values()) {
             connection.close(null, null);
         }
     }
@@ -140,7 +141,7 @@ public class MockConnectionManager implements ConnectionManager {
 
     @Override
     public boolean registerConnection(final Address remoteEndpoint, final Connection connection) {
-        mapConnections.put(remoteEndpoint, (MockConnection) connection);
+        mapConnections.put(remoteEndpoint, connection);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
             @Override
             public void run() {
