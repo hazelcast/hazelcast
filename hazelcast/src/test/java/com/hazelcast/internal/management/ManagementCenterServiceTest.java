@@ -56,4 +56,5 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     public void testCleanupUrl_withNull() {
         assertNull(cleanupUrl(null));
     }
+
 }
