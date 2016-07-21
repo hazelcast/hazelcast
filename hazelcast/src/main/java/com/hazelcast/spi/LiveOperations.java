@@ -28,12 +28,12 @@ import java.util.Set;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Collections per member the callId's of all live operations.
+ * Collections per member the callIds of all live operations.
  *
  * The Trace is not thread-safe and is recycled.
  *
- * This data-structure can be optimized to not generate less litter. Instead of using an ArrayList for Long objects,
- * use an array for primitive longs. Also the lists don't need to be recreated for every time the
+ * This data-structure can be optimized to generate less litter. Instead of using an ArrayList for Long objects,
+ * use an array for primitive longs. Also the lists don't need to be recreated every time the
  * {@link LiveOperationsTracker#populate(LiveOperations)} method is called; they could be recycled. This would be easy
  * to do since the {@link LiveOperations} is not used by a single thread.
  */
@@ -48,7 +48,7 @@ public final class LiveOperations {
 
     public void add(Address address, long callId) {
         if (callId == 0) {
-            // it is an unregistered operation.
+            // it is an unregistered operation
             return;
         }
 
@@ -88,8 +88,9 @@ public final class LiveOperations {
     }
 
     /**
-     * Makes sure that a List of counters is made for a member. The reason this method exists, is that we want to make sure
-     * that a operation-heartbeat is always send even if there are no running operations.
+     * Makes sure that a list of counters is created for a member.
+     *
+     * This method exists to ensure that an operation-heartbeat is always sent, even if there are no running operations.
      *
      * @param address the address of the member.
      */
