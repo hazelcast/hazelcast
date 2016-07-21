@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -40,6 +41,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
@@ -49,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static java.lang.System.getProperty;
 
 /**
  * Map container.
@@ -118,9 +122,28 @@ public class MapContainer {
         if (mapEvictionPolicy == null) {
             evictor = NULL_EVICTOR;
         } else {
-            EvictionChecker evictionChecker = new EvictionChecker(new RuntimeMemoryInfoAccessor(), mapServiceContext);
+            MemoryInfoAccessor memoryInfoAccessor = getMemoryInfoAccessor();
+            EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
             IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
             evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService);
+        }
+    }
+
+    protected static MemoryInfoAccessor getMemoryInfoAccessor() {
+        MemoryInfoAccessor pluggedMemoryInfoAccessor = getPluggedMemoryInfoAccessor();
+        return pluggedMemoryInfoAccessor != null ? pluggedMemoryInfoAccessor : new RuntimeMemoryInfoAccessor();
+    }
+
+    private static MemoryInfoAccessor getPluggedMemoryInfoAccessor() {
+        String memoryInfoAccessorImpl = getProperty("hazelcast.memory.info.accessor.impl");
+        if (memoryInfoAccessorImpl == null) {
+            return null;
+        }
+
+        try {
+            return ClassLoaderUtil.newInstance(null, memoryInfoAccessorImpl);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
