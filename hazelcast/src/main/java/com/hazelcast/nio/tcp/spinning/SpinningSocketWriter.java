@@ -19,18 +19,17 @@ package com.hazelcast.nio.tcp.spinning;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.OutboundFrame;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.ascii.TextWriteHandler;
 import com.hazelcast.nio.tcp.NewClientWriteHandler;
 import com.hazelcast.nio.tcp.OldClientWriteHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.WriteHandler;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.counters.SwCounter;
-
 import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
@@ -38,7 +37,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY;
@@ -227,12 +225,6 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
 
     public void write() throws Exception {
         if (!connection.isAlive()) {
-            return;
-        }
-
-        if (writeHandler == null) {
-            logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
-            createWriter(CLUSTER);
             return;
         }
 
