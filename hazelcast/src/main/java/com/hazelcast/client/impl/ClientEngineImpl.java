@@ -28,7 +28,11 @@ import com.hazelcast.client.impl.operations.PostJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
+import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
+import com.hazelcast.client.impl.protocol.task.GetPartitionsMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
+import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
@@ -57,7 +61,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -162,13 +168,26 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
         int partitionId = clientMessage.getPartitionId();
-        final MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
+        MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
+        InternalOperationService operationService = nodeEngine.getOperationService();
         if (partitionId < 0) {
-            executor.execute(messageTask);
+            if (isUrgent(messageTask)) {
+                operationService.execute(new PriorityPartitionSpecificRunnable(messageTask));
+            } else {
+                executor.execute(messageTask);
+            }
         } else {
-            InternalOperationService operationService = nodeEngine.getOperationService();
             operationService.execute(messageTask);
         }
+    }
+
+    private boolean isUrgent(MessageTask messageTask) {
+        Class clazz = messageTask.getClass();
+        return clazz == PingMessageTask.class
+                || clazz == GetPartitionsMessageTask.class
+                || clazz == AuthenticationMessageTask.class
+                || clazz == AuthenticationCustomCredentialsMessageTask.class
+                ;
     }
 
     @Override
@@ -475,5 +494,24 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         resultMap.put(ClientType.OTHER, numberOfOtherClients);
 
         return resultMap;
+    }
+
+    private static class PriorityPartitionSpecificRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {
+
+        private final MessageTask task;
+
+        public PriorityPartitionSpecificRunnable(MessageTask task) {
+            this.task = task;
+        }
+
+        @Override
+        public void run() {
+            task.run();
+        }
+
+        @Override
+        public int getPartitionId() {
+            return task.getPartitionId();
+        }
     }
 }
