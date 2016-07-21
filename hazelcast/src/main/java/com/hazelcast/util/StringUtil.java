@@ -145,6 +145,18 @@ public final class StringUtil {
     }
 
     /**
+     * Returns a String representation of the time. If time is 0, then 'never' is returned.
+     * <p>
+     * This method is not particularly efficient since it generates a ton of litter.
+     *
+     * @param timeMillis time in millis
+     * @return the String
+     */
+    public static String timeToStringFriendly(long timeMillis) {
+        return timeMillis == 0 ? "never" : timeToString(timeMillis);
+    }
+
+    /**
      * Like a String.indexOf but without MIN_SUPPLEMENTARY_CODE_POINT handling
      *
      * @param input  to check the indexOf on
