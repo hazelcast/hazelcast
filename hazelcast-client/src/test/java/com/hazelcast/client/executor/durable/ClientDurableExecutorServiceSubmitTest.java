@@ -21,11 +21,11 @@ import com.hazelcast.client.executor.tasks.MapPutPartitionAwareCallable;
 import com.hazelcast.client.executor.tasks.MapPutPartitionAwareRunnable;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
+import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,10 +37,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -55,29 +53,30 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientDurableExecutorServiceSubmitTest {
 
-    private static final int CLUSTER_SIZE = 3;
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private HazelcastInstance server;
     private HazelcastInstance client;
 
-    @After
-    public void tearDown() {
-        hazelcastFactory.terminateAll();
-    }
-
     @Before
-    public void setup() throws IOException {
+    public void setup() {
         hazelcastFactory.newHazelcastInstance();
         server = hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
     }
 
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
 
     @Test(expected = NullPointerException.class)
-    public void testSubmitCallableNullTask() throws Exception {
+    @SuppressWarnings("ConstantConditions")
+    public void testSubmitCallableNullTask() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
-        Callable<String> callable = null;
+        Callable callable = null;
 
         service.submit(callable);
     }
@@ -97,7 +96,7 @@ public class ClientDurableExecutorServiceSubmitTest {
     }
 
     @Test
-    public void testSubmitRunnable_WithResult() throws ExecutionException, InterruptedException {
+    public void testSubmitRunnable_WithResult() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         String mapName = randomString();
@@ -123,7 +122,7 @@ public class ClientDurableExecutorServiceSubmitTest {
     }
 
     @Test
-    public void testSubmitRunnable_withExecutionCallback() throws Exception {
+    public void testSubmitRunnable_withExecutionCallback() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         String mapName = randomString();
@@ -145,7 +144,7 @@ public class ClientDurableExecutorServiceSubmitTest {
     }
 
     @Test
-    public void testSubmitCallable_withExecutionCallback() throws Exception {
+    public void testSubmitCallable_withExecutionCallback() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         String msg = randomString();
@@ -180,7 +179,7 @@ public class ClientDurableExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnableToKeyOwner() throws Exception {
+    public void submitRunnableToKeyOwner() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         String mapName = randomString();
@@ -202,7 +201,7 @@ public class ClientDurableExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitCallableToKeyOwner_withExecutionCallback() throws Exception {
+    public void submitCallableToKeyOwner_withExecutionCallback() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         String msg = randomString();
@@ -225,15 +224,15 @@ public class ClientDurableExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnablePartitionAware() throws Exception {
+    public void submitRunnablePartitionAware() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         String mapName = randomString();
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         final Member member = server.getCluster().getLocalMember();
 
-        //this task should execute on a node owning the given key argument,
-        //the action is to put the UUid of the executing node into a map with the given name
+        // this task should execute on a node owning the given key argument,
+        // the action is to put the UUid of the executing node into a map with the given name
         Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
 
         service.submit(runnable);
@@ -269,7 +268,7 @@ public class ClientDurableExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnablePartitionAware_withExecutionCallback() throws Exception {
+    public void submitRunnablePartitionAware_withExecutionCallback() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         String mapName = randomString();
@@ -311,7 +310,7 @@ public class ClientDurableExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitCallablePartitionAware_WithExecutionCallback() throws Exception {
+    public void submitCallablePartitionAware_WithExecutionCallback() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         String mapName = randomString();

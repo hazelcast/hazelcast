@@ -18,10 +18,10 @@ package com.hazelcast.client.executor.durable;
 
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
+import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -42,23 +42,22 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientDurableExecutorServiceExecuteTest {
 
-    private static final int CLUSTER_SIZE = 3;
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private HazelcastInstance server1;
-    private HazelcastInstance server2;
+
+    private HazelcastInstance server;
     private HazelcastInstance client;
+
+    @Before
+    public void setup() {
+        server = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
+    }
 
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
-    }
-
-    @Before
-    public void setup()  {
-        server1 = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-        server2 = hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test
@@ -73,6 +72,7 @@ public class ClientDurableExecutorServiceExecuteTest {
     }
 
     @Test(expected = NullPointerException.class)
+    @SuppressWarnings("ConstantConditions")
     public void testExecute_whenTaskNull() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
@@ -84,9 +84,9 @@ public class ClientDurableExecutorServiceExecuteTest {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         String mapName = randomString();
 
-        Member member = server1.getCluster().getLocalMember();
+        Member member = server.getCluster().getLocalMember();
         final String targetUuid = member.getUuid();
-        String key = generateKeyOwnedBy(server1);
+        String key = generateKeyOwnedBy(server);
 
         service.executeOnKeyOwner(new MapPutRunnable(mapName), key);
 

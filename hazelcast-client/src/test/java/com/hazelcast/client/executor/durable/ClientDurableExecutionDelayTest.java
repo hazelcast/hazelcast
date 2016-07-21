@@ -19,7 +19,6 @@ package com.hazelcast.client.executor.durable;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,12 +30,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -51,24 +48,26 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
 
     private static final int CLUSTER_SIZE = 3;
     private static final AtomicInteger COUNTER = new AtomicInteger();
+
     private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(CLUSTER_SIZE);
+
     private TestHazelcastFactory hazelcastFactory;
 
-    @After
-    public void tearDown() {
-        hazelcastFactory.shutdownAll();
-    }
-
     @Before
-    public void setup() throws IOException {
+    public void setup() {
         hazelcastFactory = new TestHazelcastFactory();
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             instances.add(hazelcastFactory.newHazelcastInstance());
         }
     }
 
+    @After
+    public void tearDown() {
+        hazelcastFactory.shutdownAll();
+    }
+
     @Test
-    public void testExecutorRetriesTask_whenOneNodeTerminates() throws InterruptedException, ExecutionException {
+    public void testExecutorRetriesTask_whenOneNodeTerminates() throws Exception {
         final int taskCount = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
@@ -95,7 +94,7 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecutorRetriesTask_whenOneNodeShutdowns() throws InterruptedException, ExecutionException {
+    public void testExecutorRetriesTask_whenOneNodeShutdowns() throws Exception {
         final int taskCount = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
@@ -121,7 +120,7 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
         }
     }
 
-    private void runClient(Task task, int executions) throws InterruptedException, ExecutionException {
+    private void runClient(Task task, int executions) throws Exception {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -148,8 +147,5 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
         public String toString() {
             return "Task{}";
         }
-
     }
-
-
 }

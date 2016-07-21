@@ -48,7 +48,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -65,62 +64,61 @@ public class ClientDurableExecutorServiceTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
-    private HazelcastInstance instance;
-
-    @After
-    public void tearDown() {
-        hazelcastFactory.terminateAll();
-    }
 
     @Before
-    public void setup() throws IOException {
+    public void setup() {
         Config config = new Config();
         DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(SINGLE_TASK + "*");
         durableExecutorConfig.setCapacity(1);
 
-        instance = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
     }
 
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAll() throws InterruptedException {
+    public void testInvokeAll() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAll(callables);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAll_WithTimeout() throws InterruptedException {
+    public void testInvokeAll_WithTimeout() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAll(callables, 1, TimeUnit.SECONDS);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAny() throws InterruptedException, ExecutionException {
+    public void testInvokeAny() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAny(callables);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAny_WithTimeout() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testInvokeAny_WithTimeout() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAny(callables, 1, TimeUnit.SECONDS);
     }
 
     @Test
-    public void testAwaitTermination() throws InterruptedException {
+    public void testAwaitTermination() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         assertFalse(service.awaitTermination(1, TimeUnit.SECONDS));
     }
 
     @Test
-    public void testFullRingBuffer() throws InterruptedException {
+    public void testFullRingBuffer() throws Exception {
         String key = randomString();
         DurableExecutorService service = client.getDurableExecutorService(SINGLE_TASK + randomString());
         service.submitToKeyOwner(new SleepingTask(100), key);
@@ -134,21 +132,21 @@ public class ClientDurableExecutorServiceTest {
     }
 
     @Test
-    public void testIsTerminated() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testIsTerminated() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         assertFalse(service.isTerminated());
     }
 
     @Test
-    public void testIsShutdown() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testIsShutdown() {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         assertFalse(service.isShutdown());
     }
 
     @Test
-    public void testShutdownNow() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testShutdownNow() {
         final DurableExecutorService service = client.getDurableExecutorService(randomString());
 
         service.shutdownNow();
@@ -161,7 +159,7 @@ public class ClientDurableExecutorServiceTest {
     }
 
     @Test
-    public void testShutdownMultipleTimes() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testShutdownMultipleTimes() {
         final DurableExecutorService service = client.getDurableExecutorService(randomString());
         service.shutdownNow();
         service.shutdown();
@@ -174,7 +172,7 @@ public class ClientDurableExecutorServiceTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void testSubmitFailingCallableException() throws ExecutionException, InterruptedException {
+    public void testSubmitFailingCallableException() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         Future<String> failingFuture = service.submit(new FailingCallable());
 
@@ -182,7 +180,7 @@ public class ClientDurableExecutorServiceTest {
     }
 
     @Test
-    public void testSubmitFailingCallableException_withExecutionCallback() throws ExecutionException, InterruptedException {
+    public void testSubmitFailingCallableException_withExecutionCallback() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         final CountDownLatch latch = new CountDownLatch(1);
         service.submit(new FailingCallable()).andThen(new ExecutionCallback<String>() {
@@ -211,7 +209,7 @@ public class ClientDurableExecutorServiceTest {
     }
 
     @Test
-    public void testCallableSerializedOnce() throws ExecutionException, InterruptedException {
+    public void testCallableSerializedOnce() throws Exception {
         String name = randomString();
         DurableExecutorService service = client.getDurableExecutorService(name);
         SerializedCounterCallable counterCallable = new SerializedCounterCallable();
