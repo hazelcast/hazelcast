@@ -41,7 +41,7 @@ public class QueueTransactionRollbackOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.rollbackTransaction(transactionId);
     }
 

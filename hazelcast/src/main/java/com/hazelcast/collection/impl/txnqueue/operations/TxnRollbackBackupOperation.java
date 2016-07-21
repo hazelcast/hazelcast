@@ -45,7 +45,7 @@ public class TxnRollbackBackupOperation extends QueueOperation implements Backup
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         for (long itemId : itemIds) {
             if (CollectionTxnUtil.isRemove(itemId)) {
                 response = queueContainer.txnRollbackPoll(itemId, true);

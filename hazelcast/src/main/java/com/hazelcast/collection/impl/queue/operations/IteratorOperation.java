@@ -38,7 +38,7 @@ public class IteratorOperation extends QueueOperation {
 
     @Override
     public void run() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         List<Data> dataList = queueContainer.getAsDataList();
         response = new SerializableList(dataList);
     }

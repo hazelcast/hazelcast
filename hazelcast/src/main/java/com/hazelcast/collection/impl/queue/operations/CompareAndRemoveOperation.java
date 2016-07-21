@@ -52,7 +52,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
 
     @Override
     public void run() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         dataMap = queueContainer.compareAndRemove(dataList, retain);
         response = dataMap.size() > 0;
     }
@@ -85,7 +85,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
+        return getContainer().getOfferWaitNotifyKey();
     }
 
     @Override

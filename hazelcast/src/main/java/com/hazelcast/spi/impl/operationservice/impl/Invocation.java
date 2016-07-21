@@ -89,7 +89,7 @@ import static java.util.logging.Level.WARNING;
  * Using the {@link InvocationFuture}, one can wait for the completion of an invocation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class Invocation implements OperationResponseHandler, Runnable {
+public abstract class Invocation implements OperationResponseHandler {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
@@ -284,11 +284,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             context.invocationRegistry.deregister(this);
             notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
-    }
-
-    @Override
-    public void run() {
-        doInvoke(false);
     }
 
     private boolean engineActive() {
@@ -494,10 +489,32 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
             if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                 // fast retry for the first few invocations
-                context.asyncExecutor.execute(this);
+                context.asyncExecutor.execute(new InvocationRetryTask());
             } else {
-                context.executionService.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+                context.executionService.schedule(ASYNC_EXECUTOR, new InvocationRetryTask(), tryPauseMillis, MILLISECONDS);
             }
+        }
+    }
+
+    private class InvocationRetryTask implements Runnable {
+        @Override
+        public void run() {
+            // When a cluster is being merged into another one then local node is marked as not-joined and invocations are
+            // notified with MemberLeftException.
+            // We do not want to retry them before the node is joined again because partition table is stale at this point.
+            if (!context.node.joined() && !isJoinOperation(op) && !(op instanceof AllowedDuringPassiveState)) {
+                if (!engineActive()) {
+                    return;
+                }
+
+                if (context.logger.isFinestEnabled()) {
+                    context.logger.finest("Node is not joined. Re-scheduling " + this
+                            + " to be executed in " + tryPauseMillis + " ms.");
+                }
+                context.executionService.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+                return;
+            }
+            doInvoke(false);
         }
     }
 

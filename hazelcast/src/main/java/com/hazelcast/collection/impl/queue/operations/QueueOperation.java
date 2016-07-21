@@ -62,16 +62,17 @@ public abstract class QueueOperation extends Operation
         setWaitTimeout(timeoutMillis);
     }
 
-    protected final QueueContainer getOrCreateContainer() {
-        if (container == null) {
-            QueueService queueService = getService();
-            try {
-                container = queueService.getOrCreateContainer(name, this instanceof BackupOperation);
-            } catch (Exception e) {
-                throw new RetryableHazelcastException(e);
-            }
-        }
+    protected final QueueContainer getContainer() {
         return container;
+    }
+
+    private void initializeContainer() {
+        QueueService queueService = getService();
+        try {
+            container = queueService.getOrCreateContainer(name, this instanceof BackupOperation);
+        } catch (Exception e) {
+            throw new RetryableHazelcastException(e);
+        }
     }
 
     @Override
@@ -99,6 +100,7 @@ public abstract class QueueOperation extends Operation
 
     @Override
     public void beforeRun() throws Exception {
+        initializeContainer();
     }
 
     public boolean hasListener() {

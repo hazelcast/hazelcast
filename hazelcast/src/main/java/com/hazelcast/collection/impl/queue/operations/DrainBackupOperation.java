@@ -44,7 +44,7 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.drainFromBackup(itemIdSet);
     }
 

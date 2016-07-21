@@ -91,7 +91,7 @@ public class TxnCommitOperation extends QueueBackupAwareOperation implements Not
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         if (CollectionTxnUtil.isRemove(shouldNotify)) {
             return queueContainer.getOfferWaitNotifyKey();
         }

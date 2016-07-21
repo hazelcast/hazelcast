@@ -41,7 +41,7 @@ public class TxnPollBackupOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.txnCommitPollBackup(itemId);
         response = true;
     }

@@ -56,6 +56,10 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
 
     public synchronized void block(Address address) {
         blockedAddresses.add(address);
+        Connection connection = getConnection(address);
+        if (connection != null && connection instanceof TcpIpConnection) {
+            connection.close("Blocked by connection manager", null);
+        }
     }
 
     public synchronized void unblock(Address address) {

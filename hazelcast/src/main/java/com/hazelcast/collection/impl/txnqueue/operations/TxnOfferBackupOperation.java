@@ -45,7 +45,7 @@ public class TxnOfferBackupOperation extends QueueOperation implements BackupOpe
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.txnCommitOffer(itemId, data, true);
     }
 

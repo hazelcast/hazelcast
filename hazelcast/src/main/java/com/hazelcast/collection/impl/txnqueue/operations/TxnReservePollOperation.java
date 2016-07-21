@@ -47,19 +47,19 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
 
     @Override
     public void run() throws Exception {
-        QueueContainer createContainer = getOrCreateContainer();
+        QueueContainer createContainer = getContainer();
         response = createContainer.txnPollReserve(reservedOfferId, transactionId);
     }
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         return queueContainer.getPollWaitNotifyKey();
     }
 
     @Override
     public boolean shouldWait() {
-        final QueueContainer queueContainer = getOrCreateContainer();
+        final QueueContainer queueContainer = getContainer();
         return getWaitTimeout() != 0 && reservedOfferId == -1 && queueContainer.size() == 0;
     }
 

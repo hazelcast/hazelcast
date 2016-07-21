@@ -20,10 +20,12 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
 import org.junit.Assert;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import static org.junit.Assert.assertNotNull;
@@ -128,6 +130,15 @@ class MockJoiner extends AbstractJoiner {
     }
 
     public void searchForOtherClusters() {
+        Collection<Address> possibleAddresses = new ArrayList<Address>(registry.getJoinAddresses());
+        possibleAddresses.remove(node.getThisAddress());
+        possibleAddresses.removeAll(node.getClusterService().getMemberAddresses());
+        for (Address address : possibleAddresses) {
+            JoinMessage response = sendSplitBrainJoinMessage(address);
+            if (shouldMerge(response)) {
+                startClusterMerge(address);
+            }
+        }
     }
 
     @Override

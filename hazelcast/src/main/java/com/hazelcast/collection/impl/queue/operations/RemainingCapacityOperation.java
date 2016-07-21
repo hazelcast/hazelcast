@@ -34,7 +34,7 @@ public class RemainingCapacityOperation extends QueueOperation {
 
     @Override
     public void run() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         response = queueContainer.getConfig().getMaxSize() - queueContainer.size();
     }
 

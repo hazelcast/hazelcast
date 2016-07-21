@@ -37,6 +37,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -978,5 +979,26 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void ignore(Throwable ignored) {
+    }
+
+    public static void assertWaitingOperationCountEventually(int expectedOpsCount, HazelcastInstance...instances) {
+        for (HazelcastInstance instance : instances) {
+            assertWaitingOperationCountEventually(expectedOpsCount, instance);
+        }
+    }
+
+    public static void assertWaitingOperationCountEventually(final int opsCount, HazelcastInstance instance) {
+        final WaitNotifyServiceImpl waitNotifyService = getWaitNotifyService(instance);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(opsCount, waitNotifyService.getTotalWaitingOperationCount());
+            }
+        });
+    }
+
+    private static WaitNotifyServiceImpl getWaitNotifyService(HazelcastInstance instance) {
+        Node node = getNode(instance);
+        return (WaitNotifyServiceImpl) node.getNodeEngine().getWaitNotifyService();
     }
 }

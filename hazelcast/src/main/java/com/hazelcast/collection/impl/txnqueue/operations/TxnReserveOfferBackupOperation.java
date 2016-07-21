@@ -45,7 +45,7 @@ public class TxnReserveOfferBackupOperation extends QueueOperation implements Ba
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.txnOfferBackupReserve(itemId, transactionId);
     }
 

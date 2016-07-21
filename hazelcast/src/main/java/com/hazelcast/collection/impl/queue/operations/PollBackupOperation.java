@@ -42,7 +42,7 @@ public final class PollBackupOperation extends QueueOperation implements BackupO
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.pollBackup(itemId);
         response = Boolean.TRUE;
     }

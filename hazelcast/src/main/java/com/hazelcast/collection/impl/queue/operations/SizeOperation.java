@@ -34,7 +34,7 @@ public class SizeOperation extends QueueOperation {
 
     @Override
     public void run() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         response = queueContainer.size();
     }
 

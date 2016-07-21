@@ -43,7 +43,7 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
 
     @Override
     public void run() {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         dataMap = queueContainer.clear();
         response = true;
     }
@@ -74,7 +74,7 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
+        return getContainer().getOfferWaitNotifyKey();
     }
 
     @Override

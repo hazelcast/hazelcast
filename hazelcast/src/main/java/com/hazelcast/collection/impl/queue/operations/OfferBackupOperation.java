@@ -46,7 +46,7 @@ public final class OfferBackupOperation extends QueueOperation
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.offerBackup(data, itemId);
         response = true;
     }

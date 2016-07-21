@@ -43,7 +43,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.compareAndRemoveBackup(keySet);
         response = true;
     }

@@ -44,7 +44,7 @@ public class TxnReservePollBackupOperation extends QueueOperation implements Bac
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getContainer();
         queueContainer.txnPollBackupReserve(itemId, transactionId);
     }
 

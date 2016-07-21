@@ -48,7 +48,7 @@ public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier
 
     @Override
     public void run() throws Exception {
-        QueueContainer createContainer = getOrCreateContainer();
+        QueueContainer createContainer = getContainer();
         response = createContainer.txnCommitOffer(getItemId(), data, false);
     }
 
@@ -80,7 +80,7 @@ public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getOrCreateContainer().getPollWaitNotifyKey();
+        return getContainer().getPollWaitNotifyKey();
     }
 
     @Override
