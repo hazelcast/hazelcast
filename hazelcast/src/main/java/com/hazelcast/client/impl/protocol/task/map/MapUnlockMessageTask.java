@@ -41,7 +41,7 @@ public class MapUnlockMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new UnlockOperation(getNamespace(), parameters.key, parameters.threadId, false);
+        return new UnlockOperation(getNamespace(), parameters.key, parameters.threadId, false, parameters.referenceId);
     }
 
     @Override

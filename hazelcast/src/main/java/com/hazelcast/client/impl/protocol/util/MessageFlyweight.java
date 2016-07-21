@@ -185,7 +185,6 @@ public class MessageFlyweight {
         }
         return result;
     }
-
     //endregion GET Overloads
 
     protected int int32Get(int index) {

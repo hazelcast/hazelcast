@@ -43,7 +43,8 @@ public class ConditionAwaitMessageTask
     protected Operation prepareOperation() {
         final Data key = serializationService.toData(parameters.lockName);
         final InternalLockNamespace namespace = new InternalLockNamespace(parameters.lockName);
-        return new AwaitOperation(namespace, key, parameters.threadId, parameters.timeout, parameters.name);
+        return new AwaitOperation(namespace, key, parameters.threadId, parameters.timeout, parameters.name,
+                parameters.referenceId);
     }
 
     @Override

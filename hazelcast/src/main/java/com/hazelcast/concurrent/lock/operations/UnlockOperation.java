@@ -48,6 +48,12 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
         this.force = force;
     }
 
+    public UnlockOperation(ObjectNamespace namespace, Data key, long threadId, boolean force, long referenceId) {
+        super(namespace, key, threadId);
+        this.force = force;
+        this.setReferenceCallId(referenceId);
+    }
+
     @Override
     public void run() throws Exception {
         if (force) {
@@ -61,16 +67,10 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
         LockStoreImpl lockStore = getLockStore();
         boolean unlocked = lockStore.unlock(key, getCallerUuid(), threadId, getReferenceCallId());
         response = unlocked;
-        ensureUnlocked(lockStore, unlocked);
-    }
-
-    private void ensureUnlocked(LockStoreImpl lockStore, boolean unlocked) {
         if (!unlocked) {
-            boolean isRetry = getReferenceCallId() != getCallId();
-            if (!isRetry) {
-                String ownerInfo = lockStore.getOwnerInfo(key);
-                throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + ownerInfo);
-            }
+            // we can not check for retry here, hence just throw the exception
+            String ownerInfo = lockStore.getOwnerInfo(key);
+            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + ownerInfo);
         }
     }
 

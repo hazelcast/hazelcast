@@ -181,6 +181,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final SerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
 
+    private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
+
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
                                        AddressProvider externalAddressProvider) {
@@ -223,6 +225,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         proxyManager.init(config);
         hazelcastCacheManager = new ClientICacheManager(this);
+
+        lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
     }
 
     private Diagnostics initDiagnostics(ClientConfig config) {
@@ -443,6 +447,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
+
     }
 
     @Override
@@ -690,4 +695,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.shutdown();
     }
 
+    public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {
+        return lockReferenceIdGenerator;
+    }
 }

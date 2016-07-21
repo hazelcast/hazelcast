@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerToKeyCodec;
@@ -87,13 +88,14 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  *
  * @param <K> key
  * @param <V> value
- *
  * @author ali 5/19/13
  */
 public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+
+    private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
 
     public ClientMultiMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -307,8 +309,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapLockCodec.encodeRequest(name, keyData,
-                ThreadUtil.getThreadId(), -1);
+        ClientMessage request = MultiMapLockCodec
+                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), -1, lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -317,8 +319,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkPositive(leaseTime, "leaseTime should be positive");
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapLockCodec.encodeRequest(name, keyData,
-                ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit));
+        ClientMessage request = MultiMapLockCodec
+                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit),
+                        lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -354,7 +357,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseUnit);
 
         long threadId = ThreadUtil.getThreadId();
-        ClientMessage request = MultiMapTryLockCodec.encodeRequest(name, keyData, threadId, leaseTimeInMillis, timeoutInMillis);
+        ClientMessage request = MultiMapTryLockCodec.encodeRequest(name, keyData, threadId, leaseTimeInMillis, timeoutInMillis,
+                lockReferenceIdGenerator.getNextReferenceId());
         ClientMessage response = invoke(request, keyData);
         MultiMapTryLockCodec.ResponseParameters resultParameters = MultiMapTryLockCodec.decodeResponse(response);
         return resultParameters.response;
@@ -364,7 +368,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapUnlockCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MultiMapUnlockCodec
+                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -372,7 +377,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapForceUnlockCodec.encodeRequest(name, keyData);
+        ClientMessage request = MultiMapForceUnlockCodec
+                .encodeRequest(name, keyData, lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -418,6 +424,11 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         }
     }
 
+    @Override
+    public String toString() {
+        return "MultiMap{" + "name='" + name + '\'' + '}';
+    }
+
     protected void onDestroy() {
     }
 
@@ -425,14 +436,16 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+
+        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
+    }
+
     private EventHandler<ClientMessage> createHandler(final Object listener) {
         final ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return new ClientMultiMapEventHandler(listenerAdaptor);
-    }
-
-    @Override
-    public String toString() {
-        return "MultiMap{" + "name='" + name + '\'' + '}';
     }
 
     private class ClientMultiMapEventHandler extends MultiMapAddEntryListenerCodec.AbstractEventHandler

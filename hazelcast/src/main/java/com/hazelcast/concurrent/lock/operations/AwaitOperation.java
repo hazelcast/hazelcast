@@ -43,6 +43,13 @@ public class AwaitOperation extends AbstractLockOperation
         this.conditionId = conditionId;
     }
 
+    public AwaitOperation(ObjectNamespace namespace, Data key, long threadId, long timeout, String conditionId,
+                          long referenceId) {
+        super(namespace, key, threadId, timeout);
+        this.conditionId = conditionId;
+        setReferenceCallId(referenceId);
+    }
+
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();

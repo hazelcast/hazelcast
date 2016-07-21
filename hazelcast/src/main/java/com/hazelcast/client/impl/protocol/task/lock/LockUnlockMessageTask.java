@@ -41,7 +41,8 @@ public class LockUnlockMessageTask
     @Override
     protected Operation prepareOperation() {
         final Data key = serializationService.toData(parameters.name);
-        return new UnlockOperation(new InternalLockNamespace(parameters.name), key, parameters.threadId, false);
+        return new UnlockOperation(new InternalLockNamespace(parameters.name), key, parameters.threadId, false,
+                parameters.referenceId);
     }
 
     @Override
