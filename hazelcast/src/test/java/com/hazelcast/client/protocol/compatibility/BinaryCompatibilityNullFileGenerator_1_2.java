@@ -37,7 +37,7 @@ import java.util.Map;
 import static org.junit.Assert.assertTrue;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
-public class BinaryCompatibilityNullFileGenerator {
+public class BinaryCompatibilityNullFileGenerator_1_2 {
     public static void main(String[] args)
             throws IOException {
         OutputStream out = new FileOutputStream("1.2.protocol.compatibility.null.binary");
