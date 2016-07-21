@@ -20,6 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 
 import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.util.StringUtil.timeToStringFriendly;
 import static java.lang.String.format;
 
 /**
@@ -56,8 +57,8 @@ public class TargetDisconnectedException extends RetryableHazelcastException {
                         + "Connection %s",
                 memberAddress,
                 timeToString(System.currentTimeMillis()),
-                (lastHeartbeatMillis == 0) ? "never" : timeToString(lastHeartbeatMillis),
-                (lastReadMillis == 0) ? "never" : timeToString(lastReadMillis),
+                timeToStringFriendly(lastHeartbeatMillis),
+                timeToStringFriendly(lastReadMillis),
                 connectionString);
         return new TargetDisconnectedException(msg, cause);
     }
