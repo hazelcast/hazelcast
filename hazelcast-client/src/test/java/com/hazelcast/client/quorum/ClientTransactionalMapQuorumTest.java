@@ -23,17 +23,19 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.quorum.PartitionedCluster;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -61,12 +63,13 @@ public class ClientTransactionalMapQuorumTest extends HazelcastTestSupport {
     static HazelcastInstance c5;
     private static TestHazelcastFactory factory;
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Parameterized.Parameter(0)
     public TransactionOptions options;
 
-
-    @Parameterized.Parameters(name = "Executing: {0}")
+    @Parameterized.Parameters(name = "Options: {0}")
     public static Collection<Object[]> parameters() {
 
         TransactionOptions localOption = TransactionOptions.getDefault();
@@ -119,169 +122,345 @@ public class ClientTransactionalMapQuorumTest extends HazelcastTestSupport {
     }
 
 
-    @Test(expected = TransactionException.class)
+    @Test
     public void testTxPutThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.put("foo", "bar");
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxPutSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.put("foo", "bar");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxGetThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.get("foo");
-        transactionContext.commitTransaction();
     }
 
+    @Test
+    public void testTxGetSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
 
-    @Test(expected = TransactionException.class)
+        map.get("foo");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxGetForUpdateThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.getForUpdate("foo");
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxGetForUpdateSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.getForUpdate("foo");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxRemoveThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.remove("foo");
-        transactionContext.commitTransaction();
+    }
+
+    @Test
+    public void testTxRemoveSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.remove("foo");
+        transaction.commitTransaction();
     }
 
 
-    @Test(expected = TransactionException.class)
+    @Test
     public void testTxRemoveValueThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.remove("foo", "bar");
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxRemoveValueSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.remove("foo", "bar");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxDeleteThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.delete("foo");
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxDeleteSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.delete("foo");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxSetThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.set("foo", "bar");
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxSetSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.set("foo", "bar");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxPutWithTTLThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.put("foo", "bar", 10, TimeUnit.SECONDS);
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxPutWithTTLSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.put("foo", "bar", 10, TimeUnit.SECONDS);
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxPutIfAbsentThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.putIfAbsent("foo", "bar");
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxPutIfAbsentSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.putIfAbsent("foo", "bar");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxReplaceThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.replace("foo", "bar");
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxReplaceSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.replace("foo", "bar");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxReplaceExpectedValueThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.replace("foo", "bar", "baz");
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxReplaceExpectedValueSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.replace("foo", "bar", "baz");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxSizeThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.size();
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxSizeSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.size();
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxContainsKeyThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.containsKey("foo");
-        transactionContext.commitTransaction();
     }
 
+    @Test
+    public void testTxContainsKeySucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
 
-    @Test(expected = TransactionException.class)
+        map.containsKey("foo");
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxIsEmptyThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.isEmpty();
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxIsEmptySucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.isEmpty();
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxKeySetThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.keySet();
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxKeySetSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.keySet();
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxKeySetWithPredicateThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.keySet(TruePredicate.INSTANCE);
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxKeySetWithPredicateSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.keySet(TruePredicate.INSTANCE);
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxValuesThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = c4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
         map.values();
-        transactionContext.commitTransaction();
     }
 
-    @Test(expected = TransactionException.class)
+    @Test
+    public void testTxValuesSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.values();
+        transaction.commitTransaction();
+    }
+
+    @Test
     public void testTxValuesWithPredicateThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transaction = getTransactionFromMinority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        expectedException.expect(QuorumException.class);
+        map.values(TruePredicate.INSTANCE);
+    }
+
+    @Test
+    public void testTxValuesWithPredicateSucceedsWhenQuorumSizeMet() {
+        TransactionContext transaction = getTransactionFromMajority();
+        TransactionalMap<Object, Object> map = getMap(transaction);
+
+        map.values(TruePredicate.INSTANCE);
+        transaction.commitTransaction();
+    }
+
+    private TransactionContext getTransactionFromMajority() {
+        TransactionContext transactionContext = c1.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        return transactionContext;
+    }
+
+    private TransactionContext getTransactionFromMinority() {
         TransactionContext transactionContext = c4.newTransactionContext(options);
         transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.values(TruePredicate.INSTANCE);
-        transactionContext.commitTransaction();
+        return transactionContext;
+    }
+
+    private static TransactionalMap<Object, Object> getMap(TransactionContext transaction) {
+        return transaction.getMap(randomMapName(MAP_NAME_PREFIX));
     }
 
 }
