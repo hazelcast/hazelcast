@@ -21,7 +21,6 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
-import java.net.InetSocketAddress;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 
@@ -38,9 +37,9 @@ public class PartitionServiceBeanDTO implements JsonSerializable {
 
     public PartitionServiceBeanDTO(InternalPartitionService partitionService,
                                    HazelcastInstanceImpl hazelcastInstance) {
-        InetSocketAddress address = hazelcastInstance.getCluster().getLocalMember().getSocketAddress();
+        Address address = hazelcastInstance.getCluster().getLocalMember().getAddress();
         this.partitionCount = partitionService.getPartitionCount();
-        this.activePartitionCount = partitionService.getMemberPartitions(new Address(address)).size();
+        this.activePartitionCount = partitionService.getMemberPartitions(address).size();
     }
 
     public int getPartitionCount() {
