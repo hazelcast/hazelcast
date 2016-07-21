@@ -68,6 +68,7 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean add(final Long value) {
         return add(value.longValue());
     }
@@ -83,24 +84,21 @@ public final class LongHashSet implements Set<Long> {
             throw new IllegalStateException("This LongHashSet of capacity " + capacity + " is full");
         }
         int index = longHash(value, mask);
-
         while (values[index] != missingValue) {
             if (values[index] == value) {
                 return false;
             }
-
             index = next(index);
         }
-
         values[index] = value;
         size++;
-
         return true;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean remove(final Object value) {
         return value instanceof Long && remove(((Long) value).longValue());
     }
@@ -113,7 +111,6 @@ public final class LongHashSet implements Set<Long> {
      */
     public boolean remove(final long value) {
         int index = longHash(value, mask);
-
         while (values[index] != missingValue) {
             if (values[index] == value) {
                 values[index] = missingValue;
@@ -121,10 +118,8 @@ public final class LongHashSet implements Set<Long> {
                 size--;
                 return true;
             }
-
             index = next(index);
         }
-
         return false;
     }
 
@@ -154,30 +149,26 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean contains(final Object value) {
         return value instanceof Long && contains(((Long) value).longValue());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public boolean contains(final long value) {
         int index = longHash(value, mask);
-
         while (values[index] != missingValue) {
             if (values[index] == value) {
                 return true;
             }
-
             index = next(index);
         }
-
         return false;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int size() {
         return size;
     }
@@ -185,6 +176,7 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }
@@ -192,6 +184,7 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void clear() {
         final long[] values = this.values;
         final int length = values.length;
@@ -204,6 +197,7 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean addAll(final Collection<? extends Long> coll) {
         return addAllCapture(coll);
     }
@@ -221,6 +215,7 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean containsAll(final Collection<?> coll) {
         return containsAllCapture(coll);
     }
@@ -260,28 +255,24 @@ public final class LongHashSet implements Set<Long> {
      */
     public LongHashSet difference(final LongHashSet collection) {
         checkNotNull(collection);
-
         LongHashSet difference = null;
-
         final LongIterator it = iterator();
-
         while (it.hasNext()) {
             final long value = it.nextValue();
             if (!collection.contains(value)) {
                 if (difference == null) {
                     difference = new LongHashSet(size, missingValue);
                 }
-
                 difference.add(value);
             }
         }
-
         return difference;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean removeAll(final Collection<?> coll) {
         return removeAllCapture(coll);
     }
@@ -297,19 +288,17 @@ public final class LongHashSet implements Set<Long> {
 
     private static <T> boolean conjunction(final Collection<T> collection, final Predicate<T> predicate) {
         checkNotNull(collection);
-
         boolean acc = false;
         for (final T t : collection) {
-            // Deliberate strict evaluation
             acc |= predicate.test(t);
         }
-
         return acc;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public LongIterator iterator() {
         iterator.reset();
         return iterator;
@@ -323,11 +312,9 @@ public final class LongHashSet implements Set<Long> {
         if (this.mask != obj.mask) {
             throw new IllegalArgumentException("Cannot copy object: masks not equal");
         }
-
         if (this.missingValue != obj.missingValue) {
             throw new IllegalArgumentException("Cannot copy object: missingValues not equal");
         }
-
         System.arraycopy(obj.values, 0, this.values, 0, this.values.length);
         this.size = obj.size;
     }
@@ -335,6 +322,7 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString() {
         final StringBuilder b = new StringBuilder(size() * 3 + 2);
         b.append('{');
@@ -352,6 +340,7 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object[] toArray() {
         final long[] values = this.values;
         final Object[] array = new Object[this.size];
@@ -367,6 +356,7 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] into) {
         checkNotNull(into);
@@ -391,34 +381,34 @@ public final class LongHashSet implements Set<Long> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean equals(final Object other) {
         if (other == this) {
             return true;
         }
-
         if (other instanceof LongHashSet) {
             final LongHashSet otherSet = (LongHashSet) other;
             return otherSet.missingValue == missingValue && otherSet.size() == size() && containsAll(otherSet);
         }
-
         return false;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int hashCode() {
         final LongIterator iterator = iterator();
         int total = 0;
         while (iterator.hasNext()) {
-            // Cast exists for substitutions
-            total += (long) iterator.nextValue();
+            total += iterator.nextValue();
         }
         return total;
     }
 
     // --- Unimplemented below here
 
+    @Override
     public boolean retainAll(final Collection<?> coll) {
         throw new UnsupportedOperationException("Not implemented");
     }
