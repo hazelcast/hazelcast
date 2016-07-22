@@ -39,6 +39,21 @@ import static org.junit.Assert.fail;
 public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
 
     @Test
+    public void testRetrieveResult_WhenNewNodesJoin() throws ExecutionException, InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+
+        DurableExecutorService executorService = instance1.getDurableExecutorService(randomString());
+        SleepingTask task = new SleepingTask(5);
+        DurableExecutorServiceFuture<Boolean> future = executorService.submit(task);
+        factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+        assertTrue(future.get());
+        Future<Boolean> retrievedFuture = executorService.retrieveAndDisposeResult(future.getTaskId());
+        assertTrue(retrievedFuture.get());
+    }
+
+    @Test
     public void testDisposeResult() throws Exception {
         String key = randomString();
         String name = randomString();
