@@ -206,7 +206,7 @@ public class ClientDurableExecutorServiceTest {
                 }
             }
         });
-        assertOpenEventually(latch, 10);
+        assertOpenEventually(latch);
         assertTrue(future.isDone());
         assertFalse(future.cancel(true));
         assertFalse(future.isCancelled());
