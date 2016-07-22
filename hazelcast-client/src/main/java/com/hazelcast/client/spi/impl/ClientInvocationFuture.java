@@ -16,123 +16,63 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 
-public class ClientInvocationFuture implements ICompletableFuture<ClientMessage> {
+public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
 
-    protected static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
-
-    protected final ClientMessage clientMessage;
-    protected volatile Object response;
-
-    private final ClientExecutionServiceImpl executionService;
-    private final List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
+    protected final ClientMessage request;
     private final ClientInvocation invocation;
 
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
-                                  ClientMessage clientMessage) {
+                                  ClientMessage request, ILogger logger) {
 
-        this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        this.clientMessage = clientMessage;
+        super(client.getClientExecutionService(), logger);
+        this.request = request;
         this.invocation = invocation;
     }
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
+    protected String invocationToString() {
+        return request.toString();
     }
 
     @Override
-    public boolean isCancelled() {
-        return false;
+    protected void onInterruptDetected() {
+        complete(new InterruptedException());
     }
 
     @Override
-    public boolean isDone() {
-        return response != null;
+    protected TimeoutException newTimeoutException(long timeout, TimeUnit unit) {
+        return new TimeoutException();
     }
 
     @Override
-    public ClientMessage get() throws InterruptedException, ExecutionException {
-        try {
-            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException exception) {
-            throw ExceptionUtil.rethrow(exception);
-        }
+    protected Throwable unwrap(Throwable throwable) {
+        return throwable;
     }
 
     @Override
-    public ClientMessage get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (response == null) {
-            long waitMillis = unit.toMillis(timeout);
-            if (waitMillis > 0) {
-                synchronized (this) {
-                    while (waitMillis > 0 && response == null) {
-                        long start = Clock.currentTimeMillis();
-                        this.wait(waitMillis);
-                        long elapsed = Clock.currentTimeMillis() - start;
-                        waitMillis -= elapsed;
-                    }
-                }
-            }
+    protected Object resolve(Object value) {
+        if (value instanceof Throwable) {
+            return new ExecutionException((Throwable) value);
         }
-        return resolveResponse();
+        return value;
     }
 
-    /**
-     * @param response coming from server
-     * @return true if response coming from server should be set
-     */
-    boolean shouldSetResponse(Object response) {
-        if (this.response != null) {
-            LOGGER.warning("The Future.set() method can only be called once. Request: " + clientMessage
-                    + ", current response: " + this.response + ", new response: " + response);
-            return false;
-        }
-        return true;
-    }
-
-    void setResponse(Object response) {
-        synchronized (this) {
-            if (!shouldSetResponse(response)) {
-                return;
-            }
-
-            this.response = response;
-            this.notifyAll();
-            for (ExecutionCallbackNode node : callbackNodeList) {
-                runAsynchronous(node.callback, node.executor);
-            }
-            callbackNodeList.clear();
-        }
-    }
-
-    private ClientMessage resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
+    @Override
+    public ClientMessage resolveAndThrow(Object response) throws ExecutionException, InterruptedException {
         if (response instanceof Throwable) {
             fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
                 throw (ExecutionException) response;
-            }
-            if (response instanceof TimeoutException) {
-                throw (TimeoutException) response;
             }
             if (response instanceof Error) {
                 throw (Error) response;
@@ -142,66 +82,11 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
             }
             throw new ExecutionException((Throwable) response);
         }
-        if (response == null) {
-            throw new TimeoutException();
-        }
         return (ClientMessage) response;
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<ClientMessage> callback) {
-        andThen(callback, executionService.getAsyncExecutor());
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<ClientMessage> callback, Executor executor) {
-        synchronized (this) {
-            if (response != null) {
-                runAsynchronous(callback, executor);
-                return;
-            }
-            callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
-        }
-    }
-
-    private void runAsynchronous(final ExecutionCallback callback, Executor executor) {
-        try {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        ClientMessage resp;
-                        try {
-                            resp = resolveResponse();
-                        } catch (Throwable t) {
-                            callback.onFailure(t);
-                            return;
-                        }
-                        callback.onResponse(resp);
-                    } catch (Throwable t) {
-                        LOGGER.severe("Failed to execute callback: " + callback
-                                + "! Request: " + clientMessage + ", response: " + response, t);
-                    }
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
-            callback.onFailure(new HazelcastClientNotActiveException(e.getMessage()));
-        }
     }
 
     public ClientInvocation getInvocation() {
         return invocation;
     }
-
-    static class ExecutionCallbackNode {
-
-        final ExecutionCallback callback;
-        final Executor executor;
-
-        ExecutionCallbackNode(ExecutionCallback callback, Executor executor) {
-            this.callback = callback;
-            this.executor = executor;
-        }
-    }
 }
+
