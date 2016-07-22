@@ -295,10 +295,13 @@ public class ReferenceObjects {
             new ServiceNotFoundException(aString)
     };
 
+    public static Throwable[] throwables_1_2 = {};
+
     public static Map<String, Throwable[]> throwables = new HashMap<String, Throwable[]>();
 
     static {
         throwables.put("1.0", throwables_1_0);
         throwables.put("1.1", throwables_1_1);
+        throwables.put("1.2", throwables_1_2);
     }
 }
