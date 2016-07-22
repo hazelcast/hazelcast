@@ -22,11 +22,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.RejectedExecutionException;
 
 public class DurableExecutorContainer {
 
@@ -58,13 +56,7 @@ public class DurableExecutorContainer {
     public int execute(Callable callable) {
         int sequence = ringBuffer.add(callable);
         TaskProcessor processor = new TaskProcessor(sequence, callable);
-        try {
-            executionService.executeDurable(name, processor);
-        } catch (RejectedExecutionException e) {
-            ringBuffer.remove(sequence);
-            logger.warning("While executing " + callable + " on Executor[" + name + "]", e);
-            throw ExceptionUtil.rethrow(e);
-        }
+        executionService.executeDurable(name, processor);
         return sequence;
     }
 
@@ -103,11 +95,7 @@ public class DurableExecutorContainer {
             Callable callable = (Callable) item;
             int sequence = iterator.getSequence();
             TaskProcessor processor = new TaskProcessor(sequence, callable);
-            try {
-                executionService.executeDurable(name, processor);
-            } catch (RejectedExecutionException e) {
-                logger.warning("While executing " + callable + " on Executor[" + name + "]", e);
-            }
+            executionService.executeDurable(name, processor);
         }
     }
 

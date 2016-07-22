@@ -53,6 +53,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -67,10 +68,9 @@ public class ClientDurableExecutorServiceTest {
     private static final String SINGLE_TASK = "singleTask";
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private HazelcastInstance client;
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+    private HazelcastInstance client;
 
     @Before
     public void setup() {
@@ -186,6 +186,30 @@ public class ClientDurableExecutorServiceTest {
         // assert that onFailure() has been called and not onResponse()
         onFailureLatch.await();
         assertFalse(onResponse.get());
+    }
+
+    public void testFullRingBuffer_WithExecutionCallback() throws InterruptedException {
+        String key = randomString();
+        DurableExecutorService service = client.getDurableExecutorService(SINGLE_TASK + randomString());
+        service.submitToKeyOwner(new SleepingTask(100), key);
+        DurableExecutorServiceFuture<String> future = service.submitToKeyOwner(new BasicTestCallable(), key);
+        final CountDownLatch latch = new CountDownLatch(1);
+        future.andThen(new ExecutionCallback<String>() {
+            @Override
+            public void onResponse(String response) {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (t.getCause() instanceof RejectedExecutionException) {
+                    latch.countDown();
+                }
+            }
+        });
+        assertOpenEventually(latch, 10);
+        assertTrue(future.isDone());
+        assertFalse(future.cancel(true));
+        assertFalse(future.isCancelled());
     }
 
     @Test
