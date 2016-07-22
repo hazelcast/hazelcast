@@ -143,6 +143,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             case RUBY_CLIENT:
                 type = ClientType.RUBY;
                 break;
+            case NODEJS_CLIENT:
+                type = ClientType.NODEJS;
+                break;
             case BINARY_CLIENT:
                 type = ClientType.OTHER;
                 break;
