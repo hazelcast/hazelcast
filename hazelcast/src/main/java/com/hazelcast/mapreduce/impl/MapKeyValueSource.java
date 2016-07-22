@@ -35,8 +35,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
-
 /**
  * This {@link com.hazelcast.mapreduce.KeyValueSource} implementation is used in
  * {@link com.hazelcast.mapreduce.KeyValueSource#fromMap(com.hazelcast.core.IMap)} to generate a default
@@ -81,7 +79,6 @@ public class MapKeyValueSource<K, V>
             return false;
         }
         RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, mapName);
-        checkInMemoryFormat(recordStore.getMapContainer().getMapConfig().getInMemoryFormat());
         iterator = recordStore.iterator();
         return true;
     }

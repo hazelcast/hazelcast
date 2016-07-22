@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
-import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
+import static com.hazelcast.map.impl.MapConfigValidator.checkNotNative;
 import static com.hazelcast.map.impl.MapConfigValidator.checkMapConfig;
 
 /**
@@ -47,7 +47,7 @@ class MapRemoteService implements RemoteService {
         checkMapConfig(mapConfig);
 
         if (mapConfig.isNearCacheEnabled()) {
-            checkInMemoryFormat(mapConfig.getNearCacheConfig().getInMemoryFormat());
+            checkNotNative(mapConfig.getNearCacheConfig().getInMemoryFormat());
 
             return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         } else {

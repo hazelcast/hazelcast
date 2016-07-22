@@ -40,7 +40,7 @@ public final class MapConfigValidator {
      *
      * @param inMemoryFormat supplied inMemoryFormat.
      */
-    public static void checkInMemoryFormat(InMemoryFormat inMemoryFormat) {
+    public static void checkNotNative(InMemoryFormat inMemoryFormat) {
         if (NATIVE == inMemoryFormat) {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only. "
                     + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
@@ -53,7 +53,7 @@ public final class MapConfigValidator {
      * @param mapConfig the mapConfig
      */
     public static void checkMapConfig(MapConfig mapConfig) {
-        checkInMemoryFormat(mapConfig.getInMemoryFormat());
+        checkNotNative(mapConfig.getInMemoryFormat());
 
         logIgnoredConfig(mapConfig);
     }

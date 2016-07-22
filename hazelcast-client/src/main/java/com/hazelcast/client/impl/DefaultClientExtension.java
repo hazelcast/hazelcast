@@ -42,7 +42,7 @@ import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ExceptionUtil;
 
-import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
+import static com.hazelcast.map.impl.MapConfigValidator.checkNotNative;
 
 public class DefaultClientExtension implements ClientExtension {
 
@@ -121,7 +121,7 @@ public class DefaultClientExtension implements ClientExtension {
             public ClientProxy create(String id) {
                 NearCacheConfig nearCacheConfig = client.getClientConfig().getNearCacheConfig(id);
                 if (nearCacheConfig != null) {
-                    checkInMemoryFormat(nearCacheConfig.getInMemoryFormat());
+                    checkNotNative(nearCacheConfig.getInMemoryFormat());
                     return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id);
                 } else {
                     return new ClientMapProxy(MapService.SERVICE_NAME, id);

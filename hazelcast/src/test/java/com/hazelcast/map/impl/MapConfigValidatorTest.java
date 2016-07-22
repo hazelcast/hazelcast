@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
+import static com.hazelcast.map.impl.MapConfigValidator.checkNotNative;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -34,17 +34,17 @@ public class MapConfigValidatorTest {
      * Not supported in open source version, so test is expected to throw exception.
      */
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkInMemoryFormat_NATIVE() {
-        checkInMemoryFormat(InMemoryFormat.NATIVE);
+    public void test_checkNotNative_NATIVE() {
+        checkNotNative(InMemoryFormat.NATIVE);
     }
 
     @Test
-    public void test_checkInMemoryFormat_OBJECT() {
-        checkInMemoryFormat(InMemoryFormat.OBJECT);
+    public void test_checkNotNative_OBJECT() {
+        checkNotNative(InMemoryFormat.OBJECT);
     }
 
     @Test
-    public void test_checkInMemoryFormat_BINARY() {
-        checkInMemoryFormat(InMemoryFormat.BINARY);
+    public void test_checkNotNative_BINARY() {
+        checkNotNative(InMemoryFormat.BINARY);
     }
 }
