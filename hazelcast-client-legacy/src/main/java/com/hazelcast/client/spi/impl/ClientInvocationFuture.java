@@ -176,7 +176,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
     }
 
     private V resolveException() throws ExecutionException, TimeoutException, InterruptedException {
-        ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+        ExceptionUtil.fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
         if (response instanceof ExecutionException) {
             throw (ExecutionException) response;
         }

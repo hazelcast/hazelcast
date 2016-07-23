@@ -87,7 +87,7 @@ public class ClientInvocation implements Runnable {
         long waitTimeResolved = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
         retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
 
-        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage);
+        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, LOGGER);
 
 
         int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
@@ -159,7 +159,7 @@ public class ClientInvocation implements Runnable {
         try {
             invoke();
         } catch (Throwable e) {
-            clientInvocationFuture.setResponse(e);
+            clientInvocationFuture.complete(e);
         }
     }
 
@@ -167,14 +167,14 @@ public class ClientInvocation implements Runnable {
         if (clientMessage == null) {
             throw new IllegalArgumentException("response can't be null");
         }
-        clientInvocationFuture.setResponse(clientMessage);
+        clientInvocationFuture.complete(clientMessage);
 
     }
 
     public void notifyException(Throwable exception) {
 
         if (!lifecycleService.isRunning()) {
-            clientInvocationFuture.setResponse(new HazelcastClientNotActiveException(exception.getMessage()));
+            clientInvocationFuture.complete(new HazelcastClientNotActiveException(exception.getMessage()));
             return;
         }
 
@@ -190,7 +190,7 @@ public class ClientInvocation implements Runnable {
                 }
             }
         }
-        clientInvocationFuture.setResponse(exception);
+        clientInvocationFuture.complete(exception);
     }
 
     private boolean handleRetry() {

@@ -21,11 +21,16 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.logging.Logger;
 import org.junit.Ignore;
 
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Ignore("Not a JUnit test")
@@ -94,8 +99,31 @@ public class SimpleMapTestFromClient {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
                         if (operation < GET_PERCENTAGE) {
-                            map.get(String.valueOf(key));
+                            final long timeout = 100;
+                            final double ERROR_ALOWANCE = 0.5;
+                            final double MULIPLIER = 1 + ERROR_ALOWANCE;
+                            long start = System.nanoTime();
+                            Future<Object> future = map.getAsync(String.valueOf(key));
+                            long end = -1;
+                            try {
+                                future.get(100, TimeUnit.MILLISECONDS);
+                                end = System.nanoTime();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            } catch (TimeoutException e) {
+                                end = System.nanoTime();
+                            }
                             stats.gets.incrementAndGet();
+                            if (-1 != end) {
+                                long diff = end - start;
+                                if (diff > timeout * 1000 * 1000 * MULIPLIER) {
+                                    Logger.getLogger(getClass()).warning(
+                                            "Timeout exceeded more than " + (ERROR_ALOWANCE * 100) + "%. Total time:" + (diff / (
+                                                    1000 * 1000)) + " milliseconds. Timeout:" + timeout + " milliseconds");
+                                }
+                            }
                         } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
                             map.put(String.valueOf(key), new byte[VALUE_SIZE]);
                             stats.puts.incrementAndGet();
