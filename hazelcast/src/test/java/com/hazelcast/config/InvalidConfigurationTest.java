@@ -42,7 +42,7 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenTwoJoinMethodEnabled() {
-        expectInvalid("TCP/IP and Multicast join can't be enabled at the same time");
+        expectInvalid();
         String xml = getDraftXml();
         Properties properties = getDraftProperties();
         properties.setProperty("multicast-enabled", "true");
@@ -57,8 +57,16 @@ public class InvalidConfigurationTest {
     }
 
     @Test
+    public void testWhenXmlValidAndPropertiesAreResolved() {
+        String xml = getDraftXml();
+        Properties properties = getDraftProperties();
+        buildConfig(xml, properties);
+    }
+
+
+    @Test
     public void testWhenInvalid_QueueBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("queue-backup-count", getInvalidBackupCount());
     }
 
@@ -69,7 +77,7 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_AsyncQueueBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("queue-async-backup-count", getInvalidBackupCount());
     }
 
@@ -85,19 +93,19 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInValid_QueueTTL() {
-        expectInvalid("'a' is not a valid value for 'integer'.");
+        expectInvalid();
         buildConfig("empty-queue-ttl", "a");
     }
 
     @Test
     public void testWhenInvalid_MapMemoryFormat() {
-        expectInvalid("Value 'binary' is not facet-valid with respect to enumeration");
+        expectInvalid();
         buildConfig("map-in-memory-format", "binary");
     }
 
     @Test
     public void testWhenInvalid_MapBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("map-backup-count", getInvalidBackupCount());
     }
 
@@ -108,13 +116,13 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_MapTTL() {
-        expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
+        expectInvalid();
         buildConfig("map-time-to-live-seconds", "-1");
     }
 
     @Test
     public void testWhenInvalid_MapMaxIdleSeconds() {
-        expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
+        expectInvalid();
         buildConfig("map-max-idle-seconds", "-1");
     }
 
@@ -125,13 +133,13 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_MapEvictionPercentage() {
-        expectInvalid(" Value '101' is not facet-valid with respect to maxInclusive '100'");
+        expectInvalid();
         buildConfig("map-eviction-percentage", "101");
     }
 
     @Test
     public void testWhenInvalid_MultiMapBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("multimap-backup-count", getInvalidBackupCount());
     }
 
@@ -152,13 +160,13 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalidValid_MultiMapCollectionType() {
-        expectInvalid("Value 'set' is not facet-valid with respect to enumeration");
+        expectInvalid();
         buildConfig("multimap-value-collection-type", "set");
     }
 
     @Test
     public void testWhenInvalid_ListBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("list-backup-count", getInvalidBackupCount());
     }
 
@@ -169,7 +177,7 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_SetBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("list-backup-count", getInvalidBackupCount());
     }
 
@@ -180,13 +188,13 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_SemaphoreInitialPermits() {
-        expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
+        expectInvalid();
         buildConfig("semaphore-initial-permits", "-1");
     }
 
     @Test
     public void testWhenInvalid_SemaphoreBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("semaphore-backup-count", getInvalidBackupCount());
     }
 
@@ -197,7 +205,7 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_AsyncSemaphoreBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("semaphore-async-backup-count", getInvalidBackupCount());
     }
 
@@ -208,7 +216,7 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalidTcpIpConfiguration() {
-        expectInvalid("Duplicate required-member definition found in XML configuration.");
+        expectInvalid();
         buildConfig(HAZELCAST_START_TAG +
                 "<network\n>" +
                 "<join>\n" +
@@ -262,7 +270,7 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_CacheAsyncBackupCount() {
-        expectInvalidBackupCount();
+        expectInvalid();
         buildConfig("cache-async-backup-count", getInvalidBackupCount());
     }
 
@@ -278,43 +286,43 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_CacheInMemoryFormat() {
-        expectInvalid("Value 'binaryyy' is not facet-valid with respect to enumeration");
+        expectInvalid();
         buildConfig("cache-in-memory-format", "binaryyy");
     }
 
     @Test
     public void testWhenInvalid_EmptyDurationTime() {
-        expectInvalid("'' is not a valid value for 'integer'.");
+        expectInvalid();
         buildConfig("cache-expiry-policy-duration-amount", "");
     }
 
     @Test
     public void testWhenInvalid_InvalidDurationTime() {
-        expectInvalid("'asd' is not a valid value for 'integer'.");
+        expectInvalid();
         buildConfig("cache-expiry-policy-duration-amount", "asd");
     }
 
     @Test
     public void testWhenInvalid_NegativeDurationTime() {
-        expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
+        expectInvalid();
         buildConfig("cache-expiry-policy-duration-amount", "-1");
     }
 
     @Test
     public void testWhenInvalid_EmptyTimeUnit() {
-        expectInvalid("Value '' is not facet-valid with respect to pattern '\\S.*' for type 'time-unit'.");
+        expectInvalid();
         buildConfig("cache-expiry-policy-time-unit", "");
     }
 
     @Test
     public void testWhenInvalid_InvalidTimeUnit() {
-        expectInvalid(rule, "Value 'asd' is not facet-valid with respect to enumeration");
+        expectInvalid();
         buildConfig("cache-expiry-policy-time-unit", "asd");
     }
 
     @Test
     public void testWhenInvalid_CacheEvictionSize() {
-        expectInvalid("Value '-100' is not facet-valid with respect to minInclusive '0'");
+        expectInvalid();
         buildConfig("cache-eviction-size", "-100");
     }
 
@@ -359,16 +367,8 @@ public class InvalidConfigurationTest {
         return buildConfig(xml, properties);
     }
 
-    private void expectInvalidBackupCount() {
-        expectInvalid("is not facet-valid with respect to maxInclusive '6' for type 'backup-count'");
-    }
-
-    private void expectInvalid(String message) {
-        expectInvalid(rule, message);
-    }
-
     private void expectInvalid() {
-        expectInvalid(rule, null);
+        expectInvalid(rule);
     }
 
     private static Config buildConfig(String xml, Properties properties) {
@@ -378,11 +378,8 @@ public class InvalidConfigurationTest {
         return configBuilder.build();
     }
 
-    static void expectInvalid(ExpectedException rule, String message) {
+    static void expectInvalid(ExpectedException rule) {
         rule.expect(InvalidConfigurationException.class);
-        if (message != null) {
-            rule.expectMessage(message);
-        }
     }
 
     private static String getValidBackupCount() {

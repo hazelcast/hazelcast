@@ -49,7 +49,7 @@ public class XmlConfigImportVariableReplacementTest {
                 + "        <import resource=\"\"/>\n"
                 + "   </network>"
                 + HAZELCAST_END_TAG;
-        expectInvalid("<import> element can appear only in the top level of the XML");
+        expectInvalid();
         buildConfig(xml, null);
     }
 
@@ -59,7 +59,7 @@ public class XmlConfigImportVariableReplacementTest {
                 + "   <hazelcast>"
                 + "   </hazelcast>"
                 + HAZELCAST_END_TAG;
-        expectInvalid("Invalid content was found starting with element");
+        expectInvalid();
         buildConfig(xml, null);
     }
 
@@ -149,7 +149,7 @@ public class XmlConfigImportVariableReplacementTest {
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
-        expectInvalid("Cyclic loading of resource");
+        expectInvalid();
         buildConfig(config1Xml, null);
     }
 
@@ -167,7 +167,7 @@ public class XmlConfigImportVariableReplacementTest {
         writeStringToStreamAndClose(new FileOutputStream(config1), config1Xml);
         writeStringToStreamAndClose(new FileOutputStream(config2), config2Xml);
         writeStringToStreamAndClose(new FileOutputStream(config3), config3Xml);
-        expectInvalid("Cyclic loading of resource");
+        expectInvalid();
         buildConfig(config1Xml, null);
     }
 
@@ -179,7 +179,7 @@ public class XmlConfigImportVariableReplacementTest {
                 + "    <import resource='file:///" + config1.getAbsolutePath() + "'/>\n"
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os1, "");
-        expectInvalid("Premature end of file.");
+        expectInvalid();
         buildConfig(config1Xml, null);
     }
 
@@ -188,13 +188,13 @@ public class XmlConfigImportVariableReplacementTest {
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"\"/>\n"
                 + HAZELCAST_END_TAG;
-        expectInvalid("Failed to load resource:");
+        expectInvalid();
         buildConfig(xml, null);
     }
 
     @Test
     public void testImportNotExistingResourceThrowsException() {
-        expectInvalid("Failed to load resource: notexisting.xml");
+        expectInvalid();
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"notexisting.xml\"/>\n"
                 + HAZELCAST_END_TAG;
@@ -377,7 +377,7 @@ public class XmlConfigImportVariableReplacementTest {
     }
 
     private void expectDuplicateElementError(String elName) {
-        expectInvalid("Duplicate '" + elName + "' definition found in XML configuration.");
+        expectInvalid();
     }
 
     @Test
@@ -414,8 +414,8 @@ public class XmlConfigImportVariableReplacementTest {
         assertEquals(config.getProperty("prop2"), "value2");
     }
 
-    private void expectInvalid(String message) {
-        InvalidConfigurationTest.expectInvalid(rule, message);
+    private void expectInvalid() {
+        InvalidConfigurationTest.expectInvalid(rule);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
