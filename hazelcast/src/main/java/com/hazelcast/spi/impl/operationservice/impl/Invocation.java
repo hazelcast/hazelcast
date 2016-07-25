@@ -560,11 +560,11 @@ public abstract class Invocation implements OperationResponseHandler {
         // so if the callTimeout is five minutes, and the heartbeatTimeout is one minute, then the operation is allowed
         // to execute for at least six minutes before it is timing out
         long lastHeartbeatMillis = this.lastHeartbeatMillis;
-        long heartBeatExpirationTimeMillis = lastHeartbeatMillis == 0
+        long heartbeatExpirationTimeMillis = lastHeartbeatMillis == 0
                 ? op.getInvocationTime() + callTimeoutMillis + heartbeatTimeoutMillis
                 : lastHeartbeatMillis + heartbeatTimeoutMillis;
 
-        if (heartBeatExpirationTimeMillis > Clock.currentTimeMillis()) {
+        if (heartbeatExpirationTimeMillis > Clock.currentTimeMillis()) {
             return NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
         }
 

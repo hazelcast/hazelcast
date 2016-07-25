@@ -54,10 +54,10 @@ public class ClientHeartbeatMonitor implements Runnable {
         this.clientEndpointManager = endpointManager;
         this.clientEngine = clientEngine;
         this.executionService = executionService;
-        this.heartbeatTimeoutSeconds = getHeartBeatTimeout(hazelcastProperties);
+        this.heartbeatTimeoutSeconds = getHeartbeatTimeout(hazelcastProperties);
     }
 
-    private long getHeartBeatTimeout(HazelcastProperties hazelcastProperties) {
+    private long getHeartbeatTimeout(HazelcastProperties hazelcastProperties) {
         long configuredTimeout = hazelcastProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
         if (configuredTimeout > 0) {
             return configuredTimeout;

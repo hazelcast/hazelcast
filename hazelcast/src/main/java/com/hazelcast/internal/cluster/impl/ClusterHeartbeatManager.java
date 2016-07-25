@@ -82,8 +82,8 @@ public class ClusterHeartbeatManager {
     private final int icmpTtl;
     private final int icmpTimeoutMillis;
 
-    @Probe(name = "lastHeartBeat")
-    private volatile long lastHeartBeat;
+    @Probe(name = "lastHeartbeat")
+    private volatile long lastHeartbeat;
     private volatile long lastClusterTimeDiff;
 
     public ClusterHeartbeatManager(Node node, ClusterServiceImpl clusterService) {
@@ -97,7 +97,7 @@ public class ClusterHeartbeatManager {
         maxNoHeartbeatMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
         maxNoMasterConfirmationMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS);
 
-        heartbeatIntervalMillis = getHeartBeatInterval(hazelcastProperties);
+        heartbeatIntervalMillis = getHeartbeatInterval(hazelcastProperties);
         pingIntervalMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
 
         icmpEnabled = hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED);
@@ -105,7 +105,7 @@ public class ClusterHeartbeatManager {
         icmpTimeoutMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
     }
 
-    private static long getHeartBeatInterval(HazelcastProperties hazelcastProperties) {
+    private static long getHeartbeatInterval(HazelcastProperties hazelcastProperties) {
         long heartbeatInterval = hazelcastProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
     }
@@ -116,7 +116,7 @@ public class ClusterHeartbeatManager {
 
         executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
-                heartBeat();
+                heartbeat();
             }
         }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
 
@@ -174,7 +174,7 @@ public class ClusterHeartbeatManager {
         }
     }
 
-    void heartBeat() {
+    void heartbeat() {
         if (!node.joined()) {
             return;
         }
@@ -183,22 +183,22 @@ public class ClusterHeartbeatManager {
 
         final long clusterTime = clusterClock.getClusterTime();
         if (node.isMaster()) {
-            heartBeatWhenMaster(clusterTime);
+            heartbeatWhenMaster(clusterTime);
         } else {
-            heartBeatWhenSlave(clusterTime);
+            heartbeatWhenSlave(clusterTime);
         }
     }
 
     private void checkClockDrift(long intervalMillis) {
         long now = Clock.currentTimeMillis();
         // compensate for any abrupt jumps forward in the system clock
-        if (lastHeartBeat != 0L) {
-            long clockJump = now - lastHeartBeat - intervalMillis;
+        if (lastHeartbeat != 0L) {
+            long clockJump = now - lastHeartbeat - intervalMillis;
             long absoluteClockJump = Math.abs(clockJump);
 
             if (absoluteClockJump > CLOCK_JUMP_THRESHOLD) {
                 logger.info(format("System clock apparently jumped from %s to %s since last heartbeat (%+d ms)",
-                        timeToString(lastHeartBeat), timeToString(now), clockJump));
+                        timeToString(lastHeartbeat), timeToString(now), clockJump));
 
                 // We only set cluster clock, if clock jumps more than threshold.
                 // If the last cluster-time diff we've seen is significantly different than what we read now,
@@ -222,7 +222,7 @@ public class ClusterHeartbeatManager {
             }
         }
         lastClusterTimeDiff = clusterClock.getClusterTimeDiff();
-        lastHeartBeat = now;
+        lastHeartbeat = now;
     }
 
     /**
@@ -233,7 +233,7 @@ public class ClusterHeartbeatManager {
      * <p></p>
      * This method is only called on master member.
      */
-    private void heartBeatWhenMaster(long now) {
+    private void heartbeatWhenMaster(long now) {
         Collection<MemberImpl> members = clusterService.getMemberImpls();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
@@ -300,7 +300,7 @@ public class ClusterHeartbeatManager {
      * <p></p>
      * This method is called on NON-master members.
      */
-    private void heartBeatWhenSlave(long now) {
+    private void heartbeatWhenSlave(long now) {
         Collection<MemberImpl> members = clusterService.getMemberImpls();
 
         for (MemberImpl member : members) {
