@@ -22,9 +22,13 @@ import com.hazelcast.spi.annotation.Beta;
  * A {@link IAtomicReference} that exposes its operations using a {@link ICompletableFuture}
  * so it can be used in the reactive programming model approach.
  *
+ * Instead of this interface, use the equivalent async methods in the public {@link IAtomicReference} interface.
+ * This interface has been deprecated and will be removed in a future version.
+ *
  * @since 3.2
  */
 @Beta
+@Deprecated
 public interface AsyncAtomicReference<E> extends IAtomicReference<E> {
 
     /**

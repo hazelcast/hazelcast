@@ -50,11 +50,11 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public void alter(IFunction<E, E> function) {
-        asyncAlter(function).join();
+        alterAsync(function).join();
     }
 
     @Override
-    public InternalCompletableFuture<Void> asyncAlter(IFunction<E, E> function) {
+    public InternalCompletableFuture<Void> alterAsync(IFunction<E, E> function) {
         isNotNull(function, "function");
 
         Operation operation = new AlterOperation(name, toData(function))
@@ -63,12 +63,17 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
-    public E alterAndGet(IFunction<E, E> function) {
-        return asyncAlterAndGet(function).join();
+    public InternalCompletableFuture<Void> asyncAlter(IFunction<E, E> function) {
+        return alterAsync(function);
     }
 
     @Override
-    public InternalCompletableFuture<E> asyncAlterAndGet(IFunction<E, E> function) {
+    public E alterAndGet(IFunction<E, E> function) {
+        return alterAndGetAsync(function).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<E> alterAndGetAsync(IFunction<E, E> function) {
         isNotNull(function, "function");
 
         Operation operation = new AlterAndGetOperation(name, toData(function))
@@ -77,12 +82,17 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
-    public E getAndAlter(IFunction<E, E> function) {
-        return asyncGetAndAlter(function).join();
+    public InternalCompletableFuture<E> asyncAlterAndGet(IFunction<E, E> function) {
+        return alterAndGetAsync(function);
     }
 
     @Override
-    public InternalCompletableFuture<E> asyncGetAndAlter(IFunction<E, E> function) {
+    public E getAndAlter(IFunction<E, E> function) {
+        return getAndAlterAsync(function).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<E> getAndAlterAsync(IFunction<E, E> function) {
         isNotNull(function, "function");
 
         Operation operation = new GetAndAlterOperation(name, toData(function))
@@ -91,12 +101,17 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
-    public <R> R apply(IFunction<E, R> function) {
-        return asyncApply(function).join();
+    public InternalCompletableFuture<E> asyncGetAndAlter(IFunction<E, E> function) {
+        return getAndAlterAsync(function);
     }
 
     @Override
-    public <R> InternalCompletableFuture<R> asyncApply(IFunction<E, R> function) {
+    public <R> R apply(IFunction<E, R> function) {
+        return applyAsync(function).join();
+    }
+
+    @Override
+    public <R> InternalCompletableFuture<R> applyAsync(IFunction<E, R> function) {
         isNotNull(function, "function");
 
         Operation operation = new ApplyOperation(name, toData(function))
@@ -105,54 +120,86 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
+    public <R> InternalCompletableFuture<R> asyncApply(IFunction<E, R> function) {
+        return applyAsync(function);
+    }
+
+    @Override
     public void clear() {
-        asyncClear().join();
+        clearAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> clearAsync() {
+        return setAsync(null);
     }
 
     @Override
     public InternalCompletableFuture<Void> asyncClear() {
-        return asyncSet(null);
+        return clearAsync();
     }
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        return asyncCompareAndSet(expect, update).join();
+        return compareAndSetAsync(expect, update).join();
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> asyncCompareAndSet(E expect, E update) {
+    public InternalCompletableFuture<Boolean> compareAndSetAsync(E expect, E update) {
         Operation operation = new CompareAndSetOperation(name, toData(expect), toData(update))
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
 
     @Override
-    public E get() {
-        return asyncGet().join();
+    public InternalCompletableFuture<Boolean> asyncCompareAndSet(E expect, E update) {
+        return compareAndSetAsync(expect, update);
     }
 
     @Override
-    public InternalCompletableFuture<E> asyncGet() {
+    public E get() {
+        return getAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<E> getAsync() {
         Operation operation = new GetOperation(name)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
 
     @Override
-    public boolean contains(E expected) {
-        return asyncContains(expected).join();
+    public InternalCompletableFuture<E> asyncGet() {
+        return getAsync();
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> asyncContains(E value) {
-        Operation operation = new ContainsOperation(name, toData(value))
+    public boolean contains(E expected) {
+        return containsAsync(expected).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> containsAsync(E expected) {
+        Operation operation = new ContainsOperation(name, toData(expected))
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
 
     @Override
+    public InternalCompletableFuture<Boolean> asyncContains(E value) {
+        return containsAsync(value);
+    }
+
+    @Override
     public void set(E newValue) {
-        asyncSet(newValue).join();
+        setAsync(newValue).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> setAsync(E newValue) {
+        Operation operation = new SetOperation(name, toData(newValue))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -164,38 +211,53 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public E getAndSet(E newValue) {
-        return asyncGetAndSet(newValue).join();
+        return getAndSetAsync(newValue).join();
     }
 
     @Override
-    public InternalCompletableFuture<E> asyncGetAndSet(E newValue) {
+    public InternalCompletableFuture<E> getAndSetAsync(E newValue) {
         Operation operation = new GetAndSetOperation(name, toData(newValue))
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
 
     @Override
-    public E setAndGet(E update) {
-        return asyncSetAndGet(update).join();
+    public InternalCompletableFuture<E> asyncGetAndSet(E newValue) {
+        return getAndSetAsync(newValue);
     }
 
     @Override
-    public InternalCompletableFuture<E> asyncSetAndGet(E update) {
+    public E setAndGet(E update) {
+        return setAndGetAsync(update).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<E> setAndGetAsync(E update) {
         Operation operation = new SetAndGetOperation(name, toData(update))
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
 
     @Override
+    public InternalCompletableFuture<E> asyncSetAndGet(E update) {
+        return setAndGetAsync(update);
+    }
+
+    @Override
     public boolean isNull() {
-        return asyncIsNull().join();
+        return isNullAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> isNullAsync() {
+        Operation operation = new IsNullOperation(name)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Boolean> asyncIsNull() {
-        Operation operation = new IsNullOperation(name)
-                .setPartitionId(partitionId);
-        return invokeOnPartition(operation);
+        return isNullAsync();
     }
 
     @Override
