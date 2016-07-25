@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
-import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartBeat;
+import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartbeat;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
@@ -240,17 +240,18 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     }
 
     @Override
-    public void heartBeatStarted(Connection connection) {
+    public void heartbeatResumed(Connection connection) {
     }
 
     @Override
-    public void heartBeatStopped(Connection connection) {
+    public void heartbeatStopped(Connection connection) {
         if (connection.getEndPoint().equals(ownerConnectionAddress)) {
             ClientConnection clientConnection = (ClientConnection) connection;
-            Exception ex = newTargetDisconnectedExceptionCausedByHeartBeat(
+            Exception ex = newTargetDisconnectedExceptionCausedByHeartbeat(
                     clientConnection.getRemoteEndpoint(),
                     clientConnection.toString(),
-                    clientConnection.getLastHeartbeatMillis(),
+                    clientConnection.getLastHeartbeatRequestedMillis(),
+                    clientConnection.getLastHeartbeatReceivedMillis(),
                     clientConnection.lastReadTimeMillis(),
                     clientConnection.getCloseCause());
             connectionManager.destroyConnection(connection, null, ex);

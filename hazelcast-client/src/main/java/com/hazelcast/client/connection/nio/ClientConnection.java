@@ -32,6 +32,7 @@ import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -65,9 +66,10 @@ public class ClientConnection implements Connection {
     private final HazelcastClientInstanceImpl client;
 
     private volatile Address remoteEndpoint;
-    private volatile boolean heartBeating = true;
+    private volatile boolean isHeartBeating = true;
     // the time in millis the last heartbeat was received. 0 indicates that no heartbeat has ever been received.
-    private volatile long lastHeartbeatMillis;
+    private volatile long lastHeartbeatRequestedMillis;
+    private volatile long lastHeartbeatReceivedMillis;
     private boolean isAuthenticatedAsOwner;
     @Probe(level = ProbeLevel.DEBUG)
     private volatile long closedTime;
@@ -269,21 +271,32 @@ public class ClientConnection implements Connection {
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "incremented in single thread")
-    void heartBeatingFailed() {
-        heartBeating = false;
+    void onHeartbeatFailed() {
+        isHeartBeating = false;
     }
 
-    void heartBeatingSucceed() {
-        heartBeating = true;
-        lastHeartbeatMillis = System.currentTimeMillis();
+    void onHeartbeatResumed() {
+        isHeartBeating = true;
     }
 
-    public long getLastHeartbeatMillis() {
-        return lastHeartbeatMillis;
+    void onHeartbeatReceived() {
+        lastHeartbeatReceivedMillis = Clock.currentTimeMillis();
+    }
+
+    void onHeartbeatRequested() {
+        lastHeartbeatRequestedMillis = Clock.currentTimeMillis();
+    }
+
+    public long getLastHeartbeatRequestedMillis() {
+        return lastHeartbeatRequestedMillis;
+    }
+
+    public long getLastHeartbeatReceivedMillis() {
+        return lastHeartbeatReceivedMillis;
     }
 
     public boolean isHeartBeating() {
-        return live.get() && heartBeating;
+        return live.get() && isHeartBeating;
     }
 
     public boolean isAuthenticatedAsOwner() {
@@ -327,7 +340,8 @@ public class ClientConnection implements Connection {
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())
                 + ", closedTime=" + timeToStringFriendly(closedTime)
-                + ", lastHeartbeat=" + timeToStringFriendly(lastHeartbeatMillis)
+                + ", lastHeartbeatRequested=" + timeToStringFriendly(lastHeartbeatRequestedMillis)
+                + ", lastHeartbeatReceived=" + timeToStringFriendly(lastHeartbeatReceivedMillis)
                 + '}';
     }
 

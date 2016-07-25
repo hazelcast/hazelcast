@@ -24,8 +24,15 @@ import com.hazelcast.nio.Connection;
 
 public interface ConnectionHeartbeatListener {
 
-    void heartBeatStarted(Connection connection);
+    /**
+     * This event will be fired when the heartbeat is resumed for a connection to a member.
+     */
+    void heartbeatResumed(Connection connection);
 
-    void heartBeatStopped(Connection connection);
+    /**
+     * This event will be fired when no heartbeat response is received for
+     * {@link com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT} milliseconds from the member.
+     */
+    void heartbeatStopped(Connection connection);
 }
 

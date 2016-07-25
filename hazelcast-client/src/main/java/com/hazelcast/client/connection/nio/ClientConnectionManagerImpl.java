@@ -95,8 +95,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     };
     private final ILogger logger;
     private final int connectionTimeout;
-    private final long heartBeatInterval;
-    private final long heartBeatTimeout;
+    private final long heartbeatInterval;
+    private final long heartbeatTimeout;
 
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
@@ -129,10 +129,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         HazelcastProperties hazelcastProperties = client.getProperties();
         long timeout = hazelcastProperties.getMillis(HEARTBEAT_TIMEOUT);
-        this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
+        this.heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
 
         long interval = hazelcastProperties.getMillis(HEARTBEAT_INTERVAL);
-        heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
+        heartbeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
 
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         loggingService = client.getLoggingService();
@@ -183,8 +183,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         alive = true;
         startSelectors();
-        HeartBeat heartBeat = new HeartBeat();
-        executionService.scheduleWithRepetition(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
+        Heartbeat heartbeat = new Heartbeat();
+        executionService.scheduleWithRepetition(heartbeat, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
     }
 
     protected void startSelectors() {
@@ -394,7 +394,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    class HeartBeat implements Runnable {
+    class Heartbeat implements Runnable {
 
         @Override
         public void run() {
@@ -402,38 +402,49 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return;
             }
             final long now = Clock.currentTimeMillis();
-            for (ClientConnection connection : connections.values()) {
-                if (now - connection.lastReadTimeMillis() > heartBeatTimeout) {
+            for (final ClientConnection connection : connections.values()) {
+                if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
                     if (connection.isHeartBeating()) {
                         logger.warning("Heartbeat failed to connection : " + connection);
-                        connection.heartBeatingFailed();
-                        fireHeartBeatStopped(connection);
+                        connection.onHeartbeatFailed();
+                        fireHeartbeatStopped(connection);
                     }
                 }
-                if (now - connection.lastReadTimeMillis() > heartBeatInterval) {
+                if (now - connection.lastReadTimeMillis() > heartbeatInterval) {
                     ClientMessage request = ClientPingCodec.encodeRequest();
                     ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
                     clientInvocation.setBypassHeartbeatCheck(true);
-                    clientInvocation.invokeUrgent();
+                    connection.onHeartbeatRequested();
+                    clientInvocation.invokeUrgent().andThen(new ExecutionCallback<ClientMessage>() {
+                        @Override
+                        public void onResponse(ClientMessage response) {
+                            connection.onHeartbeatReceived();
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            logger.warning("Error receiving heartbeat for connection: " + connection, t);
+                        }
+                    });
                 } else {
                     if (!connection.isHeartBeating()) {
                         logger.warning("Heartbeat is back to healthy for connection : " + connection);
-                        connection.heartBeatingSucceed();
-                        fireHeartBeatStarted(connection);
+                        connection.onHeartbeatResumed();
+                        fireHeartbeatResumed(connection);
                     }
                 }
             }
         }
 
-        private void fireHeartBeatStarted(ClientConnection connection) {
+        private void fireHeartbeatResumed(ClientConnection connection) {
             for (ConnectionHeartbeatListener heartbeatListener : heartbeatListeners) {
-                heartbeatListener.heartBeatStarted(connection);
+                heartbeatListener.heartbeatResumed(connection);
             }
         }
 
-        private void fireHeartBeatStopped(ClientConnection connection) {
+        private void fireHeartbeatStopped(ClientConnection connection) {
             for (ConnectionHeartbeatListener heartbeatListener : heartbeatListeners) {
-                heartbeatListener.heartBeatStopped(connection);
+                heartbeatListener.heartbeatStopped(connection);
             }
         }
 
