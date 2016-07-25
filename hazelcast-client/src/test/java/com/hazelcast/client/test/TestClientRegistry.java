@@ -19,6 +19,7 @@ package com.hazelcast.client.test;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
@@ -93,7 +94,7 @@ public class TestClientRegistry {
                     throw e;
                 }
             } else if (discoveryService != null) {
-                addressTranslator = new DiscoveryAddressTranslator(discoveryService, client.getClientProperties().getBoolean(GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
+                addressTranslator = new DiscoveryAddressTranslator(discoveryService, client.getClientProperties().getBoolean(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
             } else {
                 addressTranslator = new DefaultAddressTranslator();
             }
