@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast-client xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
+                                      https://hazelcast.com/schema/client-config/hazelcast-client-config-3.6.xsd"
+                  xmlns="http://www.hazelcast.com/schema/client-config">
+
+    <properties>
+        <property name="hazelcast.logging.type">log4j</property>
+        <property name="hazelcast.discovery.enabled">true</property>
+    </properties>
+
+    <network>
+        <aws enabled="false"/>
+
+        <discovery-strategies>
+            <discovery-strategy enabled="true" class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy">
+                <properties>
+                    <property name="provider">ec2</property>
+                    <property name="identity"></property>
+                    <property name="credential"></property>
+                    <property name="regions">us-east-1</property>
+                    <property name="tag-keys">key</property>
+                    <property name="tag-values">value</property>
+                </properties>
+            </discovery-strategy>
+        </discovery-strategies>
+
+
+        <connection-attempt-limit>10</connection-attempt-limit>
+        <connection-attempt-period>20000</connection-attempt-period>
+
+    </network>
+
+</hazelcast-client>
