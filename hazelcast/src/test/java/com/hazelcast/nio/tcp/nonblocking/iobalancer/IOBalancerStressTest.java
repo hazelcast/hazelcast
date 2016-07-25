@@ -71,8 +71,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = instance1.getMap(randomMapName());
 
-        for (int i = 0; map.size() < 10000; i++) {
-            map.put(i % 1000, i);
+        for (int i = 0; i < 10000; i++) {
+            map.put(i, i);
         }
 
         assertBalanced(instance1);
