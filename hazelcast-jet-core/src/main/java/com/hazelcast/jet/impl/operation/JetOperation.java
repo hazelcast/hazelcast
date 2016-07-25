@@ -74,11 +74,8 @@ public abstract class JetOperation extends Operation {
     protected void validateJobContext(JobContext jobContext) {
         Address jobOwner = getJobOwner();
         if (!jobContext.validateOwner(jobOwner)) {
-            throw new JetException(
-                    "Invalid job owner for job name ->"
-                            + name
-                            + ", job owner -> " + jobOwner
-                            + ", current owner -> " + jobContext.getOwner()
+            throw new JetException("Invalid job owner for job name ->" + name
+                    + ", job owner -> " + jobOwner + ", current owner -> " + jobContext.getOwner()
             );
         }
     }
@@ -93,15 +90,13 @@ public abstract class JetOperation extends Operation {
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(name);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in)
-            throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         name = in.readObject();
     }

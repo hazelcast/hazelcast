@@ -17,8 +17,7 @@
 package com.hazelcast.jet.executor;
 
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.io.DataType;
-import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.io.SerializationOptimizer;
 
 import java.io.Serializable;
 
@@ -57,14 +56,7 @@ public interface TaskContext {
     <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator);
 
     /**
-     * Register dataType for serialization purposes
-     *
-     * @param dataType corresponding dataType
-     */
-    void registerDataType(DataType dataType);
-
-    /**
      * @return the IO context
      */
-    IOContext getIoContext();
+    SerializationOptimizer getSerializationOptimizer();
 }

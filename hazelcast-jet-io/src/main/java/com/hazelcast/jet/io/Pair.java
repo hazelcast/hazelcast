@@ -85,6 +85,6 @@ public class Pair<K, V> {
     }
 
     private static Object error(String msg) {
-        throw new JetIoException(msg);
+        throw new IllegalArgumentException(msg);
     }
 }

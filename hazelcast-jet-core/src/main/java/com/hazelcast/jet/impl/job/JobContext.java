@@ -24,7 +24,6 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.DiscoveryService;
-import com.hazelcast.jet.impl.data.io.JetTupleDataType;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.job.localization.LocalizationStorage;
@@ -33,8 +32,6 @@ import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachineRequestProcessor;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.IOContextImpl;
 import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -69,8 +66,6 @@ public class JobContext {
     private final com.hazelcast.util.IConcurrentMap<String, List<ContainerListener>> containerListeners =
             new ConcurrentReferenceHashMap<String, List<ContainerListener>>();
 
-    private final IOContext ioContext;
-
     private final Address localJetAddress;
 
     private final ExecutorContext executorContext;
@@ -81,48 +76,28 @@ public class JobContext {
 
     private final List<ConcurrentMap<String, Accumulator>> accumulators;
 
-    public JobContext(String name,
-                      NodeEngine nodeEngine,
-                      Address localJetAddress,
-                      JobConfig jobConfig,
-                      JobService jobService) {
+    public JobContext(
+            String name, NodeEngine nodeEngine, Address localJetAddress, JobConfig jobConfig, JobService jobService
+    ) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.localJetAddress = localJetAddress;
         this.owner = new AtomicReference<>();
         this.containerIdGenerator = new AtomicInteger(0);
-
         this.jobConfig = jobConfig;
-
-        this.executorContext = new ExecutorContext(
-                this.name,
-                this.jobConfig,
-                nodeEngine,
-                jobService.getNetworkExecutor(),
-                jobService.getProcessingExecutor()
-
-        );
-
+        this.executorContext = new ExecutorContext(this.name, this.jobConfig, nodeEngine,
+                jobService.getNetworkExecutor(), jobService.getProcessingExecutor());
         this.localizationStorage = LocalizationStorageFactory.getLocalizationStorage(this, name);
-
-        this.jobStateMachine = STATE_MACHINE_FACTORY.newStateMachine(
-                name,
-                new JobStateMachineRequestProcessor(this),
-                nodeEngine,
-                this
-        );
-
+        this.jobStateMachine = STATE_MACHINE_FACTORY.newStateMachine(name, new JobStateMachineRequestProcessor(this),
+                nodeEngine, this);
         this.hzToAddressMapping = new HashMap<>();
         this.accumulators = new CopyOnWriteArrayList<>();
         this.jobManager = createApplicationMaster(nodeEngine);
-        this.ioContext = new IOContextImpl(JetTupleDataType.INSTANCE);
     }
 
     private JobManager createApplicationMaster(NodeEngine nodeEngine) {
-        return new JobManager(
-                this,
-                new DiscoveryService(this, nodeEngine, socketWriters, socketReaders, hzToAddressMapping)
-        );
+        return new JobManager(this,
+                new DiscoveryService(this, nodeEngine, socketWriters, socketReaders, hzToAddressMapping));
     }
 
     /**
@@ -304,14 +279,11 @@ public class JobContext {
     @SuppressWarnings("unchecked")
     public Map<String, Accumulator> getAccumulators() {
         Map<String, Accumulator> map = new HashMap<>();
-
         for (ConcurrentMap<String, Accumulator> concurrentMap : accumulators) {
             for (Map.Entry<String, Accumulator> entry : concurrentMap.entrySet()) {
                 String key = entry.getKey();
                 Accumulator accumulator = entry.getValue();
-
                 Accumulator collector = map.get(key);
-
                 if (collector == null) {
                     map.put(key, accumulator);
                 } else {
@@ -319,7 +291,6 @@ public class JobContext {
                 }
             }
         }
-
         return map;
     }
 
@@ -328,12 +299,5 @@ public class JobContext {
      */
     public void registerAccumulators(ConcurrentMap<String, Accumulator> accumulatorMap) {
         accumulators.add(accumulatorMap);
-    }
-
-    /**
-     * @return IOContext of job which provides IO-management
-     */
-    public IOContext getIOContext() {
-        return ioContext;
     }
 }

@@ -18,10 +18,8 @@ package com.hazelcast.jet.memory;
 
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetSerializationService;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.memory.serialization.MemoryDataInput;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 
@@ -37,14 +35,11 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
  */
 public class TupleFetcher {
     protected final Pair tuple;
-    private final IOContext ioContext;
-    private final JetDataInput dataInput;
+    private final MemoryDataInput dataInput;
 
-    public TupleFetcher(IOContext ioContext, Pair tuple, boolean useBigEndian) {
-        this.ioContext = ioContext;
+    public TupleFetcher(SerializationOptimizer optimizer, Pair tuple, boolean useBigEndian) {
         this.tuple = tuple;
-        JetSerializationService jetSerializationService = new JetSerializationServiceImpl();
-        this.dataInput = jetSerializationService.createObjectDataInput(null, useBigEndian);
+        this.dataInput = new MemoryDataInput(null, optimizer, useBigEndian);
     }
 
     public void fetch(MemoryBlock memoryBlock, long recordAddress) {
@@ -62,8 +57,7 @@ public class TupleFetcher {
 
     private Object readObject() {
         try {
-            byte typeId = dataInput.readByte();
-            return ioContext.lookupDataType(typeId).read(dataInput, ioContext);
+            return dataInput.readOptimized();
         } catch (IOException e) {
             throw new JetMemoryException(e);
         }

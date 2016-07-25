@@ -16,11 +16,8 @@
 
 package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetSerializationService;
 import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.TupleFetcher;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
@@ -33,10 +30,8 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
  */
 public abstract class TupleCursorBase implements TupleCursor {
 
-    protected final IOContext ioContext;
     protected final boolean useBigEndian;
     protected final StorageHeader header;
-    protected final JetDataInput dataInput;
     protected final Accumulator accumulator;
     protected final MemoryBlock serviceMemoryBlock;
     protected final Pair destTuple;
@@ -48,20 +43,17 @@ public abstract class TupleCursorBase implements TupleCursor {
 
     protected TupleCursorBase(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock, Accumulator accumulator,
-            Pair destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
+            Pair destTuple, Partition[] partitions, StorageHeader header, SerializationOptimizer optimizer,
             boolean useBigEndian
     ) {
         this.header = header;
-        this.ioContext = ioContext;
         this.partitions = partitions;
         this.useBigEndian = useBigEndian;
         this.accumulator = accumulator;
         this.destTuple = destTuple;
         this.serviceMemoryBlock = serviceMemoryBlock;
         this.temporaryMemoryBlock = temporaryMemoryBlock;
-        JetSerializationService jetSerializationService = new JetSerializationServiceImpl();
-        this.dataInput = jetSerializationService.createObjectDataInput(null, useBigEndian);
-        this.tupleFetcher = new TupleFetcher(ioContext, this.destTuple, useBigEndian);
+        this.tupleFetcher = new TupleFetcher(optimizer, this.destTuple, useBigEndian);
     }
 
     @Override

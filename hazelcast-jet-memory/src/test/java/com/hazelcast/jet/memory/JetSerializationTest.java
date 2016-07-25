@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.memory;
 
-import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
-import com.hazelcast.jet.io.serialization.JetSerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.memory.serialization.MemoryDataInput;
+import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class JetSerializationTest extends BaseMemoryTest {
-    private final JetSerializationService serializationService = new JetSerializationServiceImpl();
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Before
     public void setUp() throws Exception {
@@ -55,7 +55,7 @@ public class JetSerializationTest extends BaseMemoryTest {
     }
 
     public void test(MemoryBlock memoryBlock) throws IOException {
-        JetDataOutput output = serializationService.createObjectDataOutput(memoryBlock, useBigEndian());
+        MemoryDataOutput output = new MemoryDataOutput(memoryBlock, optimizer, useBigEndian());
         writeBlock(output);
 
         long address = output.baseAddress();
@@ -69,7 +69,7 @@ public class JetSerializationTest extends BaseMemoryTest {
             writeBlock(output);
         }
 
-        JetDataInput input = serializationService.createObjectDataInput(memoryBlock, useBigEndian());
+        MemoryDataInput input = new MemoryDataInput(memoryBlock, optimizer, useBigEndian());
         input.reset(address, writeCount * allocatedSize);
         for (int i = 0; i < writeCount; i++) {
             assertEquals(input.readObject(), "1");
@@ -88,7 +88,7 @@ public class JetSerializationTest extends BaseMemoryTest {
         }
     }
 
-    private void writeBlock(JetDataOutput output) throws IOException {
+    private void writeBlock(MemoryDataOutput output) throws IOException {
         output.writeObject("1");
         output.writeInt(1);
         output.writeLong(1L);

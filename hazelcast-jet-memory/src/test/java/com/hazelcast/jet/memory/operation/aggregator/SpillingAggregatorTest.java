@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.memory.operation.aggregator;
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.IOContextImpl;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
@@ -46,7 +45,7 @@ import java.util.Arrays;
 @Category(QuickTest.class)
 public class SpillingAggregatorTest extends BaseMemoryTest {
     private Aggregator aggregator;
-    private IOContext ioContext = new IOContextImpl();
+    private SerializationOptimizer optimizer = new SerializationOptimizer();
 
     protected long blockSize() {
         return 128 * 1024;
@@ -81,7 +80,7 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
 
         aggregator = OperationFactory.getAggregator(
                 memoryContext,
-                ioContext,
+                optimizer,
                 MemoryChainingRule.HEAP,
                 1024,//partitionCount
                 65536,//spillingBufferSize

@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.data.io;
 
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.DataType;
-import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -43,21 +43,20 @@ public final class JetTupleDataType implements DataType {
     }
 
     @Override
-    public void write(Object o, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+    public void write(Object o, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
         objectDataOutput.writeByte(TYPE_ID);
         for (int i = 0; i < 2; i++) {
             final Object component = ((JetPair) o).get(i);
-            ioContext.resolveDataType(component).write(component, objectDataOutput, ioContext);
+            optimizer.write(component, objectDataOutput);
         }
     }
 
     @Override
-    public Object read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
-        return new JetPair<>(readComponent(objectDataInput, ioContext), readComponent(objectDataInput, ioContext));
+    public Object read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
+        return new JetPair<>(readComponent(objectDataInput, optimizer), readComponent(objectDataInput, optimizer));
     }
 
-    private static Object readComponent(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
-        final byte typeID = objectDataInput.readByte();
-        return ioContext.lookupDataType(typeID).read(objectDataInput, ioContext);
+    private static Object readComponent(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
+        return optimizer.read(objectDataInput);
     }
 }

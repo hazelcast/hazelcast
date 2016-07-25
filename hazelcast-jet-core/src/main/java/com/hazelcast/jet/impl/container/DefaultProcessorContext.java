@@ -23,8 +23,7 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.executor.TaskContext;
-import com.hazelcast.jet.io.DataType;
-import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.spi.NodeEngine;
 
@@ -95,14 +94,8 @@ public class DefaultProcessorContext implements ProcessorContext {
         containerContext.cleanJobVariable(variableName);
     }
 
-    @Override
-    public void registerDataType(DataType dataType) {
-        taskContext.registerDataType(dataType);
-    }
-
-    @Override
-    public IOContext getIoContext() {
-        return taskContext.getIoContext();
+    public SerializationOptimizer getSerializationOptimizer() {
+        return taskContext.getSerializationOptimizer();
     }
 
     @Override

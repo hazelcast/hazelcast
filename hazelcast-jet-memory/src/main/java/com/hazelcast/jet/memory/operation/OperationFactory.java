@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.memory.operation;
 
-import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
@@ -41,11 +41,11 @@ public final class OperationFactory {
             "checkstyle:parameternumber"
     })
     public static Aggregator getAggregator(
-            MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
+            MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
             int partitionCount, int spillingBufferSize, Comparator comparator, Pair destTuple,
             String spillingDirectory, int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        return new PartitionedAggregator(partitionCount, spillingBufferSize, ioContext,
+        return new PartitionedAggregator(partitionCount, spillingBufferSize, optimizer,
                 comparator, memoryContext, memoryChainingRule, destTuple, spillingDirectory,
                 spillingChunkSize, spillToDisk, useBigEndian);
     }
@@ -54,12 +54,12 @@ public final class OperationFactory {
             "checkstyle:parameternumber"
     })
     public static Aggregator getAggregator(
-            MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
+            MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
             int partitionCount, int spillingBufferSize, Comparator comparator, Pair destTuple,
             Accumulator accumulator, String spillingDirectory,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        return new PartitionedAggregator(partitionCount, spillingBufferSize, ioContext,
+        return new PartitionedAggregator(partitionCount, spillingBufferSize, optimizer,
                 comparator, memoryContext, memoryChainingRule, destTuple, accumulator,
                 spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
     }
@@ -68,12 +68,12 @@ public final class OperationFactory {
             "checkstyle:parameternumber"
     })
     public static SortedAggregator getSortedAggregator(
-            MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
+            MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
             int partitionCount, int spillingBufferSize, Comparator comparator, Pair destTuple,
             String spillingDirectory, SortOrder sortOrder, int spillingChunkSize,
             boolean spillToDisk, boolean useBigEndian
     ) {
-        return new SortedPartitionedAggregator(partitionCount, spillingBufferSize, ioContext, comparator,
+        return new SortedPartitionedAggregator(partitionCount, spillingBufferSize, optimizer, comparator,
                 memoryContext, memoryChainingRule, destTuple, spillingDirectory, sortOrder,
                 spillingChunkSize, spillToDisk, useBigEndian);
     }
@@ -82,12 +82,12 @@ public final class OperationFactory {
             "checkstyle:parameternumber"
     })
     public static SortedAggregator getSortedAggregator(
-            MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
+            MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
             int partitionCount, int spillingBufferSize, Comparator comparator, Pair destTuple,
             Accumulator binaryFunctor, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        return new SortedPartitionedAggregator(partitionCount, spillingBufferSize, ioContext, comparator,
+        return new SortedPartitionedAggregator(partitionCount, spillingBufferSize, optimizer, comparator,
                 memoryContext, memoryChainingRule, destTuple, binaryFunctor, spillingDirectory,
                 sortOrder, spillingChunkSize, spillToDisk, useBigEndian);
     }
@@ -96,11 +96,11 @@ public final class OperationFactory {
             "checkstyle:parameternumber"
     })
     public static  JoinAggregator getJoiner(
-            MemoryContext memoryContext, IOContext ioContext, MemoryChainingRule memoryChainingRule,
+            MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
             int partitionCount, int spillingBufferSize, Comparator comparator, Pair tuple,
             String spillingDirectory, int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        return new PartitionedJoiner(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
+        return new PartitionedJoiner(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext,
                 memoryChainingRule, tuple, spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
     }
 

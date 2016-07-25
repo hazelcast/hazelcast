@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
-import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.TupleFetcher;
@@ -38,10 +38,10 @@ public class SortedTupleCursor extends TupleCursorBase {
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock,
             Sorter<InputsCursor, TupleFetcher> memoryDiskMergeSorter,
             Accumulator accumulator, Pair destTuple, Partition[] partitions, StorageHeader header,
-            IOContext ioContext, InputsCursor inputsCursor, boolean useBigEndian
+            SerializationOptimizer optimizer, InputsCursor inputsCursor, boolean useBigEndian
     ) {
         super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destTuple, partitions, header,
-                ioContext, useBigEndian);
+                optimizer, useBigEndian);
         this.inputsCursor = inputsCursor;
         this.memoryDiskMergeSorter = memoryDiskMergeSorter;
     }

@@ -17,8 +17,7 @@
 package com.hazelcast.jet.memory.operation.aggregator;
 
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.IOContextImpl;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
@@ -49,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     private SortedAggregator aggregator;
-    private IOContext ioContext = new IOContextImpl();
+    private SerializationOptimizer optimizer = new SerializationOptimizer();
 
     @Override
     protected long heapSize() {
@@ -73,7 +72,7 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     private void initAggregator(Comparator comparator, Accumulator accumulator) throws IOException {
         memoryContext = new MemoryContext(heapMemoryPool, nativeMemoryPool, blockSize(), useBigEndian());
         aggregator = OperationFactory.getSortedAggregator(
-                memoryContext, ioContext, MemoryChainingRule.HEAP,
+                memoryContext, optimizer, MemoryChainingRule.HEAP,
                 2,//partitionCount
                 1024,//spillingBufferSize
                 comparator,

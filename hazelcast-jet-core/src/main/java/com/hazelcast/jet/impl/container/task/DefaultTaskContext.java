@@ -20,9 +20,7 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.executor.TaskContext;
 import com.hazelcast.jet.impl.data.io.JetTupleDataType;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.io.DataType;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.IOContextImpl;
+import com.hazelcast.jet.io.SerializationOptimizer;
 
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 public class DefaultTaskContext implements TaskContext {
     private final int taskCount;
     private final int taskNumber;
-    private final IOContext ioContext;
+    private final SerializationOptimizer optimizer;
     private final ConcurrentMap<String, Accumulator> accumulatorMap;
 
     public DefaultTaskContext(int taskCount,
@@ -39,7 +37,7 @@ public class DefaultTaskContext implements TaskContext {
                               JobContext jobContext) {
         this.taskCount = taskCount;
         this.taskNumber = taskNumber;
-        this.ioContext = new IOContextImpl(JetTupleDataType.INSTANCE);
+        this.optimizer = new SerializationOptimizer(JetTupleDataType.INSTANCE);
         this.accumulatorMap = new ConcurrentHashMap<>();
         jobContext.registerAccumulators(this.accumulatorMap);
     }
@@ -65,13 +63,7 @@ public class DefaultTaskContext implements TaskContext {
         accumulatorMap.put(key, accumulator);
     }
 
-    @Override
-    public void registerDataType(DataType dataType) {
-        ioContext.registerDataType(dataType);
-    }
-
-    @Override
-    public IOContext getIoContext() {
-        return ioContext;
+    public SerializationOptimizer getSerializationOptimizer() {
+        return optimizer;
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.memory.operation.joiner;
 
-import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
@@ -132,11 +132,11 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
             "checkstyle:parameternumber"
     })
     public PartitionedJoiner(
-            int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
+            int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
             MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair tuple, String spillingDirectory,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        super(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
+        super(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext,
                 memoryChainingRule, tuple, spillingDirectory, spillingChunkSize, spillToDisk,
                 useBigEndian);
     }
@@ -172,9 +172,9 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
 
         public DefaultJoinerCursor() {
             this.spillingCursor = new SpillingCursor(serviceMemoryBlock, temporaryMemoryBlock, accumulator,
-                    spiller, destTuple, partitions, header, ioContext, useBigEndian);
+                    spiller, destTuple, partitions, header, optimizer, useBigEndian);
             this.memoryCursor = new InMemoryCursor(serviceKeyValueStorage, serviceMemoryBlock,
-                    temporaryMemoryBlock, accumulator, destTuple, partitions, header, ioContext, useBigEndian);
+                    temporaryMemoryBlock, accumulator, destTuple, partitions, header, optimizer, useBigEndian);
         }
 
 

@@ -18,9 +18,9 @@ package com.hazelcast.jet.memory.util;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.memory.serialization.MemoryDataInput;
+import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.nio.Bits;
 
@@ -62,7 +62,7 @@ public final class JetIoUtil {
         return Bits.LONG_SIZE_IN_BYTES + keySize + Bits.LONG_SIZE_IN_BYTES + valueSize;
     }
 
-    public static void writeTuple(Pair tuple, JetDataOutput output, IOContext ioContext, MemoryManager memoryManager) {
+    public static void writeTuple(Pair tuple, MemoryDataOutput output, MemoryManager memoryManager) {
         output.clear();
         output.setMemoryManager(memoryManager);
         try {
@@ -73,8 +73,7 @@ public final class JetIoUtil {
                 output.skip(Bits.LONG_SIZE_IN_BYTES);
                 // Remember initial block size, to calculate the size of what this iteration wrote
                 final long initialSize = output.usedSize();
-                final Object component = tuple.get(i);
-                ioContext.resolveDataType(component).write(component, output, ioContext);
+                output.writeOptimized(tuple.get(i));
                 memoryManager.getAccessor().putLong(output.baseAddress() + initialPos, output.usedSize() - initialSize);
             }
         } catch (IOException e) {
@@ -83,15 +82,14 @@ public final class JetIoUtil {
     }
 
     public static void readTuple(
-            JetDataInput input, long tupleAddress, Pair tuple, IOContext ioContext, MemoryAccessor memoryAccessor
+            MemoryDataInput input, long tupleAddress, Pair tuple, MemoryAccessor memoryAccessor
     ) {
         input.reset(tupleAddress, sizeOfTupleAt(tupleAddress, memoryAccessor));
         try {
             for (int i = 0; i < 2; i++) {
                 // Skip the size field
                 input.readLong();
-                byte typeID = input.readByte();
-                final Object o = ioContext.lookupDataType(typeID).read(input, ioContext);
+                final Object o = input.readOptimized();
                 tuple.set(i, o);
             }
         } catch (IOException e) {

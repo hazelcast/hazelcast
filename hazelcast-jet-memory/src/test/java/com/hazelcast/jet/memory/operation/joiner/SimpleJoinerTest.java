@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.memory.operation.joiner;
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.IOContextImpl;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
@@ -32,7 +31,7 @@ import org.junit.Before;
 //@Category(QuickTest.class)
 public class SimpleJoinerTest extends BaseMemoryTest {
     private Aggregator aggregator;
-    private IOContext ioContext = new IOContextImpl();
+    private SerializationOptimizer optimizer = new SerializationOptimizer();
 
 
     protected long heapSize() {
@@ -57,7 +56,7 @@ public class SimpleJoinerTest extends BaseMemoryTest {
         memoryContext = new MemoryContext(heapMemoryPool, nativeMemoryPool, blockSize(), useBigEndian());
         aggregator = OperationFactory.getAggregator(
                 memoryContext,
-                ioContext,
+                optimizer,
                 MemoryChainingRule.HEAP,
                 1024,//partitionCount
                 1024,//spillingBufferSize

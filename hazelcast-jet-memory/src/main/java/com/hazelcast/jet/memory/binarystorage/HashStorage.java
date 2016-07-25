@@ -18,8 +18,8 @@ package com.hazelcast.jet.memory.binarystorage;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.util.hashslot.HashSlotArray;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
@@ -133,8 +133,8 @@ public class HashStorage implements Storage {
     }
 
     @Override
-    public void insertTuple(Pair tuple, IOContext ioContext, JetDataOutput output) {
-        writeTuple(tuple, output, ioContext, memoryBlock);
+    public void insertTuple(Pair tuple, SerializationOptimizer optimizer, MemoryDataOutput output) {
+        writeTuple(tuple, output, memoryBlock);
         output.skip(TupleMultimapHsa.FIRST_FOOTER_SIZE_BYTES);
         final long slotAddr = multimap.fetchSlot(output.baseAddress(), memoryBlock.getAccessor(), null, CREATE_OR_APPEND);
         adjustAllocatedSizeAsNeeded(slotAddr);

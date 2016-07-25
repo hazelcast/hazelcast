@@ -86,8 +86,7 @@ public class ContainerContext implements ContainerDescriptor {
     }
 
     @Override
-    public void registerContainerListener(String vertexName,
-                                          ContainerListener containerListener) {
+    public void registerContainerListener(String vertexName, ContainerListener containerListener) {
         jobContext.registerContainerListener(vertexName, containerListener);
     }
 
@@ -117,8 +116,7 @@ public class ContainerContext implements ContainerDescriptor {
     }
 
     @Override
-    public <V, R extends Serializable> void setAccumulator(String key,
-                                                           Accumulator<V, R> accumulator) {
+    public <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator) {
         accumulatorMap.put(key, accumulator);
     }
 }

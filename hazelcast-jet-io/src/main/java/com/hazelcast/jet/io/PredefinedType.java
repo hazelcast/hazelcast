@@ -33,7 +33,7 @@ public enum PredefinedType implements DataType {
     BYTE(-7, Byte.class, new ByteIO()),
     INT(-6, Integer.class, new IntegerIO()),
     LONG(-5, Long.class, new LongIO()),
-    // -4 Reserved for JetTuple
+    // -4 Reserved for JetTuple2
     TUPLE2(-3, Pair.class, new Tuple2IO()),
     STRING(-2, String.class, new StringIO()),
     OBJECT(-1, Object.class, new DefaultObjectIO()),
@@ -100,30 +100,30 @@ public enum PredefinedType implements DataType {
     }
 
     @Override
-    public void write(Object o, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
-        objectIO.write(o, objectDataOutput, ioContext);
+    public void write(Object o, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
+        objectIO.write(o, objectDataOutput, optimizer);
     }
 
     @Override
-    public Object read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
-        return objectIO.read(objectDataInput, ioContext);
+    public Object read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
+        return objectIO.read(objectDataInput, optimizer);
     }
 
 
     private interface ObjectIO<T> {
-        T read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException;
+        T read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException;
 
-        void write(T object, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException;
+        void write(T object, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException;
     }
 
     private static class BooleanIO implements ObjectIO<Boolean> {
         @Override
-        public Boolean read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Boolean read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readBoolean();
         }
 
         @Override
-        public void write(Boolean b, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Boolean b, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(BOOLEAN.typeId());
             objectDataOutput.writeBoolean(b);
         }
@@ -131,12 +131,12 @@ public enum PredefinedType implements DataType {
 
     private static class ByteIO implements ObjectIO<Byte> {
         @Override
-        public Byte read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Byte read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readByte();
         }
 
         @Override
-        public void write(Byte b, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Byte b, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(BYTE.typeId());
             objectDataOutput.write(b);
         }
@@ -144,12 +144,12 @@ public enum PredefinedType implements DataType {
 
     private static class CharIO implements ObjectIO<Character> {
         @Override
-        public Character read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Character read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readChar();
         }
 
         @Override
-        public void write(Character c, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Character c, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(CHAR.typeId());
             objectDataOutput.writeChar(c);
         }
@@ -157,12 +157,12 @@ public enum PredefinedType implements DataType {
 
     private static class DefaultObjectIO implements ObjectIO {
         @Override
-        public Object read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Object read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readObject();
         }
 
         @Override
-        public void write(Object o, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Object o, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(OBJECT.typeId());
             objectDataOutput.writeObject(o);
         }
@@ -170,12 +170,12 @@ public enum PredefinedType implements DataType {
 
     private static class DoubleIO implements ObjectIO<Double> {
         @Override
-        public Double read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Double read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readDouble();
         }
 
         @Override
-        public void write(Double d, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Double d, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(DOUBLE.typeId());
             objectDataOutput.writeDouble(d);
         }
@@ -183,12 +183,12 @@ public enum PredefinedType implements DataType {
 
     private static class FloatIO implements ObjectIO<Float> {
         @Override
-        public Float read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Float read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readFloat();
         }
 
         @Override
-        public void write(Float f, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Float f, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(FLOAT.typeId());
             objectDataOutput.writeFloat(f);
         }
@@ -196,12 +196,12 @@ public enum PredefinedType implements DataType {
 
     private static class IntegerIO implements ObjectIO<Integer> {
         @Override
-        public Integer read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Integer read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readInt();
         }
 
         @Override
-        public void write(Integer i, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Integer i, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(INT.typeId());
             objectDataOutput.writeInt(i);
         }
@@ -209,12 +209,12 @@ public enum PredefinedType implements DataType {
 
     private static class LongIO implements ObjectIO<Long> {
         @Override
-        public Long read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Long read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readLong();
         }
 
         @Override
-        public void write(Long l, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Long l, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(LONG.typeId());
             objectDataOutput.writeLong(l);
         }
@@ -222,12 +222,12 @@ public enum PredefinedType implements DataType {
 
     private static class NullObjectIO implements ObjectIO {
         @Override
-        public Object read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Object read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readObject();
         }
 
         @Override
-        public void write(Object o, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Object o, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(NULL.typeId());
             objectDataOutput.writeObject(o);
         }
@@ -235,12 +235,12 @@ public enum PredefinedType implements DataType {
 
     private static class ShortIO implements ObjectIO<Short> {
         @Override
-        public Short read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public Short read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readShort();
         }
 
         @Override
-        public void write(Short i, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Short i, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(SHORT.typeId());
             objectDataOutput.writeShort(i);
         }
@@ -248,12 +248,12 @@ public enum PredefinedType implements DataType {
 
     private static class StringIO implements ObjectIO<String> {
         @Override
-        public String read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        public String read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return objectDataInput.readUTF();
         }
 
         @Override
-        public void write(String s, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(String s, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(STRING.typeId());
             objectDataOutput.writeUTF(s);
         }
@@ -261,22 +261,22 @@ public enum PredefinedType implements DataType {
 
     private static class Tuple2IO implements ObjectIO<Pair> {
         @Override
-        public Pair read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
-            return new Pair<>(readComponent(objectDataInput, ioContext), readComponent(objectDataInput, ioContext));
+        public Pair read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
+            return new Pair<>(readComponent(objectDataInput, optimizer), readComponent(objectDataInput, optimizer));
         }
 
         @Override
-        public void write(Pair tuple, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Pair tuple, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(TUPLE2.typeId());
             for (int i = 0; i < 2; i++) {
                 final Object o = tuple.get(i);
-                ioContext.resolveDataType(o).write(o, objectDataOutput, ioContext);
+                optimizer.write(o, objectDataOutput);
             }
         }
 
-        private static Object readComponent(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+        private static Object readComponent(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             final byte typeID = objectDataInput.readByte();
-            return ioContext.lookupDataType(typeID).read(objectDataInput, ioContext);
+            return optimizer.read(objectDataInput);
         }
     }
 }

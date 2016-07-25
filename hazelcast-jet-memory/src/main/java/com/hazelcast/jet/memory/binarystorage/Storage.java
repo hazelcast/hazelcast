@@ -17,8 +17,8 @@
 package com.hazelcast.jet.memory.binarystorage;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
@@ -117,7 +117,7 @@ public interface Storage {
     /**
      * Serializes and adds the given tuple to the storage for the source with number 0.
      */
-    void insertTuple(Pair tuple, IOContext ioContext, JetDataOutput output);
+    void insertTuple(Pair tuple, SerializationOptimizer optimizer, MemoryDataOutput output);
 
     /**
      * Marks key with specified slot address with value marker;

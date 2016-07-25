@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.memory.binarystorage;
 
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
+import com.hazelcast.jet.memory.serialization.MemoryDataInput;
+import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.binarystorage.comparator.StringComparator;
@@ -85,8 +85,8 @@ public class SortedStorageStringTest extends BaseMemoryTest {
     }
 
     private void sortedTest(SortedStorage blobMap, MemoryBlock memoryBlock, int cnt, int value_cnt) {
-        JetDataOutput output = serializationService.createObjectDataOutput(memoryBlock, true);
-        JetDataInput input = serializationService.createObjectDataInput(memoryBlock, true);
+        MemoryDataOutput output = new MemoryDataOutput(memoryBlock, optimizer, true);
+        MemoryDataInput input = new MemoryDataInput(memoryBlock, optimizer, true);
         Pair<String, String> tuple = new Pair<>();
         long t = System.currentTimeMillis();
         for (int idx = 1; idx <= cnt; idx++) {
@@ -114,7 +114,7 @@ public class SortedStorageStringTest extends BaseMemoryTest {
             for (TupleAddressCursor tupleCursor = blobMap.tupleCursor(slotAddress); tupleCursor.advance();) {
                 long tupleAddress = tupleCursor.tupleAddress();
                 valueCount++;
-                JetIoUtil.readTuple(input, tupleAddress, tuple, ioContext, memoryBlock.getAccessor());
+                JetIoUtil.readTuple(input, tupleAddress, tuple, memoryBlock.getAccessor());
             }
             assertEquals(treeMapIterator.next(), tuple.getKey());
             assertEquals(value_cnt, valueCount);
