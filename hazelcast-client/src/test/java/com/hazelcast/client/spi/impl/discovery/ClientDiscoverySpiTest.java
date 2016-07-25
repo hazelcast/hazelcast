@@ -19,6 +19,7 @@ package com.hazelcast.client.spi.impl.discovery;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.config.AwsConfig;
@@ -218,7 +219,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryServiceProvider provider = new DefaultDiscoveryServiceProvider();
         DiscoveryService discoveryService = provider.newDiscoveryService(buildDiscoveryServiceSettings(discoveryConfig));
 
-        AddressTranslator translator = new DiscoveryAddressTranslator(discoveryService);
+        AddressTranslator translator = new DiscoveryAddressTranslator(discoveryService, false);
 
         Address address = new Address("127.0.0.1", 50001);
 
