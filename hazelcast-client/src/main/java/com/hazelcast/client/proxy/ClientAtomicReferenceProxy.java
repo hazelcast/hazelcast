@@ -113,13 +113,6 @@ public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy 
         }
     };
 
-    private static final ClientMessageDecoder SET_AND_GET_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <E> E decodeClientMessage(ClientMessage clientMessage) {
-            return (E) AtomicReferenceSetAndGetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
     private static final ClientMessageDecoder IS_NULL_DECODER = new ClientMessageDecoder() {
         @Override
         public Boolean decodeClientMessage(ClientMessage clientMessage) {
@@ -246,14 +239,10 @@ public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy 
     }
 
     @Override
-    public InternalCompletableFuture<E> setAndGetAsync(E update) {
-        ClientMessage request = AtomicReferenceSetAndGetCodec.encodeRequest(name, toData(update));
-        return invokeOnPartitionAsync(request, SET_AND_GET_DECODER);
-    }
-
-    @Override
     public E setAndGet(E update) {
-        return setAndGetAsync(update).join();
+        ClientMessage request = AtomicReferenceSetAndGetCodec.encodeRequest(name, toData(update));
+        ClientMessage response = invokeOnPartition(request);
+        return toObject(AtomicReferenceSetAndGetCodec.decodeResponse(response).response);
     }
 
     @Override

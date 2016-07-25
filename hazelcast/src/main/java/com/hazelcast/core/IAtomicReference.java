@@ -177,15 +177,6 @@ public interface IAtomicReference<E> extends DistributedObject {
     ICompletableFuture<E> getAndSetAsync(E newValue);
 
     /**
-     * Sets and gets the value.
-     *
-     * @param update the new value
-     * @return  the new value
-     * @deprecated will be removed from Hazelcast 3.4 since it doesn't really serve a purpose.
-     */
-    ICompletableFuture<E> setAndGetAsync(E update);
-
-    /**
      * Checks if the stored reference is null.
      *
      * @return true if null, false otherwise.

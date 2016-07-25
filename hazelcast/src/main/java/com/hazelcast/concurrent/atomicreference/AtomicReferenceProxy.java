@@ -228,19 +228,14 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public E setAndGet(E update) {
-        return setAndGetAsync(update).join();
-    }
-
-    @Override
-    public InternalCompletableFuture<E> setAndGetAsync(E update) {
-        Operation operation = new SetAndGetOperation(name, toData(update))
-                .setPartitionId(partitionId);
-        return invokeOnPartition(operation);
+        return asyncSetAndGet(update).join();
     }
 
     @Override
     public InternalCompletableFuture<E> asyncSetAndGet(E update) {
-        return setAndGetAsync(update);
+        Operation operation = new SetAndGetOperation(name, toData(update))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
