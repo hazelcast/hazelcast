@@ -59,10 +59,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -113,7 +114,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         final HazelcastInstance instance = createHazelcastInstance(config);
         final IMap<Integer, String> map = instance.getMap(mapName);
         // check if load all called.
-        assertTrue("map store loadAllKeys must be called", testMapStore.loadAllLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("map store loadAllKeys must be called", testMapStore.loadAllLatch.await(10, SECONDS));
         // map population count.
         final int populationCount = 100;
         // latch for store & storeAll events.
@@ -152,7 +153,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
             map.evict(i);
         }
         // wait for all store ops
-        testMapStore.storeLatch.await(10, TimeUnit.SECONDS);
+        testMapStore.storeLatch.await(10, SECONDS);
         // check store size
         assertEquals(populationCount, testMapStore.getStore().size());
         // check map size
@@ -167,7 +168,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         for (int i = 0; i < populationCount; i++) {
             map.remove(i);
         }
-        testMapStore.deleteLatch.await(10, TimeUnit.SECONDS);
+        testMapStore.deleteLatch.await(10, SECONDS);
         // check map size
         assertEquals(0, map.size());
     }
@@ -244,17 +245,34 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     public void testOneMemberWriteBehindFlush() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
-        Config config = newConfig(testMapStore, 2);
+        int writeDelaySeconds = 2;
+        Config config = newConfig(testMapStore, writeDelaySeconds);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         IMap<String, String> map = instance.getMap("default");
         assertEquals(0, map.size());
-        assertEquals(null, map.put("1", "value1"));
-        assertEquals("value1", map.get("1"));
-        assertEquals(null, testMapStore.getStore().get("1"));
+
+        long timeBeforePut = System.nanoTime();
+        assertEquals("Map produced a value out of thin air", null, map.put("1", "value1"));
+        assertEquals("Map did not return a previously stored value", "value1", map.get("1"));
+        String mapStoreValue = (String) testMapStore.getStore().get("1");
+        if (mapStoreValue != null) {
+            assertMapStoreDidNotFlushValueTooSoon(testMapStore, writeDelaySeconds, timeBeforePut);
+            assertEquals("value1", mapStoreValue);
+        }
         assertEquals(1, map.size());
         map.flush();
         assertEquals("value1", testMapStore.getStore().get("1"));
+    }
+
+    private void assertMapStoreDidNotFlushValueTooSoon(TestMapStore testMapStore, int writeDelaySeconds, long timeBeforePutNanos) {
+        double lenientFactor = 0.9;
+        long lastUpdateTimestamp = testMapStore.getLastStoreNanos();
+        double minimumFlushNanos = timeBeforePutNanos + (lenientFactor * SECONDS.toNanos(writeDelaySeconds));
+        assertTrue("WriteBehind Queue was flushed too soon. Configured write delay: "
+                + SECONDS.toMillis(writeDelaySeconds)+ " ms. But it took less than "
+                + NANOSECONDS.toMillis(lastUpdateTimestamp - timeBeforePutNanos) + " ms to flush the queue.",
+                lastUpdateTimestamp >= minimumFlushNanos);
     }
 
     @Test(timeout = 120000)

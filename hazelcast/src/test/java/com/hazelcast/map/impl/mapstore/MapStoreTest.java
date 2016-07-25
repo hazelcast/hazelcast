@@ -69,6 +69,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
@@ -1039,6 +1040,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         private Properties properties;
         private String mapName;
         private boolean loadAllKeys = true;
+        private final AtomicLong lastStoreTimestamp = new AtomicLong();
 
         TestMapStore() {
             this(0, 0, 0, 0, 0, 0);
@@ -1122,7 +1124,18 @@ public class MapStoreTest extends AbstractMapStoreTest {
             store.put(key, value);
         }
 
+        private void updateLastStoreTimestamp() {
+            long timeNow = System.nanoTime();
+            long currentLastStore = lastStoreTimestamp.get();
+            if (timeNow > currentLastStore) {
+                //try to update the timestamp. if we lose the CAS then not a big deal
+                // -> some concurrent call managed to set it.
+                lastStoreTimestamp.compareAndSet(currentLastStore, timeNow);
+            }
+        }
+
         public void store(Object key, Object value) {
+            updateLastStoreTimestamp();
             store.put(key, value);
             callCount.incrementAndGet();
             latchStore.countDown();
@@ -1147,6 +1160,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         }
 
         public void storeAll(Map map) {
+            updateLastStoreTimestamp();
             store.putAll(map);
             callCount.incrementAndGet();
             latchStoreAll.countDown();
@@ -1156,6 +1170,15 @@ public class MapStoreTest extends AbstractMapStoreTest {
                     latchStoreAllOpCount.countDown();
                 }
             }
+        }
+
+        /**
+         * @return  monotonically increasing timestamp of last store() or storeAll() method calls.
+         *          Timestamp is obtained via {@link System#nanoTime()}
+         *
+         */
+        public long getLastStoreNanos() {
+            return lastStoreTimestamp.get();
         }
 
         public void delete(Object key) {
