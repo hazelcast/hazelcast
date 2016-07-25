@@ -16,7 +16,6 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -39,7 +38,9 @@ import com.hazelcast.query.impl.DateHelperTest;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
+import com.hazelcast.query.impl.predicates.GreaterLessPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
+import com.hazelcast.query.impl.predicates.RegexPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -59,7 +60,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.toData;
-import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -384,7 +384,7 @@ public class SqlPredicateTest {
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
         IMap<Integer, Integer> map = hazelcastInstance.getMap(randomString());
 
-        for (int i=0; i < 8000; i++) {
+        for (int i = 0; i < 8000; i++) {
             map.put(i, i);
         }
 
@@ -482,6 +482,17 @@ public class SqlPredicateTest {
         assertEquals(2, concatenatedOr.getPredicates().length);
         assertSame(predicate1, concatenatedOr.getPredicates()[0]);
         assertSame(predicate2, concatenatedOr.getPredicates()[1]);
+    }
+
+    @Test
+    // http://stackoverflow.com/questions/37382505/hazelcast-imap-valuespredicate-miss-data
+    public void testAndWithRegex_stackOverflowIssue() {
+        SqlPredicate sqlPredicate = new SqlPredicate("nextExecuteTime < 1463975296703 AND autoIncrementId REGEX '.*[5,6,7,8,9]$'");
+        Predicate predicate = sqlPredicate.predicate;
+
+        AndPredicate andPredicate = (AndPredicate) predicate;
+        assertEquals(GreaterLessPredicate.class, andPredicate.getPredicates()[0].getClass());
+        assertEquals(RegexPredicate.class, andPredicate.getPredicates()[1].getClass());
     }
 
     private String sql(String sql) {
