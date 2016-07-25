@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.binarystorage.Storage;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
@@ -53,7 +53,7 @@ public class InMemoryCursor extends TupleCursorBase {
 
     public InMemoryCursor(
             Storage serviceKeyValueStorage, MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock,
-            Accumulator accumulator, Tuple2 destTuple, Partition[] partitions, StorageHeader header,
+            Accumulator accumulator, Pair destTuple, Partition[] partitions, StorageHeader header,
             IOContext ioContext, boolean useBigEndian
     ) {
         super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destTuple, partitions, header, ioContext,

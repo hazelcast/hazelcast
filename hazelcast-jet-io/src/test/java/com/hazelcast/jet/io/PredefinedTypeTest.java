@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.io;
 
-import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,7 +51,7 @@ public class PredefinedTypeTest {
                 {(short) 0, PredefinedType.SHORT},
                 {"string", PredefinedType.STRING},
                 {null, PredefinedType.NULL},
-                {new Tuple2<>(0, 0), PredefinedType.TUPLE2},
+                {new Pair<>(0, 0), PredefinedType.TUPLE2},
                 {new Object(), PredefinedType.OBJECT}
         });
     }

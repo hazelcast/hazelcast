@@ -20,8 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.dag.sink.Sink;
-import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
@@ -45,8 +45,8 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ILi
     }
 
 
-    protected <U extends T> Distributed.Function<U, Tuple2> toTupleMapper() {
-        return v -> new JetTuple2<>(0, v);
+    protected <U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+        return v -> new JetPair<>(0, v);
     }
 
     @Override

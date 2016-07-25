@@ -20,8 +20,8 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
-import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -43,10 +43,10 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple2> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toTupleMapper) {
         String listName = randomName();
         IList<T> list = context.getHazelcastInstance().getList(listName);
-        Distributed.Function<T, Tuple2> toTuple = v -> new JetTuple2<>(0, v);
+        Distributed.Function<T, Pair> toTuple = v -> new JetPair<>(0, v);
         Vertex previous = upstream.buildDAG(dag, null, toTuple);
         previous.addSink(new ListSink(list));
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;

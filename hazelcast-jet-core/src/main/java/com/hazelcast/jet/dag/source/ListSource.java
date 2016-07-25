@@ -19,7 +19,7 @@ package com.hazelcast.jet.dag.source;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.DataReader;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.dag.source.HazelcastListPartitionReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
@@ -49,14 +49,14 @@ public class ListSource implements Source {
     }
 
     @Override
-    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
+    public ObjectProducer[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
         int partitionId = HazelcastListPartitionReader.getPartitionId(containerDescriptor.getNodeEngine(), this.name);
         if (JetUtil.isPartitionLocal(containerDescriptor.getNodeEngine(), partitionId)) {
             HazelcastListPartitionReader reader =
                     new HazelcastListPartitionReader(containerDescriptor, name);
-            return new DataReader[] {reader};
+            return new ObjectProducer[] {reader};
         }
-        return new DataReader[0];
+        return new ObjectProducer[0];
     }
 
     @Override

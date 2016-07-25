@@ -20,8 +20,8 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
-import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -106,7 +106,7 @@ public class Reducer {
     private <T, U> Vertex buildMappingAccumulator(
             DAG dag, Pipeline<? extends T> upstream, U identity, BiFunction<U, ? super T, U> accumulator
     ) {
-        Distributed.Function<Tuple2, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Pair, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         Vertex accumulatorVertex = vertexBuilder(AccumulatorProcessor.class)
                 .addToDAG(dag)
                 .args(fromTupleMapper, toTupleMapper())
@@ -125,7 +125,7 @@ public class Reducer {
     private <T> Vertex buildAccumulator(
             DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, Optional<T> identity
     ) {
-        Distributed.Function<Tuple2, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Pair, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity, fromTupleMapper);
         dag.addVertex(accumulatorVertex);
 
@@ -139,7 +139,7 @@ public class Reducer {
     }
 
     private <T> Vertex getAccumulatorVertex(
-            BinaryOperator<T> accumulator, Optional<T> identity, Function<Tuple2, ? extends T> fromTupleMapper
+            BinaryOperator<T> accumulator, Optional<T> identity, Function<Pair, ? extends T> fromTupleMapper
     ) {
         return identity.isPresent()
                 ?
@@ -154,8 +154,8 @@ public class Reducer {
                         .build();
     }
 
-    private <T, U extends T> Distributed.Function<U, Tuple2> toTupleMapper() {
-        return o -> new JetTuple2<Object, T>(0, o);
+    private <T, U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+        return o -> new JetPair<Object, T>(0, o);
     }
 }
 

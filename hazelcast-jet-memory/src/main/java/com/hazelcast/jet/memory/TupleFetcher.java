@@ -22,7 +22,7 @@ import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 
 import java.io.IOException;
@@ -36,11 +36,11 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
  * Deserializes data held by a {@code MemoryManager} and puts it into a {@code Tuple}.
  */
 public class TupleFetcher {
-    protected final Tuple2 tuple;
+    protected final Pair tuple;
     private final IOContext ioContext;
     private final JetDataInput dataInput;
 
-    public TupleFetcher(IOContext ioContext, Tuple2 tuple, boolean useBigEndian) {
+    public TupleFetcher(IOContext ioContext, Pair tuple, boolean useBigEndian) {
         this.ioContext = ioContext;
         this.tuple = tuple;
         JetSerializationService jetSerializationService = new JetSerializationServiceImpl();
@@ -51,12 +51,12 @@ public class TupleFetcher {
         dataInput.setMemoryManager(memoryBlock);
         final MemoryAccessor accessor = memoryBlock.getAccessor();
         dataInput.reset(addressOfKeyBlockAt(recordAddress), sizeOfKeyBlockAt(recordAddress, accessor));
-        tuple.set0(readObject());
+        tuple.setKey(readObject());
         dataInput.reset(addrOfValueBlockAt(recordAddress, accessor), sizeOfValueBlockAt(recordAddress, accessor));
-        tuple.set1(readObject());
+        tuple.setValue(readObject());
     }
 
-    public Tuple2 tuple() {
+    public Pair tuple() {
         return tuple;
     }
 

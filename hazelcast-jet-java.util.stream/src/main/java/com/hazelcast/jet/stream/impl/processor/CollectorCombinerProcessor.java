@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -29,8 +29,8 @@ public class CollectorCombinerProcessor<T> extends AbstractStreamProcessor<T, T>
     private final BiConsumer<T, T> combiner;
     private T result;
 
-    public CollectorCombinerProcessor(Function<Tuple, T> inputMapper,
-                                      Function<T, Tuple> outputMapper,
+    public CollectorCombinerProcessor(Function<Pair, T> inputMapper,
+                                      Function<T, Pair> outputMapper,
                                       BiConsumer<T, T> combiner,
                                       Function ignored) {
         super(inputMapper, outputMapper);

@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -30,7 +30,7 @@ public class AnyMatchProcessor<T> extends AbstractStreamProcessor<T, Boolean> {
     private boolean match;
     private final Predicate<T> predicate;
 
-    public AnyMatchProcessor(Function<Tuple, T> inputMapper, Function<Boolean, Tuple> outputMapper,
+    public AnyMatchProcessor(Function<Pair, T> inputMapper, Function<Boolean, Pair> outputMapper,
                              Predicate<T> predicate) {
         super(inputMapper, outputMapper);
 

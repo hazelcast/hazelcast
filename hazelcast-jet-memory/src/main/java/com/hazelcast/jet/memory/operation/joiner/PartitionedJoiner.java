@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation.joiner;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
@@ -133,7 +133,7 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
     })
     public PartitionedJoiner(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 tuple, String spillingDirectory,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair tuple, String spillingDirectory,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         super(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
@@ -198,7 +198,7 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
         }
 
         @Override
-        public Tuple2 asTuple() {
+        public Pair asTuple() {
             return (spillingCursorDone ? memoryCursor : spillingCursor).asTuple();
         }
     }

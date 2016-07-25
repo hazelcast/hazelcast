@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 
 import java.util.function.Function;
 
@@ -28,7 +28,7 @@ public class SkipProcessor<T> extends AbstractStreamProcessor<T, T> {
     private final long skip;
     private long index;
 
-    public SkipProcessor(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, Long skip) {
+    public SkipProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper, Long skip) {
         super(inputMapper, outputMapper);
         this.skip = skip;
     }

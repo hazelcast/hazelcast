@@ -19,7 +19,7 @@ package com.hazelcast.jet.memory.operation.aggregator.cursor;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.binarystorage.Storage;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
@@ -58,7 +58,7 @@ public class SpillingCursor extends TupleCursorBase {
     })
     public SpillingCursor(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock, Accumulator accumulator,
-            Spiller spiller, Tuple2 destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
+            Spiller spiller, Pair destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
             boolean useBigEndian
     ) {
         super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destTuple, partitions, header, ioContext,

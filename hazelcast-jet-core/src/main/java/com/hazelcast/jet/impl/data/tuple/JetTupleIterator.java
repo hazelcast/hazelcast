@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.data.tuple;
 
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Iterator;
 
-public class JetTupleIterator<R> implements Iterator<JetTuple> {
+public class JetTupleIterator<R> implements Iterator<JetPair> {
     private final Iterator<R> iterator;
     private final JetTupleConverter<R> convertor;
     private final SerializationService serializationService;
@@ -45,7 +45,7 @@ public class JetTupleIterator<R> implements Iterator<JetTuple> {
     }
 
     @Override
-    public JetTuple next() {
+    public JetPair next() {
         return convertor.convert(iterator.next(), serializationService);
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,7 +31,7 @@ public class DistinctProcessor<T> extends AbstractStreamProcessor<T, T> {
     private Iterator<T> iterator;
     private final Map<T, Boolean> map = new HashMap<>();
 
-    public DistinctProcessor(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper) {
+    public DistinctProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper) {
         super(inputMapper, outputMapper);
 
     }

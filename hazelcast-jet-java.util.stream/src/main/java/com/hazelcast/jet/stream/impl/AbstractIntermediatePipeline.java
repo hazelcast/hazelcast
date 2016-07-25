@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
@@ -30,8 +30,8 @@ public abstract class AbstractIntermediatePipeline<E_IN, E_OUT> extends Abstract
         this.upstream = upstream;
     }
 
-    protected Distributed.Function<E_IN, Tuple2> toTupleMapper() {
-        return v -> new JetTuple2<>(v, v);
+    protected Distributed.Function<E_IN, Pair> toTupleMapper() {
+        return v -> new JetPair<>(v, v);
     }
 
 }

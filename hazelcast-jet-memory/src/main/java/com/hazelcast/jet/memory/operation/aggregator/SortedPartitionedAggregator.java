@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation.aggregator;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.TupleFetcher;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
@@ -174,7 +174,7 @@ extends PartitionedAggregatorBase implements SortedAggregator {
     public SortedPartitionedAggregator(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
             MemoryContext memoryContext, MemoryChainingRule memoryChainingRule,
-            Tuple2 destTuple, String spillingDirectory, SortOrder sortOrder,
+            Pair destTuple, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         this(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext, memoryChainingRule,
@@ -186,7 +186,7 @@ extends PartitionedAggregatorBase implements SortedAggregator {
     })
     public SortedPartitionedAggregator(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 destTuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair destTuple,
             Accumulator accumulator, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {

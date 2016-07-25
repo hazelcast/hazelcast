@@ -21,7 +21,7 @@ import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataOutput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.JetMemoryException;
 import com.hazelcast.jet.memory.JetOutOfMemoryException;
 import com.hazelcast.jet.memory.Partition;
@@ -72,7 +72,7 @@ public abstract class PartitionedAggregatorBase implements Aggregator {
     protected final Partition[] partitions;
     protected final StorageHeader header;
     protected final LongConsumer hsaResizeListener;
-    protected final Tuple2 destTuple;
+    protected final Pair destTuple;
     protected SpillFileCursor spillFileCursor;
 
     private final boolean spillToDisk;
@@ -84,7 +84,7 @@ public abstract class PartitionedAggregatorBase implements Aggregator {
     @SuppressWarnings({"checkstyle:parameternumber", "checkstyle:executablestatementcount"})
     protected PartitionedAggregatorBase(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 destTuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair destTuple,
             Accumulator accumulator, String spillPathname, int spillingChunkSize, boolean spillToDisk,
             boolean useBigEndian
     ) {
@@ -161,7 +161,7 @@ public abstract class PartitionedAggregatorBase implements Aggregator {
     }
 
     @Override
-    public boolean accept(Tuple2 tuple) {
+    public boolean accept(Pair tuple) {
         try {
             writeTuple(tuple, getComparator());
         } catch (JetOutOfMemoryException exception) {
@@ -256,7 +256,7 @@ public abstract class PartitionedAggregatorBase implements Aggregator {
         return true;
     }
 
-    private void writeTuple(Tuple2 tuple, Comparator comparator) {
+    private void writeTuple(Pair tuple, Comparator comparator) {
         serviceMemoryBlock.reset();
         JetIoUtil.writeTuple(tuple, jetDataOutput, ioContext, serviceMemoryBlock);
         long serviceTupleAddress = jetDataOutput.baseAddress();

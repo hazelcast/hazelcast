@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.io;
 
-import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
@@ -35,7 +34,7 @@ public enum PredefinedType implements DataType {
     INT(-6, Integer.class, new IntegerIO()),
     LONG(-5, Long.class, new LongIO()),
     // -4 Reserved for JetTuple
-    TUPLE2(-3, Tuple2.class, new Tuple2IO()),
+    TUPLE2(-3, Pair.class, new Tuple2IO()),
     STRING(-2, String.class, new StringIO()),
     OBJECT(-1, Object.class, new DefaultObjectIO()),
     NULL(NULL_TYPE_ID, null, new NullObjectIO());
@@ -260,14 +259,14 @@ public enum PredefinedType implements DataType {
         }
     }
 
-    private static class Tuple2IO implements ObjectIO<Tuple2> {
+    private static class Tuple2IO implements ObjectIO<Pair> {
         @Override
-        public Tuple2 read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
-            return new Tuple2<>(readComponent(objectDataInput, ioContext), readComponent(objectDataInput, ioContext));
+        public Pair read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException {
+            return new Pair<>(readComponent(objectDataInput, ioContext), readComponent(objectDataInput, ioContext));
         }
 
         @Override
-        public void write(Tuple2 tuple, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
+        public void write(Pair tuple, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException {
             objectDataOutput.writeByte(TUPLE2.typeId());
             for (int i = 0; i < 2; i++) {
                 final Object o = tuple.get(i);

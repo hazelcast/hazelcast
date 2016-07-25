@@ -20,7 +20,7 @@ import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.TupleFetcher;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
@@ -39,7 +39,7 @@ public abstract class TupleCursorBase implements TupleCursor {
     protected final JetDataInput dataInput;
     protected final Accumulator accumulator;
     protected final MemoryBlock serviceMemoryBlock;
-    protected final Tuple2 destTuple;
+    protected final Pair destTuple;
     protected final MemoryBlock temporaryMemoryBlock;
     protected final Partition[] partitions;
     protected final TupleFetcher tupleFetcher;
@@ -48,7 +48,7 @@ public abstract class TupleCursorBase implements TupleCursor {
 
     protected TupleCursorBase(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock, Accumulator accumulator,
-            Tuple2 destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
+            Pair destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
             boolean useBigEndian
     ) {
         this.header = header;
@@ -65,7 +65,7 @@ public abstract class TupleCursorBase implements TupleCursor {
     }
 
     @Override
-    public Tuple2 asTuple() {
+    public Pair asTuple() {
         return tupleFetcher.tuple();
     }
 

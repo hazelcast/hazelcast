@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 
 import java.util.Iterator;
@@ -32,7 +32,7 @@ public class TransformProcessor extends AbstractStreamProcessor<Object, Object> 
 
     private final TransformOperation[] operations;
 
-    public TransformProcessor(Function<Tuple, Object> inputMapper, Function<Object, Tuple> outputMapper,
+    public TransformProcessor(Function<Pair, Object> inputMapper, Function<Object, Pair> outputMapper,
                               List<TransformOperation> operations) {
         super(inputMapper, outputMapper);
         this.operations = operations.toArray(new TransformOperation[operations.size()]);

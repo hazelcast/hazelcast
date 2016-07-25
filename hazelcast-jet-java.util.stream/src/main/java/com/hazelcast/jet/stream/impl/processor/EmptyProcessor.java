@@ -19,13 +19,13 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
-public class EmptyProcessor implements ContainerProcessor<Tuple, Tuple> {
+public class EmptyProcessor implements ContainerProcessor<Pair, Pair> {
 
     @Override
-    public boolean process(ProducerInputStream<Tuple> inputStream, ConsumerOutputStream<Tuple> outputStream,
+    public boolean process(ProducerInputStream<Pair> inputStream, ConsumerOutputStream<Pair> outputStream,
                            String sourceName, ProcessorContext processorContext) throws Exception {
         outputStream.consumeStream(inputStream);
         return true;

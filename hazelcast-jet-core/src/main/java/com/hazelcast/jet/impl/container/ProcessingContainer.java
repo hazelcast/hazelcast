@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.container;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.data.DataReader;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
@@ -313,13 +313,13 @@ public class ProcessingContainer extends
     private void buildSources() {
         if (getVertex().getSources().size() > 0) {
             for (Source source : getVertex().getSources()) {
-                List<DataReader> readers = getDataReaders(source);
+                List<ObjectProducer> readers = getDataReaders(source);
                 sourcesProducers.addAll(readers);
             }
         }
     }
 
-    private List<DataReader> getDataReaders(Source source) {
+    private List<ObjectProducer> getDataReaders(Source source) {
         return Arrays.asList(source.getReaders(getContainerContext(), getVertex()));
     }
 

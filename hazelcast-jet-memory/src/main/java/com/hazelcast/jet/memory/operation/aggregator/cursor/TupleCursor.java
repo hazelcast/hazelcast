@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 
 /**
@@ -32,5 +32,5 @@ public interface TupleCursor {
      * the returned object is valid only until {@code advance} or {@code reset} is
      * called on this cursor.
      */
-    Tuple2 asTuple();
+    Pair asTuple();
 }

@@ -18,7 +18,7 @@ package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.DataReader;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.dag.source.DataFileReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
@@ -41,11 +41,11 @@ public class FileSource implements Source {
     }
 
     @Override
-    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
+    public ObjectProducer[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
         File file = new File(this.name);
         int chunkCount = vertex.getDescriptor().getTaskCount();
         long[] chunks = JetUtil.splitFile(file, chunkCount);
-        DataReader[] readers = new DataReader[chunkCount];
+        ObjectProducer[] readers = new ObjectProducer[chunkCount];
         for (int i = 0; i < chunkCount; i++) {
             long start = chunks[i];
 

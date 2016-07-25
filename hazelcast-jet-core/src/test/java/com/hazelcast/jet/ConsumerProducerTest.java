@@ -26,9 +26,8 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -111,11 +110,11 @@ public class ConsumerProducerTest extends JetTestSupport {
     }
 
     public static class FinalizingProcessor
-            implements ContainerProcessor<Tuple2<Integer, String>, Tuple2<Integer, String>> {
+            implements ContainerProcessor<Pair<Integer, String>, Pair<Integer, String>> {
         @Override
-        public boolean finalizeProcessor(ConsumerOutputStream<Tuple2<Integer, String>> outputStream,
+        public boolean finalizeProcessor(ConsumerOutputStream<Pair<Integer, String>> outputStream,
                                          ProcessorContext processorContext) throws Exception {
-            outputStream.consume(new JetTuple2<>(0, "empty"));
+            outputStream.consume(new JetPair<>(0, "empty"));
             return true;
         }
     }

@@ -21,7 +21,7 @@ import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.serialization.JetDataInput;
 import com.hazelcast.jet.io.serialization.JetDataOutput;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.nio.Bits;
 
 import java.io.IOException;
@@ -62,7 +62,7 @@ public final class JetIoUtil {
         return Bits.LONG_SIZE_IN_BYTES + keySize + Bits.LONG_SIZE_IN_BYTES + valueSize;
     }
 
-    public static void writeTuple(Tuple2 tuple, JetDataOutput output, IOContext ioContext, MemoryManager memoryManager) {
+    public static void writeTuple(Pair tuple, JetDataOutput output, IOContext ioContext, MemoryManager memoryManager) {
         output.clear();
         output.setMemoryManager(memoryManager);
         try {
@@ -83,7 +83,7 @@ public final class JetIoUtil {
     }
 
     public static void readTuple(
-            JetDataInput input, long tupleAddress, Tuple2 tuple, IOContext ioContext, MemoryAccessor memoryAccessor
+            JetDataInput input, long tupleAddress, Pair tuple, IOContext ioContext, MemoryAccessor memoryAccessor
     ) {
         input.reset(tupleAddress, sizeOfTupleAt(tupleAddress, memoryAccessor));
         try {

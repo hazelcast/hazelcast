@@ -20,8 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.dag.sink.MapSink;
 import com.hazelcast.jet.dag.sink.Sink;
-import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 
 import java.util.function.Function;
@@ -54,8 +54,8 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
     }
 
     @Override
-    protected <U extends T> Distributed.Function<U, Tuple2> toTupleMapper() {
-        return v -> new JetTuple2<>(keyMapper.apply(v), valueMapper.apply(v));
+    protected <U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+        return v -> new JetPair<>(keyMapper.apply(v), valueMapper.apply(v));
     }
 
     @Override

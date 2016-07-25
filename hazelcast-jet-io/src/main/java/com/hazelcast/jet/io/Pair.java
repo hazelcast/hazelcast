@@ -14,81 +14,74 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.tuple;
+package com.hazelcast.jet.io;
 
-import com.hazelcast.jet.io.JetIoException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class Tuple2<T0, T1> implements Tuple {
-    protected T0 c0;
-    protected T1 c1;
+public class Pair<K, V> {
+    protected K key;
+    protected V value;
 
-    public Tuple2() {
+    public Pair() {
     }
 
-    public Tuple2(T0 c0, T1 c1) {
-        this.c0 = c0;
-        this.c1 = c1;
+    public Pair(K key, V value) {
+        this.key = key;
+        this.value = value;
     }
 
-    public T0 get0() {
-        return c0;
+    public K getKey() {
+        return key;
     }
 
-    public T1 get1() {
-        return c1;
+    public V getValue() {
+        return value;
     }
 
-    public void set0(T0 c0) {
-        this.c0 = c0;
+    public void setKey(K key) {
+        this.key = key;
     }
 
-    public void set1(T1 c1) {
-        this.c1 = c1;
+    public void setValue(V value) {
+        this.value = value;
     }
 
-    @Override
     public <T> T get(int index) {
-        final Object result = index == 0 ? c0
-                            : index == 1 ? c1
+        final Object result = index == 0 ? key
+                            : index == 1 ? value
                             : error("Attempt to access component at index " + index);
         return (T) result;
     }
 
-    @Override
     public void set(int index, Object value) {
         if (index == 0) {
-            this.c0 = (T0) value;
+            this.key = (K) value;
         } else if (index == 1) {
-            this.c1 = (T1) value;
+            this.value = (V) value;
         } else {
             error("Attempt to set a component at index " + index);
         }
     }
 
-    @Override
     public int size() {
         return 2;
     }
 
-    @Override
     public Object[] toArray() {
         throw new IllegalStateException("Not supported");
     }
 
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(c0);
-        out.writeObject(c1);
+        out.writeObject(key);
+        out.writeObject(value);
     }
 
-    @Override
     public void readData(ObjectDataInput in) throws IOException {
-        c0 = in.readObject();
-        c1 = in.readObject();
+        key = in.readObject();
+        value = in.readObject();
     }
 
     private static Object error(String msg) {

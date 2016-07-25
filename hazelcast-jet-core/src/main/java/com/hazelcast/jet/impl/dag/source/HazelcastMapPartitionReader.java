@@ -21,8 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.data.tuple.JetTuple;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.JetTupleConverter;
 import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
@@ -39,16 +38,16 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class HazelcastMapPartitionReader extends AbstractHazelcastReader<JetTuple> {
+public class HazelcastMapPartitionReader extends AbstractHazelcastReader<JetPair> {
     private final MapConfig mapConfig;
     private final CalculationStrategy calculationStrategy;
 
     private final JetTupleConverter<Record> tupleConverter = new JetTupleConverter<Record>() {
         @Override
-        public JetTuple2 convert(Record record, SerializationService ss) {
+        public JetPair convert(Record record, SerializationService ss) {
             final Object value = mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY
                     ? ss.toObject(record.getValue()) : record.getValue();
-            return new JetTuple2<>(ss.toObject(record.getKey()), value, getPartitionId(), calculationStrategy);
+            return new JetPair<>(ss.toObject(record.getKey()), value, getPartitionId());
         }
     };
 

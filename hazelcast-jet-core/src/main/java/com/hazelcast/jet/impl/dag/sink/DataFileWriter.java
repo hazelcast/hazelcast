@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 public class DataFileWriter extends AbstractHazelcastWriter {
@@ -38,7 +38,7 @@ public class DataFileWriter extends AbstractHazelcastWriter {
         checkFileOpen();
         StringBuilder sb = new StringBuilder();
         for (Object o : stream) {
-            Tuple2 t = (Tuple2) o;
+            Pair t = (Pair) o;
             for (int i = 0; i < 2; i++) {
                 sb.append(t.get(i).toString()).append(" ");
             }

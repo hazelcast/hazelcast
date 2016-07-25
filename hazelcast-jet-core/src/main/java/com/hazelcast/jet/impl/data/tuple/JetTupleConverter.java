@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.data.tuple;
 
 
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
@@ -38,5 +38,5 @@ public interface JetTupleConverter<R> {
      * @param ss     - Hazelcast serialization  service;
      * @return - corresponding tuple representation;
      */
-    JetTuple convert(R object, SerializationService ss);
+    JetPair convert(R object, SerializationService ss);
 }

@@ -21,7 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -58,10 +58,10 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            JetTuple2 tuple = (JetTuple2) chunk.get(i);
+            JetPair tuple = (JetPair) chunk.get(i);
             final Data keyData = tuple.getComponentData(0, calculationStrategy, getNodeEngine());
             final Object valueData = mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY
-                    ? tuple.getComponentData(1, calculationStrategy, getNodeEngine()) : tuple.get1();
+                    ? tuple.getComponentData(1, calculationStrategy, getNodeEngine()) : tuple.getValue();
             this.recordStore.put(keyData, valueData, -1);
         }
     }

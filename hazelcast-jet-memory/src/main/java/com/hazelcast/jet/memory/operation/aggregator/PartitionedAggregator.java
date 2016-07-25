@@ -17,7 +17,7 @@
 package com.hazelcast.jet.memory.operation.aggregator;
 
 import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.binarystorage.HashStorage;
 import com.hazelcast.jet.memory.binarystorage.Storage;
@@ -105,7 +105,7 @@ public class PartitionedAggregator extends PartitionedAggregatorBase {
     })
     public PartitionedAggregator(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 destTuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair destTuple,
             String spillingDirectory, int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         this(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
@@ -119,7 +119,7 @@ public class PartitionedAggregator extends PartitionedAggregatorBase {
     })
     public PartitionedAggregator(
             int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 destTuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair destTuple,
             Accumulator accumulator, String spillingDirectory,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
@@ -192,7 +192,7 @@ public class PartitionedAggregator extends PartitionedAggregatorBase {
         }
 
         @Override
-        public Tuple2 asTuple() {
+        public Pair asTuple() {
             return (spillingCursorDone ? memoryCursor : spillingCursor).asTuple();
         }
     }

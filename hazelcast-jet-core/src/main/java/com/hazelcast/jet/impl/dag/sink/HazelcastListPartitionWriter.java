@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -55,7 +55,7 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            final JetTuple2 tuple = (JetTuple2) chunk.get(i);
+            final JetPair tuple = (JetPair) chunk.get(i);
             if (tuple == null) {
                 continue;
             }

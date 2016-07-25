@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.data.tuple;
+package com.hazelcast.jet.data;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.strategy.CalculationStrategy;
-import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -37,46 +33,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <T0> type of component 0
  * @param <T1> type of component 1
  */
-public class JetTuple2<T0, T1> extends Tuple2<T0, T1> implements JetTuple {
+public class JetPair<T0, T1> extends Pair<T0, T1> {
     private int partitionId;
-    private final CalculationStrategy calculationStrategy;
 
     /**
      * Creates a tuple with the given components, partition ID -1, and no CalculationStrategy.
      */
-    public JetTuple2(T0 c0, T1 c1) {
-        this(c0, c1, -1, null);
+    public JetPair(T0 c0, T1 c1) {
+        this(c0, c1, -1);
     }
 
     /**
      * Creates a tuple with the given components, partition ID and CalculationStrategy.
      */
-    public JetTuple2(T0 c0, T1 c1, int partitionId, CalculationStrategy calculationStrategy) {
+    public JetPair(T0 c0, T1 c1, int partitionId) {
         super(c0, c1);
         this.partitionId = partitionId;
-        this.calculationStrategy = calculationStrategy;
     }
 
-    @Override
-    public Data getComponentData(NodeEngine nodeEngine) {
-        checkNotNull(calculationStrategy);
-        return getComponentData(calculationStrategy, nodeEngine);
-    }
-
-    @Override
-    public Data getComponentData(CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
-        BufferObjectDataOutput output =
-                ((InternalSerializationService) nodeEngine.getSerializationService()).createObjectDataOutput();
-        try {
-            output.writeObject(c0);
-            output.writeObject(c1);
-        } catch (IOException e) {
-            throw JetUtil.reThrow(e);
-        }
-        return new HeapData(output.toByteArray());
-    }
-
-    @Override
     public Data getComponentData(int index, CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
         return nodeEngine.getSerializationService().toData(get(index), calculationStrategy.getPartitioningStrategy());
     }
@@ -93,12 +67,6 @@ public class JetTuple2<T0, T1> extends Tuple2<T0, T1> implements JetTuple {
         this.partitionId = in.readInt();
     }
 
-    @Override
-    public CalculationStrategy getCalculationStrategy() {
-        return calculationStrategy;
-    }
-
-    @Override
     public int getPartitionId() {
         return partitionId;
     }

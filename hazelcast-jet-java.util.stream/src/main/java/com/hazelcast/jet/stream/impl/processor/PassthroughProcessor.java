@@ -18,13 +18,13 @@ package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 
 import java.util.function.Function;
 
 public class PassthroughProcessor<T> extends AbstractStreamProcessor<T, T> {
 
-    public PassthroughProcessor(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper) {
+    public PassthroughProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper) {
         super(inputMapper, outputMapper);
     }
 

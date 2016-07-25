@@ -20,16 +20,11 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.data.tuple.JetTuple;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.JetTupleConverter;
 import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -38,21 +33,13 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.List;
 
-public class HazelcastListPartitionReader extends AbstractHazelcastReader<JetTuple> {
-    private final CalculationStrategy calculationStrategy;
-    private final JetTupleConverter<CollectionItem> tupleConverter = new JetTupleConverter<CollectionItem>() {
-        @Override
-        public JetTuple2 convert(CollectionItem item, SerializationService ss) {
-            return new JetTuple2<>(item.getItemId(), ss.toObject(item.getValue()), getPartitionId(), calculationStrategy);
-        }
-    };
+public class HazelcastListPartitionReader extends AbstractHazelcastReader<JetPair> {
+    private final JetTupleConverter<CollectionItem> tupleConverter =
+            (item, ss) -> new JetPair<>(item.getItemId(), ss.toObject(item.getValue()), getPartitionId());
 
     public HazelcastListPartitionReader(ContainerDescriptor containerDescriptor, String name) {
         super(containerDescriptor, name, getPartitionId(containerDescriptor.getNodeEngine(), name),
                 ByReferenceDataTransferringStrategy.INSTANCE);
-        this.calculationStrategy = new CalculationStrategyImpl(
-                DefaultHashingStrategy.INSTANCE, StringAndPartitionAwarePartitioningStrategy.INSTANCE,
-                containerDescriptor);
     }
 
     public static int getPartitionId(NodeEngine nodeEngine, String name) {

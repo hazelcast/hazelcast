@@ -20,8 +20,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.MapSink;
-import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -89,7 +89,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
         return target;
     }
 
-    protected <U extends T> Distributed.Function<U, Tuple2> toTupleMapper() {
-        return v -> new JetTuple2<>(classifier.apply(v), v);
+    protected <U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+        return v -> new JetPair<>(classifier.apply(v), v);
     }
 }
