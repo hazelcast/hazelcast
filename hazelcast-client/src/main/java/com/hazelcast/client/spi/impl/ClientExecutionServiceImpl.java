@@ -43,12 +43,19 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     private final ExecutorService userExecutor;
     private final ScheduledExecutorService internalExecutor;
+    private int userExecutorQueueOverloadedSize;
+    private final LinkedBlockingQueue<Runnable> userExecutorQueue;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader,
                                       ClientProperties properties, int poolSize) {
         int internalPoolSize = properties.getInteger(ClientProperty.INTERNAL_EXECUTOR_POOL_SIZE);
         if (internalPoolSize <= 0) {
             internalPoolSize = Integer.parseInt(ClientProperty.INTERNAL_EXECUTOR_POOL_SIZE.getDefaultValue());
+        }
+        userExecutorQueueOverloadedSize = properties.getInteger(ClientProperty.NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE);
+        if (userExecutorQueueOverloadedSize <= 0) {
+            userExecutorQueueOverloadedSize = Integer
+                    .parseInt(ClientProperty.NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE.getDefaultValue());
         }
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
@@ -63,18 +70,17 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
-        userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(),
+
+        userExecutorQueue = new LinkedBlockingQueue<Runnable>();
+        userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS, userExecutorQueue,
                 new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
+                        String message = "User executor rejected task: " + r + ", because client is shutting down...";
                         LOGGER.finest(message);
                         throw new RejectedExecutionException(message);
                     }
                 });
-
-
     }
 
     public void executeInternal(Runnable runnable) {
@@ -155,5 +161,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     public ExecutorService getInternalExecutor() {
         return internalExecutor;
+    }
+
+    public boolean isUserExecutorOverloaded() {
+        return userExecutorQueue.size() < userExecutorQueueOverloadedSize;
     }
 }

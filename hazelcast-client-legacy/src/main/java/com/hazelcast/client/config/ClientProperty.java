@@ -83,7 +83,13 @@ public enum ClientProperty implements HazelcastProperty {
      * eventually be removed when the experimental marker is removed.</p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
-    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false);
+    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false),
+
+    /**
+     * Configures queue size of nearcache client executor. Private configuration, for internal usage only.
+     */
+    NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE("hazelcast.client.nearcache.executor.queue.overload.size", 1000);
+
 
     private final String name;
     private final String defaultValue;

@@ -86,6 +86,11 @@ public enum ClientProperty implements HazelcastProperty {
     DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false),
 
     /**
+     * Configures queue size of nearcache client executor. Private configuration, for internal usage only.
+     */
+    NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE("hazelcast.client.nearcache.executor.queue.overload.size", 1000),
+
+    /**
      * Configures pool size of internal client executor. Private configuration, for internal usage only.
      */
     INTERNAL_EXECUTOR_POOL_SIZE("hazelcast.client.internal.executor.pool.size", 3);

@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -54,11 +56,20 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ExecutorService userExecutor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
+    private int userExecutorQueueOverloadedSize;
+    private final LinkedBlockingQueue<Runnable> userExecutorQueue;
 
-    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
+    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader,
+                                      ClientProperties properties, int poolSize) {
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();
+        }
+
+        userExecutorQueueOverloadedSize = properties.getInteger(ClientProperty.NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE);
+        if (userExecutorQueueOverloadedSize <= 0) {
+            userExecutorQueueOverloadedSize = Integer
+                    .parseInt(ClientProperty.NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE.getDefaultValue());
         }
 
         internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
@@ -71,8 +82,10 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
+
+        userExecutorQueue = new LinkedBlockingQueue<Runnable>();
         userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(),
+                userExecutorQueue,
                 new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -196,5 +209,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     public ExecutorService getInternalExecutor() {
         return internalExecutor;
+    }
+
+    public boolean isUserExecutorOverloaded() {
+        return userExecutorQueue.size() < userExecutorQueueOverloadedSize;
     }
 }
