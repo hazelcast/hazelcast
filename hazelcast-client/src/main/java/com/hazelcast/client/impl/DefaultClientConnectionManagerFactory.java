@@ -25,6 +25,8 @@ import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -52,7 +54,7 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
                 throw e;
             }
         } else if (discoveryService != null) {
-            addressTranslator = new DiscoveryAddressTranslator(discoveryService);
+            addressTranslator = new DiscoveryAddressTranslator(discoveryService, client.getClientProperties().getBoolean(GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
         } else {
             addressTranslator = new DefaultAddressTranslator();
         }

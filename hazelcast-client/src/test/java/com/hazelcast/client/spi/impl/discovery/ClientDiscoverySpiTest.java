@@ -32,6 +32,7 @@ import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -218,7 +219,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryServiceProvider provider = new DefaultDiscoveryServiceProvider();
         DiscoveryService discoveryService = provider.newDiscoveryService(buildDiscoveryServiceSettings(discoveryConfig));
 
-        AddressTranslator translator = new DiscoveryAddressTranslator(discoveryService);
+        AddressTranslator translator = new DiscoveryAddressTranslator(discoveryService, false);
 
         Address address = new Address("127.0.0.1", 50001);
 
