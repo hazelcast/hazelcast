@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -75,9 +76,13 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
     }
 
     @Override
-    public void submit(DAG dag, Class... classes) throws IOException {
+    public void submit(DAG dag, Class... classes) {
         if (classes != null) {
-            addResource(classes);
+            try {
+                addResource(classes);
+            } catch (IOException e) {
+                throw JetUtil.reThrow(e);
+            }
         }
 
         localizeJob();

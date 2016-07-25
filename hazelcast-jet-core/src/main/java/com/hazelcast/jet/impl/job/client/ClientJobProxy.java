@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.job.Job;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -79,9 +80,13 @@ public class ClientJobProxy extends ClientProxy implements Job {
     }
 
     @Override
-    public void submit(DAG dag, Class... classes) throws IOException {
+    public void submit(DAG dag, Class... classes) {
         if (classes != null) {
-            addResource(classes);
+            try {
+                addResource(classes);
+            } catch (IOException e) {
+                throw JetUtil.reThrow(e);
+            }
         }
 
         localizeApplication();

@@ -34,7 +34,6 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.util.UuidUtil;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -85,12 +84,8 @@ public final class StreamUtil {
 
     public static void executeJob(StreamContext context, DAG dag) {
         Job job = JetEngine.getJob(context.getHazelcastInstance(), randomName());
-        try {
-            Set<Class> classes = context.getClasses();
-            job.submit(dag, classes.toArray(new Class[classes.size()]));
-        } catch (IOException e) {
-            throw reThrow(e);
-        }
+        Set<Class> classes = context.getClasses();
+        job.submit(dag, classes.toArray(new Class[classes.size()]));
         try {
             result(job.execute());
             context.getStreamListeners().forEach(Runnable::run);

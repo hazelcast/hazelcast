@@ -22,6 +22,7 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.job.localization.LocalizationResourceType;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -37,9 +38,8 @@ public interface Job extends DistributedObject {
      *
      * @param dag     Direct acyclic graph, which describes calculation flow
      * @param classes Classes which will be used during calculation process
-     * @throws IOException if job could not be submitted
      */
-    void submit(DAG dag, Class... classes) throws IOException;
+    void submit(DAG dag, Class... classes);
 
 
     /**
