@@ -38,8 +38,14 @@ public final class NodeExtensionFactory {
             while (iter.hasNext()) {
                 Class<NodeExtension> clazz = iter.next();
                 if (!(clazz.equals(DefaultNodeExtension.class))) {
+                    if (clazz.getName().equals(DefaultNodeExtension.class.getName())) {
+                        node.nodeEngine.getLogger(NodeExtensionFactory.class).warning(
+                                "DefaultNodeExtension class has been loaded by two different class-loaders. "
+                                        + "Are you running Hazelcast in an OSGi environment? "
+                                        + "If so, set the bundle class-loader in the Config using the setClassloader() method");
+                    }
                     Constructor<NodeExtension> constructor = clazz
-                            .getDeclaredConstructor(new Class[] {Node.class});
+                            .getDeclaredConstructor(new Class[]{Node.class});
                     return constructor.newInstance(node);
                 }
             }
