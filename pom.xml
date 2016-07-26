@@ -39,6 +39,7 @@
         <module>hazelcast-ra</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-jclouds</module>
+        <module>hazelcast-all</module>
     </modules>
 
     <properties>
