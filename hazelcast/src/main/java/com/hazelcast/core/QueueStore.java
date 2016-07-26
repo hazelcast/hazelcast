@@ -57,9 +57,9 @@ public interface QueueStore<T> {
     void deleteAll(Collection<Long> keys);
 
     /**
-     * Loads the value of a given key. If distributed map does not contain the value
-     * for the given key, then Hazelcast will call the implementation load (key) method
-     * to obtain the value. Implementation can use any means of loading the given key;
+     * Loads the value of a given key.
+     * <p>
+     * Implementation can use any means of loading the given key;
      * such as an O/R mapping tool, simple SQL, reading a file, etc.
      *
      * @param key
@@ -70,16 +70,21 @@ public interface QueueStore<T> {
     /**
      * Loads the given keys. This is a batch load operation so that implementation can
      * optimize the multiple loads.
+     * <p>
+     * Set the bulk-load property to configure batch loading. When the queue is initialized, items are loaded from
+     * QueueStore in bulks. Bulk load is the size of these bulks. The default value of bulk-load is 250.
      *
      * @param keys keys of the value entries to load
-     * @return map of loaded key-value pairs.
+     * @return map of loaded key-value pairs. May return null if no values loaded.
      */
     Map<Long, T> loadAll(Collection<Long> keys);
 
     /**
      * Loads all of the keys from the store.
+     * <p>
+     * The items identified by the keys will be loaded in the iteration order of the returned Set
      *
-     * @return all the keys from the store
+     * @return all the keys from the store. May return null if no keys loaded.
      */
     Set<Long> loadAllKeys();
 }
