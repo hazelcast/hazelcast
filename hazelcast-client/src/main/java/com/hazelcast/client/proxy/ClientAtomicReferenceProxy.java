@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterCodec;
@@ -31,6 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -41,82 +43,199 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy implements IAtomicReference<E> {
 
+    private static final ClientMessageDecoder APPLY_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <R> R decodeClientMessage(ClientMessage clientMessage) {
+            return (R) AtomicReferenceApplyCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder ALTER_DECODER = new ClientMessageDecoder() {
+        @Override
+        public Void decodeClientMessage(ClientMessage clientMessage) {
+            return null;
+        }
+    };
+
+    private static final ClientMessageDecoder ALTER_AND_GET_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <E> E decodeClientMessage(ClientMessage clientMessage) {
+            return (E) AtomicReferenceAlterAndGetCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder GET_AND_ALTER_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <E> E decodeClientMessage(ClientMessage clientMessage) {
+            return (E) AtomicReferenceGetAndAlterCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder COMPARE_AND_SET_DECODER = new ClientMessageDecoder() {
+        @Override
+        public Boolean decodeClientMessage(ClientMessage clientMessage) {
+            return AtomicReferenceCompareAndSetCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder CONTAINS_DECODER = new ClientMessageDecoder() {
+        @Override
+        public Boolean decodeClientMessage(ClientMessage clientMessage) {
+            return AtomicReferenceContainsCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder GET_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <E> E decodeClientMessage(ClientMessage clientMessage) {
+            return (E) AtomicReferenceGetCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder SET_DECODER = new ClientMessageDecoder() {
+        @Override
+        public Void decodeClientMessage(ClientMessage clientMessage) {
+            return null;
+        }
+    };
+
+    private static final ClientMessageDecoder CLEAR_DECODER = new ClientMessageDecoder() {
+        @Override
+        public Void decodeClientMessage(ClientMessage clientMessage) {
+            return null;
+        }
+    };
+
+    private static final ClientMessageDecoder GET_AND_SET_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <E> E decodeClientMessage(ClientMessage clientMessage) {
+            return (E) AtomicReferenceGetAndSetCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder IS_NULL_DECODER = new ClientMessageDecoder() {
+        @Override
+        public Boolean decodeClientMessage(ClientMessage clientMessage) {
+            return AtomicReferenceIsNullCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
     public ClientAtomicReferenceProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
     }
 
     @Override
-    public <R> R apply(IFunction<E, R> function) {
+    public <R> InternalCompletableFuture<R> applyAsync(IFunction<E, R> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicReferenceApplyCodec.encodeRequest(name, toData(function));
-        ClientMessage response = invokeOnPartition(request);
-        AtomicReferenceApplyCodec.ResponseParameters resultParameters =
-                AtomicReferenceApplyCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        return invokeOnPartitionAsync(request, APPLY_DECODER);
+    }
+
+    @Override
+    public <R> R apply(IFunction<E, R> function) {
+        return applyAsync(function).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> alterAsync(IFunction<E, E> function) {
+        isNotNull(function, "function");
+        ClientMessage request = AtomicReferenceAlterCodec.encodeRequest(name, toData(function));
+        return invokeOnPartitionAsync(request, ALTER_DECODER);
     }
 
     @Override
     public void alter(IFunction<E, E> function) {
+        alterAsync(function).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<E> alterAndGetAsync(IFunction<E, E> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicReferenceAlterCodec.encodeRequest(name, toData(function));
-        invokeOnPartition(request);
+        ClientMessage request = AtomicReferenceAlterAndGetCodec.encodeRequest(name, toData(function));
+        return invokeOnPartitionAsync(request, ALTER_AND_GET_DECODER);
     }
 
     @Override
     public E alterAndGet(IFunction<E, E> function) {
+        return alterAndGetAsync(function).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<E> getAndAlterAsync(IFunction<E, E> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicReferenceAlterAndGetCodec.encodeRequest(name, toData(function));
-        ClientMessage response = invokeOnPartition(request);
-        return toObject(AtomicReferenceAlterAndGetCodec.decodeResponse(response).response);
+        ClientMessage request = AtomicReferenceGetAndAlterCodec.encodeRequest(name, toData(function));
+        return invokeOnPartitionAsync(request, GET_AND_ALTER_DECODER);
     }
 
     @Override
     public E getAndAlter(IFunction<E, E> function) {
-        isNotNull(function, "function");
-        ClientMessage request = AtomicReferenceGetAndAlterCodec.encodeRequest(name, toData(function));
-        ClientMessage response = invokeOnPartition(request);
-        return toObject(AtomicReferenceGetAndAlterCodec.decodeResponse(response).response);
+        return getAndAlterAsync(function).join();
+    }
 
+    @Override
+    public InternalCompletableFuture<Boolean> compareAndSetAsync(E expect, E update) {
+        ClientMessage request = AtomicReferenceCompareAndSetCodec.encodeRequest(name, toData(expect), toData(update));
+        return invokeOnPartitionAsync(request, COMPARE_AND_SET_DECODER);
     }
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        ClientMessage request = AtomicReferenceCompareAndSetCodec.encodeRequest(name, toData(expect), toData(update));
-        ClientMessage response = invokeOnPartition(request);
-        return AtomicReferenceCompareAndSetCodec.decodeResponse(response).response;
+        return compareAndSetAsync(expect, update).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> containsAsync(E expected) {
+        ClientMessage request = AtomicReferenceContainsCodec.encodeRequest(name, toData(expected));
+        return invokeOnPartitionAsync(request, CONTAINS_DECODER);
     }
 
     @Override
     public boolean contains(E expected) {
-        ClientMessage request = AtomicReferenceContainsCodec.encodeRequest(name, toData(expected));
-        ClientMessage response = invokeOnPartition(request);
-        return AtomicReferenceContainsCodec.decodeResponse(response).response;
+        return containsAsync(expected).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<E> getAsync() {
+        ClientMessage request = AtomicReferenceGetCodec.encodeRequest(name);
+        return invokeOnPartitionAsync(request, GET_DECODER);
     }
 
     @Override
     public E get() {
-        ClientMessage request = AtomicReferenceGetCodec.encodeRequest(name);
-        ClientMessage response = invokeOnPartition(request);
-        return toObject(AtomicReferenceGetCodec.decodeResponse(response).response);
+        return getAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> setAsync(E newValue) {
+        ClientMessage request = AtomicReferenceSetCodec.encodeRequest(name, toData(newValue));
+        return invokeOnPartitionAsync(request, SET_DECODER);
     }
 
     @Override
     public void set(E newValue) {
-        ClientMessage request = AtomicReferenceSetCodec.encodeRequest(name, toData(newValue));
-        invokeOnPartition(request);
+        setAsync(newValue).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> clearAsync() {
+        ClientMessage request = AtomicReferenceClearCodec.encodeRequest(name);
+        return invokeOnPartitionAsync(request, CLEAR_DECODER);
     }
 
     @Override
     public void clear() {
-        ClientMessage request = AtomicReferenceClearCodec.encodeRequest(name);
-        invokeOnPartition(request);
+        clearAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<E> getAndSetAsync(E newValue) {
+        ClientMessage request = AtomicReferenceGetAndSetCodec.encodeRequest(name, toData(newValue));
+        return invokeOnPartitionAsync(request, GET_AND_SET_DECODER);
     }
 
     @Override
     public E getAndSet(E newValue) {
-        ClientMessage request = AtomicReferenceGetAndSetCodec.encodeRequest(name, toData(newValue));
-        ClientMessage response = invokeOnPartition(request);
-        return toObject(AtomicReferenceGetAndSetCodec.decodeResponse(response).response);
+        return getAndSetAsync(newValue).join();
     }
 
     @Override
@@ -127,10 +246,14 @@ public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy 
     }
 
     @Override
-    public boolean isNull() {
+    public InternalCompletableFuture<Boolean> isNullAsync() {
         ClientMessage request = AtomicReferenceIsNullCodec.encodeRequest(name);
-        ClientMessage response = invokeOnPartition(request);
-        return AtomicReferenceIsNullCodec.decodeResponse(response).response;
+        return invokeOnPartitionAsync(request, IS_NULL_DECODER);
+    }
+
+    @Override
+    public boolean isNull() {
+        return isNullAsync().join();
     }
 
     @Override
