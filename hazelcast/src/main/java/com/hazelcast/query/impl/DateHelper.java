@@ -22,7 +22,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
+
+import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
 
 final class DateHelper {
 
@@ -79,19 +80,19 @@ final class DateHelper {
     }
 
     private static DateFormat getTimestampFormat() {
-        return new SimpleDateFormat(TIMESTAMP_FORMAT, Locale.US);
+        return new SimpleDateFormat(TIMESTAMP_FORMAT, LOCALE_INTERNAL);
     }
 
     private static DateFormat getSqlDateFormat() {
-        return new SimpleDateFormat(SQL_DATE_FORMAT, Locale.US);
+        return new SimpleDateFormat(SQL_DATE_FORMAT, LOCALE_INTERNAL);
     }
 
     private static DateFormat getUtilDateFormat() {
-        return new SimpleDateFormat(DATE_FORMAT, Locale.US);
+        return new SimpleDateFormat(DATE_FORMAT, LOCALE_INTERNAL);
     }
 
     private static DateFormat getSqlTimeFormat() {
-        return new SimpleDateFormat(SQL_TIME_FORMAT, Locale.US);
+        return new SimpleDateFormat(SQL_TIME_FORMAT, LOCALE_INTERNAL);
     }
 
 }

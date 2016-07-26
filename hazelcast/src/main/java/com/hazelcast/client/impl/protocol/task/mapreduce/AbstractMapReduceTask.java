@@ -46,11 +46,11 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
+import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
 
 public abstract class AbstractMapReduceTask<Parameters>
         extends AbstractMessageTask<Parameters>
@@ -146,7 +146,7 @@ public abstract class AbstractMapReduceTask<Parameters>
         if (topologyChangedStrategyStr == null) {
             topologyChangedStrategy = config.getTopologyChangedStrategy();
         } else {
-            topologyChangedStrategy = TopologyChangedStrategy.valueOf(topologyChangedStrategyStr.toUpperCase(Locale.ENGLISH));
+            topologyChangedStrategy = TopologyChangedStrategy.valueOf(topologyChangedStrategyStr.toUpperCase(LOCALE_INTERNAL));
         }
         return topologyChangedStrategy;
     }
