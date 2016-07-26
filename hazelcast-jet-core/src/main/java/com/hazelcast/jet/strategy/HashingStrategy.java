@@ -25,7 +25,7 @@ import java.io.Serializable;
  *
  * Used for example to determine correct task which should consume data
  *
- * For example object can be a tuple, partitionKey fields to be used for hash calculation
+ * For example object can be a pair, partitionKey fields to be used for hash calculation
  *
  * @param <O> type of the input object
  * @param <K> type of the partitionKey

@@ -55,17 +55,17 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            final JetPair tuple = (JetPair) chunk.get(i);
-            if (tuple == null) {
+            final JetPair pair = (JetPair) chunk.get(i);
+            if (pair == null) {
                 continue;
             }
             if (!listContainer.hasEnoughCapacity(chunk.size())) {
                 throw new IllegalStateException("IList " + name + " capacity exceeded");
             }
-            if (!(tuple.get(0) instanceof Number)) {
-                throw new IllegalStateException("The key of an IList tuple should be a number");
+            if (!(pair.get(0) instanceof Number)) {
+                throw new IllegalStateException("The key of an IList pair should be a number");
             }
-            this.listContainer.add(tuple.getComponentData(1, calculationStrategy, getNodeEngine()));
+            this.listContainer.add(pair.getComponentData(1, calculationStrategy, getNodeEngine()));
         }
     }
 

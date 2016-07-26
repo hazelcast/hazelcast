@@ -34,11 +34,11 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
  * Deserializes data held by a {@code MemoryManager} and puts it into a {@code Tuple}.
  */
 public class TupleFetcher {
-    protected final Pair tuple;
+    protected final Pair pair;
     private final MemoryDataInput dataInput;
 
-    public TupleFetcher(SerializationOptimizer optimizer, Pair tuple, boolean useBigEndian) {
-        this.tuple = tuple;
+    public TupleFetcher(SerializationOptimizer optimizer, Pair pair, boolean useBigEndian) {
+        this.pair = pair;
         this.dataInput = new MemoryDataInput(null, optimizer, useBigEndian);
     }
 
@@ -46,13 +46,13 @@ public class TupleFetcher {
         dataInput.setMemoryManager(memoryBlock);
         final MemoryAccessor accessor = memoryBlock.getAccessor();
         dataInput.reset(addressOfKeyBlockAt(recordAddress), sizeOfKeyBlockAt(recordAddress, accessor));
-        tuple.setKey(readObject());
+        pair.setKey(readObject());
         dataInput.reset(addrOfValueBlockAt(recordAddress, accessor), sizeOfValueBlockAt(recordAddress, accessor));
-        tuple.setValue(readObject());
+        pair.setValue(readObject());
     }
 
-    public Pair tuple() {
-        return tuple;
+    public Pair pair() {
+        return pair;
     }
 
     private Object readObject() {

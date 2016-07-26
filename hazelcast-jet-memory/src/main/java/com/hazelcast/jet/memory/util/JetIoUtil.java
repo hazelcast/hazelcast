@@ -62,7 +62,7 @@ public final class JetIoUtil {
         return Bits.LONG_SIZE_IN_BYTES + keySize + Bits.LONG_SIZE_IN_BYTES + valueSize;
     }
 
-    public static void writeTuple(Pair tuple, MemoryDataOutput output, MemoryManager memoryManager) {
+    public static void writeTuple(Pair pair, MemoryDataOutput output, MemoryManager memoryManager) {
         output.clear();
         output.setMemoryManager(memoryManager);
         try {
@@ -73,7 +73,7 @@ public final class JetIoUtil {
                 output.skip(Bits.LONG_SIZE_IN_BYTES);
                 // Remember initial block size, to calculate the size of what this iteration wrote
                 final long initialSize = output.usedSize();
-                output.writeOptimized(tuple.get(i));
+                output.writeOptimized(pair.get(i));
                 memoryManager.getAccessor().putLong(output.baseAddress() + initialPos, output.usedSize() - initialSize);
             }
         } catch (IOException e) {
@@ -82,7 +82,7 @@ public final class JetIoUtil {
     }
 
     public static void readTuple(
-            MemoryDataInput input, long tupleAddress, Pair tuple, MemoryAccessor memoryAccessor
+            MemoryDataInput input, long tupleAddress, Pair pair, MemoryAccessor memoryAccessor
     ) {
         input.reset(tupleAddress, sizeOfTupleAt(tupleAddress, memoryAccessor));
         try {
@@ -90,7 +90,7 @@ public final class JetIoUtil {
                 // Skip the size field
                 input.readLong();
                 final Object o = input.readOptimized();
-                tuple.set(i, o);
+                pair.set(i, o);
             }
         } catch (IOException e) {
             throw Util.rethrow(e);

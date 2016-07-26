@@ -102,10 +102,10 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         int VALUES_CNT = 1;
         int[] markers = new int[CNT];
         Arrays.fill(markers, (byte) 0);
-        Pair<String, String> tuple = new Pair<>();
+        Pair<String, String> pair = new Pair<>();
         long t = System.currentTimeMillis();
         for (int i = 0; i < VALUES_CNT; i++) {
-            insertElements(tuple, 1, CNT, i);
+            insertElements(pair, 1, CNT, i);
         }
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         int iterations_cnt = 0;
@@ -140,10 +140,10 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         initAggregator(new StringComparator(), new IntSumAccumulator());
         int CNT = 500_000;
         int VALUES_CNT = 20;
-        Pair<String, Integer> tuple = new Pair<>();
+        Pair<String, Integer> pair = new Pair<>();
         long t = System.currentTimeMillis();
         for (int i = 0; i < VALUES_CNT; i++) {
-            insertElementsWithOneValue(tuple, 1, CNT, i);
+            insertElementsWithOneValue(pair, 1, CNT, i);
             System.out.println("inserted " + CNT);
         }
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
@@ -162,10 +162,10 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         initAggregator(new StringComparator(), new NonAssociativeSumAccumulator());
         int CNT = 2_000_000;
         int VALUES_CNT = 2;
-        Pair<String, Integer> tuple = new Pair<>();
+        Pair<String, Integer> pair = new Pair<>();
         long t = System.currentTimeMillis();
         for (int i = 0; i < VALUES_CNT; i++) {
-            insertElementsWithOneValue(tuple, 1, CNT, i);
+            insertElementsWithOneValue(pair, 1, CNT, i);
             System.out.println("inserted " + CNT);
         }
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
@@ -178,17 +178,17 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         Assert.assertEquals(CNT, iterations_cnt);
     }
 
-    private void insertElementsWithOneValue(Pair<String, Integer> tuple, int start, int elementsCount, int step)
+    private void insertElementsWithOneValue(Pair<String, Integer> pair, int start, int elementsCount, int step)
     throws Exception {
         for (int i = start; i <= elementsCount; i++) {
-            tuple.setKey(String.valueOf(i));
-            tuple.setValue(1);
-            insertNewRecord(tuple, elementsCount, step, i);
+            pair.setKey(String.valueOf(i));
+            pair.setValue(1);
+            insertNewRecord(pair, elementsCount, step, i);
         }
     }
 
-    private void insertNewRecord(Pair tuple, int elementsCount, int step, int i) throws Exception {
-        boolean result = aggregator.accept(tuple);
+    private void insertNewRecord(Pair pair, int elementsCount, int step, int i) throws Exception {
+        boolean result = aggregator.accept(pair);
         if (!result) {
             long t = System.currentTimeMillis();
             System.out.println("Start spilling i=" + i);
@@ -196,7 +196,7 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
             while (!aggregator.spillNextChunk()) {
             }
             aggregator.finishSpilling();
-            aggregator.accept(tuple);
+            aggregator.accept(pair);
             System.out.println("Spilled " + elementsCount
                     + " start i=" + i +
                     " time=" + (System.currentTimeMillis() - t)
@@ -206,12 +206,12 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         }
     }
 
-    private void insertElements(Pair<String, String> tuple, int start, int elementsCount, int step)
+    private void insertElements(Pair<String, String> pair, int start, int elementsCount, int step)
     throws Exception {
         for (int i = start; i <= elementsCount; i++) {
-            tuple.setKey(String.valueOf(i));
-            tuple.setValue(String.valueOf(i));
-            insertNewRecord(tuple, elementsCount, step, i);
+            pair.setKey(String.valueOf(i));
+            pair.setValue(String.valueOf(i));
+            insertNewRecord(pair, elementsCount, step, i);
         }
     }
 }

@@ -83,12 +83,12 @@ public class SortingAggregatorTest extends BaseMemoryTest {
         );
     }
 
-    private void insertElements(Pair<String, String> tuple, int start, int end
+    private void insertElements(Pair<String, String> pair, int start, int end
     ) throws Exception {
         for (int i = end; i >= start; i--) {
-            tuple.setKey(String.valueOf(i));
-            tuple.setValue(String.valueOf(i));
-            if (!aggregator.accept(tuple)) {
+            pair.setKey(String.valueOf(i));
+            pair.setValue(String.valueOf(i));
+            if (!aggregator.accept(pair)) {
                 throw new JetMemoryException("Not enough memory (spilling is turned off)");
             }
         }
@@ -97,10 +97,10 @@ public class SortingAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2String() throws Exception {
         initAggregator(new StringComparator());
-        Pair<String, String> tuple = new Pair<>();
+        Pair<String, String> pair = new Pair<>();
         int CNT = 1_000_000;
         long t = System.currentTimeMillis();
-        insertElements(tuple, 1, CNT);
+        insertElements(pair, 1, CNT);
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         t = System.currentTimeMillis();
         final SortedAggregator aggregator = this.aggregator;
@@ -124,17 +124,17 @@ public class SortingAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringMultiValue() throws Exception {
         initAggregator(new StringComparator());
-        Pair<String, String> tuple = new Pair<>();
+        Pair<String, String> pair = new Pair<>();
         int KEYS_CNT = 100_000;
         int VALUES_CNT = 10;
         byte[] markers = new byte[KEYS_CNT];
         Arrays.fill(markers, (byte) 0);
         long t = System.currentTimeMillis();
         for (int i = 1; i <= 100_000; i++) {
-            tuple.setKey(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
             for (int ii = 0; ii < 10; ii++) {
-                tuple.setValue(String.valueOf(ii));
-                if (!aggregator.accept(tuple)) {
+                pair.setValue(String.valueOf(ii));
+                if (!aggregator.accept(pair)) {
                     throw new JetMemoryException("Not enough memory (spilling is turned off)");
                 }
             }
@@ -187,17 +187,17 @@ public class SortingAggregatorTest extends BaseMemoryTest {
     }
 
     private void testAccumulator() throws Exception {
-        Pair<String, Integer> tuple = new Pair<String, Integer>();
+        Pair<String, Integer> pair = new Pair<String, Integer>();
 
         int KEYS_CNT = 100_000;
         Integer VALUES_CNT = 10;
 
         long t = System.currentTimeMillis();
         for (int i = 1; i <= KEYS_CNT; i++) {
-            tuple.setKey(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
             for (int ii = 0; ii < VALUES_CNT; ii++) {
-                tuple.setValue(1);
-                aggregator.accept(tuple);
+                pair.setValue(1);
+                aggregator.accept(pair);
             }
         }
 

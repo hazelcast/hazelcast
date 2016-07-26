@@ -133,11 +133,11 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
     })
     public PartitionedJoiner(
             int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair tuple, String spillingDirectory,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair pair, String spillingDirectory,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         super(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext,
-                memoryChainingRule, tuple, spillingDirectory, spillingChunkSize, spillToDisk,
+                memoryChainingRule, pair, spillingDirectory, spillingChunkSize, spillToDisk,
                 useBigEndian);
     }
 

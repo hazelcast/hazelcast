@@ -133,8 +133,8 @@ public class HashStorage implements Storage {
     }
 
     @Override
-    public void insertTuple(Pair tuple, SerializationOptimizer optimizer, MemoryDataOutput output) {
-        writeTuple(tuple, output, memoryBlock);
+    public void insertTuple(Pair pair, SerializationOptimizer optimizer, MemoryDataOutput output) {
+        writeTuple(pair, output, memoryBlock);
         output.skip(TupleMultimapHsa.FIRST_FOOTER_SIZE_BYTES);
         final long slotAddr = multimap.fetchSlot(output.baseAddress(), memoryBlock.getAccessor(), null, CREATE_OR_APPEND);
         adjustAllocatedSizeAsNeeded(slotAddr);
@@ -179,8 +179,8 @@ public class HashStorage implements Storage {
     }
 
     private void adjustAllocatedSizeAsNeeded(long slotAddr) {
-        // negative slotAddr => slot already existed => currently inserted tuple is not the first one in the slot
-        // => reduce allocated size by the difference between the size of first tuple's footer and other tuple's footer
+        // negative slotAddr => slot already existed => currently inserted pair is not the first one in the slot
+        // => reduce allocated size by the difference between the size of first pair's footer and other pair's footer
         if (slotAddr < 0) {
             memoryBlock.getAllocator().free(NULL_ADDRESS, FIRST_FOOTER_SIZE_BYTES - OTHER_FOOTER_SIZE_BYTES);
         }

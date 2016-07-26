@@ -29,7 +29,7 @@ public interface Aggregator extends Spillable, Disposable {
 
     void setComparator(Comparator comparator);
 
-    boolean accept(Pair tuple);
+    boolean accept(Pair pair);
 
     TupleCursor cursor();
 }

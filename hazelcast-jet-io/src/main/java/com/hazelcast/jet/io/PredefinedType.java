@@ -266,10 +266,10 @@ public enum PredefinedType implements DataType {
         }
 
         @Override
-        public void write(Pair tuple, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
+        public void write(Pair pair, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException {
             objectDataOutput.writeByte(TUPLE2.typeId());
             for (int i = 0; i < 2; i++) {
-                final Object o = tuple.get(i);
+                final Object o = pair.get(i);
                 optimizer.write(o, objectDataOutput);
             }
         }

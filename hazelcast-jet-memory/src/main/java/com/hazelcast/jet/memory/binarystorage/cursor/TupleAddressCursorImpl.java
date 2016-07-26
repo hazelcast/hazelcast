@@ -21,7 +21,7 @@ import com.hazelcast.jet.memory.multimap.TupleMultimapHsa;
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 
 /**
- * Cursor over the tuple chain of a single multimap entry.
+ * Cursor over the pair chain of a single multimap entry.
  */
 public class TupleAddressCursorImpl implements TupleAddressCursor {
     private final TupleMultimapHsa layout;

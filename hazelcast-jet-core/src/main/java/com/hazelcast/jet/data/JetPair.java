@@ -37,14 +37,14 @@ public class JetPair<T0, T1> extends Pair<T0, T1> {
     private int partitionId;
 
     /**
-     * Creates a tuple with the given components, partition ID -1, and no CalculationStrategy.
+     * Creates a pair with the given components, partition ID -1, and no CalculationStrategy.
      */
     public JetPair(T0 c0, T1 c1) {
         this(c0, c1, -1);
     }
 
     /**
-     * Creates a tuple with the given components, partition ID and CalculationStrategy.
+     * Creates a pair with the given components, partition ID and CalculationStrategy.
      */
     public JetPair(T0 c0, T1 c1, int partitionId) {
         super(c0, c1);

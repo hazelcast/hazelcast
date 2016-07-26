@@ -34,12 +34,12 @@ public class SortedPartitionedSelfJoiner extends SortedPartitionedAggregator imp
     @SuppressWarnings("checkstyle:parameternumber")
     public SortedPartitionedSelfJoiner(
             int numSelfJoins, int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair tuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair pair,
             String spillingDirectory, SortOrder sortOrder, int spillingChunkSize, boolean spillToDisk,
             boolean useBigEndian
     ) {
         super(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext, memoryChainingRule,
-                tuple, spillingDirectory, sortOrder, spillingChunkSize, spillToDisk, useBigEndian);
+                pair, spillingDirectory, sortOrder, spillingChunkSize, spillToDisk, useBigEndian);
 
         this.numSelfJoins = numSelfJoins;
     }

@@ -59,65 +59,65 @@ public interface Storage {
     long count();
 
     /**
-     * Returns the length of the tuple chain for the slot at the given address.
+     * Returns the length of the pair chain for the slot at the given address.
      */
     long tupleCountAt(long slotAddress);
 
     /**
-     * Given the address of a slot, returns the address of the first tuple (head of the chain).
+     * Given the address of a slot, returns the address of the first pair (head of the chain).
      */
     long addrOfFirstTuple(long slotAddress);
 
     /**
-     * Given the address of a tuple, returns the address of the next tuple in the
+     * Given the address of a pair, returns the address of the next pair in the
      * chain, or {@value com.hazelcast.internal.memory.MemoryAllocator#NULL_ADDRESS} if the
-     * next tuple doesn't exist.
+     * next pair doesn't exist.
      */
     long addrOfNextTuple(long tupleAddress);
 
     /**
-     * Uses the tuple's key to look up a slot with the same key.
+     * Uses the pair's key to look up a slot with the same key.
      *
-     * @param tupleAddress address of the tuple
-     * @param tupleAccessor used to access the tuple
+     * @param tupleAddress address of the pair
+     * @param tupleAccessor used to access the pair
      * @return address of the slot, if found;
      *         {@value com.hazelcast.internal.memory.MemoryAllocator#NULL_ADDRESS} otherwise
      */
     long addrOfSlotWithSameKey(long tupleAddress, MemoryAccessor tupleAccessor);
 
     /**
-     * Uses the tuple's key to look up a slot with the same key.
+     * Uses the pair's key to look up a slot with the same key.
      *
-     * @param tupleAddress address of the tuple
+     * @param tupleAddress address of the pair
      * @param comparator to calculate hashcode; if null, the default one is used
-     * @param tupleAccessor used to access the tuple
+     * @param tupleAccessor used to access the pair
      * @return address of the slot, if found;
      *         {@value com.hazelcast.internal.memory.MemoryAllocator#NULL_ADDRESS} otherwise
      */
     long addrOfSlotWithSameKey(long tupleAddress, Comparator comparator, MemoryAccessor tupleAccessor);
 
     /**
-     * Uses the tuple's key to look up a slot with the same key, assigning a new one if not found.
+     * Uses the pair's key to look up a slot with the same key, assigning a new one if not found.
      *
-     * @param tupleAddress address of the tuple
+     * @param tupleAddress address of the pair
      * @param comparator to calculate hashcode; if null, the default one is used
-     * @return abs(return value) is the address of the slot where the tuple was inserted. It is positive
+     * @return abs(return value) is the address of the slot where the pair was inserted. It is positive
      * if a new slot was assigned, negative otherwise.
      */
     long getOrCreateSlotWithSameKey(long tupleAddress, Comparator comparator);
 
     /**
-     * Adds the given tuple to storage for the 0-source.
+     * Adds the given pair to storage for the 0-source.
      *
-     * @return abs(return value) is the address of the slot where the tuple was inserted. It is positive
+     * @return abs(return value) is the address of the slot where the pair was inserted. It is positive
      * if a new slot was assigned, negative otherwise.
      */
     long insertTuple(long recordAddress, Comparator comparator);
 
     /**
-     * Serializes and adds the given tuple to the storage for the source with number 0.
+     * Serializes and adds the given pair to the storage for the source with number 0.
      */
-    void insertTuple(Pair tuple, SerializationOptimizer optimizer, MemoryDataOutput output);
+    void insertTuple(Pair pair, SerializationOptimizer optimizer, MemoryDataOutput output);
 
     /**
      * Marks key with specified slot address with value marker;

@@ -97,11 +97,11 @@ public final class OperationFactory {
     })
     public static  JoinAggregator getJoiner(
             MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Pair tuple,
+            int partitionCount, int spillingBufferSize, Comparator comparator, Pair pair,
             String spillingDirectory, int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         return new PartitionedJoiner(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext,
-                memoryChainingRule, tuple, spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
+                memoryChainingRule, pair, spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
     }
 
 //    @SuppressWarnings({

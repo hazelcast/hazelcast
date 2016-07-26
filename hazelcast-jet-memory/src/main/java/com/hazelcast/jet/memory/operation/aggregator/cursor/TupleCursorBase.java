@@ -26,7 +26,7 @@ import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 
 /**
- * Base class for tuple cursor implementations.
+ * Base class for pair cursor implementations.
  */
 public abstract class TupleCursorBase implements TupleCursor {
 
@@ -58,7 +58,7 @@ public abstract class TupleCursorBase implements TupleCursor {
 
     @Override
     public Pair asTuple() {
-        return tupleFetcher.tuple();
+        return tupleFetcher.pair();
     }
 
     @Override

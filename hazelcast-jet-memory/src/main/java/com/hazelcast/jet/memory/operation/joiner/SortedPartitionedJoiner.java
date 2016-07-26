@@ -33,11 +33,11 @@ public class SortedPartitionedJoiner extends SortedPartitionedAggregator impleme
     @SuppressWarnings("checkstyle:parameternumber")
     public SortedPartitionedJoiner(
             int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair tuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair pair,
             String spillingDirectory, SortOrder sortOrder, int spillingChunkSize, boolean spillToDisk,
             boolean useBigEndian
     ) {
-        super(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext, memoryChainingRule, tuple,
+        super(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext, memoryChainingRule, pair,
                 spillingDirectory, sortOrder, spillingChunkSize, spillToDisk, useBigEndian);
     }
 

@@ -58,10 +58,10 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            JetPair tuple = (JetPair) chunk.get(i);
-            final Data keyData = tuple.getComponentData(0, calculationStrategy, getNodeEngine());
+            JetPair pair = (JetPair) chunk.get(i);
+            final Data keyData = pair.getComponentData(0, calculationStrategy, getNodeEngine());
             final Object valueData = mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY
-                    ? tuple.getComponentData(1, calculationStrategy, getNodeEngine()) : tuple.getValue();
+                    ? pair.getComponentData(1, calculationStrategy, getNodeEngine()) : pair.getValue();
             this.recordStore.put(keyData, valueData, -1);
         }
     }

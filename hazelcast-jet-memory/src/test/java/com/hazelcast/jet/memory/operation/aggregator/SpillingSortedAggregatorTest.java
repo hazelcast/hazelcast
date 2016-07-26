@@ -86,14 +86,14 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
         );
     }
 
-    private void insertElements(Pair<String, String> tuple, int start, int end)
+    private void insertElements(Pair<String, String> pair, int start, int end)
     throws Exception {
         for (int i = end; i >= start; i--) {
-            tuple.setKey(String.valueOf(i));
-            tuple.setValue(String.valueOf(i));
-            if (!aggregator.accept(tuple)) {
+            pair.setKey(String.valueOf(i));
+            pair.setValue(String.valueOf(i));
+            if (!aggregator.accept(pair)) {
                 doSpilling(i);
-                aggregator.accept(tuple);
+                aggregator.accept(pair);
             }
         }
     }
@@ -112,11 +112,11 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     public void testString2String() throws Exception {
         initAggregator(new StringComparator());
 
-        Pair<String, String> tuple = new Pair<>();
+        Pair<String, String> pair = new Pair<>();
 
         int CNT = 10_000_000;
         long t = System.currentTimeMillis();
-        insertElements(tuple, 1, CNT);
+        insertElements(pair, 1, CNT);
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         t = System.currentTimeMillis();
         aggregator.prepareToSort();
@@ -140,7 +140,7 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringMultiValue() throws Exception {
         initAggregator(new StringComparator());
-        Pair<String, String> tuple = new Pair<>();
+        Pair<String, String> pair = new Pair<>();
         int VALUES_CNT = 10;
         int KEYS_CNT = 1_000_000;
 
@@ -149,12 +149,12 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
         long t = System.currentTimeMillis();
 
         for (int i = 1; i <= KEYS_CNT; i++) {
-            tuple.setKey(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
             for (int ii = 0; ii < VALUES_CNT; ii++) {
-                tuple.setValue(String.valueOf(ii));
-                if (!aggregator.accept(tuple)) {
+                pair.setValue(String.valueOf(ii));
+                if (!aggregator.accept(pair)) {
                     doSpilling(i);
-                    aggregator.accept(tuple);
+                    aggregator.accept(pair);
                 }
             }
         }
@@ -205,15 +205,15 @@ public class SpillingSortedAggregatorTest extends BaseMemoryTest {
     }
 
     private void testAccumulator(int keyCount, int valuesCount) throws Exception {
-        Pair<String, Integer> tuple = new Pair<>();
+        Pair<String, Integer> pair = new Pair<>();
         long t = System.currentTimeMillis();
         for (int i = 1; i <= keyCount; i++) {
-            tuple.setKey(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
             for (int ii = 0; ii < valuesCount; ii++) {
-                tuple.setValue(1);
-                if (!aggregator.accept(tuple)) {
+                pair.setValue(1);
+                if (!aggregator.accept(pair)) {
                     doSpilling(i);
-                    aggregator.accept(tuple);
+                    aggregator.accept(pair);
                 }
             }
         }

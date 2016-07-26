@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.data.tuple;
+package com.hazelcast.jet.impl.data.pair;
 
 
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
- * Represents abstract converter from Java-representation onto the tuple representation;
+ * Represents abstract converter from Java-representation onto the pair representation;
  *
  * For example Map's entry {@literal <Key,Value>} will be represented as
  *
@@ -32,11 +32,11 @@ import com.hazelcast.spi.serialization.SerializationService;
 @FunctionalInterface
 public interface JetTupleConverter<R> {
     /**
-     * Performs converting of java-heap object into the tuple representation of object;
+     * Performs converting of java-heap object into the pair representation of object;
      *
      * @param object - java object;
      * @param ss     - Hazelcast serialization  service;
-     * @return - corresponding tuple representation;
+     * @return - corresponding pair representation;
      */
     JetPair convert(R object, SerializationService ss);
 }

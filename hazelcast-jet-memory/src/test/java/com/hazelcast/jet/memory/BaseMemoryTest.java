@@ -70,18 +70,18 @@ public abstract class BaseMemoryTest {
     }
 
     protected void putEntry(int idx, MemoryDataOutput output, Storage blobMap, int valueCount) {
-        final Pair<String, Integer> tuple = new Pair<>();
-        tuple.setKey("string" + idx);
+        final Pair<String, Integer> pair = new Pair<>();
+        pair.setKey("string" + idx);
         for (int value = 1; value <= valueCount; value++) {
-            tuple.setValue(value);
-            blobMap.insertTuple(tuple, optimizer, output);
+            pair.setValue(value);
+            blobMap.insertTuple(pair, optimizer, output);
         }
     }
 
     protected void test(Storage blobMap, MemoryBlock memoryBlock, int keyCount, int valueCount) {
         final MemoryDataOutput output = new MemoryDataOutput(memoryBlock, optimizer, true);
         final MemoryDataInput input = new MemoryDataInput(memoryBlock, optimizer, true);
-        final Pair<String, Integer> tuple = new Pair<>();
+        final Pair<String, Integer> pair = new Pair<>();
         final long start = System.nanoTime();
         for (int idx = 1; idx <= keyCount; idx++) {
             putEntry(idx, output, blobMap, valueCount);
@@ -100,8 +100,8 @@ public abstract class BaseMemoryTest {
             for (TupleAddressCursor tupleCur = blobMap.tupleCursor(slotCur.slotAddress()); tupleCur.advance();) {
                 value++;
                 long tupleAddress = tupleCur.tupleAddress();
-                readTuple(input, tupleAddress, tuple, memoryBlock.getAccessor());
-                map.remove(tuple.getKey());
+                readTuple(input, tupleAddress, pair, memoryBlock.getAccessor());
+                map.remove(pair.getKey());
             }
             assertEquals(valueCount, value);
         }

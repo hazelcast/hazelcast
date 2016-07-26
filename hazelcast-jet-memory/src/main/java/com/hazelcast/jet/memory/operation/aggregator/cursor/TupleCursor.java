@@ -28,7 +28,7 @@ public interface TupleCursor {
     boolean advance();
 
     /**
-     * Returns the current cursor state as a tuple. May return itself, therefore
+     * Returns the current cursor state as a pair. May return itself, therefore
      * the returned object is valid only until {@code advance} or {@code reset} is
      * called on this cursor.
      */

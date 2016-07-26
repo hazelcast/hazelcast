@@ -182,8 +182,8 @@ public class SourceSinkTest extends JetTestSupport {
         public boolean process(ProducerInputStream<Pair<Integer, String>> inputStream,
                                ConsumerOutputStream<Pair<Integer, Integer>> outputStream,
                                String sourceName, ProcessorContext processorContext) throws Exception {
-            for (Pair<Integer, String> tuple : inputStream) {
-                int val = Integer.parseInt(tuple.getValue());
+            for (Pair<Integer, String> pair : inputStream) {
+                int val = Integer.parseInt(pair.getValue());
                 outputStream.consume(new JetPair<>(val, val));
             }
             return true;

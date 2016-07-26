@@ -47,23 +47,23 @@ public class TupleMultimapHsa {
     public static final int DEFAULT_INITIAL_CAPACITY = 2048;
     public static final float DEFAULT_LOAD_FACTOR = 0.5f;
 
-    /** Size of the first tuple's footer */
+    /** Size of the first pair's footer */
     public static final int FIRST_FOOTER_SIZE_BYTES =
-            // next tuple           last tuple           tuple count          hash code            marker
+            // next pair           last pair           pair count          hash code            marker
             LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES;
     /** Size of all other tuples' footer */
-    //                                                   next tuple
+    //                                                   next pair
     public static final int OTHER_FOOTER_SIZE_BYTES = LONG_SIZE_IN_BYTES;
-    /** Address of the next tuple is stored at this offset within the footer. Size: 8 bytes. */
+    /** Address of the next pair is stored at this offset within the footer. Size: 8 bytes. */
     public static final int NEXT_TUPLE_OFFSET = 0;
-    /** Address of the previous tuple is stored at this offset within the footer. Size: 8 bytes.  */
+    /** Address of the previous pair is stored at this offset within the footer. Size: 8 bytes.  */
     public static final int LAST_TUPLE_OFFSET = 8;
     /** Tuple count is stored at this offset within the footer. Size: 8 bytes.  */
     public static final int TUPLE_COUNT_OFFSET = 16;
-    /** Tuple's hash code is stored at this offset within the footer. Only the first tuple has this field.
+    /** Tuple's hash code is stored at this offset within the footer. Only the first pair has this field.
      *  Size: 8 bytes. */
     public static final int HASH_CODE_OFFSET = 24;
-    /** Tuple marker is stored at this offset within the footer. Only the first tuple has this field.
+    /** Tuple marker is stored at this offset within the footer. Only the first pair has this field.
      *  Size: 1 byte. */
     public static final int MARKER_OFFSET = 32;
 
@@ -137,7 +137,7 @@ public class TupleMultimapHsa {
     }
 
     /**
-     * @return abs(return value) is the address of the slot where the tuple was inserted. It is positive
+     * @return abs(return value) is the address of the slot where the pair was inserted. It is positive
      * if a new slot was assigned, negative otherwise.
      */
     public long fetchSlot(long tupleAddress, MemoryAccessor mem, Hasher hasher, FetchMode fetchMode) {

@@ -159,16 +159,16 @@ public abstract class PartitionedAggregatorBase implements Aggregator {
     }
 
     @Override
-    public boolean accept(Pair tuple) {
+    public boolean accept(Pair pair) {
         try {
-            writeTuple(tuple, getComparator());
+            writeTuple(pair, getComparator());
         } catch (JetOutOfMemoryException exception) {
             MemoryBlockChain chain = currentPartition.getMemoryBlockChain();
             if (!chain.gotoNext() && !acquireNextBlock(chain)) {
                 return false;
             }
             activateMemoryBlock(currentPartition, chain.current());
-            writeTuple(tuple, getComparator());
+            writeTuple(pair, getComparator());
         }
         return true;
     }
@@ -254,9 +254,9 @@ public abstract class PartitionedAggregatorBase implements Aggregator {
         return true;
     }
 
-    private void writeTuple(Pair tuple, Comparator comparator) {
+    private void writeTuple(Pair pair, Comparator comparator) {
         serviceMemoryBlock.reset();
-        JetIoUtil.writeTuple(tuple, memoryDataOutput, serviceMemoryBlock);
+        JetIoUtil.writeTuple(pair, memoryDataOutput, serviceMemoryBlock);
         long serviceTupleAddress = memoryDataOutput.baseAddress();
         long partitionHash = comparator.getPartitionHasher().hash(
                 serviceMemoryBlock.getAccessor(), addressOfKeyBlockAt(serviceTupleAddress),

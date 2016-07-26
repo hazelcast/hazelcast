@@ -96,12 +96,12 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
 
         int CNT = 1_000_000;
         byte[] markers = new byte[CNT];
-        Pair<Integer, Integer> tuple = new Pair<>();
+        Pair<Integer, Integer> pair = new Pair<>();
         long t = System.currentTimeMillis();
         for (int i = 1; i <= CNT; i++) {
-            tuple.setKey(i);
-            tuple.setValue(i);
-            aggregator.accept(tuple);
+            pair.setKey(i);
+            pair.setValue(i);
+            aggregator.accept(pair);
         }
 
         for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
@@ -119,17 +119,17 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringMultiValue() throws Exception {
         initAggregator(new StringComparator());
-        Pair<String, String> tuple = new Pair<>();
+        Pair<String, String> pair = new Pair<>();
         int KEYS_CNT = 100_000;
         int VALUES_CNT = 10;
         byte[] markers = new byte[KEYS_CNT];
         Arrays.fill(markers, (byte) 0);
         long t = System.currentTimeMillis();
         for (int i = 1; i <= 100_000; i++) {
-            tuple.setKey(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
             for (int ii = 0; ii < 10; ii++) {
-                tuple.setValue(String.valueOf(ii));
-                aggregator.accept(tuple);
+                pair.setValue(String.valueOf(ii));
+                aggregator.accept(pair);
             }
         }
         int iterations_count = 0;
@@ -151,7 +151,7 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringAssociativeAccumulator() throws Exception {
         initAggregator(new StringComparator(), new IntSumAccumulator());
-        Pair<String, Integer> tuple = new Pair<>();
+        Pair<String, Integer> pair = new Pair<>();
 
         int KEYS_CNT = 100_000;
         int VALUES_CNT = 10;
@@ -159,10 +159,10 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         Arrays.fill(markers, (byte) 0);
         long t = System.currentTimeMillis();
         for (int i = 1; i <= KEYS_CNT; i++) {
-            tuple.setKey(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
             for (int ii = 0; ii < VALUES_CNT; ii++) {
-                tuple.setValue(1);
-                aggregator.accept(tuple);
+                pair.setValue(1);
+                aggregator.accept(pair);
             }
         }
         int iterations_count = 0;
@@ -187,7 +187,7 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringNonAssociativeAccumulator() throws Exception {
         initAggregator(new StringComparator(), new NonAssociativeSumAccumulator());
-        Pair<String, Integer> tuple = new Pair<>();
+        Pair<String, Integer> pair = new Pair<>();
 
         int KEYS_CNT = 100_000;
         int VALUES_CNT = 10;
@@ -196,11 +196,11 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         long t = System.currentTimeMillis();
 
         for (int i = 1; i <= KEYS_CNT; i++) {
-            tuple.setKey(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
 
             for (int ii = 0; ii < VALUES_CNT; ii++) {
-                tuple.setValue(1);
-                aggregator.accept(tuple); }
+                pair.setValue(1);
+                aggregator.accept(pair); }
         }
 
         int iterations_count = 0;
@@ -312,20 +312,20 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
     }
 
     private void insertIntElements(int start, int elementsCount) throws Exception {
-        final Pair<String, Integer> tuple = new Pair<>();
+        final Pair<String, Integer> pair = new Pair<>();
         for (int i = start; i <= elementsCount; i++) {
-            tuple.setKey(String.valueOf(i));
-            tuple.setValue(1);
-            aggregator.accept(tuple);
+            pair.setKey(String.valueOf(i));
+            pair.setValue(1);
+            aggregator.accept(pair);
         }
     }
 
     private void insertElements(int start, int elementsCount) throws Exception {
-        final Pair<String, String> tuple = new Pair<>();
+        final Pair<String, String> pair = new Pair<>();
         for (int i = start; i <= elementsCount; i++) {
-            tuple.setKey(String.valueOf(i));
-            tuple.setValue(String.valueOf(i));
-            if (!aggregator.accept(tuple)) {
+            pair.setKey(String.valueOf(i));
+            pair.setValue(String.valueOf(i));
+            if (!aggregator.accept(pair)) {
                 throw new JetMemoryException("Not enough memory (spilling is turned off)");
             }
         }
