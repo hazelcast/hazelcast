@@ -269,7 +269,6 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
     // ===========================================================================================================================
 
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/7932
     public void sync_whenCallTimeout_thenOperationTimeoutException() throws Exception {
         long callTimeoutMs = 60000;
         Config config = new Config().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMs);
@@ -281,7 +280,8 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         OperationService opService = getOperationService(local);
 
         int partitionId = getPartitionId(remote);
-        opService.invokeOnPartition(new SlowOperation(callTimeoutMs * 2).setPartitionId(partitionId));
+        long slowOperationDurationMs = (long) (callTimeoutMs * 1.1);
+        opService.invokeOnPartition(new SlowOperation(slowOperationDurationMs).setPartitionId(partitionId));
 
         Future future = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
 
@@ -296,7 +296,6 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/7932
     public void async_whenCallTimeout_thenOperationTimeoutException() throws Exception {
         long callTimeoutMs = 60000;
         Config config = new Config().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMs);
@@ -308,7 +307,8 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         OperationService opService = getOperationService(local);
 
         int partitionId = getPartitionId(remote);
-        opService.invokeOnPartition(new SlowOperation(callTimeoutMs * 2).setPartitionId(partitionId));
+        long slowOperationDurationMs = (long) (callTimeoutMs * 1.1);
+        opService.invokeOnPartition(new SlowOperation(slowOperationDurationMs).setPartitionId(partitionId));
 
         ICompletableFuture<Object> future = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
 
