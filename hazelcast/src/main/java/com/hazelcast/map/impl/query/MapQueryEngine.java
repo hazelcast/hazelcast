@@ -35,6 +35,10 @@ public interface MapQueryEngine {
      * - Accepts PagingPredicate
      * - Query executed in the calling thread
      * - predicate evaluation will be parallelized if QUERY_PREDICATE_PARALLEL_EVALUATION is enabled or a PagingPredicate is used.
+     * - may return empty QueryResult (with a properly initialized result limit size) if query is executed during migrations and
+     * migration conditions do not allow for safe retrieval of results (ie. there are migrations in flight or partition state
+     * version is different at the end of query vs the version observed at the beginning of query). In this case, partitionIds
+     * are not set on the QueryResult, so callers will ignore these results and fallback to {@code QueryPartitionOperation}s.
      *
      * @param mapName   the name of the map
      * @param predicate the predicate
