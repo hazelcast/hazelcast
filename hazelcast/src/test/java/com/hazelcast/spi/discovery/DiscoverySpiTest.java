@@ -264,6 +264,18 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         assertEquals(1111, (long) strategy.getOrDefault("test", value, 1111));
     }
 
+    @Test(expected = RuntimeException.class)
+    public void testSPIAwareMemberGroupFactoryInvalidConfig() throws Exception {
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+        try {
+            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
+            Collection<Member> members = createMembers();
+            groupFactory.createMemberGroups(members);
+        } finally {
+            hazelcastInstance.shutdown();
+        }
+    }
+
     @Test
     public void testSPIAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
         String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
