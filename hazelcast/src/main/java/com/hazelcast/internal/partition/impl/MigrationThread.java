@@ -119,10 +119,28 @@ class MigrationThread extends Thread implements Runnable {
         return activeTask;
     }
 
+    /**
+     * Interrupts the migration thread and joins on it.
+     * <strong>Must not be called on the migration thread itself</strong> because it will result in infinite blocking.
+     */
     void stopNow() {
+        assert currentThread() != this : "stopNow must not be called on the migration thread";
         running = false;
         queue.clear();
         interrupt();
+        boolean currentThreadInterrupted = false;
+        while (true) {
+            try {
+                join();
+            } catch (InterruptedException e) {
+                currentThreadInterrupted = true;
+                continue;
+            }
+            break;
+        }
+        if (currentThreadInterrupted) {
+            currentThread().interrupt();
+        }
     }
 
 }
