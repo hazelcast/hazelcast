@@ -18,12 +18,12 @@ package com.hazelcast.jet.memory.operation.aggregator;
 
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.PairCursor;
 import com.hazelcast.jet.memory.spilling.Spillable;
 import com.hazelcast.nio.Disposable;
 
 /**
- * Aggregates data from a sequence of tuples supplied to the {@link #accept(Pair)} method.
+ * Aggregates data from a sequence of pairs supplied to the {@link #accept(Pair)} method.
  */
 public interface Aggregator extends Spillable, Disposable {
 
@@ -31,5 +31,5 @@ public interface Aggregator extends Spillable, Disposable {
 
     boolean accept(Pair pair);
 
-    TupleCursor cursor();
+    PairCursor cursor();
 }

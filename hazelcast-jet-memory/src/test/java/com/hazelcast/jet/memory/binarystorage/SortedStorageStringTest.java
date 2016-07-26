@@ -22,7 +22,7 @@ import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.binarystorage.comparator.StringComparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
-import com.hazelcast.jet.memory.binarystorage.cursor.TupleAddressCursor;
+import com.hazelcast.jet.memory.binarystorage.cursor.PairAddressCursor;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.util.JetIoUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -111,10 +111,10 @@ public class SortedStorageStringTest extends BaseMemoryTest {
             long slotAddress = cursor.slotAddress();
             iterationsCount++;
             int valueCount = 0;
-            for (TupleAddressCursor tupleCursor = blobMap.tupleCursor(slotAddress); tupleCursor.advance();) {
-                long tupleAddress = tupleCursor.tupleAddress();
+            for (PairAddressCursor pairCursor = blobMap.pairCursor(slotAddress); pairCursor.advance();) {
+                long pairAddress = pairCursor.pairAddress();
                 valueCount++;
-                JetIoUtil.readTuple(input, tupleAddress, pair, memoryBlock.getAccessor());
+                JetIoUtil.readPair(input, pairAddress, pair, memoryBlock.getAccessor());
             }
             assertEquals(treeMapIterator.next(), pair.getKey());
             assertEquals(value_cnt, valueCount);

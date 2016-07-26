@@ -18,12 +18,6 @@ package com.hazelcast.jet;
 
 /**
  * Something which knows about partitionId
- *
- * Examples:
- *
- * <pre>
- *     Tuple
- * </pre>
  */
 public interface PartitionIdAware {
 

@@ -25,7 +25,7 @@ import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.SourcePipeline;
 import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -35,19 +35,19 @@ public class UnorderedPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
         // distribute data to tasks
 
         // if we are not the first or the last vertex, then let other vertices do the distribution
         if (!(upstream instanceof SourcePipeline) && downstreamVertex != null) {
-            return upstream.buildDAG(dag, downstreamVertex, toTupleMapper);
+            return upstream.buildDAG(dag, downstreamVertex, toPairMapper);
         }
         Vertex unordered = vertexBuilder(PassthroughProcessor.class)
                 .name("unordered")
                 .addToDAG(dag)
-                .args(defaultFromTupleMapper(), toTupleMapper)
+                .args(defaultFromPairMapper(), toPairMapper)
                 .build();
-        Vertex previous = upstream.buildDAG(dag, null, toTupleMapper());
+        Vertex previous = upstream.buildDAG(dag, null, toPairMapper());
         edgeBuilder(previous, unordered)
                 .addToDAG(dag)
                 .build();

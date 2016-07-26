@@ -25,7 +25,7 @@ import com.hazelcast.jet.memory.operation.aggregator.JoinAggregator;
 import com.hazelcast.jet.memory.operation.aggregator.PartitionedAggregator;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.InMemoryCursor;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.SpillingCursor;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.PairCursor;
 import com.hazelcast.jet.memory.spilling.DefaultSpiller;
 
 /**
@@ -143,7 +143,7 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
 
 
     @Override
-    public TupleCursor cursor() {
+    public PairCursor cursor() {
         cursor.reset(getComparator());
         spillFileCursor = this.spiller.openSpillFileCursor();
         return cursor;
@@ -156,7 +156,7 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
     }
 
     @Override
-    protected TupleCursor newResultCursor() {
+    protected PairCursor newResultCursor() {
         return new DefaultJoinerCursor();
     }
 
@@ -165,16 +165,16 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
         assert source == 0;
     }
 
-    private class DefaultJoinerCursor implements TupleCursor {
-        private final TupleCursor memoryCursor;
-        private final TupleCursor spillingCursor;
+    private class DefaultJoinerCursor implements PairCursor {
+        private final PairCursor memoryCursor;
+        private final PairCursor spillingCursor;
         private boolean spillingCursorDone;
 
         public DefaultJoinerCursor() {
             this.spillingCursor = new SpillingCursor(serviceMemoryBlock, temporaryMemoryBlock, accumulator,
-                    spiller, destTuple, partitions, header, optimizer, useBigEndian);
+                    spiller, destPair, partitions, header, optimizer, useBigEndian);
             this.memoryCursor = new InMemoryCursor(serviceKeyValueStorage, serviceMemoryBlock,
-                    temporaryMemoryBlock, accumulator, destTuple, partitions, header, optimizer, useBigEndian);
+                    temporaryMemoryBlock, accumulator, destPair, partitions, header, optimizer, useBigEndian);
         }
 
 
@@ -198,8 +198,8 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
         }
 
         @Override
-        public Pair asTuple() {
-            return (spillingCursorDone ? memoryCursor : spillingCursor).asTuple();
+        public Pair asPair() {
+            return (spillingCursorDone ? memoryCursor : spillingCursor).asPair();
         }
     }
 }

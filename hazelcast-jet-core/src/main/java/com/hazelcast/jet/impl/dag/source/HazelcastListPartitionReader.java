@@ -22,8 +22,8 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.data.pair.JetTupleConverter;
-import com.hazelcast.jet.impl.data.pair.JetTupleIterator;
+import com.hazelcast.jet.impl.data.pair.JetPairConverter;
+import com.hazelcast.jet.impl.data.pair.JetPairIterator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
@@ -31,10 +31,11 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class HazelcastListPartitionReader extends AbstractHazelcastReader<JetPair> {
-    private final JetTupleConverter<CollectionItem> tupleConverter =
+    private final JetPairConverter<CollectionItem> pairConverter =
             (item, ss) -> new JetPair<>(item.getItemId(), ss.toObject(item.getValue()), getPartitionId());
 
     public HazelcastListPartitionReader(ContainerDescriptor containerDescriptor, String name) {
@@ -62,7 +63,8 @@ public class HazelcastListPartitionReader extends AbstractHazelcastReader<JetPai
         ListContainer listContainer = listService.getOrCreateContainer(getName(), false);
         List<CollectionItem> items = listContainer.getCollection();
         SerializationService ss = nei.getSerializationService();
-        this.iterator = new JetTupleIterator<>(items.iterator(), tupleConverter, ss);
+        final Iterator<CollectionItem> iter = items.iterator();
+        this.iterator = new JetPairIterator<>(iter, pairConverter, ss);
     }
 
     @Override

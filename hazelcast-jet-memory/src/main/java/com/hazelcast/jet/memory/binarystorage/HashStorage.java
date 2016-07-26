@@ -24,10 +24,10 @@ import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursorImpl;
-import com.hazelcast.jet.memory.binarystorage.cursor.TupleAddressCursor;
-import com.hazelcast.jet.memory.binarystorage.cursor.TupleAddressCursorImpl;
+import com.hazelcast.jet.memory.binarystorage.cursor.PairAddressCursor;
+import com.hazelcast.jet.memory.binarystorage.cursor.PairAddressCursorImpl;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
-import com.hazelcast.jet.memory.multimap.TupleMultimapHsa;
+import com.hazelcast.jet.memory.multimap.PairMultimapHsa;
 
 import java.util.function.LongConsumer;
 
@@ -35,11 +35,11 @@ import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.jet.memory.binarystorage.FetchMode.CREATE_IF_ABSENT;
 import static com.hazelcast.jet.memory.binarystorage.FetchMode.CREATE_OR_APPEND;
 import static com.hazelcast.jet.memory.binarystorage.FetchMode.JUST_GET;
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.DEFAULT_INITIAL_CAPACITY;
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.DEFAULT_LOAD_FACTOR;
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.FIRST_FOOTER_SIZE_BYTES;
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.OTHER_FOOTER_SIZE_BYTES;
-import static com.hazelcast.jet.memory.util.JetIoUtil.writeTuple;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.DEFAULT_INITIAL_CAPACITY;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.FIRST_FOOTER_SIZE_BYTES;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.OTHER_FOOTER_SIZE_BYTES;
+import static com.hazelcast.jet.memory.util.JetIoUtil.writePair;
 
 /**
  * Hashtable-based binary key-value storage.
@@ -48,10 +48,10 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.writeTuple;
         "checkstyle:methodcount"
 })
 public class HashStorage implements Storage {
-    private final TupleMultimapHsa multimap;
+    private final PairMultimapHsa multimap;
     private MemoryBlock memoryBlock;
     private final SlotAddressCursor slotCursor;
-    private final TupleAddressCursor tupleCursor;
+    private final PairAddressCursor pairCursor;
 
     public HashStorage(MemoryBlock memoryBlock, Hasher hasher, LongConsumer hsaResizeListener) {
         this(memoryBlock, hasher, hsaResizeListener, DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
@@ -60,41 +60,41 @@ public class HashStorage implements Storage {
     public HashStorage(MemoryBlock memoryBlock, Hasher hasher, LongConsumer hsaResizeListener,
                        int initialCapacity, float loadFactor
     ) {
-        this.multimap = new TupleMultimapHsa(memoryBlock, hasher, hsaResizeListener, initialCapacity, loadFactor);
+        this.multimap = new PairMultimapHsa(memoryBlock, hasher, hsaResizeListener, initialCapacity, loadFactor);
         this.memoryBlock = memoryBlock != null ? memoryBlock : null;
         this.slotCursor = new SlotAddressCursorImpl(getMultimap());
-        this.tupleCursor = new TupleAddressCursorImpl(getMultimap());
+        this.pairCursor = new PairAddressCursorImpl(getMultimap());
     }
 
 
     @Override
-    public long addrOfNextTuple(long tupleAddress) {
-        return multimap.addrOfNextTuple(tupleAddress);
+    public long addrOfNextPair(long pairAddress) {
+        return multimap.addrOfNextPair(pairAddress);
     }
 
     @Override
-    public long addrOfFirstTuple(long slotAddress) {
-        return multimap.addrOfFirstTupleAt(slotAddress);
+    public long addrOfFirstPair(long slotAddress) {
+        return multimap.addrOfFirstPairAt(slotAddress);
     }
 
     @Override
-    public long getOrCreateSlotWithSameKey(long tupleAddress, Comparator comparator) {
-        return multimap.fetchSlot(tupleAddress, memoryBlock.getAccessor(), getHasher(comparator), CREATE_IF_ABSENT);
+    public long getOrCreateSlotWithSameKey(long pairAddress, Comparator comparator) {
+        return multimap.fetchSlot(pairAddress, memoryBlock.getAccessor(), getHasher(comparator), CREATE_IF_ABSENT);
     }
 
     @Override
-    public long addrOfSlotWithSameKey(long tupleAddress, MemoryAccessor tupleAccessor) {
-        return multimap.fetchSlot(tupleAddress, tupleAccessor, null, JUST_GET);
+    public long addrOfSlotWithSameKey(long pairAddress, MemoryAccessor pairAccessor) {
+        return multimap.fetchSlot(pairAddress, pairAccessor, null, JUST_GET);
     }
 
     @Override
-    public long addrOfSlotWithSameKey(long recordAddress, Comparator comparator, MemoryAccessor tupleAccessor) {
-        return multimap.fetchSlot(recordAddress, tupleAccessor, getHasher(comparator), JUST_GET);
+    public long addrOfSlotWithSameKey(long recordAddress, Comparator comparator, MemoryAccessor pairAccessor) {
+        return multimap.fetchSlot(recordAddress, pairAccessor, getHasher(comparator), JUST_GET);
     }
 
     @Override
-    public long tupleCountAt(long recordAddress) {
-        return multimap.tupleCountAt(recordAddress);
+    public long pairCountAt(long recordAddress) {
+        return multimap.pairCountAt(recordAddress);
     }
 
     @Override
@@ -133,24 +133,24 @@ public class HashStorage implements Storage {
     }
 
     @Override
-    public void insertTuple(Pair pair, SerializationOptimizer optimizer, MemoryDataOutput output) {
-        writeTuple(pair, output, memoryBlock);
-        output.skip(TupleMultimapHsa.FIRST_FOOTER_SIZE_BYTES);
+    public void insertPair(Pair pair, SerializationOptimizer optimizer, MemoryDataOutput output) {
+        writePair(pair, output, memoryBlock);
+        output.skip(PairMultimapHsa.FIRST_FOOTER_SIZE_BYTES);
         final long slotAddr = multimap.fetchSlot(output.baseAddress(), memoryBlock.getAccessor(), null, CREATE_OR_APPEND);
         adjustAllocatedSizeAsNeeded(slotAddr);
     }
 
     @Override
-    public long insertTuple(long tupleAddress, Comparator comparator) {
-        long slotAddr = multimap.fetchSlot(tupleAddress, memoryBlock.getAccessor(), getHasher(comparator), CREATE_OR_APPEND);
+    public long insertPair(long pairAddress, Comparator comparator) {
+        long slotAddr = multimap.fetchSlot(pairAddress, memoryBlock.getAccessor(), getHasher(comparator), CREATE_OR_APPEND);
         adjustAllocatedSizeAsNeeded(slotAddr);
         return slotAddr;
     }
 
     @Override
-    public TupleAddressCursor tupleCursor(long slotAddress) {
-        tupleCursor.reset(slotAddress, 0);
-        return tupleCursor;
+    public PairAddressCursor pairCursor(long slotAddress) {
+        pairCursor.reset(slotAddress, 0);
+        return pairCursor;
     }
 
     @Override
@@ -170,7 +170,7 @@ public class HashStorage implements Storage {
         return memoryBlock;
     }
 
-    public TupleMultimapHsa getMultimap() {
+    public PairMultimapHsa getMultimap() {
         return multimap;
     }
 

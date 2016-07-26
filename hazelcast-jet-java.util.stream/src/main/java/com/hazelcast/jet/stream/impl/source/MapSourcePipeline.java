@@ -43,7 +43,7 @@ public class MapSourcePipeline<K, V> extends AbstractSourcePipeline<Map.Entry<K,
     }
 
     @Override
-    public Distributed.Function<Pair, Map.Entry<K, V>> fromTupleMapper() {
+    public Distributed.Function<Pair, Map.Entry<K, V>> fromPairMapper() {
         return t -> new AbstractMap.SimpleEntry<>(((Pair<K, V>) t).getKey(), ((Pair<K, V>) t).getValue());
     }
 }

@@ -307,8 +307,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             objectConsumer.open();
         }
 
-        for (DataWriter tupleWriter : this.sendersArray) {
-            tupleWriter.open();
+        for (DataWriter pairWriter : this.sendersArray) {
+            pairWriter.open();
         }
 
         reset();
@@ -321,8 +321,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             objectConsumer.close();
         }
 
-        for (DataWriter tupleWriter : this.sendersArray) {
-            tupleWriter.close();
+        for (DataWriter pairWriter : this.sendersArray) {
+            pairWriter.close();
         }
     }
 

@@ -55,7 +55,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
     public IMap<K, V> collect(StreamContext context, Pipeline<? extends T> upstream) {
         IMap<K, V> target = getTarget(context.getHazelcastInstance());
         DAG dag = new DAG();
-        Vertex previous = upstream.buildDAG(dag, null, toTupleMapper());
+        Vertex previous = upstream.buildDAG(dag, null, toPairMapper());
 
         Vertex merger = vertexBuilder(MergeProcessor.class)
                 .name("accumulator")

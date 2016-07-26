@@ -19,7 +19,7 @@ package com.hazelcast.jet.memory.operation.aggregator.cursor;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
-import com.hazelcast.jet.memory.TupleFetcher;
+import com.hazelcast.jet.memory.PairFetcher;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
@@ -27,20 +27,20 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.operation.aggregator.sorter.Sorter;
 
 /**
- * Cursor that encounters tuples in a given sort order.
+ * Cursor that encounters pairs in a given sort order.
  */
-public class SortedTupleCursor extends TupleCursorBase {
+public class SortedPairCursor extends PairCursorBase {
     private boolean done;
     private final InputsCursor inputsCursor;
-    private final Sorter<InputsCursor, TupleFetcher> memoryDiskMergeSorter;
+    private final Sorter<InputsCursor, PairFetcher> memoryDiskMergeSorter;
 
-    public SortedTupleCursor(
+    public SortedPairCursor(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock,
-            Sorter<InputsCursor, TupleFetcher> memoryDiskMergeSorter,
-            Accumulator accumulator, Pair destTuple, Partition[] partitions, StorageHeader header,
+            Sorter<InputsCursor, PairFetcher> memoryDiskMergeSorter,
+            Accumulator accumulator, Pair destPair, Partition[] partitions, StorageHeader header,
             SerializationOptimizer optimizer, InputsCursor inputsCursor, boolean useBigEndian
     ) {
-        super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destTuple, partitions, header,
+        super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destPair, partitions, header,
                 optimizer, useBigEndian);
         this.inputsCursor = inputsCursor;
         this.memoryDiskMergeSorter = memoryDiskMergeSorter;
@@ -57,6 +57,6 @@ public class SortedTupleCursor extends TupleCursorBase {
     public void reset(Comparator comparator) {
         super.reset(comparator);
         done = false;
-        memoryDiskMergeSorter.resetTo(inputsCursor, tupleFetcher);
+        memoryDiskMergeSorter.resetTo(inputsCursor, pairFetcher);
     }
 }

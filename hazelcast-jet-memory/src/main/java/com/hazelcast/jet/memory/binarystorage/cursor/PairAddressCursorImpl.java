@@ -16,30 +16,30 @@
 
 package com.hazelcast.jet.memory.binarystorage.cursor;
 
-import com.hazelcast.jet.memory.multimap.TupleMultimapHsa;
+import com.hazelcast.jet.memory.multimap.PairMultimapHsa;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 
 /**
  * Cursor over the pair chain of a single multimap entry.
  */
-public class TupleAddressCursorImpl implements TupleAddressCursor {
-    private final TupleMultimapHsa layout;
+public class PairAddressCursorImpl implements PairAddressCursor {
+    private final PairMultimapHsa layout;
 
     private long slotAddress = NULL_ADDRESS;
-    private long tupleAddress = NULL_ADDRESS;
+    private long pairAddress = NULL_ADDRESS;
 
-    public TupleAddressCursorImpl(TupleMultimapHsa layout) {
+    public PairAddressCursorImpl(PairMultimapHsa layout) {
         this.layout = layout;
     }
 
     @Override
     public boolean advance() {
         assert slotAddress != NULL_ADDRESS : "Cursor invalid";
-        tupleAddress = tupleAddress == NULL_ADDRESS
-                ? layout.addrOfFirstTupleAt(slotAddress)
-                : layout.addrOfNextTuple(tupleAddress);
-        final boolean advanced = tupleAddress != NULL_ADDRESS;
+        pairAddress = pairAddress == NULL_ADDRESS
+                ? layout.addrOfFirstPairAt(slotAddress)
+                : layout.addrOfNextPair(pairAddress);
+        final boolean advanced = pairAddress != NULL_ADDRESS;
         if (!advanced) {
             slotAddress = NULL_ADDRESS;
         }
@@ -47,14 +47,14 @@ public class TupleAddressCursorImpl implements TupleAddressCursor {
     }
 
     @Override
-    public long tupleAddress() {
+    public long pairAddress() {
         assert slotAddress != NULL_ADDRESS : "Cursor invalid";
-        return tupleAddress;
+        return pairAddress;
     }
 
     @Override
     public void reset(long slotAddress, int sourceId) {
-        assert slotAddress != NULL_ADDRESS : "TupleCursor.reset() called with NULL slot address";
+        assert slotAddress != NULL_ADDRESS : "PairCursor.reset() called with NULL slot address";
         this.slotAddress = slotAddress;
     }
 }

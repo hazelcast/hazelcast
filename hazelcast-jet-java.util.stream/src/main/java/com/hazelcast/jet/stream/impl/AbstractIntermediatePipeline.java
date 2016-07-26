@@ -30,7 +30,7 @@ public abstract class AbstractIntermediatePipeline<E_IN, E_OUT> extends Abstract
         this.upstream = upstream;
     }
 
-    protected Distributed.Function<E_IN, Pair> toTupleMapper() {
+    protected Distributed.Function<E_IN, Pair> toPairMapper() {
         return v -> new JetPair<>(v, v);
     }
 

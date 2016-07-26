@@ -95,15 +95,15 @@ public final class StreamUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E_OUT> Distributed.Function<Pair, E_OUT> defaultFromTupleMapper() {
-        return tuple -> (E_OUT) tuple.getValue();
+    public static <E_OUT> Distributed.Function<Pair, E_OUT> defaultFromPairMapper() {
+        return pair -> (E_OUT) pair.getValue();
     }
 
     public static <E_OUT> Distributed.Function<Pair, E_OUT>
-    getTupleMapper(Pipeline<E_OUT> upstream, Distributed.Function<Pair, E_OUT> mapper) {
+    getPairMapper(Pipeline<E_OUT> upstream, Distributed.Function<Pair, E_OUT> mapper) {
         if (upstream instanceof SourcePipeline) {
             SourcePipeline<E_OUT> source = (SourcePipeline<E_OUT>) upstream;
-            return source.fromTupleMapper();
+            return source.fromPairMapper();
         }
         return mapper;
     }

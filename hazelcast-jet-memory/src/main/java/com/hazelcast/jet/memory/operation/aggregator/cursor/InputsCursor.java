@@ -43,7 +43,7 @@ public class InputsCursor {
     private long[] valueSize;
     private int[] sources;
     private int[] partitionId;
-    private long[] tupleCounts;
+    private long[] pairCounts;
     private long[] recordAddresses;
     private long[] keyAddress;
     private long[] valueAddress;
@@ -87,11 +87,11 @@ public class InputsCursor {
         if (slotAddress != MemoryAllocator.NULL_ADDRESS) {
             slotAddresses[inputId] = slotAddress;
             hashCodes[inputId] = storage.getSlotHashCode(slotAddress);
-            tupleCounts[inputId] = storage.tupleCountAt(slotAddress);
+            pairCounts[inputId] = storage.pairCountAt(slotAddress);
             return true;
         } else {
             hashCodes[inputId] = 0;
-            tupleCounts[inputId] = 0;
+            pairCounts[inputId] = 0;
             slotAddresses[inputId] = MemoryAllocator.NULL_ADDRESS;
             return false;
         }
@@ -133,7 +133,7 @@ public class InputsCursor {
     }
 
     public long recordsCount(int inputId) {
-        return tupleCounts[inputId];
+        return pairCounts[inputId];
     }
 
     public long recordAddress(int inputId) {
@@ -168,8 +168,8 @@ public class InputsCursor {
         storageGotoInput(inputId);
         long recordAddress = recordAddresses[inputId];
         return recordAddress != MemoryAllocator.NULL_ADDRESS
-                ? storage.addrOfNextTuple(recordAddress)
-                : storage.addrOfFirstTuple(slotAddresses[inputId]);
+                ? storage.addrOfNextPair(recordAddress)
+                : storage.addrOfFirstPair(slotAddresses[inputId]);
     }
 
     private void storageGotoInput(int inputId) {
@@ -184,7 +184,7 @@ public class InputsCursor {
         hashCodes = reuseIfPossible(hashCodes, 0L);
         valueSize = reuseIfPossible(valueSize, 0L);
         partitionId = reuseIfPossible(partitionId, 0);
-        tupleCounts = reuseIfPossible(tupleCounts, 0);
+        pairCounts = reuseIfPossible(pairCounts, 0);
         keyAddress = reuseIfPossible(keyAddress, MemoryAllocator.NULL_ADDRESS);
         valueAddress = reuseIfPossible(valueAddress, MemoryAllocator.NULL_ADDRESS);
         recordAddresses = reuseIfPossible(recordAddresses, MemoryAllocator.NULL_ADDRESS);
@@ -195,7 +195,7 @@ public class InputsCursor {
 
     private boolean readSourceFromDisk() {
         if (diskInput.segmentAdvance()) {
-            tupleCounts[0] = diskInput.getRecordCountInCurrentSegment();
+            pairCounts[0] = diskInput.getRecordCountInCurrentSegment();
             return true;
         }
         return false;

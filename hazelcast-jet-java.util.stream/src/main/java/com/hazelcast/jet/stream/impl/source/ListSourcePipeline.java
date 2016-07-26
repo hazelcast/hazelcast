@@ -39,7 +39,7 @@ public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
     }
 
     @Override
-    public Distributed.Function<Pair, E> fromTupleMapper() {
+    public Distributed.Function<Pair, E> fromPairMapper() {
         return t -> (E) t.getValue();
     }
 

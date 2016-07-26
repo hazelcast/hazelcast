@@ -21,13 +21,13 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Iterator;
 
-public class JetTupleIterator<R> implements Iterator<JetPair> {
+public class JetPairIterator<R> implements Iterator<JetPair> {
     private final Iterator<R> iterator;
-    private final JetTupleConverter<R> convertor;
+    private final JetPairConverter<R> convertor;
     private final SerializationService serializationService;
 
-    public JetTupleIterator(
-            Iterator<R> iterator, JetTupleConverter<R> converter, SerializationService serializationService
+    public JetPairIterator(
+            Iterator<R> iterator, JetPairConverter<R> converter, SerializationService serializationService
     ) {
         this.iterator = iterator;
         this.convertor = converter;

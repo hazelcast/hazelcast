@@ -33,16 +33,16 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.getByte;
 import static com.hazelcast.jet.memory.util.JetIoUtil.getLong;
 import static com.hazelcast.jet.memory.util.JetIoUtil.putByte;
 import static com.hazelcast.jet.memory.util.JetIoUtil.putLong;
-import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfTupleAt;
+import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfPairAt;
 import static com.hazelcast.jet.memory.util.Util.BYTE_0;
 import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 
 /**
- * A multimap in native memory whose value is a linked list of tuples. Based on the {@code HashSlotArray}
+ * A multimap in native memory whose value is a linked list of pairs. Based on the {@code HashSlotArray}
  * structure.
  */
-public class TupleMultimapHsa {
+public class PairMultimapHsa {
     public static final int KEY_SIZE = 8;
     public static final int DEFAULT_INITIAL_CAPACITY = 2048;
     public static final float DEFAULT_LOAD_FACTOR = 0.5f;
@@ -51,19 +51,19 @@ public class TupleMultimapHsa {
     public static final int FIRST_FOOTER_SIZE_BYTES =
             // next pair           last pair           pair count          hash code            marker
             LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES;
-    /** Size of all other tuples' footer */
+    /** Size of all other pairs' footer */
     //                                                   next pair
     public static final int OTHER_FOOTER_SIZE_BYTES = LONG_SIZE_IN_BYTES;
     /** Address of the next pair is stored at this offset within the footer. Size: 8 bytes. */
     public static final int NEXT_TUPLE_OFFSET = 0;
     /** Address of the previous pair is stored at this offset within the footer. Size: 8 bytes.  */
     public static final int LAST_TUPLE_OFFSET = 8;
-    /** Tuple count is stored at this offset within the footer. Size: 8 bytes.  */
+    /** Pair count is stored at this offset within the footer. Size: 8 bytes.  */
     public static final int TUPLE_COUNT_OFFSET = 16;
-    /** Tuple's hash code is stored at this offset within the footer. Only the first pair has this field.
+    /** Pair's hash code is stored at this offset within the footer. Only the first pair has this field.
      *  Size: 8 bytes. */
     public static final int HASH_CODE_OFFSET = 24;
-    /** Tuple marker is stored at this offset within the footer. Only the first pair has this field.
+    /** Pair marker is stored at this offset within the footer. Only the first pair has this field.
      *  Size: 1 byte. */
     public static final int MARKER_OFFSET = 32;
 
@@ -74,8 +74,8 @@ public class TupleMultimapHsa {
     private MemoryAccessor mem;
     private Runnable slotAddedListener;
 
-    public TupleMultimapHsa(MemoryBlock memoryBlock, Hasher defaultHasher, LongConsumer hsaResizeListener,
-                            int initialCapacity, float loadFactor
+    public PairMultimapHsa(MemoryBlock memoryBlock, Hasher defaultHasher, LongConsumer hsaResizeListener,
+                           int initialCapacity, float loadFactor
     ) {
         assert Util.isPositivePowerOfTwo(initialCapacity);
         this.defaultHasher = defaultHasher;
@@ -99,40 +99,40 @@ public class TupleMultimapHsa {
     }
 
     public long slotHashCode(long slotAddress) {
-        long tupleAddress = addrOfFirstTupleAt(slotAddress);
-        long tupleSize = JetIoUtil.sizeOfTupleAt(tupleAddress, mem);
-        return getLong(tupleAddress, tupleSize + HASH_CODE_OFFSET, mem);
+        long pairAddress = addrOfFirstPairAt(slotAddress);
+        long pairSize = JetIoUtil.sizeOfPairAt(pairAddress, mem);
+        return getLong(pairAddress, pairSize + HASH_CODE_OFFSET, mem);
     }
 
     public void setSlotHashCode(long slotAddress, long hashCode) {
-        long tupleAddress = addrOfFirstTupleAt(slotAddress);
-        long tupleSize = JetIoUtil.sizeOfTupleAt(tupleAddress, mem);
-        JetIoUtil.putLong(tupleAddress, tupleSize + HASH_CODE_OFFSET, hashCode, mem);
+        long pairAddress = addrOfFirstPairAt(slotAddress);
+        long pairSize = JetIoUtil.sizeOfPairAt(pairAddress, mem);
+        JetIoUtil.putLong(pairAddress, pairSize + HASH_CODE_OFFSET, hashCode, mem);
     }
 
-    public long sizeOfKeyBlockAt(long tupleAddress) {
-        return JetIoUtil.sizeOfKeyBlockAt(tupleAddress, mem);
+    public long sizeOfKeyBlockAt(long pairAddress) {
+        return JetIoUtil.sizeOfKeyBlockAt(pairAddress, mem);
     }
 
     public byte slotMarker(long slotAddress) {
-        long recordAddress = addrOfFirstTupleAt(slotAddress);
-        long recordSize = JetIoUtil.sizeOfTupleAt(recordAddress, mem);
+        long recordAddress = addrOfFirstPairAt(slotAddress);
+        long recordSize = JetIoUtil.sizeOfPairAt(recordAddress, mem);
         return getByte(recordAddress, recordSize + MARKER_OFFSET, mem);
     }
 
     public void markSlot(long slotAddress, byte marker) {
-        long recordAddress = addrOfFirstTupleAt(slotAddress);
-        long recordSize = JetIoUtil.sizeOfTupleAt(recordAddress, mem);
+        long recordAddress = addrOfFirstPairAt(slotAddress);
+        long recordSize = JetIoUtil.sizeOfPairAt(recordAddress, mem);
         putByte(recordAddress, recordSize + MARKER_OFFSET, marker, mem);
     }
 
-    public long tupleCountAt(long slotAddress) {
-        long addrOfFirstTuple = addrOfFirstTupleAt(slotAddress);
-        long sizeOfFirstTuple = JetIoUtil.sizeOfTupleAt(addrOfFirstTuple, mem);
-        return getLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, mem);
+    public long pairCountAt(long slotAddress) {
+        long addrOfFirstPair = addrOfFirstPairAt(slotAddress);
+        long sizeOfFirstPair = JetIoUtil.sizeOfPairAt(addrOfFirstPair, mem);
+        return getLong(addrOfFirstPair, sizeOfFirstPair + TUPLE_COUNT_OFFSET, mem);
     }
 
-    public long addrOfFirstTupleAt(long slotAddress) {
+    public long addrOfFirstPairAt(long slotAddress) {
         return mem.getLong(slotAddress);
     }
 
@@ -140,24 +140,24 @@ public class TupleMultimapHsa {
      * @return abs(return value) is the address of the slot where the pair was inserted. It is positive
      * if a new slot was assigned, negative otherwise.
      */
-    public long fetchSlot(long tupleAddress, MemoryAccessor mem, Hasher hasher, FetchMode fetchMode) {
+    public long fetchSlot(long pairAddress, MemoryAccessor mem, Hasher hasher, FetchMode fetchMode) {
         hsa.setHasher(hasher != null ? hasher : defaultHasher);
         hsa.setLocalMemoryAccessor(mem);
         try {
             if (fetchMode == JUST_GET) {
-                final long rawHsaAddr = hsa.get(tupleAddress);
+                final long rawHsaAddr = hsa.get(pairAddress);
                 return rawHsaAddr == NULL_ADDRESS ? NULL_ADDRESS : toSlotAddr(rawHsaAddr);
             }
-            final long hsaResult = hsa.ensure(tupleAddress);
+            final long hsaResult = hsa.ensure(pairAddress);
             assert hsaResult != 0;
             final long slotAddress = hsaResult > 0 ? toSlotAddr(hsaResult) : -toSlotAddr(-hsaResult);
             if (slotAddress > 0) {
-                initializeFirstFooter(tupleAddress);
+                initializeFirstFooter(pairAddress);
                 if (slotAddedListener != null) {
                     slotAddedListener.run();
                 }
             } else if (fetchMode == CREATE_OR_APPEND) {
-                updateFooters(-slotAddress, tupleAddress);
+                updateFooters(-slotAddress, pairAddress);
             }
             return slotAddress;
         } finally {
@@ -187,29 +187,29 @@ public class TupleMultimapHsa {
         compactSlotArray();
     }
 
-    public long addrOfNextTuple(long tupleAddress) {
-        return getLong(tupleAddress, sizeOfTupleAt(tupleAddress, mem) + NEXT_TUPLE_OFFSET, mem);
+    public long addrOfNextPair(long pairAddress) {
+        return getLong(pairAddress, sizeOfPairAt(pairAddress, mem) + NEXT_TUPLE_OFFSET, mem);
     }
 
-    private void initializeFirstFooter(long tupleAddress) {
-        long tupleSize = sizeOfTupleAt(tupleAddress, mem);
-        putLong(tupleAddress, tupleSize + NEXT_TUPLE_OFFSET, NULL_ADDRESS, mem);
-        putLong(tupleAddress, tupleSize + LAST_TUPLE_OFFSET, tupleAddress, mem);
-        putLong(tupleAddress, tupleSize + TUPLE_COUNT_OFFSET, 1, mem);
-        putLong(tupleAddress, tupleSize + HASH_CODE_OFFSET, hsa.getLastHashCode(), mem);
-        putByte(tupleAddress, tupleSize + MARKER_OFFSET, BYTE_0, mem);
+    private void initializeFirstFooter(long pairAddress) {
+        long pairSize = sizeOfPairAt(pairAddress, mem);
+        putLong(pairAddress, pairSize + NEXT_TUPLE_OFFSET, NULL_ADDRESS, mem);
+        putLong(pairAddress, pairSize + LAST_TUPLE_OFFSET, pairAddress, mem);
+        putLong(pairAddress, pairSize + TUPLE_COUNT_OFFSET, 1, mem);
+        putLong(pairAddress, pairSize + HASH_CODE_OFFSET, hsa.getLastHashCode(), mem);
+        putByte(pairAddress, pairSize + MARKER_OFFSET, BYTE_0, mem);
     }
 
-    private void updateFooters(long slotAddress, long tupleAddress) {
-        long addrOfFirstTuple = addrOfFirstTupleAt(slotAddress);
-        long sizeOfFirstTuple = sizeOfTupleAt(addrOfFirstTuple, mem);
-        long addrOfLastTuple = getLong(addrOfFirstTuple, sizeOfFirstTuple + LAST_TUPLE_OFFSET, mem);
-        long tupleCount = getLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, mem);
-        long tupleSize = sizeOfTupleAt(tupleAddress, mem);
-        putLong(addrOfFirstTuple, sizeOfFirstTuple + LAST_TUPLE_OFFSET, tupleAddress, mem);
-        putLong(addrOfFirstTuple, sizeOfFirstTuple + TUPLE_COUNT_OFFSET, tupleCount + 1, mem);
-        putLong(addrOfLastTuple, sizeOfTupleAt(addrOfLastTuple, mem) + NEXT_TUPLE_OFFSET, tupleAddress, mem);
-        putLong(tupleAddress, tupleSize + NEXT_TUPLE_OFFSET, NULL_ADDRESS, mem);
+    private void updateFooters(long slotAddress, long pairAddress) {
+        long addrOfFirstPair = addrOfFirstPairAt(slotAddress);
+        long sizeOfFirstPair = sizeOfPairAt(addrOfFirstPair, mem);
+        long addrOfLastPair = getLong(addrOfFirstPair, sizeOfFirstPair + LAST_TUPLE_OFFSET, mem);
+        long pairCount = getLong(addrOfFirstPair, sizeOfFirstPair + TUPLE_COUNT_OFFSET, mem);
+        long pairSize = sizeOfPairAt(pairAddress, mem);
+        putLong(addrOfFirstPair, sizeOfFirstPair + LAST_TUPLE_OFFSET, pairAddress, mem);
+        putLong(addrOfFirstPair, sizeOfFirstPair + TUPLE_COUNT_OFFSET, pairCount + 1, mem);
+        putLong(addrOfLastPair, sizeOfPairAt(addrOfLastPair, mem) + NEXT_TUPLE_OFFSET, pairAddress, mem);
+        putLong(pairAddress, pairSize + NEXT_TUPLE_OFFSET, NULL_ADDRESS, mem);
     }
 
 

@@ -33,11 +33,11 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<E_OUT, Pair> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<E_OUT, Pair> toPairMapper) {
         if (downstreamVertex == null) {
             downstreamVertex = vertexBuilder(PassthroughProcessor.class)
                     .addToDAG(dag)
-                    .args(fromTupleMapper(), toTupleMapper)
+                    .args(fromPairMapper(), toPairMapper)
                     .taskCount(isOrdered() ? 1 : DEFAULT_TASK_COUNT)
                     .build();
         }

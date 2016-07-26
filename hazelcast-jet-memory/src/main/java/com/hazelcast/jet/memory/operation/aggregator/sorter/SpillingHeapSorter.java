@@ -52,7 +52,7 @@ public class SpillingHeapSorter extends AbstractHeapSorter<SpillingKeyValueWrite
     }
 
     @Override
-    protected void outputTuple(MemoryBlock memoryBlock, long recordAddress) {
+    protected void outputPair(MemoryBlock memoryBlock, long recordAddress) {
         output.writeRecord(memoryBlock, recordAddress);
     }
 }

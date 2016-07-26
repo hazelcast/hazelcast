@@ -25,12 +25,12 @@ import com.hazelcast.spi.serialization.SerializationService;
  *
  * For example Map's entry {@literal <Key,Value>} will be represented as
  *
- * Tuple with [Key] as key part and [Value] as value part;
+ * Pair with [Key] as key part and [Value] as value part;
  *
  * @param <R> - type of the input Java-object;
  */
 @FunctionalInterface
-public interface JetTupleConverter<R> {
+public interface JetPairConverter<R> {
     /**
      * Performs converting of java-heap object into the pair representation of object;
      *

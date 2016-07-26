@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.memory.operation.aggregator.cursor;
-
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
+package com.hazelcast.jet.memory.binarystorage.cursor;
 
 /**
- * Cursor over a range of tuples.
+ * Javadoc pending.
  */
-public interface TupleCursor {
-    void reset(Comparator comparator);
-
+public interface PairAddressCursor {
     boolean advance();
 
-    /**
-     * Returns the current cursor state as a pair. May return itself, therefore
-     * the returned object is valid only until {@code advance} or {@code reset} is
-     * called on this cursor.
-     */
-    Pair asTuple();
+    long pairAddress();
+
+    void reset(long slotAddress, int sourceId);
 }

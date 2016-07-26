@@ -35,10 +35,10 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -63,7 +63,7 @@ public class Reducer {
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
         Vertex combinerVertex = vertexBuilder(CombinerProcessor.class)
                 .addToDAG(dag)
-                .args(defaultFromTupleMapper(), toTupleMapper())
+                .args(defaultFromPairMapper(), toPairMapper())
                 .args(combiner, Distributed.Function.<T>identity())
                 .taskCount(1)
                 .build();
@@ -106,14 +106,14 @@ public class Reducer {
     private <T, U> Vertex buildMappingAccumulator(
             DAG dag, Pipeline<? extends T> upstream, U identity, BiFunction<U, ? super T, U> accumulator
     ) {
-        Distributed.Function<Pair, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Pair, ? extends T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
         Vertex accumulatorVertex = vertexBuilder(AccumulatorProcessor.class)
                 .addToDAG(dag)
-                .args(fromTupleMapper, toTupleMapper())
+                .args(fromPairMapper, toPairMapper())
                 .args(accumulator, identity)
                 .build();
 
-        Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toTupleMapper());
+        Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toPairMapper());
         if (previous != accumulatorVertex) {
             edgeBuilder(previous, accumulatorVertex)
                     .addToDAG(dag)
@@ -125,11 +125,11 @@ public class Reducer {
     private <T> Vertex buildAccumulator(
             DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, Optional<T> identity
     ) {
-        Distributed.Function<Pair, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
-        Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity, fromTupleMapper);
+        Distributed.Function<Pair, ? extends T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
+        Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity, fromPairMapper);
         dag.addVertex(accumulatorVertex);
 
-        Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toTupleMapper());
+        Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toPairMapper());
         if (previous != accumulatorVertex) {
             edgeBuilder(previous, accumulatorVertex)
                     .addToDAG(dag)
@@ -139,22 +139,22 @@ public class Reducer {
     }
 
     private <T> Vertex getAccumulatorVertex(
-            BinaryOperator<T> accumulator, Optional<T> identity, Function<Pair, ? extends T> fromTupleMapper
+            BinaryOperator<T> accumulator, Optional<T> identity, Function<Pair, ? extends T> fromPairMapper
     ) {
         return identity.isPresent()
                 ?
                 vertexBuilder(AccumulatorProcessor.class)
-                        .args(fromTupleMapper, toTupleMapper())
+                        .args(fromPairMapper, toPairMapper())
                         .args(accumulator, identity.get())
                         .build()
                 :
                 vertexBuilder(CombinerProcessor.class)
-                        .args(fromTupleMapper, toTupleMapper())
+                        .args(fromPairMapper, toPairMapper())
                         .args(accumulator, Distributed.Function.<T>identity())
                         .build();
     }
 
-    private <T, U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+    private <T, U extends T> Distributed.Function<U, Pair> toPairMapper() {
         return o -> new JetPair<Object, T>(0, o);
     }
 }

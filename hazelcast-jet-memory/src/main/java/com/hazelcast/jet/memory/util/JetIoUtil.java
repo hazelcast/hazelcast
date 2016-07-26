@@ -38,31 +38,31 @@ public final class JetIoUtil {
     private JetIoUtil() {
     }
 
-    public static long addressOfKeyBlockAt(long tupleAddress) {
-        return tupleAddress + KEY_BLOCK_OFFSET;
+    public static long addressOfKeyBlockAt(long pairAddress) {
+        return pairAddress + KEY_BLOCK_OFFSET;
     }
 
-    public static long sizeOfKeyBlockAt(long tupleAddress, MemoryAccessor memoryAccessor) {
-        return getLong(tupleAddress, 0, memoryAccessor);
+    public static long sizeOfKeyBlockAt(long pairAddress, MemoryAccessor memoryAccessor) {
+        return getLong(pairAddress, 0, memoryAccessor);
     }
 
-    public static long addrOfValueBlockAt(long tupleAddress, MemoryAccessor memoryAccessor) {
-        long keySize = sizeOfKeyBlockAt(tupleAddress, memoryAccessor);
-        return tupleAddress + offsetOfValueSizeField(keySize) + Bits.LONG_SIZE_IN_BYTES;
+    public static long addrOfValueBlockAt(long pairAddress, MemoryAccessor memoryAccessor) {
+        long keySize = sizeOfKeyBlockAt(pairAddress, memoryAccessor);
+        return pairAddress + offsetOfValueSizeField(keySize) + Bits.LONG_SIZE_IN_BYTES;
     }
 
-    public static long sizeOfValueBlockAt(long tupleAddress, MemoryAccessor memoryAccessor) {
-        long keySize = sizeOfKeyBlockAt(tupleAddress, memoryAccessor);
-        return getLong(tupleAddress, offsetOfValueSizeField(keySize), memoryAccessor);
+    public static long sizeOfValueBlockAt(long pairAddress, MemoryAccessor memoryAccessor) {
+        long keySize = sizeOfKeyBlockAt(pairAddress, memoryAccessor);
+        return getLong(pairAddress, offsetOfValueSizeField(keySize), memoryAccessor);
     }
 
-    public static long sizeOfTupleAt(long tupleAddress, MemoryAccessor memoryAccessor) {
-        final long keySize = getLong(tupleAddress, 0, memoryAccessor);
-        final long valueSize = getLong(tupleAddress, offsetOfValueSizeField(keySize), memoryAccessor);
+    public static long sizeOfPairAt(long pairAddress, MemoryAccessor memoryAccessor) {
+        final long keySize = getLong(pairAddress, 0, memoryAccessor);
+        final long valueSize = getLong(pairAddress, offsetOfValueSizeField(keySize), memoryAccessor);
         return Bits.LONG_SIZE_IN_BYTES + keySize + Bits.LONG_SIZE_IN_BYTES + valueSize;
     }
 
-    public static void writeTuple(Pair pair, MemoryDataOutput output, MemoryManager memoryManager) {
+    public static void writePair(Pair pair, MemoryDataOutput output, MemoryManager memoryManager) {
         output.clear();
         output.setMemoryManager(memoryManager);
         try {
@@ -81,10 +81,10 @@ public final class JetIoUtil {
         }
     }
 
-    public static void readTuple(
-            MemoryDataInput input, long tupleAddress, Pair pair, MemoryAccessor memoryAccessor
+    public static void readPair(
+            MemoryDataInput input, long pairAddress, Pair pair, MemoryAccessor memoryAccessor
     ) {
-        input.reset(tupleAddress, sizeOfTupleAt(tupleAddress, memoryAccessor));
+        input.reset(pairAddress, sizeOfPairAt(pairAddress, memoryAccessor));
         try {
             for (int i = 0; i < 2; i++) {
                 // Skip the size field

@@ -65,7 +65,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
                 .args(collector)
                 .build();
 
-        Vertex previous = upstream.buildDAG(dag, null, toTupleMapper());
+        Vertex previous = upstream.buildDAG(dag, null, toPairMapper());
         if (previous != merger) {
             edgeBuilder(previous, merger)
                     .addToDAG(dag)
@@ -89,7 +89,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
         return target;
     }
 
-    protected <U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+    protected <U extends T> Distributed.Function<U, Pair> toPairMapper() {
         return v -> new JetPair<>(classifier.apply(v), v);
     }
 }

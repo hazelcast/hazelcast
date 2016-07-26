@@ -6,7 +6,7 @@ import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.memory.binarystorage.Storage;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
-import com.hazelcast.jet.memory.binarystorage.cursor.TupleAddressCursor;
+import com.hazelcast.jet.memory.binarystorage.cursor.PairAddressCursor;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
 import com.hazelcast.jet.memory.memoryblock.MemoryPool;
@@ -17,7 +17,7 @@ import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.memory.util.JetIoUtil.readTuple;
+import static com.hazelcast.jet.memory.util.JetIoUtil.readPair;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static junit.framework.TestCase.assertEquals;
 
@@ -74,7 +74,7 @@ public abstract class BaseMemoryTest {
         pair.setKey("string" + idx);
         for (int value = 1; value <= valueCount; value++) {
             pair.setValue(value);
-            blobMap.insertTuple(pair, optimizer, output);
+            blobMap.insertPair(pair, optimizer, output);
         }
     }
 
@@ -97,10 +97,10 @@ public abstract class BaseMemoryTest {
         for (SlotAddressCursor slotCur = blobMap.slotCursor(); slotCur.advance();) {
             iterationCount++;
             int value = 0;
-            for (TupleAddressCursor tupleCur = blobMap.tupleCursor(slotCur.slotAddress()); tupleCur.advance();) {
+            for (PairAddressCursor pairCur = blobMap.pairCursor(slotCur.slotAddress()); pairCur.advance();) {
                 value++;
-                long tupleAddress = tupleCur.tupleAddress();
-                readTuple(input, tupleAddress, pair, memoryBlock.getAccessor());
+                long pairAddress = pairCur.pairAddress();
+                readPair(input, pairAddress, pair, memoryBlock.getAccessor());
                 map.remove(pair.getKey());
             }
             assertEquals(valueCount, value);

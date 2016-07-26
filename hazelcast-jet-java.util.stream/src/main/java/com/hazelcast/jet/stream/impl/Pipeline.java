@@ -23,7 +23,7 @@ import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.DistributedStream;
 
 public interface Pipeline<E_OUT> extends DistributedStream<E_OUT> {
-    Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<E_OUT, Pair> toTupleMapper);
+    Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<E_OUT, Pair> toPairMapper);
     boolean isOrdered();
 }
 

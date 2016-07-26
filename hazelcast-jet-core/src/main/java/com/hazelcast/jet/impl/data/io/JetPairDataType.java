@@ -24,12 +24,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public final class JetTupleDataType implements DataType {
+public final class JetPairDataType implements DataType {
     public static final byte TYPE_ID = -4;
 
-    public static final DataType INSTANCE = new JetTupleDataType();
+    public static final DataType INSTANCE = new JetPairDataType();
 
-    private JetTupleDataType() {
+    private JetPairDataType() {
     }
 
     @Override

@@ -28,7 +28,7 @@ import java.io.IOException;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Jet Tuple implementation
+ * Jet Pair implementation
  *
  * @param <T0> type of component 0
  * @param <T1> type of component 1

@@ -23,15 +23,15 @@ import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.multimap.HsaQuickSorter;
-import com.hazelcast.jet.memory.multimap.TupleMultimapHsa;
+import com.hazelcast.jet.memory.multimap.PairMultimapHsa;
 
 import java.util.function.LongConsumer;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.jet.memory.binarystorage.SortOrder.ASC;
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.DEFAULT_INITIAL_CAPACITY;
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.DEFAULT_LOAD_FACTOR;
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.KEY_SIZE;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.DEFAULT_INITIAL_CAPACITY;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.KEY_SIZE;
 
 /**
  * Hashtable-based binary key-value storage which can be iterated over in a given sort order.
@@ -134,7 +134,7 @@ public class SortedHashStorage extends HashStorage implements SortedStorage {
         sortedSlotCursor.setOrder(order);
     }
 
-    private static long nullIfInvalid(long address, TupleMultimapHsa layout) {
+    private static long nullIfInvalid(long address, PairMultimapHsa layout) {
         final HashSlotArray hsa = layout.getHashSlotArray();
         final long allocAddress = hsa.address();
         final int slotLength = KEY_SIZE;

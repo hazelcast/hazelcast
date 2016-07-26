@@ -19,7 +19,7 @@ package com.hazelcast.jet.memory.operation.aggregator.cursor;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.memory.Partition;
-import com.hazelcast.jet.memory.TupleFetcher;
+import com.hazelcast.jet.memory.PairFetcher;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
@@ -28,37 +28,37 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 /**
  * Base class for pair cursor implementations.
  */
-public abstract class TupleCursorBase implements TupleCursor {
+public abstract class PairCursorBase implements PairCursor {
 
     protected final boolean useBigEndian;
     protected final StorageHeader header;
     protected final Accumulator accumulator;
     protected final MemoryBlock serviceMemoryBlock;
-    protected final Pair destTuple;
+    protected final Pair destPair;
     protected final MemoryBlock temporaryMemoryBlock;
     protected final Partition[] partitions;
-    protected final TupleFetcher tupleFetcher;
+    protected final PairFetcher pairFetcher;
 
     protected Comparator comparator;
 
-    protected TupleCursorBase(
+    protected PairCursorBase(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock, Accumulator accumulator,
-            Pair destTuple, Partition[] partitions, StorageHeader header, SerializationOptimizer optimizer,
+            Pair destPair, Partition[] partitions, StorageHeader header, SerializationOptimizer optimizer,
             boolean useBigEndian
     ) {
         this.header = header;
         this.partitions = partitions;
         this.useBigEndian = useBigEndian;
         this.accumulator = accumulator;
-        this.destTuple = destTuple;
+        this.destPair = destPair;
         this.serviceMemoryBlock = serviceMemoryBlock;
         this.temporaryMemoryBlock = temporaryMemoryBlock;
-        this.tupleFetcher = new TupleFetcher(optimizer, this.destTuple, useBigEndian);
+        this.pairFetcher = new PairFetcher(optimizer, this.destPair, useBigEndian);
     }
 
     @Override
-    public Pair asTuple() {
-        return tupleFetcher.pair();
+    public Pair asPair() {
+        return pairFetcher.pair();
     }
 
     @Override

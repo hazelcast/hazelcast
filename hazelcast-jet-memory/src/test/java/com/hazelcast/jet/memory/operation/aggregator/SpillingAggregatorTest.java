@@ -26,7 +26,7 @@ import com.hazelcast.jet.memory.binarystorage.comparator.StringComparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
 import com.hazelcast.jet.memory.operation.OperationFactory;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.PairCursor;
 import com.hazelcast.jet.memory.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -111,8 +111,8 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         int iterations_cnt = 0;
         String lastKey = "";
         int value_idx = 0;
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Pair<String, String> tt = (Pair<String, String>) cursor.asTuple();
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<String, String> tt = (Pair<String, String>) cursor.asPair();
             if (!lastKey.equals(tt.getKey())) {
                 if (!(lastKey.isEmpty())) {
                     Assert.assertEquals(value_idx, VALUES_CNT);
@@ -148,8 +148,8 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         }
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         int iterations_cnt = 0;
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Pair<String, Integer> tt = (Pair) cursor.asTuple();
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<String, Integer> tt = (Pair) cursor.asPair();
             Assert.assertEquals(VALUES_CNT, (int) tt.getValue());
             iterations_cnt++;
         }
@@ -170,8 +170,8 @@ public class SpillingAggregatorTest extends BaseMemoryTest {
         }
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         int iterations_cnt = 0;
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Pair<String, Integer> tt = (Pair<String, Integer>) cursor.asTuple();
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<String, Integer> tt = (Pair<String, Integer>) cursor.asPair();
             Assert.assertEquals(VALUES_CNT, (int) tt.getValue());
             iterations_cnt++;
         }

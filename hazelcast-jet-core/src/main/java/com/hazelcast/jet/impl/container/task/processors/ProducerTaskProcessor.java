@@ -38,7 +38,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     protected final ContainerContext containerContext;
     protected final ProcessorContext processorContext;
     protected final DefaultObjectIOStream objectInputStream;
-    protected final DefaultObjectIOStream tupleOutputStream;
+    protected final DefaultObjectIOStream pairOutputStream;
     protected boolean produced;
     protected boolean finalized;
     protected boolean finalizationStarted;
@@ -63,9 +63,9 @@ public class ProducerTaskProcessor implements TaskProcessor {
         this.processorContext = processorContext;
         this.containerContext = containerContext;
         JobConfig jobConfig = containerContext.getJobContext().getJobConfig();
-        int tupleChunkSize = jobConfig.getChunkSize();
-        this.objectInputStream = new DefaultObjectIOStream<>(new Object[tupleChunkSize]);
-        this.tupleOutputStream = new DefaultObjectIOStream<>(new Object[tupleChunkSize]);
+        int pairChunkSize = jobConfig.getChunkSize();
+        this.objectInputStream = new DefaultObjectIOStream<>(new Object[pairChunkSize]);
+        this.pairOutputStream = new DefaultObjectIOStream<>(new Object[pairChunkSize]);
     }
 
     public boolean onChunk(ProducerInputStream inputStream) throws Exception {
@@ -87,7 +87,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
         int producersCount = producers.length;
 
         if (finalizationStarted) {
-            finalizationFinished = processor.finalizeProcessor(tupleOutputStream, processorContext);
+            finalizationFinished = processor.finalizeProcessor(pairOutputStream, processorContext);
 
             return !processOutputStream();
         } else if (this.pendingProducer != null) {
@@ -147,7 +147,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     private boolean processProducer(ObjectProducer producer) throws Exception {
-        if (!processor.process(objectInputStream, tupleOutputStream, producer.getName(), processorContext)) {
+        if (!processor.process(objectInputStream, pairOutputStream, producer.getName(), processorContext)) {
             pendingProducer = producer;
         } else {
             pendingProducer = null;
@@ -158,22 +158,22 @@ public class ProducerTaskProcessor implements TaskProcessor {
             return false;
         }
 
-        tupleOutputStream.reset();
+        pairOutputStream.reset();
         return pendingProducer == null;
     }
 
 
     private boolean processOutputStream() throws Exception {
-        if (tupleOutputStream.size() == 0) {
+        if (pairOutputStream.size() == 0) {
             checkFinalization();
             return true;
         } else {
-            if (!onChunk(tupleOutputStream)) {
+            if (!onChunk(pairOutputStream)) {
                 produced = true;
                 return false;
             } else {
                 checkFinalization();
-                tupleOutputStream.reset();
+                pairOutputStream.reset();
                 return true;
             }
         }
@@ -234,7 +234,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     private void resetProducers() {
         produced = false;
         nextProducerIdx = 0;
-        tupleOutputStream.reset();
+        pairOutputStream.reset();
         objectInputStream.reset();
     }
 

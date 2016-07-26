@@ -34,8 +34,8 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected final ObjectConsumer[] consumers;
     protected final ContainerProcessor processor;
     protected final ContainerContext containerContext;
-    protected final DefaultObjectIOStream tupleInputStream;
-    protected final DefaultObjectIOStream tupleOutputStream;
+    protected final DefaultObjectIOStream pairInputStream;
+    protected final DefaultObjectIOStream pairOutputStream;
     protected boolean producersWriteFinished;
     protected final ProcessorContext processorContext;
     protected final ConsumersProcessor consumersProcessor;
@@ -59,10 +59,10 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         this.processorContext = processorContext;
         this.containerContext = containerContext;
         this.consumersProcessor = new ConsumersProcessor(consumers);
-        this.tupleInputStream = new DefaultObjectIOStream<Object>(DUMMY_CHUNK);
+        this.pairInputStream = new DefaultObjectIOStream<Object>(DUMMY_CHUNK);
         JobConfig jobConfig = containerContext.getConfig();
-        int tupleChunkSize = jobConfig.getChunkSize();
-        this.tupleOutputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
+        int pairChunkSize = jobConfig.getChunkSize();
+        this.pairOutputStream = new DefaultObjectIOStream<Object>(new Object[pairChunkSize]);
         reset();
     }
 
@@ -78,19 +78,19 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public boolean process() throws Exception {
-        if (tupleOutputStream.size() > 0) {
+        if (pairOutputStream.size() > 0) {
             return consumeChunkAndResetOutputIfSuccess();
         } else {
             if (finalizationStarted) {
-                finalizationFinished = processor.finalizeProcessor(tupleOutputStream, processorContext);
+                finalizationFinished = processor.finalizeProcessor(pairOutputStream, processorContext);
             } else {
                 if (producersWriteFinished) {
                     return true;
                 }
-                processor.process(tupleInputStream, tupleOutputStream, null, processorContext);
+                processor.process(pairInputStream, pairOutputStream, null, processorContext);
             }
 
-            if (tupleOutputStream.size() > 0) {
+            if (pairOutputStream.size() > 0) {
                 return consumeChunkAndResetOutputIfSuccess();
             } else {
                 checkFinalization();
@@ -102,10 +102,10 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     @SuppressWarnings("unchecked")
     private boolean consumeChunkAndResetOutputIfSuccess() throws Exception {
-        boolean success = onChunk(tupleOutputStream);
+        boolean success = onChunk(pairOutputStream);
 
         if (success) {
-            tupleOutputStream.reset();
+            pairOutputStream.reset();
             checkFinalization();
         }
 
@@ -152,7 +152,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     private void resetConsumers() {
         consumed = false;
-        tupleOutputStream.reset();
+        pairOutputStream.reset();
         consumersProcessor.reset();
     }
 

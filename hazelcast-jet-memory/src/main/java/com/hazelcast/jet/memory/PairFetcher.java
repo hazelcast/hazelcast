@@ -31,13 +31,13 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfKeyBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
 
 /**
- * Deserializes data held by a {@code MemoryManager} and puts it into a {@code Tuple}.
+ * Deserializes data held by a {@code MemoryManager} and puts it into a {@code Pair}.
  */
-public class TupleFetcher {
+public class PairFetcher {
     protected final Pair pair;
     private final MemoryDataInput dataInput;
 
-    public TupleFetcher(SerializationOptimizer optimizer, Pair pair, boolean useBigEndian) {
+    public PairFetcher(SerializationOptimizer optimizer, Pair pair, boolean useBigEndian) {
         this.pair = pair;
         this.dataInput = new MemoryDataInput(null, optimizer, useBigEndian);
     }

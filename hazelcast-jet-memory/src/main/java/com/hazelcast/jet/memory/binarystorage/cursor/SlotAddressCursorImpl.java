@@ -18,9 +18,9 @@ package com.hazelcast.jet.memory.binarystorage.cursor;
 
 import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
-import com.hazelcast.jet.memory.multimap.TupleMultimapHsa;
+import com.hazelcast.jet.memory.multimap.PairMultimapHsa;
 
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.toSlotAddr;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.toSlotAddr;
 
 /**
  * Javadoc pending.
@@ -29,7 +29,7 @@ public final class SlotAddressCursorImpl implements SlotAddressCursor {
     private final HashSlotArray8byteKey hsa;
     private HashSlotCursor8byteKey cursor;
 
-    public SlotAddressCursorImpl(TupleMultimapHsa layout) {
+    public SlotAddressCursorImpl(PairMultimapHsa layout) {
         this.hsa = layout.getHashSlotArray();
         reset();
     }

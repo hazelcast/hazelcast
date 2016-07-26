@@ -54,7 +54,7 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
     }
 
     @Override
-    protected <U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+    protected <U extends T> Distributed.Function<U, Pair> toPairMapper() {
         return v -> new JetPair<>(keyMapper.apply(v), valueMapper.apply(v));
     }
 

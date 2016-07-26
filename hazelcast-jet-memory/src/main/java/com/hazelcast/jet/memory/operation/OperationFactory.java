@@ -42,11 +42,11 @@ public final class OperationFactory {
     })
     public static Aggregator getAggregator(
             MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Pair destTuple,
+            int partitionCount, int spillingBufferSize, Comparator comparator, Pair destPair,
             String spillingDirectory, int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         return new PartitionedAggregator(partitionCount, spillingBufferSize, optimizer,
-                comparator, memoryContext, memoryChainingRule, destTuple, spillingDirectory,
+                comparator, memoryContext, memoryChainingRule, destPair, spillingDirectory,
                 spillingChunkSize, spillToDisk, useBigEndian);
     }
 
@@ -55,12 +55,12 @@ public final class OperationFactory {
     })
     public static Aggregator getAggregator(
             MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Pair destTuple,
+            int partitionCount, int spillingBufferSize, Comparator comparator, Pair destPair,
             Accumulator accumulator, String spillingDirectory,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         return new PartitionedAggregator(partitionCount, spillingBufferSize, optimizer,
-                comparator, memoryContext, memoryChainingRule, destTuple, accumulator,
+                comparator, memoryContext, memoryChainingRule, destPair, accumulator,
                 spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
     }
 
@@ -69,12 +69,12 @@ public final class OperationFactory {
     })
     public static SortedAggregator getSortedAggregator(
             MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Pair destTuple,
+            int partitionCount, int spillingBufferSize, Comparator comparator, Pair destPair,
             String spillingDirectory, SortOrder sortOrder, int spillingChunkSize,
             boolean spillToDisk, boolean useBigEndian
     ) {
         return new SortedPartitionedAggregator(partitionCount, spillingBufferSize, optimizer, comparator,
-                memoryContext, memoryChainingRule, destTuple, spillingDirectory, sortOrder,
+                memoryContext, memoryChainingRule, destPair, spillingDirectory, sortOrder,
                 spillingChunkSize, spillToDisk, useBigEndian);
     }
 
@@ -83,12 +83,12 @@ public final class OperationFactory {
     })
     public static SortedAggregator getSortedAggregator(
             MemoryContext memoryContext, SerializationOptimizer optimizer, MemoryChainingRule memoryChainingRule,
-            int partitionCount, int spillingBufferSize, Comparator comparator, Pair destTuple,
+            int partitionCount, int spillingBufferSize, Comparator comparator, Pair destPair,
             Accumulator binaryFunctor, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         return new SortedPartitionedAggregator(partitionCount, spillingBufferSize, optimizer, comparator,
-                memoryContext, memoryChainingRule, destTuple, binaryFunctor, spillingDirectory,
+                memoryContext, memoryChainingRule, destPair, binaryFunctor, spillingDirectory,
                 sortOrder, spillingChunkSize, spillToDisk, useBigEndian);
     }
 
@@ -110,7 +110,7 @@ public final class OperationFactory {
 //    public static  SortedJoinAggregator getSortedJoiner(
 //            MemoryContext memoryContext, IOContext ioContext, MemoryChainingType memoryChainingType,
 //            int partitionCount, int spillingBufferSize, Comparator comparator,
-//            TupleUpdater tupleUpdater, TuplePooltuplePool,
+//            PairUpdater pairUpdater, PairPoolpairPool,
 //            String spillingDirectory, SortOrder sortOrder, int spillingChunkSize,
 //            boolean spillToDisk, boolean useBigEndian
 //    ) {

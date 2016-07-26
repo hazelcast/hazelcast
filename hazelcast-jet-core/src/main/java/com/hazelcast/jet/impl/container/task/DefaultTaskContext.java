@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.container.task;
 
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.executor.TaskContext;
-import com.hazelcast.jet.impl.data.io.JetTupleDataType;
+import com.hazelcast.jet.impl.data.io.JetPairDataType;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.SerializationOptimizer;
 
@@ -37,7 +37,7 @@ public class DefaultTaskContext implements TaskContext {
                               JobContext jobContext) {
         this.taskCount = taskCount;
         this.taskNumber = taskNumber;
-        this.optimizer = new SerializationOptimizer(JetTupleDataType.INSTANCE);
+        this.optimizer = new SerializationOptimizer(JetPairDataType.INSTANCE);
         this.accumulatorMap = new ConcurrentHashMap<>();
         jobContext.registerAccumulators(this.accumulatorMap);
     }

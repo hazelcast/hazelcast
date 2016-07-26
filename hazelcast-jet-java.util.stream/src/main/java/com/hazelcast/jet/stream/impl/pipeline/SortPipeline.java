@@ -29,9 +29,9 @@ import com.hazelcast.jet.stream.impl.processor.SortProcessor;
 
 import java.util.Comparator;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -45,13 +45,13 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
         boolean isFirstVertex = upstream instanceof SourcePipeline;
-        Distributed.Function<Pair, T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Pair, T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
         Vertex vertex = vertexBuilder(SortProcessor.class)
                 .name("sorter")
                 .addToDAG(dag)
-                .args(fromTupleMapper, toTupleMapper, comparator)
+                .args(fromPairMapper, toPairMapper, comparator)
                 .taskCount(1)
                 .build();
 
@@ -61,9 +61,9 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
                     .name("passthrough")
                     .addToDAG(dag)
                     .build();
-            previous = this.upstream.buildDAG(dag, passthrough, toTupleMapper());
+            previous = this.upstream.buildDAG(dag, passthrough, toPairMapper());
         } else {
-            previous = this.upstream.buildDAG(dag, vertex, toTupleMapper());
+            previous = this.upstream.buildDAG(dag, vertex, toPairMapper());
         }
 
         edgeBuilder(previous, vertex)

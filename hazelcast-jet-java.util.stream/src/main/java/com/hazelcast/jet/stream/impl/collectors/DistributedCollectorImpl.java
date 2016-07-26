@@ -38,10 +38,10 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -87,17 +87,17 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     static <T, R> Vertex buildAccumulator(DAG dag, Pipeline<T> upstream, Supplier<R> supplier,
                                           BiConsumer<R, ? super T> accumulator) {
-        Distributed.Function<Pair, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Pair, ? extends T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
         Vertex accumulatorVertex = vertexBuilder(CollectorAccumulatorProcessor.class)
                 .addToDAG(dag)
                 .name("accumulator")
                 .taskCount(taskCount)
-                .args(fromTupleMapper, toTupleMapper())
+                .args(fromPairMapper, toPairMapper())
                 .args(accumulator, supplier)
                 .build();
 
-        Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toTupleMapper());
+        Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toPairMapper());
 
         if (previous != accumulatorVertex) {
             edgeBuilder(previous, accumulatorVertex)
@@ -114,7 +114,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         Vertex combinerVertex = vertexBuilder(factory)
                 .name("combiner")
                 .addToDAG(dag)
-                .args(defaultFromTupleMapper(), toTupleMapper())
+                .args(defaultFromPairMapper(), toPairMapper())
                 .args(combiner, finisher)
                 .taskCount(1)
                 .build();
@@ -138,7 +138,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         }
     }
 
-    protected static <T, U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+    protected static <T, U extends T> Distributed.Function<U, Pair> toPairMapper() {
         return o -> new JetPair<Object, T>(0, o);
     }
 

@@ -45,7 +45,7 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ILi
     }
 
 
-    protected <U extends T> Distributed.Function<U, Pair> toTupleMapper() {
+    protected <U extends T> Distributed.Function<U, Pair> toPairMapper() {
         return v -> new JetPair<>(0, v);
     }
 

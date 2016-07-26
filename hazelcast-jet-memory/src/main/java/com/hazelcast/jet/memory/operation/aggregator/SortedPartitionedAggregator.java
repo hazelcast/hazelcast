@@ -19,7 +19,7 @@ package com.hazelcast.jet.memory.operation.aggregator;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
-import com.hazelcast.jet.memory.TupleFetcher;
+import com.hazelcast.jet.memory.PairFetcher;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
 import com.hazelcast.jet.memory.binarystorage.SortedHashStorage;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
@@ -29,8 +29,8 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.InputsCursor;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.SortedTupleCursor;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.SortedPairCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.PairCursor;
 import com.hazelcast.jet.memory.operation.aggregator.sorter.IteratingHeapSorter;
 import com.hazelcast.jet.memory.operation.aggregator.sorter.MemoryBlockSorter;
 import com.hazelcast.jet.memory.operation.aggregator.sorter.Sorter;
@@ -161,11 +161,11 @@ import static com.hazelcast.jet.memory.Partition.newSortedPartition;
 public class SortedPartitionedAggregator
 extends PartitionedAggregatorBase implements SortedAggregator {
     private final InputsCursor inputsCursor;
-    private final TupleCursor cursor;
+    private final PairCursor cursor;
     private final Sorter<InputsCursor, SpillingKeyValueWriter> spillingSorter;
     private final Spiller spiller;
     private final MemoryBlockChain sortedMemoryBlockChain = new DefaultMemoryBlockChain();
-    private final Sorter<InputsCursor, TupleFetcher> memoryDiskMergeSorter;
+    private final Sorter<InputsCursor, PairFetcher> memoryDiskMergeSorter;
     private final Sorter<Partition[], MemoryBlockChain> memoryBlocksSorter;
 
     @SuppressWarnings({
@@ -174,11 +174,11 @@ extends PartitionedAggregatorBase implements SortedAggregator {
     public SortedPartitionedAggregator(
             int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
             MemoryContext memoryContext, MemoryChainingRule memoryChainingRule,
-            Pair destTuple, String spillingDirectory, SortOrder sortOrder,
+            Pair destPair, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         this(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext, memoryChainingRule,
-                destTuple, null, spillingDirectory, sortOrder, spillingChunkSize, spillToDisk, useBigEndian);
+                destPair, null, spillingDirectory, sortOrder, spillingChunkSize, spillToDisk, useBigEndian);
     }
 
     @SuppressWarnings({
@@ -186,12 +186,12 @@ extends PartitionedAggregatorBase implements SortedAggregator {
     })
     public SortedPartitionedAggregator(
             int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair destTuple,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair destPair,
             Accumulator accumulator, String spillingDirectory, SortOrder sortOrder,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
         super(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext, memoryChainingRule,
-                destTuple, accumulator, spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
+                destPair, accumulator, spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
         this.memoryBlocksSorter = new MemoryBlockSorter(header, sortOrder);
         this.memoryDiskMergeSorter = new IteratingHeapSorter(
                 temporaryMemoryBlock, sortOrder, comparator, comparatorHolder, accumulator, useBigEndian);
@@ -215,16 +215,16 @@ extends PartitionedAggregatorBase implements SortedAggregator {
     }
 
     @Override
-    public TupleCursor cursor() {
+    public PairCursor cursor() {
         inputsCursor.setInputs(spiller().openSpillFileCursor(), sortedMemoryBlockChain);
         cursor.reset(getComparator());
         return cursor;
     }
 
     @Override
-    protected TupleCursor newResultCursor() {
-        return new SortedTupleCursor(serviceMemoryBlock, temporaryMemoryBlock, memoryDiskMergeSorter,
-                accumulator, destTuple, partitions, header, optimizer, inputsCursor,
+    protected PairCursor newResultCursor() {
+        return new SortedPairCursor(serviceMemoryBlock, temporaryMemoryBlock, memoryDiskMergeSorter,
+                accumulator, destPair, partitions, header, optimizer, inputsCursor,
                 useBigEndian);
     }
 

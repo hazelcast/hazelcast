@@ -33,8 +33,8 @@ public enum PredefinedType implements DataType {
     BYTE(-7, Byte.class, new ByteIO()),
     INT(-6, Integer.class, new IntegerIO()),
     LONG(-5, Long.class, new LongIO()),
-    // -4 Reserved for JetTuple2
-    TUPLE2(-3, Pair.class, new Tuple2IO()),
+    // -4 Reserved for JetPair
+    TUPLE2(-3, Pair.class, new PairIO()),
     STRING(-2, String.class, new StringIO()),
     OBJECT(-1, Object.class, new DefaultObjectIO()),
     NULL(NULL_TYPE_ID, null, new NullObjectIO());
@@ -259,7 +259,7 @@ public enum PredefinedType implements DataType {
         }
     }
 
-    private static class Tuple2IO implements ObjectIO<Pair> {
+    private static class PairIO implements ObjectIO<Pair> {
         @Override
         public Pair read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
             return new Pair<>(readComponent(objectDataInput, optimizer), readComponent(objectDataInput, optimizer));

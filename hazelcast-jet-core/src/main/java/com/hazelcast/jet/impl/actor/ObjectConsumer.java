@@ -29,8 +29,8 @@ import com.hazelcast.jet.strategy.ShufflingStrategy;
 public interface ObjectConsumer extends Consumer<ProducerInputStream<Object>> {
 
     /**
-     * @param chunk - chunk of Tuples to consume
-     * @return really consumed amount of tuples
+     * @param chunk - chunk of Pairs to consume
+     * @return really consumed amount of pairs
      * @throws Exception if any exception
      */
     int consumeChunk(ProducerInputStream<Object> chunk) throws Exception;

@@ -25,9 +25,9 @@ import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.LimitProcessor;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -40,14 +40,14 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
         Vertex first = vertexBuilder(LimitProcessor.class)
                 .addToDAG(dag)
-                .args(getTupleMapper(upstream, defaultFromTupleMapper()), toTupleMapper(), limit)
+                .args(getPairMapper(upstream, defaultFromPairMapper()), toPairMapper(), limit)
                 .taskCount(1)
                 .build();
 
-        Vertex previous = upstream.buildDAG(dag, first, toTupleMapper());
+        Vertex previous = upstream.buildDAG(dag, first, toPairMapper());
 
         if (first != previous) {
             edgeBuilder(previous, first)
@@ -61,7 +61,7 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         Vertex second = vertexBuilder(LimitProcessor.class)
                 .addToDAG(dag)
-                .args(defaultFromTupleMapper(), toTupleMapper, limit)
+                .args(defaultFromPairMapper(), toPairMapper, limit)
                 .taskCount(1)
                 .build();
 

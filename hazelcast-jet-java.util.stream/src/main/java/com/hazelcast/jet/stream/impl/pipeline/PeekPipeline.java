@@ -28,7 +28,7 @@ import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
@@ -43,17 +43,17 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
         String listName = randomName();
         IList<T> list = context.getHazelcastInstance().getList(listName);
-        Distributed.Function<T, Pair> toTuple = v -> new JetPair<>(0, v);
-        Vertex previous = upstream.buildDAG(dag, null, toTuple);
+        Distributed.Function<T, Pair> toPair = v -> new JetPair<>(0, v);
+        Vertex previous = upstream.buildDAG(dag, null, toPair);
         previous.addSink(new ListSink(list));
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
         //This vertex is necessary to convert the input to format suitable for list
         Vertex vertex = vertexBuilder(PassthroughProcessor.class)
                 .addToDAG(dag)
-                .args(defaultFromTupleMapper(), toTupleMapper)
+                .args(defaultFromPairMapper(), toPairMapper)
                 .taskCount(taskCount)
                 .build();
         edgeBuilder(previous, vertex)

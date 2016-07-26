@@ -33,7 +33,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
     public R collect(StreamContext context, Pipeline<? extends T> upstream) {
         R target = getTarget(context.getHazelcastInstance());
         DAG dag = new DAG();
-        Vertex vertex = upstream.buildDAG(dag, null, toTupleMapper());
+        Vertex vertex = upstream.buildDAG(dag, null, toPairMapper());
         vertex.addSink(getSinkTap());
         executeJob(context, dag);
         return target;
@@ -41,7 +41,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
 
     protected abstract R getTarget(HazelcastInstance instance);
 
-    protected abstract <U extends T> Distributed.Function<U, Pair> toTupleMapper();
+    protected abstract <U extends T> Distributed.Function<U, Pair> toPairMapper();
 
     protected abstract Sink getSinkTap();
 }
