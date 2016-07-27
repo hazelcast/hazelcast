@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.memory.operation.aggregator;
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.binarystorage.HashStorage;
 import com.hazelcast.jet.memory.binarystorage.Storage;
@@ -27,7 +27,7 @@ import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.InMemoryCursor;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.SpillingCursor;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.PairCursor;
 import com.hazelcast.jet.memory.spilling.DefaultSpiller;
 import com.hazelcast.jet.memory.spilling.Spiller;
 
@@ -96,7 +96,7 @@ import com.hazelcast.jet.memory.spilling.Spiller;
  * No sorting is performed for this type of aggregation.
  */
 public class PartitionedAggregator extends PartitionedAggregatorBase {
-    protected final TupleCursor cursor;
+    protected final PairCursor cursor;
     protected final Spiller spiller;
     protected final Storage serviceKeyValueStorage;
 
@@ -104,12 +104,12 @@ public class PartitionedAggregator extends PartitionedAggregatorBase {
             "checkstyle:parameternumber"
     })
     public PartitionedAggregator(
-            int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 destTuple,
+            int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair destPair,
             String spillingDirectory, int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        this(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
-                memoryChainingRule, destTuple, null, spillingDirectory, spillingChunkSize,
+        this(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext,
+                memoryChainingRule, destPair, null, spillingDirectory, spillingChunkSize,
                 spillToDisk, useBigEndian
         );
     }
@@ -118,13 +118,13 @@ public class PartitionedAggregator extends PartitionedAggregatorBase {
             "checkstyle:parameternumber"
     })
     public PartitionedAggregator(
-            int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 destTuple,
+            int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair destPair,
             Accumulator accumulator, String spillingDirectory,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        super(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext, memoryChainingRule,
-                destTuple, accumulator, spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
+        super(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext, memoryChainingRule,
+                destPair, accumulator, spillingDirectory, spillingChunkSize, spillToDisk, useBigEndian);
         this.serviceKeyValueStorage = new HashStorage(null, comparator.getHasher(), hsaResizeListener);
         this.spiller = newSpiller();
         this.cursor = newResultCursor();
@@ -147,29 +147,29 @@ public class PartitionedAggregator extends PartitionedAggregatorBase {
     }
 
     @Override
-    protected TupleCursor newResultCursor() {
-        return new PartitionedTupleCursor();
+    protected PairCursor newResultCursor() {
+        return new PartitionedPairCursor();
     }
 
     @Override
-    public TupleCursor cursor() {
+    public PairCursor cursor() {
         cursor.reset(getComparator());
         spillFileCursor = spiller.openSpillFileCursor();
         return cursor;
     }
 
-    private class PartitionedTupleCursor implements TupleCursor {
-        private final TupleCursor memoryCursor;
-        private final TupleCursor spillingCursor;
+    private class PartitionedPairCursor implements PairCursor {
+        private final PairCursor memoryCursor;
+        private final PairCursor spillingCursor;
         private boolean spillingCursorDone;
 
-        public PartitionedTupleCursor() {
+        public PartitionedPairCursor() {
             this.spillingCursor = new SpillingCursor(
-                    serviceMemoryBlock, temporaryMemoryBlock, accumulator, spiller, destTuple, partitions,
-                    header, ioContext, useBigEndian);
+                    serviceMemoryBlock, temporaryMemoryBlock, accumulator, spiller, destPair, partitions,
+                    header, optimizer, useBigEndian);
             this.memoryCursor = new InMemoryCursor(
-                    serviceKeyValueStorage, serviceMemoryBlock, temporaryMemoryBlock, accumulator, destTuple,
-                    partitions, header, ioContext, useBigEndian);
+                    serviceKeyValueStorage, serviceMemoryBlock, temporaryMemoryBlock, accumulator, destPair,
+                    partitions, header, optimizer, useBigEndian);
         }
 
         @Override
@@ -192,8 +192,8 @@ public class PartitionedAggregator extends PartitionedAggregatorBase {
         }
 
         @Override
-        public Tuple2 asTuple() {
-            return (spillingCursorDone ? memoryCursor : spillingCursor).asTuple();
+        public Pair asPair() {
+            return (spillingCursorDone ? memoryCursor : spillingCursor).asPair();
         }
     }
 }

@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.data;
+package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 
 /**
- * Represents abstract reader from some source with data
+ * Cursor over a range of pairs.
  */
-public interface DataReader extends ObjectProducer {
+public interface PairCursor {
+    void reset(Comparator comparator);
 
+    boolean advance();
+
+    /**
+     * Returns the current cursor state as a pair. May return itself, therefore
+     * the returned object is valid only until {@code advance} or {@code reset} is
+     * called on this cursor.
+     */
+    Pair asPair();
 }

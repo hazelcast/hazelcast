@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.data.tuple;
+package com.hazelcast.jet.impl.data.pair;
 
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Iterator;
 
-public class JetTupleIterator<R> implements Iterator<JetTuple> {
+public class JetPairIterator<R> implements Iterator<JetPair> {
     private final Iterator<R> iterator;
-    private final JetTupleConverter<R> convertor;
+    private final JetPairConverter<R> convertor;
     private final SerializationService serializationService;
 
-    public JetTupleIterator(
-            Iterator<R> iterator, JetTupleConverter<R> converter, SerializationService serializationService
+    public JetPairIterator(
+            Iterator<R> iterator, JetPairConverter<R> converter, SerializationService serializationService
     ) {
         this.iterator = iterator;
         this.convertor = converter;
@@ -45,7 +45,7 @@ public class JetTupleIterator<R> implements Iterator<JetTuple> {
     }
 
     @Override
-    public JetTuple next() {
+    public JetPair next() {
         return convertor.convert(iterator.next(), serializationService);
     }
 }

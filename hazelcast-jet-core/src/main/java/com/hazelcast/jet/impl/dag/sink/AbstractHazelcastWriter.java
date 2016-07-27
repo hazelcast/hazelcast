@@ -101,9 +101,9 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         JobConfig jobConfig = containerDescriptor.getConfig();
         this.awaitInSecondsTime = jobConfig.getSecondsToAwait();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
-        int tupleChunkSize = jobConfig.getChunkSize();
-        this.chunkBuffer = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
-        this.chunkInputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
+        int pairChunkSize = jobConfig.getChunkSize();
+        this.chunkBuffer = new DefaultObjectIOStream<Object>(new Object[pairChunkSize]);
+        this.chunkInputStream = new DefaultObjectIOStream<Object>(new Object[pairChunkSize]);
         this.shufflingStrategy = null;
     }
 

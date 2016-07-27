@@ -21,7 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.serialization.SerializationService;
 
 public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     private final MapConfig mapConfig;
@@ -58,10 +59,11 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            JetTuple2 tuple = (JetTuple2) chunk.get(i);
-            final Data keyData = tuple.getComponentData(0, calculationStrategy, getNodeEngine());
+            JetPair pair = (JetPair) chunk.get(i);
+            final SerializationService serService = getNodeEngine().getSerializationService();
+            final Data keyData = pair.getComponentData(0, calculationStrategy, serService);
             final Object valueData = mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY
-                    ? tuple.getComponentData(1, calculationStrategy, getNodeEngine()) : tuple.get1();
+                    ? pair.getComponentData(1, calculationStrategy, serService) : pair.getValue();
             this.recordStore.put(keyData, valueData, -1);
         }
     }

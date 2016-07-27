@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.memory.operation.joiner;
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
@@ -25,7 +25,7 @@ import com.hazelcast.jet.memory.operation.aggregator.JoinAggregator;
 import com.hazelcast.jet.memory.operation.aggregator.PartitionedAggregator;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.InMemoryCursor;
 import com.hazelcast.jet.memory.operation.aggregator.cursor.SpillingCursor;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.PairCursor;
 import com.hazelcast.jet.memory.spilling.DefaultSpiller;
 
 /**
@@ -132,18 +132,18 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
             "checkstyle:parameternumber"
     })
     public PartitionedJoiner(
-            int partitionCount, int spillingBufferSize, IOContext ioContext, Comparator comparator,
-            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Tuple2 tuple, String spillingDirectory,
+            int partitionCount, int spillingBufferSize, SerializationOptimizer optimizer, Comparator comparator,
+            MemoryContext memoryContext, MemoryChainingRule memoryChainingRule, Pair pair, String spillingDirectory,
             int spillingChunkSize, boolean spillToDisk, boolean useBigEndian
     ) {
-        super(partitionCount, spillingBufferSize, ioContext, comparator, memoryContext,
-                memoryChainingRule, tuple, spillingDirectory, spillingChunkSize, spillToDisk,
+        super(partitionCount, spillingBufferSize, optimizer, comparator, memoryContext,
+                memoryChainingRule, pair, spillingDirectory, spillingChunkSize, spillToDisk,
                 useBigEndian);
     }
 
 
     @Override
-    public TupleCursor cursor() {
+    public PairCursor cursor() {
         cursor.reset(getComparator());
         spillFileCursor = this.spiller.openSpillFileCursor();
         return cursor;
@@ -156,7 +156,7 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
     }
 
     @Override
-    protected TupleCursor newResultCursor() {
+    protected PairCursor newResultCursor() {
         return new DefaultJoinerCursor();
     }
 
@@ -165,16 +165,16 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
         assert source == 0;
     }
 
-    private class DefaultJoinerCursor implements TupleCursor {
-        private final TupleCursor memoryCursor;
-        private final TupleCursor spillingCursor;
+    private class DefaultJoinerCursor implements PairCursor {
+        private final PairCursor memoryCursor;
+        private final PairCursor spillingCursor;
         private boolean spillingCursorDone;
 
         public DefaultJoinerCursor() {
             this.spillingCursor = new SpillingCursor(serviceMemoryBlock, temporaryMemoryBlock, accumulator,
-                    spiller, destTuple, partitions, header, ioContext, useBigEndian);
+                    spiller, destPair, partitions, header, optimizer, useBigEndian);
             this.memoryCursor = new InMemoryCursor(serviceKeyValueStorage, serviceMemoryBlock,
-                    temporaryMemoryBlock, accumulator, destTuple, partitions, header, ioContext, useBigEndian);
+                    temporaryMemoryBlock, accumulator, destPair, partitions, header, optimizer, useBigEndian);
         }
 
 
@@ -198,8 +198,8 @@ public class PartitionedJoiner extends PartitionedAggregator implements JoinAggr
         }
 
         @Override
-        public Tuple2 asTuple() {
-            return (spillingCursorDone ? memoryCursor : spillingCursor).asTuple();
+        public Pair asPair() {
+            return (spillingCursorDone ? memoryCursor : spillingCursor).asPair();
         }
     }
 }

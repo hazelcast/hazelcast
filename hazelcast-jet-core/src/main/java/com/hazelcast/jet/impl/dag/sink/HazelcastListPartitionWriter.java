@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -55,17 +55,17 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            final JetTuple2 tuple = (JetTuple2) chunk.get(i);
-            if (tuple == null) {
+            final JetPair pair = (JetPair) chunk.get(i);
+            if (pair == null) {
                 continue;
             }
             if (!listContainer.hasEnoughCapacity(chunk.size())) {
                 throw new IllegalStateException("IList " + name + " capacity exceeded");
             }
-            if (!(tuple.get(0) instanceof Number)) {
-                throw new IllegalStateException("The key of an IList tuple should be a number");
+            if (!(pair.get(0) instanceof Number)) {
+                throw new IllegalStateException("The key of an IList pair should be a number");
             }
-            this.listContainer.add(tuple.getComponentData(1, calculationStrategy, getNodeEngine()));
+            this.listContainer.add(pair.getComponentData(1, calculationStrategy, getNodeEngine().getSerializationService()));
         }
     }
 

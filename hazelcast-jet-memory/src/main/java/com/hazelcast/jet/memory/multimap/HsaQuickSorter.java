@@ -21,20 +21,20 @@ import com.hazelcast.internal.util.sort.QuickSorter;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.util.JetIoUtil;
 
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.KEY_SIZE;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.KEY_SIZE;
 
 /**
  * Quick sorter implementation for JET openAddressing storage
  */
 public class HsaQuickSorter extends QuickSorter {
-    private final TupleMultimapHsa multimap;
+    private final PairMultimapHsa multimap;
     private Comparator comparator;
 
     private long pivotKeyAddress;
     private long pivotKeySize;
     private MemoryAccessor mem;
 
-    public HsaQuickSorter(TupleMultimapHsa multimap) {
+    public HsaQuickSorter(PairMultimapHsa multimap) {
         this.multimap = multimap;
     }
 
@@ -49,9 +49,9 @@ public class HsaQuickSorter extends QuickSorter {
     @Override
     protected void loadPivot(long index) {
         long slotAddress = addrOfSlotAt(index);
-        long tupleAddress = multimap.addrOfFirstTupleAt(slotAddress);
-        pivotKeyAddress = JetIoUtil.addressOfKeyBlockAt(tupleAddress);
-        pivotKeySize = multimap.sizeOfKeyBlockAt(tupleAddress);
+        long pairAddress = multimap.addrOfFirstPairAt(slotAddress);
+        pivotKeyAddress = JetIoUtil.addressOfKeyBlockAt(pairAddress);
+        pivotKeySize = multimap.sizeOfKeyBlockAt(pairAddress);
     }
 
     @Override
@@ -75,9 +75,9 @@ public class HsaQuickSorter extends QuickSorter {
 
     private int compareWithPivot(long index) {
         long keySlot = addrOfSlotAt(index);
-        long tupleAddress = multimap.addrOfFirstTupleAt(keySlot);
-        long keyAddress = JetIoUtil.addressOfKeyBlockAt(tupleAddress);
-        long keySize = multimap.sizeOfKeyBlockAt(tupleAddress);
+        long pairAddress = multimap.addrOfFirstPairAt(keySlot);
+        long keyAddress = JetIoUtil.addressOfKeyBlockAt(pairAddress);
+        long keySize = multimap.sizeOfKeyBlockAt(pairAddress);
         return comparator.compare(mem, mem, keyAddress, keySize, pivotKeyAddress, pivotKeySize);
     }
 

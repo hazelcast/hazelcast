@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.data.tuple;
+package com.hazelcast.jet.impl.data.pair;
 
 
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
- * Represents abstract converter from Java-representation onto the tuple representation;
+ * Represents abstract converter from Java-representation onto the pair representation;
  *
  * For example Map's entry {@literal <Key,Value>} will be represented as
  *
- * Tuple with [Key] as key part and [Value] as value part;
+ * Pair with [Key] as key part and [Value] as value part;
  *
  * @param <R> - type of the input Java-object;
  */
 @FunctionalInterface
-public interface JetTupleConverter<R> {
+public interface JetPairConverter<R> {
     /**
-     * Performs converting of java-heap object into the tuple representation of object;
+     * Performs converting of java-heap object into the pair representation of object;
      *
      * @param object - java object;
      * @param ss     - Hazelcast serialization  service;
-     * @return - corresponding tuple representation;
+     * @return - corresponding pair representation;
      */
-    JetTuple convert(R object, SerializationService ss);
+    JetPair convert(R object, SerializationService ss);
 }

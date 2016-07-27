@@ -17,18 +17,18 @@
 package com.hazelcast.jet.memory.binarystorage;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
-import com.hazelcast.jet.memory.binarystorage.cursor.TupleAddressCursor;
+import com.hazelcast.jet.memory.binarystorage.cursor.PairAddressCursor;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 
 
 /**
  * Flyweight over binary key-multivalue storage. Under each key there is a
- * <em>slot</em> which points to a chain (linked list) of <em>tuples</em>.
+ * <em>slot</em> which points to a chain (linked list) of <em>pairs</em>.
  */
 public interface Storage {
 
@@ -59,65 +59,65 @@ public interface Storage {
     long count();
 
     /**
-     * Returns the length of the tuple chain for the slot at the given address.
+     * Returns the length of the pair chain for the slot at the given address.
      */
-    long tupleCountAt(long slotAddress);
+    long pairCountAt(long slotAddress);
 
     /**
-     * Given the address of a slot, returns the address of the first tuple (head of the chain).
+     * Given the address of a slot, returns the address of the first pair (head of the chain).
      */
-    long addrOfFirstTuple(long slotAddress);
+    long addrOfFirstPair(long slotAddress);
 
     /**
-     * Given the address of a tuple, returns the address of the next tuple in the
+     * Given the address of a pair, returns the address of the next pair in the
      * chain, or {@value com.hazelcast.internal.memory.MemoryAllocator#NULL_ADDRESS} if the
-     * next tuple doesn't exist.
+     * next pair doesn't exist.
      */
-    long addrOfNextTuple(long tupleAddress);
+    long addrOfNextPair(long pairAddress);
 
     /**
-     * Uses the tuple's key to look up a slot with the same key.
+     * Uses the pair's key to look up a slot with the same key.
      *
-     * @param tupleAddress address of the tuple
-     * @param tupleAccessor used to access the tuple
+     * @param pairAddress address of the pair
+     * @param pairAccessor used to access the pair
      * @return address of the slot, if found;
      *         {@value com.hazelcast.internal.memory.MemoryAllocator#NULL_ADDRESS} otherwise
      */
-    long addrOfSlotWithSameKey(long tupleAddress, MemoryAccessor tupleAccessor);
+    long addrOfSlotWithSameKey(long pairAddress, MemoryAccessor pairAccessor);
 
     /**
-     * Uses the tuple's key to look up a slot with the same key.
+     * Uses the pair's key to look up a slot with the same key.
      *
-     * @param tupleAddress address of the tuple
+     * @param pairAddress address of the pair
      * @param comparator to calculate hashcode; if null, the default one is used
-     * @param tupleAccessor used to access the tuple
+     * @param pairAccessor used to access the pair
      * @return address of the slot, if found;
      *         {@value com.hazelcast.internal.memory.MemoryAllocator#NULL_ADDRESS} otherwise
      */
-    long addrOfSlotWithSameKey(long tupleAddress, Comparator comparator, MemoryAccessor tupleAccessor);
+    long addrOfSlotWithSameKey(long pairAddress, Comparator comparator, MemoryAccessor pairAccessor);
 
     /**
-     * Uses the tuple's key to look up a slot with the same key, assigning a new one if not found.
+     * Uses the pair's key to look up a slot with the same key, assigning a new one if not found.
      *
-     * @param tupleAddress address of the tuple
+     * @param pairAddress address of the pair
      * @param comparator to calculate hashcode; if null, the default one is used
-     * @return abs(return value) is the address of the slot where the tuple was inserted. It is positive
+     * @return abs(return value) is the address of the slot where the pair was inserted. It is positive
      * if a new slot was assigned, negative otherwise.
      */
-    long getOrCreateSlotWithSameKey(long tupleAddress, Comparator comparator);
+    long getOrCreateSlotWithSameKey(long pairAddress, Comparator comparator);
 
     /**
-     * Adds the given tuple to storage for the 0-source.
+     * Adds the given pair to storage for the 0-source.
      *
-     * @return abs(return value) is the address of the slot where the tuple was inserted. It is positive
+     * @return abs(return value) is the address of the slot where the pair was inserted. It is positive
      * if a new slot was assigned, negative otherwise.
      */
-    long insertTuple(long recordAddress, Comparator comparator);
+    long insertPair(long recordAddress, Comparator comparator);
 
     /**
-     * Serializes and adds the given tuple to the storage for the source with number 0.
+     * Serializes and adds the given pair to the storage for the source with number 0.
      */
-    void insertTuple(Tuple2 tuple, IOContext ioContext, JetDataOutput output);
+    void insertPair(Pair pair, SerializationOptimizer optimizer, MemoryDataOutput output);
 
     /**
      * Marks key with specified slot address with value marker;
@@ -152,5 +152,5 @@ public interface Storage {
 
     SlotAddressCursor slotCursor();
 
-    TupleAddressCursor tupleCursor(long slotAddress);
+    PairAddressCursor pairCursor(long slotAddress);
 }

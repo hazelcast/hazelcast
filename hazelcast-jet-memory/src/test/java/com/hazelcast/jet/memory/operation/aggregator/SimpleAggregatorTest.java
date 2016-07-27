@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet.memory.operation.aggregator;
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.IOContextImpl;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.JetMemoryException;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
@@ -29,7 +28,7 @@ import com.hazelcast.jet.memory.binarystorage.comparator.StringComparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryChainingRule;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
 import com.hazelcast.jet.memory.operation.OperationFactory;
-import com.hazelcast.jet.memory.operation.aggregator.cursor.TupleCursor;
+import com.hazelcast.jet.memory.operation.aggregator.cursor.PairCursor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -47,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class SimpleAggregatorTest extends BaseMemoryTest {
     private Aggregator aggregator;
-    private IOContext ioContext = new IOContextImpl();
+    private final SerializationOptimizer optimizer = new SerializationOptimizer();
 
 
     @Override
@@ -81,9 +80,9 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         insertElements(1, count);
         System.out.println("InsertionTime=" + (System.currentTimeMillis() - t));
         long start = System.currentTimeMillis();
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            final Tuple2<String, String> tt = (Tuple2<String, String>) cursor.asTuple();
-            markers[Integer.valueOf(tt.get0()) - 1] = 1;
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            final Pair<String, String> tt = (Pair<String, String>) cursor.asPair();
+            markers[Integer.valueOf(tt.getKey()) - 1] = 1;
         }
         System.out.println("SelectionTime=" + (System.currentTimeMillis() - start));
         for (int i = 0; i < count; i++) {
@@ -97,17 +96,17 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
 
         int CNT = 1_000_000;
         byte[] markers = new byte[CNT];
-        Tuple2<Integer, Integer> tuple = new Tuple2<>();
+        Pair<Integer, Integer> pair = new Pair<>();
         long t = System.currentTimeMillis();
         for (int i = 1; i <= CNT; i++) {
-            tuple.set0(i);
-            tuple.set1(i);
-            aggregator.accept(tuple);
+            pair.setKey(i);
+            pair.setValue(i);
+            aggregator.accept(pair);
         }
 
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple2<Integer, Integer> tt = (Tuple2<Integer, Integer>) cursor.asTuple();
-            markers[tt.get0() - 1] = 1;
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<Integer, Integer> tt = (Pair<Integer, Integer>) cursor.asPair();
+            markers[tt.getKey() - 1] = 1;
         }
 
         for (int i = 0; i < CNT; i++) {
@@ -120,23 +119,23 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringMultiValue() throws Exception {
         initAggregator(new StringComparator());
-        Tuple2<String, String> tuple = new Tuple2<>();
+        Pair<String, String> pair = new Pair<>();
         int KEYS_CNT = 100_000;
         int VALUES_CNT = 10;
         byte[] markers = new byte[KEYS_CNT];
         Arrays.fill(markers, (byte) 0);
         long t = System.currentTimeMillis();
         for (int i = 1; i <= 100_000; i++) {
-            tuple.set0(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
             for (int ii = 0; ii < 10; ii++) {
-                tuple.set1(String.valueOf(ii));
-                aggregator.accept(tuple);
+                pair.setValue(String.valueOf(ii));
+                aggregator.accept(pair);
             }
         }
         int iterations_count = 0;
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple2<String, String> tt = (Tuple2<String, String>) cursor.asTuple();
-            markers[Integer.valueOf(tt.get0()) - 1] = 1;
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<String, String> tt = (Pair<String, String>) cursor.asPair();
+            markers[Integer.valueOf(tt.getKey()) - 1] = 1;
             iterations_count++;
         }
 
@@ -152,7 +151,7 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringAssociativeAccumulator() throws Exception {
         initAggregator(new StringComparator(), new IntSumAccumulator());
-        Tuple2<String, Integer> tuple = new Tuple2<>();
+        Pair<String, Integer> pair = new Pair<>();
 
         int KEYS_CNT = 100_000;
         int VALUES_CNT = 10;
@@ -160,18 +159,18 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         Arrays.fill(markers, (byte) 0);
         long t = System.currentTimeMillis();
         for (int i = 1; i <= KEYS_CNT; i++) {
-            tuple.set0(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
             for (int ii = 0; ii < VALUES_CNT; ii++) {
-                tuple.set1(1);
-                aggregator.accept(tuple);
+                pair.setValue(1);
+                aggregator.accept(pair);
             }
         }
         int iterations_count = 0;
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple2<String, Integer> tt = (Tuple2<String, Integer>) cursor.asTuple();
-            markers[Integer.valueOf(tt.get0()) - 1] = 1;
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<String, Integer> tt = (Pair<String, Integer>) cursor.asPair();
+            markers[Integer.valueOf(tt.getKey()) - 1] = 1;
             iterations_count++;
-            int v = tt.get1();
+            int v = tt.getValue();
             Assert.assertEquals(VALUES_CNT, v);
         }
 
@@ -188,7 +187,7 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
     @Test
     public void testString2StringNonAssociativeAccumulator() throws Exception {
         initAggregator(new StringComparator(), new NonAssociativeSumAccumulator());
-        Tuple2<String, Integer> tuple = new Tuple2<>();
+        Pair<String, Integer> pair = new Pair<>();
 
         int KEYS_CNT = 100_000;
         int VALUES_CNT = 10;
@@ -197,20 +196,20 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         long t = System.currentTimeMillis();
 
         for (int i = 1; i <= KEYS_CNT; i++) {
-            tuple.set0(String.valueOf(i));
+            pair.setKey(String.valueOf(i));
 
             for (int ii = 0; ii < VALUES_CNT; ii++) {
-                tuple.set1(1);
-                aggregator.accept(tuple); }
+                pair.setValue(1);
+                aggregator.accept(pair); }
         }
 
         int iterations_count = 0;
 
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple2<String, Integer> tt = (Tuple2<String, Integer>) cursor.asTuple();
-            markers[Integer.valueOf(tt.get0()) - 1] = 1;
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<String, Integer> tt = (Pair<String, Integer>) cursor.asPair();
+            markers[Integer.valueOf(tt.getKey()) - 1] = 1;
             iterations_count++;
-            int v = tt.get1();
+            int v = tt.getValue();
             Assert.assertEquals(VALUES_CNT, v);
         }
 
@@ -234,13 +233,13 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         long iterations_count = 0;
         String k = null;
         int localCNt = 0;
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            final Tuple2<String, String> tt = (Tuple2<String, String>) cursor.asTuple();
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            final Pair<String, String> tt = (Pair<String, String>) cursor.asPair();
             if (k == null) {
-                k = tt.get0();
+                k = tt.getKey();
             } else {
                 localCNt++;
-                Assert.assertEquals(k, tt.get0());
+                Assert.assertEquals(k, tt.getKey());
                 if (localCNt == 2) {
                     k = null;
                     localCNt = 0;
@@ -263,9 +262,9 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         insertIntElements(1, CNT);
         insertIntElements(1, CNT);
         long iterations_count = 0;
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple2<String, Integer> tt = (Tuple2) cursor.asTuple();
-            Assert.assertEquals(3, (int) tt.get1());
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<String, Integer> tt = (Pair) cursor.asPair();
+            Assert.assertEquals(3, (int) tt.getValue());
             iterations_count++;
         }
         assertEquals(iterations_count, CNT);
@@ -281,9 +280,9 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         insertIntElements(1, CNT);
         insertIntElements(1, CNT);
         long iterations_count = 0;
-        for (TupleCursor cursor = aggregator.cursor(); cursor.advance();) {
-            Tuple2<String, Integer> tt = (Tuple2<String, Integer>) cursor.asTuple();
-            Assert.assertEquals(3, (int) tt.get1());
+        for (PairCursor cursor = aggregator.cursor(); cursor.advance();) {
+            Pair<String, Integer> tt = (Pair<String, Integer>) cursor.asPair();
+            Assert.assertEquals(3, (int) tt.getValue());
             iterations_count++;
         }
         assertEquals(iterations_count, CNT);
@@ -298,12 +297,12 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
         memoryContext = new MemoryContext(heapMemoryPool, nativeMemoryPool, blockSize(), useBigEndian());
         aggregator = OperationFactory.getAggregator(
                 memoryContext,
-                ioContext,
+                optimizer,
                 MemoryChainingRule.HEAP,
                 1024,//partitionCount
                 1024,//spillingBufferSize
                 comparator,
-                new Tuple2(),
+                new Pair(),
                 accumulator,
                 "",
                 1024,//spillingChunkSize
@@ -313,20 +312,20 @@ public class SimpleAggregatorTest extends BaseMemoryTest {
     }
 
     private void insertIntElements(int start, int elementsCount) throws Exception {
-        final Tuple2<String, Integer> tuple = new Tuple2<>();
+        final Pair<String, Integer> pair = new Pair<>();
         for (int i = start; i <= elementsCount; i++) {
-            tuple.set0(String.valueOf(i));
-            tuple.set1(1);
-            aggregator.accept(tuple);
+            pair.setKey(String.valueOf(i));
+            pair.setValue(1);
+            aggregator.accept(pair);
         }
     }
 
     private void insertElements(int start, int elementsCount) throws Exception {
-        final Tuple2<String, String> tuple = new Tuple2<>();
+        final Pair<String, String> pair = new Pair<>();
         for (int i = start; i <= elementsCount; i++) {
-            tuple.set0(String.valueOf(i));
-            tuple.set1(String.valueOf(i));
-            if (!aggregator.accept(tuple)) {
+            pair.setKey(String.valueOf(i));
+            pair.setValue(String.valueOf(i));
+            if (!aggregator.accept(pair)) {
                 throw new JetMemoryException("Not enough memory (spilling is turned off)");
             }
         }

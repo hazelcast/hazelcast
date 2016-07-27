@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.memory.operation.aggregator.sorter;
 
-import com.hazelcast.jet.memory.TupleFetcher;
+import com.hazelcast.jet.memory.PairFetcher;
 import com.hazelcast.jet.memory.binarystorage.ObjectHolder;
 import com.hazelcast.jet.memory.binarystorage.SortOrder;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
@@ -27,7 +27,7 @@ import com.hazelcast.jet.memory.operation.aggregator.cursor.InputsCursor;
 /**
  * Iterating heap sorter ??
  */
-public class IteratingHeapSorter extends AbstractHeapSorter<TupleFetcher> {
+public class IteratingHeapSorter extends AbstractHeapSorter<PairFetcher> {
     private static final int CHUNK_SIZE = 1;
 
     public IteratingHeapSorter(
@@ -51,8 +51,8 @@ public class IteratingHeapSorter extends AbstractHeapSorter<TupleFetcher> {
     }
 
     @Override
-    protected void outputTuple(MemoryBlock memoryBlock, long tupleAddress) {
-        output.fetch(memoryBlock, tupleAddress);
+    protected void outputPair(MemoryBlock memoryBlock, long pairAddress) {
+        output.fetch(memoryBlock, pairAddress);
     }
 
 }

@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.source;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -43,8 +43,8 @@ public class MapSourcePipeline<K, V> extends AbstractSourcePipeline<Map.Entry<K,
     }
 
     @Override
-    public Distributed.Function<Tuple2, Map.Entry<K, V>> fromTupleMapper() {
-        return t -> new AbstractMap.SimpleEntry<>(((Tuple2<K, V>) t).get0(), ((Tuple2<K, V>) t).get1());
+    public Distributed.Function<Pair, Map.Entry<K, V>> fromPairMapper() {
+        return t -> new AbstractMap.SimpleEntry<>(((Pair<K, V>) t).getKey(), ((Pair<K, V>) t).getValue());
     }
 }
 

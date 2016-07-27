@@ -18,14 +18,14 @@ package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryAllocator;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.Partition;
 import com.hazelcast.jet.memory.binarystorage.Storage;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
-import com.hazelcast.jet.memory.binarystorage.cursor.TupleAddressCursor;
+import com.hazelcast.jet.memory.binarystorage.cursor.PairAddressCursor;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
 import com.hazelcast.jet.memory.spilling.SpillFileCursor;
@@ -39,9 +39,9 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.addrOfValueBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
 
 /**
- * Cursor over tuples that were spilled to disk.
+ * Cursor over pairs that were spilled to disk.
  */
-public class SpillingCursor extends TupleCursorBase {
+public class SpillingCursor extends PairCursorBase {
     private final Spiller spiller;
     private long[] lookedUpSlots;
     private int lookedUpSlotIdx;
@@ -50,7 +50,7 @@ public class SpillingCursor extends TupleCursorBase {
     private MemoryBlock memoryBlock;
     private MemoryBlockChain memoryBlockChain;
     private Storage storage;
-    private TupleAddressCursor tupleCursor;
+    private PairAddressCursor pairCursor;
     private SpillFileCursor spillFileCursor;
 
     @SuppressWarnings({
@@ -58,17 +58,16 @@ public class SpillingCursor extends TupleCursorBase {
     })
     public SpillingCursor(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock, Accumulator accumulator,
-            Spiller spiller, Tuple2 destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
+            Spiller spiller, Pair destPair, Partition[] partitions, StorageHeader header, SerializationOptimizer optimizer,
             boolean useBigEndian
     ) {
-        super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destTuple, partitions, header, ioContext,
-                useBigEndian);
+        super(serviceMemoryBlock, temporaryMemoryBlock, accumulator, destPair, partitions, header, optimizer, useBigEndian);
         this.spiller = spiller;
     }
 
     @Override
     public boolean advance() {
-        return checkSpilledTuples() || checkLookedUpSlot() || checkSpilledSlot();
+        return checkSpilledPairs() || checkLookedUpSlot() || checkSpilledSlot();
     }
 
     @Override
@@ -81,9 +80,9 @@ public class SpillingCursor extends TupleCursorBase {
         spillFileCursor = spiller.openSpillFileCursor();
     }
 
-    private boolean checkSpilledTuples() {
+    private boolean checkSpilledPairs() {
         if (spillFileCursor.recordAdvance(serviceMemoryBlock, TOP_OFFSET, true)) {
-            tupleFetcher.fetch(serviceMemoryBlock, TOP_OFFSET);
+            pairFetcher.fetch(serviceMemoryBlock, TOP_OFFSET);
             return true;
         }
         return false;
@@ -93,7 +92,7 @@ public class SpillingCursor extends TupleCursorBase {
         if (!hasPendingSpilledSlot) {
             return false;
         }
-        if (advanceTupleCursor()) {
+        if (advancePairCursor()) {
             return true;
         }
         if (lookedUpSlotIdx >= memoryBlockChain.size()) {
@@ -107,9 +106,9 @@ public class SpillingCursor extends TupleCursorBase {
             }
             memoryBlock = memoryBlockChain.get(idx);
             storage.setMemoryBlock(memoryBlock);
-            tupleCursor = storage.tupleCursor(lookedUpSlot);
+            pairCursor = storage.pairCursor(lookedUpSlot);
             lookedUpSlotIdx = idx + 1;
-            return advanceTupleCursor();
+            return advancePairCursor();
         }
         hasPendingSpilledSlot = false;
         lookedUpSlotIdx = memoryBlockChain.size();
@@ -178,8 +177,8 @@ public class SpillingCursor extends TupleCursorBase {
             header.setMemoryBlock(memoryBlock);
             storage.setMemoryBlock(memoryBlock);
             storage.gotoAddress(header.baseAddress());
-            for (TupleAddressCursor cursor = storage.tupleCursor(slotAddress); cursor.advance();) {
-                long recordAddress = cursor.tupleAddress();
+            for (PairAddressCursor cursor = storage.pairCursor(slotAddress); cursor.advance();) {
+                long recordAddress = cursor.pairAddress();
                 final MemoryAccessor accessor = memoryBlock.getAccessor();
                 long newValueAddress = addrOfValueBlockAt(recordAddress, accessor);
                 long newValueSize = sizeOfValueBlockAt(recordAddress, accessor);
@@ -189,22 +188,22 @@ public class SpillingCursor extends TupleCursorBase {
         }
     }
 
-    private boolean advanceTupleCursor() {
-        if (tupleCursor != null && tupleCursor.advance()) {
-            tupleFetcher.fetch(memoryBlock, tupleCursor.tupleAddress());
+    private boolean advancePairCursor() {
+        if (pairCursor != null && pairCursor.advance()) {
+            pairFetcher.fetch(memoryBlock, pairCursor.pairAddress());
             return true;
         }
-        tupleCursor = null;
+        pairCursor = null;
         return false;
     }
 
     private boolean lookUpOrCalculate() {
         if (accumulator != null) {
             calculateSlotData();
-            tupleFetcher.fetch(serviceMemoryBlock, TOP_OFFSET);
+            pairFetcher.fetch(serviceMemoryBlock, TOP_OFFSET);
             return false;
         } else {
-            if (checkSpilledTuples()) {
+            if (checkSpilledPairs()) {
                 lookUpOverMemoryBlocks();
                 return true;
             }

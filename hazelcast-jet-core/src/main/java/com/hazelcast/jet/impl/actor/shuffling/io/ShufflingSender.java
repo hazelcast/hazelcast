@@ -26,7 +26,7 @@ import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.dag.sink.AbstractHazelcastWriter;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -39,9 +39,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     private final byte[] jobNameBytes;
     private final RingBufferActor ringBufferActor;
     private final ChunkedOutputStream serializer;
-    private final SenderObjectWriter senderObjectWriter;
     private final ObjectDataOutputStream dataOutputStream;
-    private final IOContext ioContext;
+    private final SerializationOptimizer optimizer;
     private volatile boolean closed;
 
     public ShufflingSender(ContainerContext containerContext, int taskID, ContainerTask containerTask, Address address) {
@@ -55,15 +54,17 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         this.ringBufferActor = new RingBufferActor(nodeEngine, containerContext.getJobContext(), containerTask,
                 containerContext.getVertex());
         this.serializer = new ChunkedOutputStream(this.ringBufferActor, containerContext, taskID);
-        this.ioContext = containerTask.getTaskContext().getIoContext();
+        this.optimizer = containerTask.getTaskContext().getSerializationOptimizer();
         this.dataOutputStream = new ObjectDataOutputStream(
                 this.serializer, (InternalSerializationService) nodeEngine.getSerializationService());
-        this.senderObjectWriter = new SenderObjectWriter(ioContext);
     }
 
     @Override
     public int consumeChunk(ProducerInputStream<Object> chunk) throws Exception {
-        senderObjectWriter.write(chunk, dataOutputStream);
+        dataOutputStream.writeInt(chunk.size());
+        for (Object object : chunk) {
+            optimizer.write(object, dataOutputStream);
+        }
         serializer.flushSender();
         JetPacket packet = new JetPacket(taskID, containerID, jobNameBytes);
         packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK_SENT);

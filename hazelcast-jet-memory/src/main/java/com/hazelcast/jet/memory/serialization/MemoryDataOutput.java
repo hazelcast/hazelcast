@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.serialization;
+package com.hazelcast.jet.memory.serialization;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
@@ -39,7 +42,7 @@ import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
  * a new memory block for itself, then reallocates it to expand as needed. Never deallocates memory.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class JetDataOutput implements ObjectDataOutput {
+public class MemoryDataOutput implements ObjectDataOutput {
 
     public static final int UTF8_LENGTH_SCALE = 3;
 
@@ -49,11 +52,13 @@ public class JetDataOutput implements ObjectDataOutput {
     private MemoryAccessor accessor;
     private MemoryAllocator allocator;
 
+    private final SerializationOptimizer optimizer;
     private final boolean isBigEndian;
-    private final JetSerializationService service;
+    private final InternalSerializationService service;
 
-    public JetDataOutput(MemoryManager memoryManager, JetSerializationService service, boolean isBigEndian) {
-        this.service = service;
+    public MemoryDataOutput(MemoryManager memoryManager, SerializationOptimizer optimizer, boolean isBigEndian) {
+        this.service = new DefaultSerializationServiceBuilder().build();
+        this.optimizer = optimizer;
         this.isBigEndian = isBigEndian;
         setMemoryManager(memoryManager);
     }
@@ -68,8 +73,16 @@ public class JetDataOutput implements ObjectDataOutput {
         }
     }
 
+    public void writeOptimized(Object object) throws IOException {
+        optimizer.write(object, this);
+    }
 
     // DataOutput implementation
+
+    @Override
+    public void writeObject(Object object) throws IOException {
+        service.writeObject(this, object);
+    }
 
     @Override
     public void write(int b) {
@@ -272,11 +285,6 @@ public class JetDataOutput implements ObjectDataOutput {
                 writeUTF(s);
             }
         }
-    }
-
-    @Override
-    public void writeObject(Object object) throws IOException {
-        service.writeObject(this, object);
     }
 
     @Override

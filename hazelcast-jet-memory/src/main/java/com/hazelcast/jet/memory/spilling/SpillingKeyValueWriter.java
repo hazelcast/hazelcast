@@ -53,12 +53,12 @@ public class SpillingKeyValueWriter implements Flushable {
         dataOutput.writeLong(recordCount);
     }
 
-    public void writeRecord(MemoryBlock mBlock, long tupleAddress) {
+    public void writeRecord(MemoryBlock mBlock, long pairAddress) {
         final MemoryAccessor mem = mBlock.getAccessor();
-        long keySize = JetIoUtil.sizeOfKeyBlockAt(tupleAddress, mem);
-        long valueSize = JetIoUtil.sizeOfValueBlockAt(tupleAddress, mem);
-        long keyAddress = JetIoUtil.addressOfKeyBlockAt(tupleAddress);
-        long valueAddress = JetIoUtil.addrOfValueBlockAt(tupleAddress, mem);
+        long keySize = JetIoUtil.sizeOfKeyBlockAt(pairAddress, mem);
+        long valueSize = JetIoUtil.sizeOfValueBlockAt(pairAddress, mem);
+        long keyAddress = JetIoUtil.addressOfKeyBlockAt(pairAddress);
+        long valueAddress = JetIoUtil.addrOfValueBlockAt(pairAddress, mem);
         writeRecord(mBlock, keySize, valueSize, keyAddress, valueAddress);
     }
 

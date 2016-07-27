@@ -298,7 +298,7 @@ public class DefaultSocketReader
         int header = packet.getHeader();
 
         switch (header) {
-            /*Request - bytes for tuple chunk*/
+            /*Request - bytes for pair chunk*/
             /*Request shuffling channel closed*/
             case JetPacket.HEADER_JET_DATA_CHUNK:
             case JetPacket.HEADER_JET_SHUFFLER_CLOSED:

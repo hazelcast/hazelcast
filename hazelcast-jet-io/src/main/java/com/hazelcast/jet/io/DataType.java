@@ -43,10 +43,10 @@ public interface DataType {
     /**
      * Write type and entries of the object;
      */
-    void write(Object o, ObjectDataOutput objectDataOutput, IOContext ioContext) throws IOException;
+    void write(Object o, ObjectDataOutput objectDataOutput, SerializationOptimizer optimizer) throws IOException;
 
     /**
      * Read object from the binary source represented by objectDataInput;
      */
-    Object read(ObjectDataInput objectDataInput, IOContext ioContext) throws IOException;
+    Object read(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException;
 }

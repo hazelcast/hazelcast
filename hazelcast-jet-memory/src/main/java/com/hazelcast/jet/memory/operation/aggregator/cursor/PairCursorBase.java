@@ -16,57 +16,49 @@
 
 package com.hazelcast.jet.memory.operation.aggregator.cursor;
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.memory.Partition;
-import com.hazelcast.jet.memory.TupleFetcher;
+import com.hazelcast.jet.memory.PairFetcher;
 import com.hazelcast.jet.memory.binarystorage.StorageHeader;
 import com.hazelcast.jet.memory.binarystorage.accumulator.Accumulator;
 import com.hazelcast.jet.memory.binarystorage.comparator.Comparator;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 
 /**
- * Base class for tuple cursor implementations.
+ * Base class for pair cursor implementations.
  */
-public abstract class TupleCursorBase implements TupleCursor {
+public abstract class PairCursorBase implements PairCursor {
 
-    protected final IOContext ioContext;
     protected final boolean useBigEndian;
     protected final StorageHeader header;
-    protected final JetDataInput dataInput;
     protected final Accumulator accumulator;
     protected final MemoryBlock serviceMemoryBlock;
-    protected final Tuple2 destTuple;
+    protected final Pair destPair;
     protected final MemoryBlock temporaryMemoryBlock;
     protected final Partition[] partitions;
-    protected final TupleFetcher tupleFetcher;
+    protected final PairFetcher pairFetcher;
 
     protected Comparator comparator;
 
-    protected TupleCursorBase(
+    protected PairCursorBase(
             MemoryBlock serviceMemoryBlock, MemoryBlock temporaryMemoryBlock, Accumulator accumulator,
-            Tuple2 destTuple, Partition[] partitions, StorageHeader header, IOContext ioContext,
+            Pair destPair, Partition[] partitions, StorageHeader header, SerializationOptimizer optimizer,
             boolean useBigEndian
     ) {
         this.header = header;
-        this.ioContext = ioContext;
         this.partitions = partitions;
         this.useBigEndian = useBigEndian;
         this.accumulator = accumulator;
-        this.destTuple = destTuple;
+        this.destPair = destPair;
         this.serviceMemoryBlock = serviceMemoryBlock;
         this.temporaryMemoryBlock = temporaryMemoryBlock;
-        JetSerializationService jetSerializationService = new JetSerializationServiceImpl();
-        this.dataInput = jetSerializationService.createObjectDataInput(null, useBigEndian);
-        this.tupleFetcher = new TupleFetcher(ioContext, this.destTuple, useBigEndian);
+        this.pairFetcher = new PairFetcher(optimizer, this.destPair, useBigEndian);
     }
 
     @Override
-    public Tuple2 asTuple() {
-        return tupleFetcher.tuple();
+    public Pair asPair() {
+        return pairFetcher.pair();
     }
 
     @Override

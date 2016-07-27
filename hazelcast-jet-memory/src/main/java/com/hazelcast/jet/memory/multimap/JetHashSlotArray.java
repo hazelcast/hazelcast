@@ -29,7 +29,7 @@ import com.hazelcast.jet.memory.util.JetIoUtil;
 import java.util.function.LongConsumer;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
-import static com.hazelcast.jet.memory.multimap.TupleMultimapHsa.HASH_CODE_OFFSET;
+import static com.hazelcast.jet.memory.multimap.PairMultimapHsa.HASH_CODE_OFFSET;
 
 /**
  * Open-addressed hashtable with {@code long}-typed slots. Assumes a specific implementation of memory
@@ -53,7 +53,7 @@ final class JetHashSlotArray extends HashSlotArrayBase implements HashSlotArray8
     private MemoryAccessor localMem;
 
     JetHashSlotArray(LongConsumer hsaResizeListener, int initialCapacity, float loadFactor) {
-        super(NULL_ADDRESS, 0L, null, null, TupleMultimapHsa.KEY_SIZE, 0, initialCapacity, loadFactor);
+        super(NULL_ADDRESS, 0L, null, null, PairMultimapHsa.KEY_SIZE, 0, initialCapacity, loadFactor);
         this.cursor = new Cursor();
         this.hsaResizeListener = hsaResizeListener;
     }
@@ -152,18 +152,18 @@ final class JetHashSlotArray extends HashSlotArrayBase implements HashSlotArray8
     }
 
     @Override
-    protected long keyHash(long tupleAddress, long ignored) {
+    protected long keyHash(long pairAddress, long ignored) {
         final MemoryAccessor mem = resolveMem();
-        final long keyAddress = JetIoUtil.addressOfKeyBlockAt(tupleAddress);
-        final long keySize = JetIoUtil.sizeOfKeyBlockAt(tupleAddress, mem);
+        final long keyAddress = JetIoUtil.addressOfKeyBlockAt(pairAddress);
+        final long keySize = JetIoUtil.sizeOfKeyBlockAt(pairAddress, mem);
         lastHashCode = hasher.hash(mem, keyAddress, keySize);
         return lastHashCode;
     }
 
     @Override
     protected long slotHash(long baseAddress, long slot) {
-        long headTupleAddress = mem().getLong(slotBase(baseAddress, slot));
-        return mem().getLong(headTupleAddress + JetIoUtil.sizeOfTupleAt(headTupleAddress, mem()) + HASH_CODE_OFFSET);
+        long headPairAddress = mem().getLong(slotBase(baseAddress, slot));
+        return mem().getLong(headPairAddress + JetIoUtil.sizeOfPairAt(headPairAddress, mem()) + HASH_CODE_OFFSET);
     }
 
     private MemoryAccessor resolveMem() {

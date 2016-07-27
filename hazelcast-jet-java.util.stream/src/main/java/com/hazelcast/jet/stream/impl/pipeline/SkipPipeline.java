@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
@@ -28,7 +28,7 @@ import com.hazelcast.jet.stream.impl.StreamUtil;
 import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
 import com.hazelcast.jet.stream.impl.processor.SkipProcessor;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
@@ -42,11 +42,11 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple2> toTupleMapper) {
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
         Vertex vertex = vertexBuilder(SkipProcessor.class)
                 .name("skip")
                 .addToDAG(dag)
-                .args(defaultFromTupleMapper(), toTupleMapper, skip)
+                .args(defaultFromPairMapper(), toPairMapper, skip)
                 .taskCount(1)
                 .build();
 
@@ -74,11 +74,11 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
             Vertex passthrough = vertexBuilder(PassthroughProcessor.class)
                     .name("passthrough")
                     .addToDAG(dag)
-                    .args(upstream.fromTupleMapper(), toTupleMapper())
+                    .args(upstream.fromPairMapper(), toPairMapper())
                     .build();
-            previous = this.upstream.buildDAG(dag, passthrough, toTupleMapper());
+            previous = this.upstream.buildDAG(dag, passthrough, toPairMapper());
         } else {
-            previous = this.upstream.buildDAG(dag, vertex, toTupleMapper());
+            previous = this.upstream.buildDAG(dag, vertex, toPairMapper());
         }
         return previous;
     }

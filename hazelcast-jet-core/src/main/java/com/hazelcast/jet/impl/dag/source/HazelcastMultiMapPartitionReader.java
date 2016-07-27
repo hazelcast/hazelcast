@@ -17,11 +17,10 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.data.tuple.JetTuple;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.data.tuple.JetTupleConverter;
-import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
+import com.hazelcast.jet.impl.data.pair.JetPairConverter;
+import com.hazelcast.jet.impl.data.pair.JetPairIterator;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -41,12 +40,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 
-public class HazelcastMultiMapPartitionReader extends AbstractHazelcastReader<JetTuple> {
+public class HazelcastMultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
     private final CalculationStrategy calculationStrategy;
-    private final JetTupleConverter<Entry<Data, MultiMapValue>> tupleConverter =
-            new JetTupleConverter<Entry<Data, MultiMapValue>>() {
+    private final JetPairConverter<Entry<Data, MultiMapValue>> pairConverter =
+            new JetPairConverter<Entry<Data, MultiMapValue>>() {
                 @Override
-                public JetTuple2 convert(final Map.Entry<Data, MultiMapValue> entry, SerializationService ss) {
+                public JetPair convert(final Entry<Data, MultiMapValue> entry, SerializationService ss) {
                     Object key = ss.toObject(entry.getKey());
                     Collection<MultiMapRecord> multiMapRecordList = entry.getValue().getCollection(false);
                     List<MultiMapRecord> list;
@@ -59,7 +58,7 @@ public class HazelcastMultiMapPartitionReader extends AbstractHazelcastReader<Je
                     for (int idx = 0; idx < list.size(); idx++) {
                         values[idx] = list.get(0).getObject();
                     }
-                    return new JetTuple2<>(key, values, getPartitionId(), calculationStrategy);
+                    return new JetPair<>(key, values, getPartitionId());
                 }
             };
 
@@ -83,7 +82,7 @@ public class HazelcastMultiMapPartitionReader extends AbstractHazelcastReader<Je
         MultiMapContainer multiMapContainer = multiMapService.getPartitionContainer(getPartitionId())
                                                              .getCollectionContainer(getName());
         Iterator<Map.Entry<Data, MultiMapValue>> it = multiMapContainer.getMultiMapValues().entrySet().iterator();
-        this.iterator = new JetTupleIterator<>(it, tupleConverter, ss);
+        this.iterator = new JetPairIterator<>(it, pairConverter, ss);
     }
 
     @Override

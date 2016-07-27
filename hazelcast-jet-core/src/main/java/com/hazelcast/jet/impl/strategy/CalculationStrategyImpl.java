@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.strategy;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
 
@@ -69,8 +69,8 @@ public class CalculationStrategyImpl implements CalculationStrategy {
     @Override
     @SuppressWarnings("unchecked")
     public int hash(Object object) {
-        final Object partitionKey = object instanceof JetTuple2
-                ? ((JetTuple2) object).getComponentData(0, this, containerDescriptor.getNodeEngine())
+        final Object partitionKey = object instanceof JetPair
+                ? ((JetPair) object).getComponentData(0, this, containerDescriptor.getNodeEngine().getSerializationService())
                 : partitioningStrategy.getPartitionKey(object);
         return hashingStrategy.hash(object, partitionKey, containerDescriptor);
     }

@@ -20,7 +20,7 @@ package com.hazelcast.jet.strategy;
  * Represents something which can be configured with CalculationStrategy
  * Examples:
  * <pre>
- *     Tuple
+ *     Pair
  * </pre>
  */
 public interface CalculationStrategyAware {

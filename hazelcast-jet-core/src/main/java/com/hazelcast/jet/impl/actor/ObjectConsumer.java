@@ -23,21 +23,21 @@ import com.hazelcast.jet.strategy.ShufflingStrategy;
 
 /**
  * This is an abstract interface for each consumer in the system
- * which consumes tuple
+ * which consumes pair
  */
 
 public interface ObjectConsumer extends Consumer<ProducerInputStream<Object>> {
 
     /**
-     * @param chunk - chunk of Tuples to consume
-     * @return really consumed amount of tuples
+     * @param chunk - chunk of Pairs to consume
+     * @return really consumed amount of pairs
      * @throws Exception if any exception
      */
     int consumeChunk(ProducerInputStream<Object> chunk) throws Exception;
 
     /**
      * @param object - object to consume
-     * @return 1 if tuple was consumed , 0 otherwise
+     * @return 1 if pair was consumed , 0 otherwise
      * @throws Exception if any exception
      */
     int consumeObject(Object object) throws Exception;
@@ -70,12 +70,12 @@ public interface ObjectConsumer extends Consumer<ProducerInputStream<Object>> {
     void close();
 
     /**
-     * @return last consumed tuple count
+     * @return last consumed pair count
      */
     int lastConsumedCount();
 
     /**
-     * @return tuple consumer's shuffling strategy
+     * @return pair consumer's shuffling strategy
      * null if consumer doesn't support shuffling
      */
     ShufflingStrategy getShufflingStrategy();

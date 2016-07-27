@@ -16,14 +16,13 @@
 
 package com.hazelcast.jet.memory.binarystorage;
 
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
-import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.memory.serialization.MemoryDataInput;
+import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.BaseMemoryTest;
 import com.hazelcast.jet.memory.binarystorage.comparator.StringComparator;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
-import com.hazelcast.jet.memory.binarystorage.cursor.TupleAddressCursor;
+import com.hazelcast.jet.memory.binarystorage.cursor.PairAddressCursor;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.util.JetIoUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -86,9 +85,9 @@ public class SortedStorageStringTest extends BaseMemoryTest {
     }
 
     private void sortedTest(SortedStorage blobMap, MemoryBlock memoryBlock, int cnt, int value_cnt) {
-        JetDataOutput output = serializationService.createObjectDataOutput(memoryBlock, true);
-        JetDataInput input = serializationService.createObjectDataInput(memoryBlock, true);
-        Tuple2<String, String> tuple = new Tuple2<>();
+        MemoryDataOutput output = new MemoryDataOutput(memoryBlock, optimizer, true);
+        MemoryDataInput input = new MemoryDataInput(memoryBlock, optimizer, true);
+        Pair<String, String> pair = new Pair<>();
         long t = System.currentTimeMillis();
         for (int idx = 1; idx <= cnt; idx++) {
             putEntry(idx, output, blobMap, value_cnt);
@@ -112,12 +111,12 @@ public class SortedStorageStringTest extends BaseMemoryTest {
             long slotAddress = cursor.slotAddress();
             iterationsCount++;
             int valueCount = 0;
-            for (TupleAddressCursor tupleCursor = blobMap.tupleCursor(slotAddress); tupleCursor.advance();) {
-                long tupleAddress = tupleCursor.tupleAddress();
+            for (PairAddressCursor pairCursor = blobMap.pairCursor(slotAddress); pairCursor.advance();) {
+                long pairAddress = pairCursor.pairAddress();
                 valueCount++;
-                JetIoUtil.readTuple(input, tupleAddress, tuple, ioContext, memoryBlock.getAccessor());
+                JetIoUtil.readPair(input, pairAddress, pair, memoryBlock.getAccessor());
             }
-            assertEquals(treeMapIterator.next(), tuple.get0());
+            assertEquals(treeMapIterator.next(), pair.getKey());
             assertEquals(value_cnt, valueCount);
         }
         assertEquals(iterationsCount, cnt);

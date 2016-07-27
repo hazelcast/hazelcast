@@ -17,14 +17,14 @@
 package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 
 public interface SourcePipeline<E_OUT> extends Pipeline<E_OUT> {
     /**
-     * @return A function which will convert the output of this source from a Tuple to E_OUT
+     * @return A function which will convert the output of this source from a Pair to E_OUT
      */
-    Distributed.Function<Tuple2, E_OUT> fromTupleMapper();
+    Distributed.Function<Pair, E_OUT> fromPairMapper();
 
     Source getSourceTap();
 }

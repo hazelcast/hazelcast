@@ -18,11 +18,11 @@ package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 
 import java.io.File;
 
-public class DataFileReader extends AbstractHazelcastReader<Tuple2<Integer, String>> {
+public class DataFileReader extends AbstractHazelcastReader<Pair<Integer, String>> {
     private final long end;
     private final long start;
 

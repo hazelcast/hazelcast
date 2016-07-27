@@ -35,7 +35,7 @@ import java.util.List;
 
 public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     private final ObjectProducer[] receivers;
-    private final DefaultObjectIOStream<Object> receivedTupleStream;
+    private final DefaultObjectIOStream<Object> receivedPairStream;
     private final TaskProcessor receiverConsumerProcessor;
     private int nextReceiverIdx;
     private boolean receiversClosed;
@@ -64,7 +64,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         }
 
         int chunkSize = containerContext.getJobContext().getJobConfig().getChunkSize();
-        this.receivedTupleStream = new DefaultObjectIOStream<Object>(new Object[chunkSize]);
+        this.receivedPairStream = new DefaultObjectIOStream<Object>(new Object[chunkSize]);
         this.receivers = receivers.toArray(new ObjectProducer[receivers.size()]);
     }
 
@@ -85,18 +85,18 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
 
     @Override
     public boolean process() throws Exception {
-        if (this.receivedTupleStream.size() > 0) {
+        if (this.receivedPairStream.size() > 0) {
             produced = false;
             receiversProduced = false;
 
-            boolean success = this.receiverConsumerProcessor.onChunk(this.receivedTupleStream);
+            boolean success = this.receiverConsumerProcessor.onChunk(this.receivedPairStream);
 
             if (success) {
-                this.receivedTupleStream.reset();
+                this.receivedPairStream.reset();
             }
 
             return success;
-        } else if (this.tupleOutputStream.size() > 0) {
+        } else if (this.pairOutputStream.size() > 0) {
             return super.process();
         } else {
             boolean success;
@@ -105,7 +105,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
                 success = processReceivers();
 
                 if (success) {
-                    this.receivedTupleStream.reset();
+                    this.receivedPairStream.reset();
                 }
             } else {
                 receiversProduced = false;
@@ -138,9 +138,9 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
 
             if (!JetUtil.isEmpty(outChunk)) {
                 produced = true;
-                this.receivedTupleStream.consumeChunk(outChunk, receiver.lastProducedCount());
+                this.receivedPairStream.consumeChunk(outChunk, receiver.lastProducedCount());
 
-                if (!this.receiverConsumerProcessor.onChunk(this.receivedTupleStream)) {
+                if (!this.receiverConsumerProcessor.onChunk(this.receivedPairStream)) {
                     this.nextReceiverIdx = (lastIdx + 1) % this.receivers.length;
                     this.receiversProduced = true;
                     return false;

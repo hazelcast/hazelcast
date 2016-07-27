@@ -18,11 +18,9 @@ package com.hazelcast.jet.memory;
 
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.memory.serialization.MemoryDataInput;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 
 import java.io.IOException;
@@ -33,37 +31,33 @@ import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfKeyBlockAt;
 import static com.hazelcast.jet.memory.util.JetIoUtil.sizeOfValueBlockAt;
 
 /**
- * Deserializes data held by a {@code MemoryManager} and puts it into a {@code Tuple}.
+ * Deserializes data held by a {@code MemoryManager} and puts it into a {@code Pair}.
  */
-public class TupleFetcher {
-    protected final Tuple2 tuple;
-    private final IOContext ioContext;
-    private final JetDataInput dataInput;
+public class PairFetcher {
+    protected final Pair pair;
+    private final MemoryDataInput dataInput;
 
-    public TupleFetcher(IOContext ioContext, Tuple2 tuple, boolean useBigEndian) {
-        this.ioContext = ioContext;
-        this.tuple = tuple;
-        JetSerializationService jetSerializationService = new JetSerializationServiceImpl();
-        this.dataInput = jetSerializationService.createObjectDataInput(null, useBigEndian);
+    public PairFetcher(SerializationOptimizer optimizer, Pair pair, boolean useBigEndian) {
+        this.pair = pair;
+        this.dataInput = new MemoryDataInput(null, optimizer, useBigEndian);
     }
 
     public void fetch(MemoryBlock memoryBlock, long recordAddress) {
         dataInput.setMemoryManager(memoryBlock);
         final MemoryAccessor accessor = memoryBlock.getAccessor();
         dataInput.reset(addressOfKeyBlockAt(recordAddress), sizeOfKeyBlockAt(recordAddress, accessor));
-        tuple.set0(readObject());
+        pair.setKey(readObject());
         dataInput.reset(addrOfValueBlockAt(recordAddress, accessor), sizeOfValueBlockAt(recordAddress, accessor));
-        tuple.set1(readObject());
+        pair.setValue(readObject());
     }
 
-    public Tuple2 tuple() {
-        return tuple;
+    public Pair pair() {
+        return pair;
     }
 
     private Object readObject() {
         try {
-            byte typeId = dataInput.readByte();
-            return ioContext.lookupDataType(typeId).read(dataInput, ioContext);
+            return dataInput.readOptimized();
         } catch (IOException e) {
             throw new JetMemoryException(e);
         }

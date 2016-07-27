@@ -31,8 +31,8 @@ public class SimpleTaskProcessor implements TaskProcessor {
     protected boolean finalizationStarted;
     protected boolean producersWriteFinished;
     private final ContainerProcessor processor;
-    private final DefaultObjectIOStream tupleInputStream;
-    private final DefaultObjectIOStream tupleOutputStream;
+    private final DefaultObjectIOStream pairInputStream;
+    private final DefaultObjectIOStream pairOutputStream;
     private boolean finalized;
     private final ProcessorContext processorContext;
 
@@ -42,8 +42,8 @@ public class SimpleTaskProcessor implements TaskProcessor {
         checkNotNull(processor);
         this.processor = processor;
         this.processorContext = processorContext;
-        this.tupleInputStream = new DefaultObjectIOStream<>(DUMMY_CHUNK);
-        this.tupleOutputStream = new DefaultObjectIOStream<>(DUMMY_CHUNK);
+        this.pairInputStream = new DefaultObjectIOStream<>(DUMMY_CHUNK);
+        this.pairOutputStream = new DefaultObjectIOStream<>(DUMMY_CHUNK);
     }
 
     @Override
@@ -53,10 +53,10 @@ public class SimpleTaskProcessor implements TaskProcessor {
             if (producersWriteFinished) {
                 return true;
             }
-            processor.process(tupleInputStream, tupleOutputStream, null, processorContext);
+            processor.process(pairInputStream, pairOutputStream, null, processorContext);
             return true;
         } else {
-            finalized = processor.finalizeProcessor(tupleOutputStream, processorContext);
+            finalized = processor.finalizeProcessor(pairOutputStream, processorContext);
             return true;
         }
     }
@@ -69,8 +69,8 @@ public class SimpleTaskProcessor implements TaskProcessor {
     @Override
     public void reset() {
         finalized = false;
-        tupleInputStream.reset();
-        tupleOutputStream.reset();
+        pairInputStream.reset();
+        pairOutputStream.reset();
         finalizationStarted = false;
         producersWriteFinished = false;
     }
@@ -96,7 +96,7 @@ public class SimpleTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean onChunk(ProducerInputStream tupleOutputStream) throws Exception {
+    public boolean onChunk(ProducerInputStream pairOutputStream) throws Exception {
         return true;
     }
 

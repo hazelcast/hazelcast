@@ -151,7 +151,7 @@ public abstract class AbstractHeapSorter<OUT> implements Sorter<InputsCursor, OU
 
     protected abstract boolean applyNonAssociativeAccumulator();
 
-    protected abstract void outputTuple(MemoryBlock memoryBlock, long recordAddress);
+    protected abstract void outputPair(MemoryBlock memoryBlock, long recordAddress);
 
     protected abstract void outputSlot(InputsCursor iterator, int inputId);
 
@@ -169,13 +169,13 @@ public abstract class AbstractHeapSorter<OUT> implements Sorter<InputsCursor, OU
         long inputValueSize = input.valueSize(inputId);
         temporaryMemoryBlock.reset();
         temporaryMemoryBlock.copyFrom(inputMemoryBlock, inputRecordAddress,
-                MemoryBlock.TOP_OFFSET, JetIoUtil.sizeOfTupleAt(inputRecordAddress, inputMemoryBlock.getAccessor()));
+                MemoryBlock.TOP_OFFSET, JetIoUtil.sizeOfPairAt(inputRecordAddress, inputMemoryBlock.getAccessor()));
         long valueAddress = JetIoUtil.addrOfValueBlockAt(MemoryBlock.TOP_OFFSET, temporaryMemoryBlock.getAccessor());
         calculateInput(temporaryMemoryBlock, inputId, valueAddress, inputValueSize);
         calculateOverInputs(leftActual, temporaryMemoryBlock, valueAddress, inputValueSize);
         outputSlot(input, inputId);
         outputSegment(0, 1);
-        outputTuple(temporaryMemoryBlock, MemoryBlock.TOP_OFFSET);
+        outputPair(temporaryMemoryBlock, MemoryBlock.TOP_OFFSET);
         return 1;
     }
 
@@ -224,7 +224,7 @@ public abstract class AbstractHeapSorter<OUT> implements Sorter<InputsCursor, OU
         long recordsCount = calculateRecordsCount(index);
         outputSlot(input, inputId);
         outputSegment(0, recordsCount);
-        outputTuple(input, inputId);
+        outputPair(input, inputId);
         writtenRecordsCount++;
         pendingIndexId = index;
         if (writtenRecordsCount >= chunkSize) {
@@ -243,7 +243,7 @@ public abstract class AbstractHeapSorter<OUT> implements Sorter<InputsCursor, OU
             int inputId = sortedHeap[pendingIndexId];
             leftActual = pendingIndexId + 1;
             while (input.nextRecord(inputId)) {
-                outputTuple(input, inputId);
+                outputPair(input, inputId);
                 writtenRecordsCount++;
                 if (writtenRecordsCount >= chunkSize) {
                     return writtenRecordsCount;
@@ -252,7 +252,7 @@ public abstract class AbstractHeapSorter<OUT> implements Sorter<InputsCursor, OU
             if (pendingIndexId >= rightActual || !leftEqualsFlag[++pendingIndexId]) {
                 break;
             }
-            outputTuple(input, sortedHeap[pendingIndexId]);
+            outputPair(input, sortedHeap[pendingIndexId]);
             writtenRecordsCount++;
         }
         pendingIndexId = DUMMY_SOURCE_INPUT_INDEX;
@@ -523,8 +523,8 @@ public abstract class AbstractHeapSorter<OUT> implements Sorter<InputsCursor, OU
         return hasAssociativeAccumulator || hasAccumulator && applyNonAssociativeAccumulator();
     }
 
-    private void outputTuple(InputsCursor iterator, int inputId) {
-        outputTuple(iterator.getMemoryBlock(inputId), iterator.recordAddress(inputId));
+    private void outputPair(InputsCursor iterator, int inputId) {
+        outputPair(iterator.getMemoryBlock(inputId), iterator.recordAddress(inputId));
     }
 
     private static void shiftToLeft(Object array, int index) {

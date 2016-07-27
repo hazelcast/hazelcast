@@ -45,7 +45,7 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
     }
 
     public boolean process() throws Exception {
-        if (this.tupleOutputStream.size() == 0) {
+        if (this.pairOutputStream.size() == 0) {
             boolean result = super.process();
 
             if (!this.produced) {
@@ -54,11 +54,11 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
 
             return result;
         } else {
-            boolean success = onChunk(this.tupleOutputStream);
+            boolean success = onChunk(this.pairOutputStream);
 
             if (success) {
                 checkFinalization();
-                this.tupleOutputStream.reset();
+                this.pairOutputStream.reset();
             }
 
             return success;

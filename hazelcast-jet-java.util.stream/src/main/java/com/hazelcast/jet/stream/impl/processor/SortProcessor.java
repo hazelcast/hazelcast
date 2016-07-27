@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +34,7 @@ public class SortProcessor<T> extends AbstractStreamProcessor<T, T> {
     private final Comparator<T> comparator;
     private Iterator<T> iterator;
 
-    public SortProcessor(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, Comparator<T> comparator) {
+    public SortProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper, Comparator<T> comparator) {
         super(inputMapper, outputMapper);
         this.list = new ArrayList<>();
         this.comparator = comparator;

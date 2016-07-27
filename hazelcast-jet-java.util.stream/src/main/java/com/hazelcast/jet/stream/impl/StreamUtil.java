@@ -25,7 +25,7 @@ import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
@@ -95,15 +95,15 @@ public final class StreamUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E_OUT> Distributed.Function<Tuple2, E_OUT> defaultFromTupleMapper() {
-        return tuple -> (E_OUT) tuple.get1();
+    public static <E_OUT> Distributed.Function<Pair, E_OUT> defaultFromPairMapper() {
+        return pair -> (E_OUT) pair.getValue();
     }
 
-    public static <E_OUT> Distributed.Function<Tuple2, E_OUT>
-    getTupleMapper(Pipeline<E_OUT> upstream, Distributed.Function<Tuple2, E_OUT> mapper) {
+    public static <E_OUT> Distributed.Function<Pair, E_OUT>
+    getPairMapper(Pipeline<E_OUT> upstream, Distributed.Function<Pair, E_OUT> mapper) {
         if (upstream instanceof SourcePipeline) {
             SourcePipeline<E_OUT> source = (SourcePipeline<E_OUT>) upstream;
-            return source.fromTupleMapper();
+            return source.fromPairMapper();
         }
         return mapper;
     }

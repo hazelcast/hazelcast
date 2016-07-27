@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -30,8 +30,8 @@ public class CombinerProcessor<T, R> extends AbstractStreamProcessor<T, R> {
     private final Function<T, R> finisher;
     private T result;
 
-    public CombinerProcessor(Function<Tuple, T> inputMapper,
-                             Function<R, Tuple> outputMapper,
+    public CombinerProcessor(Function<Pair, T> inputMapper,
+                             Function<R, Pair> outputMapper,
                              BinaryOperator<T> combiner,
                              Function<T, R> finisher) {
         super(inputMapper, outputMapper);

@@ -16,33 +16,51 @@
 
 package com.hazelcast.jet.io;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class IOContextImpl implements IOContext {
+/**
+ * Wrapper around Hazelcast Serialization which optimizes the serialized format of primitive types and String.
+ */
+public class SerializationOptimizer {
     private final List<Class> classes = new ArrayList<>();
-    private final Map<Integer, DataType> types = new Int2ObjectHashMap<>();
+    private final Map<Integer, DataType> customTypes = new Int2ObjectHashMap<>();
     private final Map<Class, DataType> classes2Types = new IdentityHashMap<>();
 
-    public IOContextImpl(DataType... systemDataTypes) {
-        for (DataType dataType : systemDataTypes) {
-            addTypes(dataType);
+    public SerializationOptimizer(DataType... customDataTypes) {
+        for (DataType dataType : customDataTypes) {
+            addCustomType(dataType);
         }
     }
 
-    @Override
-    public DataType lookupDataType(byte typeID) {
-        DataType dataType = this.types.get((int) typeID);
-        return dataType == null ? PredefinedType.getDataType(typeID) : dataType;
+    public void write(Object o, ObjectDataOutput objectDataOutput) throws IOException {
+        resolve(o).write(o, objectDataOutput, this);
     }
 
-    @Override
+    public Object read(ObjectDataInput objectDataInput) throws IOException {
+        return lookup(objectDataInput.readByte()).read(objectDataInput, this);
+    }
+
+    private DataType lookup(byte typeID) {
+        final DataType predefined = PredefinedType.getDataType(typeID);
+        if (predefined == PredefinedType.OBJECT) {
+            final DataType custom = customTypes.get((int) typeID);
+            if (custom != null) {
+                return custom;
+            }
+        }
+        return predefined;
+    }
+
     @SuppressWarnings("unchecked")
-    public DataType resolveDataType(Object object) {
+    private DataType resolve(Object object) {
         if (object == null) {
             return PredefinedType.NULL;
         }
@@ -54,17 +72,10 @@ public class IOContextImpl implements IOContext {
         return PredefinedType.getDataType(object);
     }
 
-    @Override
-    public void registerDataType(DataType dataType) {
-        if (dataType.typeId() <= DataType.NULL_TYPE_ID) {
-            throw new IllegalStateException("Invalid typeId");
-        }
-        addTypes(dataType);
-    }
-
-    private void addTypes(DataType dataType) {
-        this.types.put((int) dataType.typeId(), dataType);
+    private void addCustomType(DataType dataType) {
+        this.customTypes.put((int) dataType.typeId(), dataType);
         this.classes2Types.put(dataType.getClazz(), dataType);
         this.classes.add(dataType.getClazz());
     }
 }
+

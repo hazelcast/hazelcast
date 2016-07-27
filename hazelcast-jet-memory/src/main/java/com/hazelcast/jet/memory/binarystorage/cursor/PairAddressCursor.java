@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.tuple;
-
-import com.hazelcast.nio.serialization.DataSerializable;
+package com.hazelcast.jet.memory.binarystorage.cursor;
 
 /**
- * A general, untyped tuple.
+ * Javadoc pending.
  */
-public interface Tuple extends DataSerializable {
+public interface PairAddressCursor {
+    boolean advance();
 
-    /** Assigns the given object to the component at the given index. */
-    void set(int index, Object o);
+    long pairAddress();
 
-    /** Gets the component at the given index. */
-    <T> T get(int index);
-
-    /** Returns the number of components in this tuple. */
-    int size();
-
-    /** Returns an array of this tuple's components. */
-    Object[] toArray();
+    void reset(long slotAddress, int sourceId);
 }

@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
@@ -29,9 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class TransformPipeline extends AbstractIntermediatePipeline {
@@ -46,18 +46,18 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function toTupleMapper) {
-        Distributed.Function<Tuple2, ?> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function toPairMapper) {
+        Distributed.Function<Pair, ?> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
 
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
         Vertex vertex = vertexBuilder(TransformProcessor.class)
                 .name("transform")
                 .addToDAG(dag)
-                .args(fromTupleMapper, toTupleMapper, operations)
+                .args(fromPairMapper, toPairMapper, operations)
                 .taskCount(taskCount)
                 .build();
 
-        Vertex previous = this.upstream.buildDAG(dag, vertex, toTupleMapper());
+        Vertex previous = this.upstream.buildDAG(dag, vertex, toPairMapper());
         if (previous != vertex) {
             edgeBuilder(previous, vertex)
                     .addToDAG(dag)

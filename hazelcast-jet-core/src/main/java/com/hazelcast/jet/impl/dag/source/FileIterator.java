@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.io.Pair;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,7 +30,7 @@ import java.io.LineNumberReader;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 
-public class FileIterator implements Iterator<Tuple2<Integer, String>> {
+public class FileIterator implements Iterator<Pair<Integer, String>> {
     private String line;
     private LineNumberReader raf;
     private boolean hasNext = true;
@@ -94,7 +94,7 @@ public class FileIterator implements Iterator<Tuple2<Integer, String>> {
     }
 
     @Override
-    public Tuple2<Integer, String> next() {
+    public Pair<Integer, String> next() {
         if (!hasNext()) {
             throw new IllegalStateException("Iterator closed");
         }
@@ -104,7 +104,7 @@ public class FileIterator implements Iterator<Tuple2<Integer, String>> {
         }
 
         try {
-            return new JetTuple2<>(lineNumber, line);
+            return new JetPair<>(lineNumber, line);
         } finally {
             line = null;
         }

@@ -20,18 +20,18 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
-import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AnyMatchProcessor;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getTupleMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -45,12 +45,12 @@ public class Matcher {
 
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
         DAG dag = new DAG();
-        Distributed.Function<Tuple2, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
+        Distributed.Function<Pair, ? extends T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
         Vertex vertex = vertexBuilder(AnyMatchProcessor.class)
                 .addToDAG(dag)
-                .args(fromTupleMapper, toTupleMapper(), predicate)
+                .args(fromPairMapper, toPairMapper(), predicate)
                 .build();
-        Vertex previous = upstream.buildDAG(dag, vertex, toTupleMapper());
+        Vertex previous = upstream.buildDAG(dag, vertex, toPairMapper());
         if (previous != vertex) {
             edgeBuilder(previous, vertex)
                     .addToDAG(dag)
@@ -78,8 +78,8 @@ public class Matcher {
         return list;
     }
 
-    private <T, U extends T> Distributed.Function<U, Tuple2> toTupleMapper() {
-        return  o -> new JetTuple2<Object, T>(0, o);
+    private <T, U extends T> Distributed.Function<U, Pair> toPairMapper() {
+        return  o -> new JetPair<Object, T>(0, o);
     }
 
 

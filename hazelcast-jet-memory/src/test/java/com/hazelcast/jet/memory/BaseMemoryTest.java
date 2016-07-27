@@ -1,24 +1,23 @@
 package com.hazelcast.jet.memory;
 
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.io.IOContextImpl;
-import com.hazelcast.jet.io.serialization.JetSerializationServiceImpl;
-import com.hazelcast.jet.io.serialization.JetDataInput;
-import com.hazelcast.jet.io.serialization.JetDataOutput;
-import com.hazelcast.jet.io.serialization.JetSerializationService;
-import com.hazelcast.jet.io.tuple.Tuple2;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.memory.binarystorage.Storage;
 import com.hazelcast.jet.memory.binarystorage.cursor.SlotAddressCursor;
-import com.hazelcast.jet.memory.binarystorage.cursor.TupleAddressCursor;
+import com.hazelcast.jet.memory.binarystorage.cursor.PairAddressCursor;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.memoryblock.MemoryContext;
 import com.hazelcast.jet.memory.memoryblock.MemoryPool;
 import com.hazelcast.jet.memory.memoryblock.MemoryType;
+import com.hazelcast.jet.memory.serialization.MemoryDataInput;
+import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.memory.util.JetIoUtil.readTuple;
+import static com.hazelcast.jet.memory.util.JetIoUtil.readPair;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static junit.framework.TestCase.assertEquals;
 
@@ -41,9 +40,9 @@ public abstract class BaseMemoryTest {
 
     protected MemoryBlock nativeMemoryBlock;
 
-    protected IOContext ioContext = new IOContextImpl();
+    protected SerializationOptimizer optimizer = new SerializationOptimizer();
 
-    protected JetSerializationService serializationService;
+    protected InternalSerializationService serializationService;
 
     protected long heapSize() {
         return DEFAULT_HEAP_POOL_SIZE_BYTES;
@@ -64,25 +63,25 @@ public abstract class BaseMemoryTest {
     protected void init() {
         this.heapMemoryPool = new MemoryPool(heapSize(), MemoryType.HEAP);
         this.nativeMemoryPool = new MemoryPool(nativeSize(), MemoryType.NATIVE);
-        this.serializationService = new JetSerializationServiceImpl();
+        this.serializationService = new DefaultSerializationServiceBuilder().build();
         MemoryContext memoryContext = new MemoryContext(heapMemoryPool, nativeMemoryPool, blockSize(), useBigEndian());
         this.heapMemoryBlock = memoryContext.getMemoryBlockPool(MemoryType.HEAP).getNextMemoryBlock(true);
         this.nativeMemoryBlock = memoryContext.getMemoryBlockPool(MemoryType.NATIVE).getNextMemoryBlock(true);
     }
 
-    protected void putEntry(int idx, JetDataOutput output, Storage blobMap, int valueCount) {
-        final Tuple2<String, Integer> tuple = new Tuple2<>();
-        tuple.set0("string" + idx);
+    protected void putEntry(int idx, MemoryDataOutput output, Storage blobMap, int valueCount) {
+        final Pair<String, Integer> pair = new Pair<>();
+        pair.setKey("string" + idx);
         for (int value = 1; value <= valueCount; value++) {
-            tuple.set1(value);
-            blobMap.insertTuple(tuple, ioContext, output);
+            pair.setValue(value);
+            blobMap.insertPair(pair, optimizer, output);
         }
     }
 
     protected void test(Storage blobMap, MemoryBlock memoryBlock, int keyCount, int valueCount) {
-        final JetDataOutput output = serializationService.createObjectDataOutput(memoryBlock, true);
-        final JetDataInput input = serializationService.createObjectDataInput(memoryBlock, true);
-        final Tuple2<String, Integer> tuple = new Tuple2<>();
+        final MemoryDataOutput output = new MemoryDataOutput(memoryBlock, optimizer, true);
+        final MemoryDataInput input = new MemoryDataInput(memoryBlock, optimizer, true);
+        final Pair<String, Integer> pair = new Pair<>();
         final long start = System.nanoTime();
         for (int idx = 1; idx <= keyCount; idx++) {
             putEntry(idx, output, blobMap, valueCount);
@@ -98,11 +97,11 @@ public abstract class BaseMemoryTest {
         for (SlotAddressCursor slotCur = blobMap.slotCursor(); slotCur.advance();) {
             iterationCount++;
             int value = 0;
-            for (TupleAddressCursor tupleCur = blobMap.tupleCursor(slotCur.slotAddress()); tupleCur.advance();) {
+            for (PairAddressCursor pairCur = blobMap.pairCursor(slotCur.slotAddress()); pairCur.advance();) {
                 value++;
-                long tupleAddress = tupleCur.tupleAddress();
-                readTuple(input, tupleAddress, tuple, ioContext, memoryBlock.getAccessor());
-                map.remove(tuple.get0());
+                long pairAddress = pairCur.pairAddress();
+                readPair(input, pairAddress, pair, memoryBlock.getAccessor());
+                map.remove(pair.getKey());
             }
             assertEquals(valueCount, value);
         }

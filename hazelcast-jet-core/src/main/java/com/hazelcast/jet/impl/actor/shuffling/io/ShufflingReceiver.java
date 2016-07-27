@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -44,7 +45,7 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
     private final ChunkedInputStream chunkReceiver;
     private final RingBufferActor ringBufferActor;
     private final DefaultObjectIOStream<JetPacket> packetBuffers;
-    private final ReceiverObjectReader receiverObjectReader;
+    private final SerializationOptimizer optimizer;
 
     private Object[] dataChunkBuffer;
     private Object[] packets;
@@ -67,44 +68,44 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
                 containerContext.getVertex());
         this.packetBuffers = new DefaultObjectIOStream<>(new JetPacket[chunkSize]);
         this.chunkReceiver = new ChunkedInputStream(this.packetBuffers);
-        this.in = new ObjectDataInputStream(this.chunkReceiver,
+        this.in = new ObjectDataInputStream(chunkReceiver,
                 (InternalSerializationService) nodeEngine.getSerializationService());
-        this.receiverObjectReader = new ReceiverObjectReader(this.in, containerTask.getTaskContext().getIoContext());
+        optimizer = containerTask.getTaskContext().getSerializationOptimizer();
     }
 
     @Override
     public void open() {
-        this.closed = false;
-        this.finalized = false;
-        this.chunkReceiver.onOpen();
-        this.ringBufferActor.open();
+        closed = false;
+        finalized = false;
+        chunkReceiver.onOpen();
+        ringBufferActor.open();
     }
 
     @Override
     public void close() {
-        this.closed = true;
-        this.finalized = true;
-        this.ringBufferActor.close();
+        closed = true;
+        finalized = true;
+        ringBufferActor.close();
     }
 
     @Override
     public boolean consume(JetPacket packet) throws Exception {
-        this.ringBufferActor.consumeObject(packet);
+        ringBufferActor.consumeObject(packet);
         return true;
     }
 
     @Override
     public Object[] produce() throws Exception {
-        if (this.closed) {
+        if (closed) {
             return null;
         }
-        if (this.packets != null) {
+        if (packets != null) {
             return processPackets();
         }
-        this.packets = this.ringBufferActor.produce();
-        this.lastProducedPacketsCount = this.ringBufferActor.lastProducedCount();
-        if ((JetUtil.isEmpty(this.packets))) {
-            if (this.finalized) {
+        packets = ringBufferActor.produce();
+        lastProducedPacketsCount = ringBufferActor.lastProducedCount();
+        if (JetUtil.isEmpty(packets)) {
+            if (finalized) {
                 close();
                 handleProducerCompleted();
             }
@@ -114,20 +115,20 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
     }
 
     private Object[] processPackets() throws Exception {
-        for (int i = this.lastPacketIdx; i < this.lastProducedPacketsCount; i++) {
-            JetPacket packet = (JetPacket) this.packets[i];
+        for (int i = lastPacketIdx; i < lastProducedPacketsCount; i++) {
+            JetPacket packet = (JetPacket) packets[i];
             if (packet.getHeader() == JetPacket.HEADER_JET_DATA_CHUNK_SENT) {
                 deserializePackets();
-                if (i == this.lastProducedPacketsCount - 1) {
+                if (i == lastProducedPacketsCount - 1) {
                     reset();
                 } else {
-                    this.lastPacketIdx = i + 1;
+                    lastPacketIdx = i + 1;
                 }
-                return this.dataChunkBuffer;
+                return dataChunkBuffer;
             } else if (packet.getHeader() == JetPacket.HEADER_JET_SHUFFLER_CLOSED) {
-                this.finalized = true;
+                finalized = true;
             } else {
-                this.packetBuffers.consume(packet);
+                packetBuffers.consume(packet);
             }
         }
         reset();
@@ -136,26 +137,29 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
 
     private void reset() {
         this.packets = null;
-        this.lastPacketIdx = 0;
-        this.lastProducedPacketsCount = 0;
+        lastPacketIdx = 0;
+        lastProducedPacketsCount = 0;
     }
 
     private void deserializePackets() throws IOException {
-        if (this.dataChunkLength == -1) {
-            this.dataChunkLength = this.in.readInt();
-            this.dataChunkBuffer = new Object[this.dataChunkLength];
+        if (dataChunkLength == -1) {
+            dataChunkLength = in.readInt();
+            dataChunkBuffer = new Object[dataChunkLength];
         }
         try {
-            this.lastProducedCount = this.receiverObjectReader.read(this.dataChunkBuffer, this.dataChunkLength);
+            for (int i = 0; i < dataChunkLength; i++) {
+                dataChunkBuffer[i] = optimizer.read(in);
+            }
+            lastProducedCount = dataChunkLength;
         } finally {
-            this.dataChunkLength = -1;
+            dataChunkLength = -1;
         }
-        this.packetBuffers.reset();
+        packetBuffers.reset();
     }
 
     @Override
     public int lastProducedCount() {
-        return this.lastProducedCount;
+        return lastProducedCount;
     }
 
     @Override
@@ -165,22 +169,22 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
 
     @Override
     public boolean isClosed() {
-        return this.closed;
+        return closed;
     }
 
     @Override
     public void registerCompletionHandler(ProducerCompletionHandler runnable) {
-        this.handlers.add(runnable);
+        handlers.add(runnable);
     }
 
     @Override
     public void handleProducerCompleted() {
-        for (ProducerCompletionHandler handler : this.handlers) {
+        for (ProducerCompletionHandler handler : handlers) {
             handler.onComplete(this);
         }
     }
 
     public RingBufferActor getRingBufferActor() {
-        return this.ringBufferActor;
+        return ringBufferActor;
     }
 }

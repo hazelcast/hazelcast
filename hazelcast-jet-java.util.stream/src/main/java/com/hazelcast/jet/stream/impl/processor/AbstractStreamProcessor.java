@@ -19,22 +19,22 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Iterator;
 import java.util.function.Function;
 
-abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Tuple, Tuple> {
+abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Pair, Pair> {
 
     protected ILogger logger;
 
     private final MappingProducerInputStream mappinginputStream;
     private final MappingConsumerOutputStream mappingOutputStream;
 
-    public AbstractStreamProcessor(Function<Tuple, IN> inputMapper,
-                                   Function<OUT, Tuple> outputMapper) {
+    public AbstractStreamProcessor(Function<Pair, IN> inputMapper,
+                                   Function<OUT, Pair> outputMapper) {
 
         this.mappinginputStream = new MappingProducerInputStream(inputMapper);
         this.mappingOutputStream = new MappingConsumerOutputStream(outputMapper);
@@ -49,7 +49,7 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Tu
     }
 
     @Override
-    public boolean process(ProducerInputStream<Tuple> inputStream, ConsumerOutputStream<Tuple> outputStream,
+    public boolean process(ProducerInputStream<Pair> inputStream, ConsumerOutputStream<Pair> outputStream,
                            String sourceName, ProcessorContext processorContext) throws Exception {
         mappinginputStream.setInputStream(inputStream);
         mappingOutputStream.setOutputStream(outputStream);
@@ -57,7 +57,7 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Tu
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple> outputStream,
+    public boolean finalizeProcessor(ConsumerOutputStream<Pair> outputStream,
                                      ProcessorContext processorContext) throws Exception {
         mappingOutputStream.setOutputStream(outputStream);
         return finalize(mappingOutputStream, processorContext.getConfig().getChunkSize());
@@ -72,14 +72,14 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Tu
 
     public class MappingProducerInputStream implements ProducerInputStream<IN> {
 
-        private ProducerInputStream<Tuple> inputStream;
-        private final Function<Tuple, IN> inputMapper;
+        private ProducerInputStream<Pair> inputStream;
+        private final Function<Pair, IN> inputMapper;
 
-        public MappingProducerInputStream(Function<Tuple, IN> inputMapper) {
+        public MappingProducerInputStream(Function<Pair, IN> inputMapper) {
             this.inputMapper = inputMapper;
         }
 
-        private void setInputStream(ProducerInputStream<Tuple> inputStream) {
+        private void setInputStream(ProducerInputStream<Pair> inputStream) {
             this.inputStream = inputStream;
         }
 
@@ -95,7 +95,7 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Tu
 
         @Override
         public Iterator<IN> iterator() {
-            Iterator<Tuple> iterator = inputStream.iterator();
+            Iterator<Pair> iterator = inputStream.iterator();
 
             return new Iterator<IN>() {
                 @Override
@@ -113,14 +113,14 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Tu
 
     public class MappingConsumerOutputStream implements ConsumerOutputStream<OUT> {
 
-        private ConsumerOutputStream<Tuple> outputStream;
-        private final Function<OUT, Tuple> outputMapper;
+        private ConsumerOutputStream<Pair> outputStream;
+        private final Function<OUT, Pair> outputMapper;
 
-        public MappingConsumerOutputStream(Function<OUT, Tuple> outputMapper) {
+        public MappingConsumerOutputStream(Function<OUT, Pair> outputMapper) {
             this.outputMapper = outputMapper;
         }
 
-        private void setOutputStream(ConsumerOutputStream<Tuple> outputStream) {
+        private void setOutputStream(ConsumerOutputStream<Pair> outputStream) {
             this.outputStream = outputStream;
         }
 

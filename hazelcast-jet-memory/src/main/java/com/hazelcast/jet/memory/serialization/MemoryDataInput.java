@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.io.serialization;
+package com.hazelcast.jet.memory.serialization;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 
@@ -40,19 +42,21 @@ import static com.hazelcast.nio.BufferObjectDataInput.UTF_BUFFER_SIZE;
  * characterized by its base address and size.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class JetDataInput implements ObjectDataInput {
+public final class MemoryDataInput implements ObjectDataInput {
 
     public static final int INITIAL_UTF8_BUFSIZE = UTF_BUFFER_SIZE * 8;
     private final boolean isBigEndian;
     private final InternalSerializationService service;
+    private final SerializationOptimizer optimizer;
     private long bufBase;
     private long size;
     private long pos;
     private char[] charBuffer;
     private MemoryAccessor accessor;
 
-    public JetDataInput(MemoryManager memoryManager, InternalSerializationService service, boolean isBigEndian) {
-        this.service = service;
+    public MemoryDataInput(MemoryManager memoryManager, SerializationOptimizer optimizer, boolean isBigEndian) {
+        this.service = new DefaultSerializationServiceBuilder().build();
+        this.optimizer = optimizer;
         this.pos = 0;
         this.isBigEndian = isBigEndian;
         setMemoryManager(memoryManager);
@@ -62,12 +66,20 @@ public class JetDataInput implements ObjectDataInput {
         this.accessor = memoryManager != null ? memoryManager.getAccessor() : null;
     }
 
+    public <T> T readOptimized() throws IOException {
+        return (T) optimizer.read(this);
+    }
 
 
     // ObjectDataInput implementation
 
     @Override
-    public final boolean readBoolean() throws IOException {
+    public <T> T readObject() throws IOException {
+        return service.readObject(this);
+    }
+
+    @Override
+    public boolean readBoolean() throws IOException {
         final int ch = read();
         if (ch < 0) {
             throw new EOFException();
@@ -89,7 +101,7 @@ public class JetDataInput implements ObjectDataInput {
      * @see java.io.FilterInputStream#in
      */
     @Override
-    public final byte readByte() throws IOException {
+    public byte readByte() throws IOException {
         final int ch = read();
         if (ch < 0) {
             throw new EOFException();
@@ -110,7 +122,7 @@ public class JetDataInput implements ObjectDataInput {
      * @see java.io.FilterInputStream#in
      */
     @Override
-    public final char readChar() throws IOException {
+    public char readChar() throws IOException {
         checkAvailable(pos, CHAR_SIZE_IN_BYTES);
         final char c = EndiannessUtil.readChar(CUSTOM_ACCESS, accessor, bufBase + pos, isBigEndian);
         pos += CHAR_SIZE_IN_BYTES;
@@ -169,7 +181,7 @@ public class JetDataInput implements ObjectDataInput {
      * @see java.io.FilterInputStream#in
      */
     @Override
-    public final int readInt() throws IOException {
+    public int readInt() throws IOException {
         final int i = readInt(pos);
         pos += INT_SIZE_IN_BYTES;
         return i;
@@ -182,7 +194,7 @@ public class JetDataInput implements ObjectDataInput {
 
     @Override
     @Deprecated
-    public final String readLine() throws IOException {
+    public String readLine() throws IOException {
         throw new UnsupportedOperationException();
     }
 
@@ -200,7 +212,7 @@ public class JetDataInput implements ObjectDataInput {
      * @see java.io.FilterInputStream#in
      */
     @Override
-    public final long readLong() throws IOException {
+    public long readLong() throws IOException {
         final long l = readLong(pos);
         pos += LONG_SIZE_IN_BYTES;
         return l;
@@ -225,7 +237,7 @@ public class JetDataInput implements ObjectDataInput {
      * @see java.io.FilterInputStream#in
      */
     @Override
-    public final short readShort() throws IOException {
+    public short readShort() throws IOException {
         checkAvailable(pos, SHORT_SIZE_IN_BYTES);
         short s = EndiannessUtil.readShort(CUSTOM_ACCESS, accessor, bufBase + pos, isBigEndian);
         pos += SHORT_SIZE_IN_BYTES;
@@ -441,7 +453,7 @@ public class JetDataInput implements ObjectDataInput {
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     @Override
-    public final String readUTF() throws IOException {
+    public String readUTF() throws IOException {
         int charCount = readInt();
         if (charCount == NULL_ARRAY_LENGTH) {
             return null;
@@ -458,19 +470,14 @@ public class JetDataInput implements ObjectDataInput {
     }
 
     @Override
-    public final <T> T readObject() throws IOException {
-        return service.readObject(this);
-    }
-
-    @Override
-    public final Data readData() throws IOException {
+    public Data readData() throws IOException {
         byte[] bytes = readByteArray();
         Data data = bytes == null ? null : new HeapData(bytes);
         return data;
     }
 
     @Override
-    public final ClassLoader getClassLoader() {
+    public ClassLoader getClassLoader() {
         return service.getClassLoader();
     }
 
@@ -494,11 +501,11 @@ public class JetDataInput implements ObjectDataInput {
         return pos < size ? Byte.toUnsignedInt(accessor.getByte(bufBase + pos++)) : -1;
     }
 
-    public final long position() {
+    public long position() {
         return pos;
     }
 
-    public final long available() {
+    public long available() {
         return size - pos;
     }
 
