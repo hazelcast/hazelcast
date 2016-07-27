@@ -28,6 +28,7 @@ import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
@@ -74,9 +75,13 @@ abstract class AbstractClientCacheProxy<K, V>
         }
     };
 
+    private final ClientExecutionServiceImpl executionService;
+
     protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext,
                                        HazelcastClientCacheManager cacheManager) {
         super(cacheConfig, clientContext, cacheManager);
+
+        executionService = cacheManager.getExecutionService();
     }
 
     protected Object getFromNearCache(Data keyData, boolean async) {
@@ -112,17 +117,7 @@ abstract class AbstractClientCacheProxy<K, V>
                 new ClientDelegatingFuture<V>(future, serializationService, cacheGetResponseDecoder);
         if (async) {
             if (nearCache != null) {
-                delegatingFuture.andThenInternal(new ExecutionCallback<Data>() {
-                    public void onResponse(Data valueData) {
-                        storeInNearCache(keyData, valueData, null);
-                        if (statisticsEnabled) {
-                            handleStatisticsOnGet(start, valueData);
-                        }
-                    }
-
-                    public void onFailure(Throwable t) {
-                    }
-                });
+                tryAsyncUpdateNearCache(start, keyData, delegatingFuture);
             }
             return delegatingFuture;
         } else {
@@ -324,6 +319,73 @@ abstract class AbstractClientCacheProxy<K, V>
         }
     }
 
+    @Override
+    public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
+        return (Boolean) putIfAbsentInternal(key, value, expiryPolicy, true, false);
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        final long start = System.nanoTime();
+        final Future<Boolean> f = replaceInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
+        try {
+            boolean replaced = f.get();
+            if (statisticsEnabled) {
+                handleStatisticsOnReplace(false, start, replaced);
+            }
+            return replaced;
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
+        final long start = System.nanoTime();
+        final Future<Boolean> f = replaceInternal(key, null, value, expiryPolicy, false, true, false);
+        try {
+            boolean replaced = f.get();
+            if (statisticsEnabled) {
+                handleStatisticsOnReplace(false, start, replaced);
+            }
+            return replaced;
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
+        final long start = System.nanoTime();
+        final Future<V> f = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
+        try {
+            V oldValue = f.get();
+            if (statisticsEnabled) {
+                handleStatisticsOnReplace(true, start, oldValue);
+            }
+            return oldValue;
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public int size() {
+        ensureOpen();
+        try {
+            ClientMessage request = CacheSizeCodec.encodeRequest(nameWithPrefix);
+            ClientMessage resultMessage = invoke(request);
+            return CacheSizeCodec.decodeResponse(resultMessage).response;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+        }
+    }
+
+    @Override
+    public CacheStatistics getLocalCacheStatistics() {
+        return statistics;
+    }
+
     private List<Map.Entry<Data, Data>>[] groupDataToPartitions(Map<? extends K, ? extends V> map,
                                                                 ClientPartitionService partitionService,
                                                                 int partitionCount) {
@@ -449,71 +511,22 @@ abstract class AbstractClientCacheProxy<K, V>
         }
     }
 
-    @Override
-    public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (Boolean) putIfAbsentInternal(key, value, expiryPolicy, true, false);
-    }
 
-    @Override
-    public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        final long start = System.nanoTime();
-        final Future<Boolean> f = replaceInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
-        try {
-            boolean replaced = f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnReplace(false, start, replaced);
-            }
-            return replaced;
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+    private void tryAsyncUpdateNearCache(final long startTime, final Data keyData, ClientDelegatingFuture<V> delegatingFuture) {
+        if (executionService.isUserExecutorOverloaded()) {
+            invalidateNearCache(keyData);
+        } else {
+            delegatingFuture.andThenInternal(new ExecutionCallback<Data>() {
+                public void onResponse(Data valueData) {
+                    storeInNearCache(keyData, valueData, null);
+                    if (statisticsEnabled) {
+                        handleStatisticsOnGet(startTime, valueData);
+                    }
+                }
+
+                public void onFailure(Throwable t) {
+                }
+            });
         }
     }
-
-    @Override
-    public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final long start = System.nanoTime();
-        final Future<Boolean> f = replaceInternal(key, null, value, expiryPolicy, false, true, false);
-        try {
-            boolean replaced = f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnReplace(false, start, replaced);
-            }
-            return replaced;
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
-        }
-    }
-
-    @Override
-    public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final long start = System.nanoTime();
-        final Future<V> f = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
-        try {
-            V oldValue = f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnReplace(true, start, oldValue);
-            }
-            return oldValue;
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
-        }
-    }
-
-    @Override
-    public int size() {
-        ensureOpen();
-        try {
-            ClientMessage request = CacheSizeCodec.encodeRequest(nameWithPrefix);
-            ClientMessage resultMessage = invoke(request);
-            return CacheSizeCodec.decodeResponse(resultMessage).response;
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
-        }
-    }
-
-    @Override
-    public CacheStatistics getLocalCacheStatistics() {
-        return statistics;
-    }
-
 }

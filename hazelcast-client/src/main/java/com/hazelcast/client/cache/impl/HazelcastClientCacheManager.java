@@ -29,6 +29,8 @@ import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -59,6 +61,7 @@ public final class HazelcastClientCacheManager
         extends AbstractHazelcastCacheManager {
 
     private final ClientContext clientContext;
+    private final ClientExecutionServiceImpl executionService;
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
 
     public HazelcastClientCacheManager(HazelcastClientCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
@@ -68,6 +71,18 @@ public final class HazelcastClientCacheManager
         final ClientCacheDistributedObject setupRef = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         this.clientContext = setupRef.getClientContext();
+
+        if (hazelcastInstance instanceof HazelcastClientInstanceImpl) {
+            ClientExecutionService clientExecutionService = ((HazelcastClientInstanceImpl) hazelcastInstance)
+                    .getClientExecutionService();
+            this.executionService = (ClientExecutionServiceImpl) clientExecutionService;
+        } else {
+            if (null != this.clientContext) {
+                executionService = (ClientExecutionServiceImpl) this.clientContext.getExecutionService();
+            } else {
+                executionService = null;
+            }
+        }
     }
 
     @Override
@@ -230,4 +245,7 @@ public final class HazelcastClientCacheManager
         }
     }
 
+    public ClientExecutionServiceImpl getExecutionService() {
+        return executionService;
+    }
 }

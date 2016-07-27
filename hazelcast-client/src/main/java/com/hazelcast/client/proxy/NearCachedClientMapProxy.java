@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.map.impl.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
@@ -62,6 +63,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     protected NearCache<Data, Object> nearCache;
     protected volatile String invalidationListenerId;
+    private ClientExecutionServiceImpl executionService;
 
     public NearCachedClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -81,6 +83,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         if (this.nearCache.isInvalidateOnChange()) {
             addNearCacheInvalidateListener();
         }
+
+        executionService = (ClientExecutionServiceImpl) getContext().getExecutionService();
     }
 
     @Override
@@ -137,17 +141,21 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         ICompletableFuture<V> future = super.getAsyncInternal(keyData);
-        ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
-            @Override
-            public void onResponse(Data response) {
-                nearCache.put(keyData, response);
-            }
+        if (executionService.isUserExecutorOverloaded()) {
+            invalidateNearCache(keyData);
+        } else {
+            ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
+                @Override
+                public void onResponse(Data response) {
+                    nearCache.put(keyData, response);
+                }
 
-            @Override
-            public void onFailure(Throwable t) {
+                @Override
+                public void onFailure(Throwable t) {
 
-            }
-        });
+                }
+            });
+        }
         return future;
     }
 
