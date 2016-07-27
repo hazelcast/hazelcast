@@ -17,14 +17,12 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.spi.BackupAwareOperation;
 
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 
 /**
  * Responsible for generating callIds.
@@ -61,9 +59,6 @@ public abstract class CallIdSequence {
 
     /**
      * Creates the next call-id.
-     * <p/>
-     * {@link com.hazelcast.spi.Operation#CALL_ID_LOCAL_SKIPPED} is returned if local registration in
-     * the InvocationRegistry can be skipped.
      *
      * @param invocation the Invocation to create a call-id for.
      * @return the generated callId.
@@ -72,25 +67,6 @@ public abstract class CallIdSequence {
     public abstract long next(Invocation invocation);
 
     public abstract void complete(Invocation invocation);
-
-    /**
-     * Not every call needs to be registered. A call that is local and has no backups, doesn't need to be registered
-     * since there will not be a remote machine sending a response back to the invocation.
-     *
-     * @param invocation
-     * @return true if registration is required, false otherwise.
-     */
-    boolean skipRegistration(Invocation invocation) {
-        if (invocation.remote) {
-            return false;
-        }
-
-        if (invocation.op instanceof BackupAwareOperation) {
-            return false;
-        }
-
-        return true;
-    }
 
     static final class CallIdSequenceWithoutBackpressure extends CallIdSequence {
 
@@ -112,10 +88,6 @@ public abstract class CallIdSequence {
         @Override
         public long next(Invocation invocation) {
             assert invocation.op.getCallId() == 0 : "callId should be null:" + invocation;
-
-            if (skipRegistration(invocation)) {
-                return CALL_ID_LOCAL_SKIPPED;
-            }
 
             return HEAD.incrementAndGet(this);
         }
@@ -182,11 +154,7 @@ public abstract class CallIdSequence {
             // because this information is used to determine the number of in flight invocations
             long callId = next();
 
-            if (skipRegistration(invocation)) {
-                return CALL_ID_LOCAL_SKIPPED;
-            } else {
-                return callId;
-            }
+            return callId;
         }
 
         private long next() {

@@ -16,11 +16,9 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
@@ -34,13 +32,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl_asyncInvokeOnPartitionTest.InvocationEntryProcessor.latch;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -194,24 +192,13 @@ public class NodeStateTest extends HazelcastTestSupport {
     }
 
     private void testInvocation_whilePassive(InvocationTask invocationTask) throws Exception {
-        CountDownLatch latch = new CountDownLatch(1);
-        Config config = new Config();
-        config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setEnabled(true)
-                        .setName("bs").setImplementation(new BlockingService(latch)));
-
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = factory.newHazelcastInstance();
         final Node node = getNode(hz);
 
-        final Thread shutdownThread = new Thread() {
-            public void run() {
-                hz.shutdown();
-            }
-        };
-        shutdownThread.start();
+        changeClusterStateEventually(hz, ClusterState.PASSIVE);
 
-        waitNodeStateToBePassive(node);
+        assertEquals(NodeState.PASSIVE, node.getState());
 
         try {
             invocationTask.invoke(getNodeEngineImpl(hz));
@@ -220,52 +207,10 @@ public class NodeStateTest extends HazelcastTestSupport {
             latch.countDown();
             throw ExceptionUtil.rethrow(e);
         }
-
-        assertEquals(NodeState.PASSIVE, node.getState());
-        latch.countDown();
-        shutdownThread.join(TimeUnit.MINUTES.toMillis(1));
-
-        assertEquals(NodeState.SHUT_DOWN, node.getState());
     }
 
     private interface InvocationTask {
         void invoke(NodeEngine nodeEngine) throws Exception;
-    }
-
-    private static void waitNodeStateToBePassive(final Node node) {
-        assertEqualsEventually(new Callable<NodeState>() {
-            @Override
-            public NodeState call() throws Exception {
-                final NodeState state = node.getState();
-                return state;
-            }
-        }, NodeState.PASSIVE);
-    }
-
-    private static class BlockingService implements ManagedService {
-
-        private final CountDownLatch latch;
-
-        BlockingService(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void init(NodeEngine nodeEngine, Properties properties) {
-        }
-
-        @Override
-        public void reset() {
-        }
-
-        @Override
-        public void shutdown(boolean terminate) {
-            try {
-                latch.await(1, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private static class DummyOperation extends Operation {

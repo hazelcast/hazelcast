@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
@@ -58,6 +57,8 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     private final ConcurrentMap<Long, Invocation> invocations;
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
+
+    private volatile boolean alive = true;
 
     public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence, int concurrencyLevel) {
         this.logger = logger;
@@ -89,18 +90,21 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      * Registers an invocation.
      *
      * @param invocation The invocation to register.
+     * @return false when InvocationRegistry is not alive and registration is not successful, true otherwise
      */
-    public void register(Invocation invocation) {
+    public boolean register(Invocation invocation) {
         assert invocation.op.getCallId() == 0 : "can't register twice: " + invocation;
 
         long callId = callIdSequence.next(invocation);
         setCallId(invocation.op, callId);
 
-        if (callId == CALL_ID_LOCAL_SKIPPED) {
-            return;
-        }
-
         invocations.put(callId, invocation);
+
+        if (!alive) {
+            invocation.notifyError(new HazelcastInstanceNotActiveException());
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -117,7 +121,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
 
         setCallId(invocation.op, 0);
 
-        if (callId == 0 || callId == CALL_ID_LOCAL_SKIPPED) {
+        if (callId == 0) {
             return;
         }
 
@@ -171,6 +175,8 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     }
 
     public void shutdown() {
+        alive = false;
+
         for (Invocation invocation : this) {
             try {
                 invocation.notifyError(new HazelcastInstanceNotActiveException());

@@ -39,6 +39,7 @@ class MigrationThread extends Thread implements Runnable {
     private final long sleepTime;
 
     private volatile MigrationRunnable activeTask;
+    private volatile boolean running = true;
 
     MigrationThread(MigrationManager migrationManager, HazelcastThreadGroup hazelcastThreadGroup, ILogger logger,
                     MigrationQueue queue) {
@@ -54,7 +55,7 @@ class MigrationThread extends Thread implements Runnable {
     @Override
     public void run() {
         try {
-            while (!isInterrupted()) {
+            while (running) {
                 doRun();
             }
         } catch (InterruptedException e) {
@@ -98,7 +99,7 @@ class MigrationThread extends Thread implements Runnable {
 
     private boolean processTask(MigrationRunnable runnable) {
         try {
-            if (runnable == null || isInterrupted()) {
+            if (runnable == null || !running) {
                 return false;
             }
 
@@ -119,6 +120,7 @@ class MigrationThread extends Thread implements Runnable {
     }
 
     void stopNow() {
+        running = false;
         queue.clear();
         interrupt();
     }

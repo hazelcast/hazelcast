@@ -60,7 +60,6 @@ import java.util.logging.Level;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
-import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -409,7 +408,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private void setOperationResponseHandler(Operation op) {
         OperationResponseHandler handler = remoteResponseHandler;
-        if (op.getCallId() == 0 || op.getCallId() == CALL_ID_LOCAL_SKIPPED) {
+        if (op.getCallId() == 0) {
             if (op.returnsResponse()) {
                 throw new HazelcastException(
                         "Op: " + op + " can not return response without call-id!");

@@ -426,10 +426,10 @@ public class NodeEngineImpl implements NodeEngine {
     public void shutdown(final boolean terminate) {
         logger.finest("Shutting down services...");
         waitNotifyService.shutdown();
+        operationService.shutdown();
         proxyService.shutdown();
         serviceManager.shutdown(terminate);
         eventService.shutdown();
-        operationService.shutdown();
         wanReplicationService.shutdown();
         executionService.shutdown();
         metricsRegistry.shutdown();
