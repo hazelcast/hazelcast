@@ -80,7 +80,6 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
         currentIndex = -1;
     }
 
-
     protected boolean advance() {
         if (lastTableIndex < 0) {
             lastTableIndex = Integer.MAX_VALUE;
@@ -93,6 +92,16 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
         }
         return false;
     }
+
+    protected void setLastTableIndex(List response, int lastTableIndex) {
+        if (response != null && response.size() > 0) {
+            this.lastTableIndex = lastTableIndex;
+        }
+    }
+
+    protected abstract List fetch();
+
+    protected abstract SerializationService getSerializationService();
 
     private Data getKey(int index) {
         if (result != null) {
@@ -117,14 +126,4 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
         }
         return null;
     }
-
-    protected void setLastTableIndex(List response, int lastTableIndex) {
-        if (response != null && response.size() > 0) {
-            this.lastTableIndex = lastTableIndex;
-        }
-    }
-
-    protected abstract List fetch();
-
-    protected abstract SerializationService getSerializationService();
 }

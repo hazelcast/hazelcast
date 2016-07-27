@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.client.spi.ClientContext;
@@ -39,5 +38,4 @@ public class ClientCachePartitionIterator<K, V> extends ClientClusterWideIterato
         }
         return false;
     }
-
 }

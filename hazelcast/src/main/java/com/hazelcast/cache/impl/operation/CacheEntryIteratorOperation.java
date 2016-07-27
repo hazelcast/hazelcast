@@ -74,5 +74,4 @@ public class CacheEntryIteratorOperation extends AbstractCacheOperation implemen
         tableIndex = in.readInt();
         size = in.readInt();
     }
-
 }

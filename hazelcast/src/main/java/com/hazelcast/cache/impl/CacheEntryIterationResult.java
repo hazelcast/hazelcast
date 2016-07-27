@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -66,8 +67,7 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(tableIndex);
         int size = entries.size();
         out.writeInt(size);
@@ -78,8 +78,7 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         tableIndex = in.readInt();
         int size = in.readInt();
         entries = new ArrayList<Map.Entry<Data, Data>>(size);
@@ -98,5 +97,4 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
     public int getCount() {
         return entries != null ? entries.size() : 0;
     }
-
 }

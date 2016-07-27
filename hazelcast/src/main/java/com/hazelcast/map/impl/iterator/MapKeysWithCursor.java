@@ -54,7 +54,6 @@ public class MapKeysWithCursor implements IdentifiedDataSerializable {
         return keys != null ? keys.get(index) : null;
     }
 
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(nextTableIndexToReadFrom);
