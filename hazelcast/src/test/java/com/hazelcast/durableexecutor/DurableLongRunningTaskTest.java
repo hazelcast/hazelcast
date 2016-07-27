@@ -2,6 +2,8 @@ package com.hazelcast.durableexecutor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -39,7 +41,6 @@ public class DurableLongRunningTaskTest extends HazelcastTestSupport {
         final String response = "foobar";
         SleepingCallable task = new SleepingCallable(response, 10 * CALL_TIMEOUT);
         final Future<String> f = hz.getDurableExecutorService("e").submit(task);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -49,10 +50,11 @@ public class DurableLongRunningTaskTest extends HazelcastTestSupport {
         });
     }
 
-    public static class SleepingCallable implements Callable<String>, Serializable {
+    public static class SleepingCallable implements Callable<String>, Serializable, HazelcastInstanceAware {
 
         private final String response;
         private final int delayMs;
+        private ILogger logger;
 
         SleepingCallable(String response, int delayMs) {
             this.response = response;
@@ -61,8 +63,14 @@ public class DurableLongRunningTaskTest extends HazelcastTestSupport {
 
         @Override
         public String call() throws Exception {
+            logger.info("SleepingCallable task started");
             Thread.sleep(delayMs);
             return response;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            logger = instance.getLoggingService().getLogger("DurableLongRunningTaskTest");
         }
     }
 }

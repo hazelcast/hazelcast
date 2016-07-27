@@ -131,7 +131,7 @@ public class DurableExecutorContainer {
                     response = get();
                 }
             } catch (Exception e) {
-                logException(e);
+                logger.warning("While executing callable: " + callableString, e);
                 response = e;
             } finally {
                 if (!isCancelled()) {
@@ -144,12 +144,6 @@ public class DurableExecutorContainer {
             OperationService operationService = nodeEngine.getOperationService();
             Operation op = new PutResultOperation(name, sequence, response).setPartitionId(partitionId);
             operationService.invokeOnPartition(op);
-        }
-
-        private void logException(Exception e) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("While executing callable: " + callableString, e);
-            }
         }
     }
 }
