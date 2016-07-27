@@ -2,6 +2,7 @@ package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
@@ -105,7 +106,7 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
             msg = "Near cache did *not* become consistent. (valueMap = " + valueMap + ", valuePut = " + valuePutLast + ").";
 
             // flush near cache and re-fetch value
-            flushNearCache(client);
+            flushClientNearCache(map);
             String valueMap2Str = map.get(key);
             int valueMap2 = Integer.parseInt(valueMap2Str);
 
@@ -151,11 +152,11 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
     }
 
     /**
-     * Flush near cache.
+     * Flush near cache on Hazelcast member.
      * <p>
      * Warning: this uses Hazelcast internals which might change from one version to the other.
      */
-    private void flushNearCache(HazelcastInstance hcInstance) throws Exception {
+    private void flushMemberNearCache(HazelcastInstance hcInstance) throws Exception {
 
         // get instance proxy
         HazelcastInstanceProxy hcInstanceProxy = (HazelcastInstanceProxy) hcInstance;
@@ -175,6 +176,21 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         nearCacheProvider.getOrCreateNearCache(mapName).clear();
+    }
+
+    /**
+     * Flush near cache from client near cached map.
+     * <p>
+     * Warning: this uses Hazelcast internals which might change from one version to the other.
+     */
+    private void flushClientNearCache(IMap map) throws Exception {
+
+        if (!(map instanceof NearCachedClientMapProxy)) {
+            return;
+        }
+
+        NearCachedClientMapProxy clientMapProxy = (NearCachedClientMapProxy) map;
+        clientMapProxy.getNearCache().clear();
     }
 
     private void runTestInternal() throws Exception {
