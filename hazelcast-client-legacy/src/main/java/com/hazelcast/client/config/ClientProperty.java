@@ -87,9 +87,10 @@ public enum ClientProperty implements HazelcastProperty {
 
     /**
      * Configures queue size of nearcache client executor. Private configuration, for internal usage only.
+     * 0 or negative value means that the feature is disabled,i.e. the near cache executor queue size will not be checked
+     * for overflow.
      */
-    NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE("hazelcast.client.nearcache.executor.queue.overload.size", 1000);
-
+    NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE("hazelcast.client.nearcache.executor.queue.overload.size", -1);
 
     private final String name;
     private final String defaultValue;

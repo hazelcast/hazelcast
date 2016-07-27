@@ -63,12 +63,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     protected NearCache<Data, Object> nearCache;
     protected volatile String invalidationListenerId;
-    private final ClientExecutionServiceImpl executionService;
+    private ClientExecutionServiceImpl executionService;
 
     public NearCachedClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
-
-        executionService = (ClientExecutionServiceImpl) getContext().getExecutionService();
     }
 
     @Override
@@ -85,6 +83,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         if (this.nearCache.isInvalidateOnChange()) {
             addNearCacheInvalidateListener();
         }
+
+        executionService = (ClientExecutionServiceImpl) getContext().getExecutionService();
     }
 
     @Override

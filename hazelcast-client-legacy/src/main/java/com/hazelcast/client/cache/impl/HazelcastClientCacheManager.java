@@ -29,6 +29,8 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -58,6 +60,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public final class HazelcastClientCacheManager extends AbstractHazelcastCacheManager {
 
     private final ClientContext clientContext;
+    private final ClientExecutionServiceImpl executionService;
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
 
     public HazelcastClientCacheManager(HazelcastClientCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
@@ -67,6 +70,19 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         final ClientCacheDistributedObject setupRef =
                 hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         this.clientContext = setupRef.getClientContext();
+
+
+        if (hazelcastInstance instanceof HazelcastClientInstanceImpl) {
+            ClientExecutionService clientExecutionService = ((HazelcastClientInstanceImpl) hazelcastInstance)
+                    .getClientExecutionService();
+            this.executionService = (ClientExecutionServiceImpl) clientExecutionService;
+        } else {
+            if (null != this.clientContext) {
+                executionService = (ClientExecutionServiceImpl) this.clientContext.getExecutionService();
+            } else {
+                executionService = null;
+            }
+        }
     }
 
     @Override
@@ -224,4 +240,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         }
     }
 
+    public ClientExecutionServiceImpl getExecutionService() {
+        return executionService;
+    }
 }

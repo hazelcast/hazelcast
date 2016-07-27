@@ -56,6 +56,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ExecutorService userExecutor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
+    private final boolean isUserExecutorSizeCheckEnabled;
     private int userExecutorQueueOverloadedSize;
     private final LinkedBlockingQueue<Runnable> userExecutorQueue;
 
@@ -67,10 +68,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         }
 
         userExecutorQueueOverloadedSize = properties.getInteger(ClientProperty.NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE);
-        if (userExecutorQueueOverloadedSize <= 0) {
-            userExecutorQueueOverloadedSize = Integer
-                    .parseInt(ClientProperty.NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE.getDefaultValue());
-        }
+        isUserExecutorSizeCheckEnabled = userExecutorQueueOverloadedSize > 0;
 
         internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
@@ -212,6 +210,10 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public boolean isUserExecutorOverloaded() {
-        return userExecutorQueue.size() < userExecutorQueueOverloadedSize;
+        if (isUserExecutorSizeCheckEnabled) {
+            return userExecutorQueue.size() < userExecutorQueueOverloadedSize;
+        }
+
+        return false;
     }
 }

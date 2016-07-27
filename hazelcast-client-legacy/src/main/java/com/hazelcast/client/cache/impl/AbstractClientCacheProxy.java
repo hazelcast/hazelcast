@@ -69,12 +69,11 @@ abstract class AbstractClientCacheProxy<K, V>
 
     private final ClientExecutionServiceImpl executionService;
 
-
     protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext,
                                        HazelcastClientCacheManager cacheManager) {
         super(cacheConfig, clientContext, cacheManager);
 
-        executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
+        executionService = cacheManager.getExecutionService();
     }
 
     protected Object getFromNearCache(Data keyData, boolean async) {
