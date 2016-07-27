@@ -18,10 +18,9 @@ package com.hazelcast.jet.memory.util;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.memory.serialization.MemoryDataInput;
 import com.hazelcast.jet.memory.serialization.MemoryDataOutput;
-import com.hazelcast.jet.io.Pair;
 import com.hazelcast.nio.Bits;
 
 import java.io.IOException;

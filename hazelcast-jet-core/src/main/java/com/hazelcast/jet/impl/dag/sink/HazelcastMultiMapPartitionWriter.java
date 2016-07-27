@@ -43,7 +43,7 @@ public class HazelcastMultiMapPartitionWriter extends AbstractHazelcastWriter {
     protected void processChunk(ProducerInputStream chunk) {
         for (int i = 0; i < chunk.size(); i++) {
             JetPair<Object, Object[]> pair = (JetPair) chunk.get(i);
-            Data dataKey = pair.getComponentData(0, null, getNodeEngine());
+            Data dataKey = pair.getComponentData(0, null, getNodeEngine().getSerializationService());
             Collection<MultiMapRecord> coll = this.container.getMultiMapValueOrNull(dataKey).getCollection(false);
             long recordId = this.container.nextId();
             for (Object value : pair.getValue()) {

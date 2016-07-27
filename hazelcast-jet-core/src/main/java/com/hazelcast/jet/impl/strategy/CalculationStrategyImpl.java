@@ -70,7 +70,7 @@ public class CalculationStrategyImpl implements CalculationStrategy {
     @SuppressWarnings("unchecked")
     public int hash(Object object) {
         final Object partitionKey = object instanceof JetPair
-                ? ((JetPair) object).getComponentData(0, this, containerDescriptor.getNodeEngine())
+                ? ((JetPair) object).getComponentData(0, this, containerDescriptor.getNodeEngine().getSerializationService())
                 : partitioningStrategy.getPartitionKey(object);
         return hashingStrategy.hash(object, partitionKey, containerDescriptor);
     }

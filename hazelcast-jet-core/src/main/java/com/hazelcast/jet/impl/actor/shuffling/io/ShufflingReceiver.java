@@ -45,7 +45,7 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
     private final ChunkedInputStream chunkReceiver;
     private final RingBufferActor ringBufferActor;
     private final DefaultObjectIOStream<JetPacket> packetBuffers;
-    final SerializationOptimizer optimizer;
+    private final SerializationOptimizer optimizer;
 
     private Object[] dataChunkBuffer;
     private Object[] packets;

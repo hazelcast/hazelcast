@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.serialization.SerializationService;
 
 public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     private final MapConfig mapConfig;
@@ -59,9 +60,10 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
             JetPair pair = (JetPair) chunk.get(i);
-            final Data keyData = pair.getComponentData(0, calculationStrategy, getNodeEngine());
+            final SerializationService serService = getNodeEngine().getSerializationService();
+            final Data keyData = pair.getComponentData(0, calculationStrategy, serService);
             final Object valueData = mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY
-                    ? pair.getComponentData(1, calculationStrategy, getNodeEngine()) : pair.getValue();
+                    ? pair.getComponentData(1, calculationStrategy, serService) : pair.getValue();
             this.recordStore.put(keyData, valueData, -1);
         }
     }

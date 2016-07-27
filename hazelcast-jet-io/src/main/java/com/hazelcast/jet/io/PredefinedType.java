@@ -274,8 +274,8 @@ public enum PredefinedType implements DataType {
             }
         }
 
-        private static Object readComponent(ObjectDataInput objectDataInput, SerializationOptimizer optimizer) throws IOException {
-            final byte typeID = objectDataInput.readByte();
+        private static Object readComponent(ObjectDataInput objectDataInput, SerializationOptimizer optimizer)
+        throws IOException {
             return optimizer.read(objectDataInput);
         }
     }

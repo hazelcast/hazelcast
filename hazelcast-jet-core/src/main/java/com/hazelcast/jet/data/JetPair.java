@@ -21,38 +21,32 @@ import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Jet Pair implementation
  *
- * @param <T0> type of component 0
- * @param <T1> type of component 1
+ * @param <K> type of component 0
+ * @param <V> type of component 1
  */
-public class JetPair<T0, T1> extends Pair<T0, T1> {
+public class JetPair<K, V> extends Pair<K, V> {
     private int partitionId;
 
     /**
      * Creates a pair with the given components, partition ID -1, and no CalculationStrategy.
      */
-    public JetPair(T0 c0, T1 c1) {
-        this(c0, c1, -1);
+    public JetPair(K key, V value) {
+        this(key, value, -1);
     }
 
     /**
      * Creates a pair with the given components, partition ID and CalculationStrategy.
      */
-    public JetPair(T0 c0, T1 c1, int partitionId) {
-        super(c0, c1);
+    public JetPair(K key, V value, int partitionId) {
+        super(key, value);
         this.partitionId = partitionId;
-    }
-
-    public Data getComponentData(int index, CalculationStrategy calculationStrategy, NodeEngine nodeEngine) {
-        return nodeEngine.getSerializationService().toData(get(index), calculationStrategy.getPartitioningStrategy());
     }
 
     @Override
@@ -67,6 +61,21 @@ public class JetPair<T0, T1> extends Pair<T0, T1> {
         this.partitionId = in.readInt();
     }
 
+    /**
+     * Retrieves the component at the specified index as a {@code Data} instance.
+     *
+     * @param index component index: 0 for key, 1 for value
+     * @param calculationStrategy used to calculate the partition hash, which is a part of the {@code Data} format
+     * @param serService Hazelcast serialization service which will serialize the component
+     * @return the Data instance representing the component's value
+     */
+    public Data getComponentData(int index, CalculationStrategy calculationStrategy, SerializationService serService) {
+        return serService.toData(get(index), calculationStrategy.getPartitioningStrategy());
+    }
+
+    /**
+     * Returns the partition ID of this pair.
+     */
     public int getPartitionId() {
         return partitionId;
     }

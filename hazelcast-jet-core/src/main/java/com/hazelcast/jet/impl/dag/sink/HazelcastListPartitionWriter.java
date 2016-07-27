@@ -65,7 +65,7 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
             if (!(pair.get(0) instanceof Number)) {
                 throw new IllegalStateException("The key of an IList pair should be a number");
             }
-            this.listContainer.add(pair.getComponentData(1, calculationStrategy, getNodeEngine()));
+            this.listContainer.add(pair.getComponentData(1, calculationStrategy, getNodeEngine().getSerializationService()));
         }
     }
 

@@ -22,8 +22,6 @@ import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.io.DataType;
-import com.hazelcast.jet.io.PredefinedType;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

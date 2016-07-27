@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.container;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
