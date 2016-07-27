@@ -37,7 +37,7 @@ public class ErrorCodecFileGenerator {
     public static void main(String[] args) throws IOException {
         Map<String, Throwable[]> allThrowables = ReferenceObjects.throwables;
         ClientExceptionFactory clientExceptionFactory = new ClientExceptionFactory(true);
-        for (String version: allThrowables.keySet()) {
+        for (String version : allThrowables.keySet()) {
             String fileName = createFileName(version);
             OutputStream out = new FileOutputStream(fileName);
             DataOutputStream outputStream = new DataOutputStream(out);
