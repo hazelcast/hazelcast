@@ -21,18 +21,16 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
-import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * SPIAwareMemberGroupFactory is responsible for providing custom MemberGroups
  * implemented by the user in {@link DiscoveryStrategy#getPartitionGroupStrategy()}
@@ -46,7 +44,7 @@ public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory imp
     private final DiscoveryService discoveryService;
 
     public SPIAwareMemberGroupFactory(DiscoveryService discoveryService) {
-         this.discoveryService = discoveryService;
+        this.discoveryService = discoveryService;
     }
 
     @Override
@@ -83,14 +81,6 @@ public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory imp
         }
 
         return memberGroups;
-    }
-
-    private DiscoveryStrategy buildDiscoveryStrategy(DiscoveryStrategyFactory factory,
-                                                     ILogger logger) {
-        /* We are building a new discovery strategy with null property and config
-        * because we are creating the discovery strategy to call getMemberGroups() impl
-        */
-        return factory.newDiscoveryStrategy(null, logger, new HashMap<String, Comparable>());
     }
 
 }
