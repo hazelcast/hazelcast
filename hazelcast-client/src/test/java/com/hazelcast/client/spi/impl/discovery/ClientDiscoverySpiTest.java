@@ -19,7 +19,6 @@ package com.hazelcast.client.spi.impl.discovery;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.config.AwsConfig;
@@ -323,10 +322,13 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
                 Address privateAddress = new Address("127.0.0.1", 1);
                 Address publicAddress = new Address("127.0.0.1", 50001);
                 discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
+                privateAddress = new Address("127.0.0.1", 2);
                 publicAddress = new Address("127.0.0.1", 50002);
                 discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
+                privateAddress = new Address("127.0.0.1", 3);
                 publicAddress = new Address("127.0.0.1", 50003);
                 discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
+                privateAddress = new Address("127.0.0.1", 4);
                 publicAddress = new Address("127.0.0.1", 50004);
                 discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
 
