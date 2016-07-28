@@ -34,12 +34,12 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
+public class MapPartitionWriter extends AbstractHazelcastWriter {
     private final MapConfig mapConfig;
     private final RecordStore recordStore;
     private final CalculationStrategy calculationStrategy;
 
-    public HazelcastMapPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId, String name) {
+    public MapPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId, String name) {
         super(containerDescriptor, partitionId);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);

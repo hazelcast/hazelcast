@@ -20,7 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingWriter;
-import com.hazelcast.jet.impl.dag.sink.HazelcastMapPartitionWriter;
+import com.hazelcast.jet.impl.dag.sink.MapPartitionWriter;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.spi.NodeEngine;
 
@@ -65,7 +65,7 @@ public class MapSink implements Sink {
     }
 
     protected DataWriter getPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId) {
-        return new HazelcastMapPartitionWriter(containerDescriptor, partitionId, name);
+        return new MapPartitionWriter(containerDescriptor, partitionId, name);
     }
 
     @Override
