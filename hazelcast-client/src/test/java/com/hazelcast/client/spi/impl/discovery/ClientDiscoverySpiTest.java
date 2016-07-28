@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressTranslator;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
@@ -271,7 +272,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryServiceProvider provider = new DefaultDiscoveryServiceProvider();
         DiscoveryService discoveryService = provider.newDiscoveryService(buildDiscoveryServiceSettings(discoveryConfig));
 
-        AddressTranslator translator = new DiscoveryAddressTranslator(discoveryService);
+        AddressTranslator translator = new DiscoveryAddressTranslator(discoveryService, false);
 
         Address address = new Address("127.0.0.1", 50001);
 
@@ -282,9 +283,31 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         assertEquals(address, translator.translate(address));
     }
 
+    @Test
+    public void test_discovery_address_translator_with_public_ip() throws Exception {
+        String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
+        InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        ClientConfig clientConfig = new XmlClientConfigBuilder(xmlResource).build();
+
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+
+        DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig();
+
+        DiscoveryServiceProvider provider = new DefaultDiscoveryServiceProvider();
+        DiscoveryService discoveryService = provider.newDiscoveryService(buildDiscoveryServiceSettings(discoveryConfig));
+
+        AddressTranslator translator = new DiscoveryAddressTranslator(discoveryService, true);
+
+        Address publicAddress = new Address("127.0.0.1", 50001);
+        Address privateAddress = new Address("127.0.0.1", 1);
+        // Enforce refresh of the internal mapping
+        assertEquals(publicAddress, translator.translate(privateAddress));
+    }
+
+
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(DiscoveryConfig config) {
         return new DiscoveryServiceSettings().setConfigClassLoader(ClientDiscoverySpiTest.class.getClassLoader())
-                                             .setDiscoveryConfig(config).setDiscoveryMode(DiscoveryMode.Client).setLogger(LOGGER);
+                .setDiscoveryConfig(config).setDiscoveryMode(DiscoveryMode.Client).setLogger(LOGGER);
     }
 
     private static class TestDiscoveryStrategy implements DiscoveryStrategy {
@@ -300,10 +323,13 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
                 Address privateAddress = new Address("127.0.0.1", 1);
                 Address publicAddress = new Address("127.0.0.1", 50001);
                 discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
+                privateAddress = new Address("127.0.0.1", 2);
                 publicAddress = new Address("127.0.0.1", 50002);
                 discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
+                privateAddress = new Address("127.0.0.1", 3);
                 publicAddress = new Address("127.0.0.1", 50003);
                 discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
+                privateAddress = new Address("127.0.0.1", 4);
                 publicAddress = new Address("127.0.0.1", 50004);
                 discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
 

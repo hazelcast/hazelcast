@@ -28,11 +28,13 @@ public class DiscoveryAddressTranslator
         implements AddressTranslator {
 
     private final DiscoveryService discoveryService;
+    private final boolean usePublic;
 
     private volatile Map<Address, Address> privateToPublic;
 
-    public DiscoveryAddressTranslator(DiscoveryService discoveryService) {
+    public DiscoveryAddressTranslator(DiscoveryService discoveryService, boolean usePublic) {
         this.discoveryService = discoveryService;
+        this.usePublic = usePublic;
     }
 
     @Override
@@ -40,6 +42,11 @@ public class DiscoveryAddressTranslator
         if (address == null) {
             return null;
         }
+        // if it is inside cloud, return private address otherwise we need to translate it.
+        if (!usePublic) {
+            return address;
+        }
+
 
         // Refresh only once to prevent load on service discovery
         boolean alreadyRefreshed = false;
