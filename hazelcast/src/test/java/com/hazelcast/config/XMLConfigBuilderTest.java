@@ -608,6 +608,26 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPartitionGroupZoneAware() {
+        String xml = HAZELCAST_START_TAG +
+                "<partition-group enabled=\"true\" group-type=\"ZONE_AWARE\" />"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        assertEquals(config.getPartitionGroupConfig().getGroupType(), PartitionGroupConfig.MemberGroupType.ZONE_AWARE);
+    }
+
+    @Test
+    public void testPartitionGroupSPI() {
+        String xml = HAZELCAST_START_TAG +
+                "<partition-group enabled=\"true\" group-type=\"SPI\" />"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        assertEquals(config.getPartitionGroupConfig().getGroupType(), PartitionGroupConfig.MemberGroupType.SPI);
+    }
+
+    @Test
     public void testNearCacheFullConfig() {
         String mapName = "testNearCacheFullConfig";
         String xml = HAZELCAST_START_TAG
