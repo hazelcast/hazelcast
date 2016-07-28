@@ -45,6 +45,19 @@ public class DefaultQueryCacheEventData implements QueryCacheEventData {
         creationTime = Clock.currentTimeMillis();
     }
 
+    public DefaultQueryCacheEventData(DefaultQueryCacheEventData other) {
+        this.key = other.key;
+        this.value = other.value;
+        this.dataKey = other.dataKey;
+        this.dataNewValue = other.dataNewValue;
+        this.dataOldValue = other.dataOldValue;
+        this.sequence = other.sequence;
+        this.serializationService = other.serializationService;
+        this.creationTime = other.creationTime;
+        this.eventType = other.eventType;
+        this.partitionId = other.partitionId;
+    }
+
     @Override
     public Object getKey() {
         if (key == null && dataKey != null) {
