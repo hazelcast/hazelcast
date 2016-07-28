@@ -27,6 +27,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
@@ -35,6 +36,7 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     private Predicate predicate;
     private QueryResult result;
     private IterationType iterationType;
+    private List<Integer> partitionIds;
 
     public QueryOperation() {
     }
@@ -45,10 +47,17 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
         this.iterationType = iterationType;
     }
 
+    public QueryOperation(String mapName, Predicate predicate, IterationType iterationType, List<Integer> partitionIds) {
+        super(mapName);
+        this.predicate = predicate;
+        this.iterationType = iterationType;
+        this.partitionIds = partitionIds;
+    }
+
     @Override
     public void run() throws Exception {
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
-        result = queryEngine.queryLocalPartitions(name, predicate, iterationType);
+        result = queryEngine.queryLocalPartitions(name, predicate, iterationType, partitionIds);
     }
 
     @Override

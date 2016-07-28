@@ -46,6 +46,10 @@ public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Dat
         return key;
     }
 
+    public void setKey(Data key) {
+        this.key = key;
+    }
+
     public Data getValue() {
         return value;
     }
