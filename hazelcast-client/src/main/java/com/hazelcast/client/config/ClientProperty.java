@@ -86,6 +86,13 @@ public enum ClientProperty implements HazelcastProperty {
     DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false),
 
     /**
+     * <p>Enables the Discovery Joiner to use public ips from DiscoveredNode. This property is temporary and will
+     * eventually be removed when the experimental marker is removed.</p>
+     * <p>Discovery SPI is <b>disabled</b> by default</p>
+     */
+    DISCOVERY_SPI_PUBLIC_IP_ENABLED("hazelcast.discovery.public.ip.enabled", false),
+
+    /**
      * Configures pool size of internal client executor. Private configuration, for internal usage only.
      */
     INTERNAL_EXECUTOR_POOL_SIZE("hazelcast.client.internal.executor.pool.size", 3);
