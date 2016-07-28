@@ -113,6 +113,10 @@ class MockJoiner extends AbstractJoiner {
 
             Assert.assertEquals(address, foundNode.getThisAddress());
 
+            if (foundNode.getThisAddress().equals(node.getThisAddress())) {
+                continue;
+            }
+
             if (!foundNode.isRunning()) {
                 logger.fine("Node for " + address + " is not running. -> " + foundNode.getState());
                 continue;
