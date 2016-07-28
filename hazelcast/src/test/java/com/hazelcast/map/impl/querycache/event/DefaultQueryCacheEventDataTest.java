@@ -213,4 +213,17 @@ public class DefaultQueryCacheEventDataTest {
 
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherSerializationService.hashCode());
     }
+
+    @Test
+    public void testCopyConstructor() throws Exception {
+        DefaultQueryCacheEventData actual = new DefaultQueryCacheEventData();
+        actual.setPartitionId(1);
+        actual.setEventType(2);
+        actual.setKey(3);
+        actual.setValue(4);
+
+        DefaultQueryCacheEventData copied = new DefaultQueryCacheEventData(actual);
+
+        assertEquals(copied, actual);
+    }
 }
