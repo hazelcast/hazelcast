@@ -24,8 +24,6 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
 
     private static boolean LOCAL = false;
     private static boolean REMOTE = true;
-    private static boolean SKIPPED = true;
-    private static boolean NOT_SKIPPED = false;
 
     private HazelcastInstance hz;
     private NodeEngineImpl nodeEngine;
@@ -74,19 +72,19 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
     @Test
     public void next() {
         // regular operation
-        next(new DummyOperation(), REMOTE, NOT_SKIPPED);
-        next(new DummyOperation(), LOCAL, SKIPPED);
+        next(new DummyOperation(), REMOTE);
+        next(new DummyOperation(), LOCAL);
 
         // backup-aware operation
-        next(new DummyBackupAwareOperation(), LOCAL, NOT_SKIPPED);
-        next(new DummyBackupAwareOperation(), REMOTE, NOT_SKIPPED);
+        next(new DummyBackupAwareOperation(), LOCAL);
+        next(new DummyBackupAwareOperation(), REMOTE);
 
         //urgent operation
-        next(new DummyPriorityOperation(), LOCAL, SKIPPED);
-        next(new DummyPriorityOperation(), REMOTE, NOT_SKIPPED);
+        next(new DummyPriorityOperation(), LOCAL);
+        next(new DummyPriorityOperation(), REMOTE);
     }
 
-    public void next(Operation operation, boolean remote, boolean skipped) {
+    public void next(Operation operation, boolean remote) {
         CallIdSequence.CallIdSequenceWithoutBackpressure sequence = new CallIdSequence.CallIdSequenceWithoutBackpressure();
 
         Invocation invocation = newInvocation(operation);
@@ -95,13 +93,8 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
 
         long result = sequence.next(invocation);
 
-        if (skipped) {
-            assertEquals(Operation.CALL_ID_LOCAL_SKIPPED, result);
-            assertEquals(oldSequence, sequence.getLastCallId());
-        } else {
-            assertEquals(oldSequence + 1, result);
-            assertEquals(oldSequence + 1, sequence.getLastCallId());
-        }
+        assertEquals(oldSequence + 1, result);
+        assertEquals(oldSequence + 1, sequence.getLastCallId());
     }
 
     @Test

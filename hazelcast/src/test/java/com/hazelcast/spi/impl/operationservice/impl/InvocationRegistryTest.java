@@ -53,19 +53,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     // ====================== register ===============================
 
     @Test
-    public void register_whenSkippableInvocation() {
-        Operation op = new DummyOperation();
-        Invocation invocation = newInvocation(op);
-        invocation.remote = false;
-
-        invocationRegistry.register(invocation);
-
-        assertEquals(Operation.CALL_ID_LOCAL_SKIPPED, invocation.op.getCallId());
-        assertNull(invocationRegistry.get(op.getCallId()));
-    }
-
-    @Test
-    public void register_whenNoneSkippableInvocation() {
+    public void register_Invocation() {
         Operation op = new DummyBackupAwareOperation();
         Invocation invocation = newInvocation(op);
         long oldCallId = invocationRegistry.getLastCallId();

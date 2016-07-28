@@ -337,6 +337,11 @@ public class MigrationManager {
                     || t.getCause() instanceof HazelcastInstanceNotActiveException;
 
         if (memberLeft) {
+            if (node.getThisAddress().equals(destination)) {
+                logger.fine("Migration commit failed for " + migration
+                        + " since this node is shutting down.");
+                return;
+            }
             logger.warning("Migration commit failed for " + migration
                         + " since destination " + destination + " left the cluster");
         } else {
@@ -394,6 +399,11 @@ public class MigrationManager {
 
     void triggerControlTask() {
         migrationQueue.clear();
+        if (!node.joined()) {
+            logger.fine("Node is not joined, will not trigger ControlTask");
+            return;
+        }
+
         migrationQueue.add(new ControlTask());
         if (logger.isFinestEnabled()) {
             logger.finest("Migration queue is cleared and control task is scheduled");
@@ -1170,23 +1180,30 @@ public class MigrationManager {
                     || t.getCause() instanceof TargetNotMemberException
                     || t.getCause() instanceof HazelcastInstanceNotActiveException;
 
+            int migrationsSize = migrations.size();
             if (memberLeft) {
+                if (node.getThisAddress().equals(destination)) {
+                    logger.fine("Promotion commit failed for " + migrationsSize + " migrations"
+                            + " since this node is shutting down.");
+                    return;
+                }
+
                 if (logger.isFinestEnabled()) {
                     logger.warning("Promotion commit failed for " + migrations
                             + " since destination " + destination + " left the cluster");
                 } else {
                     logger.warning("Promotion commit failed for "
-                            + (migrations.size() == 1 ? migrations.iterator().next() : "multiple migrations")
+                            + (migrationsSize == 1 ? migrations.iterator().next() : migrationsSize + " migrations")
                             + " since destination " + destination + " left the cluster");
                 }
+                return;
+            }
 
+            if (logger.isFinestEnabled()) {
+                logger.severe("Promotion commit to " + destination + " failed for " + migrations, t);
             } else {
-                if (logger.isFinestEnabled()) {
-                    logger.severe("Promotion commit to " + destination + " failed for " + migrations, t);
-                } else {
-                    logger.severe("Promotion commit to " + destination + " failed for "
-                            + (migrations.size() == 1 ? migrations.iterator().next() : "multiple migrations"), t);
-                }
+                logger.severe("Promotion commit to " + destination + " failed for "
+                        + (migrationsSize == 1 ? migrations.iterator().next() : migrationsSize + " migrations"), t);
             }
         }
     }

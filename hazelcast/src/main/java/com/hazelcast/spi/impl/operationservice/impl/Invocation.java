@@ -31,6 +31,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
@@ -52,6 +53,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
@@ -256,7 +258,10 @@ public abstract class Invocation implements OperationResponseHandler {
         }
 
         setInvocationTime(op, context.clusterClock.getClusterTime());
-        context.invocationRegistry.register(this);
+        if (!context.invocationRegistry.register(this)) {
+            return;
+        }
+
         if (remote) {
             doInvokeRemote();
         } else {
@@ -487,11 +492,15 @@ public abstract class Invocation implements OperationResponseHandler {
         } else {
             context.invocationRegistry.deregister(this);
 
-            if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
-                // fast retry for the first few invocations
-                context.asyncExecutor.execute(new InvocationRetryTask());
-            } else {
-                context.executionService.schedule(ASYNC_EXECUTOR, new InvocationRetryTask(), tryPauseMillis, MILLISECONDS);
+            try {
+                if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+                    // fast retry for the first few invocations
+                    context.asyncExecutor.execute(new InvocationRetryTask());
+                } else {
+                    context.executionService.schedule(ASYNC_EXECUTOR, new InvocationRetryTask(), tryPauseMillis, MILLISECONDS);
+                }
+            } catch (RejectedExecutionException e) {
+                completeWhenRetryRejected(e);
             }
         }
     }
@@ -511,11 +520,22 @@ public abstract class Invocation implements OperationResponseHandler {
                     context.logger.finest("Node is not joined. Re-scheduling " + this
                             + " to be executed in " + tryPauseMillis + " ms.");
                 }
-                context.executionService.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+                try {
+                    context.executionService.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+                } catch (RejectedExecutionException e) {
+                    completeWhenRetryRejected(e);
+                }
                 return;
             }
             doInvoke(false);
         }
+    }
+
+    private void completeWhenRetryRejected(RejectedExecutionException e) {
+        if (context.logger.isFinestEnabled()) {
+            context.logger.finest(e);
+        }
+        complete(new HazelcastInstanceNotActiveException(e.getMessage()));
     }
 
     /**
@@ -529,6 +549,11 @@ public abstract class Invocation implements OperationResponseHandler {
      * @return {@code true} if there is a timeout detected, {@code false} otherwise.
      */
     boolean detectAndHandleTimeout(long heartbeatTimeoutMillis) {
+        // skip if local and not BackupAwareOperation
+        if (!(remote || op instanceof BackupAwareOperation)) {
+            return false;
+        }
+
         HeartbeatTimeout heartbeatTimeout = detectTimeout(heartbeatTimeoutMillis);
 
         if (heartbeatTimeout == TIMEOUT) {

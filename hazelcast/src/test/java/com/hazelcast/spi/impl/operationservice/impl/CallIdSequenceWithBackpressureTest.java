@@ -17,7 +17,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure.MAX_DELAY_MS;
 import static org.junit.Assert.assertEquals;
@@ -31,8 +30,6 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
     private static boolean LOCAL = false;
     private static boolean REMOTE = true;
-    private static boolean SKIPPED = true;
-    private static boolean NOT_SKIPPED = false;
 
     private HazelcastInstance hz;
     private NodeEngineImpl nodeEngine;
@@ -70,19 +67,19 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
     @Test
     public void next() {
         // regular operation
-        next(new DummyOperation(), REMOTE, NOT_SKIPPED);
-        next(new DummyOperation(), LOCAL, SKIPPED);
+        next(new DummyOperation(), REMOTE);
+        next(new DummyOperation(), LOCAL);
 
         // backup-aware operation
-        next(new DummyBackupAwareOperation(), LOCAL, NOT_SKIPPED);
-        next(new DummyBackupAwareOperation(), REMOTE, NOT_SKIPPED);
+        next(new DummyBackupAwareOperation(), LOCAL);
+        next(new DummyBackupAwareOperation(), REMOTE);
 
         //urgent operation
-        next(new DummyPriorityOperation(), LOCAL, SKIPPED);
-        next(new DummyPriorityOperation(), REMOTE, NOT_SKIPPED);
+        next(new DummyPriorityOperation(), LOCAL);
+        next(new DummyPriorityOperation(), REMOTE);
     }
 
-    public void next(Operation operation, boolean remote, boolean skipped) {
+    public void next(Operation operation, boolean remote) {
         CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
 
         Invocation invocation = newInvocation(operation);
@@ -91,11 +88,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
         long result = sequence.next(invocation);
 
-        if (skipped) {
-            assertEquals(CALL_ID_LOCAL_SKIPPED, result);
-        } else {
-            assertEquals(oldSequence + 1, result);
-        }
+        assertEquals(oldSequence + 1, result);
 
         // the sequence always needs to increase because we need to know how many invocations are done
         assertEquals(oldSequence + 1, sequence.getLastCallId());
@@ -163,10 +156,9 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
         long oldLastCallId = sequence.getLastCallId();
 
-        //
         Invocation priorityInvocation = newInvocation(new DummyPriorityOperation());
         long result = sequence.next(priorityInvocation);
-        assertEquals(CALL_ID_LOCAL_SKIPPED, result);
+        assertEquals(oldLastCallId + 1, result);
         assertEquals(oldLastCallId + 1, sequence.getLastCallId());
     }
 

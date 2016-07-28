@@ -127,16 +127,20 @@ public class MigrationCommitTest
 
     @Test
     public void shouldRollbackMigrationWhenMasterCrashesBeforeCommit() {
+        final CountDownLatch migrationStartLatch = new CountDownLatch(1);
         final Config config1 = createConfig();
         config1.setLiteMember(true);
-        config1.addListenerConfig(new ListenerConfig(new TerminateOnMigrationComplete()));
 
         final HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
 
-        final CollectMigrationTaskOnRollback listener2 = new CollectMigrationTaskOnRollback();
+        final TerminateOtherMemberOnMigrationComplete listener2 = new TerminateOtherMemberOnMigrationComplete(migrationStartLatch);
+
         final Config config2 = createConfig();
         config2.addListenerConfig(new ListenerConfig(listener2));
         final HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
+
+        listener2.other = hz1;
+        migrationStartLatch.countDown();
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
@@ -656,7 +660,12 @@ public class MigrationCommitTest
             }
 
             final int memberCount = instance.getCluster().getMembers().size();
-            other.getLifecycleService().terminate();
+            spawn(new Runnable() {
+                @Override
+                public void run() {
+                    other.getLifecycleService().terminate();
+                }
+            });
             assertClusterSizeEventually(memberCount - 1, instance);
         }
 
@@ -696,7 +705,12 @@ public class MigrationCommitTest
         @Override
         public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
             final int memberCount = instance.getCluster().getMembers().size();
-            other.getLifecycleService().terminate();
+            spawn(new Runnable() {
+                @Override
+                public void run() {
+                    other.getLifecycleService().terminate();
+                }
+            });
             assertClusterSizeEventually(memberCount - 1, instance);
             resetInternalMigrationListener(instance);
         }
@@ -730,29 +744,6 @@ public class MigrationCommitTest
             });
 
             assertOpenEventually(latch);
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance instance) {
-            this.instance = instance;
-        }
-
-    }
-
-    private static class TerminateOnMigrationComplete
-            extends InternalMigrationListener
-            implements HazelcastInstanceAware {
-
-        private volatile HazelcastInstance instance;
-
-        @Override
-        public void onMigrationComplete(MigrationParticipant participant, MigrationInfo migrationInfo, boolean success) {
-            if (!success) {
-                System.err.println("ERR: migration is not successful " + migrationInfo + " participant: " + participant);
-            }
-
-            resetInternalMigrationListener(instance);
-            instance.getLifecycleService().terminate();
         }
 
         @Override
