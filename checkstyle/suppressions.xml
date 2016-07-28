@@ -307,6 +307,7 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/tx/TransactionalMapProxySupport"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="com/hazelcast/map/impl/querycache/event/DefaultQueryCacheEventData"/>
+    <suppress checks="MethodCount" files="com/hazelcast/map/impl/query/MapQueryEngineImpl"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/map/impl/SimpleEntryView"/>
 
     <!-- Util (written by Doug Lea, Agrona backport etc.) -->
