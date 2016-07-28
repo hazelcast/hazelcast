@@ -65,7 +65,7 @@ public final class DelegatingTaskScheduler implements TaskScheduler {
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
         checkNotNull(command);
         Runnable decoratedTask = new DelegatingTaskDecorator(command, executor);
-        return scheduledExecutorService.schedule(new DelegatingTaskDecorator(decoratedTask, executor), delay, unit);
+        return scheduledExecutorService.schedule(decoratedTask, delay, unit);
     }
 
     @Override
