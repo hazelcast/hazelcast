@@ -161,7 +161,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroy() {
-        clearPartition(false);
+        clearPartition(false, true);
         storage.destroy(false);
     }
 
@@ -278,7 +278,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void clearPartition(boolean onShutdown) {
+    public void clearPartition(boolean onShutdown, boolean onMapDestroy) {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
@@ -287,14 +287,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             lockService.clearLockStore(partitionId, namespace);
         }
 
-        Indexes indexes = mapContainer.getIndexes();
-        if (indexes.hasIndex()) {
-            for (Record record : storage.values()) {
-                Data key = record.getKey();
-                Object value = Records.getValueOrCachedValue(record, serializationService);
-                indexes.removeEntryIndex(key, value);
+        // No need to iterate over all entries of this partition to remove indexes during map#destroy or node-shutdown.
+        // Removal of MapContainer already removes them. See MapServiceContext#destroyMap for this.
+        if (!(onShutdown || onMapDestroy)) {
+            Indexes indexes = mapContainer.getIndexes();
+            if (indexes.hasIndex()) {
+                for (Record record : storage.values()) {
+                    Data key = record.getKey();
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    indexes.removeEntryIndex(key, value);
+                }
             }
         }
+
         mapDataStore.reset();
 
         if (onShutdown) {

@@ -178,7 +178,7 @@ public class PartitionContainer {
 
     public void clear(boolean onShutdown) {
         for (RecordStore recordStore : maps.values()) {
-            recordStore.clearPartition(onShutdown);
+            recordStore.clearPartition(onShutdown, false);
         }
         maps.clear();
     }
