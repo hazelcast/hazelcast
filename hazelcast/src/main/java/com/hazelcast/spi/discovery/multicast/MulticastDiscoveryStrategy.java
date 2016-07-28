@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 /**
  * The multicast {@link com.hazelcast.spi.discovery.DiscoveryStrategy}.
  */
@@ -82,6 +84,7 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
             }
         } catch (Exception e) {
             logger.finest(e.getMessage());
+            rethrow(e);
         }
     }
 

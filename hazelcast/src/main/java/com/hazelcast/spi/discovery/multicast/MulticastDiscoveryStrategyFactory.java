@@ -22,13 +22,26 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
- * TODO:
+ * Factory class which returns {@link MulticastDiscoveryStrategy} to Discovery SPI
  */
 public class MulticastDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+
+    private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS;
+
+    static {
+        List<PropertyDefinition> propertyDefinitions = new ArrayList<PropertyDefinition>();
+        propertyDefinitions.add(MulticastProperties.GROUP);
+        propertyDefinitions.add(MulticastProperties.PORT);
+        PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(propertyDefinitions);
+    }
+
     @Override
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
         return MulticastDiscoveryStrategy.class;
@@ -41,6 +54,6 @@ public class MulticastDiscoveryStrategyFactory implements DiscoveryStrategyFacto
 
     @Override
     public Collection<PropertyDefinition> getConfigurationProperties() {
-        return null;
+        return PROPERTY_DEFINITIONS;
     }
 }
