@@ -40,7 +40,6 @@ public class SpillFileCursor {
 
     private int segmentCount;
     private long recordCountInCurrentSegment;
-    private int segmentId;
     private long recordAddress;
     private long hashCode;
     private int partitionId;
@@ -69,7 +68,8 @@ public class SpillFileCursor {
         }
         segmentsRead++;
         recordsRead = 0;
-        segmentId = spillFileReader.readNextInt();
+        // reads segmentId, but not used anywhere. Inspect whether OK to remove segmentId.
+        spillFileReader.readNextInt();
         recordCountInCurrentSegment = spillFileReader.readNextLong();
         return true;
     }

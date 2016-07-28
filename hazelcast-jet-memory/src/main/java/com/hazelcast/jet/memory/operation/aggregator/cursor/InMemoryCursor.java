@@ -38,7 +38,6 @@ import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
  */
 public class InMemoryCursor extends PairCursorBase {
     private final Storage serviceKeyValueStorage;
-    private long hashCode;
     private int nextPartitionId;
     private int memoryBlockIdx;
     private int nextMemoryBlockIdx;
@@ -158,7 +157,6 @@ public class InMemoryCursor extends PairCursorBase {
             if (storage.getSlotMarker(slotAddress) == Util.BYTE_1) {
                 continue;
             }
-            hashCode = storage.getSlotHashCode(slotAddress);
             pairCursor = storage.pairCursor(slotAddress);
             storage.markSlot(slotAddress, Util.BYTE_1);
             nextMemoryBlockIdx = memoryBlockIdx;
