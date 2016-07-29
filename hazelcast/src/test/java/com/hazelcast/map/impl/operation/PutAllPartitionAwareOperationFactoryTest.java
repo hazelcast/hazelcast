@@ -1,6 +1,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -20,7 +21,7 @@ public class PutAllPartitionAwareOperationFactoryTest extends HazelcastTestSuppo
     public void setUp() throws Exception {
         String name = randomMapName();
         int[] partitions = new int[0];
-        MapEntries[] mapEntries = new MapEntries[0];
+        MapEntries[] mapEntries = new MapEntriesImpl[0];
         factory = getFactory(name, partitions, mapEntries);
     }
 

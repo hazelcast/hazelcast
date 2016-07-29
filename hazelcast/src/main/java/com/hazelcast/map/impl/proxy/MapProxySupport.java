@@ -39,6 +39,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -779,7 +780,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
 
             // fill entriesPerPartition
-            MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
+            MapEntries[] entriesPerPartition = new MapEntriesImpl[partitionCount];
             for (Entry entry : map.entrySet()) {
                 checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
                 checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
@@ -788,7 +789,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 int partitionId = partitionService.getPartitionId(keyData);
                 MapEntries entries = entriesPerPartition[partitionId];
                 if (entries == null) {
-                    entries = new MapEntries(initialSize);
+                    entries = new MapEntriesImpl(initialSize);
                     entriesPerPartition[partitionId] = entries;
                 }
 
@@ -832,7 +833,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
 
         index = 0;
-        MapEntries[] entries = new MapEntries[size];
+        MapEntries[] entries = new MapEntriesImpl[size];
         long totalSize = 0;
         for (int partitionId : partitions) {
             int batchSize = entriesPerPartition[partitionId].size();

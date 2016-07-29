@@ -33,6 +33,7 @@ import com.hazelcast.internal.eviction.EvictionStrategy;
 import com.hazelcast.internal.eviction.EvictionStrategyProvider;
 import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -99,9 +100,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final boolean disablePerEntryInvalidationEvents;
     protected boolean primary;
 
-    //CHECKSTYLE:OFF
-    public AbstractCacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
-                                    AbstractCacheService cacheService) {
+    @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:npathcomplexity"})
+    public AbstractCacheRecordStore(String name, int partitionId, NodeEngine nodeEngine, AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
@@ -155,7 +155,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         registerResourceIfItIsClosable(defaultExpiryPolicy);
         init();
     }
-    //CHECKSTYLE:ON
 
     private boolean isPrimary() {
         IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
@@ -196,8 +195,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected abstract CRM createRecordCacheMap();
 
-    protected abstract CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key, R record,
-                                                                               long now, int completionId);
+    protected abstract CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key, R record, long now, int completionId);
 
     protected abstract R createRecord(Object value, long creationTime, long expiryTime);
 
@@ -1311,7 +1309,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public MapEntries getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-        MapEntries result = new MapEntries(keySet.size());
+        MapEntries result = new MapEntriesImpl(keySet.size());
         for (Data key : keySet) {
             Object value = get(key, expiryPolicy);
             if (value != null) {

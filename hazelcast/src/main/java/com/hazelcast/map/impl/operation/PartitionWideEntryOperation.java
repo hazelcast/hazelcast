@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -61,7 +61,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     public void run() {
         long now = getNow();
 
-        responses = new MapEntries(recordStore.size());
+        responses = new MapEntriesImpl(recordStore.size());
         Iterator<Record> iterator = recordStore.iterator(now, false);
         while (iterator.hasNext()) {
             Record record = iterator.next();
@@ -152,5 +152,4 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
         super.writeInternal(out);
         out.writeObject(entryProcessor);
     }
-
 }

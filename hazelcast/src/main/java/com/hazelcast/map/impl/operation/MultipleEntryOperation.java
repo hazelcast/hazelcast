@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -56,7 +56,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     @Override
     public void run() throws Exception {
         long now = getNow();
-        responses = new MapEntries(keys.size());
+        responses = new MapEntriesImpl(keys.size());
         for (Data key : keys) {
             if (!isKeyProcessable(key)) {
                 continue;

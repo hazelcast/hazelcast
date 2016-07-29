@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -636,7 +637,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         final long now = getNow();
 
-        final MapEntries mapEntries = new MapEntries(keys.size());
+        final MapEntries mapEntries = new MapEntriesImpl(keys.size());
 
         final Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {

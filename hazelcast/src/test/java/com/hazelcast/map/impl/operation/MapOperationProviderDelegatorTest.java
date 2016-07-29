@@ -1,6 +1,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -100,9 +101,9 @@ public class MapOperationProviderDelegatorTest extends HazelcastTestSupport {
             } else if (parameterType.equals(boolean[].class)) {
                 parameters[i] = new boolean[0];
             } else if (parameterType.isAssignableFrom(MapEntries.class)) {
-                parameters[i] = new MapEntries();
+                parameters[i] = new MapEntriesImpl();
             } else if (parameterType.equals(MapEntries[].class)) {
-                parameters[i] = new MapEntries[0];
+                parameters[i] = new MapEntriesImpl[0];
             } else {
                 try {
                     parameters[i] = mock(parameterType);

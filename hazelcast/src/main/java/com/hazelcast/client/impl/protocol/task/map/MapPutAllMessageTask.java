@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesLegacyImpl;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
@@ -32,8 +33,7 @@ import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapPutAllMessageTask
-        extends AbstractMapPartitionMessageTask<MapPutAllCodec.RequestParameters> {
+public class MapPutAllMessageTask extends AbstractMapPartitionMessageTask<MapPutAllCodec.RequestParameters> {
 
     public MapPutAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,7 +41,8 @@ public class MapPutAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        MapEntries mapEntries = new MapEntries(parameters.entries);
+        // we have to use MapEntriesLegacyImpl here to avoid a performance regression
+        MapEntries mapEntries = new MapEntriesLegacyImpl(parameters.entries);
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         return operationProvider.createPutAllOperation(parameters.name, mapEntries);
     }
