@@ -37,7 +37,11 @@ public final class StringUtil {
      */
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-    private static final Locale LOCALE_INTERNAL = Locale.ENGLISH;
+    /**
+     * LOCALE_INTERNAL is the default locale for string operations and number formatting. Initialized to
+     * {@code java.util.Locale.US} (US English).
+     */
+    public static final Locale LOCALE_INTERNAL = Locale.US;
 
     private StringUtil() {
     }

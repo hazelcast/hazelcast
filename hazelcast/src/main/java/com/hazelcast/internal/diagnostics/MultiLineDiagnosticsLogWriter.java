@@ -17,13 +17,14 @@
 package com.hazelcast.internal.diagnostics;
 
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
 
 /**
  * A {@link DiagnosticsLogWriter} that writes over multiple lines. Useful for human reading.
  */
 class MultiLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
 
-    private static final String STR_LONG_MIN_VALUE = String.format("%,d", Long.MIN_VALUE);
+    private static final String STR_LONG_MIN_VALUE = String.format(LOCALE_INTERNAL, "%,d", Long.MIN_VALUE);
 
     private static final char[] DIGITS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
