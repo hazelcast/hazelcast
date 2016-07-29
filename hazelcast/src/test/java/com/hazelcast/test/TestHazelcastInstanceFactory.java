@@ -207,6 +207,7 @@ public class TestHazelcastInstanceFactory {
     public void shutdownAll() {
         if (mockNetwork) {
             registry.shutdown();
+            addressMap.clear();
         } else {
             Hazelcast.shutdownAll();
         }

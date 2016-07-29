@@ -118,6 +118,10 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         super.shutdownAll();
     }
 
+    public void shutdownAllMembers() {
+        super.shutdownAll();
+    }
+
     @Override
     public void terminateAll() {
         if (!mockNetwork) {
