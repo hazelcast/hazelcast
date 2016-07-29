@@ -43,6 +43,7 @@ import java.util.Set;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
+import static com.hazelcast.util.MapUtil.isNullOrEmpty;
 
 public class PartitionWideEntryWithPredicateOperationFactory implements PartitionAwareOperationFactory {
 
@@ -72,7 +73,7 @@ public class PartitionWideEntryWithPredicateOperationFactory implements Partitio
     }
 
     private void queryIndex() {
-        // Do not use index in this case, because it requires full-table-scan.
+        // do not use index in this case, because it requires full-table-scan
         if (predicate == TruePredicate.INSTANCE) {
             return;
         }
@@ -104,12 +105,13 @@ public class PartitionWideEntryWithPredicateOperationFactory implements Partitio
 
     @Override
     public Operation createPartitionOperation(int partition) {
-        if (hasIndex) {
+        if (hasIndex && !isNullOrEmpty(partitionIdToKeys)) {
             List<Data> keys = partitionIdToKeys.get(partition);
-            InflatableSet<Data> keySet = InflatableSet.newBuilder(keys).build();
-            return new MultipleEntryWithPredicateOperation(name, keySet, entryProcessor, predicate);
+            if (keys != null) {
+                InflatableSet<Data> keySet = InflatableSet.newBuilder(keys).build();
+                return new MultipleEntryWithPredicateOperation(name, keySet, entryProcessor, predicate);
+            }
         }
-
         return createOperation();
     }
 
