@@ -6,15 +6,14 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runners.Parameterized;
-
+import java.util.Arrays;
+import java.util.Iterator;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.util.Arrays;
-import java.util.Iterator;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runners.Parameterized;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -69,6 +68,21 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 1, prefetchValues);
         Cache.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
+    }
+
+    @Test
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
+        ClientCacheProxy<String, String> cache = getCacheProxy();
+
+        String key = generateKeyForPartition(server, 1);
+        String value = randomString();
+        cache.put(key, value);
+
+        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 1, prefetchValues);
+        Cache.Entry entry = iterator.next();
+        assertEquals(value, entry.getValue());
+        boolean hasNext = iterator.hasNext();
+        assertFalse(hasNext);
     }
 
     @Test
