@@ -16,11 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 
@@ -124,8 +124,8 @@ final class InvokeOnPartitions {
 
         for (Integer failedPartition : failedPartitions) {
             Operation operation;
-            if (operationFactory instanceof PartitionAwareOperationFactory) {
-                operation = ((PartitionAwareOperationFactory) operationFactory).createPartitionOperation(failedPartition);
+            if (operationFactory instanceof PutAllPartitionAwareOperationFactory) {
+                operation = ((PutAllPartitionAwareOperationFactory) operationFactory).createPartitionOperation(failedPartition);
             } else {
                 operation = operationFactory.createOperation();
             }
