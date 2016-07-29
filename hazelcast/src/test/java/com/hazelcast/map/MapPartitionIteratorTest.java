@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -36,6 +37,39 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     @Parameterized.Parameters(name = "prefetchValues:{0}")
     public static Iterable<Object[]> parameters() {
         return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void test_next_Throws_Exception_On_EmptyPartition() throws Exception {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, 1, prefetchValues);
+        iterator.next();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void test_remove_Throws_Exception_When_Called_Without_Next() throws Exception {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, 1, prefetchValues);
+        iterator.remove();
+    }
+
+    @Test
+    public void test_Remove() throws Exception {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        String key = generateKeyForPartition(instance, 1);
+        String value = randomString();
+        proxy.put(key, value);
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, 1, prefetchValues);
+        iterator.next();
+        iterator.remove();
+        assertEquals(0,proxy.size());
     }
 
     @Test
@@ -72,6 +106,22 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
         Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, 1, prefetchValues);
         Map.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
+    }
+
+    @Test
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        String key = generateKeyForPartition(instance, 1);
+        String value = randomString();
+        proxy.put(key, value);
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, 1, prefetchValues);
+        Map.Entry entry = iterator.next();
+        assertEquals(value, entry.getValue());
+        boolean hasNext = iterator.hasNext();
+        assertFalse(hasNext);
     }
 
     @Test
