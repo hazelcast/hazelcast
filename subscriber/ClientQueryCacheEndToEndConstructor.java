@@ -36,6 +36,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         }
         if (info.isPopulate()) {
             madePublishable(info.getMapName(), info.getCacheName());
+            info.setPublishable(true);
         }
     }
 
