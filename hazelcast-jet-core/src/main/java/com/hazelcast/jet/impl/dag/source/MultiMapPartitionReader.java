@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 
-public class HazelcastMultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
+public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
     private final CalculationStrategy calculationStrategy;
     private final JetPairConverter<Entry<Data, MultiMapValue>> pairConverter =
             new JetPairConverter<Entry<Data, MultiMapValue>>() {
@@ -62,7 +62,7 @@ public class HazelcastMultiMapPartitionReader extends AbstractHazelcastReader<Je
                 }
             };
 
-    public HazelcastMultiMapPartitionReader(ContainerDescriptor containerDescriptor, String name, int partitionId) {
+    public MultiMapPartitionReader(ContainerDescriptor containerDescriptor, String name, int partitionId) {
         super(containerDescriptor, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         this.calculationStrategy = new CalculationStrategyImpl(
                 DefaultHashingStrategy.INSTANCE, StringAndPartitionAwarePartitioningStrategy.INSTANCE,

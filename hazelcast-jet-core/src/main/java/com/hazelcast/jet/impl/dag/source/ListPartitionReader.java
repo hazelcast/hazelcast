@@ -34,11 +34,11 @@ import com.hazelcast.spi.serialization.SerializationService;
 import java.util.Iterator;
 import java.util.List;
 
-public class HazelcastListPartitionReader extends AbstractHazelcastReader<JetPair> {
+public class ListPartitionReader extends AbstractHazelcastReader<JetPair> {
     private final JetPairConverter<CollectionItem> pairConverter =
             (item, ss) -> new JetPair<>(item.getItemId(), ss.toObject(item.getValue()), getPartitionId());
 
-    public HazelcastListPartitionReader(ContainerDescriptor containerDescriptor, String name) {
+    public ListPartitionReader(ContainerDescriptor containerDescriptor, String name) {
         super(containerDescriptor, name, getPartitionId(containerDescriptor.getNodeEngine(), name),
                 ByReferenceDataTransferringStrategy.INSTANCE);
     }

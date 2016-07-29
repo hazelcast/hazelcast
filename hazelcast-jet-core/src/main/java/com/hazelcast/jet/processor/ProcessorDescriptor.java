@@ -66,14 +66,14 @@ public class ProcessorDescriptor implements Serializable {
      * @return task count in the corresponding vertex-container
      */
     public int getTaskCount() {
-        return this.taskCount;
+        return taskCount;
     }
 
     /**
      * @return arguments which will be passed to construct ContainerProcessor
      */
     public Object[] getArgs() {
-        return this.args;
+        return args.clone();
     }
 
 
@@ -81,7 +81,7 @@ public class ProcessorDescriptor implements Serializable {
      * @return class of the corresponding ContainerProcessor
      */
     public String getContainerProcessorClazz() {
-        return this.clazz;
+        return clazz;
     }
 
     /**

@@ -38,7 +38,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class HazelcastMapPartitionReader extends AbstractHazelcastReader<JetPair> {
+public class MapPartitionReader extends AbstractHazelcastReader<JetPair> {
     private final MapConfig mapConfig;
     private final CalculationStrategy calculationStrategy;
 
@@ -51,7 +51,7 @@ public class HazelcastMapPartitionReader extends AbstractHazelcastReader<JetPair
         }
     };
 
-    public HazelcastMapPartitionReader(ContainerDescriptor containerDescriptor, String name, int partitionId) {
+    public MapPartitionReader(ContainerDescriptor containerDescriptor, String name, int partitionId) {
         super(containerDescriptor, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         this.mapConfig = nodeEngine.getConfig().getMapConfig(name);

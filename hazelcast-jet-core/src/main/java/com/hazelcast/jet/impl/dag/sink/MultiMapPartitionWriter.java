@@ -20,6 +20,8 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -29,23 +31,26 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
 
-public class HazelcastMultiMapPartitionWriter extends AbstractHazelcastWriter {
+public class MultiMapPartitionWriter extends AbstractHazelcastWriter {
     private final MultiMapContainer container;
+    private final CalculationStrategyImpl calculationStrategy;
 
-    public HazelcastMultiMapPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId, String name) {
+    public MultiMapPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId, String name) {
         super(containerDescriptor, partitionId);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         MultiMapService service = nodeEngine.getService(MultiMapService.SERVICE_NAME);
         this.container = service.getOrCreateCollectionContainer(getPartitionId(), name);
+        this.calculationStrategy = new CalculationStrategyImpl(DefaultHashingStrategy.INSTANCE,
+                StringPartitioningStrategy.INSTANCE, containerDescriptor);
     }
 
     @Override
     protected void processChunk(ProducerInputStream chunk) {
         for (int i = 0; i < chunk.size(); i++) {
             JetPair<Object, Object[]> pair = (JetPair) chunk.get(i);
-            Data dataKey = pair.getComponentData(0, null, getNodeEngine().getSerializationService());
-            Collection<MultiMapRecord> coll = this.container.getMultiMapValueOrNull(dataKey).getCollection(false);
-            long recordId = this.container.nextId();
+            Data dataKey = pair.getComponentData(0, calculationStrategy, getNodeEngine().getSerializationService());
+            Collection<MultiMapRecord> coll = container.getMultiMapValueOrNull(dataKey).getCollection(false);
+            long recordId = container.nextId();
             for (Object value : pair.getValue()) {
                 Data dataValue = getNodeEngine().getSerializationService().toData(value);
                 MultiMapRecord record = new MultiMapRecord(recordId, dataValue);

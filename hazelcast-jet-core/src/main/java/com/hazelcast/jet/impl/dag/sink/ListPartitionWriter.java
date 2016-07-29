@@ -31,13 +31,13 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
+public class ListPartitionWriter extends AbstractHazelcastWriter {
 
     private final String name;
     private final ListContainer listContainer;
     private final CalculationStrategy calculationStrategy;
 
-    public HazelcastListPartitionWriter(ContainerDescriptor containerDescriptor, String name) {
+    public ListPartitionWriter(ContainerDescriptor containerDescriptor, String name) {
         super(containerDescriptor, getPartitionId(name, containerDescriptor.getNodeEngine()));
         this.name = name;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
