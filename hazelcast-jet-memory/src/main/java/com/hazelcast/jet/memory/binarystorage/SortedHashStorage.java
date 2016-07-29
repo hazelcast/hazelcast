@@ -180,14 +180,14 @@ public class SortedHashStorage extends HashStorage implements SortedStorage {
 
         @Override
         public int compare(long leftAddress, long leftSize, long rightAddress, long rightSize) {
-            return -original.compare(leftAddress, leftSize, rightAddress, rightSize);
+            return original.compare(rightAddress, rightSize, leftAddress, leftSize);
         }
 
         @Override
         public int compare(MemoryAccessor leftAccessor, MemoryAccessor rightAccessor, long leftAddress, long leftSize,
                            long rightAddress, long rightSize
         ) {
-            return -original.compare(leftAccessor, rightAccessor, leftAddress, leftSize, rightAddress, rightSize);
+            return original.compare(rightAccessor, leftAccessor, rightAddress, rightSize, leftAddress, leftSize);
         }
 
         @Override

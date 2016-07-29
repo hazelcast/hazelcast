@@ -22,6 +22,7 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.util.Util;
 import com.hazelcast.nio.Bits;
 
+import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +32,7 @@ import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCES
 /**
  * Reader of a spill-file.
  */
-public final class SpillFileReader {
+public final class SpillFileReader implements Closeable {
 
     private final boolean isBigEndian;
 

@@ -68,7 +68,6 @@ public abstract class BaseMemoryBlock implements MemoryBlock, MemoryAllocator {
 
     protected long pos = MemoryBlock.TOP_OFFSET;
     protected long lastAllocatedSize;
-    protected long lastAuxAllocatedSize;
     protected long usedSize = MemoryBlock.TOP_OFFSET;
 
     private final MemoryAllocator reverseAllocator;
@@ -133,7 +132,6 @@ public abstract class BaseMemoryBlock implements MemoryBlock, MemoryAllocator {
         usedSize = MemoryBlock.TOP_OFFSET;
         pos = MemoryBlock.TOP_OFFSET;
         lastAllocatedSize = 1L;
-        lastAuxAllocatedSize = 0L;
     }
 
     @Override
@@ -191,7 +189,6 @@ public abstract class BaseMemoryBlock implements MemoryBlock, MemoryAllocator {
 
     private long allocateAux(long size, long pos, long limit) {
         long newPos = checkAndSubNewPos(size, pos, limit);
-        lastAuxAllocatedSize = size;
         usedSize += size;
         return newPos;
     }

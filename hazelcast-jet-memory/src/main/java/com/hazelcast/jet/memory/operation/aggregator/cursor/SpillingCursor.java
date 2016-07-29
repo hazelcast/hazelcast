@@ -45,7 +45,6 @@ public class SpillingCursor extends PairCursorBase {
     private final Spiller spiller;
     private long[] lookedUpSlots;
     private int lookedUpSlotIdx;
-    private long hashCode;
     private boolean hasPendingSpilledSlot;
     private MemoryBlock memoryBlock;
     private MemoryBlockChain memoryBlockChain;
@@ -127,7 +126,6 @@ public class SpillingCursor extends PairCursorBase {
             lookedUpSlots = new long[memoryBlockChain.size()];
         }
         Arrays.fill(lookedUpSlots, MemoryAllocator.NULL_ADDRESS);
-        hashCode = spillFileCursor.getHashCode();
         hasPendingSpilledSlot = spillFileCursor.segmentAdvance() && lookUpOrCalculate();
         return true;
     }

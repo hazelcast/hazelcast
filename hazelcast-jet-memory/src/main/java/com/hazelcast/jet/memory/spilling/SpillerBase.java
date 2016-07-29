@@ -19,6 +19,7 @@ package com.hazelcast.jet.memory.spilling;
 import com.hazelcast.jet.memory.JetMemoryException;
 import com.hazelcast.jet.memory.util.Util;
 import com.hazelcast.nio.IOUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,6 +54,7 @@ abstract class SpillerBase {
         this.output = new SpillFileWriter(bufferSize, useBigEndian);
     }
 
+    @SuppressFBWarnings(value = "OBL_UNSATISFIED_OBLIGATION", justification = "temporarily disabled, needs inspection")
     public SpillFileCursor openSpillFileCursor() {
         if (activeFile != null) {
             try {

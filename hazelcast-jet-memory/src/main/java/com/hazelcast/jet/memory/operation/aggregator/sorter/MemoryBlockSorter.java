@@ -24,6 +24,7 @@ import com.hazelcast.jet.memory.binarystorage.StorageHeader;
 import com.hazelcast.jet.memory.memoryblock.DefaultMemoryBlockChain;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * This is abstract implementation of chain of the blocks;
@@ -37,44 +38,21 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
  * it sorts data inside each block and return result chain of blocks with sorted data;
  */
 public class MemoryBlockSorter implements Sorter<Partition[], MemoryBlockChain> {
-    /**
-     * Array of all source partitions.
-     */
+    /** Array of all source partitions. */
     private Partition[] partitions;
-
-    /**
-     * ID of the partition currently being sorted.
-     */
+    /** ID of the partition currently being sorted. */
     private int partitionId;
-
-    /**
-     * The partition currently being sorted.
-     */
+    /** The partition currently being sorted. */
     private Partition partition;
-
-    /**
-     * ID of current memory block.
-     */
+    /** ID of current memory block. */
     private int memoryBlockId;
-
-    /**
-     * Storage header to obtain the address of the OA-storage.
-     */
+    /** Storage header to obtain the address of the OA-storage. */
     private final StorageHeader storageHeader;
-
-    /**
-     * Contains a list of memory blocks with sorted storage.
-     */
+    /** Contains a list of memory blocks with sorted storage. */
     private MemoryBlockChain resultChain;
-
-    /**
-     * Sort order (ascending, descending).
-     */
+    /** Sort order (ascending, descending). */
     private final SortOrder order;
-
-    /**
-     * In-flight object.
-     */
+    /** In-flight object. */
     private SortedStorage sortedStorage;
 
     public MemoryBlockSorter(StorageHeader storageHeader, SortOrder order) {
@@ -84,6 +62,7 @@ public class MemoryBlockSorter implements Sorter<Partition[], MemoryBlockChain> 
     }
 
     @Override
+    @SuppressFBWarnings(value = "EI2", justification = "partition array is not owned by this object")
     public void resetTo(Partition[] input, MemoryBlockChain output) {
         reset();
         partitions = input;

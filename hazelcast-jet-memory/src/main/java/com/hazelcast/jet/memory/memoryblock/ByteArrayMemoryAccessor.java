@@ -18,6 +18,7 @@ package com.hazelcast.jet.memory.memoryblock;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
@@ -31,6 +32,7 @@ public class ByteArrayMemoryAccessor implements MemoryAccessor {
     private final boolean isBigEndian;
     private final byte[] memory;
 
+    @SuppressFBWarnings(value = "EI2", justification = "the byte array is not owned by this object")
     public ByteArrayMemoryAccessor(byte[] memory, boolean isBigEndian) {
         this.isBigEndian = isBigEndian;
         this.memory = memory;

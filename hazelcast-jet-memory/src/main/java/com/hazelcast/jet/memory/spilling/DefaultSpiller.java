@@ -27,6 +27,7 @@ import com.hazelcast.jet.memory.memoryblock.MemoryBlock;
 import com.hazelcast.jet.memory.memoryblock.MemoryBlockChain;
 import com.hazelcast.jet.memory.util.JetIoUtil;
 import com.hazelcast.jet.memory.util.Util;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -89,6 +90,9 @@ public class DefaultSpiller extends SpillerBase implements Spiller {
     }
 
     @Override
+    @SuppressFBWarnings(value = {"OBL_UNSATISFIED_OBLIGATION", "EI2"},
+            justification = "OBL_UNSATISFIED_OBLIGATION: temporarily suppressed, needs inspection;"
+                          + "EI2: partition array is not owned by this object")
     public void start(Partition[] partitions) {
         this.partitions = partitions;
         ensureSpillFiles();
