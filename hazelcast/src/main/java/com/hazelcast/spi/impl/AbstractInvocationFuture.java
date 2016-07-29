@@ -41,7 +41,7 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  * - thread value protection
  *
  * The long term goal is that this whole class can be ripped out and replaced by the
- * {@link java.util.concurrent.java.util.concurrent.CompletableFuture}. So we need to be very careful with adding more
+ * {@link java.util.concurrent.CompletableFuture}. So we need to be very careful with adding more
  * functionality to this class because the more we add, the more difficult the replacement will be.
  *
  * @param <V>
