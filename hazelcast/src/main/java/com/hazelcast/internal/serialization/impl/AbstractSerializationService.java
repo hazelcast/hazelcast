@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.distributedclassloading.impl.ClassLocator;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
@@ -170,6 +171,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataInput in = pool.takeInputBuffer(data);
         try {
+            ClassLocator.onStartDeserialization();
             final int typeId = data.getType();
             final SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {
@@ -187,6 +189,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         } catch (Throwable e) {
             throw handleException(e);
         } finally {
+            ClassLocator.onFinishDeserialization();
             pool.returnInputBuffer(in);
         }
     }
@@ -205,6 +208,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataInput in = pool.takeInputBuffer(data);
         try {
+            ClassLocator.onStartDeserialization();
             final int typeId = data.getType();
             final SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {
@@ -222,6 +226,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         } catch (Throwable e) {
             throw handleException(e);
         } finally {
+            ClassLocator.onFinishDeserialization();
             pool.returnInputBuffer(in);
         }
     }

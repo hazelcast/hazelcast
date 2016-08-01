@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.collection.impl.queue.QueueStoreWrapper;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -50,7 +49,6 @@ import java.util.Properties;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static java.io.File.createTempFile;
-import static java.io.File.listRoots;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1302,6 +1300,27 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
         Config config = new InMemoryXmlConfig(xml);
         assertEquals(name, config.getInstanceName());
+    }
+
+    @Test
+    public void testDistributedClassloading() {
+        String xml = HAZELCAST_START_TAG
+                + "<distributed-classloading enabled=\"true\">"
+                    + "<class-cache-mode>OFF</class-cache-mode>"
+                    + "<provider-mode>LOCAL_CLASSES_ONLY</provider-mode>"
+                    + "<blacklist-prefixes>com.blacklisted,com.other.blacklisted</blacklist-prefixes>"
+                    + "<whitelist-prefixes>com.whitelisted,com.other.whitelisted</whitelist-prefixes>"
+                    + "<provider-filter>HAS_ATTRIBUTE:foo</provider-filter>"
+                + "</distributed-classloading>"
+                + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+        DistributedClassloadingConfig dcConfig = config.getDistributedClassloadingConfig();
+        assertTrue(dcConfig.isEnabled());
+        assertEquals(DistributedClassloadingConfig.ClassCacheMode.OFF, dcConfig.getClassCacheMode());
+        assertEquals(DistributedClassloadingConfig.ProviderMode.LOCAL_CLASSES_ONLY, dcConfig.getProviderMode());
+        assertEquals("com.blacklisted,com.other.blacklisted", dcConfig.getBlacklistedPrefixes());
+        assertEquals("com.whitelisted,com.other.whitelisted", dcConfig.getWhitelistedPrefixes());
+        assertEquals("HAS_ATTRIBUTE:foo", dcConfig.getProviderFilter());
     }
 
     @Test

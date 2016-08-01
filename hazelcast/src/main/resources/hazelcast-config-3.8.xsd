@@ -64,6 +64,7 @@
                 <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="lite-member" type="lite-member" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="distributed-classloading" type="distributed-classloading" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -2863,6 +2864,91 @@
             <xs:annotation>
                 <xs:documentation>
                     True to set the node as a lite member, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="distributed-classloading">
+        <xs:all>
+            <xs:element name="class-cache-mode" default="ETERNAL">
+                <xs:annotation>
+                    <xs:documentation>
+                        Controls caching of caches loaded from remote members
+
+                        OFF: Never caches loaded classes. This is suitable for loading runnables, callebles,
+                        entry processors, etc.
+                        ETERNAL: Cache indefinitely. This is suitable when you load long-living objects,
+                        such as domain objects stored in a map.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="non-space-string">
+                        <xs:enumeration value="OFF"/>
+                        <xs:enumeration value="ETERNAL"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="provider-mode" default="LOCAL_AND_CACHED_CLASSES">
+                <xs:annotation>
+                    <xs:documentation>
+                        Controls how to react on receiving a classloading request from a remote member
+
+                        OFF: Never serve classes to other members. This member will never server classes to remote
+                        members.
+                        LOCAL_CLASSES_ONLY: Serve classes from local classpath only. Classes loaded from other members
+                        will be used locally, but they won't be served to other members.
+                        LOCAL_AND_CACHED_CLASSES: Server classes loaded from both local classpath and from other members.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="non-space-string">
+                        <xs:enumeration value="OFF"/>
+                        <xs:enumeration value="LOCAL_CLASSES_ONLY"/>
+                        <xs:enumeration value="LOCAL_AND_CACHED_CLASSES"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="blacklist-prefixes" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Filter to constraint members to be used for classloading request when a class
+                        is not available locally.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="whitelist-prefixes" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Command separated list of prefixes of classes which will be loaded remotely.
+
+                        Use this to enable distributed loading of selected classes only and disable remote loading for all
+                        other classes. This gives you a nice control over classloading.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="provider-filter" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Filter to constraint members to be used for classloading request when a class
+                        is not available locally.
+
+                        Filter format: HAS_ATTRIBUTE:foo this will send classloading requests
+                        only to members which has a member attribute foo set. Value is ignored,
+                        it can be any type. A present of the attribute is sufficient.
+
+                        This facility allows to have a control on classloading. You can e.g. start Hazelcast lite
+                        members dedicated for class-serving.
+
+                        Setting the filter to null will allow to load classes from all members.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable distributed classloading on this member, false otherwise.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

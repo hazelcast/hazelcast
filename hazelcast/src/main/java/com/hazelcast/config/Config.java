@@ -128,6 +128,8 @@ public class Config {
 
     private HotRestartPersistenceConfig hotRestartPersistenceConfig = new HotRestartPersistenceConfig();
 
+    private DistributedClassloadingConfig distributedClassloadingConfig = new DistributedClassloadingConfig();
+
     private String licenseKey;
 
     private boolean liteMember;
@@ -1259,6 +1261,28 @@ public class Config {
      */
     public Config setLiteMember(boolean liteMember) {
         this.liteMember = liteMember;
+        return this;
+    }
+
+    /**
+     * Get current configuration of distributed classloading.
+     *
+     * @since 3.8
+     *
+     */
+    public DistributedClassloadingConfig getDistributedClassloadingConfig() {
+        return distributedClassloadingConfig;
+    }
+
+    /**
+     * Set distributed classloading configuration
+     *
+     * @param distributedClassloadingConfig
+     * @since 3.8
+     * @return distributed classloading configuration
+     */
+    public Config setDistributedClassloadingConfig(DistributedClassloadingConfig distributedClassloadingConfig) {
+        this.distributedClassloadingConfig = distributedClassloadingConfig;
         return this;
     }
 
