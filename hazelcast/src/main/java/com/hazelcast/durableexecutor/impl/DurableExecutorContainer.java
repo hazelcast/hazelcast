@@ -16,8 +16,11 @@
 
 package com.hazelcast.durableexecutor.impl;
 
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.durableexecutor.impl.operations.PutResultOperation;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -140,10 +143,33 @@ public class DurableExecutorContainer {
             }
         }
 
-        private void setResponse(Object response) {
+        private void setResponse(final Object response) {
             OperationService operationService = nodeEngine.getOperationService();
-            Operation op = new PutResultOperation(name, sequence, response).setPartitionId(partitionId);
-            operationService.invokeOnPartition(op);
+            final Operation op = new PutResultOperation(name, sequence, response).setPartitionId(partitionId);
+            InternalCompletableFuture<Object> future = operationService.invokeOnPartition(op);
+            future.andThen(new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object response) {
+
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    if (t instanceof OperationTimeoutException) {
+                        //retry-on-timeout is the only reasonable action we can do.
+                        //not retrying means the response is lost as the timeout
+                        //exception is not propagated to the user
+                        if (logger.isFinestEnabled()) {
+                            logger.finest("Timeout while invoking " + op + " retrying.", t);
+                        }
+                        setResponse(response);
+                    } else {
+                        logger.warning("Error while invoking PutResultOperation. "
+                                + "Result may not be available. Container name = '"
+                                + name + "'", t);
+                    }
+                }
+            });
         }
 
         private void logException(Exception e) {
