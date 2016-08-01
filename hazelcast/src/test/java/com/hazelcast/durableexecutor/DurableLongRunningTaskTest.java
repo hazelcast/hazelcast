@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class DurableLongRunningTaskTest extends HazelcastTestSupport {
 
-    private static final int CALL_TIMEOUT = 1000;
+    private static final int CALL_TIMEOUT = 2000;
 
     private HazelcastInstance hz;
 
