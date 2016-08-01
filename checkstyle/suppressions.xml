@@ -9,12 +9,15 @@
     <!-- Suppress strict duplicate code checking -->
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
-    <!-- Suppress checking of copyright notice -->
+    <!-- Suppress checking of copyright notice where additional attributions are made -->
     <suppress checks="Header" files="com/hazelcast/buildutils/ElementParser"/>
     <suppress checks="Header" files="com/hazelcast/logging/Log4j2Factory"/>
     <suppress checks="Header" files="com/hazelcast/util/HashUtil"/>
     <suppress checks="Header" files="com/hazelcast/util/QuickMath"/>
     <suppress checks="Header" files="com/hazelcast/util/collection/"/>
+    <suppress checks="Header" files="com/hazelcast/internal/util/collection/.*ConcurrentArrayQueue"/>
+    <suppress checks="Header" files="com/hazelcast/internal/util/collection/Pipe"/>
+    <suppress checks="Header" files="com/hazelcast/internal/util/collection/QueuedPipe"/>
 
     <!-- Exclude implementation packages from JavaDoc checks -->
     <suppress checks="JavadocPackage" files="/impl/"/>
@@ -310,7 +313,8 @@
     <suppress checks="MethodCount" files="com/hazelcast/map/impl/query/MapQueryEngineImpl"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/map/impl/SimpleEntryView"/>
 
-    <!-- Util (written by Doug Lea, Agrona backport etc.) -->
+    <!-- Util (written by Doug Lea, Agrona, etc.) -->
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/internal/util/collection/AbstractConcurrentArrayQueue\.java"/>
     <suppress checks="MethodCount" files="com/hazelcast/collection/impl/collection/CollectionContainer"/>
     <suppress checks="MagicNumber" files="com/hazelcast/util/QuickMath"/>
     <suppress checks="MagicNumber" files="com/hazelcast/util/collection/"/>
