@@ -94,6 +94,16 @@ public class MemcacheEntry implements DataSerializable {
         return bytes;
     }
 
+    public String getKey() {
+        final int start = TextCommandConstants.VALUE_SPACE.length;
+        for (int i = start; i < bytes.length; ++i) {
+            if (bytes[i] == ' ') {
+                return bytesToString(Arrays.copyOfRange(bytes, start, i));
+            }
+        }
+        return null;
+    }
+
     public byte[] getValue() {
         return value;
     }
