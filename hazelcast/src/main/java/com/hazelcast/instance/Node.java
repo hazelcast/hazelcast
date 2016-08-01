@@ -442,6 +442,7 @@ public class Node {
 
     /**
      * Indicates that node is not shutting down or it has not already shut down
+     *
      * @return true if node is not shutting down or it has not already shut down
      */
     public boolean isRunning() {
@@ -560,7 +561,7 @@ public class Node {
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                config.getMemberAttributeConfig().getAttributes());
+                localMember.getAttributes());
     }
 
     public ConfigCheck createConfigCheck() {
