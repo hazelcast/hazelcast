@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -33,10 +32,9 @@ import java.util.Map;
  * <p/>
  * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
  */
-public class PutAllPartitionAwareOperationFactory implements PartitionAwareOperationFactory {
+public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperationFactory {
 
     protected String name;
-    protected int[] partitions;
     protected MapEntries[] mapEntries;
 
     @SuppressWarnings("unused")
@@ -50,20 +48,6 @@ public class PutAllPartitionAwareOperationFactory implements PartitionAwareOpera
         this.mapEntries = mapEntries;
     }
 
-    @Override
-    public void init(NodeEngine nodeEngine) {
-    }
-
-    @Override
-    public Operation createOperation() {
-        throw new UnsupportedOperationException("A PartitionAwareOperationFactory should be used via createPartitionOperation()");
-    }
-
-    @Override
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public int[] getPartitions() {
-        return partitions;
-    }
 
     @Override
     public Operation createPartitionOperation(int partitionId) {

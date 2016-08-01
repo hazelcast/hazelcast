@@ -19,32 +19,57 @@ package com.hazelcast.spi.impl.operationservice.impl.operations;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * Provides a way to instantiate partition specific operations in the {@link PartitionIteratingOperation}
+ * Creates partition specific operations.
+ * Intended to be used by {@link PartitionIteratingOperation}.
  */
-public interface PartitionAwareOperationFactory extends OperationFactory {
+public abstract class PartitionAwareOperationFactory implements OperationFactory {
 
     /**
-     * Initializes this factory.
+     * Partition-operations will be created for these partition-ids.
+     */
+    protected int[] partitions;
+
+    /**
+     * This method will be called on operation runner node.
+     *
+     * If {@link PartitionAwareOperationFactory} needs to have runner-side state different from caller-side one,
+     * this method can be used to create it. Otherwise, stateful factories may cause JMM problems.
      *
      * @param nodeEngine nodeEngine
      */
-    void init(NodeEngine nodeEngine);
+    public PartitionAwareOperationFactory createFactoryOnRunner(NodeEngine nodeEngine) {
+        return this;
+    }
 
     /**
-     * Create a partition-operation for the supplied partition-id
+     * This method can be called both caller and runner nodes.
+     *
+     * Creates a partition-operation for supplied partition-id
      *
      * @param partition id of partition
-     * @return new operation
+     * @return created partition-operation
      */
-    Operation createPartitionOperation(int partition);
+    public abstract Operation createPartitionOperation(int partition);
 
     /**
-     * Created operations by this factory will be run on these partitions.
-     * Return null to preserve  default behaviour.
+     * This method will be called on operation runner node.
      *
-     * @return null to preserve default behaviour or return all partition-ids for the operations of this factory.
+     * Created operations by this factory will be run on the partitions returned by this method.
+     * Returning null means operations will be run provided partitions by default.
+     *
+     * @return null to preserve default behaviour or return relevant partition-ids for the operations of this factory.
      */
-    int[] getPartitions();
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public int[] getPartitions() {
+        return partitions;
+    }
+
+
+    @Override
+    public Operation createOperation() {
+        throw new UnsupportedOperationException("Use createPartitionOperation() with PartitionAwareOperationFactory");
+    }
 }

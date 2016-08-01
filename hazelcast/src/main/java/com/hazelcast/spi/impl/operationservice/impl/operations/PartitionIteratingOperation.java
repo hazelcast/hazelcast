@@ -118,11 +118,11 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         return getCallerUuid();
     }
 
-    private Object[] executePartitionAwareOperations(PartitionAwareOperationFactory partitionAwareFactory) {
-        partitionAwareFactory.init(getNodeEngine());
+    private Object[] executePartitionAwareOperations(PartitionAwareOperationFactory givenFactory) {
+        PartitionAwareOperationFactory factory = givenFactory.createFactoryOnRunner(getNodeEngine());
 
         NodeEngine nodeEngine = getNodeEngine();
-        int[] operationFactoryPartitions = partitionAwareFactory.getPartitions();
+        int[] operationFactoryPartitions = factory.getPartitions();
         partitions = operationFactoryPartitions == null ? partitions : operationFactoryPartitions;
         Object[] responses = new Object[partitions.length];
 
@@ -131,7 +131,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             responses[i] = responseQueue;
 
             int partition = partitions[i];
-            Operation operation = partitionAwareFactory.createPartitionOperation(partition);
+            Operation operation = factory.createPartitionOperation(partition);
 
             operation.setNodeEngine(nodeEngine)
                     .setPartitionId(partition)
