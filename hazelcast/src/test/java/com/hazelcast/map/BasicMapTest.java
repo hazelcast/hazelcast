@@ -41,18 +41,17 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -195,17 +194,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         final String value1 = "/home/data/file1.dat";
         final String value2 = "/home/data/file2.dat";
 
-        final List<String> newList = new CopyOnWriteArrayList<String>();
+        final AtomicReference<String> oldValue1 = new AtomicReference<String>();
+        final AtomicReference<String> oldValue2 = new AtomicReference<String>();
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
+
         map.addEntryListener(new EntryAdapter<String, String>() {
             @Override
             public void entryEvicted(EntryEvent<String, String> event) {
                 if (value1.equals(event.getOldValue())) {
-                    newList.add(event.getOldValue());
+                    oldValue1.set(event.getOldValue());
                     latch1.countDown();
                 } else if (value2.equals(event.getOldValue())) {
-                    newList.add(event.getOldValue());
+                    oldValue2.set(event.getOldValue());
                     latch2.countDown();
                 }
             }
@@ -217,8 +218,8 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", value2, 1, TimeUnit.SECONDS);
         assertOpenEventually(latch2);
 
-        assertEquals(value1, newList.get(0));
-        assertEquals(value2, newList.get(1));
+        assertEquals(value1, oldValue1.get());
+        assertEquals(value2, oldValue2.get());
     }
 
     @Test
