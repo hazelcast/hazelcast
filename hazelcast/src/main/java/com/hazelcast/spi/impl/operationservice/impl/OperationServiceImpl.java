@@ -485,14 +485,17 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         slowOperationDetector.start();
     }
 
-    public void shutdown() {
-        logger.finest("Shutting down OperationService");
+    /**
+     * Shuts down invocation infrastructure.
+     * New invocation requests will be rejected after shutdown and all pending invocations
+     * will be notified with a failure response.
+     */
+    public void shutdownInvocations() {
+        logger.finest("Shutting down invocations");
 
         invocationRegistry.shutdown();
         invocationMonitor.shutdown();
-        operationExecutor.shutdown();
         asyncResponseHandler.shutdown();
-        slowOperationDetector.shutdown();
 
         try {
             invocationMonitor.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
@@ -502,5 +505,12 @@ public final class OperationServiceImpl implements InternalOperationService, Met
             Thread.currentThread().interrupt();
             EmptyStatement.ignore(e);
         }
+    }
+
+    public void shutdownOperationExecutor() {
+        logger.finest("Shutting down operation executors");
+
+        operationExecutor.shutdown();
+        slowOperationDetector.shutdown();
     }
 }

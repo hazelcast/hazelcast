@@ -81,7 +81,8 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
             return;
         }
         OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
-        operationService.shutdown();
+        operationService.shutdownInvocations();
+        operationService.shutdownOperationExecutor();
     }
 
     static Collection<SlowOperationLog.Invocation> getInvocations(SlowOperationLog log) {
