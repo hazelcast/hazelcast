@@ -59,7 +59,7 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapBaseTest {
                 assertEquals(count, map1.size());
                 assertEquals(count, map2.size());
             }
-        }, 15);
+        });
     }
 
     @Test
