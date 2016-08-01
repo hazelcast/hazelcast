@@ -622,7 +622,7 @@ public class Node {
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                config.getMemberAttributeConfig().getAttributes());
+                localMember.getAttributes());
     }
 
     public ConfigCheck createConfigCheck() {
