@@ -448,13 +448,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         int numberOfJavaClients = 0;
         int numberOfOtherClients = 0;
 
-        Operation clientInfoOperation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();
         Map<ClientType, Integer> resultMap = new HashMap<ClientType, Integer>();
         Map<String, ClientType> clientsMap = new HashMap<String, ClientType>();
 
         for (Member member : node.getClusterService().getMembers()) {
             Address target = member.getAddress();
+            Operation clientInfoOperation = new GetConnectedClientsOperation();
             Future<Map<String, ClientType>> future
                     = operationService.invokeOnTarget(SERVICE_NAME, clientInfoOperation, target);
             try {
