@@ -229,24 +229,17 @@
         -->
         <max-size policy="PER_NODE">0</max-size>
         <!--
-            When max. size is reached, specified percentage of
-            the map will be evicted. Any integer between 0 and 100.
-            If 25 is set for example, 25% of the entries will
-            get evicted.
+            `eviction-percentage` property is deprecated.
 
-            Beware that eviction mechanism is different for NATIVE in-memory format.
-            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
-            For this in-memory format, `eviction-percentage` has no effect
+            As of version 3.7, eviction mechanism changed.
+            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
         -->
         <eviction-percentage>25</eviction-percentage>
         <!--
-            Minimum time in milliseconds which should pass before checking
-            if a partition of this map is evictable or not.
-            Default value is 100 millis.
+            `min-eviction-check-millis` property is deprecated.
 
-            Beware that eviction mechanism is different for NATIVE in-memory format.
-            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
-            For this in-memory format, `minEvictionCheckMillis` has no effect
+            As of version 3.7, eviction mechanism changed.
+            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
         -->
         <min-eviction-check-millis>100</min-eviction-check-millis>
 
