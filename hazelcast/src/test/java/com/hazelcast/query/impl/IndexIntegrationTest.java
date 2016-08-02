@@ -93,13 +93,13 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         Trade trade = map.get(randomString());
 
         // THEN
-        assertEquals(0, map.size());
+        assertEquals(1, map.size());
         assertEquals(5L, (long) trade.amount);
         assertEquals(currency, trade.currency);
 
         Index index = getIndexOfAttributeForMap(instance, name, attributeName);
         Set<QueryableEntry> dollars = index.getRecords(currency);
-        assertEquals(0, dollars.size());
+        assertEquals(1, dollars.size());
     }
 
     @Test

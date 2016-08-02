@@ -251,7 +251,6 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        EvictionCheckerImpl evictionChecker = new EvictionCheckerImpl(mapServiceContext);
         MemoryInfoAccessor memoryInfoAccessor = new MemoryInfoAccessor() {
             @Override
             public long getTotalMemory() {
@@ -269,7 +268,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
             }
         };
 
-        evictionChecker.setMemoryInfoAccessor(memoryInfoAccessor);
+        EvictionCheckerImpl evictionChecker = new EvictionCheckerImpl(memoryInfoAccessor, mapServiceContext);
         Evictor evictor = new EvictorImpl(evictionChecker, mapServiceContext);
         mapServiceContext.getMapContainer(map.getName()).setEvictor(evictor);
     }
