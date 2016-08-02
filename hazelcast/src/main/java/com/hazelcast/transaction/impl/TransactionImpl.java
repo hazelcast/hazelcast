@@ -66,7 +66,6 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class TransactionImpl implements Transaction {
 
@@ -292,7 +291,7 @@ public class TransactionImpl implements Transaction {
             try {
                 state = COMMITTING;
                 List<Future> futures = transactionLog.commit(nodeEngine);
-                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, MINUTES, RETHROW_TRANSACTION_EXCEPTION);
+                waitWithDeadline(futures, Long.MAX_VALUE, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
                 state = COMMITTED;
                 transactionManagerService.commitCount.inc();
             } catch (Throwable e) {
@@ -324,7 +323,7 @@ public class TransactionImpl implements Transaction {
                 //TODO: Do we need both a purge and rollback?
                 rollbackBackupLogs();
                 List<Future> futures = transactionLog.rollback(nodeEngine);
-                waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, MINUTES, rollbackExceptionHandler);
+                waitWithDeadline(futures, Long.MAX_VALUE, MILLISECONDS, rollbackExceptionHandler);
                 purgeBackupLogs();
             } catch (Throwable e) {
                 throw rethrow(e);
