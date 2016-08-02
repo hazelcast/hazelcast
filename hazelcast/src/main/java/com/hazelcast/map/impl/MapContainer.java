@@ -32,12 +32,16 @@ import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -45,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static java.lang.System.getProperty;
 
 /**
  * Map container.
@@ -110,9 +115,29 @@ public class MapContainer {
 
     // this method is overridden.
     Evictor createEvictor(MapServiceContext mapServiceContext) {
-        EvictionChecker evictionChecker = new EvictionCheckerImpl(mapServiceContext);
+        MemoryInfoAccessor memoryInfoAccessor = getMemoryInfoAccessor();
+        EvictionChecker evictionChecker = new EvictionCheckerImpl(memoryInfoAccessor, mapServiceContext);
         return new EvictorImpl(evictionChecker, mapServiceContext);
     }
+
+    protected static MemoryInfoAccessor getMemoryInfoAccessor() {
+        MemoryInfoAccessor pluggedMemoryInfoAccessor = getPluggedMemoryInfoAccessor();
+        return pluggedMemoryInfoAccessor != null ? pluggedMemoryInfoAccessor : new RuntimeMemoryInfoAccessor();
+    }
+
+    private static MemoryInfoAccessor getPluggedMemoryInfoAccessor() {
+        String memoryInfoAccessorImpl = getProperty("hazelcast.memory.info.accessor.impl");
+        if (memoryInfoAccessorImpl == null) {
+            return null;
+        }
+
+        try {
+            return ClassLoaderUtil.newInstance(null, memoryInfoAccessorImpl);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
 
     // overridden in different context.
     ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
