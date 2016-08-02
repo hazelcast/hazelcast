@@ -17,8 +17,8 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.StringUtil;
 
 import java.util.HashMap;
@@ -49,7 +49,9 @@ public final class ExtractorHelper {
             try {
                 extractor = instantiateExtractorWithConfigClassLoader(config, classLoader);
             } catch (IllegalArgumentException ex) {
-                EmptyStatement.ignore(ex);
+                // cached back-stage, initialised lazily since it's not a common case
+                Logger.getLogger(ExtractorHelper.class)
+                        .warning("Could not instantiate extractor with the config class loader", ex);
             }
         }
 
