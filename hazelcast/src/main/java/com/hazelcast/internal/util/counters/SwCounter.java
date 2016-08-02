@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util.counters;
 
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
-import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -29,19 +28,20 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 /**
  * A {@link Counter} that is made to be used by a single writing thread.
  * <p>
- * It makes use of the lazySet to provide a lower overhead than a volatile write on X86 systems. The volatile write requires
- * waiting for the store buffer to be drained which isn't needed for the lazySet.
+ * It makes use of the lazySet to provide a lower overhead than a volatile write on X86 systems.
+ * The volatile write requires waiting for the store buffer to be drained which isn't needed for the lazySet.
  * <p>
  * This counter does not provide padding to prevent false sharing.
  * <p>
- * You might wonder why not use the AtomicLong.inc. The problem here is that AtomicLong requires a full fence, so there is
- * waiting for store and load buffers to be drained. This is more expensive.
+ * One might wonder why not use the AtomicLong.inc. The problem here is that AtomicLong requires a full fence,
+ * so there is waiting for store and load buffers to be drained. This is more expensive.
  * <p>
- * You might also wonder why not use the following:
+ * One might also wonder why not use the following:
  * <pre>
  *     atomicLong.lazySet(atomicLong.get()+1)
  * </pre>
- * This causes a lot of syntactic noise due to lack of abstraction. A counter.inc() gives a better clue what the intent is.
+ * This causes a lot of syntactic noise due to lack of abstraction.
+ * A counter.inc() gives a better clue what the intent is.
  */
 public abstract class SwCounter implements Counter {
 
@@ -64,15 +64,12 @@ public abstract class SwCounter implements Counter {
      * @return the created SwCounter.
      */
     public static SwCounter newSwCounter(long initialValue) {
-        if (GlobalMemoryAccessorRegistry.MEM_AVAILABLE) {
-            return new UnsafeSwCounter(initialValue);
-        } else {
-            return new SafeSwCounter(initialValue);
-        }
+        return GlobalMemoryAccessorRegistry.MEM_AVAILABLE
+                ? new UnsafeSwCounter(initialValue) : new SafeSwCounter(initialValue);
     }
 
     /**
-     * The UnsafeSwCounter relies on the same {@link Unsafe#putOrderedLong(Object, long, long)} as the
+     * The UnsafeSwCounter relies on the same {@link sun.misc.Unsafe#putOrderedLong(Object, long, long)} as the
      * {@link AtomicLongFieldUpdater#lazySet(Object, long)} but it removes all kinds of checks.
      * <p>
      * For the AtomicLongFieldUpdater, these checks are needed since an arbitrary object can be passed to the
@@ -100,6 +97,7 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
+        @SuppressWarnings("checkstyle:innerassignment")
         public long inc() {
             long newLocalValue = localValue += 1;
             MEM.putOrderedLong(this, OFFSET, newLocalValue);
@@ -107,6 +105,7 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
+        @SuppressWarnings("checkstyle:innerassignment")
         public long inc(long amount) {
             long newLocalValue = localValue += amount;
             MEM.putOrderedLong(this, OFFSET, newLocalValue);
@@ -120,9 +119,7 @@ public abstract class SwCounter implements Counter {
 
         @Override
         public String toString() {
-            return "Counter{"
-                    + "value=" + value
-                    + '}';
+            return "Counter{value=" + value + '}';
         }
     }
 
@@ -131,8 +128,7 @@ public abstract class SwCounter implements Counter {
      */
     static final class SafeSwCounter extends SwCounter {
 
-        private static final AtomicLongFieldUpdater<SafeSwCounter> COUNTER
-                = newUpdater(SafeSwCounter.class, "value");
+        private static final AtomicLongFieldUpdater<SafeSwCounter> COUNTER = newUpdater(SafeSwCounter.class, "value");
 
         private volatile long value;
 
@@ -161,9 +157,7 @@ public abstract class SwCounter implements Counter {
 
         @Override
         public String toString() {
-            return "Counter{"
-                    + "value=" + value
-                    + '}';
+            return "Counter{value=" + value + '}';
         }
     }
 }

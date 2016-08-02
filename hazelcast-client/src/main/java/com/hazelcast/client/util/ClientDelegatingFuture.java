@@ -112,6 +112,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     public V get(long timeout, TimeUnit unit) throws InterruptedException,
             ExecutionException, TimeoutException {
         if (!done || !isResponseSet()) {

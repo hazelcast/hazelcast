@@ -199,9 +199,9 @@ public class Long2LongHashMapTest {
 
         final Iterator<Entry<Long, Long>> it = entrySet.iterator();
         assertTrue(it.hasNext());
-        assertEntryIs(it.next(), 1L, 1L);
-        assertTrue(it.hasNext());
         assertEntryIs(it.next(), 2L, 3L);
+        assertTrue(it.hasNext());
+        assertEntryIs(it.next(), 1L, 1L);
         assertFalse(it.hasNext());
     }
 
@@ -257,7 +257,7 @@ public class Long2LongHashMapTest {
     public void toStringShouldReportAllEntries() {
         map.put(1, 2);
         map.put(3, 4);
-        assertEquals("{3->4 1->2}", map.toString());
+        assertEquals("{1->2 3->4}", map.toString());
     }
 
     private static void assertEntryIs(final Entry<Long, Long> entry, final long expectedKey, final long expectedValue) {

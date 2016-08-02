@@ -30,6 +30,10 @@ import java.util.Map;
  * @param <V> type of the object stored in the map.
  */
 public class BiInt2ObjectMap<V> {
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    private static final long LOWER_INT_MASK = (1L << Integer.SIZE) - 1;
+
     /**
      * Handler for a map entry
      *
@@ -131,8 +135,8 @@ public class BiInt2ObjectMap<V> {
     public void forEach(final EntryConsumer<V> consumer) {
         for (Map.Entry<Long, V> entry : map.entrySet()) {
             Long compoundKey = entry.getKey();
-            final int keyPartA = (int) (compoundKey >>> 32);
-            final int keyPartB = (int) (compoundKey & 0xFFFFFFFFL);
+            final int keyPartA = (int) (compoundKey >>> Integer.SIZE);
+            final int keyPartB = (int) (compoundKey & LOWER_INT_MASK);
             consumer.accept(keyPartA, keyPartB, entry.getValue());
         }
     }
@@ -167,6 +171,6 @@ public class BiInt2ObjectMap<V> {
     }
 
     private static long compoundKey(final int keyPartA, final int keyPartB) {
-        return ((long) keyPartA << 32) | keyPartB;
+        return ((long) keyPartA << Integer.SIZE) | keyPartB;
     }
 }

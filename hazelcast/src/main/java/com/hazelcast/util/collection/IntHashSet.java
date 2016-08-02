@@ -32,6 +32,7 @@ import static com.hazelcast.util.collection.Hashing.intHash;
 /**
  * Simple fixed-size int hashset.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class IntHashSet implements Set<Integer> {
     /** Maximum supported capacity */
     @SuppressWarnings("checkstyle:magicnumber")
@@ -58,9 +59,7 @@ public final class IntHashSet implements Set<Integer> {
         iterator = new IntIterator(missingValue, values);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean add(final Integer value) {
         return add(value.intValue());
     }
@@ -91,9 +90,7 @@ public final class IntHashSet implements Set<Integer> {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean remove(final Object value) {
         return value instanceof Integer && remove(((Integer) value).intValue());
     }
@@ -144,16 +141,11 @@ public final class IntHashSet implements Set<Integer> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean contains(final Object value) {
         return value instanceof Integer && contains(((Integer) value).intValue());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public boolean contains(final int value) {
         int index = intHash(value, mask);
 
@@ -168,23 +160,17 @@ public final class IntHashSet implements Set<Integer> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public int size() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void clear() {
         final int[] values = this.values;
         final int length = values.length;
@@ -194,9 +180,7 @@ public final class IntHashSet implements Set<Integer> {
         size = 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean addAll(final Collection<? extends Integer> coll) {
         return addAllCapture(coll);
     }
@@ -211,9 +195,7 @@ public final class IntHashSet implements Set<Integer> {
         return conjunction(coll, p);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean containsAll(final Collection<?> coll) {
         return containsAllCapture(coll);
     }
@@ -271,9 +253,7 @@ public final class IntHashSet implements Set<Integer> {
         return difference;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean removeAll(final Collection<?> coll) {
         return removeAllCapture(coll);
     }
@@ -298,17 +278,12 @@ public final class IntHashSet implements Set<Integer> {
         return acc;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public IntIterator iterator() {
         iterator.reset();
         return iterator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void copy(final IntHashSet obj) {
         // NB: mask also implies the length is the same
         if (this.mask != obj.mask) {
@@ -323,9 +298,7 @@ public final class IntHashSet implements Set<Integer> {
         this.size = obj.size;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String toString() {
         final StringBuilder b = new StringBuilder(size() * 3 + 2);
         b.append('{');
@@ -337,9 +310,7 @@ public final class IntHashSet implements Set<Integer> {
         return b.append('}').toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Object[] toArray() {
         final int[] values = this.values;
         final Object[] array = new Object[this.size];
@@ -352,9 +323,7 @@ public final class IntHashSet implements Set<Integer> {
         return array;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] into) {
         checkNotNull(into);
@@ -376,9 +345,6 @@ public final class IntHashSet implements Set<Integer> {
         return (T[]) ret;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public boolean equals(final Object other) {
         if (other == this) {
             return true;
@@ -392,9 +358,6 @@ public final class IntHashSet implements Set<Integer> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public int hashCode() {
         final IntIterator iterator = iterator();
         int total = 0;
@@ -407,6 +370,7 @@ public final class IntHashSet implements Set<Integer> {
 
     // --- Unimplemented below here
 
+    @Override
     public boolean retainAll(final Collection<?> coll) {
         throw new UnsupportedOperationException("Not implemented");
     }

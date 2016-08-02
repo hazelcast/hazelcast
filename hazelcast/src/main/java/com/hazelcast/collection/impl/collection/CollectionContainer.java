@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class CollectionContainer implements DataSerializable {
 
     protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();

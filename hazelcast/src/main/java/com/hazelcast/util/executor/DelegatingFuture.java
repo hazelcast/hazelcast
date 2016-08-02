@@ -63,8 +63,9 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     }
 
 
-    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     public final V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (!done || value == null) {
             synchronized (mutex) {

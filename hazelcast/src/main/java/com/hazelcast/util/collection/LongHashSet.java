@@ -32,6 +32,7 @@ import static com.hazelcast.util.collection.Hashing.longHash;
 /**
  * Simple fixed-size long hashset.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class LongHashSet implements Set<Long> {
     /** Maximum supported capacity */
     @SuppressWarnings("checkstyle:magicnumber")

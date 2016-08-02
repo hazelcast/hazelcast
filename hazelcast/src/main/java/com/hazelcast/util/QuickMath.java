@@ -23,6 +23,7 @@ package com.hazelcast.util;
  * Methods are <b>not</b> required to perform validation of input arguments, but they have to indicate the constraints
  * in theirs contract.
  */
+@SuppressWarnings("checkstyle:magicnumber")
 public final class QuickMath {
 
     private QuickMath() {
