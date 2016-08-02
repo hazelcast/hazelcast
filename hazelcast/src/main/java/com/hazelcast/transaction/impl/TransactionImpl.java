@@ -71,8 +71,6 @@ public class TransactionImpl implements Transaction {
 
     private static final Address[] EMPTY_ADDRESSES = new Address[0];
     private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
-    private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
-    private static final int COMMIT_TIMEOUT_MINUTES = 5;
 
     private final ExceptionHandler rollbackExceptionHandler;
     private final ExceptionHandler rollbackTxExceptionHandler;
