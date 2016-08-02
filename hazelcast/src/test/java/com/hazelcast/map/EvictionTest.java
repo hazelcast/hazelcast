@@ -49,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -284,7 +286,7 @@ public class EvictionTest extends HazelcastTestSupport {
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         mapConfig.setEvictionPercentage(25);
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
-        maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
+        maxSizeConfig.setMaxSizePolicy(PER_PARTITION);
         maxSizeConfig.setSize(size);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
 
@@ -338,13 +340,13 @@ public class EvictionTest extends HazelcastTestSupport {
         final int size = 10;
         final String mapName = "testEvictionPerPartition";
         Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         final MapConfig mc = cfg.getMapConfig(mapName);
         mc.setEvictionPolicy(EvictionPolicy.LRU);
         mc.setEvictionPercentage(50);
         mc.setMinEvictionCheckMillis(0);
         final MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
+        msc.setMaxSizePolicy(PER_PARTITION);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
@@ -354,17 +356,11 @@ public class EvictionTest extends HazelcastTestSupport {
         int insertCount = size * pnum * 2;
         final Map map = instances[0].getMap(mapName);
         for (int i = 0; i < insertCount; i++) {
-            if (i == insertCount - 1) {
-                sleepMillis(1100);
-            }
             map.put(i, i);
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(map.size() < size);
-            }
-        });
+        int mapSize = map.size();
+        String message = format("mapSize : %d should be <= max-size : %d ", mapSize, size);
+        assertTrue(message, mapSize <= size);
     }
 
     @Test
@@ -749,7 +745,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final long diffSecs = TimeUnit.MILLISECONDS.toSeconds(lastAccessTimeAfterContainsOperation - lastAccessTime);
 
         //3. So there should be a diff at least waitSeconds.
-        final String failureMessage = String.format("Diff seconds %d, wait seconds %d", diffSecs, waitSeconds);
+        final String failureMessage = format("Diff seconds %d, wait seconds %d", diffSecs, waitSeconds);
         assertTrue(failureMessage, diffSecs >= waitSeconds);
 
     }
