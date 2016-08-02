@@ -41,17 +41,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.instance.GroupProperty.PARTITION_COUNT;
 
 /**
  * NearCache.
  */
 public class NearCacheImpl implements NearCache<Data, Object> {
+
     public static final String NEAR_CACHE_EXECUTOR_NAME = "hz:near-cache";
+
     private static final double EVICTION_FACTOR = 0.2;
     private static final int CLEANUP_INTERVAL = 5000;
+
     private final int maxSize;
     private final String mapName;
-    private volatile long lastCleanup;
     private final long maxIdleMillis;
     private final long timeToLiveMillis;
     private final EvictionPolicy evictionPolicy;
@@ -66,6 +69,8 @@ public class NearCacheImpl implements NearCache<Data, Object> {
     private final boolean invalidateOnChange;
 
     private SizeEstimator nearCacheSizeEstimator;
+
+    private volatile long lastCleanup;
 
     /**
      * @param mapName    name of map which owns near cache.
@@ -89,6 +94,11 @@ public class NearCacheImpl implements NearCache<Data, Object> {
         this.serializationService = nodeEngine.getSerializationService();
         this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         this.mapName = mapName;
+        int partitionCount = getPartitionCount(nodeEngine);
+    }
+
+    private int getPartitionCount(NodeEngine nodeEngine) {
+        return nodeEngine.getGroupProperties().getInteger(PARTITION_COUNT);
     }
 
     // TODO this operation returns the given value in near-cache memory format (data or object)?
@@ -292,4 +302,5 @@ public class NearCacheImpl implements NearCache<Data, Object> {
     public void setNearCacheSizeEstimator(SizeEstimator nearCacheSizeEstimator) {
         this.nearCacheSizeEstimator = nearCacheSizeEstimator;
     }
+
 }
