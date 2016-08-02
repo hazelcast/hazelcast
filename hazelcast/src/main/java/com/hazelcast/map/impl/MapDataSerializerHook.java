@@ -110,7 +110,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         };
         constructors[MAP_ENTRIES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEntries();
+                return new MapEntriesImpl();
             }
         };
         constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

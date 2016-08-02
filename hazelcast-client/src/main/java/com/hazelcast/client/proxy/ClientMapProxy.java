@@ -124,7 +124,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.Preconditions;
@@ -146,6 +145,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_S
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 import static java.util.Collections.emptyMap;
@@ -326,7 +326,7 @@ public class ClientMapProxy<K, V>
             return new ClientDelegatingFuture<V>(future, serializationService, GET_ASYNC_RESPONSE_DECODER);
 
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -359,7 +359,7 @@ public class ClientMapProxy<K, V>
             return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(),
                     PUT_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -386,7 +386,7 @@ public class ClientMapProxy<K, V>
             return new ClientDelegatingFuture<Void>(future, getContext().getSerializationService(),
                     SET_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -404,7 +404,7 @@ public class ClientMapProxy<K, V>
             return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(),
                     REMOVE_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -1055,7 +1055,7 @@ public class ClientMapProxy<K, V>
 
                 responses.add(resultParameters);
             } catch (Exception e) {
-                ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
         return responses;
@@ -1245,7 +1245,7 @@ public class ClientMapProxy<K, V>
                     SUBMIT_TO_KEY_RESPONSE_DECODER);
             clientDelegatingFuture.andThen(callback);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -1264,7 +1264,7 @@ public class ClientMapProxy<K, V>
             final ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             return new ClientDelegatingFuture(future, getContext().getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -1399,10 +1399,9 @@ public class ClientMapProxy<K, V>
 
     protected void putAllInternal(Map<Integer, List<Map.Entry<Data, Data>>> entryMap) {
         List<Future<?>> futures = new ArrayList<Future<?>>(entryMap.size());
-        for (final Entry<Integer, List<Map.Entry<Data, Data>>> entry : entryMap.entrySet()) {
-            final Integer partitionId = entry.getKey();
-            //If there is only one entry, consider how we can use MapPutRequest
-            //without having to get back the return value.
+        for (Entry<Integer, List<Map.Entry<Data, Data>>> entry : entryMap.entrySet()) {
+            Integer partitionId = entry.getKey();
+            // if there is only one entry, consider how we can use MapPutRequest without having to get back the return value
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
             futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
         }
@@ -1412,7 +1411,7 @@ public class ClientMapProxy<K, V>
                 future.get();
             }
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

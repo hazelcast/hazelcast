@@ -16,140 +16,34 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * MapEntries is a collection of {@link Data} instances for keys and values of a {@link java.util.Map.Entry}.
  */
-public final class MapEntries implements IdentifiedDataSerializable {
+public interface MapEntries extends IdentifiedDataSerializable {
 
-    private List<Data> keys;
-    private List<Data> values;
+    void add(Data key, Data value);
 
-    public MapEntries() {
-    }
+    List<Map.Entry<Data, Data>> entries();
 
-    public MapEntries(int initialSize) {
-        keys = new ArrayList<Data>(initialSize);
-        values = new ArrayList<Data>(initialSize);
-    }
+    Data getKey(int index);
 
-    public MapEntries(List<Map.Entry<Data, Data>> entries) {
-        int initialSize = entries.size();
-        keys = new ArrayList<Data>(initialSize);
-        values = new ArrayList<Data>(initialSize);
-        for (Map.Entry<Data, Data> entry : entries) {
-            keys.add(entry.getKey());
-            values.add(entry.getValue());
-        }
-    }
+    Data getValue(int index);
 
-    public void add(Data key, Data value) {
-        ensureEntriesCreated();
-        keys.add(key);
-        values.add(value);
-    }
+    int size();
 
-    public List<Map.Entry<Data, Data>> entries() {
-        ArrayList<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(keys.size());
-        putAllToList(entries);
-        return entries;
-    }
+    boolean isEmpty();
 
-    public Data getKey(int index) {
-        return keys.get(index);
-    }
+    void clear();
 
-    public Data getValue(int index) {
-        return values.get(index);
-    }
+    void putAllToList(Collection<Map.Entry<Data, Data>> targetList);
 
-    public int size() {
-        return (keys == null ? 0 : keys.size());
-    }
-
-    public boolean isEmpty() {
-        return (keys == null || keys.size() == 0);
-    }
-
-    public void clear() {
-        if (keys != null) {
-            keys.clear();
-            values.clear();
-        }
-    }
-
-    public void putAllToList(Collection<Map.Entry<Data, Data>> targetList) {
-        if (keys == null) {
-            return;
-        }
-        Iterator<Data> keyIterator = keys.iterator();
-        Iterator<Data> valueIterator = values.iterator();
-        while (keyIterator.hasNext()) {
-            targetList.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyIterator.next(), valueIterator.next()));
-        }
-    }
-
-    public <K, V> void putAllToMap(SerializationService serializationService, Map<K, V> map) {
-        if (keys == null) {
-            return;
-        }
-        Iterator<Data> keyIterator = keys.iterator();
-        Iterator<Data> valueIterator = values.iterator();
-        while (keyIterator.hasNext()) {
-            K key = serializationService.toObject(keyIterator.next());
-            V value = serializationService.toObject(valueIterator.next());
-            map.put(key, value);
-        }
-    }
-
-    private void ensureEntriesCreated() {
-        if (keys == null) {
-            keys = new ArrayList<Data>();
-            values = new ArrayList<Data>();
-        }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return MapDataSerializerHook.MAP_ENTRIES;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        int size = size();
-        out.writeInt(size);
-        for (int i = 0; i < size; i++) {
-            out.writeData(keys.get(i));
-            out.writeData(values.get(i));
-        }
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        keys = new ArrayList<Data>(size);
-        values = new ArrayList<Data>(size);
-        for (int i = 0; i < size; i++) {
-            keys.add(in.readData());
-            values.add(in.readData());
-        }
-    }
+    <K, V> void putAllToMap(SerializationService serializationService, Map<K, V> map);
 }

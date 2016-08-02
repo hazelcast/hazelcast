@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -72,9 +73,9 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         partitions = in.readIntArray();
-        mapEntries = new MapEntries[partitions.length];
+        mapEntries = new MapEntriesImpl[partitions.length];
         for (int i = 0; i < partitions.length; i++) {
-            MapEntries entry = new MapEntries();
+            MapEntries entry = new MapEntriesImpl();
             entry.readData(in);
             mapEntries[i] = entry;
         }

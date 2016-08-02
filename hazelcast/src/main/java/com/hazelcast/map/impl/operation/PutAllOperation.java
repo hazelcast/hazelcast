@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
@@ -181,7 +182,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapEntries = new MapEntries();
+        mapEntries = new MapEntriesImpl();
         mapEntries.readData(in);
     }
 }

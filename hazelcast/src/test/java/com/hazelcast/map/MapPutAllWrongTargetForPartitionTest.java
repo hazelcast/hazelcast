@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapEntriesImpl;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
 import com.hazelcast.nio.Address;
@@ -148,9 +149,9 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
                                                                         HazelcastInstance hz,
                                                                         SerializationService serializationService) {
         int[] partitions = new int[INSTANCE_COUNT];
-        MapEntries[] entries = new MapEntries[INSTANCE_COUNT];
+        MapEntries[] entries = new MapEntriesImpl[INSTANCE_COUNT];
         for (int partitionId = 0; partitionId < INSTANCE_COUNT; partitionId++) {
-            MapEntries mapEntries = new MapEntries(entriesPerPartition);
+            MapEntries mapEntries = new MapEntriesImpl(entriesPerPartition);
 
             for (int i = 0; i < entriesPerPartition; i++) {
                 String key = generateKeyForPartition(hz, partitionId);
