@@ -33,6 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -485,6 +486,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
+//    @Repeat(100)
     public void testStatsIssue2039() throws Exception {
         Config config = new Config();
         String name = "testStatsIssue2039";
@@ -493,9 +495,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         DurableExecutorService executorService = instance.getDurableExecutorService(name);
 
         executorService.execute(new SleepLatchRunnable());
-
         assertOpenEventually(SleepLatchRunnable.startLatch, 30);
-        Future waitingInQueue = executorService.submit(new EmptyRunnable());
 
         Future rejected = executorService.submit(new EmptyRunnable());
 
@@ -510,39 +510,10 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             SleepLatchRunnable.sleepLatch.countDown();
         }
 
-        waitingInQueue.get(1, TimeUnit.MINUTES);
-
         // FIXME as soon as executorService.getLocalExecutorStats() is implemented
         //LocalExecutorStats stats = executorService.getLocalExecutorStats();
         //assertEquals(2, stats.getStartedTaskCount());
         //assertEquals(0, stats.getPendingTaskCount());
-    }
-
-    @Test
-    public void testExecutorServiceStats() throws Exception {
-        int executeCount = 10;
-        DurableExecutorService executorService = createSingleNodeDurableExecutorService("testExecutorServiceStats");
-        LatchRunnable.latch = new CountDownLatch(executeCount);
-
-        for (int i = 0; i < executeCount; i++) {
-            executorService.execute(new LatchRunnable());
-        }
-        assertOpenEventually(LatchRunnable.latch);
-
-        Future<Boolean> future = executorService.submit(new SleepingTask(10));
-        sleepSeconds(1);
-        future.cancel(true);
-        try {
-            future.get();
-        } catch (CancellationException ignored) {
-        }
-
-        // FIXME as soon as executorService.getLocalExecutorStats() is implemented
-        //LocalExecutorStats stats = executorService.getLocalExecutorStats();
-        //assertEquals(executeCount + 1, stats.getStartedTaskCount());
-        //assertEquals(executeCount, stats.getCompletedTaskCount());
-        //assertEquals(0, stats.getPendingTaskCount());
-        //assertEquals(1, stats.getCancelledTaskCount());
     }
 
     @Test
@@ -651,7 +622,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         }
     }
 
-    static class SleepLatchRunnable implements Runnable, Serializable {
+    static class SleepLatchRunnable implements Runnable, Serializable, PartitionAware {
 
         static CountDownLatch startLatch;
         static CountDownLatch sleepLatch;
@@ -665,6 +636,11 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         public void run() {
             startLatch.countDown();
             assertOpenEventually(sleepLatch);
+        }
+
+        @Override
+        public Object getPartitionKey() {
+            return "key";
         }
     }
 
