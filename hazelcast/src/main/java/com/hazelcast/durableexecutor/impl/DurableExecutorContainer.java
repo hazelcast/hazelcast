@@ -26,6 +26,8 @@ import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
+
 public class DurableExecutorContainer {
 
     private final String name;
@@ -142,8 +144,10 @@ public class DurableExecutorContainer {
 
         private void setResponse(Object response) {
             OperationService operationService = nodeEngine.getOperationService();
-            Operation op = new PutResultOperation(name, sequence, response).setPartitionId(partitionId);
-            operationService.invokeOnPartition(op);
+            Operation op = new PutResultOperation(name, sequence, response);
+            operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId)
+                    .setCallTimeout(Long.MAX_VALUE)
+                    .invoke();
         }
     }
 }
