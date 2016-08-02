@@ -424,15 +424,15 @@ public abstract class Invocation implements OperationResponseHandler {
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
-        if (context.logger.isFinestEnabled()) {
-            context.logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
-        }
-
         if (!(op instanceof BlockingOperation)) {
             // if the call is not a BLockingOperation, then in case of a call-timeout, we are not going to retry;
             // only blocking operations are going to be retried, because they rely on a repeated execution mechanism
             complete(CALL_TIMEOUT);
             return;
+        }
+        if (context.logger.isFinestEnabled()) {
+            context.logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: "
+                    + this);
         }
 
         // decrement wait-timeout by call-timeout
