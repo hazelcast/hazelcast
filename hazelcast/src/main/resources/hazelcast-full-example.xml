@@ -118,10 +118,8 @@ https://hazelcast.org/documentation/.
     defined in the target cluster's <group> element. Please see the <group> configuration
 	description in this XML.
     * <class-name>:
-	Name of the class implementation for WAN Replication. This name can have two values:
-    	- WanNoDelayReplication: 
-		Sends replication events to the target cluster as soon as they are generated.
-    	- WanBatchReplication: 
+	Fully qualified class name of WAN Replication implementation. Hazelcast Enterprise comes with;
+    	- com.hazelcast.enterprise.wan.replication.WanBatchReplication:
 		Waits until a batch size is reached or a delay time is passed.
 		Please see the `batch.size and batch.max.delay.millis configuration descriptions below.
     * "endpoints":
