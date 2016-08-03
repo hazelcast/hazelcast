@@ -31,7 +31,7 @@ import java.util.Collections;
  * @param <K> key type
  * @param <V> value type
  */
-final class SimpleEntry<K, V>
+public final class SimpleEntry<K, V>
         extends QueryableEntry<K, V> {
 
     private K key;
@@ -75,11 +75,11 @@ final class SimpleEntry<K, V>
         return oldValue;
     }
 
-    void setKey(K key) {
+    public void setKey(K key) {
         this.key = key;
     }
 
-    void setSerializationService(InternalSerializationService serializationService) {
+    public void setSerializationService(InternalSerializationService serializationService) {
         this.serializationService = serializationService;
     }
 
