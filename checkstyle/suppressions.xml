@@ -23,9 +23,8 @@
     <suppress checks="JavadocVariable" files="/impl/"/>
 
     <!-- Exclude internal packages from JavaDoc checks -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/internal/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/internal/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/internal/"/>
+    <suppress checks="Javadoc(Method|Type|Variable)" files="com/hazelcast/internal/"/>
+    <suppress checks="Javadoc(Method|Type|Variable)" files="com/hazelcast/util/executor/"/>
 
     <!-- SerializerHook -->
     <suppress checks="MethodCount|MethodLength|ReturnCount|AnonInnerLength" files="SerializerHook\.java$"/>
@@ -310,19 +309,7 @@
     <suppress checks="MethodCount" files="com/hazelcast/map/impl/query/MapQueryEngineImpl"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/map/impl/SimpleEntryView"/>
 
-    <!-- Util (written by Doug Lea, Agrona backport etc.) -->
-    <suppress checks="MethodCount" files="com/hazelcast/collection/impl/collection/CollectionContainer"/>
-    <suppress checks="MagicNumber" files="com/hazelcast/util/QuickMath"/>
-    <suppress checks="MagicNumber" files="com/hazelcast/util/collection/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/util/collection/\w*2ObjectHashMap"/>
-    <suppress checks="MethodCount" files="com/hazelcast/util/collection/\w*Hash\w*"/>
-    <suppress checks="SuperClone" files="com/hazelcast/util/collection/InflatableSet"/>
-    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/client/util/ClientDelegatingFuture"/>
-    <suppress checks="IllegalImport|InnerAssignment" files="com/hazelcast/internal/util/counters/SwCounter"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/util/executor/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/util/executor/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/util/executor/"/>
-    <suppress checks="NPathComplexity" files="com/hazelcast/util/executor/DelegatingFuture"/>
+    <!-- Adopted public domain code with different style -->
     <suppress checks="MagicNumber|DeclarationOrder|ConstantName|MultipleVariableDeclarations|NeedBracesCheck|Whitespace"
               files="com/hazelcast/internal/util/ThreadLocalRandom"/>
     <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"

@@ -43,10 +43,10 @@ import static com.hazelcast.util.collection.Hashing.longHash;
  */
 public class Long2ObjectHashMap<V> implements Map<Long, V> {
 
-    /**
-     * The default load factor for constructors not explicitly supplying it
-     */
+    /** The default load factor for constructors not explicitly supplying it */
     public static final double DEFAULT_LOAD_FACTOR = 0.6;
+    /** The default initial capacity for constructors not explicitly supplying it */
+    public static final int DEFAULT_INITIAL_CAPACITY = 8;
 
     private final double loadFactor;
     private int resizeThreshold;
@@ -63,7 +63,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     private final EntrySet entrySet = new EntrySet();
 
     public Long2ObjectHashMap() {
-        this(8, DEFAULT_LOAD_FACTOR);
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
     public Long2ObjectHashMap(int initialCapacity) {
@@ -114,23 +114,17 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         return resizeThreshold;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public int size() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isEmpty() {
         return 0 == size;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean containsKey(final Object key) {
         checkNotNull(key, "Null keys are not permitted");
         return containsKey(((Long) key).longValue());
@@ -153,9 +147,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean containsValue(final Object value) {
         checkNotNull(value, "Null values are not permitted");
         for (final Object v : values) {
@@ -166,9 +158,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public V get(final Object key) {
         return get(((Long) key).longValue());
     }
@@ -212,9 +202,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         return value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public V put(final Long key, final V value) {
         return put(key.longValue(), value);
     }
@@ -249,9 +237,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         return oldValue;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public V remove(final Object key) {
         return remove(((Long) key).longValue());
     }
@@ -278,9 +264,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void clear() {
         size = 0;
         Arrays.fill(values, null);
@@ -295,25 +279,19 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         rehash(QuickMath.nextPowerOfTwo(idealCapacity));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void putAll(final Map<? extends Long, ? extends V> map) {
         for (final Entry<? extends Long, ? extends V> entry : map.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public KeySet keySet() {
         return keySet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Collection<V> values() {
         return valueCollection;
     }
@@ -326,13 +304,11 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
      * makes the set unusable wherever the returned entries are
      * retained (such as <code>coll.addAll(entrySet)</code>.
      */
+    @Override
     public Set<Entry<Long, V>> entrySet() {
         return entrySet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append('{');
@@ -404,36 +380,45 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     // Internal Sets and Collections
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    /** Adds non-boxing methods to the standard Set interface. */
     public class KeySet extends AbstractSet<Long> {
 
+        @Override
         public int size() {
             return Long2ObjectHashMap.this.size();
         }
 
+        @Override
         public boolean isEmpty() {
             return Long2ObjectHashMap.this.isEmpty();
         }
 
+        @Override
         public boolean contains(final Object o) {
             return Long2ObjectHashMap.this.containsKey(o);
         }
 
+        /** Non-boxing variant of contains(). */
         public boolean contains(final long key) {
             return Long2ObjectHashMap.this.containsKey(key);
         }
 
+        @Override
         public KeyIterator iterator() {
             return new KeyIterator();
         }
 
+        @Override
         public boolean remove(final Object o) {
             return null != Long2ObjectHashMap.this.remove(o);
         }
 
+        /** Non-boxing variant of remove(). */
         public boolean remove(final long key) {
             return null != Long2ObjectHashMap.this.remove(key);
         }
 
+        @Override
         public void clear() {
             Long2ObjectHashMap.this.clear();
         }
@@ -441,22 +426,27 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
 
     private class ValueCollection extends AbstractCollection<V> {
 
+        @Override
         public int size() {
             return Long2ObjectHashMap.this.size();
         }
 
+        @Override
         public boolean isEmpty() {
             return Long2ObjectHashMap.this.isEmpty();
         }
 
+        @Override
         public boolean contains(final Object o) {
             return Long2ObjectHashMap.this.containsValue(o);
         }
 
-        public ValueIterator<V> iterator() {
+        @Override
+        public Iterator<V> iterator() {
             return new ValueIterator<V>();
         }
 
+        @Override
         public void clear() {
             Long2ObjectHashMap.this.clear();
         }
@@ -464,18 +454,22 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
 
     private class EntrySet extends AbstractSet<Entry<Long, V>> {
 
+        @Override
         public int size() {
             return Long2ObjectHashMap.this.size();
         }
 
+        @Override
         public boolean isEmpty() {
             return Long2ObjectHashMap.this.isEmpty();
         }
 
+        @Override
         public Iterator<Entry<Long, V>> iterator() {
             return new EntryIterator();
         }
 
+        @Override
         public void clear() {
             Long2ObjectHashMap.this.clear();
         }
@@ -511,6 +505,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
             return posCounter & mask;
         }
 
+        @Override
         public boolean hasNext() {
             for (int i = posCounter - 1; i >= stopCounter; i--) {
                 final int index = i & mask;
@@ -534,8 +529,10 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
             throw new NoSuchElementException();
         }
 
+        @Override
         public abstract T next();
 
+        @Override
         public void remove() {
             if (isPositionValid) {
                 final int position = getPosition();
@@ -549,7 +546,8 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         }
     }
 
-    public class ValueIterator<T> extends AbstractIterator<T> {
+    private class ValueIterator<T> extends AbstractIterator<T> {
+        @Override
         @SuppressWarnings("unchecked")
         public T next() {
             findNext();
@@ -557,15 +555,17 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         }
     }
 
+    /** Adds an unboxed next() method to the standard Iterator interface. */
     public class KeyIterator extends AbstractIterator<Long> {
 
+        @Override
         public Long next() {
             return nextLong();
         }
 
+        /** Non-boxing variant of next(). */
         public long nextLong() {
             findNext();
-
             return keys[getPosition()];
         }
     }
@@ -575,19 +575,23 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
             justification = "deliberate, documented choice")
     private class EntryIterator extends AbstractIterator<Entry<Long, V>> implements Entry<Long, V> {
 
+        @Override
         public Entry<Long, V> next() {
             findNext();
             return this;
         }
 
+        @Override
         public Long getKey() {
             return keys[getPosition()];
         }
 
+        @Override
         public V getValue() {
             return (V) values[getPosition()];
         }
 
+        @Override
         public V setValue(final V value) {
             checkNotNull(value);
             final int pos = getPosition();

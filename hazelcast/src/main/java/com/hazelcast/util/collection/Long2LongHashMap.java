@@ -36,9 +36,14 @@ import static com.hazelcast.util.collection.Hashing.evenLongHash;
 /**
  * A Probing hashmap specialised for long key and value pairs.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class Long2LongHashMap implements Map<Long, Long> {
     /** The default load factor for constructors not explicitly supplying it */
     public static final double DEFAULT_LOAD_FACTOR = 0.6;
+    /** The default initial capacity for constructors not explicitly supplying it */
+    public static final int DEFAULT_INITIAL_CAPACITY = 8;
+    private static final int CURSOR_BEFORE_FIRST_INDEX = -2;
+
     private final Set<Long> keySet;
     private final LongIterator valueIterator;
     private final Collection<Long> values;
@@ -59,7 +64,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     }
 
     public Long2LongHashMap(long missingValue) {
-        this(16, DEFAULT_LOAD_FACTOR, missingValue);
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, missingValue);
     }
 
     public Long2LongHashMap(Long2LongHashMap that) {
@@ -80,16 +85,12 @@ public class Long2LongHashMap implements Map<Long, Long> {
         this.missingValue = missingValue;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public int size() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }
@@ -176,11 +177,9 @@ public class Long2LongHashMap implements Map<Long, Long> {
         return new LongLongCursor();
     }
 
-    /**
-     * Implements the cursor.
-     */
+    /** Implements the cursor. */
     public final class LongLongCursor {
-        private int i = -2;
+        private int i = CURSOR_BEFORE_FIRST_INDEX;
 
         public boolean advance() {
             final long[] es = entries;
@@ -220,9 +219,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void clear() {
         Arrays.fill(entries, missingValue);
         size = 0;
@@ -230,60 +227,43 @@ public class Long2LongHashMap implements Map<Long, Long> {
 
     // ---------------- Boxed Versions Below ----------------
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Long get(final Object key) {
         return get((long) (Long) key);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Long put(final Long key, final Long value) {
         return put(key.longValue(), value.longValue());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void forEach(final BiConsumer<? super Long, ? super Long> action) {
         longForEach(new UnboxingBiConsumer(action));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean containsKey(final Object key) {
         return containsKey((long) (Long) key);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean containsValue(final Object value) {
         return containsValue((long) (Long) value);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void putAll(final Map<? extends Long, ? extends Long> map) {
         for (final Entry<? extends Long, ? extends Long> entry : map.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Set<Long> keySet() {
         return keySet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Collection<Long> values() {
         return values;
     }
@@ -296,13 +276,12 @@ public class Long2LongHashMap implements Map<Long, Long> {
      * makes the set unusable wherever the returned entries are
      * retained (such as <code>coll.addAll(entrySet)</code>.
      */
+    @Override
     public Set<Entry<Long, Long>> entrySet() {
         return entrySet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Long remove(final Object key) {
         return remove((long) (Long) key);
     }
@@ -427,6 +406,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
             return positionCounter & mask;
         }
 
+        /** Will become the implementation of Iterator#hasNext in subclasses */
         public boolean hasNext() {
             final long[] entries = Long2LongHashMap.this.entries;
             boolean hasNext = false;
@@ -457,22 +437,26 @@ public class Long2LongHashMap implements Map<Long, Long> {
         }
     }
 
-    private final class LongIterator extends AbstractIterator implements Iterator<Long> {
+    /** Adds an unboxed next() method to the standard Iterator interface. */
+    public final class LongIterator extends AbstractIterator implements Iterator<Long> {
         private final int offset;
 
         private LongIterator(final int offset) {
             this.offset = offset;
         }
 
+        @Override
         public Long next() {
             return nextValue();
         }
 
+        /** Non-boxing variant of next(). */
         public long nextValue() {
             findNext();
             return entries[keyPosition() + offset];
         }
 
+        /** Makes this iterator reusable. */
         public LongIterator reset() {
             super.reset();
             return this;
@@ -487,20 +471,22 @@ public class Long2LongHashMap implements Map<Long, Long> {
         private long key;
         private long value;
 
-        private EntryIterator() { }
-
+        @Override
         public Long getKey() {
             return key;
         }
 
+        @Override
         public Long getValue() {
             return value;
         }
 
+        @Override
         public Long setValue(final Long value) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Entry<Long, Long> next() {
             findNext();
             final int keyPosition = keyPosition();

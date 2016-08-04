@@ -179,7 +179,8 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
      * @return a shallow copy of this set
      */
     @Override
-    @SuppressFBWarnings("CN_IDIOM")
+    @SuppressFBWarnings(value = "CN_IDIOM", justification = "Deliberate, documented contract violation")
+    @SuppressWarnings({"checkstyle:superclone", "CloneDoesntCallSuperClone"})
     protected Object clone() {
         return new InflatableSet<T>(this);
     }

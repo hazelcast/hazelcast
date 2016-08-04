@@ -34,19 +34,19 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.collection.Hashing.intHash;
 
 /**
- * {@link java.util.Map} implementation specialised for int keys using open addressing and
- * linear probing for cache efficient access.
- *
- * NOTE: This map doesn't support {@code null} keys and values!
+ * {@link java.util.Map} implementation specialized for int keys using open addressing and
+ * linear probing for cache-efficient access.
+ * <p>
+ * <strong>NOTE: This map doesn't support {@code null} keys and values.</strong>
  *
  * @param <V> values stored in the {@link java.util.Map}
  */
 public class Int2ObjectHashMap<V> implements Map<Integer, V> {
 
-    /**
-     * The default load factor for constructors not explicitly supplying it
-     */
+    /** The default load factor for constructors not explicitly supplying it. */
     public static final double DEFAULT_LOAD_FACTOR = 0.6;
+    /** The default initial capacity for constructors not explicitly supplying it. */
+    public static final int DEFAULT_INITIAL_CAPACITY = 8;
 
     private final double loadFactor;
     private int resizeThreshold;
@@ -63,7 +63,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     private final EntrySet entrySet = new EntrySet();
 
     public Int2ObjectHashMap() {
-        this(8, DEFAULT_LOAD_FACTOR);
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
     public Int2ObjectHashMap(int initialCapacity) {
@@ -114,23 +114,17 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         return resizeThreshold;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public int size() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isEmpty() {
         return 0 == size;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean containsKey(final Object key) {
         checkNotNull(key, "Null keys are not permitted");
         return containsKey(((Integer) key).intValue());
@@ -153,9 +147,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean containsValue(final Object value) {
         checkNotNull(value, "Null values are not permitted");
         for (final Object v : values) {
@@ -166,9 +158,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public V get(final Object key) {
         return get(((Integer) key).intValue());
     }
@@ -212,9 +202,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         return value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public V put(final Integer key, final V value) {
         return put(key.intValue(), value);
     }
@@ -249,9 +237,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         return oldValue;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public V remove(final Object key) {
         return remove(((Integer) key).intValue());
     }
@@ -278,9 +264,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void clear() {
         size = 0;
         Arrays.fill(values, null);
@@ -295,25 +279,19 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         rehash(QuickMath.nextPowerOfTwo(idealCapacity));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void putAll(final Map<? extends Integer, ? extends V> map) {
         for (final Entry<? extends Integer, ? extends V> entry : map.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public KeySet keySet() {
         return keySet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Collection<V> values() {
         return valueCollection;
     }
@@ -326,13 +304,12 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
      * makes the set unusable wherever the returned entries are
      * retained (such as <code>coll.addAll(entrySet)</code>.
      */
+    @Override
     public Set<Entry<Integer, V>> entrySet() {
         return entrySet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append('{');
@@ -404,36 +381,45 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     // Internal Sets and Collections
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    /** Adds non-boxing methods to the standard Set interface. */
     public class KeySet extends AbstractSet<Integer> {
 
+        @Override
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
 
+        @Override
         public boolean isEmpty() {
             return Int2ObjectHashMap.this.isEmpty();
         }
 
+        @Override
         public boolean contains(final Object o) {
             return Int2ObjectHashMap.this.containsKey(o);
         }
 
+        /** Non-boxing variant of contains(). */
         public boolean contains(final int key) {
             return Int2ObjectHashMap.this.containsKey(key);
         }
 
+        @Override
         public KeyIterator iterator() {
             return new KeyIterator();
         }
 
+        @Override
         public boolean remove(final Object o) {
             return null != Int2ObjectHashMap.this.remove(o);
         }
 
+        /** Non-boxing variant of remove(). */
         public boolean remove(final int key) {
             return null != Int2ObjectHashMap.this.remove(key);
         }
 
+        @Override
         public void clear() {
             Int2ObjectHashMap.this.clear();
         }
@@ -441,22 +427,27 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
 
     private class ValueCollection extends AbstractCollection<V> {
 
+        @Override
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
 
+        @Override
         public boolean isEmpty() {
             return Int2ObjectHashMap.this.isEmpty();
         }
 
+        @Override
         public boolean contains(final Object o) {
             return Int2ObjectHashMap.this.containsValue(o);
         }
 
+        @Override
         public ValueIterator<V> iterator() {
             return new ValueIterator<V>();
         }
 
+        @Override
         public void clear() {
             Int2ObjectHashMap.this.clear();
         }
@@ -464,18 +455,22 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
 
     private class EntrySet extends AbstractSet<Entry<Integer, V>> {
 
+        @Override
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
 
+        @Override
         public boolean isEmpty() {
             return Int2ObjectHashMap.this.isEmpty();
         }
 
+        @Override
         public Iterator<Entry<Integer, V>> iterator() {
             return new EntryIterator();
         }
 
+        @Override
         public void clear() {
             Int2ObjectHashMap.this.clear();
         }
@@ -511,6 +506,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
             return posCounter & mask;
         }
 
+        @Override
         public boolean hasNext() {
             for (int i = posCounter - 1; i >= stopCounter; i--) {
                 final int index = i & mask;
@@ -534,8 +530,10 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
             throw new NoSuchElementException();
         }
 
+        @Override
         public abstract T next();
 
+        @Override
         public void remove() {
             if (isPositionValid) {
                 final int position = getPosition();
@@ -549,7 +547,8 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         }
     }
 
-    public class ValueIterator<T> extends AbstractIterator<T> {
+    private class ValueIterator<T> extends AbstractIterator<T> {
+        @Override
         @SuppressWarnings("unchecked")
         public T next() {
             findNext();
@@ -557,12 +556,15 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         }
     }
 
+    /** Adds an unboxed next() method to the standard Iterator interface. */
     public class KeyIterator extends AbstractIterator<Integer> {
 
+        @Override
         public Integer next() {
             return nextInt();
         }
 
+        /** Non-boxing variant of next(). */
         public int nextInt() {
             findNext();
             return keys[getPosition()];
@@ -574,19 +576,23 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
             justification = "deliberate, documented choice")
     private class EntryIterator extends AbstractIterator<Entry<Integer, V>> implements Entry<Integer, V> {
 
+        @Override
         public Entry<Integer, V> next() {
             findNext();
             return this;
         }
 
+        @Override
         public Integer getKey() {
             return keys[getPosition()];
         }
 
+        @Override
         public V getValue() {
             return (V) values[getPosition()];
         }
 
+        @Override
         public V setValue(final V value) {
             checkNotNull(value);
             final int pos = getPosition();
