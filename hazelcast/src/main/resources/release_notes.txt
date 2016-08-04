@@ -77,6 +77,18 @@ a `SAXParse` exception is thrown. [5528]
 
 The following are the issues solved for Hazelcast 3.6 and 3.6.x releases.
 
+*3.6.5*
+
+- The method ClusterMergeTask::waitOnFutureInterruptible has an almost endless loop. [8527]
+- Cluster state should not be allowed to change before startup is completed. Normally, the method NodeExtension.isStartCompleted() returns true when a member is joined successfully. However, when Hot Restart Store is enabled, it returns false until Hot Restart process completes on the whole cluster. [8523]
+- MapPartitionLostListener is not working. Upon migration commit, the flag SYNC_WAITING_REPLICA should not be overwritten. [8505]
+- PartitonServiceBeanDTO always tries to resolve the domain name. Instead of calling the method getSocketAddress() every time, it can use the method getLocalAddress(). [8463]
+- Hazelcast Demo application depends on JDK. JRE should be enough on all platforms. [8445]
+- Excessive logging of is-executing': true checks against long running operations. [8386]
+- There is a deadlock in MigrationQueue. The internal queue and counter are not synced in some situations and this causes deadlock. Usually it happens when there is a migration task failure. [8217]
+- The method ClientSmartInvocationServiceImpl#invokeOnTarget does not throw TargetNotMemberException. [7997]
+- Access data is not updated by local reads when reading from backup is enabled. [7354]
+
 *3.6.4*
 
 The following are the fixed issues for 3.6.4 release.
