@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.map.impl.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -60,6 +61,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     protected NearCache<Data, Object> nearCache;
     protected volatile String invalidationListenerId;
+    private ClientExecutionServiceImpl executionService;
 
     public NearCachedClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -80,6 +82,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         if (nearCache.isInvalidateOnChange()) {
             addNearCacheInvalidateListener();
         }
+
+        executionService = (ClientExecutionServiceImpl) getContext().getExecutionService();
     }
 
     @Override

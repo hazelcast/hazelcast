@@ -28,6 +28,7 @@ import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
@@ -137,17 +138,21 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         ICompletableFuture<V> future = super.getAsyncInternal(keyData);
-        ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
-            @Override
-            public void onResponse(Data response) {
-                nearCache.put(keyData, response);
-            }
+        try {
+            ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
+                @Override
+                public void onResponse(Data response) {
+                    nearCache.put(keyData, response);
+                }
 
-            @Override
-            public void onFailure(Throwable t) {
+                @Override
+                public void onFailure(Throwable t) {
 
-            }
-        });
+                }
+            });
+        } catch (HazelcastOverloadException e) {
+            invalidateNearCache(keyData);
+        }
         return future;
     }
 

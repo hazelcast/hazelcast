@@ -16,8 +16,11 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -54,11 +57,19 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ExecutorService userExecutor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
+    private int userExecutorQueueCapacity;
+    private final LinkedBlockingQueue<Runnable> userExecutorQueue;
 
-    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
+    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader,
+                                      ClientProperties properties, int poolSize) {
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();
+        }
+
+        userExecutorQueueCapacity = properties.getInteger(ClientProperty.NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE);
+        if (userExecutorQueueCapacity < 0) {
+            userExecutorQueueCapacity = Integer.MAX_VALUE;
         }
 
         internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
@@ -71,14 +82,24 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
-        userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(),
+
+        userExecutorQueue = new LinkedBlockingQueue<Runnable>(userExecutorQueueCapacity);
+        userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS, userExecutorQueue,
                 new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-                        LOGGER.finest(message);
-                        throw new RejectedExecutionException(message);
+                        RuntimeException e;
+                        if (0 == userExecutorQueue.remainingCapacity()) {
+                            e = new HazelcastOverloadException(
+                                    "User executor rejected task: " + r + ", because executor current queue size limit of "
+                                            + userExecutorQueueCapacity + " is reached!");
+                        } else {
+                            e = new RejectedExecutionException(
+                                    "User executor rejected task: " + r + ", because client is shutting down...");
+                        }
+
+                        LOGGER.finest(e.getMessage());
+                        throw e;
                     }
                 });
 

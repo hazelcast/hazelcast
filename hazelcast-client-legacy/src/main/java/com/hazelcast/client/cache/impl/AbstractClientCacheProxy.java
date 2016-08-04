@@ -30,6 +30,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapEntries;
@@ -101,17 +102,21 @@ abstract class AbstractClientCacheProxy<K, V>
         }
         if (async) {
             if (nearCache != null) {
-                future.andThenInternal(new ExecutionCallback<Data>() {
-                    public void onResponse(Data valueData) {
-                        storeInNearCache(keyData, valueData, null);
-                        if (statisticsEnabled) {
-                            handleStatisticsOnGet(start, valueData);
+                try {
+                    future.andThenInternal(new ExecutionCallback<Data>() {
+                        public void onResponse(Data valueData) {
+                            storeInNearCache(keyData, valueData, null);
+                            if (statisticsEnabled) {
+                                handleStatisticsOnGet(start, valueData);
+                            }
                         }
-                    }
 
-                    public void onFailure(Throwable t) {
-                    }
-                });
+                        public void onFailure(Throwable t) {
+                        }
+                    });
+                } catch (HazelcastOverloadException e) {
+                    invalidateNearCache(keyData);
+                }
             }
             return new DelegatingFuture<V>(future, clientContext.getSerializationService());
         } else {

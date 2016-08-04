@@ -53,6 +53,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
@@ -230,6 +231,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
+    protected void handleStatisticsOnOverloadException() {
+    }
+
     protected <T> ICompletableFuture<T> removeAsyncInternal(K key, V oldValue, final boolean hasOldValue,
                                                             final boolean isGet, boolean withCompletionEvent,
                                                             boolean async) {
@@ -262,16 +266,20 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         DelegatingFuture delegatingFuture = new DelegatingFuture<T>(future, clientContext.getSerializationService());
         if (async && statisticsEnabled) {
-            delegatingFuture.andThen(new ExecutionCallback<Object>() {
-                public void onResponse(Object responseData) {
-                    Object response = clientContext.getSerializationService().toObject(responseData);
-                    handleStatisticsOnRemove(isGet, start, response);
-                }
+            try {
+                delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                    public void onResponse(Object responseData) {
+                        Object response = clientContext.getSerializationService().toObject(responseData);
+                        handleStatisticsOnRemove(false, start, response);
+                    }
 
-                public void onFailure(Throwable t) {
+                    public void onFailure(Throwable t) {
 
-                }
-            });
+                    }
+                });
+            } catch (HazelcastOverloadException e) {
+                handleStatisticsOnOverloadException();
+            }
         }
         return delegatingFuture;
     }
@@ -328,16 +336,20 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         DelegatingFuture delegatingFuture = new DelegatingFuture<T>(future, clientContext.getSerializationService());
         if (async && statisticsEnabled) {
-            delegatingFuture.andThen(new ExecutionCallback<Object>() {
-                public void onResponse(Object responseData) {
-                    Object response = clientContext.getSerializationService().toObject(responseData);
-                    handleStatisticsOnReplace(isGet, start, response);
-                }
+            try {
+                delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                    public void onResponse(Object responseData) {
+                        Object response = clientContext.getSerializationService().toObject(responseData);
+                        handleStatisticsOnReplace(true, start, response);
+                    }
 
-                public void onFailure(Throwable t) {
+                    public void onFailure(Throwable t) {
 
-                }
-            });
+                    }
+                });
+            } catch (HazelcastOverloadException e) {
+                handleStatisticsOnOverloadException();
+            }
         }
         return delegatingFuture;
     }
@@ -476,27 +488,36 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             }
         } else {
             if (nearCache != null || (async && statisticsEnabled)) {
-                delegatingFuture.andThen(new ExecutionCallback<Object>() {
-                    @Override
-                    public void onResponse(Object responseData) {
-                        if (nearCache != null) {
-                            if (cacheOnUpdate) {
-                                storeInNearCache(keyData, valueData, value);
-                            } else {
-                                invalidateNearCache(keyData);
+                try {
+                    delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                        @Override
+                        public void onResponse(Object responseData) {
+                            if (nearCache != null) {
+                                if (cacheOnUpdate) {
+                                    storeInNearCache(keyData, valueData, value);
+                                } else {
+                                    invalidateNearCache(keyData);
+                                }
+                            }
+                            if (statisticsEnabled) {
+                                Object response = clientContext.getSerializationService().toObject(responseData);
+                                handleStatisticsOnPutIfAbsent(start, (Boolean) response);
                             }
                         }
-                        if (statisticsEnabled) {
-                            Object response = clientContext.getSerializationService().toObject(responseData);
-                            handleStatisticsOnPutIfAbsent(start, (Boolean) response);
+
+                        @Override
+                        public void onFailure(Throwable t) {
+
                         }
+                    });
+                } catch (HazelcastOverloadException e) {
+                    if (nearCache != null) {
+                        invalidateNearCache(keyData);
                     }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-
+                    if (statisticsEnabled) {
+                        handleStatisticsOnOverloadException();
                     }
-                });
+                }
             }
             return delegatingFuture;
         }

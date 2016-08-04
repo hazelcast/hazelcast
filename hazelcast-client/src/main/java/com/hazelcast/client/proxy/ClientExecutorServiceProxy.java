@@ -31,6 +31,7 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.client.util.ClientPartitionCancellableDelegatingFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
@@ -422,11 +423,24 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
+        submitToExecutor(callback, f, SUBMIT_TO_PARTITION_DECODER);
+    }
+
+    private <T> void submitToExecutor(ExecutionCallback<T> callback, ClientInvocationFuture f, ClientMessageDecoder decoder) {
         SerializationService serializationService = getContext().getSerializationService();
 
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService,
-                SUBMIT_TO_PARTITION_DECODER);
-        delegatingFuture.andThen(callback);
+                decoder);
+        try {
+            delegatingFuture.andThen(callback);
+        } catch (HazelcastOverloadException e) {
+            // let it run synchronously if the executor is overloaded, this is going to be run at user application thread
+            try {
+                callback.onResponse(delegatingFuture.get());
+            } catch (Throwable t) {
+                callback.onFailure(t);
+            }
+        }
     }
 
     private <T> Future<T> submitToRandomInternal(Callable<T> task, T defaultValue, boolean preventSync) {
@@ -448,11 +462,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        SerializationService serializationService = getContext().getSerializationService();
-        ClientDelegatingFuture<T> delegatingFuture =
-                new ClientDelegatingFuture<T>(f, serializationService,
-                        SUBMIT_TO_PARTITION_DECODER);
-        delegatingFuture.andThen(callback);
+        submitToExecutor(callback, f, SUBMIT_TO_PARTITION_DECODER);
     }
 
     private <T> Future<T> submitToTargetInternal(Callable<T> task, Address address
@@ -471,10 +481,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task), address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
-        SerializationService serializationService = getContext().getSerializationService();
-        ClientDelegatingFuture<T> delegatingFuture =
-                new ClientDelegatingFuture<T>(f, serializationService, SUBMIT_TO_ADDRESS_DECODER);
-        delegatingFuture.andThen(callback);
+        submitToExecutor(callback, f, SUBMIT_TO_ADDRESS_DECODER);
     }
 
     @Override
