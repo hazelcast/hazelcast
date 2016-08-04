@@ -232,8 +232,8 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         int len = str != null ? str.length() : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
+            final byte[] buffer = new byte[3];
             for (int i = 0; i < len; i++) {
-                byte[] buffer = new byte[3];
                 int count = Bits.writeUtf8Char(buffer, 0, str.charAt(i));
                 dataOut.write(buffer, 0, count);
             }
