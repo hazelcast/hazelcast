@@ -43,12 +43,9 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/**
- * Used for testing {@link PagingPredicate}
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SortLimitTest extends HazelcastTestSupport {
+public class PagingPredicateTest extends HazelcastTestSupport {
 
     private static int size = 50;
     private static int pageSize = 5;
