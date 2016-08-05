@@ -509,7 +509,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         boolean hasWaitingThreads = invocationFuture.getWaitingThreadsCount() > 0;
         boolean notExpired = maxCallTimeout == Long.MAX_VALUE
                 || expirationTime < 0
-                || expirationTime >= Clock.currentTimeMillis();
+                || expirationTime >= nodeEngine.getClusterService().getClusterTime();
 
         if (hasResponse || hasWaitingThreads || notExpired || done) {
             return false;
