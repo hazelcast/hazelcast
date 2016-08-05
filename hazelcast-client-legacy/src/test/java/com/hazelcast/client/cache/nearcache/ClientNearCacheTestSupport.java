@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -29,6 +30,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.LifecycleServiceImpl;
@@ -41,14 +43,19 @@ import org.junit.Before;
 
 import javax.cache.spi.CachingProvider;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
@@ -116,6 +123,23 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected NearCacheTestContext createNearCacheTest(String cacheName, NearCacheConfig nearCacheConfig) {
         ClientConfig clientConfig = createClientConfig();
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
+
+        CacheConfig<Object, String> cacheConfig = createCacheConfig(nearCacheConfig.getInMemoryFormat());
+        ICache<Object, String> cache = cacheManager.createCache(cacheName, cacheConfig);
+
+        NearCache<Data, String> nearCache =
+                nearCacheManager.getNearCache(cacheManager.getCacheNameWithPrefix(cacheName));
+
+        return new NearCacheTestContext(client, cacheManager, nearCacheManager, cache, nearCache);
+    }
+
+    protected NearCacheTestContext createNearCacheTest(String cacheName, NearCacheConfig nearCacheConfig,
+                                                       ClientConfig clientConfig) {
         clientConfig.addNearCacheConfig(nearCacheConfig);
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
@@ -436,4 +460,95 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
+    protected void putToCacheWhenUserExecutorIsOverloaded() {
+        final int MAX_ALLOWED = 5;
+
+        final int MAX_POOL_SIZE = 2;
+
+        final int TEST_KEY = 1;
+
+        final String TEST_VALUE = generateValueFromKey(TEST_KEY);
+
+        ClientConfig clientConfig = createClientConfig();
+
+        clientConfig.setExecutorPoolSize(MAX_POOL_SIZE);
+
+        clientConfig.setProperty(ClientProperty.USER_EXECUTOR_QUEUE_CAPACITY.getName(), String.valueOf(MAX_ALLOWED));
+
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT);
+
+        NearCacheTestContext nearCacheTestContext = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig, clientConfig);
+
+        nearCacheTestContext.cache.put(TEST_KEY, TEST_VALUE);
+
+        // make sure the value is not in the near cache
+        assertNull(nearCacheTestContext.nearCache.get(nearCacheTestContext.serializationService.toData(TEST_KEY)));
+
+        HazelcastClientProxy clientProxy = nearCacheTestContext.client;
+
+        ExecutorService userExecutor = clientProxy.client.getClientExecutionService().getAsyncExecutor();
+
+        CountDownLatch testFinishLatch = new CountDownLatch(1);
+
+        CountDownLatch startPoolLatch = new CountDownLatch(MAX_POOL_SIZE);
+
+        // run threads to consume the executor available pool
+        for (int i = 0; i < MAX_POOL_SIZE; i++) {
+            userExecutor.execute(new SleepyProcessor(startPoolLatch, testFinishLatch));
+        }
+
+        try {
+            assertTrue(startPoolLatch.await(2, TimeUnit.SECONDS));
+        } catch (InterruptedException e) {
+            fail("Could not wait for pool threads to start.");
+        }
+
+        // Run threads to fill the queue
+        for (int i = 0; i < MAX_ALLOWED; i++) {
+            userExecutor.execute(new SleepyProcessor(testFinishLatch));
+        }
+
+        // Do a get request
+        ICompletableFuture<String> future = nearCacheTestContext.cache.getAsync(TEST_KEY);
+        try {
+            assertEquals(TEST_VALUE, future.get(2, TimeUnit.SECONDS));
+        } catch (Exception e) {
+            fail("Could not get value for key: " + TEST_KEY);
+        }
+
+        // sleep a second to let the near cache update finish
+        sleepMillis(1000);
+
+        // Make sure that the near cache is not updated
+        assertNull(nearCacheTestContext.nearCache.get(nearCacheTestContext.serializationService.toData(TEST_KEY)));
+
+        testFinishLatch.countDown();
+    }
+
+    static class SleepyProcessor implements Runnable, Serializable {
+
+        private CountDownLatch startLatch;
+        private final CountDownLatch finishLatch;
+
+        SleepyProcessor(CountDownLatch startThreadLatch, CountDownLatch threadFinishLatch) {
+            this.startLatch = startThreadLatch;
+            this.finishLatch = threadFinishLatch;
+        }
+
+        SleepyProcessor(CountDownLatch threadFinishLatch) {
+            this.finishLatch = threadFinishLatch;
+        }
+
+        @Override
+        public void run() {
+            if (null != startLatch) {
+                startLatch.countDown();
+            }
+            try {
+                finishLatch.await();
+            } catch (InterruptedException e) {
+                fail("Sleepy thread could not sleep enough");
+            }
+        }
+    }
 }

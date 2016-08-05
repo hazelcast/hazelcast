@@ -93,11 +93,9 @@ public enum ClientProperty implements HazelcastProperty {
     DISCOVERY_SPI_PUBLIC_IP_ENABLED("hazelcast.discovery.public.ip.enabled", false),
 
     /**
-     * Configures queue size of nearcache client executor. Private configuration, for internal usage only.
-     * 0 or negative value means that the feature is disabled,i.e. the near cache executor queue size will not be checked
-     * for overflow.
+     * Configures queue size of user executor. Private configuration, for internal usage only.
      */
-    NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE("hazelcast.client.nearcache.executor.queue.overload.size", -1),
+    USER_EXECUTOR_QUEUE_CAPACITY("hazelcast.client.internal.user.executor.queue.capacity", Integer.MAX_VALUE),
 
     /**
      * Configures pool size of internal client executor. Private configuration, for internal usage only.

@@ -102,4 +102,8 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
         doTestGetAllReturnsFromNearCache();
     }
 
+    @Test
+    public void testNoNearCacheUpdateWhenUserExecutorQueueOverloaded() {
+        putToCacheWhenUserExecutorIsOverloaded();
+    }
 }

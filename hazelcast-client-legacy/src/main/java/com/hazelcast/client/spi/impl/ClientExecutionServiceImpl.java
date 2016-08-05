@@ -67,7 +67,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
             executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
 
-        userExecutorQueueCapacity = properties.getInteger(ClientProperty.NEARCACHE_EXECUTOR_QUEUE_OVERLOADED_SIZE);
+        userExecutorQueueCapacity = properties.getInteger(ClientProperty.USER_EXECUTOR_QUEUE_CAPACITY);
         if (userExecutorQueueCapacity < 0) {
             userExecutorQueueCapacity = Integer.MAX_VALUE;
         }
