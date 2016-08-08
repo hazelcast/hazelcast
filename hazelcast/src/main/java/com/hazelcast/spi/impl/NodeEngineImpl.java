@@ -150,7 +150,7 @@ public class NodeEngineImpl implements NodeEngine {
     private Diagnostics newDiagnostics() {
         Member localMember = node.getLocalMember();
         Address address = localMember.getAddress();
-        String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
+        String addressString = address.getHost().replace(":", "_") + "_" + address.getPort();
         String name = "diagnostics-" + addressString + "-" + currentTimeMillis();
 
         return new Diagnostics(
