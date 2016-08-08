@@ -17,7 +17,6 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * A {@link MessageListener} to better integrate with the reliable topic.
@@ -50,7 +49,6 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @param <E>
  */
-@Beta
 public interface ReliableMessageListener<E> extends MessageListener<E> {
 
     /**

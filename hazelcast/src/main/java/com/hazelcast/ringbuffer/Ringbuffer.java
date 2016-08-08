@@ -19,7 +19,6 @@ package com.hazelcast.ringbuffer;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Collection;
 
@@ -56,7 +55,6 @@ import java.util.Collection;
  *
  * @param <E>
  */
-@Beta
 public interface Ringbuffer<E> extends DistributedObject {
 
     /**

@@ -17,7 +17,6 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * A {@link HazelcastException} thrown when a publisher wants to write to a topic, but there is not sufficient storage
@@ -25,7 +24,6 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * This exception is only thrown in combination with the reliable topic.
  */
-@Beta
 public class TopicOverloadException extends HazelcastException {
 
     /**
