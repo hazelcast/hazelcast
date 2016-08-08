@@ -145,7 +145,7 @@ public abstract class Invocation implements OperationResponseHandler {
     volatile Boolean responseReceived = FALSE;
 
     /**
-     * The last time a heartbeat was received for the invocation.
+     * The last (local) time a heartbeat was received for the invocation.
      * The value 0 indicates that no heartbeat was received at all.
      */
     volatile long lastHeartbeatMillis;
