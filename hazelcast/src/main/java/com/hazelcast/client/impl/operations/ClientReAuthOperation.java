@@ -21,13 +21,13 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 import java.util.Set;
 
-public class ClientReAuthOperation extends AbstractOperation implements UrgentSystemOperation {
+public class ClientReAuthOperation extends Operation implements UrgentSystemOperation {
 
     private String clientUuid;
 

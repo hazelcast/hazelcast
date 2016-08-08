@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Replicates the update happened on the partition owner to the other nodes.
  */
-public class ReplicateUpdateOperation extends AbstractOperation implements PartitionAwareOperation, IdentifiedDataSerializable {
+public class ReplicateUpdateOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     VersionResponsePair response;
     boolean isRemove;

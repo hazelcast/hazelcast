@@ -26,7 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -35,7 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class PostJoinMapOperation extends AbstractOperation {
+public class PostJoinMapOperation extends Operation {
 
     private List<MapIndexInfo> indexInfoList = new LinkedList<MapIndexInfo>();
     private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();

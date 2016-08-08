@@ -40,22 +40,9 @@ public class GetMapConfigOperation extends Operation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         MapService service = getService();
         mapConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

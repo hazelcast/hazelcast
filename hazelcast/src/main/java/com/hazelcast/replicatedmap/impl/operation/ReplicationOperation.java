@@ -26,7 +26,7 @@ import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -39,7 +39,7 @@ import java.util.Set;
 /**
  * Carries all the partition data for replicated map from old owner to the new owner.
  */
-public class ReplicationOperation extends AbstractOperation {
+public class ReplicationOperation extends Operation {
 
     private SerializationService serializationService;
     private Map<String, Set<RecordMigrationInfo>> data;

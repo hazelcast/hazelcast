@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ import java.io.IOException;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
 
-public abstract class AbstractRingBufferOperation extends AbstractOperation
+public abstract class AbstractRingBufferOperation extends Operation
         implements IdentifiedDataSerializable, PartitionAwareOperation {
 
     protected String name;

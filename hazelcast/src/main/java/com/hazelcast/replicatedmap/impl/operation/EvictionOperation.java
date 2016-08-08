@@ -17,7 +17,7 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
@@ -25,7 +25,7 @@ import java.util.Collection;
 /**
  * Evicts set of entries from the record store. Runs locally.
  */
-public class EvictionOperation extends AbstractOperation {
+public class EvictionOperation extends Operation {
 
     private final ReplicatedRecordStore store;
     private final Collection<ScheduledEntry<Object, Object>> entries;

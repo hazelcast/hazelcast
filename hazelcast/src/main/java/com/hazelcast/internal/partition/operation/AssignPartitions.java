@@ -17,9 +17,9 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
-public class AssignPartitions extends AbstractOperation {
+public class AssignPartitions extends Operation {
 
     @Override
     public void run() {

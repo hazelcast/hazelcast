@@ -22,13 +22,13 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AtomicLongReplicationOperation extends AbstractOperation
+public class AtomicLongReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
 
     private Map<String, Long> migrationData;

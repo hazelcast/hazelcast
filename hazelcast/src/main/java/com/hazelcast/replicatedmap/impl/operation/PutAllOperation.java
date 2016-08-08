@@ -26,7 +26,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 
@@ -36,7 +36,7 @@ import java.util.Collection;
 /**
  * Puts a set of records to the replicated map.
  */
-public class PutAllOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public class PutAllOperation extends Operation implements IdentifiedDataSerializable {
 
     private String name;
     private ReplicatedMapEntries entries;

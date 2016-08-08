@@ -21,12 +21,12 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.Map;
 
-public abstract class CollectionReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public abstract class CollectionReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
     protected Map<String, CollectionContainer> migrationData;
 

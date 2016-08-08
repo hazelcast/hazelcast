@@ -23,14 +23,14 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapValueCollection;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class ValuesOperation extends AbstractOperation {
+public class ValuesOperation extends Operation {
 
     private String name;
     private transient Object response;
@@ -56,11 +56,6 @@ public class ValuesOperation extends AbstractOperation {
             dataValues.add(serializationService.toData(value.getValue()));
         }
         response = new ReplicatedMapValueCollection(dataValues);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

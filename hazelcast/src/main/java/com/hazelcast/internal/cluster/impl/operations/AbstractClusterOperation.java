@@ -17,9 +17,9 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
-abstract class AbstractClusterOperation extends AbstractOperation implements JoinOperation {
+abstract class AbstractClusterOperation extends Operation implements JoinOperation {
 
     @Override
     public boolean returnsResponse() {

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * @see com.hazelcast.core.PartitionService#isClusterSafe
  * @see com.hazelcast.core.PartitionService#isMemberSafe
  */
-public class SafeStateCheckOperation extends AbstractOperation implements AllowedDuringPassiveState {
+public class SafeStateCheckOperation extends Operation implements AllowedDuringPassiveState {
 
     private transient boolean safe;
 

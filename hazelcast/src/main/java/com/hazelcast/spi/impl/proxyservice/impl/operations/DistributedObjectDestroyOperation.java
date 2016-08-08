@@ -18,13 +18,13 @@ package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.io.IOException;
 
 public class DistributedObjectDestroyOperation
-        extends AbstractOperation {
+        extends Operation {
 
     private String serviceName;
     private String name;

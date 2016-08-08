@@ -33,7 +33,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -52,7 +52,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.or;
  * @param <V> type of the value
  */
 public class KeyValueJobOperation<K, V>
-        extends AbstractOperation
+        extends Operation
         implements IdentifiedDataSerializable {
 
     /**

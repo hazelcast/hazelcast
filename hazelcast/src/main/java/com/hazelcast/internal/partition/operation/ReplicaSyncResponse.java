@@ -60,10 +60,6 @@ public class ReplicaSyncResponse extends Operation
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionServiceImpl partitionService = getService();
@@ -186,17 +182,8 @@ public class ReplicaSyncResponse extends Operation
 
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
     public boolean returnsResponse() {
         return false;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
     }
 
     @Override

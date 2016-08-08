@@ -16,10 +16,10 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.xa.XAService;
 
-public abstract class AbstractXAOperation extends AbstractOperation {
+public abstract class AbstractXAOperation extends Operation {
 
     @Override
     public String getServiceName() {

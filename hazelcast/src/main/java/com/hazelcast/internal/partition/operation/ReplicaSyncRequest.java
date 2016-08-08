@@ -200,10 +200,6 @@ public final class ReplicaSyncRequest extends Operation
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
     public boolean returnsResponse() {
         return false;
     }

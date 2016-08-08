@@ -44,11 +44,6 @@ public class SetOperation extends AtomicReferenceBackupAwareOperation {
     }
 
     @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
     public Operation getBackupOperation() {
         return new SetBackupOperation(name, newValue);
     }

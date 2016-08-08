@@ -83,10 +83,6 @@ public abstract class MapOperation extends AbstractNamedOperation {
         return MapService.SERVICE_NAME;
     }
 
-    @Override
-    public void afterRun() throws Exception {
-    }
-
     protected boolean isPostProcessing(RecordStore recordStore) {
         MapDataStore mapDataStore = recordStore.getMapDataStore();
         return mapDataStore.isPostProcessingMapStore() || mapServiceContext.hasInterceptor(name);

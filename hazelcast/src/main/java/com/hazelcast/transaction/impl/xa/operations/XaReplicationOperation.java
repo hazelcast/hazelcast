@@ -18,8 +18,8 @@ package com.hazelcast.transaction.impl.xa.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.xa.XATransaction;
 import com.hazelcast.transaction.impl.xa.XATransactionDTO;
@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class XaReplicationOperation extends AbstractOperation {
+public class XaReplicationOperation extends Operation {
 
     private List<XATransactionDTO> migrationData;
 

@@ -24,12 +24,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
+public class JoinCheckOperation extends Operation implements JoinOperation {
 
     private JoinMessage request;
     private JoinMessage response;
@@ -121,7 +121,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
         final ClusterState clusterState = node.clusterService.getClusterState();
         if (clusterState != ClusterState.ACTIVE) {
             logger.info("Ignoring join check from " + getCallerAddress() + ", because cluster is in "
-                    + clusterState +  " state ...");
+                    + clusterState + " state ...");
             return false;
         }
 

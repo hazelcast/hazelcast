@@ -23,8 +23,8 @@ import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
@@ -32,7 +32,7 @@ import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 
-public class ChangeClusterStateOperation extends AbstractOperation implements AllowedDuringPassiveState {
+public class ChangeClusterStateOperation extends Operation implements AllowedDuringPassiveState {
 
     private ClusterState newState;
     private Address initiator;

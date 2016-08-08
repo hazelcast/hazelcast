@@ -59,19 +59,6 @@ public abstract class MultiMapOperation extends Operation
         return MultiMapService.SERVICE_NAME;
     }
 
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
     public final boolean hasListener() {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);

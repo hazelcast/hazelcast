@@ -55,14 +55,6 @@ public abstract class CollectionOperation extends Operation
         this.name = name;
     }
 
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
     protected final ListContainer getOrCreateListContainer() {
         if (container == null) {
             ListService service = getService();
@@ -101,11 +93,6 @@ public abstract class CollectionOperation extends Operation
 
     public boolean hasEnoughCapacity(int delta) {
         return getOrCreateContainer().hasEnoughCapacity(delta);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

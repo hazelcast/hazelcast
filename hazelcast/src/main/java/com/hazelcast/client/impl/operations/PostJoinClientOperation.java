@@ -19,13 +19,13 @@ package com.hazelcast.client.impl.operations;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PostJoinClientOperation extends AbstractOperation {
+public class PostJoinClientOperation extends Operation {
 
     private Map<String, String> mappings;
 

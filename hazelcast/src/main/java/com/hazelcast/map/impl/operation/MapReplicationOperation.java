@@ -33,7 +33,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
@@ -56,7 +56,7 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 /**
  * Replicates all IMap-states of this partition to a replica partition.
  */
-public class MapReplicationOperation extends AbstractOperation implements MutatingOperation {
+public class MapReplicationOperation extends Operation implements MutatingOperation {
 
     // keep these fields `protected`, extended in another context.
     protected final MapReplicationStateHolder mapReplicationStateHolder = new MapReplicationStateHolder();

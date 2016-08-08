@@ -23,7 +23,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class EntrySetOperation extends AbstractOperation {
+public class EntrySetOperation extends Operation {
 
     private String name;
     private transient Object response;
@@ -61,11 +61,6 @@ public class EntrySetOperation extends AbstractOperation {
             dataEntries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value));
         }
         response = new ReplicatedMapEntries(dataEntries);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

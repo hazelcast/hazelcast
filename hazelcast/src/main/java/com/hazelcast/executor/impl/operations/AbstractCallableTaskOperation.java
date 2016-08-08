@@ -97,17 +97,8 @@ abstract class AbstractCallableTaskOperation extends Operation  {
     }
 
     @Override
-    public final void afterRun() throws Exception {
-    }
-
-    @Override
     public final boolean returnsResponse() {
         return returnsResponse;
-    }
-
-    @Override
-    public final Object getResponse() {
-        return null;
     }
 
     @Override
@@ -128,7 +119,6 @@ abstract class AbstractCallableTaskOperation extends Operation  {
         uuid = in.readUTF();
         callableData = in.readData();
     }
-
 
     @Override
     protected void toString(StringBuilder sb) {

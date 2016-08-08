@@ -21,10 +21,10 @@ import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class MasterClaimOperation extends AbstractOperation implements JoinOperation {
+public class MasterClaimOperation extends Operation implements JoinOperation {
 
     private transient boolean approvedAsMaster;
 

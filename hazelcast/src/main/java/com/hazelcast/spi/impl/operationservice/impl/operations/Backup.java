@@ -170,11 +170,6 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     }
 
     @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
     public boolean validatesTarget() {
         return false;
     }

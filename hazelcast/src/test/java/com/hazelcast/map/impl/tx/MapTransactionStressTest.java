@@ -12,7 +12,6 @@ import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
@@ -328,7 +327,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public Operation newCommitOperation() {
-            return new AbstractOperation() {
+            return new Operation() {
                 {
                     setPartitionId(0);
                 }
@@ -345,8 +344,8 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
             return newEmptyOperation();
         }
 
-        private AbstractOperation newEmptyOperation() {
-            return new AbstractOperation() {
+        private Operation newEmptyOperation() {
+            return new Operation() {
                 {
                     setPartitionId(0);
                 }

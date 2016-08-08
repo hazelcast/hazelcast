@@ -84,15 +84,6 @@ public abstract class MutatingKeyBasedMapOperation extends MapOperation
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeData(dataKey);

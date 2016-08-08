@@ -146,11 +146,6 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         private GithubIssue2559Value value;
 
         @Override
-        public void beforeRun()
-                throws Exception {
-        }
-
-        @Override
         public void run()
                 throws Exception {
 
@@ -159,30 +154,8 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void afterRun()
-                throws Exception {
-        }
-
-        @Override
-        public boolean returnsResponse() {
-            return true;
-        }
-
-        @Override
         public Object getResponse() {
             return value;
-        }
-
-        @Override
-        protected void writeInternal(ObjectDataOutput out)
-                throws IOException {
-
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in)
-                throws IOException {
-
         }
     }
 

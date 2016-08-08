@@ -4,7 +4,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -69,7 +68,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     public void runOperation() {
         final AtomicLong counter = new AtomicLong();
         final Object response = "someresponse";
-        Operation op = new AbstractOperation() {
+        Operation op = new Operation() {
             @Override
             public void run() throws Exception {
                 counter.incrementAndGet();
@@ -93,7 +92,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         final AtomicLong counter = new AtomicLong();
         final Object response = "someresponse";
 
-        Operation op = new AbstractOperation() {
+        Operation op = new Operation() {
             @Override
             public void run() throws Exception {
                 counter.incrementAndGet();
@@ -117,7 +116,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     public void runOperation_whenWrongPartition_thenTaskNotExecuted() {
         final AtomicLong counter = new AtomicLong();
 
-        Operation op = new AbstractOperation() {
+        Operation op = new Operation() {
             @Override
             public void run() throws Exception {
                 counter.incrementAndGet();
@@ -134,7 +133,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
     @Test
     public void runOperation_whenRunThrowsException() {
-        Operation op = new AbstractOperation() {
+        Operation op = new Operation() {
             @Override
             public void run() throws Exception {
                 throw new ExpectedRuntimeException();
@@ -170,7 +169,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     public void runOperation_whenTimeout_thenOperationNotExecuted() {
         final AtomicLong counter = new AtomicLong();
 
-        Operation op = new AbstractOperation() {
+        Operation op = new Operation() {
             @Override
             public void run() throws Exception {
                 counter.incrementAndGet();

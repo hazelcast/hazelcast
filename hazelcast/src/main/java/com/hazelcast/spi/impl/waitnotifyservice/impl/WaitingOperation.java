@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.waitnotifyservice.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -35,7 +34,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-class WaitingOperation extends AbstractOperation implements Delayed, PartitionAwareOperation {
+class WaitingOperation extends Operation implements Delayed, PartitionAwareOperation {
     final Queue<WaitingOperation> queue;
     final Operation op;
     final BlockingOperation blockingOperation;

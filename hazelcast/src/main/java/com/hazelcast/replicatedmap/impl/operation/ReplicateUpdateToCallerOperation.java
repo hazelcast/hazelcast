@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This operation will update the local record store with the update received from local/remote partition owner.
  */
-public class ReplicateUpdateToCallerOperation extends AbstractOperation implements PartitionAwareOperation,
+public class ReplicateUpdateToCallerOperation extends Operation implements PartitionAwareOperation,
         IdentifiedDataSerializable {
 
     private String name;

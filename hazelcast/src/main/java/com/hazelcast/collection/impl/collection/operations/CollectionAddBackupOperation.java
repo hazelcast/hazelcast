@@ -40,18 +40,10 @@ public class CollectionAddBackupOperation extends CollectionOperation implements
         this.value = value;
     }
 
-     @Override
-    public void beforeRun() throws Exception {
-    }
-
     @Override
     public void run() throws Exception {
         CollectionContainer collectionContainer = getOrCreateContainer();
         collectionContainer.addBackup(itemId, value);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

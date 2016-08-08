@@ -44,10 +44,6 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         InternalPartitionServiceImpl partitionService = getService();
         int partitionId = getPartitionId();
@@ -71,10 +67,6 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
                     + " version is not matching to version of the owner! "
                     + " expected-version=" + version + ", current-version=" + currentVersion);
         }
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

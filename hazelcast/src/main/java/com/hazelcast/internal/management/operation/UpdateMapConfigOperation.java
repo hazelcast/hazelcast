@@ -59,10 +59,6 @@ public class UpdateMapConfigOperation extends Operation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         MapService service = getService();
         MapConfig oldConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
@@ -79,20 +75,6 @@ public class UpdateMapConfigOperation extends Operation {
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
         mapContainer.setMapConfig(newConfig.getAsReadOnly());
         mapContainer.initEvictor();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
     }
 
     @Override

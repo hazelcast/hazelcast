@@ -26,7 +26,7 @@ public class DummyOperation extends Operation {
 
     @Override
     public void run() throws Exception {
-        if(delayMillis>0){
+        if (delayMillis > 0) {
             Thread.sleep(delayMillis);
         }
 

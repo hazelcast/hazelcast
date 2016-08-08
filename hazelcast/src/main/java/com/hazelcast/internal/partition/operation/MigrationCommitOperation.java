@@ -24,20 +24,18 @@ import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
 /**
- *
  * Used for committing a migration on migration destination.
  * It updates the partition table on migration destination and finalizes the migration.
- *
  */
-public class MigrationCommitOperation extends AbstractOperation implements MigrationCycleOperation {
+public class MigrationCommitOperation extends Operation implements MigrationCycleOperation {
 
     private PartitionRuntimeState partitionState;
 
@@ -66,11 +64,6 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
         partitionState.setEndpoint(getCallerAddress());
         InternalPartitionServiceImpl partitionService = getService();
         success = partitionService.processPartitionRuntimeState(partitionState);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

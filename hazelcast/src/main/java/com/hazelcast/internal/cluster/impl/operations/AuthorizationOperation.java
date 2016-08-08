@@ -19,11 +19,11 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class AuthorizationOperation extends AbstractOperation implements JoinOperation {
+public class AuthorizationOperation extends Operation implements JoinOperation {
 
     private String groupName;
     private String groupPassword;

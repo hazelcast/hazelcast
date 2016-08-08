@@ -18,12 +18,12 @@ package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ProxyService;
 
 import java.io.IOException;
 
-public class InitializeDistributedObjectOperation extends AbstractOperation {
+public class InitializeDistributedObjectOperation extends Operation {
 
     private String serviceName;
     private String name;

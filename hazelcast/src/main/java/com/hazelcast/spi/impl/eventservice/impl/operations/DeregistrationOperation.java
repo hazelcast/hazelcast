@@ -18,14 +18,14 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
 
 import java.io.IOException;
 
-public class DeregistrationOperation extends AbstractOperation implements AllowedDuringPassiveState {
+public class DeregistrationOperation extends Operation implements AllowedDuringPassiveState {
 
     private String topic;
     private String id;

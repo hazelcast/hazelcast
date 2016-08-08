@@ -281,19 +281,19 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    private void assertAllLocked(ILock...locks) {
+    private void assertAllLocked(ILock... locks) {
         for (ILock lock : locks) {
             assertTrue(lock.isLocked());
         }
     }
 
-    private void lockAll(ILock...locks) {
+    private void lockAll(ILock... locks) {
         for (ILock lock : locks) {
             lock.lock();
         }
     }
 
-    private ILock[] getLocks(HazelcastInstance instance, String...names) {
+    private ILock[] getLocks(HazelcastInstance instance, String... names) {
         ILock[] locks = new ILock[names.length];
         for (int i = 0; i < names.length; i++) {
             locks[i] = instance.getLock(names[i]);

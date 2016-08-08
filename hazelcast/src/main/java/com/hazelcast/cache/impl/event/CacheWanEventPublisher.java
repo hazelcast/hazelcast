@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.event;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 /**
  * This interface provides methods to publish wan replication events
@@ -32,7 +32,7 @@ public interface CacheWanEventPublisher {
      * This method will create a wrapper object using the given {@link CacheEntryView}
      * and place it to wan replication queues.
      *
-     * Updating cache operations should call this method in their {@link AbstractOperation#afterRun()} method.
+     * Updating cache operations should call this method in their {@link Operation#afterRun()} method.
      *
      * @see com.hazelcast.cache.impl.operation.CachePutOperation
      * @see com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation
@@ -44,7 +44,7 @@ public interface CacheWanEventPublisher {
      * and place it to wan replication queues.
      *
      * Cache operations which removes data from cache should call this method in their
-     * {@link AbstractOperation#afterRun()} method.
+     * {@link com.hazelcast.spi.Operation#afterRun()} method.
      *
      * @see com.hazelcast.cache.impl.operation.CacheRemoveOperation
      */

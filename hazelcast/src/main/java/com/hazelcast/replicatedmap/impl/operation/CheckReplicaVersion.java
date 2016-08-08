@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.PartitionContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 
@@ -38,7 +38,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  * Checks whether replica version is in sync with the primary.
  * If not, it will request the correct state via {@link RequestMapDataOperation}
  */
-public class CheckReplicaVersion extends AbstractOperation implements PartitionAwareOperation {
+public class CheckReplicaVersion extends Operation implements PartitionAwareOperation {
 
     private Map<String, Long> versions;
 
