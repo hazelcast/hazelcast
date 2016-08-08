@@ -16,8 +16,6 @@
 
 package com.hazelcast.ringbuffer;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Using this policy one can control the behavior what should to be done when an item is about to be added to the ringbuffer,
  * but there is 0 remaining capacity.
@@ -27,7 +25,6 @@ import com.hazelcast.spi.annotation.Beta;
  * @see Ringbuffer#addAsync(Object, OverflowPolicy)
  * @see Ringbuffer#addAllAsync(java.util.Collection, OverflowPolicy)
  */
-@Beta
 public enum OverflowPolicy {
 
     /**

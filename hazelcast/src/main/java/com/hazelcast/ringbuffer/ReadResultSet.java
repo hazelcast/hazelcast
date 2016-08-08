@@ -16,8 +16,6 @@
 
 package com.hazelcast.ringbuffer;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * The result of a {@link Ringbuffer#readManyAsync(long, int, int, com.hazelcast.core.IFunction)} operation.
  *
@@ -27,7 +25,6 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @param <E>
  */
-@Beta
 public interface ReadResultSet<E> extends Iterable<E> {
 
     /**
