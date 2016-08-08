@@ -16,13 +16,10 @@
 
 package com.hazelcast.ringbuffer;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * An {@link RuntimeException} that is thrown when accessing an item in the {@link Ringbuffer} using a sequence that is smaller
  * than the current head sequence. This means that the and old item is read, but it isn't available anymore in the ringbuffer.
  */
-@Beta
 public class StaleSequenceException extends RuntimeException {
 
     private final long headSeq;

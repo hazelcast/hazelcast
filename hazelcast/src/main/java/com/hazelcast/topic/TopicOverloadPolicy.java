@@ -16,8 +16,6 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * A policy to deal with an overloaded topic; so topic where there is no place to store new messages.
  *
@@ -35,7 +33,6 @@ import com.hazelcast.spi.annotation.Beta;
  * So keep in mind that a this retention period keep the messages in memory, even though it might by that all readers already
  * have completed reading.
  */
-@Beta
 public enum TopicOverloadPolicy {
 
     /**
