@@ -672,7 +672,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
      * This check is a temporary fix for 3.7, the actual issue will be addressed with an additional migration hook in 3.8.
      * see https://github.com/hazelcast/hazelcast/issues/6471 & https://github.com/hazelcast/hazelcast/issues/8046
      * @return {@code true} if owner partition migrations are currently being executed, otherwise false.
-     * @see com.hazelcast.spi.impl.DelegatingMigrationAwareService
+     * @see com.hazelcast.spi.impl.CountingMigrationAwareService
      */
     protected boolean hasOwnerMigrationsInFlight() {
         return mapServiceContext.getService().getOwnerMigrationsInFlight() > 0;

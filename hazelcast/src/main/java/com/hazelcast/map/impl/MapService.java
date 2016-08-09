@@ -38,7 +38,7 @@ import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.impl.DelegatingMigrationAwareService;
+import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
@@ -74,7 +74,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
     protected ManagedService managedService;
-    protected DelegatingMigrationAwareService migrationAwareService;
+    protected CountingMigrationAwareService migrationAwareService;
     protected TransactionalService transactionalService;
     protected RemoteService remoteService;
     protected EventPublishingService eventPublishingService;

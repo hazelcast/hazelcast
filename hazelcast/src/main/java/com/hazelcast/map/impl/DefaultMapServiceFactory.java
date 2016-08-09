@@ -27,7 +27,7 @@ import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.impl.DelegatingMigrationAwareService;
+import com.hazelcast.spi.impl.CountingMigrationAwareService;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -55,8 +55,8 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     }
 
     @Override
-    DelegatingMigrationAwareService createMigrationAwareService() {
-        return new DelegatingMigrationAwareService(new MapMigrationAwareService(mapServiceContext));
+    CountingMigrationAwareService createMigrationAwareService() {
+        return new CountingMigrationAwareService(new MapMigrationAwareService(mapServiceContext));
     }
 
     @Override
