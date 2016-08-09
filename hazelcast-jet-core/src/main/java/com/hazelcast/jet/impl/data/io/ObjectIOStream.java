@@ -18,14 +18,17 @@ package com.hazelcast.jet.impl.data.io;
 
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.BufferAware;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, ConsumerOutputStream<T>, BufferAware<T> {
+public class ObjectIOStream<T> implements ProducerInputStream<T>, ConsumerOutputStream<T>, BufferAware<T>, Closeable {
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE;
     private final Iterator<T> iterator = new DataIterator();
     private final DataTransferringStrategy dataTransferringStrategy;
@@ -33,9 +36,13 @@ public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, Con
     private T[] buffer;
     private int currentIdx;
 
+    public ObjectIOStream(T[] buffer) {
+        this(buffer, ByReferenceDataTransferringStrategy.INSTANCE);
+    }
+
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public AbstractIOStream(T[] buffer,
-                            DataTransferringStrategy dataTransferringStrategy) {
+    public ObjectIOStream(T[] buffer,
+                          DataTransferringStrategy dataTransferringStrategy) {
         this.buffer = buffer;
         this.dataTransferringStrategy = dataTransferringStrategy;
         initBuffer();
@@ -68,7 +75,7 @@ public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, Con
     }
 
     @Override
-    public boolean consume(T object) throws Exception {
+    public boolean consume(T object) {
         if (this.buffer == null) {
             this.buffer = (T[]) new Object[1];
             initBuffer();
@@ -106,7 +113,7 @@ public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, Con
     }
 
     @Override
-    public void consumeStream(ProducerInputStream<T> inputStream) throws Exception {
+    public void consumeStream(ProducerInputStream<T> inputStream) {
         consumeChunk(((BufferAware<T>) inputStream).getBuffer(), inputStream.size());
     }
 
@@ -142,6 +149,11 @@ public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, Con
         }
         // minCapacity is usually close to size, so this is a win:
         this.buffer = Arrays.copyOf(this.buffer, newCapacity);
+    }
+
+    @Override
+    public void close() throws IOException {
+
     }
 
     public class DataIterator implements Iterator<T> {

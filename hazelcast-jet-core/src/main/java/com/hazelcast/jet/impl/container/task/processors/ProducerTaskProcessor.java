@@ -23,7 +23,7 @@ import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -37,8 +37,8 @@ public class ProducerTaskProcessor implements TaskProcessor {
     protected final ContainerProcessor processor;
     protected final ContainerContext containerContext;
     protected final ProcessorContext processorContext;
-    protected final DefaultObjectIOStream objectInputStream;
-    protected final DefaultObjectIOStream pairOutputStream;
+    protected final ObjectIOStream objectInputStream;
+    protected final ObjectIOStream pairOutputStream;
     protected boolean produced;
     protected boolean finalized;
     protected boolean finalizationStarted;
@@ -64,8 +64,8 @@ public class ProducerTaskProcessor implements TaskProcessor {
         this.containerContext = containerContext;
         JobConfig jobConfig = containerContext.getJobContext().getJobConfig();
         int pairChunkSize = jobConfig.getChunkSize();
-        this.objectInputStream = new DefaultObjectIOStream<>(new Object[pairChunkSize]);
-        this.pairOutputStream = new DefaultObjectIOStream<>(new Object[pairChunkSize]);
+        this.objectInputStream = new ObjectIOStream<>(new Object[pairChunkSize]);
+        this.pairOutputStream = new ObjectIOStream<>(new Object[pairChunkSize]);
     }
 
     public boolean onChunk(ProducerInputStream inputStream) throws Exception {

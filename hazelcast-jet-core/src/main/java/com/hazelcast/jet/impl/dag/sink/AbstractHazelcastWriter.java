@@ -21,7 +21,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class AbstractHazelcastWriter implements DataWriter {
-    protected final DefaultObjectIOStream<Object> chunkInputStream;
+    protected final ObjectIOStream<Object> chunkInputStream;
 
     protected final SettableFuture<Boolean> future = SettableFuture.create();
 
@@ -45,7 +45,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
     protected final ContainerDescriptor containerDescriptor;
 
-    protected final DefaultObjectIOStream<Object> chunkBuffer;
+    protected final ObjectIOStream<Object> chunkBuffer;
 
     protected final ILogger logger;
 
@@ -102,8 +102,8 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         this.awaitInSecondsTime = jobConfig.getSecondsToAwait();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
         int pairChunkSize = jobConfig.getChunkSize();
-        this.chunkBuffer = new DefaultObjectIOStream<Object>(new Object[pairChunkSize]);
-        this.chunkInputStream = new DefaultObjectIOStream<Object>(new Object[pairChunkSize]);
+        this.chunkBuffer = new ObjectIOStream<Object>(new Object[pairChunkSize]);
+        this.chunkInputStream = new ObjectIOStream<Object>(new Object[pairChunkSize]);
         this.shufflingStrategy = null;
     }
 

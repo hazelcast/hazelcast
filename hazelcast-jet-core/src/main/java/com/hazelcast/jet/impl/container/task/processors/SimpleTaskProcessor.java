@@ -18,9 +18,8 @@ package com.hazelcast.jet.impl.container.task.processors;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -31,19 +30,18 @@ public class SimpleTaskProcessor implements TaskProcessor {
     protected boolean finalizationStarted;
     protected boolean producersWriteFinished;
     private final ContainerProcessor processor;
-    private final DefaultObjectIOStream pairInputStream;
-    private final DefaultObjectIOStream pairOutputStream;
+    private final ObjectIOStream pairInputStream;
+    private final ObjectIOStream pairOutputStream;
     private boolean finalized;
     private final ProcessorContext processorContext;
 
     public SimpleTaskProcessor(ContainerProcessor processor,
-                               ContainerContext containerContext,
                                ProcessorContext processorContext) {
         checkNotNull(processor);
         this.processor = processor;
         this.processorContext = processorContext;
-        this.pairInputStream = new DefaultObjectIOStream<>(DUMMY_CHUNK);
-        this.pairOutputStream = new DefaultObjectIOStream<>(DUMMY_CHUNK);
+        this.pairInputStream = new ObjectIOStream<>(DUMMY_CHUNK);
+        this.pairOutputStream = new ObjectIOStream<>(DUMMY_CHUNK);
     }
 
     @Override

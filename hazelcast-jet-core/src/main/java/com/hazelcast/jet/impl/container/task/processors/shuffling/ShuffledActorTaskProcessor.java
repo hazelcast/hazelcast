@@ -26,7 +26,7 @@ import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.ActorTaskProcessor;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.nio.Address;
@@ -35,7 +35,7 @@ import java.util.List;
 
 public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     private final ObjectProducer[] receivers;
-    private final DefaultObjectIOStream<Object> receivedPairStream;
+    private final ObjectIOStream<Object> receivedPairStream;
     private final TaskProcessor receiverConsumerProcessor;
     private int nextReceiverIdx;
     private boolean receiversClosed;
@@ -64,7 +64,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         }
 
         int chunkSize = containerContext.getJobContext().getJobConfig().getChunkSize();
-        this.receivedPairStream = new DefaultObjectIOStream<Object>(new Object[chunkSize]);
+        this.receivedPairStream = new ObjectIOStream<Object>(new Object[chunkSize]);
         this.receivers = receivers.toArray(new ObjectProducer[receivers.size()]);
     }
 
