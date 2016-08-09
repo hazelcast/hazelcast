@@ -22,8 +22,8 @@ import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.data.io.JetPacket;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.job.JobContext;
@@ -31,6 +31,7 @@ import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -47,7 +48,7 @@ public class DefaultSocketReader
     private final int chunkSize;
     private final Address jetAddress;
     private final JobContext jobContext;
-    private final DefaultObjectIOStream<JetPacket> buffer;
+    private final ObjectIOStream<JetPacket> buffer;
     private final List<RingBufferActor> consumers = new ArrayList<RingBufferActor>();
     private final Map<Address, SocketWriter> writers = new HashMap<Address, SocketWriter>();
 
@@ -65,7 +66,7 @@ public class DefaultSocketReader
                 (InternalSerializationService) jobContext.getNodeEngine().getSerializationService();
         this.jobNameBytes = serializationService.toBytes(this.jobContext.getName());
         this.chunkSize = jobContext.getJobConfig().getChunkSize();
-        this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
+        this.buffer = new ObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
     public DefaultSocketReader(NodeEngine nodeEngine) {
@@ -75,7 +76,7 @@ public class DefaultSocketReader
         this.jobContext = null;
         this.chunkSize = JobConfig.DEFAULT_CHUNK_SIZE;
         this.jobNameBytes = null;
-        this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
+        this.buffer = new ObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
     public void init() {

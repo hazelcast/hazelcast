@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.dag.Edge;
@@ -26,7 +27,6 @@ import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithReferenceStrategy;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithValueStrategy;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.strategy.HashingStrategy;
@@ -46,7 +46,7 @@ public class RingBufferActor implements ObjectActor {
     private final ContainerTask sourceTask;
     private final Object[] producerChunk;
     private final RingBuffer<Object> ringBuffer;
-    private final DefaultObjectIOStream<Object> flushBuffer;
+    private final ObjectIOStream<Object> flushBuffer;
     private final List<ProducerCompletionHandler> completionHandlers;
     private int producedCount;
     private int lastConsumedCount;
@@ -81,7 +81,7 @@ public class RingBufferActor implements ObjectActor {
         int objectChunkSize = jobConfig.getChunkSize();
         this.producerChunk = new Object[objectChunkSize];
         int ringbufferSize = jobConfig.getRingbufferSize();
-        this.flushBuffer = new DefaultObjectIOStream<Object>(new Object[objectChunkSize]);
+        this.flushBuffer = new ObjectIOStream<Object>(new Object[objectChunkSize]);
         this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
         boolean byReference = edge == null || edge.getDataTransferringStrategy().byReference();
 

@@ -30,7 +30,7 @@ public interface ConsumerOutputStream<T> extends Consumer<T> {
      * @param inputStream corresponding inputStream
      * @throws Exception if any exception
      */
-    void consumeStream(ProducerInputStream<T> inputStream) throws Exception;
+    void consumeStream(ProducerInputStream<T> inputStream);
 
     /**
      * Consumes chunk of objects with size actualSize
@@ -47,5 +47,5 @@ public interface ConsumerOutputStream<T> extends Consumer<T> {
      * @return always true for this type of consumer
      * @throws Exception if any exception
      */
-    boolean consume(T object) throws Exception;
+    boolean consume(T object);
 }

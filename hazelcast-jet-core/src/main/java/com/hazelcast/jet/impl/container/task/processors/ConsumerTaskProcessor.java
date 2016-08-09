@@ -23,7 +23,7 @@ import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -34,8 +34,8 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected final ObjectConsumer[] consumers;
     protected final ContainerProcessor processor;
     protected final ContainerContext containerContext;
-    protected final DefaultObjectIOStream pairInputStream;
-    protected final DefaultObjectIOStream pairOutputStream;
+    protected final ObjectIOStream pairInputStream;
+    protected final ObjectIOStream pairOutputStream;
     protected boolean producersWriteFinished;
     protected final ProcessorContext processorContext;
     protected final ConsumersProcessor consumersProcessor;
@@ -59,10 +59,10 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         this.processorContext = processorContext;
         this.containerContext = containerContext;
         this.consumersProcessor = new ConsumersProcessor(consumers);
-        this.pairInputStream = new DefaultObjectIOStream<Object>(DUMMY_CHUNK);
+        this.pairInputStream = new ObjectIOStream<Object>(DUMMY_CHUNK);
         JobConfig jobConfig = containerContext.getConfig();
         int pairChunkSize = jobConfig.getChunkSize();
-        this.pairOutputStream = new DefaultObjectIOStream<Object>(new Object[pairChunkSize]);
+        this.pairOutputStream = new ObjectIOStream<Object>(new Object[pairChunkSize]);
         reset();
     }
 

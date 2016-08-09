@@ -25,8 +25,8 @@ import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.data.io.JetPacket;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.SerializationOptimizer;
@@ -44,7 +44,7 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
     private final List<ProducerCompletionHandler> handlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
     private final ChunkedInputStream chunkReceiver;
     private final RingBufferActor ringBufferActor;
-    private final DefaultObjectIOStream<JetPacket> packetBuffers;
+    private final ObjectIOStream<JetPacket> packetBuffers;
     private final SerializationOptimizer optimizer;
 
     private Object[] dataChunkBuffer;
@@ -66,7 +66,7 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
         int chunkSize = jobConfig.getChunkSize();
         this.ringBufferActor = new RingBufferActor(nodeEngine, containerContext.getJobContext(), containerTask,
                 containerContext.getVertex());
-        this.packetBuffers = new DefaultObjectIOStream<>(new JetPacket[chunkSize]);
+        this.packetBuffers = new ObjectIOStream<>(new JetPacket[chunkSize]);
         this.chunkReceiver = new ChunkedInputStream(this.packetBuffers);
         this.in = new ObjectDataInputStream(chunkReceiver,
                 (InternalSerializationService) nodeEngine.getSerializationService());

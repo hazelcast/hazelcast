@@ -38,7 +38,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
                                              ProcessorContext processorContext,
                                              Vertex vertex,
                                              int taskID) {
-        return new SimpleTaskProcessor(processor, containerContext, processorContext);
+        return new SimpleTaskProcessor(processor, processorContext);
     }
 
     @Override

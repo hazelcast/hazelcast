@@ -125,7 +125,7 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Pa
         }
 
         @Override
-        public void consumeStream(ProducerInputStream<OUT> inputStream) throws Exception {
+        public void consumeStream(ProducerInputStream<OUT> inputStream) {
             for (OUT out : inputStream) {
                 outputStream.consume(outputMapper.apply(out));
             }
@@ -137,7 +137,7 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Pa
         }
 
         @Override
-        public boolean consume(OUT object) throws Exception {
+        public boolean consume(OUT object) {
             return outputStream.consume(outputMapper.apply(object));
         }
     }
