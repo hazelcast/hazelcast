@@ -20,46 +20,101 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.operation.ClearExpiredOperation;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
-// TODO refactor
+import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.lang.Integer.getInteger;
+import static java.lang.Math.min;
+import static java.util.Collections.sort;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Manages expiration operations.
+ * Responsible for gradual cleanup of expired entries in partitions.
+ * By using these system properties, one can accelerate or slow down background expiration process.
+ * <li>
+ * <ul>{@value SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS}</ul>
+ * <ul>{@value SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE}</ul>
+ * <ul>{@value SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT}</ul>
+ * </li>
  *
  * @since 3.3
  */
 public class ExpirationManager {
 
-    private static final long INITIAL_DELAY = 5;
+    // These are `public` for testing purposes.
+    public static final String SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS = "hazelcast.internal.map.expiration.task.period.seconds";
+    public static final String SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE = "hazelcast.internal.map.expiration.cleanup.percentage";
+    @SuppressWarnings("checkstyle:linelength")
+    public static final String SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT = "hazelcast.internal.map.expiration.cleanup.operation.count";
 
-    private static final long PERIOD = 5;
-
-    private static final TimeUnit UNIT = TimeUnit.SECONDS;
-
-    private final NodeEngine nodeEngine;
+    private static final int DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS = 5;
+    private static final int DEFAULT_EXPIRATION_CLEANUP_PERCENTAGE = 10;
+    private static final int DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS = 1000;
 
     private final MapServiceContext mapServiceContext;
+    private final InternalPartitionService partitionService;
+    private final ExecutionService executionService;
+    private final InternalOperationService operationService;
+    private final Address thisAddress;
+    private final int partitionCount;
+    private final int taskPeriodSeconds;
+    private final int cleanupPercentage;
+    private final int cleanupOperationCount;
 
-    public ExpirationManager(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
+    @SuppressWarnings("checkstyle:magicnumber")
+    public ExpirationManager(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.partitionService = nodeEngine.getPartitionService();
+        this.executionService = nodeEngine.getExecutionService();
+        this.operationService = (InternalOperationService) nodeEngine.getOperationService();
+        this.thisAddress = nodeEngine.getThisAddress();
+        this.partitionCount = partitionService.getPartitionCount();
+
+        this.taskPeriodSeconds = getInteger(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS);
+        checkPositive(taskPeriodSeconds, "taskPeriodSeconds should be a positive number");
+
+        this.cleanupPercentage = getInteger(SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE, DEFAULT_EXPIRATION_CLEANUP_PERCENTAGE);
+        checkTrue(cleanupPercentage > 0 && cleanupPercentage <= 100, "cleanupPercentage should be in range (0,100]");
+
+        int defaultCleanupOpCount = calculateCleanupOperationCount(partitionCount, operationService.getPartitionOperationThreadCount());
+        this.cleanupOperationCount = getInteger(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT, defaultCleanupOpCount);
+        checkPositive(cleanupOperationCount, "cleanupOperationCount should be a positive number");
+    }
+
+    private static int calculateCleanupOperationCount(int partitionCount, int partitionThreadCount) {
+        // calculate operation count to be sent by using partition-count.
+        final double scanPercentage = 0.1D;
+        final int opCountFromPartitionCount = (int) (partitionCount * scanPercentage);
+
+        // calculate operation count to be sent by using partition-thread-count.
+        final int inflationFactor = 3;
+        int opCountFromThreadCount = partitionThreadCount * inflationFactor;
+
+        if (opCountFromPartitionCount == 0) {
+            return opCountFromThreadCount;
+        }
+
+        return min(opCountFromPartitionCount, opCountFromThreadCount);
     }
 
     public void start() {
-        nodeEngine.getExecutionService()
-                .scheduleAtFixedRate(new ClearExpiredRecordsTask(), INITIAL_DELAY, PERIOD, UNIT);
+        ClearExpiredRecordsTask task = new ClearExpiredRecordsTask();
+        executionService.scheduleAtFixedRate(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
     }
 
     /**
@@ -68,10 +123,6 @@ public class ExpirationManager {
      * Fires cleanup operations at most partition operation thread count or some factor of it in one round.
      */
     private class ClearExpiredRecordsTask implements Runnable {
-
-        private static final int EXPIRATION_PERCENTAGE = 10;
-
-        private static final long MIN_MILLIS_DIFF_BETWEEN_TWO_RUNS = 1000;
 
         private final Comparator<PartitionContainer> partitionContainerComparator = new Comparator<PartitionContainer>() {
             @Override
@@ -84,36 +135,38 @@ public class ExpirationManager {
 
         public void run() {
             final long now = Clock.currentTimeMillis();
-            final NodeEngine nodeEngine = ExpirationManager.this.nodeEngine;
-            final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-            List<PartitionContainer> partitionContainers = Collections.emptyList();
-            boolean createLazy = true;
             int currentlyRunningCleanupOperationsCount = 0;
+
+            List<PartitionContainer> partitionContainers = null;
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
-                if (partition.isOwnerOrBackup(nodeEngine.getThisAddress())) {
-                    final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+                InternalPartition partition = partitionService.getPartition(partitionId, false);
+
+                if (partition.isOwnerOrBackup(thisAddress)) {
+                    PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
                     if (isContainerEmpty(partitionContainer)) {
                         continue;
                     }
-                    if (hasRunningCleanup(partitionContainer)) {
+
+                    if (partitionContainer.hasRunningCleanup()) {
                         currentlyRunningCleanupOperationsCount++;
                         continue;
                     }
-                    if (currentlyRunningCleanupOperationsCount > getMaxCleanupOperationCountInOneRound()
+
+                    if (currentlyRunningCleanupOperationsCount > cleanupOperationCount
                             || notInProcessableTimeWindow(partitionContainer, now)
                             || notHaveAnyExpirableRecord(partitionContainer)) {
                         continue;
                     }
 
-                    if (createLazy) {
+                    if (partitionContainers == null) {
                         partitionContainers = new ArrayList<PartitionContainer>();
-                        createLazy = false;
                     }
+
                     partitionContainers.add(partitionContainer);
                 }
             }
-            if (partitionContainers.isEmpty()) {
+
+            if (isEmpty(partitionContainers)) {
                 return;
             }
 
@@ -123,47 +176,32 @@ public class ExpirationManager {
 
         private void sortPartitionContainers(List<PartitionContainer> partitionContainers) {
             updateLastCleanupTimesBeforeSorting(partitionContainers);
-            Collections.sort(partitionContainers, partitionContainerComparator);
+            sort(partitionContainers, partitionContainerComparator);
         }
 
 
         private void sendCleanupOperations(List<PartitionContainer> partitionContainers) {
-            final int maxCleanupOperationCountInOneRound = getMaxCleanupOperationCountInOneRound();
             final int start = 0;
-            int end = maxCleanupOperationCountInOneRound;
+            int end = cleanupOperationCount;
             if (end > partitionContainers.size()) {
                 end = partitionContainers.size();
             }
-            final List<PartitionContainer> partitionIds = partitionContainers.subList(start, end);
+            List<PartitionContainer> partitionIds = partitionContainers.subList(start, end);
             for (PartitionContainer container : partitionIds) {
                 // mark partition container as has on going expiration operation.
                 container.setHasRunningCleanup(true);
-                OperationService operationService = ExpirationManager.this.nodeEngine.getOperationService();
-                operationService.executeOperation(createExpirationOperation(EXPIRATION_PERCENTAGE,
-                        container.getPartitionId()));
+                Operation operation = createExpirationOperation(cleanupPercentage, container.getPartitionId());
+                operationService.executeOperation(operation);
             }
         }
 
-        private boolean expirable(RecordStore recordStore) {
-            return recordStore.isExpirable();
-        }
-
-        private boolean hasRunningCleanup(PartitionContainer partitionContainer) {
-            return partitionContainer.hasRunningCleanup();
-        }
-
         private boolean notInProcessableTimeWindow(PartitionContainer partitionContainer, long now) {
-            return now - partitionContainer.getLastCleanupTime() < MIN_MILLIS_DIFF_BETWEEN_TWO_RUNS;
-        }
-
-        private int getMaxCleanupOperationCountInOneRound() {
-            final int times = 3;
-            return times * ExpirationManager.this.nodeEngine.getOperationService().getPartitionOperationThreadCount();
+            return now - partitionContainer.getLastCleanupTime() < DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS;
         }
 
         private boolean isContainerEmpty(PartitionContainer container) {
             long size = 0L;
-            final ConcurrentMap<String, RecordStore> maps = container.getMaps();
+            ConcurrentMap<String, RecordStore> maps = container.getMaps();
             for (RecordStore store : maps.values()) {
                 size += store.size();
                 if (size > 0L) {
@@ -184,7 +222,7 @@ public class ExpirationManager {
             boolean notExist = true;
             final ConcurrentMap<String, RecordStore> maps = partitionContainer.getMaps();
             for (RecordStore store : maps.values()) {
-                if (expirable(store)) {
+                if (store.isExpirable()) {
                     notExist = false;
                     break;
                 }
@@ -194,7 +232,8 @@ public class ExpirationManager {
     }
 
     private Operation createExpirationOperation(int expirationPercentage, int partitionId) {
-        final ClearExpiredOperation clearExpiredOperation = new ClearExpiredOperation(expirationPercentage);
+        ClearExpiredOperation clearExpiredOperation = new ClearExpiredOperation(expirationPercentage);
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         clearExpiredOperation
                 .setNodeEngine(nodeEngine)
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())
@@ -216,5 +255,18 @@ public class ExpirationManager {
         }
     }
 
+    // used for testing purposes
+    public int getTaskPeriodSeconds() {
+        return taskPeriodSeconds;
+    }
 
+    // used for testing purposes
+    public int getCleanupPercentage() {
+        return cleanupPercentage;
+    }
+
+    // used for testing purposes
+    public int getCleanupOperationCount() {
+        return cleanupOperationCount;
+    }
 }

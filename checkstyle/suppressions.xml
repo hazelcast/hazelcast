@@ -576,6 +576,8 @@
     <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.map.impl.MapServiceContextImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.map.impl.MapServiceContext"/>
 
+    <suppress checks="LineLength|MagicNumber" files="com.hazelcast.map.impl.eviction.ExpirationManager"/>
+
     <!-- map.proxy-->
     <!--<suppress checks="" files="com.hazelcast.map.impl.proxy[\\/]"/>-->
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.impl.tx.TransactionalMapProxySupport"/>

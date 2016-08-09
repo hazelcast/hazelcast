@@ -98,7 +98,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.partitionContainers = new PartitionContainer[partitionCount];
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
-        this.expirationManager = new ExpirationManager(this, nodeEngine);
+        this.expirationManager = new ExpirationManager(this);
         this.evictionOperator = EvictionOperator.create(this);
         this.nearCacheProvider = new NearCacheProvider(this, nodeEngine);
         this.localMapStatsProvider = new LocalMapStatsProvider(this, nodeEngine);
