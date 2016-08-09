@@ -38,7 +38,6 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.Collection;
@@ -52,12 +51,10 @@ public class NodeIOService implements IOService {
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final PacketDispatcher packetDispatcher;
 
     public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
-        this.packetDispatcher = nodeEngine.getPacketDispatcher();
     }
 
     @Override

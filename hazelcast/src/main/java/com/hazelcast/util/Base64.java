@@ -52,7 +52,6 @@ public final class Base64 {
     private static final int TWENTYFOURBITGROUP = 24;
     private static final int EIGHTBIT = 8;
     private static final int SIXTEENBIT = 16;
-    private static final int SIXBIT = 6;
     private static final int FOURBYTE = 4;
     private static final int SIGN = -128;
     private static final byte PAD = (byte) '=';
@@ -91,7 +90,6 @@ public final class Base64 {
 
     private Base64() {
     }
-
 
     protected static boolean isWhiteSpace(byte octect) {
         return (octect == 0x20 || octect == 0xd || octect == 0xa || octect == 0x9);

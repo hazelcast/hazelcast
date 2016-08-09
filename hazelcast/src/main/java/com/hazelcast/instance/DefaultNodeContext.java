@@ -62,7 +62,6 @@ public class DefaultNodeContext implements NodeContext {
         boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
         if (spinning) {
             return new SpinningIOThreadingModel(
-                    ioService,
                     node.loggingService,
                     node.nodeEngine.getMetricsRegistry(),
                     node.getHazelcastThreadGroup());

@@ -33,7 +33,7 @@ import java.util.Random;
  * than shared {@code Random} objects in concurrent programs will
  * typically encounter much less overhead and contention.  Use of
  * {@code ThreadLocalRandom} is particularly appropriate when multiple
- * tasks (for example, each a {@link ForkJoinTask}) use random numbers
+ * tasks (for example, each a {@link java.util.concurrent.ForkJoinTask}) use random numbers
  * in parallel in thread pools.
  *
  * <p>Usages of this class should typically be of the form:
@@ -70,6 +70,7 @@ public class ThreadLocalRandom extends Random {
     // Padding to help avoid memory contention among seed updates in
     // different TLRs in the common case that they are located near
     // each other.
+    @SuppressWarnings("unused")
     private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
 
     /**

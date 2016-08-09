@@ -23,7 +23,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
@@ -31,8 +30,6 @@ import com.hazelcast.multimap.impl.operations.MultiMapMigrationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -46,6 +43,8 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
@@ -82,7 +81,6 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
                     return new LocalMultiMapStatsImpl();
                 }
             };
-    private final ILogger logger;
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
 
@@ -90,7 +88,6 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         partitionContainers = new MultiMapPartitionContainer[partitionCount];
-        this.logger = nodeEngine.getLogger(MultiMapService.class);
         dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
         publisher = new MultiMapEventsPublisher(nodeEngine);
     }

@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp.spinning;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -31,12 +30,10 @@ public class SpinningOutputThread extends Thread {
     private static final AtomicReferenceFieldUpdater<SpinningOutputThread, SocketWriters> CONNECTION_HANDLERS
             = newUpdater(SpinningOutputThread.class, SocketWriters.class, "socketWriters");
 
-    private final ILogger logger;
     private volatile SocketWriters socketWriters;
 
-    public SpinningOutputThread(HazelcastThreadGroup threadGroup, ILogger logger) {
+    public SpinningOutputThread(HazelcastThreadGroup threadGroup) {
         super(threadGroup.getInternalThreadGroup(), "out-thread");
-        this.logger = logger;
         this.socketWriters = new SocketWriters();
     }
 

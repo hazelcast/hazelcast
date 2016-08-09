@@ -20,7 +20,6 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketWriter;
@@ -50,15 +49,14 @@ public class SpinningIOThreadingModel implements IOThreadingModel {
     private final SpinningOutputThread outThread;
 
     public SpinningIOThreadingModel(
-            IOService ioService,
             LoggingService loggingService,
             MetricsRegistry metricsRegistry,
             HazelcastThreadGroup hazelcastThreadGroup) {
         this.logger = loggingService.getLogger(SpinningIOThreadingModel.class);
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
-        this.inputThread = new SpinningInputThread(hazelcastThreadGroup, loggingService.getLogger(SpinningInputThread.class));
-        this.outThread = new SpinningOutputThread(hazelcastThreadGroup, loggingService.getLogger(SpinningOutputThread.class));
+        this.inputThread = new SpinningInputThread(hazelcastThreadGroup);
+        this.outThread = new SpinningOutputThread(hazelcastThreadGroup);
     }
 
     @Override

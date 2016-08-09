@@ -78,7 +78,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         eventService = nodeEngine.getEventService();
     }
 
-    //only for testing
+    // only for testing
     public ConcurrentMap<String, LocalTopicStatsImpl> getStatsMap() {
         return statsMap;
     }

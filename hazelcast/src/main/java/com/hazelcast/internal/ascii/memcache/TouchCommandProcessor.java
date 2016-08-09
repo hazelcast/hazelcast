@@ -18,7 +18,6 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
-import com.hazelcast.logging.ILogger;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -28,11 +27,8 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TOUCHED;
 
 public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand> {
 
-    private final ILogger logger;
-
     public TouchCommandProcessor(TextCommandServiceImpl textCommandService) {
         super(textCommandService);
-        logger = textCommandService.getNode().getLogger(getClass());
     }
 
     @Override
