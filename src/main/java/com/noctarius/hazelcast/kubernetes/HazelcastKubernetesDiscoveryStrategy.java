@@ -28,10 +28,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.*;
 
 final class HazelcastKubernetesDiscoveryStrategy
         implements DiscoveryStrategy {
@@ -43,16 +40,16 @@ final class HazelcastKubernetesDiscoveryStrategy
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         String serviceDns = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS);
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
-        String namespace = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE);
+        String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
+        String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE,"true");
+        String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE,getNamespaceOrDefault());
 
-        if (serviceDns == null && (serviceName == null || namespace == null)) {
-            throw new RuntimeException(
-                    "For kubernetes discovery either 'service-dns' or " + "'service-name' and 'namespace' must be set");
-        }
 
         logger.info("Kubernetes Discovery properties: { "
                 + "service-dns: " + serviceDns + ", "
                 + "service-name: " + serviceName + ", "
+                + "service-label: " + serviceLabel + ", "
+                + "service-label-value: " + serviceLabelValue + ", "
                 + "namespace: " + namespace
                 + "}");
 
@@ -60,10 +57,21 @@ final class HazelcastKubernetesDiscoveryStrategy
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns);
         } else {
-            endpointResolver = new ServiceEndpointResolver(logger, serviceName, namespace);
+            endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel, serviceLabelValue, namespace);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
         this.endpointResolver = endpointResolver;
+    }
+
+    private String getNamespaceOrDefault() {
+        String namespace = System.getenv("KUBERNETES_NAMESPACE");
+        if (namespace == null) {
+            namespace = System.getenv("OPENSHIFT_BUILD_NAMESPACE");
+            if (namespace == null) {
+                namespace = "default";
+            }
+        }
+        return namespace;
     }
 
     public void start() {
@@ -82,8 +90,8 @@ final class HazelcastKubernetesDiscoveryStrategy
         return getOrDefault(properties, prefix, property, null);
     }
 
-    protected  <T extends Comparable> T getOrDefault(Map<String, Comparable> properties, String prefix,
-                                                     PropertyDefinition property, T defaultValue) {
+    protected <T extends Comparable> T getOrDefault(Map<String, Comparable> properties, String prefix,
+                                                    PropertyDefinition property, T defaultValue) {
         if (property == null) {
             return defaultValue;
         }

@@ -16,16 +16,13 @@
  */
 package com.noctarius.hazelcast.kubernetes;
 
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.SRVRecord;
-import org.xbill.DNS.TextParseException;
-import org.xbill.DNS.Type;
+import org.xbill.DNS.*;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -71,7 +68,7 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
                 //      Address: 10.1.9.33
                 SRVRecord srv = (SRVRecord) records[0];
                 InetAddress[] inetAddress = getAllAdresses(srv);
-                int port = srv.getPort();
+                int port = getHazelcastPort(srv.getPort());
 
                 for (InetAddress i : inetAddress) {
                     Address address = new Address(i, port);
@@ -93,6 +90,11 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
         } catch (UnknownHostException e) {
             throw new RuntimeException("Could not resolve services via DNS", e);
         }
+    }
+
+    private int getHazelcastPort(int port){
+        if(port>0) return port;
+        return NetworkConfig.DEFAULT_PORT;
     }
 
     private InetAddress[] getAllAdresses(SRVRecord srv) throws UnknownHostException {

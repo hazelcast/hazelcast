@@ -30,9 +30,9 @@ public final class KubernetesProperties {
 
     /**
      * <p>Configuration System Environment Prefix: <tt>hazelcast.kubernetes.</tt></p>
-     * Defines the prefix for system environment variables and JVM command line parameters.<br/>
+     * Defines the prefix for system environment variables and JVM command line parameters.<br>
      * Defining or overriding properties as JVM parameters or using the system environment, those
-     * properties need to be prefixed to prevent collision on property names.<br/>
+     * properties need to be prefixed to prevent collision on property names.<br>
      * Example: {@link #SERVICE_DNS} will be:
      * <pre>
      *     -Dhazelcast.kubernetes.service-dns=value
@@ -49,7 +49,7 @@ public final class KubernetesProperties {
     /**
      * <p>Configuration key: <tt>service-dns</tt></p>
      * Defines the DNS service lookup domain. This is defined as something similar
-     * to <tt>my-svc.my-namespace.svc.cluster.local</tt>.<br/>
+     * to <tt>my-svc.my-namespace.svc.cluster.local</tt>.<br>
      * For more information please refer to the official documentation of the Kubernetes DNS addon,
      * <a href="https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns">here</a>.
      */
@@ -60,6 +60,16 @@ public final class KubernetesProperties {
      * Defines the service name of the POD to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition SERVICE_NAME = property("service-name", STRING);
+    /**
+     * <p>Configuration key: <tt>service-label-name</tt></p>
+     * Defines the service label to lookup through the Service Discovery REST API of Kubernetes.
+     */
+    public static final PropertyDefinition SERVICE_LABEL_NAME = property("service-label-name", STRING);
+    /**
+     * <p>Configuration key: <tt>service-label-value</tt></p>
+     * Defines the service label value to lookup through the Service Discovery REST API of Kubernetes.
+     */
+    public static final PropertyDefinition SERVICE_LABEL_VALUE= property("service-label-value", STRING);
 
     /**
      * <p>Configuration key: <tt>namespace</tt></p>
