@@ -61,6 +61,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.executor.ExecutorType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -568,9 +569,20 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return membersRemovedInNotActiveState.containsKey(target);
     }
 
-    public Collection<MemberImpl> getMembersRemovedWhileClusterIsNotActive() {
-        Map<Address, MemberImpl> membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-        return membersRemovedInNotActiveState.values();
+    public Collection<Member> getCurrentMembersAndMembersRemovedWhileClusterIsNotActive() {
+        lock.lock();
+        try {
+            Collection<MemberImpl> members = membersRef.get();
+            Collection<MemberImpl> removedMembers = membersRemovedInNotActiveStateRef.get().values();
+
+            Collection<Member> allMembers = new ArrayList<Member>(members.size() + removedMembers.size());
+            allMembers.addAll(members);
+            allMembers.addAll(removedMembers);
+
+            return allMembers;
+        } finally {
+            lock.unlock();
+        }
     }
 
     void removeMembersDeadWhileClusterIsNotActive() {
