@@ -49,7 +49,9 @@ class ServiceEndpointResolver
 
     private final KubernetesClient client;
 
-    public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, String serviceLabelValue, String namespace) {
+    public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, //
+                                   String serviceLabelValue, String namespace) {
+
         super(logger);
 
         this.serviceName = serviceName;
@@ -64,28 +66,31 @@ class ServiceEndpointResolver
     }
 
     List<DiscoveryNode> resolve() {
-        List<DiscoveryNode> result = Collections.EMPTY_LIST;
+        List<DiscoveryNode> result = Collections.emptyList();
         if (serviceName != null && !serviceName.isEmpty()) {
             result = getSimpleDiscoveryNodes(client.endpoints().inNamespace(namespace).withName(serviceName).get());
         }
 
         if (result.isEmpty() && serviceLabel != null && !serviceLabel.isEmpty()) {
-            result = getDiscoveryNodes(client.endpoints().inNamespace(namespace).withLabel(serviceLabel, serviceLabelValue).list());
+            result = getDiscoveryNodes(
+                    client.endpoints().inNamespace(namespace).withLabel(serviceLabel, serviceLabelValue).list());
         }
 
         return result.isEmpty() ? getNodesByNamespace() : result;
-
     }
 
     private List<DiscoveryNode> getNodesByNamespace() {
         final EndpointsList endpointsInNamespace = client.endpoints().inNamespace(namespace).list();
-        if (endpointsInNamespace == null)
+        if (endpointsInNamespace == null) {
             return Collections.emptyList();
+        }
         return getDiscoveryNodes(endpointsInNamespace);
     }
 
     private List<DiscoveryNode> getDiscoveryNodes(EndpointsList endpointsInNamespace) {
-        if (endpointsInNamespace == null) return Collections.emptyList();
+        if (endpointsInNamespace == null) {
+            return Collections.emptyList();
+        }
         List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
         for (Endpoints endpoints : endpointsInNamespace.getItems()) {
             discoveredNodes.addAll(getSimpleDiscoveryNodes(endpoints));
@@ -94,7 +99,9 @@ class ServiceEndpointResolver
     }
 
     private List<DiscoveryNode> getSimpleDiscoveryNodes(Endpoints endpoints) {
-        if (endpoints == null) return Collections.emptyList();
+        if (endpoints == null) {
+            return Collections.emptyList();
+        }
         List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
         for (EndpointSubset endpointSubset : endpoints.getSubsets()) {
             for (EndpointAddress endpointAddress : endpointSubset.getAddresses()) {

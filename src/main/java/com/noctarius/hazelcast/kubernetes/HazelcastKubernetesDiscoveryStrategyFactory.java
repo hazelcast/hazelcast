@@ -30,16 +30,17 @@ import java.util.Map;
 /**
  * Just the factory to create the Kubernetes Discovery Strategy
  */
-public class HazelcastKubernetesDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+public class HazelcastKubernetesDiscoveryStrategyFactory
+        implements DiscoveryStrategyFactory {
 
     private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS;
 
     static {
-        PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(Arrays.asList(
-                KubernetesProperties.SERVICE_DNS,
-                KubernetesProperties.SERVICE_NAME,
-                KubernetesProperties.NAMESPACE,
-                KubernetesProperties.SERVICE_LABEL_NAME,
+        PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(Arrays.asList( //
+                KubernetesProperties.SERVICE_DNS, //
+                KubernetesProperties.SERVICE_NAME, //
+                KubernetesProperties.NAMESPACE, //
+                KubernetesProperties.SERVICE_LABEL_NAME, //
                 KubernetesProperties.SERVICE_LABEL_VALUE));
     }
 

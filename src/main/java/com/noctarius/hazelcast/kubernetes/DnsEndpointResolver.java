@@ -22,7 +22,11 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import org.xbill.DNS.*;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.SRVRecord;
+import org.xbill.DNS.TextParseException;
+import org.xbill.DNS.Type;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,7 +34,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
+final class DnsEndpointResolver
+        extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
 
     private static final ILogger LOGGER = Logger.getLogger(DnsEndpointResolver.class);
 
@@ -67,7 +72,7 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
                 //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
                 //      Address: 10.1.9.33
                 SRVRecord srv = (SRVRecord) records[0];
-                InetAddress[] inetAddress = getAllAdresses(srv);
+                InetAddress[] inetAddress = getAllAddresses(srv);
                 int port = getHazelcastPort(srv.getPort());
 
                 for (InetAddress i : inetAddress) {
@@ -78,6 +83,7 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
                     }
                     discoveredNodes.add(new SimpleDiscoveryNode(address));
                 }
+
             } else {
                 LOGGER.warning("Could not find any service for serviceDns '" + serviceDns + "' failed");
                 return Collections.emptyList();
@@ -92,12 +98,16 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
         }
     }
 
-    private int getHazelcastPort(int port){
-        if(port>0) return port;
+    private int getHazelcastPort(int port) {
+        if (port > 0) {
+            return port;
+        }
         return NetworkConfig.DEFAULT_PORT;
     }
 
-    private InetAddress[] getAllAdresses(SRVRecord srv) throws UnknownHostException {
+    private InetAddress[] getAllAddresses(SRVRecord srv)
+            throws UnknownHostException {
+
         try {
             return org.xbill.DNS.Address.getAllByName(srv.getTarget().canonicalize().toString(true));
         } catch (UnknownHostException e) {

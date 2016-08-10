@@ -19,8 +19,8 @@ package com.noctarius.hazelcast.kubernetes;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
-import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.util.StringUtil;
 
 import java.net.InetAddress;
@@ -28,29 +28,35 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.*;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 
 final class HazelcastKubernetesDiscoveryStrategy
-        implements DiscoveryStrategy {
+        extends AbstractDiscoveryStrategy {
 
     private static final String HAZELCAST_SERVICE_PORT = "hazelcast-service-port";
 
     private final EndpointResolver endpointResolver;
 
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+        super(logger, properties);
+
         String serviceDns = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS);
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
         String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
-        String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE,"true");
-        String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE,getNamespaceOrDefault());
+        String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
+        String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
 
-
-        logger.info("Kubernetes Discovery properties: { "
-                + "service-dns: " + serviceDns + ", "
-                + "service-name: " + serviceName + ", "
-                + "service-label: " + serviceLabel + ", "
-                + "service-label-value: " + serviceLabelValue + ", "
-                + "namespace: " + namespace
+        logger.info("Kubernetes Discovery properties: { " //
+                + "service-dns: " + serviceDns + ", " //
+                + "service-name: " + serviceName + ", " //
+                + "service-label: " + serviceLabel + ", " //
+                + "service-label-value: " + serviceLabelValue + ", " //
+                + "namespace: " + namespace //
                 + "}");
 
         EndpointResolver endpointResolver;

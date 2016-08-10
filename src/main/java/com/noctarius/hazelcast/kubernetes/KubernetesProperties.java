@@ -69,7 +69,7 @@ public final class KubernetesProperties {
      * <p>Configuration key: <tt>service-label-value</tt></p>
      * Defines the service label value to lookup through the Service Discovery REST API of Kubernetes.
      */
-    public static final PropertyDefinition SERVICE_LABEL_VALUE= property("service-label-value", STRING);
+    public static final PropertyDefinition SERVICE_LABEL_VALUE = property("service-label-value", STRING);
 
     /**
      * <p>Configuration key: <tt>namespace</tt></p>

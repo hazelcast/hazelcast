@@ -50,12 +50,16 @@ maven, Gradle, sbt or similar tools, this is as easy as adding it to the build c
 </project>
 ----
 
-This fragment will add the discovery plugin as well as necessary transitive dependencies into your application classpath. The
-second step is to configure the discovery plugin inside of your Hazelcast configuration. You have 3 options to configure the plugin:
+This fragment will add the discovery plugin as well as necessary transitive dependencies into your application classpath. The second step is to configure the discovery plugin inside of your Hazelcast configuration. You have 3 options to configure the plugin:
 
-1. Set a namespace ( <property name="namespace">MY-KUBERNETES-NAMESPACE</property>), if no property is set the default namespace will be used
-2. Set a service name ( <property name="service-name">MY-SERVICE-NAME</property>), scans all endpoints (pods) connected by a service (query is combined with namespace)
-3. Set a service label & value (<property name="service-label-name">cluster01</property> & <property name="service-label-value">true</property>). If no endpoints by service name were found, endpoints were queried by service label name & value (in namespace). You can have many services and group your nodes by labels.
+1. Set a namespace, if no property is set the default namespace will be used: +
+`<property name="namespace">MY-KUBERNETES-NAMESPACE</property>`
+
+2. Set a service name to scan all endpoints (pods) connected by a service (the query is combined with the namespace) +
+    `<property name="service-name">MY-SERVICE-NAME</property>`
+3. Set a service label and value. If no endpoints can be found by a given service name, the endpoints are queried by the service label name and value (inside the defined namespace). Multiple services and group can be defined by labels. +
+   `<property name="service-label-name">cluster01</property>` +
+   `<property name="service-label-value">true</property>`
 
 
 [source,xml]
