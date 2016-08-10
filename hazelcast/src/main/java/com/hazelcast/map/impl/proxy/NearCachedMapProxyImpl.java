@@ -220,6 +220,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
+    public void clearInternal() {
+        super.clearInternal();
+        nearCache.clear();
+    }
+
+    @Override
     public void loadAllInternal(boolean replaceExistingValues) {
         super.loadAllInternal(replaceExistingValues);
         if (replaceExistingValues) {
