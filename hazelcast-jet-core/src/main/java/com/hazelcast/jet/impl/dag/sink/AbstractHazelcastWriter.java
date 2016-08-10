@@ -108,7 +108,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     @Override
-    public boolean consume(ProducerInputStream<Object> chunk) throws Exception {
+    public boolean consume(ProducerInputStream<Object> chunk) {
         return consumeChunk(chunk) > 0;
     }
 
@@ -119,7 +119,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) throws Exception {
+    public int consumeChunk(ProducerInputStream<Object> chunk) {
         this.chunkInputStream.consumeStream(chunk);
         pushWriteRequest();
         this.lastConsumedCount = chunk.size();
@@ -127,7 +127,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     @Override
-    public int consumeObject(Object object) throws Exception {
+    public int consumeObject(Object object) {
         this.chunkBuffer.consume(object);
         this.lastConsumedCount = 1;
         return 1;

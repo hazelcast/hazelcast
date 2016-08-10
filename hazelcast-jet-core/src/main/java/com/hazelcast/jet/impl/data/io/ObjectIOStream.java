@@ -23,12 +23,10 @@ import com.hazelcast.jet.impl.data.BufferAware;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class ObjectIOStream<T> implements ProducerInputStream<T>, ConsumerOutputStream<T>, BufferAware<T>, Closeable {
+public class ObjectIOStream<T> implements ProducerInputStream<T>, ConsumerOutputStream<T>, BufferAware<T> {
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE;
     private final Iterator<T> iterator = new DataIterator();
     private final DataTransferringStrategy dataTransferringStrategy;
@@ -149,11 +147,6 @@ public class ObjectIOStream<T> implements ProducerInputStream<T>, ConsumerOutput
         }
         // minCapacity is usually close to size, so this is a win:
         this.buffer = Arrays.copyOf(this.buffer, newCapacity);
-    }
-
-    @Override
-    public void close() throws IOException {
-
     }
 
     public class DataIterator implements Iterator<T> {

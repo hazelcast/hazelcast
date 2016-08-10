@@ -36,12 +36,12 @@ public class ShufflingConsumer implements ObjectConsumer {
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) throws Exception {
+    public int consumeChunk(ProducerInputStream<Object> chunk) {
         return this.baseConsumer.consumeChunk(chunk);
     }
 
     @Override
-    public int consumeObject(Object object) throws Exception {
+    public int consumeObject(Object object) {
         return this.baseConsumer.consumeObject(object);
     }
 
@@ -91,7 +91,7 @@ public class ShufflingConsumer implements ObjectConsumer {
     }
 
     @Override
-    public boolean consume(ProducerInputStream chunk) throws Exception {
+    public boolean consume(ProducerInputStream chunk) {
         return consumeChunk(chunk) > 0;
     }
 

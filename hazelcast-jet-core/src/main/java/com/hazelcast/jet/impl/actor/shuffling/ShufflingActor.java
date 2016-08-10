@@ -44,12 +44,12 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) throws Exception {
+    public int consumeChunk(ProducerInputStream<Object> chunk) {
         return this.objectConsumer.consumeChunk(chunk);
     }
 
     @Override
-    public int consumeObject(Object object) throws Exception {
+    public int consumeObject(Object object) {
         return this.objectConsumer.consumeObject(object);
     }
 
@@ -94,7 +94,7 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
     }
 
     @Override
-    public boolean consume(ProducerInputStream<Object> inputStream) throws Exception {
+    public boolean consume(ProducerInputStream<Object> inputStream) {
         return this.objectConsumer.consume(inputStream);
     }
 }

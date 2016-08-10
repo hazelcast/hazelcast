@@ -89,7 +89,7 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
     }
 
     @Override
-    public boolean consume(JetPacket packet) throws Exception {
+    public boolean consume(JetPacket packet) {
         ringBufferActor.consumeObject(packet);
         return true;
     }
