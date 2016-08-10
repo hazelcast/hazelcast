@@ -31,6 +31,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.io.IOException;
+
 public class ShufflingSender extends AbstractHazelcastWriter {
     private final int taskID;
     private final Address address;
@@ -60,10 +62,14 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) throws Exception {
-        dataOutputStream.writeInt(chunk.size());
-        for (Object object : chunk) {
-            optimizer.write(object, dataOutputStream);
+    public int consumeChunk(ProducerInputStream<Object> chunk) {
+        try {
+            dataOutputStream.writeInt(chunk.size());
+            for (Object object : chunk) {
+                optimizer.write(object, dataOutputStream);
+            }
+        } catch (IOException e) {
+            throw JetUtil.reThrow(e);
         }
         serializer.flushSender();
         JetPacket packet = new JetPacket(taskID, containerID, jobNameBytes);

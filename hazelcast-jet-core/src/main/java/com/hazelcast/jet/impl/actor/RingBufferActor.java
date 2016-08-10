@@ -17,18 +17,18 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
-import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithReferenceStrategy;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithValueStrategy;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -134,12 +134,12 @@ public class RingBufferActor implements ObjectActor {
     }
 
     @Override
-    public boolean consume(ProducerInputStream<Object> chunk) throws Exception {
+    public boolean consume(ProducerInputStream<Object> chunk) {
         return consumeChunk(chunk) > 0;
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) throws Exception {
+    public int consumeChunk(ProducerInputStream<Object> chunk) {
         this.currentFlushedCount = 0;
         this.lastConsumedCount = 0;
         this.flushBuffer.consumeStream(chunk);
@@ -147,7 +147,7 @@ public class RingBufferActor implements ObjectActor {
     }
 
     @Override
-    public int consumeObject(Object object) throws Exception {
+    public int consumeObject(Object object) {
         this.currentFlushedCount = 0;
         this.lastConsumedCount = 0;
         this.flushBuffer.consume(object);

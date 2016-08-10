@@ -31,16 +31,14 @@ public interface ObjectConsumer extends Consumer<ProducerInputStream<Object>> {
     /**
      * @param chunk - chunk of Pairs to consume
      * @return really consumed amount of pairs
-     * @throws Exception if any exception
      */
-    int consumeChunk(ProducerInputStream<Object> chunk) throws Exception;
+    int consumeChunk(ProducerInputStream<Object> chunk);
 
     /**
      * @param object - object to consume
      * @return 1 if pair was consumed , 0 otherwise
-     * @throws Exception if any exception
      */
-    int consumeObject(Object object) throws Exception;
+    int consumeObject(Object object);
 
     /**
      * @return true if consumer supports shuffling, false otherwise

@@ -30,5 +30,5 @@ public interface Consumer<T> {
      * false if entry hasn't been consumed
      * @throws Exception if any exception
      */
-    boolean consume(T entry) throws Exception;
+    boolean consume(T entry);
 }

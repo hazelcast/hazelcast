@@ -94,12 +94,12 @@ public class DefaultComposedActor implements ComposedActor {
     }
 
     @Override
-    public boolean consume(ProducerInputStream<Object> chunk) throws Exception {
+    public boolean consume(ProducerInputStream<Object> chunk) {
         return consumeChunk(chunk) > 0;
     }
 
     @Override
-    public int consumeObject(Object object) throws Exception {
+    public int consumeObject(Object object) {
         if (this.processingStrategy == ProcessingStrategy.ROUND_ROBIN) {
             this.consumers[nextActorId].consumeObject(object);
             next();
@@ -117,7 +117,7 @@ public class DefaultComposedActor implements ComposedActor {
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) throws Exception {
+    public int consumeChunk(ProducerInputStream<Object> chunk) {
         if (this.processingStrategy == ProcessingStrategy.ROUND_ROBIN) {
             this.consumers[nextActorId].consumeChunk(chunk);
             next();

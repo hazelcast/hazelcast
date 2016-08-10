@@ -62,7 +62,7 @@ public class ChunkedOutputStream extends OutputStream {
         }
     }
 
-    private void flushBuffer() throws Exception {
+    private void flushBuffer() {
         try {
             if (this.bufferSize > 0) {
                 byte[] buffer = new byte[BUFFER_OFFSET + this.bufferSize];
@@ -90,7 +90,7 @@ public class ChunkedOutputStream extends OutputStream {
         Arrays.fill(buffer, (byte) 0);
     }
 
-    public void flushSender() throws Exception {
+    public void flushSender() {
         flushBuffer();
     }
 }
