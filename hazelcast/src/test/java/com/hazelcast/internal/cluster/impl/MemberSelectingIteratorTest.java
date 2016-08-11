@@ -5,6 +5,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,10 +39,11 @@ public class MemberSelectingIteratorTest {
     @Before
     public void before()
             throws Exception {
-        thisMember = new MemberImpl(new Address("localhost", 5701), true, true);
-        matchingMember = new MemberImpl(new Address("localhost", 5702), false, true);
-        matchingMember2 = new MemberImpl(new Address("localhost", 5703), false, true);
-        nonMatchingMember = new MemberImpl(new Address("localhost", 5704), false, false);
+        Version version = new Version("3.8.0");
+        thisMember = new MemberImpl(new Address("localhost", 5701), version, true, true);
+        matchingMember = new MemberImpl(new Address("localhost", 5702), version, false, true);
+        matchingMember2 = new MemberImpl(new Address("localhost", 5703), version, false, true);
+        nonMatchingMember = new MemberImpl(new Address("localhost", 5704), version, false, false);
     }
 
     private Set<MemberImpl> createMembers() {

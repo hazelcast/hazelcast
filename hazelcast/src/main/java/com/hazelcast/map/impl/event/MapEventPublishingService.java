@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.Invalidation;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.version.Version;
 
 /**
  * Contains map service event publishing service functionality.
@@ -124,7 +125,7 @@ public class MapEventPublishingService implements EventPublishingService<Object,
     private Member getMember(EventData eventData) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         if (member == null) {
-            member = new MemberImpl(eventData.getCaller(), false);
+            member = new MemberImpl(eventData.getCaller(), Version.UNKNOWN, false);
         }
         return member;
     }

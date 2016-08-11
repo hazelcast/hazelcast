@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,9 +37,9 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     public JoinRequest() {
     }
 
-    public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, boolean liteMember, ConfigCheck config,
-                       Credentials credentials, Map<String, Object> attributes) {
-        super(packetVersion, buildNumber, address, uuid, liteMember, config);
+    public JoinRequest(byte packetVersion, int buildNumber, Version version, Address address, String uuid,
+                       boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, Object> attributes) {
+        super(packetVersion, buildNumber, version, address, uuid, liteMember, config);
         this.credentials = credentials;
         this.attributes = attributes;
     }
@@ -60,7 +61,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     }
 
     public MemberInfo toMemberInfo() {
-        return new MemberInfo(address, uuid, attributes, liteMember);
+        return new MemberInfo(address, uuid, attributes, liteMember, version);
     }
 
     @Override
@@ -97,6 +98,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         return "JoinRequest{"
                 + "packetVersion=" + packetVersion
                 + ", buildNumber=" + buildNumber
+                + ", version=" + version
                 + ", address=" + address
                 + ", uuid='" + uuid + "'"
                 + ", liteMember=" + liteMember

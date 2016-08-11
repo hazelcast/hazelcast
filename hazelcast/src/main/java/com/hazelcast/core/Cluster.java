@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.version.Version;
 
 import java.util.Set;
 
@@ -53,7 +54,7 @@ public interface Cluster {
      * Removes the specified MembershipListener.
      * <p/>
      * If the same MembershipListener is registered multiple times, it needs to be removed multiple times.
-     *
+     * <p>
      * This method can safely be called multiple times for the same registration-id; subsequent calls are ignored.
      *
      * @param registrationId the registrationId of MembershipListener to remove.
@@ -134,6 +135,9 @@ public interface Cluster {
      * @since 3.6
      */
     void changeClusterState(ClusterState newState);
+
+    // TODO RU
+    Version getClusterVersion();
 
     /**
      * Changes state of the cluster to the given state transactionally. Transaction must be a

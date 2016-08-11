@@ -30,6 +30,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.version.Version;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -166,9 +167,9 @@ public class MemberListTest {
 
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap()));
-        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections.<String, Object>emptyMap()));
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap(), Version.of("3.8.0")));
+        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections.<String, Object>emptyMap(), Version.of("3.8.0")));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap(), Version.of("3.8.0")));
         n2.clusterService.updateMembers(members);
         n2.setMasterAddress(m2.getAddress());
 
@@ -210,8 +211,8 @@ public class MemberListTest {
         final Node n2 = TestUtil.getNode(h2);
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap()));
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap(), Version.of("3.8.0")));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap(), Version.of("3.8.0")));
         n2.clusterService.updateMembers(members);
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point

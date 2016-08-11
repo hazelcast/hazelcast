@@ -59,6 +59,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -666,7 +667,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private MemberImpl createMember(MemberInfo memberInfo, String ipV6ScopeId) {
         Address address = memberInfo.getAddress();
         address.setScopeId(ipV6ScopeId);
-        return new MemberImpl(address, thisAddress.equals(address), memberInfo.getUuid(),
+        return new MemberImpl(address, memberInfo.getVersion(), thisAddress.equals(address), memberInfo.getUuid(),
                 (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), memberInfo.getAttributes(), memberInfo.isLiteMember());
     }
 
@@ -856,6 +857,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterStateManager.changeClusterState(newState, getMembers(), options, partitionStateVersion);
     }
 
+    @Override
+    public Version getClusterVersion() {
+        // TODO RU
+        // for now just returning the node codebase version...
+        return node.getVersion();
+    }
+
     // for testing
     void changeClusterState(ClusterState newState, Collection<Member> members) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
@@ -877,7 +885,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 if (thisAddress.equals(address)) {
                     continue;
                 }
-                membersRemovedInNotActiveState.put(address, new MemberImpl(address, false));
+                membersRemovedInNotActiveState.put(address, new MemberImpl(address, Version.UNKNOWN, false));
             }
 
             membersRemovedInNotActiveStateRef.set(Collections.unmodifiableMap(membersRemovedInNotActiveState));

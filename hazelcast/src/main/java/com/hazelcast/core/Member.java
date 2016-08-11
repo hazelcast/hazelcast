@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.version.Version;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -257,5 +258,7 @@ public interface Member extends DataSerializable, Endpoint {
      * @since 3.2
      */
     void removeAttribute(String key);
+
+    Version getVersion();
 
 }

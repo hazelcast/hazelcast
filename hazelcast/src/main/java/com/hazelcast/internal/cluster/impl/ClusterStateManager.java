@@ -35,6 +35,7 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,12 +71,15 @@ public class ClusterStateManager {
     private final Lock clusterServiceLock;
     private final AtomicReference<ClusterStateLock> stateLockRef
             = new AtomicReference<ClusterStateLock>(ClusterStateLock.NOT_LOCKED);
+
     private volatile ClusterState state = ClusterState.ACTIVE;
+    private volatile Version version;
 
     ClusterStateManager(Node node, Lock clusterServiceLock) {
         this.node = node;
         this.clusterServiceLock = clusterServiceLock;
-        logger = node.getLogger(getClass());
+        this.logger = node.getLogger(getClass());
+        this.version = node.getVersion();
     }
 
     public ClusterState getState() {
@@ -129,6 +133,7 @@ public class ClusterStateManager {
         try {
             state = ClusterState.ACTIVE;
             stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+            version = node.getVersion();
         } finally {
             clusterServiceLock.unlock();
         }
@@ -174,7 +179,7 @@ public class ClusterStateManager {
             throw new IllegalStateException("Still have pending migration tasks, "
                     + "cannot lock cluster state! New state: " + newState
                     + ", current state: " + getState());
-        } else  if (partitionStateVersion != thisPartitionStateVersion) {
+        } else if (partitionStateVersion != thisPartitionStateVersion) {
             throw new IllegalStateException("Can not lock cluster state! Partition tables have different versions! "
                     + "Expected version: " + partitionStateVersion + " Current version: " + thisPartitionStateVersion);
         }
@@ -272,7 +277,7 @@ public class ClusterStateManager {
 
         try {
             tx.commit();
-        } catch (Throwable  e) {
+        } catch (Throwable e) {
             if (e instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException) {
                 // Member left while tx is being committed after prepare successful.
                 // We cannot rollback tx after this point. Cluster state change is done
@@ -376,6 +381,29 @@ public class ClusterStateManager {
             if (error != null) {
                 throw ExceptionUtil.rethrow(error);
             }
+        }
+    }
+
+    public static final class ClusterStateChange {
+        private final ClusterState state;
+        private final Version version;
+
+        private ClusterStateChange(ClusterState state) {
+            this.state = state;
+            this.version = null;
+        }
+
+        private ClusterStateChange(Version version) {
+            this.state = null;
+            this.version = version;
+        }
+
+        public static ClusterStateChange from(ClusterState state) {
+            return new ClusterStateChange(state);
+        }
+
+        public static ClusterStateChange from(Version version) {
+            return new ClusterStateChange(version);
         }
     }
 }

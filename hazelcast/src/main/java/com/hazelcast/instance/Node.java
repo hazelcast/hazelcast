@@ -70,6 +70,7 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.version.Version;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
@@ -93,6 +94,8 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
         "checkstyle:classfanoutcomplexity"})
 @PrivateApi
 public class Node {
+
+    private static final Version CURRENT_CODEBASAE_VERSION = new Version(3, 8, 0);
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
 
@@ -144,6 +147,8 @@ public class Node {
 
     private volatile NodeState state;
 
+    private volatile Version version;
+
     private volatile Address masterAddress;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -154,6 +159,8 @@ public class Node {
         this.configClassLoader = config.getClassLoader();
         this.properties = new HazelcastProperties(config);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
+//        this.version = new Version(BuildInfoProvider.getBuildInfo().getVersion());
+        this.version = new Version(BuildInfoProvider.getBuildInfo().getVersion());
 
         String loggingType = properties.getString(LOGGING_TYPE);
         loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
@@ -168,7 +175,7 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, createMemberUuid(address),
+            localMember = new MemberImpl(address, version, true, createMemberUuid(address),
                     hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
@@ -611,7 +618,7 @@ public class Node {
     }
 
     public JoinMessage createSplitBrainJoinMessage() {
-        return new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), address, localMember.getUuid(),
+        return new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), version, address, localMember.getUuid(),
                 localMember.isLiteMember(), createConfigCheck(), clusterService.getMemberAddresses(),
                 clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR));
     }
@@ -620,7 +627,7 @@ public class Node {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
 
-        return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
+        return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
                 localMember.getAttributes());
     }
@@ -713,6 +720,16 @@ public class Node {
     public NodeState getState() {
         return state;
     }
+
+    /**
+     * Returns the codebase version of the node (node version may be downgraded during operation).
+     *
+     * @return codebase version of the node
+     */
+    public Version getVersion() {
+        return version;
+    }
+
 
     public boolean isLiteMember() {
         return liteMember;

@@ -223,7 +223,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            if (!validateJoinRequest(target)) {
+            if (!validateJoinRequest(joinRequest, target)) {
                 return;
             }
 
@@ -284,10 +284,11 @@ public class ClusterJoinManager {
         }
     }
 
-    private boolean validateJoinRequest(Address target) {
+    private boolean validateJoinRequest(JoinRequest joinRequest, Address target) {
         if (node.isMaster()) {
             try {
                 node.getNodeExtension().validateJoinRequest();
+                ClusterVersionService.validateJoinRequestOnMaster(node, joinRequest);
             } catch (Exception e) {
                 logger.warning(e.getMessage());
                 nodeEngine.getOperationService().send(new BeforeJoinCheckFailureOperation(e.getMessage()), target);
@@ -402,8 +403,8 @@ public class ClusterJoinManager {
 
         BuildInfo buildInfo = node.getBuildInfo();
         final Address thisAddress = node.getThisAddress();
-        JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), thisAddress,
-                node.getLocalMember().getUuid(), node.isLiteMember(), node.createConfigCheck());
+        JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), node.getVersion(),
+                thisAddress, node.getLocalMember().getUuid(), node.isLiteMember(), node.createConfigCheck());
         return nodeEngine.getOperationService().send(new MasterDiscoveryOperation(joinMessage), toAddress);
     }
 

@@ -42,6 +42,7 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.version.Version;
 
 import java.util.Collection;
 import java.util.EventListener;
@@ -160,7 +161,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
     private Member getMember(EventData eventData) {
         Member member = replicatedMapService.getNodeEngine().getClusterService().getMember(eventData.getCaller());
         if (member == null) {
-            member = new MemberImpl(eventData.getCaller(), false);
+            member = new MemberImpl(eventData.getCaller(), Version.UNKNOWN, false);
         }
         return member;
     }

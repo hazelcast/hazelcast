@@ -24,6 +24,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -41,24 +42,26 @@ public abstract class AbstractMember implements Member {
     protected Address address;
     protected String uuid;
     protected boolean liteMember;
+    protected Version version;
 
     protected AbstractMember() {
     }
 
-    protected AbstractMember(Address address) {
-        this(address, null, null);
+    protected AbstractMember(Address address, Version version) {
+        this(address, version, null, null);
     }
 
-    protected AbstractMember(Address address, String uuid) {
-        this(address, uuid, null);
+    protected AbstractMember(Address address, Version version, String uuid) {
+        this(address, version, uuid, null);
     }
 
-    protected AbstractMember(Address address, String uuid, Map<String, Object> attributes) {
-        this(address, uuid, attributes, false);
+    protected AbstractMember(Address address, Version version, String uuid, Map<String, Object> attributes) {
+        this(address, version, uuid, attributes, false);
     }
 
-    protected AbstractMember(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
+    protected AbstractMember(Address address, Version version, String uuid, Map<String, Object> attributes, boolean liteMember) {
         this.address = address;
+        this.version = version;
         this.uuid = uuid;
         if (attributes != null) {
             this.attributes.putAll(attributes);
@@ -68,6 +71,7 @@ public abstract class AbstractMember implements Member {
 
     protected AbstractMember(AbstractMember member) {
         this.address = member.address;
+        this.version = member.version;
         this.uuid = member.uuid;
         this.attributes.putAll(member.attributes);
         this.liteMember = member.liteMember;
@@ -148,10 +152,16 @@ public abstract class AbstractMember implements Member {
     }
 
     @Override
+    public Version getVersion() {
+        return version;
+    }
+
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         uuid = in.readUTF();
+        version = in.readObject();
         liteMember = in.readBoolean();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
@@ -166,6 +176,7 @@ public abstract class AbstractMember implements Member {
         address.writeData(out);
         out.writeUTF(uuid);
         out.writeBoolean(liteMember);
+        out.writeObject(version);
         Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
