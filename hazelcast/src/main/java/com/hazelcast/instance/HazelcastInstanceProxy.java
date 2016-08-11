@@ -255,7 +255,7 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return getOriginal().getSerializationService();
     }
 
-    private HazelcastInstanceImpl getOriginal() {
+    public HazelcastInstanceImpl getOriginal() {
         final HazelcastInstanceImpl hazelcastInstance = original;
         if (hazelcastInstance == null) {
             throw new HazelcastInstanceNotActiveException();

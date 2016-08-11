@@ -113,6 +113,9 @@ abstract class AbstractCacheProxyBase<K, V> {
         }
         loadAllTasks.clear();
 
+        // send invalidation event
+        cacheService.sendInvalidationEvent(nameWithPrefix, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
+
         closeListeners();
         if (caughtException != null) {
             throw new CacheException("Problem while waiting for loadAll tasks to complete", caughtException);

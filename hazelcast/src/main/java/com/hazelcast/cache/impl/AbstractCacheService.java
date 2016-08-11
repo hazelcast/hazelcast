@@ -132,6 +132,10 @@ public abstract class AbstractCacheService
                 }
             }
         }
+
+        for (String objectName : configs.keySet()) {
+            sendInvalidationEvent(objectName, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
+        }
     }
 
     @Override

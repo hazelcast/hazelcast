@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.AbstractCacheRecordStore;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.client.impl.client.RetryableRequest;
@@ -122,6 +124,10 @@ public class CacheClearRequest
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
+        // send the invalidation event
+        CacheService cacheService = getService();
+        cacheService.sendInvalidationEvent(name, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
+
         return map;
     }
 
