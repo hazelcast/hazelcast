@@ -14,26 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization.classloader;
+package com.hazelcast.jet.impl.job.deployment;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.jet.impl.job.JobContext;
 
-public class ClassLoaderEntry {
-    private final byte[] resourceBytes;
-    private final String baseUrl;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public ClassLoaderEntry(byte[] resourceBytes, String baseUrl) {
-        this.resourceBytes = resourceBytes;
-        this.baseUrl = baseUrl;
+public final class DeploymentStorageFactory {
+    private DeploymentStorageFactory() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public byte[] getResourceBytes() {
-        return resourceBytes;
-    }
-
-    public String getBaseUrl() {
-        return baseUrl;
+    public static DeploymentStorage getLocalizationStorage(JobContext jobContext, String name) {
+        return new DiskDeploymentStorage(jobContext, name);
     }
 }

@@ -14,29 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization.classloader;
+package com.hazelcast.jet.impl.operation;
 
-import java.io.InputStream;
+import com.hazelcast.jet.impl.job.JobContext;
 
-public class ResourceStream {
-    private final String baseUrl;
-    private final InputStream inputStream;
-
-    public ResourceStream(InputStream inputStream) {
-        this.inputStream = inputStream;
-        this.baseUrl = null;
+public class FinishDeploymentOperation extends JetOperation {
+    @SuppressWarnings("unused")
+    public FinishDeploymentOperation() {
     }
 
-    public ResourceStream(InputStream inputStream, String baseUrl) {
-        this.inputStream = inputStream;
-        this.baseUrl = baseUrl;
+    public FinishDeploymentOperation(String name) {
+        super(name);
     }
 
-    public String getBaseUrl() {
-        return baseUrl;
-    }
-
-    public InputStream getInputStream() {
-        return inputStream;
+    @Override
+    public void run() throws Exception {
+        JobContext jobContext = getJobContext();
+        jobContext.getDeploymentStorage().finish();
     }
 }

@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization;
-
-import com.hazelcast.jet.impl.job.JobContext;
-
-
-public final class LocalizationStorageFactory {
-    private LocalizationStorageFactory() {
-    }
-
-    public static LocalizationStorage getLocalizationStorage(JobContext jobContext,
-                                                             String name) {
-        return new DiskLocalizationStorage(jobContext, name);
-    }
-}
+/**
+ * Provides API for resource deployment
+ */
+package com.hazelcast.jet.impl.job.deployment;

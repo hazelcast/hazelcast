@@ -17,22 +17,20 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.job.localization.Chunk;
+import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
 import java.io.IOException;
 
-public class LocalizationChunkOperation extends JetOperation {
+public class DeployChunkOperation extends JetOperation {
     private Chunk chunk;
 
     @SuppressWarnings("unused")
-    public LocalizationChunkOperation() {
+    public DeployChunkOperation() {
 
     }
 
-    public LocalizationChunkOperation(String name,
-                                      Chunk chunk) {
+    public DeployChunkOperation(String name, Chunk chunk) {
         super(name);
         this.chunk = chunk;
     }
@@ -40,19 +38,17 @@ public class LocalizationChunkOperation extends JetOperation {
     @Override
     public void run() throws Exception {
         JobContext jobContext = getJobContext();
-        jobContext.getLocalizationStorage().receiveFileChunk(this.chunk);
+        jobContext.getDeploymentStorage().receiveChunk(chunk);
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(chunk);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in)
-            throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         chunk = in.readObject();
     }

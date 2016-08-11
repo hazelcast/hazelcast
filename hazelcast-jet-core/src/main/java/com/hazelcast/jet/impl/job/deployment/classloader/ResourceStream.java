@@ -14,34 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization.classloader;
+package com.hazelcast.jet.impl.job.deployment.classloader;
 
 import java.io.InputStream;
-import java.net.URL;
 
-public interface ProxyClassLoader {
-    /**
-     * Loads the class
-     *
-     * @param className
-     * @param resolveIt
-     * @return class
-     */
-    Class loadClass(String className, boolean resolveIt);
+public class ResourceStream {
+    private final String baseUrl;
+    private final InputStream inputStream;
 
-    /**
-     * Loads the resource
-     *
-     * @param name
-     * @return InputStream
-     */
-    InputStream loadResource(String name);
+    public ResourceStream(InputStream inputStream) {
+        this.inputStream = inputStream;
+        this.baseUrl = null;
+    }
 
-    /**
-     * Finds the resource
-     *
-     * @param name
-     * @return InputStream
-     */
-    URL findResource(String name);
+    public ResourceStream(InputStream inputStream, String baseUrl) {
+        this.inputStream = inputStream;
+        this.baseUrl = baseUrl;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public InputStream getInputStream() {
+        return inputStream;
+    }
 }

@@ -70,7 +70,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
         this.jobManager = jobManager;
         this.nodeEngine = jobManager.getNodeEngine();
         this.jobContext = jobManager.getJobContext();
-        this.jobClassLoader = this.jobContext.getLocalizationStorage().getClassLoader();
+        this.jobClassLoader = this.jobContext.getDeploymentStorage().getClassLoader();
         this.logger = nodeEngine.getLogger(getClass());
     }
 

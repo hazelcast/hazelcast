@@ -14,30 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization;
+package com.hazelcast.jet.impl.job.deployment;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.io.IOException;
 
 
 public class Chunk implements DataSerializable {
     private byte[] bytes;
-    private long length;
-    private LocalizationResourceDescriptor descriptor;
+    private ResourceDescriptor descriptor;
+    private int chunkSize;
+    private int length;
+    private int sequence;
 
     public Chunk() {
-
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public Chunk(byte[] bytes, LocalizationResourceDescriptor descriptor, long length) {
+    public Chunk(byte[] bytes, ResourceDescriptor descriptor, int chunkSize, int length, int sequence) {
         this.bytes = bytes;
+        this.chunkSize = chunkSize;
         this.length = length;
         this.descriptor = descriptor;
+        this.sequence = sequence;
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -45,25 +47,48 @@ public class Chunk implements DataSerializable {
         return bytes;
     }
 
-    public LocalizationResourceDescriptor getDescriptor() {
+    public ResourceDescriptor getDescriptor() {
         return descriptor;
     }
 
-    public long getLength() {
+    public int getLength() {
         return length;
+    }
+
+    public int getChunkSize() {
+        return chunkSize;
+    }
+
+    public int getSequence() {
+        return sequence;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByteArray(bytes);
         out.writeObject(this.descriptor);
-        out.writeLong(length);
+        out.writeInt(length);
+        out.writeInt(chunkSize);
+        out.writeInt(sequence);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         bytes = in.readByteArray();
         descriptor = in.readObject();
-        length = in.readLong();
+        length = in.readInt();
+        chunkSize = in.readInt();
+        sequence = in.readInt();
+    }
+
+
+    @Override
+    public String toString() {
+        return "Chunk{"
+                + "length=" + length
+                + ", chunkSize=" + chunkSize
+                + ", descriptor=" + descriptor
+                + ", seq=" + sequence
+                + '}';
     }
 }

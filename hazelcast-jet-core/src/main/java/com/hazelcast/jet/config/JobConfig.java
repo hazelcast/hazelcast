@@ -23,7 +23,7 @@ import java.util.Properties;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
- * Config for a {@link Job}
+ * Config for a {@link com.hazelcast.jet.job.Job}
  */
 public class JobConfig implements Serializable {
 
@@ -38,14 +38,9 @@ public class JobConfig implements Serializable {
     public static final int DEFAULT_CONNECTIONS_SILENCE_TIMEOUT_MS = 1000;
 
     /**
-     * Represents default number of attempts to create localization directories
+     * Represents default number of attempts to create deployment directories
      */
     public static final int DEFAULT_APP_ATTEMPTS_COUNT = 100;
-
-    /**
-     * Represents default value for localization process chunks to be used
-     */
-    public static final int DEFAULT_FILE_CHUNK_SIZE_BYTES = 1024;
 
     /**
      * Default chunk size for data passed between JET-containers
@@ -69,7 +64,7 @@ public class JobConfig implements Serializable {
 
     private final Properties properties;
 
-    private String localizationDirectory;
+    private String deploymentDirectory;
 
     private int jobDirectoryCreationAttemptsCount = DEFAULT_APP_ATTEMPTS_COUNT;
 
@@ -124,27 +119,28 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Gets the name of the directory to be used for localization
+     * Gets the name of the directory to be used for deployment
      *
      * @return the name of the directory
      */
-    public String getLocalizationDirectory() {
-        return localizationDirectory;
+    public String getDeploymentDirectory() {
+        return deploymentDirectory;
     }
 
     /**
-     * Sets the name of the directory to be used for localization
+     * Sets the name of the directory to be used for deployment
      *
-     * @param localizationDirectory name of the directory
+     * @param deploymentDirectory name of the directory
      * @return the current job configuration
      */
-    public JobConfig setLocalizationDirectory(String localizationDirectory) {
-        this.localizationDirectory = localizationDirectory;
+    public JobConfig setDeploymentDirectory(String deploymentDirectory) {
+        this.deploymentDirectory = deploymentDirectory;
         return this;
     }
 
     /**
-     * Gets the maximum number of attempts to create a temp directory during localization
+     * Gets the maximum number of attempts to create a temp directory during deployment
+     *
      * @return the number of attempts
      */
     public int getJobDirectoryCreationAttemptsCount() {
@@ -152,7 +148,8 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Sets the maximum number of attempts to create a temp directory during localization
+     * Sets the maximum number of attempts to create a temp directory during deployment
+     *
      * @param count the maximum number of attempts
      * @return the current job configuration
      */
@@ -214,6 +211,7 @@ public class JobConfig implements Serializable {
 
     /**
      * Sets the size of the chunk that will be processed at each call in {@code ContainerProcessor.process}
+     *
      * @param chunkSize the chunk size
      * @return the current job configuration
      */
@@ -224,6 +222,7 @@ public class JobConfig implements Serializable {
 
     /**
      * Gets the size of the batch to send when shuffling data to other nodes
+     *
      * @return the size of the batch to send when shuffling data to other nodes
      */
     public int getShufflingBatchSizeBytes() {
@@ -232,6 +231,7 @@ public class JobConfig implements Serializable {
 
     /**
      * Sets the size of the batch to send when shuffling data to other nodes
+     *
      * @param shufflingBatchSizeBytes the size of the batch to send when shuffling data to other nodes
      * @return the current job configuration
      */
@@ -242,6 +242,7 @@ public class JobConfig implements Serializable {
 
     /**
      * Gets job specific properties
+     *
      * @return job specific properties
      */
     public Properties getProperties() {
@@ -250,6 +251,7 @@ public class JobConfig implements Serializable {
 
     /**
      * Get the TCP buffer size used when writing to network
+     *
      * @return the TCP buffer size
      */
     public int getTcpBufferSize() {
@@ -258,6 +260,7 @@ public class JobConfig implements Serializable {
 
     /**
      * Set the TCP buffer size used when writing to network
+     *
      * @param tcpBufferSize the TCP buffer size
      * @return the current job configuration
      */

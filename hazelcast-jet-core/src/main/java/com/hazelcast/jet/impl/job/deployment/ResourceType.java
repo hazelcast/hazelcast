@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-/**
- * Provides API for jet localization
- */
-package com.hazelcast.jet.impl.job.localization;
+package com.hazelcast.jet.impl.job.deployment;
+
+import java.io.Serializable;
+
+public enum ResourceType implements Serializable {
+    JAR,
+    CLASS,
+    DATA
+}

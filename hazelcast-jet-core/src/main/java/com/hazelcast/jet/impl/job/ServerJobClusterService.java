@@ -21,8 +21,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.job.localization.Chunk;
-import com.hazelcast.jet.impl.operation.AcceptLocalizationOperation;
+import com.hazelcast.jet.impl.job.deployment.Chunk;
+import com.hazelcast.jet.impl.operation.FinishDeploymentOperation;
 import com.hazelcast.jet.impl.operation.GetAccumulatorsOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.operation.JobEventOperation;
@@ -30,7 +30,7 @@ import com.hazelcast.jet.impl.operation.JobExecuteOperation;
 import com.hazelcast.jet.impl.operation.JobInitOperation;
 import com.hazelcast.jet.impl.operation.JobInterruptOperation;
 import com.hazelcast.jet.impl.operation.JobSubmitOperation;
-import com.hazelcast.jet.impl.operation.LocalizationChunkOperation;
+import com.hazelcast.jet.impl.operation.DeployChunkOperation;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -44,9 +44,7 @@ import java.util.function.Supplier;
 public class ServerJobClusterService extends JobClusterService<JetOperation> {
     private final NodeEngine nodeEngine;
 
-    public ServerJobClusterService(String name,
-                                   ExecutorService executorService,
-                                   NodeEngine nodeEngine) {
+    public ServerJobClusterService(String name, ExecutorService executorService, NodeEngine nodeEngine) {
         super(name, executorService);
 
         this.nodeEngine = nodeEngine;
@@ -77,13 +75,13 @@ public class ServerJobClusterService extends JobClusterService<JetOperation> {
     }
 
     @Override
-    public JetOperation createLocalizationInvoker(Chunk chunk) {
-        return new LocalizationChunkOperation(name, chunk);
+    public JetOperation createDeploymentInvoker(Chunk chunk) {
+        return new DeployChunkOperation(name, chunk);
     }
 
     @Override
-    public JetOperation createAcceptedLocalizationInvoker() {
-        return new AcceptLocalizationOperation(name);
+    public JetOperation createFinishDeploymentInvoker() {
+        return new FinishDeploymentOperation(name);
     }
 
     public JetOperation createEventInvoker(JobEvent jobEvent) {
