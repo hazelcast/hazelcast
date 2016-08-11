@@ -50,7 +50,7 @@ public class JetFinishDeploymentMessageTask extends JetMessageTask<JetFinishDepl
 
     @Override
     public String getMethodName() {
-        return "acceptLocalization";
+        return "finishDeployment";
     }
 
 }

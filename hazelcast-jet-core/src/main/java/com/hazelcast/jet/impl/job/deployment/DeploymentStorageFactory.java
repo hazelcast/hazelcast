@@ -23,7 +23,7 @@ public final class DeploymentStorageFactory {
     private DeploymentStorageFactory() {
     }
 
-    public static DeploymentStorage getLocalizationStorage(JobContext jobContext, String name) {
+    public static DeploymentStorage getDeploymentStorage(JobContext jobContext, String name) {
         return new DiskDeploymentStorage(jobContext, name);
     }
 }

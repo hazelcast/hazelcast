@@ -106,21 +106,21 @@ public class JobStateMachineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNextStateIs_LocalizationInProgress_when_LocalizationStart_received_and_stateWas_InitSuccess() throws Exception {
+    public void testNextStateIs_DeploymentInProgress_when_DeploymentStart_received_and_stateWas_InitSuccess() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         JobResponse response = processRequest(getRequest(DEPLOYMENT_START));
 
         assertTrue(response.isSuccess());
-        assertEquals(JobState.LOCALIZATION_IN_PROGRESS, stateMachine.currentState());
+        assertEquals(JobState.DEPLOYMENT_IN_PROGRESS, stateMachine.currentState());
     }
 
     @Test
-    public void testNextStateIs_LocalizationSuccess_when_LocalizationSuccess_received_and_stateWas_InitSuccess() throws Exception {
+    public void testNextStateIs_DeploymentSuccess_when_DeploymentSuccess_received_and_stateWas_InitSuccess() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         JobResponse response = processRequest(getRequest(DEPLOYMENT_SUCCESS));
 
         assertTrue(response.isSuccess());
-        assertEquals(JobState.LOCALIZATION_SUCCESS, stateMachine.currentState());
+        assertEquals(JobState.DEPLOYMENT_SUCCESS, stateMachine.currentState());
     }
 
     @Test
@@ -160,27 +160,27 @@ public class JobStateMachineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNextStateIs_LocalizationSuccess_when_LocalizationSuccess_received_and_stateWas_LocalizationInProgress() throws Exception {
+    public void testNextStateIs_DeploymentSuccess_when_DeploymentSuccess_received_and_stateWas_DeploymentInProgress() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         processRequest(getRequest(DEPLOYMENT_START));
         JobResponse response = processRequest(getRequest(DEPLOYMENT_SUCCESS));
 
         assertTrue(response.isSuccess());
-        assertEquals(JobState.LOCALIZATION_SUCCESS, stateMachine.currentState());
+        assertEquals(JobState.DEPLOYMENT_SUCCESS, stateMachine.currentState());
     }
 
     @Test
-    public void testNextStateIs_LocalizationFailure_when_LocalizationFailure_received_and_stateWas_LocalizationInProgress() throws Exception {
+    public void testNextStateIs_DeploymentFailure_when_DeploymentFailure_received_and_stateWas_DeploymentInProgress() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         processRequest(getRequest(DEPLOYMENT_START));
         JobResponse response = processRequest(getRequest(DEPLOYMENT_FAILURE));
 
         assertTrue(response.isSuccess());
-        assertEquals(JobState.LOCALIZATION_FAILURE, stateMachine.currentState());
+        assertEquals(JobState.DEPLOYMENT_FAILURE, stateMachine.currentState());
     }
 
     @Test
-    public void testNextStateIs_SubmitInProgress_when_SubmitStart_received_and_stateWas_LocalizationSuccess() throws Exception {
+    public void testNextStateIs_SubmitInProgress_when_SubmitStart_received_and_stateWas_DeploymentSuccess() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         processRequest(getRequest(DEPLOYMENT_START));
         processRequest(getRequest(DEPLOYMENT_SUCCESS));
@@ -191,7 +191,7 @@ public class JobStateMachineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNextStateIs_FinalizationInProgress_when_FinalizationStart_received_and_stateWas_LocalizationSuccess() throws Exception {
+    public void testNextStateIs_FinalizationInProgress_when_FinalizationStart_received_and_stateWas_DeploymentSuccess() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         processRequest(getRequest(DEPLOYMENT_START));
         processRequest(getRequest(DEPLOYMENT_SUCCESS));
@@ -202,7 +202,7 @@ public class JobStateMachineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNextStateIs_SubmitSuccess_when_SubmitSuccess_received_and_stateWas_LocalizationSuccess() throws Exception {
+    public void testNextStateIs_SubmitSuccess_when_SubmitSuccess_received_and_stateWas_DeploymentSuccess() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         processRequest(getRequest(DEPLOYMENT_START));
         processRequest(getRequest(DEPLOYMENT_SUCCESS));
@@ -213,7 +213,7 @@ public class JobStateMachineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNextStateIs_FinalizationInProgress_when_FinalizationStart_received_and_stateWas_LocalizationFailure() throws Exception {
+    public void testNextStateIs_FinalizationInProgress_when_FinalizationStart_received_and_stateWas_DeploymentFailure() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         processRequest(getRequest(DEPLOYMENT_START));
         processRequest(getRequest(DEPLOYMENT_FAILURE));
@@ -224,7 +224,7 @@ public class JobStateMachineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNextStateIs_New_when_FinalizationSuccess_received_and_stateWas_LocalizationFailure() throws Exception {
+    public void testNextStateIs_New_when_FinalizationSuccess_received_and_stateWas_DeploymentFailure() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         processRequest(getRequest(DEPLOYMENT_START));
         processRequest(getRequest(DEPLOYMENT_FAILURE));

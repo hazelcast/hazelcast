@@ -87,7 +87,7 @@ public class JobContext {
         this.jobConfig = jobConfig;
         this.executorContext = new ExecutorContext(this.name, this.jobConfig, nodeEngine,
                 jobService.getNetworkExecutor(), jobService.getProcessingExecutor());
-        this.deploymentStorage = DeploymentStorageFactory.getLocalizationStorage(this, name);
+        this.deploymentStorage = DeploymentStorageFactory.getDeploymentStorage(this, name);
         this.jobStateMachine = STATE_MACHINE_FACTORY.newStateMachine(name, new JobStateMachineRequestProcessor(this),
                 nodeEngine, this);
         this.hzToAddressMapping = new HashMap<>();

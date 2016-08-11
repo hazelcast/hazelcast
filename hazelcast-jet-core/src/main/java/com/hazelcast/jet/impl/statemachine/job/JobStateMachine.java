@@ -38,9 +38,9 @@ public class JobStateMachine
                     ).
                     put(
                             JobState.INIT_SUCCESS, LinkedMapBuilder.of(
-                                    JobEvent.DEPLOYMENT_START, JobState.LOCALIZATION_IN_PROGRESS,
+                                    JobEvent.DEPLOYMENT_START, JobState.DEPLOYMENT_IN_PROGRESS,
                                     JobEvent.FINALIZATION_START, JobState.FINALIZATION_IN_PROGRESS,
-                                    JobEvent.DEPLOYMENT_SUCCESS, JobState.LOCALIZATION_SUCCESS,
+                                    JobEvent.DEPLOYMENT_SUCCESS, JobState.DEPLOYMENT_SUCCESS,
                                     JobEvent.FINALIZATION_SUCCESS, JobState.NEW
                             )
                     ).
@@ -51,20 +51,20 @@ public class JobStateMachine
                             )
                     ).
                     put(
-                            JobState.LOCALIZATION_IN_PROGRESS, LinkedMapBuilder.of(
-                                    JobEvent.DEPLOYMENT_SUCCESS, JobState.LOCALIZATION_SUCCESS,
-                                    JobEvent.DEPLOYMENT_FAILURE, JobState.LOCALIZATION_FAILURE
+                            JobState.DEPLOYMENT_IN_PROGRESS, LinkedMapBuilder.of(
+                                    JobEvent.DEPLOYMENT_SUCCESS, JobState.DEPLOYMENT_SUCCESS,
+                                    JobEvent.DEPLOYMENT_FAILURE, JobState.DEPLOYMENT_FAILURE
                             )
                     ).
                     put(
-                            JobState.LOCALIZATION_SUCCESS, LinkedMapBuilder.of(
+                            JobState.DEPLOYMENT_SUCCESS, LinkedMapBuilder.of(
                                     JobEvent.SUBMIT_START, JobState.SUBMIT_IN_PROGRESS,
                                     JobEvent.FINALIZATION_START, JobState.FINALIZATION_IN_PROGRESS,
                                     JobEvent.SUBMIT_SUCCESS, JobState.SUBMIT_SUCCESS
                             )
                     ).
                     put(
-                            JobState.LOCALIZATION_FAILURE, LinkedMapBuilder.of(
+                            JobState.DEPLOYMENT_FAILURE, LinkedMapBuilder.of(
                                     JobEvent.FINALIZATION_START, JobState.FINALIZATION_IN_PROGRESS,
                                     JobEvent.FINALIZATION_SUCCESS, JobState.NEW
                             )

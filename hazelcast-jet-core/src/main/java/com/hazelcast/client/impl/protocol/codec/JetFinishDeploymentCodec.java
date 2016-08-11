@@ -26,7 +26,7 @@ import javax.annotation.Generated;
 @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public final class JetFinishDeploymentCodec {
 
-    public static final JetMessageType REQUEST_TYPE = JetMessageType.JET_ACCEPTLOCALIZATION;
+    public static final JetMessageType REQUEST_TYPE = JetMessageType.JET_FINISHDEPLOYMENT;
     public static final int RESPONSE_TYPE = 101;
     public static final boolean RETRYABLE = false;
 

@@ -254,7 +254,7 @@ public abstract class JobClusterService<Payload> {
         return getJobConfig().getSecondsToAwait();
     }
 
-    private int getLocalizationChunkSize() {
+    private int getDeploymentChunkSize() {
         return getJobConfig().getChunkSize();
     }
 
@@ -295,7 +295,7 @@ public abstract class JobClusterService<Payload> {
     }
 
     private void executeDeployment(final Set<DeploymentResource> resources) {
-        Iterator<Chunk> iterator = new ChunkIterator(resources, getLocalizationChunkSize());
+        Iterator<Chunk> iterator = new ChunkIterator(resources, getDeploymentChunkSize());
         List<Future> futures = new ArrayList<>();
         while (iterator.hasNext()) {
             final Chunk chunk = iterator.next();
