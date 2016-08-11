@@ -14,33 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization;
+package com.hazelcast.jet.impl.job.deployment;
 
-import com.hazelcast.jet.impl.job.localization.classloader.ResourceStream;
+import com.hazelcast.jet.impl.job.deployment.classloader.ResourceStream;
 import java.io.IOException;
 import java.util.Map;
 
 /**
- * Interface for localization storage
- * <p>
  * It stores byte-code of classes which will be used in job
  */
-public interface LocalizationStorage {
+public interface DeploymentStorage {
     /**
      * Add next chunk with byte-code into the storage
      *
      * @param chunk -   chunk with byte-code
      * @throws IOException if IO error
      */
-    void receiveFileChunk(Chunk chunk) throws IOException;
+    void receiveChunk(Chunk chunk) throws IOException;
 
     /**
-     * Accepts localisation phase.
      * Signal that no more chunks will be received
      *
-     * @throws InvalidLocalizationException if localization could not be completed
+     * @throws DeploymentException if deployment could not be completed
      */
-    void accept() throws InvalidLocalizationException;
+    void finish() throws DeploymentException;
 
     /**
      * Returns classLoaders corresponding to the received byte-code
@@ -53,10 +50,10 @@ public interface LocalizationStorage {
      * @return all resources stored in storage
      * @throws IOException if IOException
      */
-    Map<LocalizationResourceDescriptor, ResourceStream> getResources() throws IOException;
+    Map<ResourceDescriptor, ResourceStream> getResources() throws IOException;
 
     /**
      * Clean-up all data in storage
      */
-    void cleanUp();
+    void cleanup();
 }

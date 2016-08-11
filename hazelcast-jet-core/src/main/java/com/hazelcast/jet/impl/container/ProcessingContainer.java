@@ -119,7 +119,7 @@ public class ProcessingContainer extends
                     taskID, new DefaultTaskContext(tasksCount, taskIndex, getJobContext()));
             getJobContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
             containerTasks[taskIndex].setThreadContextClassLoaders(
-                    getJobContext().getLocalizationStorage().getClassLoader());
+                    getJobContext().getDeploymentStorage().getClassLoader());
             containerTasksCache.put(taskID, containerTasks[taskIndex]);
         }
     }

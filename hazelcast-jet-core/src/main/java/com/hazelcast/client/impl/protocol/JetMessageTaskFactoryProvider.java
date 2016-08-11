@@ -38,9 +38,9 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
                 return new com.hazelcast.client.impl.protocol.task.jet.JetInterruptMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.JetAcceptLocalizationCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.JetFinishDeploymentCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.jet.JetAcceptLocalizationMessageTask(clientMessage, node, connection);
+                return new com.hazelcast.client.impl.protocol.task.jet.JetFinishDeploymentMessageTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.JetInitCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
@@ -63,9 +63,9 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
                 return new com.hazelcast.client.impl.protocol.task.jet.JetSubmitMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.JetLocalizeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.JetDeploymentCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.jet.JetLocalizeMessageTask(clientMessage, node, connection);
+                return new com.hazelcast.client.impl.protocol.task.jet.JetDeploymentMessageTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.JetEventCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {

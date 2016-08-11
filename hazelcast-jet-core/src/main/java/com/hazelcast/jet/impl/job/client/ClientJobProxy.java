@@ -22,14 +22,13 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.job.JobClusterService;
-import com.hazelcast.jet.impl.job.localization.LocalizationResource;
-import com.hazelcast.jet.impl.job.localization.LocalizationResourceType;
+import com.hazelcast.jet.impl.job.deployment.DeploymentResource;
+import com.hazelcast.jet.impl.job.deployment.ResourceType;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.job.Job;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -43,14 +42,13 @@ import java.util.concurrent.Future;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ClientJobProxy extends ClientProxy implements Job {
-    private final Set<LocalizationResource> localizedResources;
+    private final Set<DeploymentResource> resources;
     private final JobStateMachine jobStateMachine;
     private JobClusterService jobClusterService;
 
-    public ClientJobProxy(String serviceName,
-                          String name) {
+    public ClientJobProxy(String serviceName, String name) {
         super(serviceName, name);
-        localizedResources = new HashSet<>();
+        resources = new HashSet<>();
         jobStateMachine = new JobStateMachine(name);
     }
 
@@ -61,11 +59,7 @@ public class ClientJobProxy extends ClientProxy implements Job {
                 new JetThreadFactory("client-invoker-job-thread-" + name, hzName)
         );
 
-        jobClusterService = new ClientJobClusterService(
-                getClient(),
-                name,
-                executorService
-        );
+        jobClusterService = new ClientJobClusterService(getClient(), name, executorService);
     }
 
     public void init(JobConfig config) {
@@ -75,8 +69,8 @@ public class ClientJobProxy extends ClientProxy implements Job {
         jobClusterService.init(config, jobStateMachine);
     }
 
-    private void localizeApplication() {
-        jobClusterService.localize(localizedResources, jobStateMachine);
+    private void deploy() {
+        jobClusterService.deploy(resources, jobStateMachine);
     }
 
     @Override
@@ -89,7 +83,7 @@ public class ClientJobProxy extends ClientProxy implements Job {
             }
         }
 
-        localizeApplication();
+        deploy();
         submit0(dag);
     }
 
@@ -102,25 +96,20 @@ public class ClientJobProxy extends ClientProxy implements Job {
         checkNotNull(classes, "Classes can not be null");
 
         for (Class clazz : classes) {
-            localizedResources.add(new LocalizationResource(clazz));
+            resources.add(new DeploymentResource(clazz));
         }
     }
 
     @Override
     public void addResource(URL url) throws IOException {
-        localizedResources.add(new LocalizationResource(url));
+        resources.add(new DeploymentResource(url));
     }
 
     @Override
     public void addResource(InputStream inputStream,
                             String name,
-                            LocalizationResourceType resourceType) throws IOException {
-        localizedResources.add(new LocalizationResource(inputStream, name, resourceType));
-    }
-
-    @Override
-    public void clearResources() {
-        localizedResources.clear();
+                            ResourceType resourceType) throws IOException {
+        resources.add(new DeploymentResource(inputStream, name, resourceType));
     }
 
     @Override
@@ -141,6 +130,7 @@ public class ClientJobProxy extends ClientProxy implements Job {
     @Override
     protected boolean preDestroy() {
         try {
+            resources.clear();
             jobClusterService.destroy(jobStateMachine).get();
             return true;
         } catch (Exception e) {
@@ -155,6 +145,6 @@ public class ClientJobProxy extends ClientProxy implements Job {
 
     @Override
     public HazelcastInstance getHazelcastInstance() {
-        return null;
+        return getClient();
     }
 }

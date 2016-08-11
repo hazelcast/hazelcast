@@ -20,8 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.job.localization.LocalizationResource;
-import com.hazelcast.jet.impl.job.localization.LocalizationResourceType;
+import com.hazelcast.jet.impl.job.deployment.DeploymentResource;
+import com.hazelcast.jet.impl.job.deployment.ResourceType;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetThreadFactory;
@@ -45,7 +45,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class JobProxy extends AbstractDistributedObject<JobService> implements Job {
     private final String name;
     private final HazelcastInstance hazelcastInstance;
-    private final Set<LocalizationResource> localizedResources;
+    private final Set<DeploymentResource> deployedResources;
     private final JobStateMachine jobStateMachine;
     private final JobClusterService jobClusterService;
 
@@ -53,7 +53,7 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
         super(nodeEngine, jobService);
 
         this.name = name;
-        localizedResources = new HashSet<>();
+        deployedResources = new HashSet<>();
         String hzName = nodeEngine.getHazelcastInstance().getName();
 
         ExecutorService executorService = Executors.newCachedThreadPool(
@@ -85,7 +85,7 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
             }
         }
 
-        localizeJob();
+        deploy();
         submit0(dag);
     }
 
@@ -102,6 +102,7 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
     @Override
     protected boolean preDestroy() {
         try {
+            deployedResources.clear();
             jobClusterService.destroy(jobStateMachine).get();
             return true;
         } catch (Exception e) {
@@ -114,28 +115,23 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
         checkNotNull(classes, "Classes can not be null");
 
         for (Class clazz : classes) {
-            localizedResources.add(new LocalizationResource(clazz));
+            deployedResources.add(new DeploymentResource(clazz));
         }
     }
 
     @Override
     public void addResource(URL url) throws IOException {
-        localizedResources.add(new LocalizationResource(url));
+        deployedResources.add(new DeploymentResource(url));
     }
 
     @Override
-    public void addResource(InputStream inputStream, String name, LocalizationResourceType resourceType) throws IOException {
-        localizedResources.add(new LocalizationResource(inputStream, name, resourceType));
+    public void addResource(InputStream inputStream, String name, ResourceType resourceType) throws IOException {
+        deployedResources.add(new DeploymentResource(inputStream, name, resourceType));
     }
 
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public void clearResources() {
-        localizedResources.clear();
     }
 
     @Override
@@ -158,8 +154,8 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
         return hazelcastInstance;
     }
 
-    private void localizeJob() {
-        jobClusterService.localize(localizedResources, jobStateMachine);
+    private void deploy() {
+        jobClusterService.deploy(deployedResources, jobStateMachine);
     }
 
     private void submit0(final DAG dag) {

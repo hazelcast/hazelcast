@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization;
+package com.hazelcast.jet.impl.job.deployment;
 
-import java.io.Serializable;
+import java.io.IOException;
 
-public enum LocalizationResourceType implements Serializable {
-    JAR,
-    CLASS,
-    DATA
+public class JetClassLoaderException extends RuntimeException {
+    public JetClassLoaderException(String message) {
+        super(message);
+    }
+
+    public JetClassLoaderException(IOException e) {
+        super(e);
+    }
 }

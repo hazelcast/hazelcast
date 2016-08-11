@@ -17,28 +17,26 @@
 package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetLocalizeCodec;
+import com.hazelcast.client.impl.protocol.codec.JetFinishDeploymentCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.job.localization.Chunk;
+import com.hazelcast.jet.impl.operation.FinishDeploymentOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
-import com.hazelcast.jet.impl.operation.LocalizationChunkOperation;
 import com.hazelcast.nio.Connection;
 
-public class JetLocalizeMessageTask extends JetMessageTask<JetLocalizeCodec.RequestParameters> {
-    public JetLocalizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public class JetFinishDeploymentMessageTask extends JetMessageTask<JetFinishDeploymentCodec.RequestParameters> {
+    public JetFinishDeploymentMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected JetLocalizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return JetLocalizeCodec.decodeRequest(clientMessage);
+    protected JetFinishDeploymentCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return JetFinishDeploymentCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return JetLocalizeCodec.encodeResponse(true);
+        return JetFinishDeploymentCodec.encodeResponse(true);
     }
-
 
     @Override
     protected String getJobName() {
@@ -47,12 +45,12 @@ public class JetLocalizeMessageTask extends JetMessageTask<JetLocalizeCodec.Requ
 
     @Override
     protected JetOperation prepareOperation() {
-        Chunk chunk = serializationService.toObject(this.parameters.chunk);
-        return new LocalizationChunkOperation(getJobName(), chunk);
+        return new FinishDeploymentOperation(getJobName());
     }
 
     @Override
     public String getMethodName() {
-        return "localize";
+        return "acceptLocalization";
     }
+
 }

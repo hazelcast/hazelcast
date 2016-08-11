@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization;
+package com.hazelcast.jet.impl.job.deployment;
 
 import java.io.Serializable;
 
-public class LocalizationResourceDescriptor implements Serializable {
+public class ResourceDescriptor implements Serializable {
     private final String name;
-    private final LocalizationResourceType resourceType;
+    private final ResourceType resourceType;
 
-    public LocalizationResourceDescriptor(String name, LocalizationResourceType resourceType) {
+    public ResourceDescriptor(String name, ResourceType resourceType) {
         this.name = name;
         this.resourceType = resourceType;
     }
 
-    public LocalizationResourceType getResourceType() {
+    public ResourceType getResourceType() {
         return this.resourceType;
     }
 
@@ -45,7 +45,7 @@ public class LocalizationResourceDescriptor implements Serializable {
             return false;
         }
 
-        LocalizationResourceDescriptor that = (LocalizationResourceDescriptor) o;
+        ResourceDescriptor that = (ResourceDescriptor) o;
 
         if (!this.name.equals(that.name)) {
             return false;
@@ -60,5 +60,13 @@ public class LocalizationResourceDescriptor implements Serializable {
         int result = name.hashCode();
         result = 31 * result + resourceType.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ResourceDescriptor{"
+                + "name='" + name + '\''
+                + ", resourceType=" + resourceType
+                + '}';
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization;
+package com.hazelcast.jet.impl.job.deployment;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -26,84 +26,73 @@ import java.util.jar.JarInputStream;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class LocalizationResource {
-    public static final int CLASS_PREFIX = 0xcafebabe;
+public class DeploymentResource {
+    private static final int CLASS_PREFIX = 0xcafebabe;
     private final transient InputStream inputStream;
-    private final LocalizationResourceDescriptor descriptor;
+    private final ResourceDescriptor descriptor;
 
-    public LocalizationResource(Class clazz) throws IOException {
+    public DeploymentResource(Class clazz) throws IOException {
         ProtectionDomain protectionDomain = clazz.getProtectionDomain();
         String classAsPath = clazz.getName().replace('.', '/') + ".class";
-        LocalizationResourceType localizationResourceType = null;
+        ResourceType resourceType = null;
 
         URL location = getLocation(protectionDomain);
 
-        if ((location != null)) {
-            localizationResourceType = getContentType(location);
+        if (location != null) {
+            resourceType = getContentType(location);
         }
 
-        if ((location == null) || (localizationResourceType == LocalizationResourceType.DATA)) {
+        if (location == null || resourceType == ResourceType.DATA) {
             this.inputStream = clazz.getClassLoader().getResourceAsStream(classAsPath);
-            this.descriptor = new LocalizationResourceDescriptor(clazz.getName(), LocalizationResourceType.CLASS);
+            this.descriptor = new ResourceDescriptor(clazz.getName(), ResourceType.CLASS);
         } else {
-            if (localizationResourceType != LocalizationResourceType.JAR) {
+            if (resourceType != ResourceType.JAR) {
                 throw new IllegalStateException("Something wrong with class=" + clazz + "it should be a part of jar archive");
             }
 
             this.inputStream = location.openStream();
-            this.descriptor = new LocalizationResourceDescriptor(location.toString(), LocalizationResourceType.JAR);
+            this.descriptor = new ResourceDescriptor(location.toString(), ResourceType.JAR);
         }
 
         checkNotNull(this.descriptor, "Descriptor is null");
         checkNotNull(this.inputStream, "InputStream is null");
     }
 
-    public LocalizationResource(URL url) throws IOException {
+    public DeploymentResource(URL url) throws IOException {
         checkNotNull(url, "Url is null");
         this.inputStream = url.openStream();
-
         checkNotNull(this.inputStream, "InputStream is null");
-        this.descriptor = new LocalizationResourceDescriptor(url.toString(), getContentType(url));
+        this.descriptor = new ResourceDescriptor(url.toString(), getContentType(url));
     }
 
-    public LocalizationResource(InputStream inputStream, String name, LocalizationResourceType resourceType) {
+    public DeploymentResource(InputStream inputStream, String name, ResourceType resourceType) {
         checkNotNull(inputStream, "InputStream is null");
 
         this.inputStream = inputStream;
-        this.descriptor = new LocalizationResourceDescriptor(name, resourceType);
+        this.descriptor = new ResourceDescriptor(name, resourceType);
     }
 
-    private LocalizationResourceType getContentType(URL url) throws IOException {
-        DataInputStream in = new DataInputStream(url.openStream());
+    private ResourceType getContentType(URL url) throws IOException {
 
-        try {
+        try (DataInputStream in = new DataInputStream(url.openStream())) {
             int magic = in.readInt();
-
             // Check that is it class
             if (magic == CLASS_PREFIX) {
-                return LocalizationResourceType.CLASS;
+                return ResourceType.CLASS;
             }
-        } finally {
-            in.close();
         }
 
-        JarInputStream jarInputStream = new JarInputStream(url.openStream());
-
-        try {
+        try (JarInputStream jarInputStream = new JarInputStream(url.openStream())) {
             if (jarInputStream.getNextJarEntry() != null) {
-                return LocalizationResourceType.JAR;
+                return ResourceType.JAR;
             }
-        } catch (Error e) {
-            throw e;
-        } catch (RuntimeException e) {
+        } catch (Error | RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            return LocalizationResourceType.DATA;
-        } finally {
-            jarInputStream.close();
+            return ResourceType.DATA;
         }
 
-        return LocalizationResourceType.DATA;
+        return ResourceType.DATA;
     }
 
     private URL getLocation(ProtectionDomain protectionDomain) {
@@ -125,11 +114,11 @@ public class LocalizationResource {
         return location;
     }
 
-    public InputStream openStream() {
+    public InputStream getInputStream() {
         return this.inputStream;
     }
 
-    public LocalizationResourceDescriptor getDescriptor() {
+    public ResourceDescriptor getDescriptor() {
         return descriptor;
     }
 }

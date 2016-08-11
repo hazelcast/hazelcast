@@ -117,11 +117,10 @@ public class JobService implements RemoteService {
             throw new JetException("No job with name " + objectName + " found.");
         }
         JobManager jobManager = jobContext.getJobManager();
-        ICompletableFuture<JobManagerResponse> future =
-                jobManager.handleContainerRequest(new FinalizeJobRequest());
+        ICompletableFuture<JobManagerResponse> future = jobManager.handleContainerRequest(new FinalizeJobRequest());
         JobManagerResponse response = uncheckedGet(future);
         if (response.isSuccess()) {
-            jobContext.getLocalizationStorage().cleanUp();
+            jobContext.getDeploymentStorage().cleanup();
             jobContext.getExecutorContext().getJobStateMachineExecutor().shutdown();
             jobContext.getExecutorContext().getDataContainerStateMachineExecutor().shutdown();
             jobContext.getExecutorContext().getJobManagerStateMachineExecutor().shutdown();

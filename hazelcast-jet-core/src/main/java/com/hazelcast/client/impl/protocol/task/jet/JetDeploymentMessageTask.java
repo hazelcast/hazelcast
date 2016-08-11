@@ -17,26 +17,28 @@
 package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetAcceptLocalizationCodec;
+import com.hazelcast.client.impl.protocol.codec.JetDeploymentCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.AcceptLocalizationOperation;
+import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.operation.JetOperation;
+import com.hazelcast.jet.impl.operation.DeployChunkOperation;
 import com.hazelcast.nio.Connection;
 
-public class JetAcceptLocalizationMessageTask extends JetMessageTask<JetAcceptLocalizationCodec.RequestParameters> {
-    public JetAcceptLocalizationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public class JetDeploymentMessageTask extends JetMessageTask<JetDeploymentCodec.RequestParameters> {
+    public JetDeploymentMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected JetAcceptLocalizationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return JetAcceptLocalizationCodec.decodeRequest(clientMessage);
+    protected JetDeploymentCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return JetDeploymentCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return JetAcceptLocalizationCodec.encodeResponse(true);
+        return JetDeploymentCodec.encodeResponse(true);
     }
+
 
     @Override
     protected String getJobName() {
@@ -45,12 +47,12 @@ public class JetAcceptLocalizationMessageTask extends JetMessageTask<JetAcceptLo
 
     @Override
     protected JetOperation prepareOperation() {
-        return new AcceptLocalizationOperation(getJobName());
+        Chunk chunk = serializationService.toObject(this.parameters.chunk);
+        return new DeployChunkOperation(getJobName(), chunk);
     }
 
     @Override
     public String getMethodName() {
-        return "acceptLocalization";
+        return "deploy";
     }
-
 }

@@ -19,20 +19,20 @@ package com.hazelcast.jet.impl.job.client;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetAcceptLocalizationCodec;
+import com.hazelcast.client.impl.protocol.codec.JetFinishDeploymentCodec;
 import com.hazelcast.client.impl.protocol.codec.JetEventCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetAccumulatorsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetInitCodec;
 import com.hazelcast.client.impl.protocol.codec.JetInterruptCodec;
-import com.hazelcast.client.impl.protocol.codec.JetLocalizeCodec;
+import com.hazelcast.client.impl.protocol.codec.JetDeploymentCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.job.JobClusterService;
-import com.hazelcast.jet.impl.job.localization.Chunk;
+import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.nio.serialization.Data;
 import java.util.Map;
@@ -80,13 +80,13 @@ public class ClientJobClusterService extends JobClusterService<ClientMessage> {
     }
 
     @Override
-    public ClientMessage createLocalizationInvoker(Chunk chunk) {
-        return JetLocalizeCodec.encodeRequest(name, client.getSerializationService().toData(chunk));
+    public ClientMessage createDeploymentInvoker(Chunk chunk) {
+        return JetDeploymentCodec.encodeRequest(name, client.getSerializationService().toData(chunk));
     }
 
     @Override
-    public ClientMessage createAcceptedLocalizationInvoker() {
-        return JetAcceptLocalizationCodec.encodeRequest(name);
+    public ClientMessage createFinishDeploymentInvoker() {
+        return JetFinishDeploymentCodec.encodeRequest(name);
     }
 
     @Override

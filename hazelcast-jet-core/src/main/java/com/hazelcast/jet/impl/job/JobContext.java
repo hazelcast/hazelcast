@@ -22,12 +22,12 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.DiscoveryService;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
-import com.hazelcast.jet.impl.job.localization.LocalizationStorage;
-import com.hazelcast.jet.impl.job.localization.LocalizationStorageFactory;
+import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
+import com.hazelcast.jet.impl.job.deployment.DeploymentStorageFactory;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
@@ -57,7 +57,7 @@ public class JobContext {
     private final AtomicReference<Address> owner;
     private final AtomicInteger containerIdGenerator;
     private final JobManager jobManager;
-    private final LocalizationStorage localizationStorage;
+    private final DeploymentStorage deploymentStorage;
     private final Map<Address, Address> hzToAddressMapping;
     private final JobConfig jobConfig;
     private final JobStateMachine jobStateMachine;
@@ -87,7 +87,7 @@ public class JobContext {
         this.jobConfig = jobConfig;
         this.executorContext = new ExecutorContext(this.name, this.jobConfig, nodeEngine,
                 jobService.getNetworkExecutor(), jobService.getProcessingExecutor());
-        this.localizationStorage = LocalizationStorageFactory.getLocalizationStorage(this, name);
+        this.deploymentStorage = DeploymentStorageFactory.getLocalizationStorage(this, name);
         this.jobStateMachine = STATE_MACHINE_FACTORY.newStateMachine(name, new JobStateMachineRequestProcessor(this),
                 nodeEngine, this);
         this.hzToAddressMapping = new HashMap<>();
@@ -124,10 +124,10 @@ public class JobContext {
     }
 
     /**
-     * @return Localization storage for job
+     * @return deployment storage for job
      */
-    public LocalizationStorage getLocalizationStorage() {
-        return localizationStorage;
+    public DeploymentStorage getDeploymentStorage() {
+        return deploymentStorage;
     }
 
     /**

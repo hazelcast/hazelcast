@@ -29,32 +29,35 @@ public enum JobEvent implements StateMachineEvent {
     INIT_SUCCESS,
 
     /**
-     * Will be sent on success of the job failure operation;
+     * Will be sent on failure of the job init operation;
      */
     INIT_FAILURE,
 
     /**
-     * Will be sent on success of the job failure operation;
+     * Will be sent on start of the deployment operation;
      */
-    LOCALIZATION_START,
+    DEPLOYMENT_START,
 
     /**
-     * Will be sent on success of the localization operation;
+     * Will be sent on success of the deployment operation;
      */
-    LOCALIZATION_SUCCESS,
+    DEPLOYMENT_SUCCESS,
+
     /**
-     * Will be sent on failure of the localization operation;
+     * Will be sent on failure of the deployment operation;
      */
-    LOCALIZATION_FAILURE,
+    DEPLOYMENT_FAILURE,
 
     /**
      * Will be sent before DAG's submit operation;
      */
     SUBMIT_START,
+
     /**
      * Will be sent on DAG's-submit success;
      */
     SUBMIT_SUCCESS,
+
     /**
      * Will be sent on DAG's-submit failure;
      */
@@ -64,10 +67,12 @@ public enum JobEvent implements StateMachineEvent {
      * Will be sent before start of the job's interruption;
      */
     INTERRUPTION_START,
+
     /**
      * Will be sent on interruption success;
      */
     INTERRUPTION_SUCCESS,
+
     /**
      * Will be sent on interruption failure;
      */
@@ -77,10 +82,12 @@ public enum JobEvent implements StateMachineEvent {
      * Will be sent on execution start;
      */
     EXECUTION_START,
+
     /**
      * Will be sent on execution success;
      */
     EXECUTION_SUCCESS,
+
     /**
      * Will be sent on execution failure;
      */
@@ -90,10 +97,12 @@ public enum JobEvent implements StateMachineEvent {
      * Will be sent on finalization start;
      */
     FINALIZATION_START,
+
     /**
      * Will be sent on finalization success;
      */
     FINALIZATION_SUCCESS,
+
     /**
      * Will be sent on finalization failure;
      */

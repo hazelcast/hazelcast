@@ -14,89 +14,87 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.localization;
+package com.hazelcast.jet.impl.job.deployment;
 
 import com.hazelcast.jet.impl.util.JetUtil;
-
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ChunkIterator implements Iterator<Chunk> {
     private final int chunkSize;
-    private final Iterator<LocalizationResource> urlIterator;
-    private long currentLength;
-    private InputStream currentInputStream;
-    private LocalizationResource currentURL;
+    private final Iterator<DeploymentResource> resourceIterator;
+    private InputStream inputStream;
+    private DeploymentResource resource;
+    private AtomicInteger sequenceGenerator = new AtomicInteger();
 
-    public ChunkIterator(Set<LocalizationResource> urls, int chunkSize) {
-        this.urlIterator = urls.iterator();
+    public ChunkIterator(Set<DeploymentResource> resources, int chunkSize) {
+        this.resourceIterator = resources.iterator();
         this.chunkSize = chunkSize;
     }
 
     private void switchFile() throws IOException {
-        if (!this.urlIterator.hasNext()) {
+        if (!hasMoreResources()) {
             throw new NoSuchElementException();
         }
-
-        this.currentURL = this.urlIterator.next();
-        this.currentInputStream = this.currentURL.openStream();
-        this.currentLength = this.currentInputStream.available();
+        resource = resourceIterator.next();
+        inputStream = resource.getInputStream();
     }
 
     @Override
     public boolean hasNext() {
         try {
-            return (this.urlIterator.hasNext()) || (
-                    (this.currentInputStream != null)
-                            &&
-                            (this.currentInputStream.available() > 0)
-
-            );
+            return hasMoreResources() || (streamIsNotNull() && streamHasAvailableBytes());
         } catch (IOException e) {
             throw JetUtil.reThrow(e);
         }
     }
 
+    private boolean hasMoreResources() {
+        return resourceIterator.hasNext();
+    }
+
+    private boolean streamIsNotNull() {
+        return inputStream != null;
+    }
+
+    private boolean streamHasAvailableBytes() throws IOException {
+        return inputStream.available() > 0;
+    }
+
     @Override
     public void remove() {
-        throw new IllegalStateException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Chunk next() {
         try {
-            if (this.currentInputStream == null) {
-                do {
-                    switchFile();
-                } while (this.currentInputStream.available() <= 0);
+            if (inputStream == null) {
+                switchFile();
             }
 
-            if (this.currentInputStream.available() <= 0) {
-                throw new NoSuchElementException();
-            }
+            byte[] bytes = JetUtil.readChunk(inputStream, chunkSize);
 
-            byte[] bytes = JetUtil.readChunk(this.currentInputStream, this.chunkSize);
-
-            if (this.currentInputStream.available() <= 0) {
-                close(this.currentInputStream);
-                this.currentInputStream = null;
+            if (inputStream.available() <= 0) {
+                close(inputStream);
+                inputStream = null;
             }
 
             if (bytes.length > 0) {
                 return new Chunk(
                         bytes,
-                        this.currentURL.getDescriptor(),
-                        this.currentLength
+                        resource.getDescriptor(),
+                        chunkSize,
+                        bytes.length,
+                        sequenceGenerator.incrementAndGet()
                 );
             } else {
                 throw new NoSuchElementException();
             }
-        } catch (FileNotFoundException e) {
-            throw JetUtil.reThrow(e);
         } catch (IOException e) {
             throw JetUtil.reThrow(e);
         }

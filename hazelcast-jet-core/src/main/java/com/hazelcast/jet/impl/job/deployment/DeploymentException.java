@@ -14,23 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.operation;
+package com.hazelcast.jet.impl.job.deployment;
 
-import com.hazelcast.jet.impl.job.JobContext;
-
-public class AcceptLocalizationOperation extends JetOperation {
-    @SuppressWarnings("unused")
-    public AcceptLocalizationOperation() {
-
-    }
-
-    public AcceptLocalizationOperation(String name) {
-        super(name);
-    }
-
-    @Override
-    public void run() throws Exception {
-        JobContext jobContext = getJobContext();
-        jobContext.getLocalizationStorage().accept();
-    }
+public class DeploymentException extends Exception {
 }

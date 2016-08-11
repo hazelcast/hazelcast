@@ -22,9 +22,9 @@ import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.job.localization.Chunk;
-import com.hazelcast.jet.impl.job.localization.ChunkIterator;
-import com.hazelcast.jet.impl.job.localization.LocalizationResource;
+import com.hazelcast.jet.impl.job.deployment.Chunk;
+import com.hazelcast.jet.impl.job.deployment.ChunkIterator;
+import com.hazelcast.jet.impl.job.deployment.DeploymentResource;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -51,8 +51,7 @@ public abstract class JobClusterService<Payload> {
 
     private final ExecutorService executorService;
 
-    public JobClusterService(String name,
-                             ExecutorService executorService) {
+    public JobClusterService(String name, ExecutorService executorService) {
         this.name = name;
         this.executorService = executorService;
     }
@@ -75,19 +74,18 @@ public abstract class JobClusterService<Payload> {
     }
 
     /**
-     * Performs localization operation
+     * Performs deployment operation
      *
-     * @param localizedResources classpath resources
+     * @param resources classpath resources
      * @param jobStateMachine    manager to work with job state-machine
      */
-    public void localize(Set<LocalizationResource> localizedResources,
-                         JobStateMachine jobStateMachine) {
+    public void deploy(Set<DeploymentResource> resources, JobStateMachine jobStateMachine) {
         new OperationExecutor(
-                JobEvent.LOCALIZATION_START,
-                JobEvent.LOCALIZATION_SUCCESS,
-                JobEvent.LOCALIZATION_FAILURE,
+                JobEvent.DEPLOYMENT_START,
+                JobEvent.DEPLOYMENT_SUCCESS,
+                JobEvent.DEPLOYMENT_FAILURE,
                 jobStateMachine,
-                () -> executeJobLocalization(localizedResources)
+                () -> executeDeployment(resources)
         ).run();
     }
 
@@ -208,15 +206,15 @@ public abstract class JobClusterService<Payload> {
     protected abstract Payload createAccumulatorsInvoker();
 
     /**
-     * @return invoker to accept job's localization
+     * @return invoker to finish deployment
      */
-    protected abstract Payload createAcceptedLocalizationInvoker();
+    protected abstract Payload createFinishDeploymentInvoker();
 
     /**
      * @param chunk chunk of byte-code
-     * @return invoker to localize job
+     * @return invoker to deploy job
      */
-    protected abstract Payload createLocalizationInvoker(Chunk chunk);
+    protected abstract Payload createDeploymentInvoker(Chunk chunk);
 
     /**
      * Invoker to send JET event
@@ -272,10 +270,7 @@ public abstract class JobClusterService<Payload> {
     }
 
     private void await(List<Future> list) {
-        List<Throwable> errors = new ArrayList<>(
-                list.size()
-        );
-
+        List<Throwable> errors = new ArrayList<>(list.size());
         for (Future future : list) {
             try {
                 future.get();
@@ -295,26 +290,20 @@ public abstract class JobClusterService<Payload> {
     }
 
     private void publishEvent(final JobEvent jobEvent) {
-        List<Future> futures = invokeInCluster(
-                () -> createEventInvoker(jobEvent)
-        );
-
+        List<Future> futures = invokeInCluster(() -> createEventInvoker(jobEvent));
         await(futures);
     }
 
-    private void executeJobLocalization(final Set<LocalizationResource> localizedResources) {
-        Iterator<Chunk> iterator = new ChunkIterator(localizedResources, getLocalizationChunkSize());
-
+    private void executeDeployment(final Set<DeploymentResource> resources) {
+        Iterator<Chunk> iterator = new ChunkIterator(resources, getLocalizationChunkSize());
         List<Future> futures = new ArrayList<>();
-
         while (iterator.hasNext()) {
             final Chunk chunk = iterator.next();
-            Supplier<Payload> operationFactory = () -> createLocalizationInvoker(chunk);
+            Supplier<Payload> operationFactory = () -> createDeploymentInvoker(chunk);
             futures.addAll(invokeInCluster(operationFactory));
         }
-
         await(futures);
-        Supplier<Payload> operationFactory = this::createAcceptedLocalizationInvoker;
+        Supplier<Payload> operationFactory = this::createFinishDeploymentInvoker;
         futures.addAll(invokeInCluster(operationFactory));
         await(futures);
     }

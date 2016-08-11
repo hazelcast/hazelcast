@@ -20,7 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.job.localization.LocalizationResourceType;
+import com.hazelcast.jet.impl.job.deployment.ResourceType;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 
 import java.io.IOException;
@@ -61,17 +61,12 @@ public interface Job extends DistributedObject {
     /**
      * Add all bytecode for url to the calculation classLoader
      *
-     * @param inputStream              source inputStream with bytecode
-     * @param name                     name of the source
-     * @param localizationResourceType type of data stored in inputStream (JAR,CLASS,DATA)
+     * @param inputStream  source inputStream with bytecode
+     * @param name         name of the source
+     * @param resourceType type of data stored in inputStream (JAR,CLASS,DATA)
      * @throws IOException if resource could not be added
      */
-    void addResource(InputStream inputStream, String name, LocalizationResourceType localizationResourceType) throws IOException;
-
-    /**
-     * Clear all submitted resources
-     */
-    void clearResources();
+    void addResource(InputStream inputStream, String name, ResourceType resourceType) throws IOException;
 
     /**
      * @return state for the job's state-machine
