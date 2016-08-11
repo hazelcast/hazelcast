@@ -43,7 +43,6 @@ import java.util.concurrent.TimeUnit;
  * Handles split-brain functionality for cache.
  */
 class CacheSplitBrainHandler {
-
     private final NodeEngine nodeEngine;
     private final Map<String, CacheConfig> configs;
     private final CachePartitionSegment[] segments;
@@ -85,6 +84,11 @@ class CacheSplitBrainHandler {
                     }
                     // Clear all records either owned or backup
                     cacheRecordStore.clear();
+
+                    // send the cache invalidation event regardless if any actually cleared or not (no need to know how many
+                    // actually cleared)
+                    final CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
+                    cacheService.sendInvalidationEvent(cacheName, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
                 }
             }
         }

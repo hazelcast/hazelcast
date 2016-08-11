@@ -13,19 +13,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,7 +32,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CacheDestroyTest extends CacheTestSupport {
+public class CacheCloseTest
+        extends CacheTestSupport {
     private static final int INSTANCE_COUNT = 2;
 
     private TestHazelcastInstanceFactory factory = getInstanceFactory(INSTANCE_COUNT);
@@ -132,7 +129,7 @@ public class CacheDestroyTest extends CacheTestSupport {
             }
         }, config.getNameWithPrefix());
 
-        cache.destroy();
+        cache.close();
 
         // Make sure that one event is received
         assertTrueEventually(new AssertTask() {
