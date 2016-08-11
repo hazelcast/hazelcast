@@ -75,8 +75,8 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
         implements ICacheRecordStore, EvictionListener<Data, R> {
 
+    public static final String SOURCE_NOT_AVAILABLE = "<NA>";
     protected static final int DEFAULT_INITIAL_CAPACITY = 256;
-    protected static final String SOURCE_NOT_AVAILABLE = "<NA>";
 
     protected final String name;
     protected final int partitionId;
@@ -1223,7 +1223,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         R record = records.get(key);
         int hitCount = 0;
         boolean removed = false;
-
         try {
             if (recordNotExistOrExpired(record, now)) {
                 if (isStatisticsEnabled()) {
@@ -1280,7 +1279,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         R record = records.get(key);
         final Object obj;
         boolean removed = false;
-
         try {
             if (recordNotExistOrExpired(record, now)) {
                 obj = null;
@@ -1451,11 +1449,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void clear() {
         records.clear();
-        onClear();
-    }
-
-    protected void onClear() {
-        invalidateAllEntries();
     }
 
     @Override

@@ -31,6 +31,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.HashMap;
@@ -43,7 +44,6 @@ import java.util.concurrent.TimeUnit;
  * Handles split-brain functionality for cache.
  */
 class CacheSplitBrainHandler {
-
     private final NodeEngine nodeEngine;
     private final Map<String, CacheConfig> configs;
     private final CachePartitionSegment[] segments;
@@ -85,6 +85,12 @@ class CacheSplitBrainHandler {
                     }
                     // Clear all records either owned or backup
                     cacheRecordStore.clear();
+
+                    // send the cache invalidation event regardless if any actually cleared or not (no need to know how many
+                    // actually cleared)
+                    NodeEngineImpl node = (NodeEngineImpl) this.nodeEngine;
+                    final CacheService cacheService = node.getService(CacheService.SERVICE_NAME);
+                    cacheService.sendInvalidationEvent(cacheName, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
                 }
             }
         }
