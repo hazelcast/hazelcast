@@ -194,7 +194,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     public void testOneMemberWriteBehind() throws Exception {
         MapStoreTest.TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
-        Config config = newConfig(testMapStore, 2);
+        Config config = newConfig(testMapStore, 5);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         testMapStore.insert("1", "value1");
@@ -217,7 +217,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         // store should have the old data as we will delete-behind
         assertEquals(1, testMapStore.getStore().size());
         assertEquals(0, map.size());
-        testMapStore.assertAwait(12);
+        testMapStore.assertAwait(100);
         assertEquals(0, testMapStore.getStore().size());
     }
 
@@ -270,8 +270,8 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         long lastUpdateTimestamp = testMapStore.getLastStoreNanos();
         double minimumFlushNanos = timeBeforePutNanos + (lenientFactor * SECONDS.toNanos(writeDelaySeconds));
         assertTrue("WriteBehind Queue was flushed too soon. Configured write delay: "
-                + SECONDS.toMillis(writeDelaySeconds)+ " ms. But it took less than "
-                + NANOSECONDS.toMillis(lastUpdateTimestamp - timeBeforePutNanos) + " ms to flush the queue.",
+                        + SECONDS.toMillis(writeDelaySeconds) + " ms. But it took less than "
+                        + NANOSECONDS.toMillis(lastUpdateTimestamp - timeBeforePutNanos) + " ms to flush the queue.",
                 lastUpdateTimestamp >= minimumFlushNanos);
     }
 
