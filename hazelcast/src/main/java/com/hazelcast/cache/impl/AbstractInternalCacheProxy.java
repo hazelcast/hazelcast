@@ -72,12 +72,13 @@ abstract class AbstractInternalCacheProxy<K, V>
         implements ICacheInternal<K, V>, CacheSyncListenerCompleter {
 
     private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
+
     private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
-
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
-    private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
 
+    private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
+
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
     private HazelcastServerCacheManager cacheManager;
@@ -240,6 +241,9 @@ abstract class AbstractInternalCacheProxy<K, V>
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+        } finally {
+            // send single invalidation event
+            cacheService.sendInvalidationEvent(nameWithPrefix, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
         }
     }
 
