@@ -139,6 +139,12 @@ public interface Cluster {
     // TODO RU
     Version getClusterVersion();
 
+    // TODO RU
+    void changeClusterVersion(Version version);
+
+    // TODO RU
+    void changeClusterVersion(Version version, TransactionOptions options);
+
     /**
      * Changes state of the cluster to the given state transactionally. Transaction must be a
      * {@code TWO_PHASE} transaction.

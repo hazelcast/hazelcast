@@ -135,7 +135,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         long timeoutInMillis = TimeUnit.SECONDS.toMillis(60);
         ClusterStateManager clusterStateManager = node.clusterService.getClusterStateManager();
-        clusterStateManager.lockClusterState(ClusterState.FROZEN, node.getThisAddress(), "fakeTxn", timeoutInMillis, partitionStateVersion);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(ClusterState.FROZEN), node.getThisAddress(), "fakeTxn", timeoutInMillis, partitionStateVersion);
     }
 
     @Test

@@ -102,6 +102,7 @@ public interface ClusterService extends CoreService, Cluster {
 
     /**
      * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     *
      * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted.
      * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
      */
@@ -109,7 +110,7 @@ public interface ClusterService extends CoreService, Cluster {
 
     /**
      * Returns the {@link ClusterClock} of the cluster.
-     *
+     * <p>
      * The returned value will never be null and will never change.
      *
      * @return the ClusterClock.

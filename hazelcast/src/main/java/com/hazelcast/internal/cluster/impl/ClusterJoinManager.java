@@ -160,6 +160,7 @@ public class ClusterJoinManager {
         return false;
     }
 
+    // TODO RU
     private boolean ensureValidConfiguration(JoinMessage joinMessage) {
         Address address = joinMessage.getAddress();
         try {

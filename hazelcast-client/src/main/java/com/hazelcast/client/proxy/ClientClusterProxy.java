@@ -82,6 +82,18 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
+    public void changeClusterVersion(Version version) {
+        // TODO RU
+        return;
+    }
+
+    @Override
+    public void changeClusterVersion(Version version, TransactionOptions options) {
+        // TODO RU
+        return;
+    }
+
+    @Override
     public void changeClusterState(ClusterState newState, TransactionOptions transactionOptions) {
         throw new UnsupportedOperationException();
     }

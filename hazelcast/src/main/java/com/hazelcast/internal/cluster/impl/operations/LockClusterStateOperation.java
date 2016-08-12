@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterStateChange;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,14 +29,12 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 
 public class LockClusterStateOperation extends Operation implements AllowedDuringPassiveState {
 
-    private String stateName;
-    private ClusterState newState;
+    private ClusterStateChange stateChange;
     private Address initiator;
     private String txnId;
     private long leaseTime;
@@ -44,9 +43,9 @@ public class LockClusterStateOperation extends Operation implements AllowedDurin
     public LockClusterStateOperation() {
     }
 
-    public LockClusterStateOperation(ClusterState newState, Address initiator, String txnId,
+    public LockClusterStateOperation(ClusterStateChange stateChange, Address initiator, String txnId,
                                      long leaseTime, int partitionStateVersion) {
-        this.newState = newState;
+        this.stateChange = stateChange;
         this.initiator = initiator;
         this.txnId = txnId;
         this.leaseTime = leaseTime;
@@ -55,9 +54,10 @@ public class LockClusterStateOperation extends Operation implements AllowedDurin
 
     @Override
     public void beforeRun() throws Exception {
-        if (newState == null) {
-            throw new IllegalArgumentException("Unknown cluster state: " + stateName);
+        if (stateChange == null) {
+            throw new IllegalArgumentException("Invalid null cluster state");
         }
+        stateChange.validate();
     }
 
     @Override
@@ -72,7 +72,7 @@ public class LockClusterStateOperation extends Operation implements AllowedDurin
             getLogger().info("Locking cluster state. Initiator: " + initiator
                     + ", lease-time: " + leaseTime);
         }
-        clusterStateManager.lockClusterState(newState, initiator, txnId, leaseTime, partitionStateVersion);
+        clusterStateManager.lockClusterState(stateChange, initiator, txnId, leaseTime, partitionStateVersion);
     }
 
     @Override
@@ -100,7 +100,7 @@ public class LockClusterStateOperation extends Operation implements AllowedDurin
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(newState.toString());
+        out.writeObject(stateChange);
         initiator.writeData(out);
         out.writeUTF(txnId);
         out.writeLong(leaseTime);
@@ -110,16 +110,12 @@ public class LockClusterStateOperation extends Operation implements AllowedDurin
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        stateName = in.readUTF();
-        try {
-            newState = ClusterState.valueOf(stateName);
-        } catch (IllegalArgumentException ignored) {
-            EmptyStatement.ignore(ignored);
-        }
+        stateChange = in.readObject();
         initiator = new Address();
         initiator.readData(in);
         txnId = in.readUTF();
         leaseTime = in.readLong();
         partitionStateVersion = in.readInt();
     }
+
 }

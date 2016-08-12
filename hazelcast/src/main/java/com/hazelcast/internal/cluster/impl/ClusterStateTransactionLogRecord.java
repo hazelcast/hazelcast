@@ -37,7 +37,7 @@ import java.io.IOException;
  */
 public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord {
 
-    private ClusterState newState;
+    private ClusterStateChange stateChange;
     private Address initiator;
     private Address target;
     private String txnId;
@@ -47,15 +47,15 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
     public ClusterStateTransactionLogRecord() {
     }
 
-    public ClusterStateTransactionLogRecord(ClusterState newState, Address initiator, Address target,
-            String txnId, long leaseTime, int partitionStateVersion) {
-        Preconditions.checkNotNull(newState);
+    public ClusterStateTransactionLogRecord(ClusterStateChange stateChange, Address initiator, Address target,
+                                            String txnId, long leaseTime, int partitionStateVersion) {
+        Preconditions.checkNotNull(stateChange);
         Preconditions.checkNotNull(initiator);
         Preconditions.checkNotNull(target);
         Preconditions.checkNotNull(txnId);
         Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
 
-        this.newState = newState;
+        this.stateChange = stateChange;
         this.initiator = initiator;
         this.target = target;
         this.txnId = txnId;
@@ -70,12 +70,12 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     @Override
     public Operation newPrepareOperation() {
-        return new LockClusterStateOperation(newState, initiator, txnId, leaseTime, partitionStateVersion);
+        return new LockClusterStateOperation(stateChange, initiator, txnId, leaseTime, partitionStateVersion);
     }
 
     @Override
     public Operation newCommitOperation() {
-        return new ChangeClusterStateOperation(newState, initiator, txnId);
+        return new ChangeClusterStateOperation(stateChange, initiator, txnId);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(newState.toString());
+        out.writeObject(stateChange);
         initiator.writeData(out);
         target.writeData(out);
         out.writeUTF(txnId);
@@ -100,8 +100,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        String stateName = in.readUTF();
-        newState = ClusterState.valueOf(stateName);
+        stateChange = in.readObject();
         initiator = new Address();
         initiator.readData(in);
         target = new Address();

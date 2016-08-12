@@ -848,13 +848,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public void changeClusterState(ClusterState newState) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), getMembers(), partitionStateVersion);
     }
 
     @Override
     public void changeClusterState(ClusterState newState, TransactionOptions options) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, getMembers(), options, partitionStateVersion);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), getMembers(), options, partitionStateVersion);
     }
 
     @Override
@@ -864,15 +864,25 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return node.getVersion();
     }
 
+    @Override
+    public void changeClusterVersion(Version version) {
+        // TODO RU
+    }
+
+    @Override
+    public void changeClusterVersion(Version version, TransactionOptions options) {
+        // TODO RU
+    }
+
     // for testing
     void changeClusterState(ClusterState newState, Collection<Member> members) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, members, partitionStateVersion);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), members, partitionStateVersion);
     }
 
     // for testing
     void changeClusterState(ClusterState newState, int partitionStateVersion) {
-        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), getMembers(), partitionStateVersion);
     }
 
     void addMembersRemovedInNotActiveState(Collection<Address> addresses) {
