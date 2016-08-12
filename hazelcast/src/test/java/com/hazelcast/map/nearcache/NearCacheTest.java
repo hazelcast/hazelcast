@@ -33,9 +33,6 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.query.EntryObject;
@@ -892,6 +889,34 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertEquals(nearCacheSizeBeforeExpiration, nearCacheSizeAfterExpiration);
     }
 
+    @Test
+    public void testMapClear_clears_localNearCache() throws Exception {
+        String mapName = randomMapName();
+        Config config = createNearCachedMapConfig(mapName);
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        final IMap<Integer, Integer> map = instance.getMap(mapName);
+
+        populateMap(map, 1000);
+        pullEntriesToNearCache(map, 1000);
+
+        map.clear();
+
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, ((NearCachedMapProxyImpl) map).getNearCache().size());
+            }
+        };
+
+        assertTrueEventually(task);
+    }
+
     protected void waitUntilEvictionEventsReceived(CountDownLatch latch) {
         assertOpenEventually(latch);
     }
@@ -921,24 +946,6 @@ public class NearCacheTest extends HazelcastTestSupport {
         for (int i = 0; i < mapSize; i++) {
             map.put(i, i);
         }
-    }
-
-    protected void assertNearCacheSize(final int expectedSize, final String mapName, final Map map) {
-
-        final AssertTask assertionTask = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final MapProxyImpl mapProxy = (MapProxyImpl) map;
-                final MapService mapService = (MapService) mapProxy.getService();
-                final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-                final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-                final NearCache nearCache = nearCacheProvider.getOrCreateNearCache(mapName);
-
-                assertEquals(expectedSize, nearCache.size());
-            }
-        };
-
-        assertTrueEventually(assertionTask);
     }
 
     protected Config createNearCachedMapConfig(String mapName) {
