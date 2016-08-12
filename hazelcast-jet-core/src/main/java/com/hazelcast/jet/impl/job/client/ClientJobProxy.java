@@ -30,7 +30,6 @@ import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.job.Job;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
@@ -74,15 +73,7 @@ public class ClientJobProxy extends ClientProxy implements Job {
     }
 
     @Override
-    public void submit(DAG dag, Class... classes) {
-        if (classes != null) {
-            try {
-                addResource(classes);
-            } catch (IOException e) {
-                throw JetUtil.reThrow(e);
-            }
-        }
-
+    public void submit(DAG dag) {
         deploy();
         submit0(dag);
     }
@@ -92,25 +83,57 @@ public class ClientJobProxy extends ClientProxy implements Job {
     }
 
     @Override
-    public void addResource(Class... classes) throws IOException {
+    public void addClass(Class... classes) {
         checkNotNull(classes, "Classes can not be null");
 
         for (Class clazz : classes) {
-            resources.add(new DeploymentResource(clazz));
+            try {
+                resources.add(new DeploymentResource(clazz));
+            } catch (IOException e) {
+                JetUtil.reThrow(e);
+            }
         }
     }
 
     @Override
-    public void addResource(URL url) throws IOException {
-        resources.add(new DeploymentResource(url));
+    public void addClass(URL url, String name) {
+        checkNotNull(name, "Class name cannot be null");
+        add(url, name, ResourceType.CLASS);
     }
 
     @Override
-    public void addResource(InputStream inputStream,
-                            String name,
-                            ResourceType resourceType) throws IOException {
-        resources.add(new DeploymentResource(inputStream, name, resourceType));
+    public void addJar(URL url) {
+        addJar(url, getFileName(url));
     }
+
+    @Override
+    public void addJar(URL url, String name) {
+        add(url, name, ResourceType.JAR);
+    }
+
+    @Override
+    public void addResource(URL url) {
+        addResource(url, getFileName(url));
+    }
+
+    @Override
+    public void addResource(URL url, String name) {
+        add(url, name, ResourceType.DATA);
+    }
+
+    private void add(URL url, String name, ResourceType type) {
+        try {
+            resources.add(new DeploymentResource(url, name, type));
+        } catch (IOException e) {
+            throw JetUtil.reThrow(e);
+        }
+    }
+
+    private String getFileName(URL url) {
+        String urlFile = url.getFile();
+        return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
+    }
+
 
     @Override
     public JobState getJobState() {

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.job.deployment.classloader;
 
+import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
 import com.hazelcast.jet.impl.job.deployment.JetClassLoaderException;
 import com.hazelcast.jet.impl.job.deployment.ResourceDescriptor;
-import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
 import com.hazelcast.jet.impl.util.JetUtil;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;

@@ -54,10 +54,8 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
             int max = config.getJobDirectoryCreationAttemptsCount();
             if (count > max) {
                 throw new JetException(
-                        "Default job directory creation attempts count exceeded containerDir="
-                                + containerDir
-                                + " defaultJobDirectoryCreationAttemptsCount="
-                                + max
+                        "Default job directory creation attempts count exceeded, directory -> "
+                                + containerDir + ", attempt count -> " + max
                 );
             }
         } while (!dir.mkdir());

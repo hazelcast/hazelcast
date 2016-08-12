@@ -1,19 +1,14 @@
-package com.hazelcast.jet.deployment.processors;
+package com.hazelcast.jet.impl.job.deployment.processors;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.processor.ContainerProcessor;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import org.junit.Assert;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+public class PrintCarVertex implements ContainerProcessor {
 
-public class GPL implements ContainerProcessor {
-
-    public GPL() {
+    public PrintCarVertex() {
     }
 
     @Override
@@ -22,10 +17,12 @@ public class GPL implements ContainerProcessor {
                            String sourceName, ProcessorContext processorContext) throws Exception {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = contextClassLoader.getResource("gpl");
-        String firstLine = Files.newBufferedReader(Paths.get(resource.toURI())).readLine();
-        assertTrue(firstLine.contains("GNU"));
-        assertNull(contextClassLoader.getResource("apache"));
+        contextClassLoader.loadClass("com.sample.pojo.car.Car");
+        try {
+            contextClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+            Assert.fail();
+        } catch (ClassNotFoundException ignored) {
+        }
         outputStream.consumeStream(inputStream);
         return true;
     }

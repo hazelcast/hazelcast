@@ -20,11 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.job.deployment.ResourceType;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -36,37 +32,55 @@ public interface Job extends DistributedObject {
     /**
      * Submit dag to the cluster
      *
-     * @param dag     Direct acyclic graph, which describes calculation flow
-     * @param classes Classes which will be used during calculation process
+     * @param dag Direct acyclic graph, which describes calculation flow
      */
-    void submit(DAG dag, Class... classes);
+    void submit(DAG dag);
 
 
     /**
-     * Add classes to the calculation's classLoader
+     * Add class to the job classLoader
      *
      * @param classes classes, which will be used during calculation
-     * @throws IOException if resource could not be added
      */
-    void addResource(Class... classes) throws IOException;
+    void addClass(Class... classes);
 
     /**
-     * Add all bytecode for url to the calculation classLoader
+     * Add class to the job classLoader
+     *
+     * @param url       location of the class file
+     * @param className fully qualified name of the class
+     */
+    void addClass(URL url, String className);
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param url location of the JAR file
+     */
+    void addJar(URL url);
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param url  location of the JAR file
+     * @param name name of the JAR file
+     */
+    void addJar(URL url, String name);
+
+    /**
+     * Add resource to the job classLoader
      *
      * @param url source url with classes
-     * @throws IOException if resource could not be added
      */
-    void addResource(URL url) throws IOException;
+    void addResource(URL url);
 
     /**
-     * Add all bytecode for url to the calculation classLoader
+     * Add resource to the job classLoader
      *
-     * @param inputStream  source inputStream with bytecode
-     * @param name         name of the source
-     * @param resourceType type of data stored in inputStream (JAR,CLASS,DATA)
-     * @throws IOException if resource could not be added
+     * @param url  source url with classes
+     * @param name name of the resource
      */
-    void addResource(InputStream inputStream, String name, ResourceType resourceType) throws IOException;
+    void addResource(URL url, String name) ;
 
     /**
      * @return state for the job's state-machine

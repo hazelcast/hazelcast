@@ -34,10 +34,8 @@ public interface DeploymentStorage {
 
     /**
      * Signal that no more chunks will be received
-     *
-     * @throws DeploymentException if deployment could not be completed
      */
-    void finish() throws DeploymentException;
+    void finish();
 
     /**
      * Returns classLoaders corresponding to the received byte-code

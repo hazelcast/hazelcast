@@ -1,4 +1,4 @@
-package com.hazelcast.jet.deployment.processors;
+package com.hazelcast.jet.impl.job.deployment.processors;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
@@ -12,9 +12,9 @@ import java.nio.file.Paths;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class Apache implements ContainerProcessor {
+public class ApacheV1 implements ContainerProcessor {
 
-    public Apache() {
+    public ApacheV1() {
     }
 
     @Override
@@ -23,12 +23,12 @@ public class Apache implements ContainerProcessor {
                            String sourceName, ProcessorContext processorContext) throws Exception {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = contextClassLoader.getResource("apache");
+        URL resource = contextClassLoader.getResource("apachev1");
         BufferedReader reader = Files.newBufferedReader(Paths.get(resource.toURI()));
-        reader.readLine();
+        String firstLine = reader.readLine();
         String secondLine = reader.readLine();
-        assertTrue(secondLine.contains("Apache"));
-        assertNull(contextClassLoader.getResource("gpl"));
+        assertTrue(secondLine.contains("Version 1.1"));
+        assertNull(contextClassLoader.getResourceAsStream("apachev2"));
         outputStream.consumeStream(inputStream);
         return true;
     }
