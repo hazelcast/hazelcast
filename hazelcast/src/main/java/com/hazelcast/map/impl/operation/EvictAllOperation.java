@@ -48,7 +48,7 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
     public void run() throws Exception {
 
         // TODO this also clears locked keys from near cache which should be preserved.
-        clearNearCache(true);
+        clearLocalNearCache();
 
         if (recordStore == null) {
             return;

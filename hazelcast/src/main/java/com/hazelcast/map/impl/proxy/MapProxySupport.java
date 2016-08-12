@@ -44,6 +44,8 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.PartitioningStrategyFactory;
 import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
+import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
@@ -129,9 +131,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     /**
      * Defines the batch size for operations of {@link IMap#putAll(Map)} calls.
-     *
+     * <p>
      * A value of {@code 0} disables the batching and will send a single operation per member with all map entries.
-     *
+     * <p>
      * If you set this value too high, you may ran into OOME or blocked network pipelines due to huge operations.
      * If you set this value too low, you will lower the performance of the putAll() operation.
      */
@@ -141,17 +143,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     /**
      * Defines the initial size of entry arrays per partition for {@link IMap#putAll(Map)} calls.
-     *
+     * <p>
      * {@link IMap#putAll(Map)} splits up the entries of the user input map per partition,
      * to eventually send the entries the correct target nodes.
      * So the method creates multiple arrays with map entries per partition.
      * This value determines how the initial size of these arrays is calculated.
-     *
+     * <p>
      * The default value of {@code 0} uses an educated guess, depending on the map size, which is a good overall strategy.
      * If you insert entries which don't match a normal partition distribution you should configure this factor.
      * The initial size is calculated by this formula:
      * {@code initialSize = ceil(MAP_PUT_ALL_INITIAL_SIZE_FACTOR * map.size() / PARTITION_COUNT)}
-     *
+     * <p>
      * As a rule of thumb you can try the following values:
      * <ul>
      * <li>{@code 10.0} for map sizes up to 500 entries</li>
@@ -159,7 +161,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * <li>{@code 1.5} for map sizes between up to 50000 entries</li>
      * <li>{@code 1.0} for map sizes beyond 50000 entries</li>
      * </ul>
-     *
+     * <p>
      * If you set this value too high, you will waste memory.
      * If you set this value too low, you will suffer from expensive {@link java.util.Arrays#copyOf} calls.
      */
@@ -448,19 +450,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             BinaryOperationFactory factory = new BinaryOperationFactory(operation, getNodeEngine());
             Map<Integer, Object> resultMap = operationService.invokeOnAllPartitions(SERVICE_NAME, factory);
 
-            int numberOfAffectedEntries = 0;
+            int evictedCount = 0;
             for (Object object : resultMap.values()) {
-                numberOfAffectedEntries += (Integer) object;
+                evictedCount += (Integer) object;
             }
 
-            MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
-            for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
-                operationService.invokeOnTarget(SERVICE_NAME, new EvictAllOperation(name), member.getAddress());
+            if (evictedCount > 0) {
+                publishMapEvent(evictedCount, EntryEventType.EVICT_ALL);
+                sendClientNearCacheClearEvent();
             }
 
-            if (numberOfAffectedEntries > 0) {
-                publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
-            }
+            runOnLiteMembers(new EvictAllOperation(name));
+
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -474,11 +475,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         try {
             loadMapFuture.get();
+            waitUntilLoaded();
         } catch (Throwable t) {
             throw rethrow(t);
+        } finally {
+            if (replaceExistingValues) {
+                sendClientNearCacheClearEvent();
+                runOnLiteMembers(new ClearOperation(name));
+            }
         }
-
-        waitUntilLoaded();
     }
 
     /**
@@ -495,7 +500,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
         }
 
-        waitUntilLoaded();
+        try {
+            waitUntilLoaded();
+        } finally {
+            if (replaceExistingValues) {
+                sendClientNearCacheClearEvent();
+                runOnLiteMembers(new ClearOperation(name));
+            }
+        }
     }
 
     protected <K> Iterable<Data> convertToData(Iterable<K> keys) {
@@ -889,22 +901,35 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             BinaryOperationFactory factory = new BinaryOperationFactory(clearOperation, getNodeEngine());
             Map<Integer, Object> resultMap = operationService.invokeOnAllPartitions(SERVICE_NAME, factory);
 
-            int numberOfAffectedEntries = 0;
+            int clearedCount = 0;
             for (Object object : resultMap.values()) {
-                numberOfAffectedEntries += (Integer) object;
+                clearedCount += (Integer) object;
             }
 
-            MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
-            for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
-                operationService.invokeOnTarget(SERVICE_NAME, new ClearOperation(name), member.getAddress());
+            if (clearedCount > 0) {
+                publishMapEvent(clearedCount, EntryEventType.CLEAR_ALL);
+                sendClientNearCacheClearEvent();
             }
 
-            if (numberOfAffectedEntries > 0) {
-                publishMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
-            }
+            runOnLiteMembers(new ClearOperation(name));
+
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    protected void runOnLiteMembers(Operation operation) {
+        MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
+        for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
+            operationService.invokeOnTarget(SERVICE_NAME, operation, member.getAddress());
+        }
+    }
+
+    protected void sendClientNearCacheClearEvent() {
+        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
+        nearCacheInvalidator.sendClientNearCacheClearEvent(getName(),
+                mapServiceContext.getNodeEngine().getLocalMember().getUuid());
     }
 
     public String addMapInterceptorInternal(MapInterceptor interceptor) {
