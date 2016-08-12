@@ -31,6 +31,11 @@ public class DeploymentResource {
     private final transient InputStream inputStream;
     private final ResourceDescriptor descriptor;
 
+    public DeploymentResource(URL url, String name, ResourceType type) throws IOException {
+        this.descriptor = new ResourceDescriptor(name, type);
+        this.inputStream = url.openStream();
+    }
+
     public DeploymentResource(Class clazz) throws IOException {
         ProtectionDomain protectionDomain = clazz.getProtectionDomain();
         String classAsPath = clazz.getName().replace('.', '/') + ".class";
@@ -42,7 +47,7 @@ public class DeploymentResource {
             resourceType = getContentType(location);
         }
 
-        if (location == null || resourceType == ResourceType.DATA) {
+        if (location == null) {
             this.inputStream = clazz.getClassLoader().getResourceAsStream(classAsPath);
             this.descriptor = new ResourceDescriptor(clazz.getName(), ResourceType.CLASS);
         } else {
@@ -53,23 +58,17 @@ public class DeploymentResource {
             this.inputStream = location.openStream();
             this.descriptor = new ResourceDescriptor(location.toString(), ResourceType.JAR);
         }
-
         checkNotNull(this.descriptor, "Descriptor is null");
         checkNotNull(this.inputStream, "InputStream is null");
     }
 
-    public DeploymentResource(URL url) throws IOException {
-        checkNotNull(url, "Url is null");
-        this.inputStream = url.openStream();
-        checkNotNull(this.inputStream, "InputStream is null");
-        this.descriptor = new ResourceDescriptor(url.toString(), getContentType(url));
+
+    public InputStream getInputStream() {
+        return inputStream;
     }
 
-    public DeploymentResource(InputStream inputStream, String name, ResourceType resourceType) {
-        checkNotNull(inputStream, "InputStream is null");
-
-        this.inputStream = inputStream;
-        this.descriptor = new ResourceDescriptor(name, resourceType);
+    public ResourceDescriptor getDescriptor() {
+        return descriptor;
     }
 
     private ResourceType getContentType(URL url) throws IOException {
@@ -114,11 +113,4 @@ public class DeploymentResource {
         return location;
     }
 
-    public InputStream getInputStream() {
-        return this.inputStream;
-    }
-
-    public ResourceDescriptor getDescriptor() {
-        return descriptor;
-    }
 }

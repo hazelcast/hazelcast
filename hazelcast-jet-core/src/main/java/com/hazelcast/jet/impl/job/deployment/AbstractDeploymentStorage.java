@@ -69,18 +69,15 @@ public abstract class AbstractDeploymentStorage<S> implements DeploymentStorage 
     }
 
 
-    public void finish() throws DeploymentException {
+    public void finish() {
         if (finalized) {
             return;
         }
 
         finalized = true;
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                classLoader = new JobClassLoader(AbstractDeploymentStorage.this);
-                return null;
-            }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            classLoader = new JobClassLoader(AbstractDeploymentStorage.this);
+            return null;
         });
     }
 

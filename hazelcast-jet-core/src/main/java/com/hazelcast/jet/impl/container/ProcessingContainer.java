@@ -118,8 +118,7 @@ public class ProcessingContainer extends
             containerTasks[taskIndex] = new DefaultContainerTask(this, getVertex(), taskProcessorFactory,
                     taskID, new DefaultTaskContext(tasksCount, taskIndex, getJobContext()));
             getJobContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
-            containerTasks[taskIndex].setThreadContextClassLoaders(
-                    getJobContext().getDeploymentStorage().getClassLoader());
+            containerTasks[taskIndex].setThreadContextClassLoaders(getJobContext().getDeploymentStorage().getClassLoader());
             containerTasksCache.put(taskID, containerTasks[taskIndex]);
         }
     }

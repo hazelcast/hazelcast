@@ -1,4 +1,4 @@
-package com.hazelcast.jet.deployment.processors;
+package com.hazelcast.jet.impl.job.deployment.processors;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;

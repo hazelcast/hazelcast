@@ -1,4 +1,4 @@
-package com.hazelcast.jet.deployment;
+package com.hazelcast.jet.impl.job.deployment;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -6,11 +6,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetEngine;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.deployment.processors.Apache;
-import com.hazelcast.jet.deployment.processors.GPL;
-import com.hazelcast.jet.deployment.processors.PrintCarVertex;
-import com.hazelcast.jet.deployment.processors.PrintPersonVertex;
-import com.hazelcast.jet.impl.job.deployment.ResourceType;
+import com.hazelcast.jet.impl.job.deployment.processors.ApacheV1;
+import com.hazelcast.jet.impl.job.deployment.processors.ApacheV2;
+import com.hazelcast.jet.impl.job.deployment.processors.PrintCarVertex;
+import com.hazelcast.jet.impl.job.deployment.processors.PrintPersonVertex;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,7 +43,7 @@ public class ClientDeploymentTest extends JetTestSupport {
 
         DAG dag = new DAG();
         dag.addVertex(createVertex("create and print person", PrintPersonVertex.class));
-        job.addResource(this.getClass().getResource("/sample-pojo-1.0-person.jar"));
+        job.addJar(this.getClass().getResource("/sample-pojo-1.0-person.jar"));
 
         job.submit(dag);
         execute(job);
@@ -62,7 +61,7 @@ public class ClientDeploymentTest extends JetTestSupport {
         URL gzipResource = this.getClass().getResource("/Person$Appereance.class.gz");
         File classFile = createClassFileFromGzip(gzipResource, "Person$Appereance.class");
 
-        job.addResource(classFile.toURI().toURL().openStream(), "com.sample.pojo.person.Person$Appereance", ResourceType.CLASS);
+        job.addClass(classFile.toURI().toURL(), "com.sample.pojo.person.Person$Appereance");
 
         job.submit(dag);
         execute(job);
@@ -76,8 +75,8 @@ public class ClientDeploymentTest extends JetTestSupport {
         HazelcastInstance[] instances = factory.newInstances();
         final Job job = JetEngine.getJob(instances[0], generateRandomString(10));
         DAG dag = new DAG();
-        dag.addVertex(createVertex("gpl", GPL.class));
-        job.addResource(new URL("https://www.gnu.org/licenses/gpl-3.0.txt").openStream(), "gpl", ResourceType.DATA);
+        dag.addVertex(createVertex("apachev1", ApacheV1.class));
+        job.addResource(new URL("http://www.apache.org/licenses/LICENSE-1.1.txt"), "apachev1");
         job.submit(dag);
         execute(job);
     }
@@ -92,12 +91,12 @@ public class ClientDeploymentTest extends JetTestSupport {
 
         DAG dag1 = new DAG();
         dag1.addVertex(createVertex("create and print person", PrintPersonVertex.class));
-        job1.addResource(this.getClass().getResource("/sample-pojo-1.0-person.jar"));
+        job1.addJar(this.getClass().getResource("/sample-pojo-1.0-person.jar"));
         job1.submit(dag1);
 
         DAG dag2 = new DAG();
         dag2.addVertex(createVertex("create and print car", PrintCarVertex.class));
-        job2.addResource(this.getClass().getResource("/sample-pojo-1.0-car.jar"));
+        job2.addJar(this.getClass().getResource("/sample-pojo-1.0-car.jar"));
         job2.submit(dag2);
 
         Future f1 = job1.execute();
@@ -121,7 +120,7 @@ public class ClientDeploymentTest extends JetTestSupport {
         dag1.addVertex(createVertex("create and print person", PrintPersonVertex.class));
         URL gzipResource1 = this.getClass().getResource("/Person$Appereance.class.gz");
         File classFile1 = createClassFileFromGzip(gzipResource1, "Person$Appereance.class");
-        job1.addResource(classFile1.toURI().toURL().openStream(), "com.sample.pojo.person.Person$Appereance", ResourceType.CLASS);
+        job1.addClass(classFile1.toURI().toURL(), "com.sample.pojo.person.Person$Appereance");
         job1.submit(dag1);
 
 
@@ -129,7 +128,7 @@ public class ClientDeploymentTest extends JetTestSupport {
         dag2.addVertex(createVertex("create and print car", PrintCarVertex.class));
         URL gzipResource2 = this.getClass().getResource("/Car.class.gz");
         File classFile2 = createClassFileFromGzip(gzipResource2, "Car.class");
-        job2.addResource(classFile2.toURI().toURL().openStream(), "com.sample.pojo.car.Car", ResourceType.CLASS);
+        job2.addClass(classFile2.toURI().toURL(), "com.sample.pojo.car.Car");
 
         job2.submit(dag2);
 
@@ -150,14 +149,14 @@ public class ClientDeploymentTest extends JetTestSupport {
         final Job job2 = JetEngine.getJob(client, generateRandomString(10));
 
         DAG dag1 = new DAG();
-        dag1.addVertex(createVertex("gpl", GPL.class));
-        job1.addResource(new URL("https://www.gnu.org/licenses/gpl-3.0.txt").openStream(), "gpl", ResourceType.DATA);
+        dag1.addVertex(createVertex("apachev1", ApacheV1.class));
+        job1.addResource(new URL("http://www.apache.org/licenses/LICENSE-1.1.txt"), "apachev1");
         job1.submit(dag1);
 
 
         DAG dag2 = new DAG();
-        dag2.addVertex(createVertex("apache", Apache.class));
-        job2.addResource(new URL("http://www.apache.org/licenses/LICENSE-2.0.txt").openStream(), "apache", ResourceType.DATA);
+        dag2.addVertex(createVertex("apachev2", ApacheV2.class));
+        job2.addResource(new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"), "apachev2");
         job2.submit(dag2);
 
         Future f1 = job1.execute();

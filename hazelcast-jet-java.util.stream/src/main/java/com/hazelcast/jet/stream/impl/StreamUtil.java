@@ -85,7 +85,8 @@ public final class StreamUtil {
     public static void executeJob(StreamContext context, DAG dag) {
         Job job = JetEngine.getJob(context.getHazelcastInstance(), randomName());
         Set<Class> classes = context.getClasses();
-        job.submit(dag, classes.toArray(new Class[classes.size()]));
+        job.addClass(classes.toArray(new Class[classes.size()]));
+        job.submit(dag);
         try {
             result(job.execute());
             context.getStreamListeners().forEach(Runnable::run);
