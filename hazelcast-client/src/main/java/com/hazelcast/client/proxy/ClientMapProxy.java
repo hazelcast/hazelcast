@@ -968,6 +968,10 @@ public class ClientMapProxy<K, V>
     public void loadAll(boolean replaceExistingValues) {
         ClientMessage request = MapLoadAllCodec.encodeRequest(name, replaceExistingValues);
         invoke(request);
+
+        if (replaceExistingValues) {
+            clearNearCachesOnLiteMembers();
+        }
     }
 
     @Override
@@ -979,6 +983,10 @@ public class ClientMapProxy<K, V>
 
         Collection<Data> dataKeys = CollectionUtil.objectToDataCollection(keys, getSerializationService());
         loadAllInternal(replaceExistingValues, dataKeys);
+
+        if (replaceExistingValues) {
+            clearNearCachesOnLiteMembers();
+        }
     }
 
     protected void loadAllInternal(boolean replaceExistingValues, Collection<Data> dataKeys) {

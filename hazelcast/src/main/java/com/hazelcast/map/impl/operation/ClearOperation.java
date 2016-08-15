@@ -43,7 +43,7 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     public void run() {
         // near-cache clear will be called multiple times by each clear operation,
         // but it's still preferred to send a separate operation to clear near-cache.
-        clearNearCache(true);
+        clearLocalNearCache();
 
         if (recordStore == null) {
             return;

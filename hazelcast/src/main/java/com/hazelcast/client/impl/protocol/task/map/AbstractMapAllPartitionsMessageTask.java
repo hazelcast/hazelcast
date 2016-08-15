@@ -21,8 +21,12 @@ import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
+import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
+
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 abstract class AbstractMapAllPartitionsMessageTask<P> extends AbstractAllPartitionsMessageTask<P> {
 
@@ -31,8 +35,16 @@ abstract class AbstractMapAllPartitionsMessageTask<P> extends AbstractAllPartiti
     }
 
     protected final MapOperationProvider getOperationProvider(String mapName) {
-        MapService mapService = getService(MapService.SERVICE_NAME);
+        MapService mapService = getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapOperationProvider(mapName);
+    }
+
+    protected final void sendClientNearCacheClearEvent(String mapName) {
+        MapService mapService = getService(SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
+        nearCacheInvalidator.sendClientNearCacheClearEvent(mapName, nodeEngine.getLocalMember().getUuid());
     }
 }

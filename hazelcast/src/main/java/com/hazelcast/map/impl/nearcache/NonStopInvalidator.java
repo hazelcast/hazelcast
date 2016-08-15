@@ -50,13 +50,8 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
     }
 
     @Override
-    public void clear(String mapName, boolean owner, String sourceUuid) {
-        if (owner) {
-            // only send invalidation event to clients, server near-caches are cleared by ClearOperation.
-            invalidateClient(mapName, null, null, sourceUuid);
-        }
-
-        clearLocal(mapName);
+    public void sendClientNearCacheClearEvent(String mapName, String sourceUuid) {
+        invalidateClient(mapName, null, null, sourceUuid);
     }
 
     @Override

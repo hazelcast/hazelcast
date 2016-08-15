@@ -94,13 +94,8 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     }
 
     @Override
-    public void clear(String mapName, boolean owner, String sourceUuid) {
-        if (owner) {
-            // only send invalidation event to clients, server near-caches are cleared by ClearOperation.
-            invalidateClient(new CleaningNearCacheInvalidation(mapName, sourceUuid));
-        }
-
-        clearLocal(mapName);
+    public void sendClientNearCacheClearEvent(String mapName, String sourceUuid) {
+        invalidateClient(new CleaningNearCacheInvalidation(mapName, sourceUuid));
     }
 
     private void invalidateInternal(String mapName, Data key, List<Data> keys, String sourceUuid) {
