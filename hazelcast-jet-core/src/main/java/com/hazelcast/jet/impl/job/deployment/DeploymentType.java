@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.job.deployment;
 
 import java.io.Serializable;
 
-public enum ResourceType implements Serializable {
+public enum DeploymentType implements Serializable {
     JAR,
     CLASS,
     DATA

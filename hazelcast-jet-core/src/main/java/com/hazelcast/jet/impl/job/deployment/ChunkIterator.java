@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.job.deployment;
 
+import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.impl.util.JetUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,35 +27,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ChunkIterator implements Iterator<Chunk> {
     private final int chunkSize;
-    private final Iterator<DeploymentResource> resourceIterator;
+    private final Iterator<DeploymentConfig> configIterator;
     private InputStream inputStream;
-    private DeploymentResource resource;
+    private DeploymentConfig deploymentConfig;
     private AtomicInteger sequenceGenerator = new AtomicInteger();
 
-    public ChunkIterator(Set<DeploymentResource> resources, int chunkSize) {
-        this.resourceIterator = resources.iterator();
+    public ChunkIterator(Set<DeploymentConfig> deploymentConfigs, int chunkSize) {
+        this.configIterator = deploymentConfigs.iterator();
         this.chunkSize = chunkSize;
     }
 
     private void switchFile() throws IOException {
-        if (!hasMoreResources()) {
+        if (!hasMoreDeployments()) {
             throw new NoSuchElementException();
         }
-        resource = resourceIterator.next();
-        inputStream = resource.getInputStream();
+        deploymentConfig = configIterator.next();
+        inputStream = deploymentConfig.getUrl().openStream();
     }
 
     @Override
     public boolean hasNext() {
         try {
-            return hasMoreResources() || (streamIsNotNull() && streamHasAvailableBytes());
+            return hasMoreDeployments() || (streamIsNotNull() && streamHasAvailableBytes());
         } catch (IOException e) {
             throw JetUtil.reThrow(e);
         }
     }
 
-    private boolean hasMoreResources() {
-        return resourceIterator.hasNext();
+    private boolean hasMoreDeployments() {
+        return configIterator.hasNext();
     }
 
     private boolean streamIsNotNull() {
@@ -87,7 +88,7 @@ public final class ChunkIterator implements Iterator<Chunk> {
             if (bytes.length > 0) {
                 return new Chunk(
                         bytes,
-                        resource.getDescriptor(),
+                        deploymentConfig.getDescriptor(),
                         chunkSize,
                         bytes.length,
                         sequenceGenerator.incrementAndGet()

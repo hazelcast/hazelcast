@@ -48,7 +48,7 @@ public interface DeploymentStorage {
      * @return all resources stored in storage
      * @throws IOException if IOException
      */
-    Map<ResourceDescriptor, ResourceStream> getResources() throws IOException;
+    Map<DeploymentDescriptor, ResourceStream> getResources() throws IOException;
 
     /**
      * Clean-up all data in storage

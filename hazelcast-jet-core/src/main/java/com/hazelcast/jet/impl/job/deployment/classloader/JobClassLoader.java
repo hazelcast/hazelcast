@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.job.deployment.classloader;
 
 import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
 import com.hazelcast.jet.impl.job.deployment.JetClassLoaderException;
-import com.hazelcast.jet.impl.job.deployment.ResourceDescriptor;
+import com.hazelcast.jet.impl.job.deployment.DeploymentDescriptor;
 import com.hazelcast.jet.impl.util.JetUtil;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -236,10 +236,10 @@ public class JobClassLoader extends ClassLoader {
         private final Map<String, ClassLoaderEntry> dataEntries = new HashMap<>();
         private final Map<String, ClassLoaderEntry> classEntries = new HashMap<>();
 
-        JobUserClassLoader(Map<ResourceDescriptor, ResourceStream> resourceMap) {
-            for (Map.Entry<ResourceDescriptor, ResourceStream> entry : resourceMap.entrySet()) {
-                ResourceDescriptor descriptor = entry.getKey();
-                switch (descriptor.getResourceType()) {
+        JobUserClassLoader(Map<DeploymentDescriptor, ResourceStream> resourceMap) {
+            for (Map.Entry<DeploymentDescriptor, ResourceStream> entry : resourceMap.entrySet()) {
+                DeploymentDescriptor descriptor = entry.getKey();
+                switch (descriptor.getDeploymentType()) {
                     case JAR:
                         loadJarStream(entry.getValue());
                         break;
@@ -315,12 +315,12 @@ public class JobClassLoader extends ClassLoader {
             return url;
         }
 
-        private void loadClassStream(ResourceDescriptor descriptor, ResourceStream resourceStream) {
+        private void loadClassStream(DeploymentDescriptor descriptor, ResourceStream resourceStream) {
             byte[] classBytes = JetUtil.readFully(resourceStream.getInputStream());
             classEntries.put(descriptor.getName(), new ClassLoaderEntry(classBytes, resourceStream.getBaseUrl()));
         }
 
-        private void loadDataStream(ResourceDescriptor descriptor, ResourceStream resourceStream) {
+        private void loadDataStream(DeploymentDescriptor descriptor, ResourceStream resourceStream) {
             byte[] bytes = JetUtil.readFully(resourceStream.getInputStream());
             dataEntries.put(descriptor.getName(), new ClassLoaderEntry(bytes, resourceStream.getBaseUrl()));
         }

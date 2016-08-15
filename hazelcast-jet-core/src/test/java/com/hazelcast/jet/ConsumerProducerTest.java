@@ -18,16 +18,16 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.dag.source.ListSource;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,7 +52,6 @@ public class ConsumerProducerTest extends JetTestSupport {
 
     @Test
     public void testFinalization_whenEmptyProducerWithNoConsumer() throws Exception {
-        final Job job = JetEngine.getJob(instance, "emptyProducerNoConsumer");
         DAG dag = new DAG();
 
         IList<String> sourceList = getList(instance);
@@ -61,13 +60,12 @@ public class ConsumerProducerTest extends JetTestSupport {
 
         dag.addVertex(producer);
 
-        job.submit(dag);
+        Job job = JetEngine.getJob(instance, "emptyProducerNoConsumer", dag);
         execute(job);
     }
 
     @Test
     public void testFinalization_whenEmptyProducerWithConsumer() throws Exception {
-        final Job job = JetEngine.getJob(instance, "emptyProducerWithConsumer");
         DAG dag = new DAG();
 
         IList<String> sourceList = getList(instance);
@@ -82,7 +80,7 @@ public class ConsumerProducerTest extends JetTestSupport {
         dag.addVertex(consumer);
         dag.addEdge(new Edge("", producer, consumer));
 
-        job.submit(dag);
+        Job job = JetEngine.getJob(instance, "emptyProducerWithConsumer", dag);
         execute(job);
 
         assertEquals(TASK_COUNT * NODE_COUNT, sinkList.size());
@@ -90,19 +88,18 @@ public class ConsumerProducerTest extends JetTestSupport {
 
     @Test
     public void testArrayProducer() throws Exception {
-        Job job = JetEngine.getJob(instance, "arrayProducer");
         IList<Integer[]> sourceList = getList(instance);
         IList<Integer[]> sinkList = getList(instance);
         DAG dag = new DAG();
         int count = 10;
         for (int i = 0; i < count; i++) {
-            sourceList.add(new Integer[] {i});
+            sourceList.add(new Integer[]{i});
         }
         Vertex vertex = createVertex("vertex", TestProcessors.Noop.class, 1);
         vertex.addSource(new ListSource(sourceList));
         vertex.addSink(new ListSink(sinkList));
         dag.addVertex(vertex);
-        job.submit(dag);
+        Job job = JetEngine.getJob(instance, "arrayProducer", dag);
         execute(job);
         for (int i = 0; i < count; i++) {
             assertEquals(i, (int) sinkList.get(i)[0]);

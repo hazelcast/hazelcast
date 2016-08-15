@@ -17,13 +17,18 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.job.JobProxy;
 import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.job.client.ClientJobProxy;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.job.Job;
+import java.util.Set;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Utility class for creating new Jet Jobs
@@ -41,10 +46,11 @@ public final class JetEngine {
      *
      * @param hazelcastInstance Hazelcast instance to use
      * @param name              name of the job
+     * @param dag               Direct acyclic graph, which describes calculation flow
      * @return a new Jet job
      */
-    public static Job getJob(HazelcastInstance hazelcastInstance, String name) {
-        return getJob(hazelcastInstance, name, null);
+    public static Job getJob(HazelcastInstance hazelcastInstance, String name, DAG dag) {
+        return getJob(hazelcastInstance, name, dag, new JobConfig());
     }
 
     /**
@@ -52,25 +58,28 @@ public final class JetEngine {
      *
      * @param hazelcastInstance Hazelcast instance to use
      * @param name              name of the job
+     * @param dag               Direct acyclic graph, which describes calculation flow
      * @param jobConfig         configuration for the job
      * @return a new Jet job
      */
-    public static Job getJob(HazelcastInstance hazelcastInstance,
-                             String name,
-                             JobConfig jobConfig) {
+    public static Job getJob(HazelcastInstance hazelcastInstance, String name, DAG dag, JobConfig jobConfig) {
         checkJobName(name);
+        checkNotNull(dag, "DAG cannot be null");
 
-        Job job = hazelcastInstance.getDistributedObject(
-                JobService.SERVICE_NAME,
-                name
-        );
+        Job job = hazelcastInstance.getDistributedObject(JobService.SERVICE_NAME, name);
+
+        Set<DeploymentConfig> deploymentConfigs = jobConfig.getDeploymentConfigs();
 
         // TODO: job init should be done in createDistributedObject
         if (job.getJobState() == JobState.NEW) {
             if (job instanceof JobProxy) {
-                ((JobProxy) job).init(jobConfig);
+                JobProxy jobProxy = (JobProxy) job;
+                jobProxy.init(jobConfig);
+                jobProxy.submit(dag, deploymentConfigs);
             } else {
-                ((ClientJobProxy) job).init(jobConfig);
+                ClientJobProxy clientJobProxy = (ClientJobProxy) job;
+                clientJobProxy.init(jobConfig);
+                clientJobProxy.submit(dag, deploymentConfigs);
             }
         }
 

@@ -24,7 +24,7 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.job.deployment.ChunkIterator;
-import com.hazelcast.jet.impl.job.deployment.DeploymentResource;
+import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -79,7 +79,7 @@ public abstract class JobClusterService<Payload> {
      * @param resources classpath resources
      * @param jobStateMachine    manager to work with job state-machine
      */
-    public void deploy(Set<DeploymentResource> resources, JobStateMachine jobStateMachine) {
+    public void deploy(Set<DeploymentConfig> resources, JobStateMachine jobStateMachine) {
         new OperationExecutor(
                 JobEvent.DEPLOYMENT_START,
                 JobEvent.DEPLOYMENT_SUCCESS,
@@ -294,7 +294,7 @@ public abstract class JobClusterService<Payload> {
         await(futures);
     }
 
-    private void executeDeployment(final Set<DeploymentResource> resources) {
+    private void executeDeployment(final Set<DeploymentConfig> resources) {
         Iterator<Chunk> iterator = new ChunkIterator(resources, getDeploymentChunkSize());
         List<Future> futures = new ArrayList<>();
         while (iterator.hasNext()) {

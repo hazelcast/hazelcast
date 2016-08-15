@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
@@ -27,16 +26,16 @@ import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.counters.LongCounter;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -59,13 +58,12 @@ public class AccumulatorTest extends JetTestSupport {
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
-        final Job job = JetEngine.getJob(instance, "emptyProducerNoConsumer");
         DAG dag = new DAG();
         Vertex vertex = createVertex("accumulator", AccumulatorProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
 
-        job.submit(dag);
+        final Job job = JetEngine.getJob(instance, "emptyProducerNoConsumer", dag);
         try {
             job.execute().get();
             Accumulator accumulator = job.getAccumulators().get(AccumulatorProcessor.ACCUMULATOR_KEY);

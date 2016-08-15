@@ -29,11 +29,11 @@ import com.hazelcast.jet.dag.sink.MapSink;
 import com.hazelcast.jet.dag.source.FileSource;
 import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.dag.source.MapSource;
+import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.strategy.SingleNodeShufflingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -66,7 +66,6 @@ public class SourceSinkTest extends JetTestSupport {
 
     @Test
     public void testMapToList() throws Exception {
-        Job job = JetEngine.getJob(instance, "mapToList");
         IMap<Integer, Integer> sourceMap = getMap(instance);
         IList<Integer> sinkList = getList(instance);
         fillMapWithInts(sourceMap, COUNT);
@@ -76,7 +75,7 @@ public class SourceSinkTest extends JetTestSupport {
         vertex.addSource(new MapSource(sourceMap));
         vertex.addSink(new ListSink(sinkList));
         dag.addVertex(vertex);
-        job.submit(dag);
+        Job job = JetEngine.getJob(instance, "mapToList", dag);
 
         execute(job);
 
@@ -85,7 +84,6 @@ public class SourceSinkTest extends JetTestSupport {
 
     @Test
     public void testListToList() throws Exception {
-        Job job = JetEngine.getJob(instance, "listToList");
 
         IList<Integer> sourceList = getList(instance);
         fillListWithInts(sourceList, COUNT);
@@ -98,7 +96,7 @@ public class SourceSinkTest extends JetTestSupport {
         vertex.addSink(new ListSink(targetList));
         dag.addVertex(vertex);
 
-        job.submit(dag);
+        Job job = JetEngine.getJob(instance, "listToList", dag);
 
         execute(job);
         assertEquals(COUNT, targetList.size());
@@ -106,7 +104,6 @@ public class SourceSinkTest extends JetTestSupport {
 
     @Test
     public void testMapToMultipleSinks() throws Exception {
-        Job job = JetEngine.getJob(instance, "multipleSinks");
 
         IMap<Integer, Integer> sourceMap = instance.getMap("sourceMap");
 
@@ -126,7 +123,7 @@ public class SourceSinkTest extends JetTestSupport {
         dag.addVertex(vertex1);
         dag.addVertex(vertex2);
         dag.addEdge(new Edge("edge", vertex1, vertex2));
-        job.submit(dag);
+        Job job = JetEngine.getJob(instance, "multipleSinks", dag);
 
         execute(job);
 
@@ -136,7 +133,6 @@ public class SourceSinkTest extends JetTestSupport {
 
     @Test
     public void testFileToFile() throws Exception {
-        Job job = JetEngine.getJob(instance, "fileToFile");
 
         File input = createInputFile();
         File output = File.createTempFile("output", null);
@@ -159,7 +155,7 @@ public class SourceSinkTest extends JetTestSupport {
                 .build();
         dag.addEdge(edge);
 
-        job.submit(dag);
+        Job job = JetEngine.getJob(instance, "fileToFile", dag);
         execute(job);
 
         List<String> files = Files.readAllLines(output.toPath());

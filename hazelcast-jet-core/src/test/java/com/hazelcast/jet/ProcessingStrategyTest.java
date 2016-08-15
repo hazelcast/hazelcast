@@ -2,12 +2,12 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.dag.source.ListSource;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,8 +44,6 @@ public class ProcessingStrategyTest extends JetTestSupport {
     }
 
     private int getCountWithStrategy(ProcessingStrategy processingStrategy) throws Exception {
-        Job job = JetEngine.getJob(instance, processingStrategy.toString());
-
         IList<Integer> source = getList(instance);
         IList<Integer> sink = getList(instance);
         fillListWithInts(source, COUNT);
@@ -64,7 +62,7 @@ public class ProcessingStrategyTest extends JetTestSupport {
                 processingStrategy(processingStrategy)
                 .build());
 
-        job.submit(dag);
+        Job job = JetEngine.getJob(instance, processingStrategy.toString(), dag);
         execute(job);
 
         return sink.size();

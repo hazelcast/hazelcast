@@ -17,11 +17,10 @@
 package com.hazelcast.jet.impl.job;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.job.deployment.DeploymentResource;
-import com.hazelcast.jet.impl.job.deployment.ResourceType;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetThreadFactory;
@@ -29,21 +28,16 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
-import java.io.IOException;
-import java.net.URL;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class JobProxy extends AbstractDistributedObject<JobService> implements Job {
     private final String name;
     private final HazelcastInstance hazelcastInstance;
-    private final Set<DeploymentResource> deployedResources;
     private final JobStateMachine jobStateMachine;
     private final JobClusterService jobClusterService;
 
@@ -51,19 +45,13 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
         super(nodeEngine, jobService);
 
         this.name = name;
-        deployedResources = new HashSet<>();
         String hzName = nodeEngine.getHazelcastInstance().getName();
 
-        ExecutorService executorService = Executors.newCachedThreadPool(
-                new JetThreadFactory("job-invoker-thread-" + name, hzName)
-        );
+        ExecutorService executorService = newCachedThreadPool(new JetThreadFactory("job-invoker-thread-" + name, hzName));
 
         hazelcastInstance = nodeEngine.getHazelcastInstance();
         jobStateMachine = new JobStateMachine(name);
-        jobClusterService = new ServerJobClusterService(
-                name, executorService,
-                nodeEngine
-        );
+        jobClusterService = new ServerJobClusterService(name, executorService, nodeEngine);
     }
 
     public void init(JobConfig config) {
@@ -73,9 +61,8 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
         jobClusterService.init(config, jobStateMachine);
     }
 
-    @Override
-    public void submit(DAG dag) {
-        deploy();
+    public void submit(DAG dag, Set<DeploymentConfig> deploymentConfigs) {
+        deploy(deploymentConfigs);
         submit0(dag);
     }
 
@@ -92,64 +79,11 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
     @Override
     protected boolean preDestroy() {
         try {
-            deployedResources.clear();
             jobClusterService.destroy(jobStateMachine).get();
             return true;
         } catch (Exception e) {
             throw JetUtil.reThrow(e);
         }
-    }
-
-    @Override
-    public void addClass(Class... classes) {
-        checkNotNull(classes, "Classes can not be null");
-
-        for (Class clazz : classes) {
-            try {
-                deployedResources.add(new DeploymentResource(clazz));
-            } catch (IOException e) {
-                throw JetUtil.reThrow(e);
-            }
-        }
-    }
-
-    @Override
-    public void addClass(URL url, String className) {
-        checkNotNull(className, "Class name cannot be null");
-        add(url, className, ResourceType.CLASS);
-    }
-
-    @Override
-    public void addJar(URL url) {
-        addJar(url, getFileName(url));
-    }
-
-    @Override
-    public void addJar(URL url, String name) {
-        add(url, name, ResourceType.JAR);
-    }
-
-    @Override
-    public void addResource(URL url) {
-        addResource(url, getFileName(url));
-    }
-
-    @Override
-    public void addResource(URL url, String name) {
-        add(url, name, ResourceType.DATA);
-    }
-
-    private void add(URL url, String name, ResourceType type) {
-        try {
-            deployedResources.add(new DeploymentResource(url, name, type));
-        } catch (IOException e) {
-            throw JetUtil.reThrow(e);
-        }
-    }
-
-    private String getFileName(URL url) {
-        String urlFile = url.getFile();
-        return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
     }
 
     @Override
@@ -177,8 +111,8 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
         return hazelcastInstance;
     }
 
-    private void deploy() {
-        jobClusterService.deploy(deployedResources, jobStateMachine);
+    private void deploy(Set<DeploymentConfig> deploymentConfigs) {
+        jobClusterService.deploy(deploymentConfigs, jobStateMachine);
     }
 
     private void submit0(final DAG dag) {

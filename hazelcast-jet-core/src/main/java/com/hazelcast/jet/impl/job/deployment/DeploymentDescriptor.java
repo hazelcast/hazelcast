@@ -18,17 +18,17 @@ package com.hazelcast.jet.impl.job.deployment;
 
 import java.io.Serializable;
 
-public class ResourceDescriptor implements Serializable {
+public class DeploymentDescriptor implements Serializable {
     private final String name;
-    private final ResourceType resourceType;
+    private final DeploymentType deploymentType;
 
-    public ResourceDescriptor(String name, ResourceType resourceType) {
+    public DeploymentDescriptor(String name, DeploymentType deploymentType) {
         this.name = name;
-        this.resourceType = resourceType;
+        this.deploymentType = deploymentType;
     }
 
-    public ResourceType getResourceType() {
-        return this.resourceType;
+    public DeploymentType getDeploymentType() {
+        return this.deploymentType;
     }
 
     public String getName() {
@@ -45,28 +45,28 @@ public class ResourceDescriptor implements Serializable {
             return false;
         }
 
-        ResourceDescriptor that = (ResourceDescriptor) o;
+        DeploymentDescriptor that = (DeploymentDescriptor) o;
 
         if (!this.name.equals(that.name)) {
             return false;
         }
 
-        return resourceType == that.resourceType;
+        return deploymentType == that.deploymentType;
 
     }
 
     @Override
     public int hashCode() {
         int result = name.hashCode();
-        result = 31 * result + resourceType.hashCode();
+        result = 31 * result + deploymentType.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
-        return "ResourceDescriptor{"
+        return "DeploymentDescriptor{"
                 + "name='" + name + '\''
-                + ", resourceType=" + resourceType
+                + ", deploymentType=" + deploymentType
                 + '}';
     }
 }

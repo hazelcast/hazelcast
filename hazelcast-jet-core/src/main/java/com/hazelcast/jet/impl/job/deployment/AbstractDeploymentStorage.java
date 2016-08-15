@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractDeploymentStorage<S> implements DeploymentStorage {
-    protected final Map<ResourceDescriptor, S> resources = new ConcurrentHashMap<>();
+    protected final Map<DeploymentDescriptor, S> resources = new ConcurrentHashMap<>();
 
     protected final JobConfig config;
 
@@ -47,12 +47,12 @@ public abstract class AbstractDeploymentStorage<S> implements DeploymentStorage 
 
     protected abstract void setChunk(S resource, Chunk chunk);
 
-    protected abstract S createResource(ResourceDescriptor descriptor);
+    protected abstract S createResource(DeploymentDescriptor descriptor);
 
-    public Map<ResourceDescriptor, ResourceStream> getResources() throws IOException {
-        Map<ResourceDescriptor, ResourceStream> resourceStreams = new LinkedHashMap<>(resources.size());
+    public Map<DeploymentDescriptor, ResourceStream> getResources() throws IOException {
+        Map<DeploymentDescriptor, ResourceStream> resourceStreams = new LinkedHashMap<>(resources.size());
 
-        for (Map.Entry<ResourceDescriptor, S> entry : this.resources.entrySet()) {
+        for (Map.Entry<DeploymentDescriptor, S> entry : this.resources.entrySet()) {
             resourceStreams.put(entry.getKey(), asResourceStream(entry.getValue()));
         }
 
@@ -60,7 +60,7 @@ public abstract class AbstractDeploymentStorage<S> implements DeploymentStorage 
     }
 
     public synchronized void receiveChunk(Chunk chunk) {
-        ResourceDescriptor descriptor = chunk.getDescriptor();
+        DeploymentDescriptor descriptor = chunk.getDescriptor();
         if (!resources.containsKey(descriptor)) {
             createResource(descriptor);
         }
