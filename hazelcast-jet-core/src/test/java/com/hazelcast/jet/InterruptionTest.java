@@ -18,29 +18,28 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -68,7 +67,6 @@ public class InterruptionTest extends JetTestSupport {
     public void testInterruptSlowApplication() throws Exception {
         int nodeCount = 2;
         HazelcastInstance instance = createCluster(factory, nodeCount);
-        final Job job = JetEngine.getJob(instance, "testInterrupt");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -76,7 +74,7 @@ public class InterruptionTest extends JetTestSupport {
         Vertex vertex = createVertex("vertex", SlowProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
-        job.submit(dag);
+        final Job job = JetEngine.getJob(instance, "testInterrupt", dag);
 
         AtomicBoolean interrupted = new AtomicBoolean(false);
         new Thread(() -> {
@@ -102,7 +100,6 @@ public class InterruptionTest extends JetTestSupport {
     public void testExceptionInProcessor_whenMultipleNodes() throws Exception {
         int nodeCount = 3;
         HazelcastInstance instance = createCluster(factory, nodeCount);
-        final Job job = JetEngine.getJob(instance, "testExceptionMultipleNodes");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -110,7 +107,7 @@ public class InterruptionTest extends JetTestSupport {
         Vertex vertex = createVertex("vertex", ExceptionProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
-        job.submit(dag);
+        final Job job = JetEngine.getJob(instance, "testExceptionMultipleNodes", dag);
 
         try {
             execute(job);
@@ -129,7 +126,6 @@ public class InterruptionTest extends JetTestSupport {
     @Test
     public void testExceptionInProcessor_whenSingleNode() throws Exception {
         HazelcastInstance instance = createCluster(factory, 1);
-        final Job job = JetEngine.getJob(instance, "testExceptionSingleNode");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -137,7 +133,7 @@ public class InterruptionTest extends JetTestSupport {
         Vertex vertex = createVertex("vertex", ExceptionProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
-        job.submit(dag);
+        final Job job = JetEngine.getJob(instance, "testExceptionSingleNode", dag);
 
         try {
             execute(job);

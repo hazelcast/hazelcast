@@ -17,9 +17,16 @@
 package com.hazelcast.jet.config;
 
 
+import com.hazelcast.jet.impl.job.deployment.DeploymentType;
+import com.hazelcast.jet.impl.util.JetUtil;
+import java.io.IOException;
 import java.io.Serializable;
+import java.net.URL;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
@@ -79,6 +86,8 @@ public class JobConfig implements Serializable {
     private int shufflingBatchSizeBytes = DEFAULT_SHUFFLING_BATCH_SIZE_BYTES;
 
     private String name;
+
+    private Set<DeploymentConfig> deploymentConfigs = new HashSet<>();
 
     /**
      * Constructs an empty JobConfig
@@ -268,5 +277,95 @@ public class JobConfig implements Serializable {
         this.tcpBufferSize = tcpBufferSize;
         return this;
     }
+
+    /**
+     * Add class to the job classLoader
+     *
+     * @param classes classes, which will be used during calculation
+     */
+    public void addClass(Class... classes) {
+        checkNotNull(classes, "Classes can not be null");
+
+        for (Class clazz : classes) {
+            try {
+                deploymentConfigs.add(new DeploymentConfig(clazz));
+            } catch (IOException e) {
+                throw JetUtil.reThrow(e);
+            }
+        }
+    }
+
+    /**
+     * Add class to the job classLoader
+     *
+     * @param url       location of the class file
+     * @param className fully qualified name of the class
+     */
+    public void addClass(URL url, String className) {
+        checkNotNull(className, "Class name cannot be null");
+        add(url, className, DeploymentType.CLASS);
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param url location of the JAR file
+     */
+    public void addJar(URL url) {
+        addJar(url, getFileName(url));
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param url  location of the JAR file
+     * @param name name of the JAR file
+     */
+    public void addJar(URL url, String name) {
+        add(url, name, DeploymentType.JAR);
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param url source url with classes
+     */
+    public void addResource(URL url) {
+        addResource(url, getFileName(url));
+
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param url  source url with classes
+     * @param name name of the resource
+     */
+    public void addResource(URL url, String name) {
+        add(url, name, DeploymentType.DATA);
+    }
+
+    /**
+     * Returns all the deployment configurations
+     *
+     * @return deployment configuration set
+     */
+    public Set<DeploymentConfig> getDeploymentConfigs() {
+        return deploymentConfigs;
+    }
+
+    private void add(URL url, String name, DeploymentType type) {
+        try {
+            deploymentConfigs.add(new DeploymentConfig(url, name, type));
+        } catch (IOException e) {
+            throw JetUtil.reThrow(e);
+        }
+    }
+
+    private String getFileName(URL url) {
+        String urlFile = url.getFile();
+        return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
+    }
+
 
 }

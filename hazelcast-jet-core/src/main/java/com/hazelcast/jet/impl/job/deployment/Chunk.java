@@ -25,7 +25,7 @@ import java.io.IOException;
 
 public class Chunk implements DataSerializable {
     private byte[] bytes;
-    private ResourceDescriptor descriptor;
+    private DeploymentDescriptor descriptor;
     private int chunkSize;
     private int length;
     private int sequence;
@@ -34,7 +34,7 @@ public class Chunk implements DataSerializable {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public Chunk(byte[] bytes, ResourceDescriptor descriptor, int chunkSize, int length, int sequence) {
+    public Chunk(byte[] bytes, DeploymentDescriptor descriptor, int chunkSize, int length, int sequence) {
         this.bytes = bytes;
         this.chunkSize = chunkSize;
         this.length = length;
@@ -47,7 +47,7 @@ public class Chunk implements DataSerializable {
         return bytes;
     }
 
-    public ResourceDescriptor getDescriptor() {
+    public DeploymentDescriptor getDescriptor() {
         return descriptor;
     }
 

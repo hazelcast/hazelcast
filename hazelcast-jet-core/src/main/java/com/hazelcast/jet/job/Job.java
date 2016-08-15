@@ -19,9 +19,7 @@ package com.hazelcast.jet.job;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
-import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -29,58 +27,6 @@ import java.util.concurrent.Future;
  * Represents abstract job
  */
 public interface Job extends DistributedObject {
-    /**
-     * Submit dag to the cluster
-     *
-     * @param dag Direct acyclic graph, which describes calculation flow
-     */
-    void submit(DAG dag);
-
-
-    /**
-     * Add class to the job classLoader
-     *
-     * @param classes classes, which will be used during calculation
-     */
-    void addClass(Class... classes);
-
-    /**
-     * Add class to the job classLoader
-     *
-     * @param url       location of the class file
-     * @param className fully qualified name of the class
-     */
-    void addClass(URL url, String className);
-
-    /**
-     * Add JAR to the job classLoader
-     *
-     * @param url location of the JAR file
-     */
-    void addJar(URL url);
-
-    /**
-     * Add JAR to the job classLoader
-     *
-     * @param url  location of the JAR file
-     * @param name name of the JAR file
-     */
-    void addJar(URL url, String name);
-
-    /**
-     * Add resource to the job classLoader
-     *
-     * @param url source url with classes
-     */
-    void addResource(URL url);
-
-    /**
-     * Add resource to the job classLoader
-     *
-     * @param url  source url with classes
-     * @param name name of the resource
-     */
-    void addResource(URL url, String name) ;
 
     /**
      * @return state for the job's state-machine

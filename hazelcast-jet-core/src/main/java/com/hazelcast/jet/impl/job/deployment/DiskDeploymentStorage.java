@@ -97,7 +97,7 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
     }
 
     @Override
-    protected File createResource(ResourceDescriptor descriptor) {
+    protected File createResource(DeploymentDescriptor descriptor) {
         String path = getPath();
         File file = new File(path);
         if (!file.exists()) {

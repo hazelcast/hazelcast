@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.job.deployment;
+package com.hazelcast.jet.config;
 
+import com.hazelcast.jet.impl.job.deployment.DeploymentDescriptor;
+import com.hazelcast.jet.impl.job.deployment.DeploymentType;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Serializable;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
@@ -26,72 +28,93 @@ import java.util.jar.JarInputStream;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class DeploymentResource {
+/**
+ * Represents deployment configuration
+ */
+public class DeploymentConfig implements Serializable {
     private static final int CLASS_PREFIX = 0xcafebabe;
-    private final transient InputStream inputStream;
-    private final ResourceDescriptor descriptor;
+    private DeploymentDescriptor descriptor;
+    private URL url;
 
-    public DeploymentResource(URL url, String name, ResourceType type) throws IOException {
-        this.descriptor = new ResourceDescriptor(name, type);
-        this.inputStream = url.openStream();
+    /**
+     * @param url  url of the deployment
+     * @param name name of the deployment
+     * @param type type of the deployment
+     * @throws IOException if IO error happens
+     */
+    public DeploymentConfig(URL url, String name, DeploymentType type) throws IOException {
+        this.descriptor = new DeploymentDescriptor(name, type);
+        this.url = url;
     }
 
-    public DeploymentResource(Class clazz) throws IOException {
+    /**
+     * @param clazz class file to deploy
+     * @throws IOException if IO error happens
+     */
+    public DeploymentConfig(Class clazz) throws IOException {
         ProtectionDomain protectionDomain = clazz.getProtectionDomain();
         String classAsPath = clazz.getName().replace('.', '/') + ".class";
-        ResourceType resourceType = null;
+        DeploymentType deploymentType = null;
 
-        URL location = getLocation(protectionDomain);
+        this.url = getLocation(protectionDomain);
 
-        if (location != null) {
-            resourceType = getContentType(location);
+        if (this.url != null) {
+            deploymentType = getContentType(url);
         }
 
-        if (location == null) {
-            this.inputStream = clazz.getClassLoader().getResourceAsStream(classAsPath);
-            this.descriptor = new ResourceDescriptor(clazz.getName(), ResourceType.CLASS);
+        if (this.url == null) {
+            this.url = clazz.getClassLoader().getResource(classAsPath);
+            this.descriptor = new DeploymentDescriptor(clazz.getName(), DeploymentType.CLASS);
         } else {
-            if (resourceType != ResourceType.JAR) {
+            if (deploymentType != DeploymentType.JAR) {
                 throw new IllegalStateException("Something wrong with class=" + clazz + "it should be a part of jar archive");
             }
 
-            this.inputStream = location.openStream();
-            this.descriptor = new ResourceDescriptor(location.toString(), ResourceType.JAR);
+            this.descriptor = new DeploymentDescriptor(url.toString(), DeploymentType.JAR);
         }
         checkNotNull(this.descriptor, "Descriptor is null");
-        checkNotNull(this.inputStream, "InputStream is null");
+        checkNotNull(this.url, "URL is null");
     }
 
-
-    public InputStream getInputStream() {
-        return inputStream;
+    /**
+     * Returns the URL of the deployment
+     *
+     * @return URL
+     */
+    public URL getUrl() {
+        return url;
     }
 
-    public ResourceDescriptor getDescriptor() {
+    /**
+     * Returns the {@link DeploymentDescriptor} for the deployment
+     *
+     * @return DeploymentDescriptor
+     */
+    public DeploymentDescriptor getDescriptor() {
         return descriptor;
     }
 
-    private ResourceType getContentType(URL url) throws IOException {
+    private DeploymentType getContentType(URL url) throws IOException {
 
         try (DataInputStream in = new DataInputStream(url.openStream())) {
             int magic = in.readInt();
             // Check that is it class
             if (magic == CLASS_PREFIX) {
-                return ResourceType.CLASS;
+                return DeploymentType.CLASS;
             }
         }
 
         try (JarInputStream jarInputStream = new JarInputStream(url.openStream())) {
             if (jarInputStream.getNextJarEntry() != null) {
-                return ResourceType.JAR;
+                return DeploymentType.JAR;
             }
         } catch (Error | RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            return ResourceType.DATA;
+            return DeploymentType.DATA;
         }
 
-        return ResourceType.DATA;
+        return DeploymentType.DATA;
     }
 
     private URL getLocation(ProtectionDomain protectionDomain) {

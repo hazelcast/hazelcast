@@ -21,6 +21,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
@@ -33,7 +34,6 @@ import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.util.UuidUtil;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -83,10 +83,10 @@ public final class StreamUtil {
     }
 
     public static void executeJob(StreamContext context, DAG dag) {
-        Job job = JetEngine.getJob(context.getHazelcastInstance(), randomName());
         Set<Class> classes = context.getClasses();
-        job.addClass(classes.toArray(new Class[classes.size()]));
-        job.submit(dag);
+        JobConfig config = new JobConfig();
+        config.addClass(classes.toArray(new Class[classes.size()]));
+        Job job = JetEngine.getJob(context.getHazelcastInstance(), randomName(), dag, config);
         try {
             result(job.execute());
             context.getStreamListeners().forEach(Runnable::run);
