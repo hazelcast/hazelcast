@@ -113,17 +113,12 @@ https://hazelcast.org/documentation/.
     
     The <wan-replication> element has the following sub-elements:
     * <wan-publisher>:
-	Specifies the target cluster to which the events will be replicated. It has the group-name attribute.
-	These attribute corresponds to the <name> sub-element
-    defined in the target cluster's <group> element. Please see the <group> configuration
-	description in this XML.
-    * <class-name>:
-	Name of the class implementation for WAN Replication. This name can have two values:
-    	- WanNoDelayReplication: 
-		Sends replication events to the target cluster as soon as they are generated.
-    	- WanBatchReplication: 
+	Fully qualified class name of WAN Replication implementation. Hazelcast Enterprise comes with;
+    	- com.hazelcast.enterprise.wan.replication.WanBatchReplication:
 		Waits until a batch size is reached or a delay time is passed.
 		Please see the `batch.size and batch.max.delay.millis configuration descriptions below.
+    * <wan-consumer>:
+	Name of the custom class implementation that is responsible for incoming WAN events.
     * "endpoints":
 	Comma separated list of IP addresses of the target cluster members for which the WAN replication is implemented.
     * "batch.size":
@@ -220,8 +215,10 @@ https://hazelcast.org/documentation/.
 	Hazelcast can find members by multicast, TCP/IP lists and in the clouds supported by jclouds API. 
 	The following are the elements of <join>:
 	- <multicast>:
-		Set its "enabled" attribute to true for discovery by multicast. It has the following sub-elements
-		to fine tune the multicast discovery.
+		Set its "enabled" attribute to true for discovery by multicast. It has another attribute
+		("loopbackModeEnabled") which enables or disables the loopback mode in the multicast discovery
+		mechanism. 
+		It has the following sub-elements to fine tune the multicast discovery.
 		- <multicast-group>:
 			Specifies the multicast group IP address when you want to create clusters within 
 			the same network. Its default value is 224.2.2.3.
@@ -255,6 +252,28 @@ https://hazelcast.org/documentation/.
 			to try to connect to a well known member before giving up. Increasing this value is 
 			recommended if you have many IPs listed and the members cannot properly build up the 
 			cluster. Its default value is 5.
+	- <aws>:
+		Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
+		- <access-key>:
+			Access key of your account on EC2.
+		- <secret-key>:
+			Secret key of your account on EC2.
+		- <iam-role>:
+			IAM role that binds with your instance.
+		- <region>:
+			The region where your Hazelcast members run. Default value is us-east-1.
+                        It needs to be specified if the region is other than the default one.
+		- <host-header>:
+			The URL that is the entry point for a web service. It is optional.
+		- <security-group-name>:
+			Name of the security group you specified at the EC2 management console.
+                        It is used to narrow the Hazelcast members to be within this group. It is optional.
+		- <tag-key>:
+			To narrow the members in the cloud down to only Hazelcast members, you can set
+                        this to the one you specified in the EC2 console. It is optional.
+		- <tag-value>:
+			To narrow the members in the cloud down to only Hazelcast members, you can set
+                        this to the one you specified in the EC2 console. It is optional.
 	- <discovery-strategies>:
 		Set its "enabled" attribute to true for discovery in a jclouds backed cloud. You also need to set the
 		value of "hazelcast.discovery.enabled" property to true. See the description of the <properties> element
@@ -365,7 +384,14 @@ https://hazelcast.org/documentation/.
     * CUSTOM: 
 	You can add different and multiple members to a group.
     * PER_MEMBER: 
-	Each member is a group of its own and primary/backup partitions are distributed randomly. This
+	Each member is a group of its own and primary/backup partitions are distributed 
+	randomly (not on the same physical member).
+    * ZONE_AWARE: 
+	Backups are created in the other zones. Each zone will be accepted as one partition group. 
+	It can be used when you make use of Hazelcast's jclouds or Azure discovery service plugins. 
+    * SPI: 
+	You can provide your own partition group implementation using the SPI grouping type. Please see 
+	Partition Group Configuration section in Hazelcast Reference Manual.
 -->
     <partition-group enabled="true" group-type="CUSTOM">
 	<member-group>
@@ -393,6 +419,24 @@ https://hazelcast.org/documentation/.
 	The number of executor threads per member for the executor. Its default value is 8.
     * <queue-capacity>: 
 	Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
+-->
+    <executor-service name="default">
+        <statistics-enabled>true</statistics-enabled>
+        <pool-size>16</pool-size>
+        <queue-capacity>0</queue-capacity>
+    </executor-service>
+<!--
+    ===== HAZELCAST DURABLE EXECUTOR SERVICE CONFIGURATION =====
+    
+    Configuration element's name is <durable-executor-service>. It has the optional attribute "name" with which you 
+    can specify the name of your durable executor service. Its default value is "default". 
+    It has the following sub-elements:
+    * <pool-size>: 
+	The number of executor threads per member for the executor. Its default value is 8.
+    * <durability>:
+    	Durability of the executor.
+    * <capacity>: 
+	Capacity of the executor task per partition.
 -->
     <executor-service name="default">
         <statistics-enabled>true</statistics-enabled>
@@ -1001,6 +1045,10 @@ https://hazelcast.org/documentation/.
 	sub-element.
 	- <fsync>:
 		Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.    
+    * <disable-per-entry-invalidation-events>:
+	Disables invalidation events for each entry; but full-flush invalidation events are still enabled. 
+	Full-flush invalidation means the invalidation of events for all entries when clear is called. 
+	The default value is false.
 -->
     <cache name="default">
         <key-type class-name="java.lang.Object"/>
@@ -1044,6 +1092,7 @@ https://hazelcast.org/documentation/.
 	<hot-restart enabled="false">
 		<fsync>false</fsync>
 	</hot-restart>
+	<disable-per-entry-invalidation-events>true</<disable-per-entry-invalidation-events>
     </cache>
 
 <!--
@@ -1552,6 +1601,11 @@ https://hazelcast.org/documentation/.
     	Specifies the directory where the Hot Restart data will be stored. Its default value is hot-restart. 
     	You can use the default value, or you can specify another folder.
     	This directory will be created automatically if it does not exist.
+    * <parallelism>:
+    	Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
+    	each writing in parallel to its own files. During the Hot Restart procedure, this many 
+    	IO threads will be reading the files and this many Rebuilder threads will be rebuilding 
+    	the Hot Restart metadata.
     * <validation-timeout-seconds>:
     	Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition 
     	table on the whole cluster.
