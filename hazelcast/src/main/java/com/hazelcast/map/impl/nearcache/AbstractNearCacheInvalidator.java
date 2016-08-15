@@ -72,7 +72,8 @@ public abstract class AbstractNearCacheInvalidator implements NearCacheInvalidat
         }
     }
 
-    public void clearLocal(String mapName) {
+    @Override
+    public void clearLocalNearCache(String mapName) {
         if (!isMemberNearCacheInvalidationEnabled(mapName)) {
             return;
         }

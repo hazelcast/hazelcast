@@ -51,14 +51,20 @@ public interface NearCacheInvalidator {
 
 
     /**
-     * Clears local and remote near-caches.
-     * Local near-caches are node local, remote near-caches can be exist on remote members or clients.
+     * Clears local members near-cache.
+     *
+     * @param mapName name of the map.
+     */
+    void clearLocalNearCache(String mapName);
+
+
+    /**
+     * Send clear event to client-side near-cache invalidation listeners.
      *
      * @param mapName    name of the map.
-     * @param owner      <code>true</code> if this method is called from partition owner, otherwise <code>false</code>.
      * @param sourceUuid caller uuid
      */
-    void clear(String mapName, boolean owner, String sourceUuid);
+    void sendClientNearCacheClearEvent(String mapName, String sourceUuid);
 
     /**
      * Removes supplied maps invalidation queue and flushes its content.

@@ -29,7 +29,7 @@ public class ClearNearCacheOperation extends MapOperation implements MutatingOpe
 
     @Override
     public void run() {
-        clearNearCache(false);
+        clearLocalNearCache();
     }
 
     @Override

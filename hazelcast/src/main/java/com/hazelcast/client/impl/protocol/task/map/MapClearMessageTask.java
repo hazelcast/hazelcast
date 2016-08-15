@@ -18,9 +18,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -30,6 +31,8 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
 import java.util.Map;
+
+import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
 
 public class MapClearMessageTask
         extends AbstractMapAllPartitionsMessageTask<MapClearCodec.RequestParameters> {
@@ -46,16 +49,22 @@ public class MapClearMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        int totalAffectedEntries = 0;
+        int clearedTotal = 0;
         for (Object affectedEntries : map.values()) {
-            totalAffectedEntries += (Integer) affectedEntries;
+            clearedTotal += (Integer) affectedEntries;
         }
-        final MapService service = getService(MapService.SERVICE_NAME);
-        final Address thisAddress = service.getMapServiceContext().getNodeEngine().getThisAddress();
-        if (totalAffectedEntries > 0) {
-            service.getMapServiceContext().getMapEventPublisher()
-                    .publishMapEvent(thisAddress, parameters.name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+
+        MapService service = getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+
+        if (clearedTotal > 0) {
+            Address thisAddress = nodeEngine.getThisAddress();
+            MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+            mapEventPublisher.publishMapEvent(thisAddress, parameters.name, CLEAR_ALL, clearedTotal);
+
+            sendClientNearCacheClearEvent(parameters.name);
         }
+
         return null;
     }
 
