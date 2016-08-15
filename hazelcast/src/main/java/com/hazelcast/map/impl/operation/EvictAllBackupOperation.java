@@ -37,7 +37,7 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
 
     @Override
     public void run() throws Exception {
-        clearNearCache(false);
+        clearLocalNearCache();
 
         if (recordStore == null) {
             return;

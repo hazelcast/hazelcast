@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEvictAllCodec;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -31,6 +31,8 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
 import java.util.Map;
+
+import static com.hazelcast.core.EntryEventType.EVICT_ALL;
 
 public class MapEvictAllMessageTask
         extends AbstractMapAllPartitionsMessageTask<MapEvictAllCodec.RequestParameters> {
@@ -47,18 +49,23 @@ public class MapEvictAllMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        int total = 0;
         MapService mapService = getService(MapService.SERVICE_NAME);
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+
+        int evictedTotal = 0;
         for (Object result : map.values()) {
             Integer size = (Integer) mapServiceContext.toObject(result);
-            total += size;
+            evictedTotal += size;
         }
-        final Address thisAddress = mapServiceContext.getNodeEngine().getThisAddress();
-        if (total > 0) {
-            mapServiceContext.getMapEventPublisher().
-                    publishMapEvent(thisAddress, parameters.name, EntryEventType.EVICT_ALL, total);
+
+        if (evictedTotal > 0) {
+            Address thisAddress = mapServiceContext.getNodeEngine().getThisAddress();
+            MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+            mapEventPublisher.publishMapEvent(thisAddress, parameters.name, EVICT_ALL, evictedTotal);
+
+            sendClientNearCacheClearEvent(parameters.name);
         }
+
         return null;
     }
 
