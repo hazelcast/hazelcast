@@ -34,7 +34,7 @@ public class ClearBackupOperation extends MapOperation implements BackupOperatio
     public void run() {
         // clear near-cache also on this backup operation, there is a possibility that no owner partition exists on this
         // node but a near-cache exists.
-        clearNearCache(false);
+        clearLocalNearCache();
 
         RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         if (recordStore != null) {

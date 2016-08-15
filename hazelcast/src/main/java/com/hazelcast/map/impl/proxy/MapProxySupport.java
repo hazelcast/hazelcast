@@ -44,7 +44,10 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.PartitioningStrategyFactory;
 import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
+import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
@@ -65,7 +68,6 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.map.impl.PartitioningStrategyFactory;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.Predicate;
@@ -379,19 +381,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Map<Integer, Object> resultMap = operationService.invokeOnAllPartitions(SERVICE_NAME,
                     new BinaryOperationFactory(operation, getNodeEngine()));
 
-            int numberOfAffectedEntries = 0;
-            for (Object o : resultMap.values()) {
-                numberOfAffectedEntries += (Integer) o;
+            int evictedCount = 0;
+            for (Object object : resultMap.values()) {
+                evictedCount += (Integer) object;
             }
 
-            MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
-            for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
-                operationService.invokeOnTarget(SERVICE_NAME, new EvictAllOperation(name), member.getAddress());
+            if (evictedCount > 0) {
+                publishMapEvent(evictedCount, EntryEventType.EVICT_ALL);
+                sendClientNearCacheClearEvent();
             }
 
-            if (numberOfAffectedEntries > 0) {
-                publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
-            }
+            runOnLiteMembers(new EvictAllOperation(name));
+
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -405,11 +406,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         try {
             loadMapFuture.get();
+            waitUntilLoaded();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
+        } finally {
+            if (replaceExistingValues) {
+                sendClientNearCacheClearEvent();
+                runOnLiteMembers(new ClearOperation(name));
+            }
         }
-
-        waitUntilLoaded();
     }
 
     /**
@@ -429,7 +434,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
         }
 
-        waitUntilLoaded();
+        try {
+            waitUntilLoaded();
+        } finally {
+            if (replaceExistingValues) {
+                sendClientNearCacheClearEvent();
+                runOnLiteMembers(new ClearOperation(name));
+            }
+        }
     }
 
     protected <K> Iterable<Data> convertToData(Iterable<K> keys) {
@@ -754,22 +766,35 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Map<Integer, Object> resultMap = operationService.invokeOnAllPartitions(
                     SERVICE_NAME, new BinaryOperationFactory(clearOperation, getNodeEngine()));
 
-            int numberOfAffectedEntries = 0;
-            for (Object o : resultMap.values()) {
-                numberOfAffectedEntries += (Integer) o;
+            int clearedCount = 0;
+            for (Object object : resultMap.values()) {
+                clearedCount += (Integer) object;
             }
 
-            MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
-            for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
-                operationService.invokeOnTarget(SERVICE_NAME, new ClearOperation(name), member.getAddress());
+            if (clearedCount > 0) {
+                publishMapEvent(clearedCount, EntryEventType.CLEAR_ALL);
+                sendClientNearCacheClearEvent();
             }
 
-            if (numberOfAffectedEntries > 0) {
-                publishMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
-            }
+            runOnLiteMembers(new ClearOperation(name));
+
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+    }
+
+    protected void runOnLiteMembers(Operation operation) {
+        MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
+        for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
+            operationService.invokeOnTarget(SERVICE_NAME, operation, member.getAddress());
+        }
+    }
+
+    protected void sendClientNearCacheClearEvent() {
+        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
+        nearCacheInvalidator.sendClientNearCacheClearEvent(getName(),
+                mapServiceContext.getNodeEngine().getLocalMember().getUuid());
     }
 
     public String addMapInterceptorInternal(MapInterceptor interceptor) {

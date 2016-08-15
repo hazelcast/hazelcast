@@ -692,6 +692,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public void loadAll(boolean replaceExistingValues) {
         MapLoadAllKeysRequest request = new MapLoadAllKeysRequest(name, replaceExistingValues);
         invoke(request);
+
+        if (replaceExistingValues) {
+            clearNearCachesOnLiteMembers();
+        }
     }
 
     @Override
@@ -708,6 +712,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     protected void loadAllInternal(boolean replaceExistingValues, List<Data> dataKeys) {
         MapLoadGivenKeysRequest request = new MapLoadGivenKeysRequest(name, dataKeys, replaceExistingValues);
         invoke(request);
+
+        if (replaceExistingValues) {
+            clearNearCachesOnLiteMembers();
+        }
     }
 
     // todo duplicate code.

@@ -19,7 +19,10 @@ package com.hazelcast.map.impl.client;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
+import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.spi.NodeEngine;
 
 public abstract class MapAllPartitionsClientRequest extends AllPartitionsClientRequest {
 
@@ -36,5 +39,14 @@ public abstract class MapAllPartitionsClientRequest extends AllPartitionsClientR
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapOperationProvider(name);
+    }
+
+    protected final void sendClientNearCacheClearEvent(String mapName) {
+        MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        nearCacheInvalidator.sendClientNearCacheClearEvent(mapName, nodeEngine.getLocalMember().getUuid());
     }
 }

@@ -78,6 +78,8 @@ public class MapClearRequest extends MapAllPartitionsClientRequest implements Po
         if (totalAffectedEntries > 0) {
             service.getMapServiceContext().getMapEventPublisher()
                     .publishMapEvent(thisAddress, name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+
+            sendClientNearCacheClearEvent(name);
         }
         return null;
     }

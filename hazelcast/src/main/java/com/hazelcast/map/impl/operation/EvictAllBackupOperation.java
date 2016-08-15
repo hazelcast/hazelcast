@@ -36,7 +36,7 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
 
     @Override
     public void run() throws Exception {
-        clearNearCache(false);
+        clearLocalNearCache();
 
         RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         //if there is no recordStore, then there is nothing to evict.

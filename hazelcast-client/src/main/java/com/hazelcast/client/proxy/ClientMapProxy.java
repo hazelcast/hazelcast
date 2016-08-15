@@ -923,6 +923,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public void loadAll(boolean replaceExistingValues) {
         ClientMessage request = MapLoadAllCodec.encodeRequest(name, replaceExistingValues);
         invoke(request);
+
+        if (replaceExistingValues) {
+            clearNearCachesOnLiteMembers();
+        }
     }
 
     @Override
@@ -934,6 +938,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
         Set<Data> dataKeys = convertKeysToData(keys);
         loadAllInternal(replaceExistingValues, dataKeys);
+
+        if (replaceExistingValues) {
+            clearNearCachesOnLiteMembers();
+        }
     }
 
     protected void loadAllInternal(boolean replaceExistingValues, Set<Data> dataKeys) {

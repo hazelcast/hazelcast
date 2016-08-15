@@ -84,6 +84,8 @@ public class MapEvictAllRequest extends MapAllPartitionsClientRequest implements
         final Address thisAddress = mapServiceContext.getNodeEngine().getThisAddress();
         if (total > 0) {
             mapServiceContext.getMapEventPublisher().publishMapEvent(thisAddress, name, EntryEventType.EVICT_ALL, total);
+
+            sendClientNearCacheClearEvent(name);
         }
         return total;
     }
