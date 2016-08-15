@@ -997,7 +997,7 @@ public class ClientMapNearCacheTest {
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidateListener(handler);
 
         // create a new client to send events
-        HazelcastInstance anotherClient = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance anotherClient = hazelcastFactory.newHazelcastClient(newClientConfig());
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.clear();
 
@@ -1019,7 +1019,7 @@ public class ClientMapNearCacheTest {
         populateNearCache(clientMap, 1000);
 
         // member comes
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
 
         // add test listener to count clear events
         final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
@@ -1051,7 +1051,7 @@ public class ClientMapNearCacheTest {
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidateListener(handler);
 
         // call evictAll
-        HazelcastInstance anotherClient = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance anotherClient = hazelcastFactory.newHazelcastClient(newClientConfig());
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.evictAll();
 
@@ -1073,7 +1073,7 @@ public class ClientMapNearCacheTest {
         populateNearCache(clientMap, 1000);
 
         // member comes
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
 
         // add test listener to count clear events
         final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
@@ -1097,7 +1097,7 @@ public class ClientMapNearCacheTest {
     @Test
     public void receives_one_clearEvent_after_mapLoadAll_call_from_client() throws ExecutionException, InterruptedException {
         // configure map-store
-        Config config = new Config();
+        Config config = newConfig();
         config.getMapConfig("default").getMapStoreConfig().setEnabled(true).setImplementation(new SimpleMapStore());
 
         // populate near-cache
@@ -1109,7 +1109,7 @@ public class ClientMapNearCacheTest {
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidateListener(handler);
 
         // create a new client to send events
-        HazelcastInstance anotherClient = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance anotherClient = hazelcastFactory.newHazelcastClient(newClientConfig());
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.loadAll(true);
 
@@ -1127,7 +1127,7 @@ public class ClientMapNearCacheTest {
     @Test
     public void receives_one_clearEvent_after_mapLoadAll_call_from_member() throws ExecutionException, InterruptedException {
         // configure map-store
-        Config config = new Config();
+        Config config = newConfig();
         config.getMapConfig("default").getMapStoreConfig().setEnabled(true).setImplementation(new SimpleMapStore());
 
         // member comes
