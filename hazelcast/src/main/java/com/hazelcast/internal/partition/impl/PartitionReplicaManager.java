@@ -20,6 +20,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.DEFAULT_REPLICA_SYNC_DELAY;
 import static com.hazelcast.internal.partition.InternalPartitionService.REPLICA_SYNC_RETRY_DELAY;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 /**
  *
@@ -61,6 +63,8 @@ public class PartitionReplicaManager {
     private final EntryTaskScheduler<Integer, ReplicaSyncInfo> replicaSyncScheduler;
     @Probe
     private final Semaphore replicaSyncProcessLock;
+    @Probe
+    private final MwCounter replicaSyncRequestsCounter = newMwCounter();
 
     private final long partitionMigrationTimeout;
     private final int partitionCount;
@@ -203,6 +207,7 @@ public class PartitionReplicaManager {
                 logger.finest("Sending sync replica request to -> " + target + "; for partitionId=" + partitionId
                         + ", replicaIndex=" + replicaIndex);
             }
+            replicaSyncRequestsCounter.inc();
             replicaSyncScheduler.schedule(partitionMigrationTimeout, partitionId, syncInfo);
             ReplicaSyncRequest syncRequest = new ReplicaSyncRequest(partitionId, replicaIndex);
             nodeEngine.getOperationService().send(syncRequest, target);
