@@ -138,7 +138,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     }
 
     private boolean hasMissingPartitions(BitSet finishedPartitions, int partitionCount) {
-        return finishedPartitions.nextClearBit(0) == partitionCount;
+        return finishedPartitions.nextClearBit(0) < partitionCount;
     }
 
     private List<Integer> findMissingPartitions(BitSet finishedPartitions, int partitionCount) {
