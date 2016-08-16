@@ -67,7 +67,7 @@ public class DeploymentConfig implements Serializable {
             this.descriptor = new DeploymentDescriptor(clazz.getName(), DeploymentType.CLASS);
         } else {
             if (deploymentType != DeploymentType.JAR) {
-                throw new IllegalStateException("Something wrong with class=" + clazz + "it should be a part of jar archive");
+                throw new IllegalStateException("Something wrong with class=" + clazz + " it should be a part of jar archive");
             }
 
             this.descriptor = new DeploymentDescriptor(url.toString(), DeploymentType.JAR);
