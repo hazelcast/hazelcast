@@ -859,19 +859,19 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public Version getClusterVersion() {
-        // TODO RU
-        // for now just returning the node codebase version...
-        return node.getVersion();
+        return clusterStateManager.getVersion();
     }
 
     @Override
     public void changeClusterVersion(Version version) {
-        // TODO RU
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), partitionStateVersion);
     }
 
     @Override
     public void changeClusterVersion(Version version, TransactionOptions options) {
-        // TODO RU
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), options, partitionStateVersion);
     }
 
     // for testing

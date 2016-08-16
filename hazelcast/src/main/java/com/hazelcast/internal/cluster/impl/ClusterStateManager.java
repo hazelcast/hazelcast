@@ -87,6 +87,11 @@ public class ClusterStateManager {
         return stateLock.isLocked() ? ClusterState.IN_TRANSITION : state;
     }
 
+    public Version getVersion() {
+        // if version is locked we still operate using the "old" version, so we return this one
+        return version;
+    }
+
     ClusterStateLock getStateLock() {
         ClusterStateLock stateLock = stateLockRef.get();
         while (stateLock.isLeaseExpired()) {
@@ -237,10 +242,11 @@ public class ClusterStateManager {
             if (newState == ClusterState.ACTIVE) {
                 node.getClusterService().removeMembersDeadWhileClusterIsNotActive();
             }
-        } else if (stateChange.isOfType(ClusterVersionService.class)) {
+        } else if (stateChange.isOfType(Version.class)) {
             this.version = (Version) stateChange.getNewState();
+        } else {
+            throw new IllegalArgumentException("Illegal cluster state change " + stateChange);
         }
-        throw new IllegalArgumentException("Illegal cluster state change " + stateChange);
     }
 
     private void changeNodeState(ClusterState newState) {

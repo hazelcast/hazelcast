@@ -80,4 +80,11 @@ public class ClusterStateChange<T> implements DataSerializable {
         newState = in.readObject();
     }
 
+    @Override
+    public String toString() {
+        return "ClusterStateChange{" +
+                "type=" + type +
+                ", newState=" + newState +
+                '}';
+    }
 }
