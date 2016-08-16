@@ -19,6 +19,7 @@ package com.hazelcast.spi.properties;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.connection.tcp.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
@@ -139,10 +140,10 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.io.output.thread.count", IO_THREAD_COUNT);
 
     /**
-     * The interval in seconds between {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer IOBalancer}
+     * The interval in seconds between {@link IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
      * <p/>
-     * Please see the documentation of {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer IOBalancer} for a
+     * Please see the documentation of {@link IOBalancer IOBalancer} for a
      * detailed explanation of the problem.
      * <p/>
      * The default is 20 seconds. A value smaller than 1 disables the balancer.

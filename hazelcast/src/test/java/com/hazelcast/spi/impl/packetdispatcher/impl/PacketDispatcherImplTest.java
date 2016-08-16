@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl.packetdispatcher.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -14,12 +14,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import static com.hazelcast.nio.Packet.FLAG_BIND;
-import static com.hazelcast.nio.Packet.FLAG_EVENT;
-import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.internal.connection.Packet.FLAG_BIND;
+import static com.hazelcast.internal.connection.Packet.FLAG_EVENT;
+import static com.hazelcast.internal.connection.Packet.FLAG_OP;
+import static com.hazelcast.internal.connection.Packet.FLAG_OP_CONTROL;
+import static com.hazelcast.internal.connection.Packet.FLAG_RESPONSE;
+import static com.hazelcast.internal.connection.Packet.FLAG_URGENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;

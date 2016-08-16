@@ -29,7 +29,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 
 import java.util.Collection;
 import java.util.Collections;

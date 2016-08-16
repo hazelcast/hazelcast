@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.connection.ssl;
+
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Properties;
+
+/**
+ * @author mdogan 9/6/13
+ */
+
+public final class TestKeyStoreUtil {
+
+    public static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
+    public static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
+    public static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
+    public static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
+
+    private static String keyStore;
+    private static String trustStore;
+    private static ILogger logger = Logger.getLogger(TestKeyStoreUtil.class.getName());
+
+    private TestKeyStoreUtil() {
+    }
+
+    public static synchronized String getKeyStoreFilePath() throws IOException {
+        if (keyStore == null || !new File(keyStore).exists()) {
+            keyStore = createTempKeyStoreFile("com/hazelcast/internal/connection/ssl/hazelcast.keystore").getAbsolutePath();
+        }
+        return keyStore;
+    }
+
+    public static synchronized String getTrustStoreFilePath() throws IOException {
+        if (trustStore == null || !new File(trustStore).exists()) {
+            trustStore = createTempKeyStoreFile("com/hazelcast/internal/connection/ssl/hazelcast.truststore").getAbsolutePath();
+        }
+        return trustStore;
+    }
+
+    private static File createTempKeyStoreFile(String resource) throws IOException {
+        ClassLoader cl = TestKeyStoreUtil.class.getClassLoader();
+        InputStream in = new BufferedInputStream(cl.getResourceAsStream(resource));
+        File file = File.createTempFile("hazelcast", "jks");
+        OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
+        int b;
+        while ((b = in.read()) > -1) {
+            out.write(b);
+        }
+        out.flush();
+        out.close();
+        in.close();
+        file.deleteOnExit();
+        logger.warning("Keystore file path: " + file.getAbsolutePath()
+                + ", length = " + file.length());
+        return file;
+    }
+
+    public static Properties createSslProperties() throws IOException {
+        Properties props = new Properties();
+        props.setProperty(JAVAX_NET_SSL_KEY_STORE, getKeyStoreFilePath());
+        props.setProperty(JAVAX_NET_SSL_TRUST_STORE, getTrustStoreFilePath());
+        props.setProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD, "123456");
+        props.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, "123456");
+        return props;
+    }
+
+}

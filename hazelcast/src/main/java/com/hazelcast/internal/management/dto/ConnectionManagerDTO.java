@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.internal.connection.ConnectionManager;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 

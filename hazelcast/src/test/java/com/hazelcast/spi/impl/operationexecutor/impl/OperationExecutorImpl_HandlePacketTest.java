@@ -1,6 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -11,8 +11,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.internal.connection.Packet.FLAG_OP;
+import static com.hazelcast.internal.connection.Packet.FLAG_RESPONSE;
 import static org.junit.Assert.assertTrue;
 
 /**

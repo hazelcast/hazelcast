@@ -18,7 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.NoOpCommand;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.internal.connection.ascii.TextReadHandler;
 import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;

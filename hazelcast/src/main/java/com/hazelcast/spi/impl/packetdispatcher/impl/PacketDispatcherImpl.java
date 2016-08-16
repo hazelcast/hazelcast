@@ -17,16 +17,16 @@
 package com.hazelcast.spi.impl.packetdispatcher.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
-import static com.hazelcast.nio.Packet.FLAG_BIND;
-import static com.hazelcast.nio.Packet.FLAG_EVENT;
-import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.internal.connection.Packet.FLAG_BIND;
+import static com.hazelcast.internal.connection.Packet.FLAG_EVENT;
+import static com.hazelcast.internal.connection.Packet.FLAG_OP;
+import static com.hazelcast.internal.connection.Packet.FLAG_OP_CONTROL;
+import static com.hazelcast.internal.connection.Packet.FLAG_RESPONSE;
 
 /**
  * Default {@link PacketDispatcher} implementation.

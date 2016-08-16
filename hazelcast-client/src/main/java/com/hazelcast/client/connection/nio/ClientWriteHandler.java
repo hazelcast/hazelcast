@@ -21,8 +21,8 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.internal.connection.OutboundFrame;
+import com.hazelcast.internal.connection.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;

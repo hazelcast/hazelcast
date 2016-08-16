@@ -17,12 +17,12 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.IOThreadingModel;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
-import com.hazelcast.nio.tcp.spinning.SpinningIOThreadingModel;
+import com.hazelcast.internal.connection.ConnectionManager;
+import com.hazelcast.internal.connection.NodeIOService;
+import com.hazelcast.internal.connection.tcp.IOThreadingModel;
+import com.hazelcast.internal.connection.tcp.TcpIpConnectionManager;
+import com.hazelcast.internal.connection.tcp.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.internal.connection.tcp.spinning.SpinningIOThreadingModel;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.nio.channels.ServerSocketChannel;

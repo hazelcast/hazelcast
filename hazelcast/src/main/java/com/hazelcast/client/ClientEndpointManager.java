@@ -16,7 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;

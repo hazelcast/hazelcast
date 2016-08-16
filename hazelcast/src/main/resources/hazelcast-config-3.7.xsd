@@ -1922,7 +1922,7 @@
             <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the com.hazelcast.nio.ssl.SSLContextFactory implementation class.
+                        The name of the com.hazelcast.internal.connection.ssl.SSLContextFactory implementation class.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

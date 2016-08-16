@@ -20,7 +20,7 @@ package com.hazelcast.internal.ascii.memcache;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.internal.ascii.TypeAwareCommandParser;
-import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.internal.connection.ascii.TextReadHandler;
 
 import java.util.StringTokenizer;
 
