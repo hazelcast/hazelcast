@@ -457,7 +457,8 @@ public class ClusterJoinManager {
 
                 Operation operation = new FinalizeJoinOperation(createMemberInfoList(clusterService.getMemberImpls()),
                         postJoinOp, clusterClock.getClusterTime(), clusterService.getClusterId(),
-                        clusterClock.getClusterStartTime(), clusterStateManager.getState(), partitionRuntimeState, false);
+                        clusterClock.getClusterStartTime(), clusterStateManager.getState(),
+                        clusterStateManager.getVersion(), partitionRuntimeState, false);
                 nodeEngine.getOperationService().send(operation, target);
             } else {
                 sendMasterAnswer(target);
@@ -518,7 +519,7 @@ public class ClusterJoinManager {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
                             clusterService.getClusterId(), startTime,
-                            clusterStateManager.getState(), partitionState);
+                            clusterStateManager.getState(), clusterStateManager.getVersion(), partitionState);
                     calls.add(invokeClusterOperation(joinOperation, member.getAddress()));
                 }
                 for (MemberImpl member : members) {

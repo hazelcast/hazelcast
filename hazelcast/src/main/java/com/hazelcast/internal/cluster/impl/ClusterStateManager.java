@@ -104,7 +104,7 @@ public class ClusterStateManager {
         return stateLock;
     }
 
-    void initialClusterState(ClusterState initialState) {
+    void initialClusterState(ClusterState initialState, Version version) {
         clusterServiceLock.lock();
         try {
             final ClusterState currentState = getState();
@@ -114,6 +114,9 @@ public class ClusterStateManager {
                 return;
             }
             this.state = initialState;
+            // we need to validate the post-join version since we do not trust it eventhough we validate on pre-join
+            ClusterVersionService.validateNodeVersionCompatibility(node, version);
+            this.version = version;
             changeNodeState(initialState);
             node.getNodeExtension().onClusterStateChange(initialState, false);
         } finally {
@@ -151,6 +154,10 @@ public class ClusterStateManager {
         try {
             if (!node.getNodeExtension().isStartCompleted()) {
                 throw new IllegalStateException("Can not lock cluster state! Startup is not completed yet!");
+            }
+
+            if (stateChange.isOfType(Version.class)) {
+                ClusterVersionService.validateNodeVersionCompatibility(node, (Version) stateChange.getNewState());
             }
 
             checkMigrationsAndPartitionStateVersion(stateChange, partitionStateVersion);
@@ -243,7 +250,12 @@ public class ClusterStateManager {
                 node.getClusterService().removeMembersDeadWhileClusterIsNotActive();
             }
         } else if (stateChange.isOfType(Version.class)) {
+            // version is validated on cluster-state-lock, thus we can commit without checking compatibility
             this.version = (Version) stateChange.getNewState();
+            stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+
+            // TODO RU -> callback when the version is changed should be added
+            // node.getNodeExtension().onClusterStateChange(newState, true);
         } else {
             throw new IllegalArgumentException("Illegal cluster state change " + stateChange);
         }

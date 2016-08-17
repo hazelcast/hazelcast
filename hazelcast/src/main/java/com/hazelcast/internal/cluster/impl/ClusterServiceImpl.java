@@ -864,12 +864,16 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void changeClusterVersion(Version version) {
+        ClusterVersionService.validateClusterVersionChange(version);
+        ClusterVersionService.validateNodeVersionCompatibility(node, version);
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), partitionStateVersion);
     }
 
     @Override
     public void changeClusterVersion(Version version, TransactionOptions options) {
+        ClusterVersionService.validateClusterVersionChange(version);
+        ClusterVersionService.validateNodeVersionCompatibility(node, version);
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), options, partitionStateVersion);
     }
@@ -947,11 +951,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         hazelcastInstance.getLifecycleService().shutdown();
     }
 
-    public void initialClusterState(ClusterState clusterState) {
+    public void initialClusterState(ClusterState clusterState, Version version) {
         if (node.joined()) {
             throw new IllegalStateException("Cannot set initial state after node joined! -> " + clusterState);
         }
-        clusterStateManager.initialClusterState(clusterState);
+        clusterStateManager.initialClusterState(clusterState, version);
     }
 
     public ClusterStateManager getClusterStateManager() {

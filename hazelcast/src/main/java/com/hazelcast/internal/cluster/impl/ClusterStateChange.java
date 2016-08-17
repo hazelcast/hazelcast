@@ -82,9 +82,9 @@ public class ClusterStateChange<T> implements DataSerializable {
 
     @Override
     public String toString() {
-        return "ClusterStateChange{" +
-                "type=" + type +
-                ", newState=" + newState +
-                '}';
+        return "ClusterStateChange{"
+                + "type=" + type
+                + ", newState=" + newState
+                + '}';
     }
 }

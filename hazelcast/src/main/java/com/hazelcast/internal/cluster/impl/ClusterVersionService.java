@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.version.Version;
 
 //
@@ -71,7 +72,29 @@ public final class ClusterVersionService {
             throw new ConfigMismatchException("Illegal joiner version. Cluster=[" + clusterVersion + "] vs. Joiner=["
                     + joinerVersion + "]");
         }
-
     }
+
+    public static void validateClusterVersionChange(Version version) {
+        if (version.getPatch() > 0) {
+            throw new IllegalArgumentException("Could not set cluster's patch version to " + version.getPatch()
+                    + " Just set the major & minor versions, e.g. '3.8' or '3.9'");
+        }
+    }
+
+    public static void validateNodeVersionCompatibility(Node currentNode, Version version) {
+        Preconditions.checkNotNull(version);
+        Version nodeVersion = currentNode.getVersion();
+
+        // node can either work at its codebase version (native mode)
+        // or at a  minor version that's smaller by one (emulated mode)
+        if (nodeVersion.getMajor() == version.getMajor()
+                && (nodeVersion.getMinor() == version.getMinor() || nodeVersion.getMinor() == version.getMinor() + 1)) {
+            return;
+        }
+
+        throw new IllegalArgumentException("Node's codebase version " + nodeVersion
+                + " is incompatible with the requested version " + version);
+    }
+
 
 }

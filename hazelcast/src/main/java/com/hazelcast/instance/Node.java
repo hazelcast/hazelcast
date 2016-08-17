@@ -95,8 +95,6 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 @PrivateApi
 public class Node {
 
-    private static final Version CURRENT_CODEBASAE_VERSION = new Version(3, 8, 0);
-
     private static final int THREAD_SLEEP_DURATION_MS = 500;
 
     public final HazelcastInstanceImpl hazelcastInstance;
@@ -159,7 +157,6 @@ public class Node {
         this.configClassLoader = config.getClassLoader();
         this.properties = new HazelcastProperties(config);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
-//        this.version = new Version(BuildInfoProvider.getBuildInfo().getVersion());
         this.version = new Version(BuildInfoProvider.getBuildInfo().getVersion());
 
         String loggingType = properties.getString(LOGGING_TYPE);
@@ -729,7 +726,6 @@ public class Node {
     public Version getVersion() {
         return version;
     }
-
 
     public boolean isLiteMember() {
         return liteMember;

@@ -64,13 +64,15 @@ public class LockClusterStateOperation extends Operation implements AllowedDurin
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
         ClusterStateManager clusterStateManager = service.getClusterStateManager();
-        ClusterState state = clusterStateManager.getState();
-        if (state == ClusterState.IN_TRANSITION) {
-            getLogger().info("Extending cluster state lock. Initiator: " + initiator
-                    + ", lease-time: " + leaseTime);
-        } else {
-            getLogger().info("Locking cluster state. Initiator: " + initiator
-                    + ", lease-time: " + leaseTime);
+        if (stateChange.isOfType(ClusterState.class)) {
+            ClusterState state = clusterStateManager.getState();
+            if (state == ClusterState.IN_TRANSITION) {
+                getLogger().info("Extending cluster state lock. Initiator: " + initiator
+                        + ", lease-time: " + leaseTime);
+            } else {
+                getLogger().info("Locking cluster state. Initiator: " + initiator
+                        + ", lease-time: " + leaseTime);
+            }
         }
         clusterStateManager.lockClusterState(stateChange, initiator, txnId, leaseTime, partitionStateVersion);
     }
