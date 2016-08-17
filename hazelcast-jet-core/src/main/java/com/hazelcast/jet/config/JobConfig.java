@@ -18,20 +18,23 @@ package com.hazelcast.jet.config;
 
 
 import com.hazelcast.jet.impl.job.deployment.DeploymentType;
-import com.hazelcast.jet.impl.util.JetUtil;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.jet.impl.util.JetUtil.reThrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Config for a {@link com.hazelcast.jet.job.Job}
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class JobConfig implements Serializable {
 
     /**
@@ -162,8 +165,7 @@ public class JobConfig implements Serializable {
      * @param count the maximum number of attempts
      * @return the current job configuration
      */
-    public JobConfig setJobDirectoryCreationAttemptsCount(
-            int count) {
+    public JobConfig setJobDirectoryCreationAttemptsCount(int count) {
         this.jobDirectoryCreationAttemptsCount = count;
         return this;
     }
@@ -290,20 +292,9 @@ public class JobConfig implements Serializable {
             try {
                 deploymentConfigs.add(new DeploymentConfig(clazz));
             } catch (IOException e) {
-                throw JetUtil.reThrow(e);
+                throw reThrow(e);
             }
         }
-    }
-
-    /**
-     * Add class to the job classLoader
-     *
-     * @param url       location of the class file
-     * @param className fully qualified name of the class
-     */
-    public void addClass(URL url, String className) {
-        checkNotNull(className, "Class name cannot be null");
-        add(url, className, DeploymentType.CLASS);
     }
 
     /**
@@ -318,12 +309,68 @@ public class JobConfig implements Serializable {
     /**
      * Add JAR to the job classLoader
      *
-     * @param url  location of the JAR file
-     * @param name name of the JAR file
+     * @param url location of the JAR file
+     * @param id  identifier for the JAR file
      */
-    public void addJar(URL url, String name) {
-        add(url, name, DeploymentType.JAR);
+    public void addJar(URL url, String id) {
+        add(url, id, DeploymentType.JAR);
     }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param file the JAR file
+     */
+    public void addJar(File file) {
+        try {
+            addJar(file.toURI().toURL(), file.getName());
+        } catch (MalformedURLException e) {
+            throw reThrow(e);
+        }
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param file the JAR file
+     * @param id   identifier for the JAR file
+     */
+    public void addJar(File file, String id) {
+        try {
+            addJar(file.toURI().toURL(), id);
+        } catch (MalformedURLException e) {
+            throw reThrow(e);
+        }
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param path path the JAR file
+     */
+    public void addJar(String path) {
+        try {
+            File file = new File(path);
+            addJar(file.toURI().toURL(), file.getName());
+        } catch (MalformedURLException e) {
+            throw reThrow(e);
+        }
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param path path the JAR file
+     * @param id   identifier for the JAR file
+     */
+    public void addJar(String path, String id) {
+        try {
+            addJar(new File(path).toURI().toURL(), id);
+        } catch (MalformedURLException e) {
+            throw reThrow(e);
+        }
+    }
+
 
     /**
      * Add resource to the job classLoader
@@ -338,11 +385,68 @@ public class JobConfig implements Serializable {
     /**
      * Add resource to the job classLoader
      *
-     * @param url  source url with classes
-     * @param name name of the resource
+     * @param url source url with classes
+     * @param id  identifier for the resource
      */
-    public void addResource(URL url, String name) {
-        add(url, name, DeploymentType.DATA);
+    public void addResource(URL url, String id) {
+        add(url, id, DeploymentType.DATA);
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param file resource file
+     */
+    public void addResource(File file) {
+        try {
+            addResource(file.toURI().toURL(), file.getName());
+        } catch (MalformedURLException e) {
+            throw reThrow(e);
+        }
+
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param file resource file
+     * @param id   identifier for the resource
+     */
+    public void addResource(File file, String id) {
+        try {
+            add(file.toURI().toURL(), id, DeploymentType.DATA);
+        } catch (MalformedURLException e) {
+            throw reThrow(e);
+        }
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param path path of the resource
+     */
+    public void addResource(String path) {
+        File file = new File(path);
+        try {
+            addResource(file.toURI().toURL(), file.getName());
+        } catch (MalformedURLException e) {
+            throw reThrow(e);
+        }
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param path path of the resource
+     * @param id   identifier for the resource
+     */
+    public void addResource(String path, String id) {
+        File file = new File(path);
+        try {
+            addResource(file.toURI().toURL(), id);
+        } catch (MalformedURLException e) {
+            throw reThrow(e);
+        }
     }
 
     /**
@@ -354,11 +458,11 @@ public class JobConfig implements Serializable {
         return deploymentConfigs;
     }
 
-    private void add(URL url, String name, DeploymentType type) {
+    private void add(URL url, String id, DeploymentType type) {
         try {
-            deploymentConfigs.add(new DeploymentConfig(url, name, type));
+            deploymentConfigs.add(new DeploymentConfig(url, id, type));
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw reThrow(e);
         }
     }
 

@@ -19,11 +19,11 @@ package com.hazelcast.jet.impl.job.deployment;
 import java.io.Serializable;
 
 public class DeploymentDescriptor implements Serializable {
-    private final String name;
+    private final String id;
     private final DeploymentType deploymentType;
 
-    public DeploymentDescriptor(String name, DeploymentType deploymentType) {
-        this.name = name;
+    public DeploymentDescriptor(String id, DeploymentType deploymentType) {
+        this.id = id;
         this.deploymentType = deploymentType;
     }
 
@@ -31,8 +31,8 @@ public class DeploymentDescriptor implements Serializable {
         return this.deploymentType;
     }
 
-    public String getName() {
-        return this.name;
+    public String getId() {
+        return this.id;
     }
 
     @Override
@@ -47,7 +47,7 @@ public class DeploymentDescriptor implements Serializable {
 
         DeploymentDescriptor that = (DeploymentDescriptor) o;
 
-        if (!this.name.equals(that.name)) {
+        if (!this.id.equals(that.id)) {
             return false;
         }
 
@@ -57,7 +57,7 @@ public class DeploymentDescriptor implements Serializable {
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
+        int result = id.hashCode();
         result = 31 * result + deploymentType.hashCode();
         return result;
     }
@@ -65,7 +65,7 @@ public class DeploymentDescriptor implements Serializable {
     @Override
     public String toString() {
         return "DeploymentDescriptor{"
-                + "name='" + name + '\''
+                + "id='" + id + '\''
                 + ", deploymentType=" + deploymentType
                 + '}';
     }
