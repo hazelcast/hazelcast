@@ -90,6 +90,18 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
+    public void testLoadAllNearCacheInvalidationBinary()
+            throws InterruptedException {
+        testLoadAllNearCacheInvalidation(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void testLoadAllNearCacheInvalidationObject()
+            throws InterruptedException {
+        testLoadAllNearCacheInvalidation(InMemoryFormat.OBJECT);
+    }
+
+    @Test
     public void putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCacheWithBinaryInMemoryFormat() {
         putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache(InMemoryFormat.BINARY);
     }
