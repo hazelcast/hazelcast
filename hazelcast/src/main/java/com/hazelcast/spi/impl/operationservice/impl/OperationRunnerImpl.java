@@ -196,8 +196,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             return;
         }
 
+        Address localAddress = node.getThisAddress();
         if (state == NodeState.SHUT_DOWN) {
-            throw new HazelcastInstanceNotActiveException("This node is shut down! Operation: " + op);
+            throw new HazelcastInstanceNotActiveException("Member " + localAddress + " is shut down! Operation: " + op);
         }
 
         if (op instanceof AllowedDuringPassiveState) {
@@ -212,12 +213,12 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         // Operation has no partition id. So it is sent to this node in purpose.
         // Operation will fail since node is shutting down or cluster is passive.
         if (op.getPartitionId() < 0) {
-            throw new HazelcastInstanceNotActiveException("This node is currently passive! Operation: " + op);
+            throw new HazelcastInstanceNotActiveException("Member " + localAddress + "+ is currently passive! Operation: " + op);
         }
 
         // Custer is not passive but this node is shutting down.
         // Since operation has a partition id, it must be retried on another node.
-        throw new RetryableHazelcastException("This node is currently shutting down! Operation: " + op);
+        throw new RetryableHazelcastException("Member " + localAddress + " is currently shutting down! Operation: " + op);
     }
 
     private void ensureQuorumPresent(Operation op) {
