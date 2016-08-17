@@ -19,8 +19,11 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @param <V> the type of the value of Record.
@@ -28,11 +31,12 @@ import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 @SuppressWarnings("VolatileLongOrDoubleField")
 public abstract class AbstractRecord<V> implements Record<V> {
 
-    private static final int NUMBER_OF_LONGS = 6;
+    private static final int NUMBER_OF_LONGS = 5;
+    private static final int NUMBER_OF_INTS = 1;
 
     protected Data key;
+    protected int ttl;
     protected long version;
-    protected long ttl;
     protected long creationTime;
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -56,12 +60,19 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getTtl() {
-        return ttl;
+        return SECONDS.toMillis(ttl);
     }
 
     @Override
-    public void setTtl(long ttl) {
-        this.ttl = ttl;
+    public void setTtl(long ttlMillis) {
+        long ttlSeconds = MILLISECONDS.toSeconds(ttlMillis);
+
+        // this means ttl is smaller than 1 second, and possibly, it was set with a method like map#set(k,v,ttl,TimeUnit)
+        // in this case, we are setting ttl to 1 second so effectively smallest ttl in imap can be 1 second.
+        if (ttlSeconds == 0 && ttlMillis != 0) {
+            ttlSeconds = 1;
+        }
+        this.ttl = ttlSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) ttlSeconds;
     }
 
     @Override
@@ -106,7 +117,9 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getCost() {
-        return REFERENCE_COST_IN_BYTES + NUMBER_OF_LONGS * LONG_SIZE_IN_BYTES;
+        return REFERENCE_COST_IN_BYTES
+                + NUMBER_OF_LONGS * LONG_SIZE_IN_BYTES
+                + NUMBER_OF_INTS * INT_SIZE_IN_BYTES;
     }
 
     @Override
@@ -209,8 +222,8 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public int hashCode() {
         int result = key.hashCode();
+        result = 31 * result + ttl;
         result = 31 * result + (int) (version ^ (version >>> 32));
-        result = 31 * result + (int) (ttl ^ (ttl >>> 32));
         result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         result = 31 * result + (int) (hits ^ (hits >>> 32));
         result = 31 * result + (int) (lastAccessTime ^ (lastAccessTime >>> 32));

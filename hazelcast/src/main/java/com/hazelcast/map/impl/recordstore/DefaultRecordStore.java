@@ -222,9 +222,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void putRecord(Data key, Record record) {
-        markRecordStoreExpirable(record.getTtl());
         storage.put(key, record);
         updateStatsOnPut(record.getHits());
+        markRecordStoreExpirable(record.getTtl());
     }
 
     @Override
@@ -235,7 +235,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Record putBackup(Data key, Object value, long ttl, boolean putTransient) {
         final long now = getNow();
-        markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, true);
         if (record == null) {
@@ -249,6 +248,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             mapDataStore.addBackup(key, value, now);
         }
+
+        markRecordStoreExpirable(record.getTtl());
         return record;
     }
 
@@ -722,8 +723,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
 
         long now = getNow();
-        markRecordStoreExpirable(ttl);
-
         Record record = getRecordOrNull(key, now, false);
         Object oldValue = record == null ? (loadFromStore ? mapDataStore.load(key) : null) : record.getValue();
         value = mapServiceContext.interceptPut(name, oldValue, value);
@@ -739,6 +738,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         saveIndex(record, oldValue);
+        markRecordStoreExpirable(record.getTtl());
+
         return oldValue;
     }
 
@@ -836,9 +837,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void putTransient(Data key, Object value, long ttl) {
         checkIfLoaded();
-        final long now = getNow();
-        markRecordStoreExpirable(ttl);
 
+        final long now = getNow();
         Record record = getRecordOrNull(key, now, false);
         Object oldValue = null;
         if (record == null) {
@@ -851,7 +851,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             updateRecord(key, record, value, now);
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
+
         saveIndex(record, oldValue);
+        markRecordStoreExpirable(record.getTtl());
         mapDataStore.addTransient(key, now);
     }
 
@@ -880,7 +882,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (shouldEvict()) {
             return null;
         }
-        markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, false);
         Object oldValue = null;
@@ -897,6 +898,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (!backup) {
             saveIndex(record, oldValue);
         }
+
+        markRecordStoreExpirable(record.getTtl());
         return oldValue;
     }
 
@@ -924,7 +927,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Object putIfAbsent(Data key, Object value, long ttl) {
         checkIfLoaded();
         final long now = getNow();
-        markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, false);
         Object oldValue;
@@ -946,7 +948,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
+
         saveIndex(record, oldValue);
+        markRecordStoreExpirable(record.getTtl());
+
         return oldValue;
     }
 

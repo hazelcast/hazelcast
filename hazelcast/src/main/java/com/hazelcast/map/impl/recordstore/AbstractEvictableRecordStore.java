@@ -42,12 +42,15 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 /**
  * Contains eviction specific functionality.
  */
 abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
+
+    protected static final long MAX_TTL_MILLIS = SECONDS.toMillis(Integer.MAX_VALUE);
 
     protected final long expiryDelayMillis;
     protected final EventService eventService;
@@ -160,7 +163,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void markRecordStoreExpirable(long ttl) {
-        if (ttl > 0L && ttl < Long.MAX_VALUE) {
+        if (ttl > 0L && ttl < MAX_TTL_MILLIS) {
             hasEntryWithCustomTTL = true;
         }
     }
