@@ -298,17 +298,6 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Add class to the job classLoader
-     *
-     * @param url       location of the class file
-     * @param className fully qualified name of the class
-     */
-    public void addClass(URL url, String className) {
-        checkNotNull(className, "Class name cannot be null");
-        add(url, className, DeploymentType.CLASS);
-    }
-
-    /**
      * Add JAR to the job classLoader
      *
      * @param url location of the JAR file
@@ -320,11 +309,11 @@ public class JobConfig implements Serializable {
     /**
      * Add JAR to the job classLoader
      *
-     * @param url  location of the JAR file
-     * @param name name of the JAR file
+     * @param url location of the JAR file
+     * @param id  identifier for the JAR file
      */
-    public void addJar(URL url, String name) {
-        add(url, name, DeploymentType.JAR);
+    public void addJar(URL url, String id) {
+        add(url, id, DeploymentType.JAR);
     }
 
     /**
@@ -336,7 +325,7 @@ public class JobConfig implements Serializable {
         try {
             addJar(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            reThrow(e);
+            throw reThrow(e);
         }
     }
 
@@ -344,13 +333,13 @@ public class JobConfig implements Serializable {
      * Add JAR to the job classLoader
      *
      * @param file the JAR file
-     * @param name name of the JAR file
+     * @param id   identifier for the JAR file
      */
-    public void addJar(File file, String name) {
+    public void addJar(File file, String id) {
         try {
-            addJar(file.toURI().toURL(), name);
+            addJar(file.toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            reThrow(e);
+            throw reThrow(e);
         }
     }
 
@@ -364,7 +353,7 @@ public class JobConfig implements Serializable {
             File file = new File(path);
             addJar(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            reThrow(e);
+            throw reThrow(e);
         }
     }
 
@@ -372,13 +361,13 @@ public class JobConfig implements Serializable {
      * Add JAR to the job classLoader
      *
      * @param path path the JAR file
-     * @param name name of the JAR file
+     * @param id   identifier for the JAR file
      */
-    public void addJar(String path, String name) {
+    public void addJar(String path, String id) {
         try {
-            addJar(new File(path).toURI().toURL(), name);
+            addJar(new File(path).toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            reThrow(e);
+            throw reThrow(e);
         }
     }
 
@@ -396,11 +385,11 @@ public class JobConfig implements Serializable {
     /**
      * Add resource to the job classLoader
      *
-     * @param url  source url with classes
-     * @param name name of the resource
+     * @param url source url with classes
+     * @param id  identifier for the resource
      */
-    public void addResource(URL url, String name) {
-        add(url, name, DeploymentType.DATA);
+    public void addResource(URL url, String id) {
+        add(url, id, DeploymentType.DATA);
     }
 
     /**
@@ -412,7 +401,7 @@ public class JobConfig implements Serializable {
         try {
             addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            reThrow(e);
+            throw reThrow(e);
         }
 
     }
@@ -421,13 +410,13 @@ public class JobConfig implements Serializable {
      * Add resource to the job classLoader
      *
      * @param file resource file
-     * @param name name of the resource
+     * @param id   identifier for the resource
      */
-    public void addResource(File file, String name) {
+    public void addResource(File file, String id) {
         try {
-            add(file.toURI().toURL(), name, DeploymentType.DATA);
+            add(file.toURI().toURL(), id, DeploymentType.DATA);
         } catch (MalformedURLException e) {
-            reThrow(e);
+            throw reThrow(e);
         }
     }
 
@@ -441,7 +430,7 @@ public class JobConfig implements Serializable {
         try {
             addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            reThrow(e);
+            throw reThrow(e);
         }
     }
 
@@ -449,14 +438,14 @@ public class JobConfig implements Serializable {
      * Add resource to the job classLoader
      *
      * @param path path of the resource
-     * @param name name of the resource
+     * @param id   identifier for the resource
      */
-    public void addResource(String path, String name) {
+    public void addResource(String path, String id) {
         File file = new File(path);
         try {
-            addResource(file.toURI().toURL(), name);
+            addResource(file.toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            reThrow(e);
+            throw reThrow(e);
         }
     }
 
@@ -469,9 +458,9 @@ public class JobConfig implements Serializable {
         return deploymentConfigs;
     }
 
-    private void add(URL url, String name, DeploymentType type) {
+    private void add(URL url, String id, DeploymentType type) {
         try {
-            deploymentConfigs.add(new DeploymentConfig(url, name, type));
+            deploymentConfigs.add(new DeploymentConfig(url, id, type));
         } catch (IOException e) {
             throw reThrow(e);
         }

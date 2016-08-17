@@ -12,12 +12,9 @@ import com.hazelcast.jet.impl.job.deployment.processors.PrintCarVertex;
 import com.hazelcast.jet.impl.job.deployment.processors.PrintPersonVertex;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.concurrent.Future;
-import java.util.zip.GZIPInputStream;
 import org.junit.Test;
 
 public abstract class AbstractDeploymentTest extends JetTestSupport {
@@ -47,12 +44,12 @@ public abstract class AbstractDeploymentTest extends JetTestSupport {
 
         DAG dag = new DAG();
         dag.addVertex(createVertex("create and print person", PrintPersonVertex.class));
-
         String name = generateRandomString(10);
         JobConfig jobConfig = new JobConfig(name);
-        URL gzipResource = this.getClass().getResource("/Person$Appereance.class.gz");
-        File classFile = createClassFileFromGzip(gzipResource, "Person$Appereance.class");
-        jobConfig.addClass(classFile.toURI().toURL(), "com.sample.pojo.person.Person$Appereance");
+        URL classUrl = this.getClass().getResource("/cp1/");
+        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
+        Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+        jobConfig.addClass(appearance);
         Job job = JetEngine.getJob(getHazelcastInstance(), name, dag, jobConfig);
 
         execute(job);
@@ -110,22 +107,24 @@ public abstract class AbstractDeploymentTest extends JetTestSupport {
 
         DAG dag1 = new DAG();
         dag1.addVertex(createVertex("create and print person", PrintPersonVertex.class));
-        URL gzipResource1 = this.getClass().getResource("/Person$Appereance.class.gz");
-        File classFile1 = createClassFileFromGzip(gzipResource1, "Person$Appereance.class");
+        URL classUrl1 = this.getClass().getResource("/cp1/");
+        URLClassLoader urlClassLoader1 = new URLClassLoader(new URL[]{classUrl1}, null);
+        Class<?> appearance = urlClassLoader1.loadClass("com.sample.pojo.person.Person$Appereance");
         String name1 = generateRandomString(10);
         JobConfig jobConfig1 = new JobConfig(name1);
-        jobConfig1.addClass(classFile1.toURI().toURL(), "com.sample.pojo.person.Person$Appereance");
+        jobConfig1.addClass(appearance);
 
         Job job1 = JetEngine.getJob(getHazelcastInstance(), name1, dag1, jobConfig1);
 
 
         DAG dag2 = new DAG();
         dag2.addVertex(createVertex("create and print car", PrintCarVertex.class));
-        URL gzipResource2 = this.getClass().getResource("/Car.class.gz");
-        File classFile2 = createClassFileFromGzip(gzipResource2, "Car.class");
+        URL classUrl2 = this.getClass().getResource("/cp2/");
+        URLClassLoader urlClassLoader2 = new URLClassLoader(new URL[]{classUrl2}, null);
+        Class<?> car = urlClassLoader2.loadClass("com.sample.pojo.car.Car");
         String name2 = generateRandomString(10);
         JobConfig jobConfig2 = new JobConfig(name2);
-        jobConfig2.addClass(classFile2.toURI().toURL(), "com.sample.pojo.car.Car");
+        jobConfig2.addClass(car);
 
         Job job2 = JetEngine.getJob(getHazelcastInstance(), name2, dag2, jobConfig2);
 
@@ -170,20 +169,4 @@ public abstract class AbstractDeploymentTest extends JetTestSupport {
 
     }
 
-    private File createClassFileFromGzip(URL gzipResource, String className) throws IOException {
-        GZIPInputStream inputStream = new GZIPInputStream(gzipResource.openStream());
-        String tempDir = System.getProperty("java.io.tmpdir");
-        File classFile = new File(tempDir, className);
-        classFile.deleteOnExit();
-        FileOutputStream outputStream = new FileOutputStream(classFile);
-        byte[] buffer = new byte[1024];
-        int len;
-        while ((len = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, len);
-        }
-        outputStream.flush();
-        outputStream.close();
-        inputStream.close();
-        return classFile;
-    }
 }

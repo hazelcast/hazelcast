@@ -4,7 +4,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.File;
 import java.net.URL;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -18,31 +17,15 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 public class DeploymentConfigTest {
 
-    @Ignore
     @Test
     public void testAddClass_with_Class() throws Exception {
         JobConfig config = new JobConfig();
         config.addClass(this.getClass());
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals(this.getClass().getName(), deploymentConfig.getDescriptor().getName());
+        assertEquals(this.getClass().getName(), deploymentConfig.getDescriptor().getId());
         assertEquals(CLASS, deploymentConfig.getDescriptor().getDeploymentType());
-        System.out.println(deploymentConfig.getUrl().toString());
     }
-
-    @Test
-    public void testAddClass_with_Url_and_ClassName() throws Exception {
-        JobConfig config = new JobConfig();
-        String urlString = "file://path/to/classfile";
-        String className = "Person";
-        config.addClass(new URL(urlString), className);
-        DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
-
-        assertEquals(className, deploymentConfig.getDescriptor().getName());
-        assertEquals(CLASS, deploymentConfig.getDescriptor().getDeploymentType());
-        assertEquals(urlString, deploymentConfig.getUrl().toString());
-    }
-
 
     @Test
     public void testAddJar_with_Url() throws Exception {
@@ -51,7 +34,7 @@ public class DeploymentConfigTest {
         config.addJar(new URL(urlString));
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals("jarfile", deploymentConfig.getDescriptor().getName());
+        assertEquals("jarfile", deploymentConfig.getDescriptor().getId());
         assertEquals(JAR, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(urlString, deploymentConfig.getUrl().toString());
     }
@@ -64,7 +47,7 @@ public class DeploymentConfigTest {
         config.addJar(new URL(urlString), jarName);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals(jarName, deploymentConfig.getDescriptor().getName());
+        assertEquals(jarName, deploymentConfig.getDescriptor().getId());
         assertEquals(JAR, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(urlString, deploymentConfig.getUrl().toString());
     }
@@ -76,7 +59,7 @@ public class DeploymentConfigTest {
         config.addJar(path);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals("jarfile", deploymentConfig.getDescriptor().getName());
+        assertEquals("jarfile", deploymentConfig.getDescriptor().getId());
         assertEquals(JAR, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(path, deploymentConfig.getUrl().getPath());
     }
@@ -89,7 +72,7 @@ public class DeploymentConfigTest {
         config.addJar(path, jarName);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals(jarName, deploymentConfig.getDescriptor().getName());
+        assertEquals(jarName, deploymentConfig.getDescriptor().getId());
         assertEquals(JAR, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(path, deploymentConfig.getUrl().getPath());
     }
@@ -101,7 +84,7 @@ public class DeploymentConfigTest {
         config.addJar(file);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals("jarfile", deploymentConfig.getDescriptor().getName());
+        assertEquals("jarfile", deploymentConfig.getDescriptor().getId());
         assertEquals(JAR, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(file.getPath(), deploymentConfig.getUrl().getPath());
     }
@@ -114,7 +97,7 @@ public class DeploymentConfigTest {
         config.addJar(file, jarName);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals(jarName, deploymentConfig.getDescriptor().getName());
+        assertEquals(jarName, deploymentConfig.getDescriptor().getId());
         assertEquals(JAR, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(file.getPath(), deploymentConfig.getUrl().getPath());
     }
@@ -126,7 +109,7 @@ public class DeploymentConfigTest {
         config.addResource(new URL(urlString));
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals("resourceFile", deploymentConfig.getDescriptor().getName());
+        assertEquals("resourceFile", deploymentConfig.getDescriptor().getId());
         assertEquals(DATA, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(urlString, deploymentConfig.getUrl().toString());
     }
@@ -139,7 +122,7 @@ public class DeploymentConfigTest {
         config.addResource(new URL(urlString), resourceName);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals(resourceName, deploymentConfig.getDescriptor().getName());
+        assertEquals(resourceName, deploymentConfig.getDescriptor().getId());
         assertEquals(DATA, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(urlString, deploymentConfig.getUrl().toString());
     }
@@ -151,7 +134,7 @@ public class DeploymentConfigTest {
         config.addResource(path);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals("resource", deploymentConfig.getDescriptor().getName());
+        assertEquals("resource", deploymentConfig.getDescriptor().getId());
         assertEquals(DATA, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(path, deploymentConfig.getUrl().getPath());
     }
@@ -164,7 +147,7 @@ public class DeploymentConfigTest {
         config.addResource(path, resourceName);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals(resourceName, deploymentConfig.getDescriptor().getName());
+        assertEquals(resourceName, deploymentConfig.getDescriptor().getId());
         assertEquals(DATA, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(path, deploymentConfig.getUrl().getPath());
     }
@@ -176,7 +159,7 @@ public class DeploymentConfigTest {
         config.addResource(file);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals("resource", deploymentConfig.getDescriptor().getName());
+        assertEquals("resource", deploymentConfig.getDescriptor().getId());
         assertEquals(DATA, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(file.getPath(), deploymentConfig.getUrl().getPath());
     }
@@ -189,7 +172,7 @@ public class DeploymentConfigTest {
         config.addResource(file, resourceName);
         DeploymentConfig deploymentConfig = config.getDeploymentConfigs().iterator().next();
 
-        assertEquals(resourceName, deploymentConfig.getDescriptor().getName());
+        assertEquals(resourceName, deploymentConfig.getDescriptor().getId());
         assertEquals(DATA, deploymentConfig.getDescriptor().getDeploymentType());
         assertEquals(file.getPath(), deploymentConfig.getUrl().getPath());
     }

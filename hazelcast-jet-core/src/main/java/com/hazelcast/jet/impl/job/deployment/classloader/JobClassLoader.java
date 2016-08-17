@@ -317,12 +317,12 @@ public class JobClassLoader extends ClassLoader {
 
         private void loadClassStream(DeploymentDescriptor descriptor, ResourceStream resourceStream) {
             byte[] classBytes = JetUtil.readFully(resourceStream.getInputStream());
-            classEntries.put(descriptor.getName(), new ClassLoaderEntry(classBytes, resourceStream.getBaseUrl()));
+            classEntries.put(descriptor.getId(), new ClassLoaderEntry(classBytes, resourceStream.getBaseUrl()));
         }
 
         private void loadDataStream(DeploymentDescriptor descriptor, ResourceStream resourceStream) {
             byte[] bytes = JetUtil.readFully(resourceStream.getInputStream());
-            dataEntries.put(descriptor.getName(), new ClassLoaderEntry(bytes, resourceStream.getBaseUrl()));
+            dataEntries.put(descriptor.getId(), new ClassLoaderEntry(bytes, resourceStream.getBaseUrl()));
         }
 
         private void loadJarStream(ResourceStream resourceStream) {
