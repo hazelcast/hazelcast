@@ -39,11 +39,19 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 
+import javax.cache.configuration.FactoryBuilder;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheLoaderException;
+import javax.cache.integration.CompletionListener;
 import javax.cache.spi.CachingProvider;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -76,9 +84,9 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
-        return new CacheConfig()
-                .setName(DEFAULT_CACHE_NAME)
-                .setInMemoryFormat(inMemoryFormat);
+        CacheConfig cacheConfig = new CacheConfig().setName(DEFAULT_CACHE_NAME).setInMemoryFormat(inMemoryFormat);
+        cacheConfig.setCacheLoaderFactory(FactoryBuilder.factoryOf(ClientNearCacheTestSupport.TestCacheLoader.class));
+        return cacheConfig;
     }
 
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
@@ -389,6 +397,56 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
+    protected void testLoadAllNearCacheInvalidation(InMemoryFormat inMemoryFormat)
+            throws InterruptedException {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
+        nearCacheConfig.setInvalidateOnChange(true);
+        NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
+        final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
+
+        Set<Integer> testKeys = new HashSet<Integer>(DEFAULT_RECORD_COUNT);
+        Set<Integer> loadKeys = new HashSet<Integer>(DEFAULT_RECORD_COUNT / 2);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            if (i % 2 == 0) {
+                loadKeys.add(i);
+            }
+            testKeys.add(i);
+        }
+
+        // Populate cache from client-1
+        for (int i : testKeys) {
+            nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
+        }
+
+        final CountDownLatch completed = new CountDownLatch(1);
+        nearCacheTestContext1.cache.loadAll(loadKeys, true, new CompletionListener() {
+            @Override
+            public void onCompletion() {
+                completed.countDown();
+            }
+
+            @Override
+            public void onException(Exception e) {
+            }
+        });
+
+        completed.await(3, TimeUnit.SECONDS);
+
+        // Can't get replaced keys from client-2
+        for (int i : loadKeys) {
+            final int key = i;
+            // Records are stored in the near-cache will be invalidated eventually
+            // since cache records are updated.
+            HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertNull(nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.serializationService.toData(key)));
+                }
+            });
+        }
+    }
+
     protected void putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true);
@@ -524,4 +582,20 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
+    public static class TestCacheLoader implements CacheLoader<Integer, String> {
+
+        @Override
+        public String load(Integer key) throws CacheLoaderException {
+            return String.valueOf(2 * key);
+        }
+
+        @Override
+        public Map<Integer, String> loadAll(Iterable<? extends Integer> keys) throws CacheLoaderException {
+            Map<Integer, String> entries = new HashMap<Integer, String>();
+            for (int key : keys) {
+                entries.put(key, String.valueOf(2 * key));
+            }
+            return entries;
+        }
+    }
 }
