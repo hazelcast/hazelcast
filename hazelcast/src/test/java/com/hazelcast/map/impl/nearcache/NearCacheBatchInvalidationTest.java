@@ -70,17 +70,17 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
             map1.put(i, i);
         }
 
-        // fill near-cache on node-1
+        // fill Near Cache on node-1
         for (int i = 0; i < size; i++) {
             map1.get(i);
         }
 
-        // fill near-cache on node-2
+        // fill Near Cache on node-2
         for (int i = 0; i < size; i++) {
             map2.get(i);
         }
 
-        // generate invalidation data.
+        // generate invalidation data
         for (int i = 0; i < size; i++) {
             map1.put(i, i);
         }
@@ -120,17 +120,17 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
             map1.put(keys.get(i), i);
         }
 
-        // fill near-cache on node-1
+        // fill Near Cache on node-1
         for (int i = 0; i < size; i++) {
             map1.get(keys.get(i));
         }
 
-        // fill near-cache on node-2
+        // fill Near Cache on node-2
         for (int i = 0; i < size; i++) {
             map2.get(keys.get(i));
         }
 
-        // generate invalidation data.
+        // generate invalidation data
         for (int i = 0; i < size; i++) {
             map1.put(keys.get(i), i);
         }
@@ -138,7 +138,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
         NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
         NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
 
-        // Near-cache on one node should be invalidated wholly, other node should not receive any event.
+        // Near Cache on one node should be invalidated wholly, other node should not receive any event.
         // Due to the higher batch-size to sent invalidation.
         assertEquals(size, nearCache1.size() + nearCache2.size());
     }
@@ -164,12 +164,12 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
             map1.put(i, i);
         }
 
-        // fill near-cache on node-1
+        // fill Near Cache on node-1
         for (int i = 0; i < size; i++) {
             map1.get(i);
         }
 
-        // fill near-cache on node-2
+        // fill Near Cache on node-2
         for (int i = 0; i < size; i++) {
             map2.get(i);
         }
@@ -207,12 +207,12 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
             map1.put(i, i);
         }
 
-        // fill near-cache on node-1
+        // fill Near Cache on node-1
         for (int i = 0; i < size; i++) {
             map1.get(i);
         }
 
-        // fill near-cache on node-2
+        // fill Near Cache on node-2
         for (int i = 0; i < size; i++) {
             map2.get(i);
         }

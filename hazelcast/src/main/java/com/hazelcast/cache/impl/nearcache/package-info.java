@@ -15,8 +15,6 @@
  */
 
 /**
- * <p>
- *     Near cache support.
- * </p>
+ * Near Cache support.
  */
 package com.hazelcast.cache.impl.nearcache;

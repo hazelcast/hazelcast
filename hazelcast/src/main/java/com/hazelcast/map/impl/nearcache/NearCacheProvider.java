@@ -35,7 +35,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAG
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
- * Provides near cache specific functionality.
+ * Provides Near Cache specific functionality.
  */
 public class NearCacheProvider {
 

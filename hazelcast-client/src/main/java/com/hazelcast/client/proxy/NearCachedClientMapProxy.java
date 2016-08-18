@@ -56,7 +56,7 @@ import static java.util.Collections.EMPTY_MAP;
 import static java.util.Collections.emptyMap;
 
 /**
- * A Client-side {@code IMap} implementation which is fronted by a near-cache.
+ * A Client-side {@code IMap} implementation which is fronted by a Near Cache.
  *
  * @param <K> the key type for this {@code IMap} proxy.
  * @param <V> the value type for this {@code IMap} proxy.
@@ -241,7 +241,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         V v = super.replaceInternal(keyData, valueData);
         invalidateNearCache(keyData);
         return v;
-
     }
 
     @Override
@@ -493,7 +492,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         @Override
         public void handle(Data key) {
-            // null key means near cache has to remove all entries in it.
+            // null key means Near Cache has to remove all entries in it.
             // see MapAddNearCacheEntryListenerMessageTask.
             if (key == null) {
                 nearCache.clear();

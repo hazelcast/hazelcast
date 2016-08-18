@@ -557,7 +557,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected Object putIfAbsentInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean withCompletionEvent, boolean async) {
+    protected Object putIfAbsentInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean withCompletionEvent,
+                                         boolean async) {
         long start = System.nanoTime();
         ensureOpen();
         validateNotNull(key, value);

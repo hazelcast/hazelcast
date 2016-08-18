@@ -28,7 +28,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Contains configuration for an NearCache.
+ * Contains the configuration for a Near Cache.
  */
 public class NearCacheConfig
         implements DataSerializable, Serializable {
@@ -143,19 +143,19 @@ public class NearCacheConfig
     }
 
     /**
-     * Gets the name of the near cache.
+     * Gets the name of the Near Cache.
      *
-     * @return The name of the near cache.
+     * @return The name of the Near Cache.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Sets the name of the near cache.
+     * Sets the name of the Near Cache.
      *
-     * @param name The name of the near cache.
-     * @return This near cache config instance.
+     * @param name The name of the Near Cache.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setName(String name) {
         this.name = name;
@@ -163,22 +163,22 @@ public class NearCacheConfig
     }
 
     /**
-     * Gets the maximum number of seconds for each entry to stay in the near cache. Entries that are
-     * older than time-to-live-seconds will get automatically evicted from the near cache.
+     * Gets the maximum number of seconds for each entry to stay in the Near Cache. Entries that are
+     * older than time-to-live-seconds will get automatically evicted from the Near Cache.
      *
-     * @return The maximum number of seconds for each entry to stay in the near cache.
+     * @return The maximum number of seconds for each entry to stay in the Near Cache.
      */
     public int getTimeToLiveSeconds() {
         return timeToLiveSeconds;
     }
 
     /**
-     * Sets the maximum number of seconds for each entry to stay in the near cache. Entries that are
-     * older than time-to-live-seconds will get automatically evicted from the near cache.
+     * Sets the maximum number of seconds for each entry to stay in the Near Cache. Entries that are
+     * older than time-to-live-seconds will get automatically evicted from the Near Cache.
      * Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
      *
-     * @param timeToLiveSeconds The maximum number of seconds for each entry to stay in the near cache.
-     * @return This near cache config instance.
+     * @param timeToLiveSeconds The maximum number of seconds for each entry to stay in the Near Cache.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
         this.timeToLiveSeconds = checkNotNegative(timeToLiveSeconds, "TTL seconds cannot be negative !");
@@ -186,23 +186,23 @@ public class NearCacheConfig
     }
 
     /**
-     * Gets the maximum size of the near cache. When max size is reached,
+     * Gets the maximum size of the Near Cache. When max size is reached,
      * cache is evicted based on the policy defined.
      *
-     * @return The maximum size of the near cache.
+     * @return The maximum size of the Near Cache.
      */
     public int getMaxSize() {
         return maxSize;
     }
 
     /**
-     * Sets the maximum size of the near cache. When max size is reached,
+     * Sets the maximum size of the Near Cache. When max size is reached,
      * cache is evicted based on the policy defined.
      * Any integer between 0 and Integer.MAX_VALUE. 0 means
      * Integer.MAX_VALUE. Default is 0.
      *
-     * @param maxSize The maximum number of seconds for each entry to stay in the near cache.
-     * @return This near cache config instance.
+     * @param maxSize The maximum number of seconds for each entry to stay in the Near Cache.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setMaxSize(int maxSize) {
         this.maxSize = (maxSize == 0) ? Integer.MAX_VALUE : checkNotNegative(maxSize, "Max-Size cannot be negative !");
@@ -210,7 +210,7 @@ public class NearCacheConfig
     }
 
     /**
-     * The eviction policy for the near cache.
+     * The eviction policy for the Near Cache.
      * Valid values are:
      * NONE (no extra eviction, time-to-live-seconds may still apply),
      * LRU  (Least Recently Used),
@@ -218,7 +218,7 @@ public class NearCacheConfig
      * NONE is the default.
      * Regardless of the eviction policy used, time-to-live-seconds will still apply.
      *
-     * @return TThe eviction policy for the near cache.
+     * @return TThe eviction policy for the Near Cache.
      */
     public String getEvictionPolicy() {
         return evictionPolicy;
@@ -232,8 +232,8 @@ public class NearCacheConfig
      * NONE is the default.
      * Regardless of the eviction policy used, time-to-live-seconds will still apply.
      *
-     * @param evictionPolicy The eviction policy for the near cache.
-     * @return This near cache config instance.
+     * @param evictionPolicy The eviction policy for the Near Cache.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setEvictionPolicy(String evictionPolicy) {
         this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null !");
@@ -241,11 +241,11 @@ public class NearCacheConfig
     }
 
     /**
-     * Maximum number of seconds each entry can stay in the near cache as untouched (not-read).
+     * Maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
      * Entries that are not read (touched) more than max-idle-seconds value will get removed
-     * from the near cache.
+     * from the Near Cache.
      *
-     * @return Maximum number of seconds each entry can stay in the near cache as
+     * @return Maximum number of seconds each entry can stay in the Near Cache as
      * untouched (not-read).
      */
     public int getMaxIdleSeconds() {
@@ -253,14 +253,14 @@ public class NearCacheConfig
     }
 
     /**
-     * Maximum number of seconds each entry can stay in the near cache as untouched (not-read).
+     * Maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
      * Entries that are not read (touched) more than max-idle-seconds value will get removed
-     * from the near cache.
+     * from the Near Cache.
      * Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
      *
-     * @param maxIdleSeconds Maximum number of seconds each entry can stay in the near cache as
+     * @param maxIdleSeconds Maximum number of seconds each entry can stay in the Near Cache as
      *                       untouched (not-read).
-     * @return This near cache config instance.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setMaxIdleSeconds(int maxIdleSeconds) {
         this.maxIdleSeconds = checkNotNegative(maxIdleSeconds, "Max-Idle seconds cannot be negative !");
@@ -273,7 +273,7 @@ public class NearCacheConfig
      * When true, the member listens for cluster-wide changes on the entries and invalidates
      * them on change. Changes done on the local member always invalidate the cache.
      *
-     * @return This near cache config instance.
+     * @return This Near Cache config instance.
      */
     public boolean isInvalidateOnChange() {
         return invalidateOnChange;
@@ -287,7 +287,7 @@ public class NearCacheConfig
      *
      * @param invalidateOnChange True to evict the cached entries if the entries are
      *                           changed (updated or removed), false otherwise.
-     * @return This near cache config instance.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setInvalidateOnChange(boolean invalidateOnChange) {
         this.invalidateOnChange = invalidateOnChange;
@@ -315,7 +315,7 @@ public class NearCacheConfig
      * NATIVE: keys and values are stored in native memory.
      *
      * @param inMemoryFormat The data type used to store entries.
-     * @return This near cache config instance.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
@@ -324,7 +324,7 @@ public class NearCacheConfig
 
     /**
      * If true, cache local entries also.
-     * This is useful when in-memory-format for near cache is different than the map's one.
+     * This is useful when in-memory-format for Near Cache is different than the map's one.
      *
      * @return True if local entries are cached also.
      */
@@ -334,10 +334,10 @@ public class NearCacheConfig
 
     /**
      * True to cache local entries also.
-     * This is useful when in-memory-format for near cache is different than the map's one.
+     * This is useful when in-memory-format for Near Cache is different than the map's one.
      *
      * @param cacheLocalEntries True to cache local entries also.
-     * @return This near cache config instance.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setCacheLocalEntries(boolean cacheLocalEntries) {
         this.cacheLocalEntries = cacheLocalEntries;
@@ -383,7 +383,7 @@ public class NearCacheConfig
      * Regardless of the eviction policy used, time-to-live-seconds will still apply.
      *
      * @param evictionConfig The eviction policy.
-     * @return This near cache config instance.
+     * @return This Near Cache config instance.
      */
     public NearCacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
         this.evictionConfig = checkNotNull(evictionConfig, "Eviction config cannot be null !");

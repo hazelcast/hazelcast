@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains near-cache specific classes.
+ * Contains Near Cache specific classes.
  */
 package com.hazelcast.map.impl.nearcache;

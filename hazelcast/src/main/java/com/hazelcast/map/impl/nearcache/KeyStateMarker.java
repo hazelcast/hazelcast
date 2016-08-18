@@ -19,9 +19,9 @@ package com.hazelcast.map.impl.nearcache;
 /**
  * Used to assign a {@link STATE} to a key.
  *
- * That {@link STATE} is used when deciding whether or not a key can be puttable to a near-cache.
+ * That {@link STATE} is used when deciding whether or not a key can be puttable to a Near Cache.
  * Because there is a possibility that an invalidation for a key can be received before putting that
- * key into near-cache, in that case, key should not be put into near-cache.
+ * key into Near Cache, in that case, key should not be put into Near Cache.
  */
 public interface KeyStateMarker {
 

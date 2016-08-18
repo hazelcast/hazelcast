@@ -31,7 +31,7 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
- * Sends invalidations to near-caches immediately.
+ * Sends invalidations to Near Cache immediately.
  */
 public class NonStopInvalidator extends AbstractNearCacheInvalidator {
 
@@ -56,17 +56,17 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
 
     @Override
     public void destroy(String mapName) {
-        // nop.
+        // nop
     }
 
     @Override
     public void reset() {
-        // nop.
+        // nop
     }
 
     @Override
     public void shutdown() {
-        // nop.
+        // nop
     }
 
     private void invalidateInternal(String mapName, Data key, List<Data> keys, String sourceUuid) {
@@ -108,7 +108,7 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
             return batch;
         }
 
-        // if key and keys are null, that means a cleaning invalidation must be created.
+        // if key and keys are null, that means a cleaning invalidation must be created
         return new CleaningNearCacheInvalidation(mapName, sourceUuid);
     }
 

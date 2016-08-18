@@ -44,7 +44,7 @@ public final class EvictionPolicyEvaluatorProvider {
     }
 
     /**
-     * Gets the {@link EvictionPolicyEvaluator} implementation specified with <code>evictionPolicy</code>.
+     * Gets the {@link EvictionPolicyEvaluator} implementation specified with {@code evictionPolicy}.
      *
      * @param evictionConfig {@link EvictionConfiguration} for requested {@link EvictionPolicyEvaluator} implementation
      * @param classLoader    the {@link java.lang.ClassLoader} to be used

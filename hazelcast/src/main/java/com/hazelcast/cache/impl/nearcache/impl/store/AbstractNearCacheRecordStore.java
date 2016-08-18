@@ -124,7 +124,7 @@ public abstract class AbstractNearCacheRecordStore<
 
     protected void checkAvailable() {
         if (!isAvailable()) {
-            throw new IllegalStateException(nearCacheConfig.getName() + " named near cache record store is not available");
+            throw new IllegalStateException(nearCacheConfig.getName() + " named Near Cache record store is not available");
         }
     }
 
@@ -331,7 +331,7 @@ public abstract class AbstractNearCacheRecordStore<
 
     protected void destroyStore() {
         clearRecords();
-        // Clear reference so GC can collect it
+        // clear reference so GC can collect it
         records = null;
     }
 

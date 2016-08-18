@@ -72,7 +72,7 @@ public class NearCacheImpl implements NearCache<Data, Object> {
     private volatile long lastExpiration;
 
     /**
-     * @param mapName    name of the map which owns near cache.
+     * @param mapName    name of the map which owns Near Cache.
      * @param nodeEngine node engine.
      */
     public NearCacheImpl(String mapName, NodeEngine nodeEngine, SizeEstimator<NearCacheRecord> nearCacheSizeEstimator) {
@@ -97,7 +97,7 @@ public class NearCacheImpl implements NearCache<Data, Object> {
         this.lastExpiration = Clock.currentTimeMillis();
     }
 
-    // TODO this operation returns the given value in near-cache memory format (data or object)?
+    // TODO this operation returns the given value in Near Cache memory format (data or object)?
     @Override
     public void put(Data key, Object value) {
         fireCacheExpiration();

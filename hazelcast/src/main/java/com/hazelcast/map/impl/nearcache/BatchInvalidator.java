@@ -50,7 +50,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.util.Collections.EMPTY_LIST;
 
 /**
- * Sends invalidations to near-caches in batches.
+ * Sends invalidations to Near Cache in batches.
  */
 public class BatchInvalidator extends AbstractNearCacheInvalidator {
 
@@ -154,7 +154,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
         if (invalidationQueue == null) {
             return;
         }
-        // If still in progress, no need to another attempt. So just return.
+        // if still in progress, no need to another attempt, so just return
         if (!invalidationQueue.tryAcquire()) {
             return;
         }
