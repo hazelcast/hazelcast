@@ -49,7 +49,7 @@ public class NearCacheBatchInvalidationOperation extends MapOperation implements
             NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
             ((AbstractNearCacheInvalidator) nearCacheInvalidator).invalidateLocal(name, null, keys);
         } else {
-            getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
+            getLogger().warning("Cache clear operation has been accepted while Near Cache is not enabled for "
                     + name + " map. Possible configuration conflict among nodes.");
         }
     }

@@ -83,7 +83,6 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
         public long getAccessHit() {
             return value.getAccessHit();
         }
-
     }
 
     @Override

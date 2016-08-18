@@ -99,5 +99,4 @@ public class DefaultNearCacheManager implements NearCacheManager {
             nearCache.destroy();
         }
     }
-
 }

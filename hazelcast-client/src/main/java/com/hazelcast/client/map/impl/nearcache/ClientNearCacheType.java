@@ -17,7 +17,7 @@
 package com.hazelcast.client.map.impl.nearcache;
 
 /**
- * Legal near cache types
+ * Legal Near Cache types.
  */
 public enum ClientNearCacheType {
     /**

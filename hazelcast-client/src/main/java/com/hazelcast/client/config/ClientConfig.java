@@ -231,7 +231,7 @@ public class ClientConfig {
     /**
      * please use {@link ClientConfig#addNearCacheConfig(NearCacheConfig)}
      *
-     * @param name            name of the IMap / ICache that near cache config will be applied to
+     * @param name            name of the IMap / ICache that Near Cache config will be applied to
      * @param nearCacheConfig nearCacheConfig
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */

@@ -469,7 +469,8 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = client.getMap(mapName);
 
         map.put("a", "b");
-        map.get("a"); //put to nearCache
+        // populate Near Cache
+        map.get("a");
 
         instance.shutdown();
         hazelcastFactory.newHazelcastInstance();

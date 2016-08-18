@@ -64,5 +64,4 @@ public class NearCacheContext {
     public ClassLoader getClassLoader() {
         return classLoader;
     }
-
 }

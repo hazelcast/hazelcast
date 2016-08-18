@@ -20,16 +20,14 @@ import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
 
 /**
- * Contract point for all record maps these supports entry sampling to be used for storage in near-cache.
+ * Contract point for all record maps these supports entry sampling to be used for storage in Near Cache.
  *
  * @param <K> type of the key
  * @param <V> type of the {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord} to be stored
- *
  * @see com.hazelcast.cache.impl.nearcache.NearCacheRecord
  * @see com.hazelcast.cache.impl.nearcache.impl.NearCacheRecordMap
  * @see com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore
  */
 public interface SampleableNearCacheRecordMap<K, V extends NearCacheRecord>
         extends NearCacheRecordMap<K, V>, SampleableEvictableStore<K, V> {
-
 }

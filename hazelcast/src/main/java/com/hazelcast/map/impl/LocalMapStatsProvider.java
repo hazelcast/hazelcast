@@ -232,7 +232,7 @@ public class LocalMapStatsProvider {
     }
 
     /**
-     * Adds near cache stats.
+     * Adds Near Cache stats.
      */
     protected void addNearCacheStats(LocalMapStatsImpl stats,
                                      LocalMapOnDemandCalculatedStats onDemandStats, MapContainer mapContainer) {
@@ -256,7 +256,7 @@ public class LocalMapStatsProvider {
         protected long ownedEntryMemoryCost;
         protected long backupEntryMemoryCost;
         /**
-         * Holds total heap cost of map & near-cache & backups.
+         * Holds total heap cost of map & Near Cache & backups.
          */
         protected long heapCost;
         protected long lockedEntryCount;

@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * Root interface for near-cache invalidation data.
+ * Root interface for Near Cache invalidation data.
  */
 public abstract class Invalidation implements IMapEvent, DataSerializable {
 

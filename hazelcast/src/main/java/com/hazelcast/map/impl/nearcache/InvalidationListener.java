@@ -21,7 +21,7 @@ import com.hazelcast.map.listener.MapListener;
 /**
  * Used to receive invalidation events from an {@link com.hazelcast.core.IMap IMap}
  * <p/>
- * For example, a client near-cache implementation can listen changes in IMap data and
+ * For example, a client Near Cache implementation can listen changes in IMap data and
  * can remove stale data in its own cache.
  *
  * @since 3.6

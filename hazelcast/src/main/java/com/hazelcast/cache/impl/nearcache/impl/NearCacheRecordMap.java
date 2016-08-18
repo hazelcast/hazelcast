@@ -22,15 +22,13 @@ import com.hazelcast.internal.eviction.EvictableStore;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Contract point for all record maps to be used for storage in near-cache.
+ * Contract point for all record maps to be used for storage in Near Cache.
  *
  * @param <K> type of the key
  * @param <V> type of the {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord} to be stored
- *
  * @see com.hazelcast.cache.impl.nearcache.NearCacheRecord
  * @see com.hazelcast.internal.eviction.EvictableStore
  */
 public interface NearCacheRecordMap<K, V extends NearCacheRecord>
         extends ConcurrentMap<K, V>, EvictableStore<K, V> {
-
 }

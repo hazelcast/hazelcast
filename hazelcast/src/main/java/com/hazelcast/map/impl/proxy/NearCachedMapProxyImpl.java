@@ -44,7 +44,7 @@ import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * A server-side {@code IMap} implementation which is fronted by a near-cache.
+ * A server-side {@code IMap} implementation which is fronted by a Near Cache.
  *
  * @param <K> the key type for this {@code IMap} proxy.
  * @param <V> the value type for this {@code IMap} proxy.
@@ -75,7 +75,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     // this operation returns the object in data format,
-    // except when it is retrieved from near-cache and near-cache memory format is object
+    // except when it is retrieved from Near Cache and Near Cache memory format is object
     @Override
     protected Object getInternal(Data key) {
         Object value = getCachedValue(key);

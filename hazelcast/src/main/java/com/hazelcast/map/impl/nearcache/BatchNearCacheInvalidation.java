@@ -55,7 +55,6 @@ public class BatchNearCacheInvalidation extends Invalidation {
         for (SingleNearCacheInvalidation singleNearCacheInvalidation : invalidations) {
             singleNearCacheInvalidation.writeData(out);
         }
-
     }
 
     @Override
@@ -74,5 +73,4 @@ public class BatchNearCacheInvalidation extends Invalidation {
             this.invalidations = invalidations;
         }
     }
-
 }

@@ -25,18 +25,19 @@ import com.hazelcast.monitor.NearCacheStats;
  *
  * @see KeyStateMarker
  */
-public final class StaleReadPreventerNearCacheWrapper implements NearCache {
+public final class StaleReadPreventerNearCacheWrapper<K, V> implements NearCache<K, V> {
 
-    private final NearCache nearCache;
+    private final NearCache<K, V> nearCache;
     private final KeyStateMarker keyStateMarker;
 
-    private StaleReadPreventerNearCacheWrapper(NearCache nearCache, int markerCount) {
+    private StaleReadPreventerNearCacheWrapper(NearCache<K, V> nearCache, int markerCount) {
         this.nearCache = nearCache;
         this.keyStateMarker = new KeyStateMarkerImpl(markerCount);
     }
 
-    public static NearCache wrapAsStaleReadPreventerNearCache(NearCache nearCache, int markerCount) {
-        return new StaleReadPreventerNearCacheWrapper(nearCache, markerCount);
+    public static <KEY, VALUE> NearCache<KEY, VALUE> wrapAsStaleReadPreventerNearCache(NearCache<KEY, VALUE> nearCache,
+                                                                                       int markerCount) {
+        return new StaleReadPreventerNearCacheWrapper<KEY, VALUE>(nearCache, markerCount);
     }
 
     @Override
@@ -45,17 +46,17 @@ public final class StaleReadPreventerNearCacheWrapper implements NearCache {
     }
 
     @Override
-    public Object get(Object key) {
+    public V get(K key) {
         return nearCache.get(key);
     }
 
     @Override
-    public void put(Object key, Object value) {
+    public void put(K key, V value) {
         nearCache.put(key, value);
     }
 
     @Override
-    public boolean remove(Object key) {
+    public boolean remove(K key) {
         keyStateMarker.tryRemove(key);
         return nearCache.remove(key);
     }

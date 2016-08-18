@@ -51,7 +51,7 @@ public enum CacheEventType {
     EVICTED(5),
 
     /**
-     * An event type indicating that the cache entry has invalidated for near cache invalidation.
+     * An event type indicating that the cache entry has invalidated for Near Cache invalidation.
      */
     INVALIDATED(6),
 

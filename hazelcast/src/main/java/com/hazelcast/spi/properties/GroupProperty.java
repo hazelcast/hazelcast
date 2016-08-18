@@ -443,19 +443,19 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.cache.invalidation.batchfrequency.seconds", 10, SECONDS);
 
     /**
-     * Defines near-cache invalidation event batch sending is enabled or not.
+     * Defines Near Cache invalidation event batch sending is enabled or not.
      */
     public static final HazelcastProperty MAP_INVALIDATION_MESSAGE_BATCH_ENABLED
             = new HazelcastProperty("hazelcast.map.invalidation.batch.enabled", true);
 
     /**
-     * Defines the maximum number of near-cache invalidation events to be drained and sent to the event near-caches in a batch.
+     * Defines the maximum number of Near Cache invalidation events to be drained and sent to the event Near Cache in a batch.
      */
     public static final HazelcastProperty MAP_INVALIDATION_MESSAGE_BATCH_SIZE
             = new HazelcastProperty("hazelcast.map.invalidation.batch.size", 100);
 
     /**
-     * Defines the near-cache invalidation event batch sending frequency in seconds.
+     * Defines the Near Cache invalidation event batch sending frequency in seconds.
      * <p/>
      * When the number of events do not come up to {@link #MAP_INVALIDATION_MESSAGE_BATCH_SIZE} in the given time period (which
      * is defined by this property); those events are gathered into a batch and sent to target.

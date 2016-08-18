@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.nearcache;
 
 /**
- * Used when invalidating client near-caches.
- * When a client near-cache invalidation listener receives this data, it clears its near-cache.
+ * Used when invalidating client Near Caches.
+ * When a client Near Cache invalidation listener receives this data, it clears its Near Cache.
  */
 public class CleaningNearCacheInvalidation extends Invalidation {
 

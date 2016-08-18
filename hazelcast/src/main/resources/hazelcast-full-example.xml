@@ -656,21 +656,21 @@ https://hazelcast.org/documentation/.
 		While you are implementing MapStore or MapLoader you can define specific properties to be configured.
 		It can be your store's URL, credentials, etc. Please see the example map configuration snippet below.
     * <near-cache>:
-	Configuration options when you want to use a near cache for your map.
+	Configuration options when you want to use a Near Cache for your map.
 	It has the following attributes:
-	- name: You can give a name for your near cache. It is optional and its default value is "default".
+	- name: You can give a name for your Near Cache. It is optional and its default value is "default".
 	
 	It has the following sub-elements:
     	- <max-size>:
-    		Maximum size of the near cache. When this is reached, near cache is evicted based on the policy defined.
+    		Maximum size of the Near Cache. When this is reached, Near Cache is evicted based on the policy defined.
 			Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
     	- <time-to-live-seconds>:
-    		Maximum number of seconds for each entry to stay in the near cache. Entries that are older than this 
-    		period are automatically evicted from the near cache. Any integer between 0 and Integer.MAX_VALUE. 
+    		Maximum number of seconds for each entry to stay in the Near Cache. Entries that are older than this 
+    		period are automatically evicted from the Near Cache. Any integer between 0 and Integer.MAX_VALUE. 
     		0 means infinite. Its default value is 0.
     	- <max-idle-seconds>:
-    		Maximum number of seconds each entry can stay in the near cache as untouched (not read). Entries that 
-    		are not read more than this period are removed from the near cache. Any integer between 0 and 
+    		Maximum number of seconds each entry can stay in the Near Cache as untouched (not read). Entries that 
+    		are not read more than this period are removed from the Near Cache. Any integer between 0 and 
     		Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
     	- <eviction-policy>:
     		Eviction policy configuration. Its default values is NONE. Available values are as follows:
@@ -683,26 +683,26 @@ https://hazelcast.org/documentation/.
     		Specifies whether the cached entries are evicted when the entries are updated or removed. Its default 
     		value is true.
     	- <in-memory-format>:
-		Specifies in which format data will be stored in your near cache. Note that a map's in-memory format
-		can be different from that of its near cache.
+		Specifies in which format data will be stored in your Near Cache. Note that a map's in-memory format
+		can be different from that of its Near Cache.
 		Available values are as follows:
 		- BINARY:
 			Data will be stored in serialized binary format. It is the default option.
 		- OBJECT:
 			Data will be stored in deserialized form.
 		- NATIVE:
-			Data will be stored in the near cache that uses Hazelcast's High-Density Memory Store feature. 
-			This option is available only in Hazelcast Enterprise HD. Note that a map and its near cache 
+			Data will be stored in the Near Cache that uses Hazelcast's High-Density Memory Store feature. 
+			This option is available only in Hazelcast Enterprise HD. Note that a map and its Near Cache 
 			can independently use High-Density Memory Store. For example, while your map does not use 
-			High-Density Memory Store, its near cache can use it.
+			High-Density Memory Store, its Near Cache can use it.
     	- <cache-local-entries>:
     		Specifies whether the local entries will be cached. It can be useful when in-memory format for 
-    		near cache is different from that of the map. By default, it is disabled.
+    		Near Cache is different from that of the map. By default, it is disabled.
     	- <eviction>:
-    		Configuration for the eviction when the in-memory format of the near cache is NATIVE. It has the 
+    		Configuration for the eviction when the in-memory format of the Near Cache is NATIVE. It has the 
     		following attributes:
-    		- size: Maximum size (entry count) of the near cache.
-    		- max-size-policy: Maximum size policy for eviction of the near cache. Available values are as follows:
+    		- size: Maximum size (entry count) of the Near Cache.
+    		- max-size-policy: Maximum size policy for eviction of the Near Cache. Available values are as follows:
     			* ENTRY_COUNT: Maximum entry count per member.
          		* USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes.
          		* USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory percentage.

@@ -34,7 +34,6 @@ public final class EvictionStrategyProvider {
     }
 
     private EvictionStrategyProvider() {
-
     }
 
     private static void init() {
@@ -45,10 +44,10 @@ public final class EvictionStrategyProvider {
      * Gets the {@link EvictionStrategy} implementation specified with <code>evictionStrategyType</code>.
      *
      * @param evictionConfig {@link EvictionConfiguration} for the requested {@link EvictionStrategy} implementation
-     *
      * @return the requested {@link EvictionStrategy} implementation
      */
-    public static EvictionStrategy getEvictionStrategy(EvictionConfiguration evictionConfig) {
+    public static <A, E extends Evictable, S extends EvictableStore<A, E>> EvictionStrategy<A, E, S> getEvictionStrategy(
+            EvictionConfiguration evictionConfig) {
         if (evictionConfig == null) {
             return null;
         }
@@ -56,6 +55,7 @@ public final class EvictionStrategyProvider {
         if (evictionStrategyType == null) {
             return null;
         }
+        //noinspection unchecked
         return EVICTION_STRATEGY_MAP.get(evictionStrategyType);
 
         // TODO "evictionStrategyFactory" can be handled here from a single point
@@ -71,5 +71,4 @@ public final class EvictionStrategyProvider {
     public static EvictionStrategy getDefaultEvictionStrategy() {
         return EVICTION_STRATEGY_MAP.get(EvictionStrategyType.DEFAULT_EVICTION_STRATEGY);
     }
-
 }

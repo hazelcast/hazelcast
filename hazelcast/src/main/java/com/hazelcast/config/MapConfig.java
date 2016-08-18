@@ -511,18 +511,18 @@ public class MapConfig {
     }
 
     /**
-     * Returns the near cache configuration
+     * Returns the Near Cache configuration
      *
-     * @return the near cache configuration
+     * @return the Near Cache configuration
      */
     public NearCacheConfig getNearCacheConfig() {
         return nearCacheConfig;
     }
 
     /**
-     * Sets the near cache configuration
+     * Sets the Near Cache configuration
      *
-     * @param nearCacheConfig the near cache configuration
+     * @param nearCacheConfig the Near Cache configuration
      * @return the updated map configuration
      */
     public MapConfig setNearCacheConfig(NearCacheConfig nearCacheConfig) {
@@ -731,9 +731,9 @@ public class MapConfig {
     }
 
     /**
-     * Checks if near cache is enabled
+     * Checks if Near Cache is enabled
      *
-     * @return true if near cache is enabled, false otherwise
+     * @return true if Near Cache is enabled, false otherwise
      */
     public boolean isNearCacheEnabled() {
         return nearCacheConfig != null;
