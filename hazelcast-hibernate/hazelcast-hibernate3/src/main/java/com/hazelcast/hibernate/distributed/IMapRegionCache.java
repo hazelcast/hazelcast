@@ -174,6 +174,6 @@ public class IMapRegionCache implements RegionCache {
     }
 
     private String nextMarkerId() {
-        return hazelcastInstance.getCluster().getLocalMember().getUuid() + markerIdCounter.getAndIncrement();
+        return hazelcastInstance.getLocalEndpoint().getUuid() + markerIdCounter.getAndIncrement();
     }
 }
