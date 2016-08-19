@@ -69,4 +69,11 @@ public class MapSource implements Source {
     public String getName() {
         return name;
     }
+
+    @Override
+    public String toString() {
+        return "MapSource{"
+                + "name='" + name + '\''
+                + '}';
+    }
 }

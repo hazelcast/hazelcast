@@ -183,4 +183,11 @@ public class Vertex implements Serializable {
     public int hashCode() {
         return this.name != null ? this.name.hashCode() : 0;
     }
+
+    @Override
+    public String toString() {
+        return "Vertex{"
+                + "name='" + name + '\''
+                + '}';
+    }
 }

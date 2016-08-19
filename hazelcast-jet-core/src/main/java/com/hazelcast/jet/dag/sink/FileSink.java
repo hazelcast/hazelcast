@@ -55,4 +55,11 @@ public class FileSink implements Sink {
     public String getName() {
         return filename;
     }
+
+    @Override
+    public String toString() {
+        return "FileSink{"
+                + "name='" + filename + '\''
+                + '}';
+    }
 }

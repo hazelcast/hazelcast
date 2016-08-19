@@ -49,4 +49,10 @@ public class MultiMapSink extends MapSink {
         return new MultiMapPartitionWriter(containerDescriptor, partitionId, getName());
     }
 
+    @Override
+    public String toString() {
+        return "MultiMapSink{"
+                + "name='" + getName() + '\''
+                + '}';
+    }
 }

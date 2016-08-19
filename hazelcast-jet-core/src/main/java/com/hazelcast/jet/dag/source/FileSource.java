@@ -65,4 +65,11 @@ public class FileSource implements Source {
     public String getName() {
         return name;
     }
+
+    @Override
+    public String toString() {
+        return "FileSource{"
+                + "name='" + name + '\''
+                + '}';
+    }
 }

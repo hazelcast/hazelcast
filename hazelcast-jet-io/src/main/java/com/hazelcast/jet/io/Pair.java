@@ -51,8 +51,8 @@ public class Pair<K, V> {
 
     public <T> T get(int index) {
         final Object result = index == 0 ? key
-                            : index == 1 ? value
-                            : error("Attempt to access component at index " + index);
+                : index == 1 ? value
+                : error("Attempt to access component at index " + index);
         return (T) result;
     }
 
@@ -86,5 +86,13 @@ public class Pair<K, V> {
 
     private static Object error(String msg) {
         throw new IllegalArgumentException(msg);
+    }
+
+    @Override
+    public String toString() {
+        return "Pair{"
+                + "key=" + key
+                + ", value=" + value
+                + '}';
     }
 }

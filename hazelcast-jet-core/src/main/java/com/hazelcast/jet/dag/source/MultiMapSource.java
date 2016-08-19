@@ -48,4 +48,11 @@ public class MultiMapSource extends MapSource {
     protected ObjectProducer getReader(ContainerDescriptor containerDescriptor, int partitionId) {
         return new MultiMapPartitionReader(containerDescriptor, getName(), partitionId);
     }
+
+    @Override
+    public String toString() {
+        return "MultiMapSource{"
+                + "name='" + getName() + '\''
+                + '}';
+    }
 }
