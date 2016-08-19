@@ -157,6 +157,9 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
 
         assertEquals("No event is expected at the start", 0, eventCount.get());
 
+        // let enough time for server side listener registration to be completed
+        sleepSeconds(1);
+
         produceEvent();
 
         assertTrueEventually(new AssertTask() {
@@ -181,6 +184,9 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         addListener(eventCount);
 
         restartCluster(instance);
+
+        // let enough time for server side listener registration to be completed
+        sleepSeconds(1);
 
         assertEquals("No event is expected at the start", 0, eventCount.get());
 
