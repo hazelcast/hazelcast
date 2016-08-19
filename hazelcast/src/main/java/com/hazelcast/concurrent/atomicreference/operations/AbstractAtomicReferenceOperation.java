@@ -27,7 +27,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-
 public abstract class AbstractAtomicReferenceOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
