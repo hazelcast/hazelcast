@@ -27,7 +27,6 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.instance.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
@@ -139,36 +138,7 @@ public class ClientConfig {
         return this;
     }
 
-    /**
-     * Gets a {@link HazelcastProperty} already set or from system properties if not exists.
-     *
-     * Deprecated since Hazelcast 3.7, use {@link #getProperty(String)} instead.
-     *
-     * @param property {@link HazelcastProperty} to get
-     * @return value of the property
-     * @deprecated since Hazelcast 3.7
-     */
-    @Deprecated
-    public String getProperty(HazelcastProperty property) {
-        return getProperty(property.getName());
-    }
-
-    /**
-     * Sets the value of a {@link HazelcastProperty}.
-     *
-     * Deprecated since Hazelcast 3.7, use {@link #setProperty(String, String)} instead.
-     *
-     * @param property {@link HazelcastProperty} to set
-     * @param value    value of the property
-     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-     * @deprecated since Hazelcast 3.7
-     */
-    @Deprecated
-    public ClientConfig setProperty(HazelcastProperty property, String value) {
-        return setProperty(property.getName(), value);
-    }
-
-    /**
+     /**
      * Gets {@link java.util.Properties} object
      *
      * @return {@link java.util.Properties} object
