@@ -2119,9 +2119,9 @@
             <xs:element name="aws" type="aws-client" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
-        <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="false"/>
+        <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="true"/>
         <xs:attribute name="redo-operation" use="optional" type="parameterized-boolean" default="false"/>
-        <xs:attribute name="connection-timeout" use="optional" type="parameterized-positive-integer" default="60000"/>
+        <xs:attribute name="connection-timeout" use="optional" type="parameterized-positive-integer" default="5000"/>
         <xs:attribute name="connection-attempt-period" use="optional" type="parameterized-positive-integer" default="3000"/>
         <xs:attribute name="connection-attempt-limit" use="optional" type="parameterized-non-negative-integer" default="2"/>
     </xs:complexType>
