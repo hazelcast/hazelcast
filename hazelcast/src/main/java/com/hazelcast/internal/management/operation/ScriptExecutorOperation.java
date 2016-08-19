@@ -49,10 +49,6 @@ public class ScriptExecutorOperation extends Operation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
         ScriptEngine engine = scriptEngineManager.getEngineByName(engineName);
@@ -71,15 +67,6 @@ public class ScriptExecutorOperation extends Operation {
         } catch (ScriptException e) {
             this.result = e.getMessage();
         }
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

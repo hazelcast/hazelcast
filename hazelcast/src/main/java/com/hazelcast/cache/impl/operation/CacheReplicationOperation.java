@@ -24,7 +24,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ import java.util.Map;
  * </p>
  * <p><b>Note:</b> This operation is a per partition operation.</p>
  */
-public class CacheReplicationOperation extends AbstractOperation {
+public class CacheReplicationOperation extends Operation {
 
     protected Map<String, Map<Data, CacheRecord>> data;
 

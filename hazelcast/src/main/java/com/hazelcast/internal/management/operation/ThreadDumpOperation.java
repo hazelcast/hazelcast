@@ -39,18 +39,9 @@ public class ThreadDumpOperation extends Operation {
         this.dumpDeadlocks = dumpDeadlocks;
     }
 
-    public void beforeRun() throws Exception {
-    }
-
+    @Override
     public void run() throws Exception {
         result = dumpDeadlocks ? ThreadDumpGenerator.dumpDeadlocks() : ThreadDumpGenerator.dumpAllThreads();
-    }
-
-    public void afterRun() throws Exception {
-    }
-
-    public boolean returnsResponse() {
-        return true;
     }
 
     public Object getResponse() {

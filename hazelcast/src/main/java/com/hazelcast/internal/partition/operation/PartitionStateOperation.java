@@ -25,11 +25,11 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public final class PartitionStateOperation extends AbstractOperation
+public final class PartitionStateOperation extends Operation
         implements MigrationCycleOperation, JoinOperation {
 
     private PartitionRuntimeState partitionState;

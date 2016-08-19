@@ -39,10 +39,6 @@ public class ReplicaSyncRetryResponse extends Operation
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         final InternalPartitionServiceImpl partitionService = getService();
         final int partitionId = getPartitionId();
@@ -71,17 +67,8 @@ public class ReplicaSyncRetryResponse extends Operation
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
     public boolean returnsResponse() {
         return false;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
     }
 
     @Override

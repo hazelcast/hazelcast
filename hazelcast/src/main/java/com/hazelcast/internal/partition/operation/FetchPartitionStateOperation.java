@@ -22,12 +22,12 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
-public final class FetchPartitionStateOperation extends AbstractOperation
+public final class FetchPartitionStateOperation extends Operation
         implements MigrationCycleOperation {
 
     private PartitionRuntimeState partitionState;

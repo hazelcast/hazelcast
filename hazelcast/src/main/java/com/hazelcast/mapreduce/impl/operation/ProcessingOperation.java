@@ -20,7 +20,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
@@ -29,7 +29,7 @@ import java.io.IOException;
  * the JobTracker and the unique jobId
  */
 public abstract class ProcessingOperation
-        extends AbstractOperation
+        extends Operation
         implements IdentifiedDataSerializable {
 
     private transient String name;

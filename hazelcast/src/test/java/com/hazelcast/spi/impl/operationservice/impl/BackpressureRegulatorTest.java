@@ -239,7 +239,6 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
             setPartitionId(-1);
         }
 
-
         @Override
         public void run() throws Exception {
         }

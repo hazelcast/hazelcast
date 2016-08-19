@@ -41,10 +41,6 @@ public class UpdateManagementCenterUrlOperation extends Operation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         ManagementCenterService service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         int count = 0;
@@ -57,20 +53,6 @@ public class UpdateManagementCenterUrlOperation extends Operation {
         if (service != null) {
             service.updateManagementCenterUrl(newUrl);
         }
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
     }
 
     @Override

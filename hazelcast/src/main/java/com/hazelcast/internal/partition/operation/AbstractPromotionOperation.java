@@ -22,11 +22,11 @@ import com.hazelcast.core.MigrationEvent.MigrationStatus;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -39,7 +39,7 @@ import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 
 // Runs locally when the node becomes owner of a partition
-abstract class AbstractPromotionOperation extends AbstractOperation
+abstract class AbstractPromotionOperation extends Operation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
     // this is the replica index of the partition owner before the promotion.

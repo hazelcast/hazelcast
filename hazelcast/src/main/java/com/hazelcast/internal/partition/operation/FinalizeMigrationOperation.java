@@ -23,8 +23,8 @@ import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 // runs locally...
-public final class FinalizeMigrationOperation extends AbstractOperation
+public final class FinalizeMigrationOperation extends Operation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
     private final MigrationInfo migrationInfo;
@@ -89,10 +89,10 @@ public final class FinalizeMigrationOperation extends AbstractOperation
     private PartitionMigrationEvent getPartitionMigrationEvent() {
         int partitionId = getPartitionId();
         return new PartitionMigrationEvent(endpoint, partitionId,
-                    endpoint == MigrationEndpoint.SOURCE
-                            ? migrationInfo.getSourceCurrentReplicaIndex() : migrationInfo.getDestinationCurrentReplicaIndex(),
-                    endpoint == MigrationEndpoint.SOURCE
-                            ? migrationInfo.getSourceNewReplicaIndex() : migrationInfo.getDestinationNewReplicaIndex());
+                endpoint == MigrationEndpoint.SOURCE
+                        ? migrationInfo.getSourceCurrentReplicaIndex() : migrationInfo.getDestinationCurrentReplicaIndex(),
+                endpoint == MigrationEndpoint.SOURCE
+                        ? migrationInfo.getSourceNewReplicaIndex() : migrationInfo.getDestinationNewReplicaIndex());
     }
 
     private void commitSource() {

@@ -24,8 +24,8 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import java.util.Map;
  * Replication operation for the Queue.
  */
 
-public class QueueReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public class QueueReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
     private Map<String, QueueContainer> migrationData;
 

@@ -21,12 +21,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class ContainsValueOperation extends AbstractOperation {
+public class ContainsValueOperation extends Operation {
 
     private String name;
     private Data value;
@@ -51,11 +51,6 @@ public class ContainsValueOperation extends AbstractOperation {
                 break;
             }
         }
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

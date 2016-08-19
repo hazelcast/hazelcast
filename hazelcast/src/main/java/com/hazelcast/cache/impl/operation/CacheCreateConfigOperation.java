@@ -149,7 +149,6 @@ public class CacheCreateConfigOperation
         return returnsResponse;
     }
 
-
     @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {

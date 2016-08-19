@@ -65,7 +65,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
     public void setup() {
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(new ServiceConfig()
-            .setImplementation(service).setName(ValueHolderService.NAME).setEnabled(true));
+                .setImplementation(service).setName(ValueHolderService.NAME).setEnabled(true));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -103,8 +103,9 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
     }
 
     private void runBackup(NodeEngine nodeEngine, int value, long[] replicaVersions, Address sender)
-            throws InterruptedException {Backup
-            backup = new Backup(new SampleBackupOperation(value), sender, replicaVersions, false);
+            throws InterruptedException {
+        Backup
+                backup = new Backup(new SampleBackupOperation(value), sender, replicaVersions, false);
         backup.setPartitionId(partitionId).setReplicaIndex(1).setNodeEngine(nodeEngine);
         nodeEngine.getOperationService().execute(backup);
 
@@ -114,7 +115,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
     }
 
     private void assertBackupReplicaVersions(final Node node, final int partitionId,
-            final long[] expectedReplicaVersions) {
+                                             final long[] expectedReplicaVersions) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -126,7 +127,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
 
     private void setValue(NodeEngine nodeEngine, int partitionId, int value) {
         InternalCompletableFuture<Object> future = nodeEngine.getOperationService()
-            .invokeOnPartition(new SampleBackupAwareOperation(value).setPartitionId(partitionId));
+                .invokeOnPartition(new SampleBackupAwareOperation(value).setPartitionId(partitionId));
         future.join();
     }
 
@@ -228,7 +229,9 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
 
         final CountDownLatch latch;
 
-        private LatchOperation(int count) {latch = new CountDownLatch(count);}
+        private LatchOperation(int count) {
+            latch = new CountDownLatch(count);
+        }
 
         @Override
         public void run() throws Exception {

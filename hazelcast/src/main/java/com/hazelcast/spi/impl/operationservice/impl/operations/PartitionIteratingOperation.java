@@ -170,10 +170,6 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
     public Object getResponse() {
         return new PartitionResponse(partitions, results);
     }

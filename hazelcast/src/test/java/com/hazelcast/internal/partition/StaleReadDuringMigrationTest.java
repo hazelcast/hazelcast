@@ -75,11 +75,6 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return true;
-        }
-
-        @Override
         public Object getResponse() {
             return true;
         }

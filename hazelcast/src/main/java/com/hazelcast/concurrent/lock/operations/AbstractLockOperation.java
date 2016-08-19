@@ -23,13 +23,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public abstract class AbstractLockOperation extends AbstractOperation
+public abstract class AbstractLockOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     public static final int ANY_THREAD = 0;

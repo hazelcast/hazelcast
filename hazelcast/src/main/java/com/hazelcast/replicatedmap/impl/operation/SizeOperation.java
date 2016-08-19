@@ -21,16 +21,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class SizeOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public class SizeOperation extends Operation implements IdentifiedDataSerializable {
 
     private String name;
     private transient int response;
-
 
     public SizeOperation() {
     }
@@ -48,11 +47,6 @@ public class SizeOperation extends AbstractOperation implements IdentifiedDataSe
             size += store.size();
         }
         response = size;
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

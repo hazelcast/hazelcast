@@ -34,11 +34,6 @@ public class PutTransientOperation extends BasePutOperation {
     }
 
     @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
     public void onWaitExpire() {
         sendResponse(null);
     }

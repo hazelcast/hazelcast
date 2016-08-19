@@ -19,10 +19,10 @@ package com.hazelcast.spi.impl.proxyservice.impl.operations;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class PostJoinProxyOperation extends AbstractOperation {
+public class PostJoinProxyOperation extends Operation {
 
     private Collection<ProxyInfo> proxies;
 

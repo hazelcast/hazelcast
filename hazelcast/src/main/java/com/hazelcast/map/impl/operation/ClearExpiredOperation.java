@@ -23,8 +23,8 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Clear expired records.
  */
-public class ClearExpiredOperation extends AbstractOperation implements PartitionAwareOperation, MutatingOperation {
+public class ClearExpiredOperation extends Operation implements PartitionAwareOperation, MutatingOperation {
 
     private int expirationPercentage;
 

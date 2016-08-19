@@ -171,11 +171,6 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object getResponse() {
-            return null;
-        }
-
-        @Override
         public boolean shouldBackup() {
             return i == 3;
         }

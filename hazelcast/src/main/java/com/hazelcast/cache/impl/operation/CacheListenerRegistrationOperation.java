@@ -61,11 +61,6 @@ public class CacheListenerRegistrationOperation
     }
 
     @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);

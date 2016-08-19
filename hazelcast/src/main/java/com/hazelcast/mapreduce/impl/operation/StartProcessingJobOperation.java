@@ -27,7 +27,7 @@ import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ import java.util.concurrent.CancellationException;
  * @param <K> type of the key
  */
 public class StartProcessingJobOperation<K>
-        extends AbstractOperation
+        extends Operation
         implements IdentifiedDataSerializable {
 
     private String name;

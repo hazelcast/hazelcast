@@ -24,7 +24,7 @@ import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.InternalReplicatedMapStorage;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Carries set of replicated map records for a partition from one node to another
  */
-public class SyncReplicatedMapDataOperation<K, V> extends AbstractOperation {
+public class SyncReplicatedMapDataOperation<K, V> extends Operation {
 
 
     private String name;

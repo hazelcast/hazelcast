@@ -17,12 +17,12 @@
 package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.F_ID;
 import static com.hazelcast.transaction.impl.TransactionManagerServiceImpl.SERVICE_NAME;
 
-public abstract class AbstractTxOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public abstract class AbstractTxOperation extends Operation implements IdentifiedDataSerializable {
 
     @Override
     public String getServiceName() {

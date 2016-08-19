@@ -20,13 +20,13 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PostJoinCacheOperation extends AbstractOperation {
+public class PostJoinCacheOperation extends Operation {
 
     private List<CacheConfig> configs = new ArrayList<CacheConfig>();
 

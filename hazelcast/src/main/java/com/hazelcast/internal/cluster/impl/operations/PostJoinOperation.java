@@ -19,7 +19,6 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
@@ -33,7 +32,7 @@ import java.util.logging.Level;
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation, JoinOperation {
+public class PostJoinOperation extends Operation implements UrgentSystemOperation, JoinOperation {
 
     private Operation[] operations;
 
