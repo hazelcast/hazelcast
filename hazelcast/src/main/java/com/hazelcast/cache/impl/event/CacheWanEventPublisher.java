@@ -44,7 +44,7 @@ public interface CacheWanEventPublisher {
      * and place it to wan replication queues.
      *
      * Cache operations which removes data from cache should call this method in their
-     * {@link com.hazelcast.spi.Operation#afterRun()} method.
+     * {@link Operation#afterRun()} method.
      *
      * @see com.hazelcast.cache.impl.operation.CacheRemoveOperation
      */
