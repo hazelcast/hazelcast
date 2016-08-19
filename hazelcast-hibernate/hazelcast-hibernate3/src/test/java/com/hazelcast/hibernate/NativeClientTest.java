@@ -3,6 +3,7 @@ package com.hazelcast.hibernate;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -22,7 +23,7 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(QuickTest.class)
 public class NativeClientTest
         extends HibernateSlowTestSupport {
 
@@ -52,13 +53,21 @@ public class NativeClientTest
         session.close();
 
         session = clientSf.openSession();
-        DummyEntity retrieved = (DummyEntity) session.get(DummyEntity.class, (long)1);
+        DummyEntity retrieved = (DummyEntity) session.get(DummyEntity.class, (long) 1);
         assertEquals("dummy:1", retrieved.getName());
+
+        session.close();
+        session = clientSf.openSession();
+        retrieved.setName("dummy:update");
+        tx = session.beginTransaction();
+        session.update(retrieved);
+        tx.commit();
+        session.close();
     }
 
     @After
     public void tearDown() {
-        if(clientSf !=null) {
+        if (clientSf != null) {
             clientSf.close();
         }
     }
