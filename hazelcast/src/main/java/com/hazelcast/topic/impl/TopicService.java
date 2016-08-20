@@ -22,9 +22,10 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -64,17 +65,17 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
                 }
             };
     private EventService eventService;
-    private ILogger logger;
     private final AtomicInteger counter = new AtomicInteger(0);
+    private Address localAddress;
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
+        this.localAddress = nodeEngine.getThisAddress();
         for (int i = 0; i < orderingLocks.length; i++) {
             orderingLocks[i] = new ReentrantLock();
         }
         eventService = nodeEngine.getEventService();
-        this.logger = nodeEngine.getLogger(TopicService.class);
     }
 
     //only for testing
@@ -146,10 +147,14 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         getLocalTopicStats(topicName).incrementReceives();
     }
 
-    public void publishEvent(String name, TopicEvent event, boolean multithreaded) {
-        Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
-        int partitionId = multithreaded ? counter.incrementAndGet() : name.hashCode();
-        eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, partitionId);
+    public void publishMessage(String topicName, Object payload, boolean multithreaded) {
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, topicName);
+        if (!registrations.isEmpty()) {
+            Data payloadData = nodeEngine.toData(payload);
+            TopicEvent topicEvent = new TopicEvent(topicName, payloadData, localAddress);
+            int partitionId = multithreaded ? counter.incrementAndGet() : topicName.hashCode();
+            eventService.publishEvent(SERVICE_NAME, registrations, topicEvent, partitionId);
+        }
     }
 
     public String addMessageListener(String name, MessageListener listener, boolean localOnly) {

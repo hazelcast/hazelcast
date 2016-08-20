@@ -680,4 +680,39 @@ public class TopicTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void givenTopicHasNoSubscriber_whenMessageIsPublished_thenNoSerialializationIsInvoked() {
+        final int nodeCount = 2;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance[] instances = factory.newInstances();
+        ITopic<SerializationCounting> topic = instances[0].getTopic(randomString());
+
+        SerializationCounting message = new SerializationCounting();
+        topic.publish(message);
+
+        assertNoSerializationInvoked(message);
+    }
+
+    private void assertNoSerializationInvoked(SerializationCounting localMessage) {
+        assertEquals(0, localMessage.getSerializationCount());
+    }
+
+    public static class SerializationCounting implements DataSerializable {
+        private AtomicInteger counter = new AtomicInteger();
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            counter.incrementAndGet();
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+
+        }
+
+        public int getSerializationCount() {
+            return counter.get();
+        }
+    }
+
 }

@@ -19,12 +19,10 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
@@ -36,7 +34,6 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     private final ClassLoader configClassLoader;
     private final TopicService topicService;
     private final LocalTopicStatsImpl topicStats;
-    private final Member localMember;
     private boolean multithreaded;
 
     public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
@@ -45,7 +42,6 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
         this.configClassLoader = nodeEngine.getConfigClassLoader();
         this.topicService = service;
         this.topicStats = topicService.getLocalTopicStats(name);
-        this.localMember = nodeEngine.getLocalMember();
     }
 
     @Override
@@ -90,10 +86,9 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
         return topicService.getLocalTopicStats(name);
     }
 
-    public void publishInternal(Data message) {
-        TopicEvent topicEvent = new TopicEvent(name, message, localMember.getAddress());
+    public void publishInternal(Object message) {
         topicStats.incrementPublishes();
-        topicService.publishEvent(name, topicEvent, multithreaded);
+        topicService.publishMessage(name, message, multithreaded);
     }
 
     public String addMessageListenerInternal(MessageListener listener) {
