@@ -19,7 +19,6 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
@@ -30,8 +29,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     @Override
     public void publish(E message) {
-        Data messageData = getNodeEngine().toData(message);
-        publishInternal(messageData);
+        publishInternal(message);
     }
 
     @Override
