@@ -43,6 +43,7 @@ public final class ChunkIterator implements Iterator<Chunk> {
         }
         deploymentConfig = configIterator.next();
         inputStream = deploymentConfig.getUrl().openStream();
+        sequenceGenerator.set(0);
     }
 
     @Override
