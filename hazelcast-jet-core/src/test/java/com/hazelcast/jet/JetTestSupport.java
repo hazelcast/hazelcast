@@ -20,25 +20,23 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.processor.ContainerProcessor;
-import com.hazelcast.jet.processor.ProcessorDescriptor;
+import com.hazelcast.jet.job.Job;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import org.apache.log4j.Level;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.log4j.Level;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 public class JetTestSupport extends HazelcastTestSupport {
 
     protected static TestHazelcastFactory hazelcastInstanceFactory;
-    protected static final int TASK_COUNT = 1;
+    protected static final int PARALLELISM = 1;
 
     @BeforeClass
     public static void setUpFactory() {
@@ -82,19 +80,12 @@ public class JetTestSupport extends HazelcastTestSupport {
         return instance.getList(randomName());
     }
 
-    public static Vertex createVertex(String name, Class<? extends ContainerProcessor> processorClass,
-                                      int taskCount) {
-        return new Vertex(
-                name,
-                ProcessorDescriptor.
-                        builder(processorClass).
-                        withTaskCount(taskCount).
-                        build()
-        );
+    public static Vertex createVertex(String name, Class<? extends Processor> processorClass, int parallelism) {
+        return new Vertex(name, processorClass).parallelism(parallelism);
     }
 
-    public static Vertex createVertex(String name, Class<? extends ContainerProcessor> processorClass) {
-        return createVertex(name, processorClass, TASK_COUNT);
+    public static Vertex createVertex(String name, Class<? extends Processor> processorClass) {
+        return createVertex(name, processorClass, PARALLELISM);
     }
 
     public static void execute(Job job) throws ExecutionException, InterruptedException {

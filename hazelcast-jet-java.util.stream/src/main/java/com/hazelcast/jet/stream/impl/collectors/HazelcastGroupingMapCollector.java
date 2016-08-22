@@ -22,13 +22,11 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.MapSink;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.GroupingCombinerProcessor;
-
 import java.util.function.Function;
 import java.util.stream.Collector;
 
@@ -69,8 +67,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
         if (previous != merger) {
             edgeBuilder(previous, merger)
                     .addToDAG(dag)
-                    .processingStrategy(ProcessingStrategy.PARTITIONING)
-                    .build();
+                    .partitioned();
         }
 
         Vertex combiner = vertexBuilder(GroupingCombinerProcessor.class)
@@ -80,9 +77,8 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
         edgeBuilder(merger, combiner)
                 .addToDAG(dag)
-                .shuffling(true)
-                .processingStrategy(ProcessingStrategy.PARTITIONING)
-                .build();
+                .shuffled()
+                .partitioned();
 
         combiner.addSink(new MapSink(mapName));
         executeJob(context, dag);

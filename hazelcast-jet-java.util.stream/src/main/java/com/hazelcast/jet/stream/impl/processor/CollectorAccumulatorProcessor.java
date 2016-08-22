@@ -42,7 +42,7 @@ public class CollectorAccumulatorProcessor<IN, OUT> extends AbstractStreamProces
     }
 
     @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
+    public void before(ProcessorContext processorContext) {
         result = supplier.get();
     }
 

@@ -21,7 +21,7 @@ import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
 public class ActorTaskProcessor extends ProducerTaskProcessor {
     protected boolean consumed;
@@ -29,7 +29,7 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
     private final TaskProcessor consumerProcessor;
 
     public ActorTaskProcessor(ObjectProducer[] producers,
-                              ContainerProcessor processor,
+                              Processor processor,
                               ContainerContext containerContext,
                               ProcessorContext processorContext,
                               TaskProcessor consumerProcessor,

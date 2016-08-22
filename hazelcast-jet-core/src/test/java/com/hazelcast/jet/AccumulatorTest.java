@@ -27,7 +27,7 @@ import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.counters.LongCounter;
 import com.hazelcast.jet.job.Job;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.IOException;
@@ -73,12 +73,12 @@ public class AccumulatorTest extends JetTestSupport {
         }
     }
 
-    public static class AccumulatorProcessor implements ContainerProcessor {
+    public static class AccumulatorProcessor implements Processor {
 
         public static final String ACCUMULATOR_KEY = "counter";
 
         @Override
-        public void beforeProcessing(ProcessorContext processorContext) {
+        public void before(ProcessorContext processorContext) {
             processorContext.setAccumulator(ACCUMULATOR_KEY, new LongCounter());
         }
 

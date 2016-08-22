@@ -67,9 +67,7 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         edgeBuilder(first, second)
                 .addToDAG(dag)
-                .shuffling(true)
-                .shufflingStrategy(new IListBasedShufflingStrategy(randomName()))
-                .build();
+                .shuffled(new IListBasedShufflingStrategy(randomName()));
 
         return second;
     }

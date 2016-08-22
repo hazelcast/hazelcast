@@ -20,11 +20,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.MapSink;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
-
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
@@ -65,8 +63,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
 
         edgeBuilder(previous, merger)
                 .addToDAG(dag)
-                .processingStrategy(ProcessingStrategy.PARTITIONING)
-                .build();
+                .partitioned();
 
         Vertex combiner = vertexBuilder(MergeProcessor.class)
                 .name("merger")
@@ -76,9 +73,8 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
 
         edgeBuilder(merger, combiner)
                 .addToDAG(dag)
-                .shuffling(true)
-                .processingStrategy(ProcessingStrategy.PARTITIONING)
-                .build();
+                .shuffled()
+                .partitioned();
 
         combiner.addSink(new MapSink(mapName));
         executeJob(context, dag);

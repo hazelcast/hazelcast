@@ -8,7 +8,6 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.job.Job;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -33,17 +32,17 @@ public class ProcessingStrategyTest extends JetTestSupport {
 
     @Test
     public void testRoundRobin() throws Exception {
-        int count = getCountWithStrategy(ProcessingStrategy.ROUND_ROBIN);
+        int count = getCountWithStrategy(false);
         assertEquals(count, COUNT);
     }
 
     @Test
     public void testBroadcast() throws Exception {
-        int count = getCountWithStrategy(ProcessingStrategy.BROADCAST);
-        assertEquals(count, COUNT * TASK_COUNT);
+        int count = getCountWithStrategy(true);
+        assertEquals(count, COUNT * PARALLELISM);
     }
 
-    private int getCountWithStrategy(ProcessingStrategy processingStrategy) throws Exception {
+    private int getCountWithStrategy(boolean broadcast) throws Exception {
         IList<Integer> source = getList(instance);
         IList<Integer> sink = getList(instance);
         fillListWithInts(source, COUNT);
@@ -58,11 +57,13 @@ public class ProcessingStrategyTest extends JetTestSupport {
         producer.addSource(new ListSource(source));
         consumer.addSink(new ListSink(sink));
 
-        dag.addEdge(new Edge.EdgeBuilder("edge", producer, consumer).
-                processingStrategy(processingStrategy)
-                .build());
+        Edge edge = new Edge("edge", producer, consumer);
+        if (broadcast) {
+            edge.broadcast();
+        }
+        dag.addEdge(edge);
 
-        Job job = JetEngine.getJob(instance, processingStrategy.toString(), dag);
+        Job job = JetEngine.getJob(instance, edge.getProcessingStrategy().toString(), dag);
         execute(job);
 
         return sink.size();

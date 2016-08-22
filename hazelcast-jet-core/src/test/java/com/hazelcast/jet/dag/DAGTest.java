@@ -20,27 +20,23 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.dag.sink.FileSink;
 import com.hazelcast.jet.dag.source.FileSource;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-
 import static com.hazelcast.jet.JetTestSupport.createVertex;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
@@ -61,14 +57,14 @@ public class DAGTest {
         DAG dag = new DAG();
         Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
         dag.addVertex(v1);
-        assertTrue("DAG should contain the added vertex", dag.containsVertex(v1));
+        assertTrue("DAG should contain the added vertex", dag.getVertex(v1.getName()) != null);
     }
 
     @Test
     public void test_empty_dag_should_not_contain_vertex() throws Exception {
         DAG dag = new DAG();
         Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
-        assertFalse("DAG should not contain any vertex", dag.containsVertex(v1));
+        assertTrue("DAG should not contain any vertex", dag.getVertex(v1.getName()) == null);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -251,20 +247,13 @@ public class DAGTest {
         Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
         Vertex v3 = createVertex("v3", TestProcessors.Noop.class);
 
-        Edge e1 = new Edge.EdgeBuilder("e1", v1, v2)
-                .dataTransferringStrategy(ByReferenceDataTransferringStrategy.INSTANCE)
-                .hashingStrategy(DefaultHashingStrategy.INSTANCE)
-                .partitioningStrategy(StringAndPartitionAwarePartitioningStrategy.INSTANCE)
-                .processingStrategy(ProcessingStrategy.BROADCAST)
-                .shufflingStrategy(new IListBasedShufflingStrategy("e1"))
-                .build();
-        Edge e2 = new Edge.EdgeBuilder("e2", v2, v3)
-                .dataTransferringStrategy(ByReferenceDataTransferringStrategy.INSTANCE)
-                .hashingStrategy(DefaultHashingStrategy.INSTANCE)
-                .partitioningStrategy(StringPartitioningStrategy.INSTANCE)
-                .processingStrategy(ProcessingStrategy.PARTITIONING)
-                .shufflingStrategy(new IListBasedShufflingStrategy("e2"))
-                .build();
+        Edge e1 = new Edge("e1", v1, v2)
+                .partitioned(StringAndPartitionAwarePartitioningStrategy.INSTANCE, DefaultHashingStrategy.INSTANCE)
+                .shuffled(new IListBasedShufflingStrategy("e1"))
+                .broadcast();
+        Edge e2 = new Edge("e2", v2, v3)
+                .partitioned(StringPartitioningStrategy.INSTANCE, DefaultHashingStrategy.INSTANCE)
+                .shuffled(new IListBasedShufflingStrategy("e2"));
 
         dag.addVertex(v1);
         dag.addVertex(v2);
@@ -282,8 +271,6 @@ public class DAGTest {
         assertEquals(v1, deSerializedDag.getVertex("v1"));
         assertEquals(v2, deSerializedDag.getVertex("v2"));
         assertEquals(v3, deSerializedDag.getVertex("v3"));
-        assertTrue(deSerializedDag.containsEdge(e1));
-        assertTrue(deSerializedDag.containsEdge(e2));
 
     }
 

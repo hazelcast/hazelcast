@@ -38,7 +38,7 @@ import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachine;
 import com.hazelcast.jet.impl.statemachine.container.processors.ContainerPayloadFactory;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalizedRequest;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -65,7 +65,7 @@ public class ProcessingContainer extends
 
     private final Map<Integer, ContainerTask> containerTasksCache = new ConcurrentHashMap<>();
 
-    private final int tasksCount;
+    private final int parallelism;
 
     private final int awaitSecondsTimeOut;
 
@@ -81,12 +81,12 @@ public class ProcessingContainer extends
 
     private final EventProcessorFactory eventProcessorFactory;
 
-    private final Supplier<ContainerProcessor> containerProcessorFactory;
+    private final Supplier<Processor> containerProcessorFactory;
 
     private final AtomicInteger taskIdGenerator = new AtomicInteger(0);
 
     public ProcessingContainer(
-            Vertex vertex, Supplier<ContainerProcessor> containerProcessorFactory, NodeEngine nodeEngine,
+            Vertex vertex, Supplier<Processor> containerProcessorFactory, NodeEngine nodeEngine,
             JobContext jobContext
     ) {
         super(vertex, STATE_MACHINE_FACTORY, nodeEngine, jobContext);
@@ -95,13 +95,13 @@ public class ProcessingContainer extends
         this.outputChannels = new ArrayList<>();
         this.taskProcessorFactory = isShuffled(vertex, nodeEngine) ? new ShuffledTaskProcessorFactory()
                 : new DefaultTaskProcessorFactory();
-        this.tasksCount = vertex.getDescriptor().getTaskCount();
+        this.parallelism = vertex.getParallelism();
         this.sourcesProducers = new ArrayList<>();
         this.containerProcessorFactory = containerProcessorFactory;
-        this.containerTasks = new ContainerTask[this.tasksCount];
+        this.containerTasks = new ContainerTask[this.parallelism];
         this.awaitSecondsTimeOut = getJobContext().getJobConfig().getSecondsToAwait();
         AtomicInteger readyForFinalizationTasksCounter = new AtomicInteger(0);
-        readyForFinalizationTasksCounter.set(this.tasksCount);
+        readyForFinalizationTasksCounter.set(this.parallelism);
         AtomicInteger completedTasks = new AtomicInteger(0);
         AtomicInteger interruptedTasks = new AtomicInteger(0);
         this.eventProcessorFactory = new DefaultEventProcessorFactory(completedTasks, interruptedTasks,
@@ -113,10 +113,10 @@ public class ProcessingContainer extends
 
     private void buildTasks() {
         ContainerTask[] containerTasks = getContainerTasks();
-        for (int taskIndex = 0; taskIndex < this.tasksCount; taskIndex++) {
+        for (int taskIndex = 0; taskIndex < this.parallelism; taskIndex++) {
             int taskID = taskIdGenerator.incrementAndGet();
             containerTasks[taskIndex] = new DefaultContainerTask(this, getVertex(), taskProcessorFactory,
-                    taskID, new DefaultTaskContext(tasksCount, taskIndex, getJobContext()));
+                    taskID, new DefaultTaskContext(parallelism, taskIndex, getJobContext()));
             getJobContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
             containerTasks[taskIndex].setThreadContextClassLoaders(getJobContext().getDeploymentStorage().getClassLoader());
             containerTasksCache.put(taskID, containerTasks[taskIndex]);
@@ -147,7 +147,7 @@ public class ProcessingContainer extends
     /**
      * @return - user-level container processing factory;
      */
-    public final Supplier<ContainerProcessor> getContainerProcessorFactory() {
+    public final Supplier<Processor> getContainerProcessorFactory() {
         return containerProcessorFactory;
     }
 

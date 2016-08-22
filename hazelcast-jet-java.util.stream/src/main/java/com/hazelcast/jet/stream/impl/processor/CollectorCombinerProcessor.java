@@ -38,7 +38,7 @@ public class CollectorCombinerProcessor<T> extends AbstractStreamProcessor<T, T>
     }
 
     @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
+    public void before(ProcessorContext processorContext) {
         result = null;
     }
 

@@ -38,8 +38,8 @@ public class AnyMatchProcessor<T> extends AbstractStreamProcessor<T, Boolean> {
     }
 
     @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
-        super.beforeProcessing(processorContext);
+    public void before(ProcessorContext processorContext) {
+        super.before(processorContext);
         match = false;
     }
 

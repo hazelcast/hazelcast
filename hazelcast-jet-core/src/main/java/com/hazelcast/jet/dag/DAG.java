@@ -22,7 +22,6 @@ import com.hazelcast.jet.impl.dag.TopologicalOrderIterator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,9 +34,9 @@ import java.util.Set;
 import java.util.Stack;
 
 /**
- * <p>Direct acyclic graph representation
+ * Direct acyclic graph representation
  *
- * <p>DAG describes topology of calculation flow
+ * DAG describes topology of calculation flow
  *
  * <pre>
  *
@@ -45,7 +44,7 @@ import java.util.Stack;
  *                            -&gt; Vertex4
  * </pre>
  *
- * <p>Data will be passed from vertex to vertex
+ * Data will be passed from vertex to vertex
  */
 public class DAG implements DataSerializable {
     private String name;
@@ -76,12 +75,11 @@ public class DAG implements DataSerializable {
      * @return the DAG
      */
     public DAG addVertex(Vertex vertex) {
-        if (this.vertices.containsKey(vertex.getName())) {
-            throw new IllegalArgumentException(
-                    "Vertex " + vertex.getName() + " already defined!");
+        if (vertices.containsKey(vertex.getName())) {
+            throw new IllegalArgumentException("Vertex " + vertex.getName() + " already defined!");
         }
 
-        this.vertices.put(vertex.getName(), vertex);
+        vertices.put(vertex.getName(), vertex);
         return this;
     }
 
@@ -110,26 +108,10 @@ public class DAG implements DataSerializable {
     }
 
     /**
-     * @param vertex some vertex
-     * @return true if DAG contains vertex, false otherwise
-     */
-    public boolean containsVertex(Vertex vertex) {
-        return vertices.containsKey(vertex.getName());
-    }
-
-    /**
-     * @param edge some edge
-     * @return true if DAG contains edge, false otherwise
-     */
-    public boolean containsEdge(Edge edge) {
-        return edges.contains(edge);
-    }
-
-    /**
      * @return iterator over DAG's vertices on accordance with DAG's topology
      */
     public Iterator<Vertex> getTopologicalVertexIterator() {
-        if (!this.validated) {
+        if (!validated) {
             throw new IllegalStateException("Graph should be validated before");
         }
 
@@ -142,12 +124,12 @@ public class DAG implements DataSerializable {
      * @return iterator over DAG's vertices on accordance with DAG's reverted topology
      */
     public Iterator<Vertex> getRevertedTopologicalVertexIterator() {
-        if (!this.validated) {
+        if (!validated) {
             throw new IllegalStateException("Graph should be validated before");
         }
 
         Stack<Vertex> stack = new Stack<Vertex>();
-        stack.addAll(this.topologicalVertexStack);
+        stack.addAll(topologicalVertexStack);
 
         Stack<Vertex> reversedStack = new Stack<Vertex>();
         while (!stack.empty()) {
@@ -158,9 +140,9 @@ public class DAG implements DataSerializable {
     }
 
     /**
-     * <p>Validate DAG's consistency
+     * Validate DAG's consistency
      *
-     * <p>It checks:
+     * It checks:
      *
      * <pre>
      *        duplicate of vertices names
@@ -171,7 +153,7 @@ public class DAG implements DataSerializable {
      * @throws IllegalStateException if DAG validation fails
      */
     public void validate() throws IllegalStateException {
-        if (this.vertices.isEmpty()) {
+        if (vertices.isEmpty()) {
             throw new IllegalStateException("Invalid dag containing 0 vertices");
         }
 
@@ -181,10 +163,9 @@ public class DAG implements DataSerializable {
         Map<Vertex, Set<String>> inboundVertexMap = new HashMap<Vertex, Set<String>>();
         Map<Vertex, Set<String>> outboundVertexMap = new HashMap<Vertex, Set<String>>();
 
-        for (Map.Entry<String, Vertex> v : this.vertices.entrySet()) {
+        for (Map.Entry<String, Vertex> v : vertices.entrySet()) {
             if (vertexMap.containsKey(v.getKey())) {
-                throw new IllegalStateException("DAG contains multiple vertices"
-                        + " with name: " + v.getKey());
+                throw new IllegalStateException("DAG contains multiple vertices" + " with name: " + v.getKey());
             }
 
             vertexMap.put(v.getKey(), new AnnotatedVertex(v.getValue()));
@@ -230,7 +211,7 @@ public class DAG implements DataSerializable {
     }
 
     private void checkVertices(Map<String, AnnotatedVertex> vertexMap) {
-        for (Vertex vertex : this.vertices.values()) {
+        for (Vertex vertex : vertices.values()) {
             for (Source source : vertex.getSources()) {
                 if (vertexMap.containsKey(source.getName())) {
                     throw new IllegalStateException("Vertex: "
@@ -255,7 +236,7 @@ public class DAG implements DataSerializable {
     private void checkEdges(Map<Vertex, Set<String>> inboundVertexMap,
                             Map<Vertex, Set<String>> outboundVertexMap,
                             Map<Vertex, List<Edge>> edgeMap) {
-        for (Edge e : this.edges) {
+        for (Edge e : edges) {
             // Construct structure for cycle detection
             Vertex inputVertex = e.getInputVertex();
             Vertex outputVertex = e.getOutputVertex();

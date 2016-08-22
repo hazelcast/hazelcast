@@ -27,13 +27,13 @@ import com.hazelcast.jet.impl.container.task.processors.ActorTaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.ConsumerTaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.ProducerTaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.SimpleTaskProcessor;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     @Override
-    public TaskProcessor simpleTaskProcessor(ContainerProcessor processor,
+    public TaskProcessor simpleTaskProcessor(Processor processor,
                                              ContainerContext containerContext,
                                              ProcessorContext processorContext,
                                              Vertex vertex,
@@ -43,7 +43,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
 
     @Override
     public TaskProcessor consumerTaskProcessor(ObjectConsumer[] consumers,
-                                               ContainerProcessor processor,
+                                               Processor processor,
                                                ContainerContext containerContext,
                                                ProcessorContext processorContext,
                                                Vertex vertex,
@@ -53,7 +53,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
 
     @Override
     public TaskProcessor producerTaskProcessor(ObjectProducer[] producers,
-                                               ContainerProcessor processor,
+                                               Processor processor,
                                                ContainerContext containerContext,
                                                ProcessorContext processorContext,
                                                Vertex vertex,
@@ -64,7 +64,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     @Override
     public TaskProcessor actorTaskProcessor(ObjectProducer[] producers,
                                             ObjectConsumer[] consumers,
-                                            ContainerProcessor processor,
+                                            Processor processor,
                                             ContainerContext containerContext,
                                             ProcessorContext processorContext,
                                             Vertex vertex,
@@ -83,7 +83,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
                                           ObjectConsumer[] consumers,
                                           ContainerContext containerContext,
                                           ProcessorContext processorContext,
-                                          ContainerProcessor processor,
+                                          Processor processor,
                                           Vertex vertex,
                                           int taskID) {
         checkNotNull(vertex);

@@ -21,14 +21,14 @@ import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 
-public class MergeProcessor<K, V> implements ContainerProcessor<Pair<K, V>, Pair<K, V>> {
+public class MergeProcessor<K, V> implements Processor<Pair<K, V>, Pair<K, V>> {
 
     private final BinaryOperator<V> merger;
     private final Map<K, V> cache = new HashMap<>();
@@ -54,8 +54,8 @@ public class MergeProcessor<K, V> implements ContainerProcessor<Pair<K, V>, Pair
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Pair<K, V>> outputStream,
-                                     ProcessorContext processorContext) throws Exception {
+    public boolean complete(ConsumerOutputStream<Pair<K, V>> outputStream,
+                            ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
         try {
             if (finalizationIterator == null) {

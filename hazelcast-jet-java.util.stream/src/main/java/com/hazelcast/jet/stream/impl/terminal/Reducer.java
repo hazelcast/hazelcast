@@ -69,9 +69,7 @@ public class Reducer {
                 .build();
         edgeBuilder(accumulatorVertex, combinerVertex)
                 .addToDAG(dag)
-                .shuffling(true)
-                .shufflingStrategy(new IListBasedShufflingStrategy(randomName()))
-                .build();
+                .shuffled(new IListBasedShufflingStrategy(randomName()));
         return combinerVertex;
     }
 

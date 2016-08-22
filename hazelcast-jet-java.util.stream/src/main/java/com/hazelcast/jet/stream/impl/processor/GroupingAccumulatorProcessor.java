@@ -21,14 +21,14 @@ import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collector;
 
-public class GroupingAccumulatorProcessor<K, V, A, R> implements ContainerProcessor<Pair<K, V>, Pair<K, A>> {
+public class GroupingAccumulatorProcessor<K, V, A, R> implements Processor<Pair<K, V>, Pair<K, A>> {
 
     private final Map<K, A> cache = new HashMap<>();
     private final Collector<V, A, R> collector;
@@ -55,8 +55,8 @@ public class GroupingAccumulatorProcessor<K, V, A, R> implements ContainerProces
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Pair<K, A>> outputStream,
-                                     ProcessorContext processorContext) throws Exception {
+    public boolean complete(ConsumerOutputStream<Pair<K, A>> outputStream,
+                            ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
         try {
             if (finalizationIterator == null) {

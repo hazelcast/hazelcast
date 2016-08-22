@@ -121,9 +121,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
         edgeBuilder(accumulatorVertex, combinerVertex)
                 .addToDAG(dag)
-                .shuffling(true)
-                .shufflingStrategy(new IListBasedShufflingStrategy(randomName()))
-                .build();
+                .shuffled(new IListBasedShufflingStrategy(randomName()));
 
         return combinerVertex;
     }

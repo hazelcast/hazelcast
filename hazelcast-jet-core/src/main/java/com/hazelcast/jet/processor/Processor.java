@@ -23,9 +23,9 @@ import java.io.Serializable;
 
 /**
  * Abstract JET processor for job's execution
- *
+ * <p>
  * Should be implemented by user and will be used during container's execution
- *
+ * <p>
  * There are two phases of execution:
  * <pre>
  *      1) Read phase. When Jet reads data from all input producers (previous vertices or sources) and
@@ -34,8 +34,8 @@ import java.io.Serializable;
  *      2) Finalization phase. When JET uses results of Read-phase (if it presents) and can write or not
  *      data to the output stream
  * </pre>
- *
- *
+ * <p>
+ * <p>
  * There is strict happens-before relation between execution of processor's execution.
  * So no needs to use thread-safe structures in case if task created separate processor
  * using corresponding factory
@@ -43,14 +43,14 @@ import java.io.Serializable;
  * @param <I> Type of the input object
  * @param <O> Type of the output object
  */
-public interface ContainerProcessor<I, O> extends Serializable {
+public interface Processor<I, O> extends Serializable {
     /**
      * Will be invoked strictly  before first invocation of the corresponding task, strictly
      * from the executor thread
      *
      * @param processorContext context of processor
      */
-    default void beforeProcessing(ProcessorContext processorContext) {
+    default void before(ProcessorContext processorContext) {
 
     }
 
@@ -58,30 +58,29 @@ public interface ContainerProcessor<I, O> extends Serializable {
      * Performs next iteration of execution
      *
      * @param inputStream      stream to be used for reading of data
-     * @param outputStream     steam to be used for writing of data
+     * @param outputStream     stream to be used for writing of data
      * @param sourceName       name of the source where data come from (Vertex or Tap)
      * @param processorContext context of processor
      * @return true if next chunk should be read, false if next iteration will be with the same inputStream
      * @throws Exception if any exception
      */
     default boolean process(ProducerInputStream<I> inputStream,
-                    ConsumerOutputStream<O> outputStream,
-                    String sourceName,
-                    ProcessorContext processorContext
+                            ConsumerOutputStream<O> outputStream,
+                            String sourceName,
+                            ProcessorContext processorContext
     ) throws Exception {
         return true;
     }
 
     /**
-     * Will be invoked on finalization phase
+     * Will be invoked on after all the inputs are processed.
      *
-     * @param outputStream     outputSteam where data should be written
+     * @param outputStream     outputStream where data should be written
      * @param processorContext context of processor
      * @return true if finalization is finished, false if this method should be invoked again
      * @throws Exception if any exception
      */
-    default boolean finalizeProcessor(ConsumerOutputStream<O> outputStream,
-                              ProcessorContext processorContext) throws Exception {
+    default boolean complete(ConsumerOutputStream<O> outputStream, ProcessorContext processorContext) throws Exception {
         return true;
     }
 
@@ -91,7 +90,7 @@ public interface ContainerProcessor<I, O> extends Serializable {
      *
      * @param processorContext context of processor
      */
-    default void afterProcessing(ProcessorContext processorContext) {
+    default void after(ProcessorContext processorContext) {
 
     }
 }

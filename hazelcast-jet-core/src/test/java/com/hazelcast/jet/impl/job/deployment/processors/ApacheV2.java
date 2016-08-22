@@ -3,7 +3,7 @@ package com.hazelcast.jet.impl.job.deployment.processors;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import java.io.BufferedReader;
 import java.net.URL;
 import java.nio.file.Files;
@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class ApacheV2 implements ContainerProcessor {
+public class ApacheV2 implements Processor {
 
     public ApacheV2() {
     }

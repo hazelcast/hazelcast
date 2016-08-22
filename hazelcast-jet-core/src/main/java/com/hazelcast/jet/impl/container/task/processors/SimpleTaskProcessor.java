@@ -20,7 +20,7 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -29,13 +29,13 @@ public class SimpleTaskProcessor implements TaskProcessor {
 
     protected boolean finalizationStarted;
     protected boolean producersWriteFinished;
-    private final ContainerProcessor processor;
+    private final Processor processor;
     private final ObjectIOStream pairInputStream;
     private final ObjectIOStream pairOutputStream;
     private boolean finalized;
     private final ProcessorContext processorContext;
 
-    public SimpleTaskProcessor(ContainerProcessor processor,
+    public SimpleTaskProcessor(Processor processor,
                                ProcessorContext processorContext) {
         checkNotNull(processor);
         this.processor = processor;
@@ -54,7 +54,7 @@ public class SimpleTaskProcessor implements TaskProcessor {
             processor.process(pairInputStream, pairOutputStream, null, processorContext);
             return true;
         } else {
-            finalized = processor.finalizeProcessor(pairOutputStream, processorContext);
+            finalized = processor.complete(pairOutputStream, processorContext);
             return true;
         }
     }

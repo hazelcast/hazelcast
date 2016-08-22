@@ -35,8 +35,8 @@ public class LimitProcessor<T> extends AbstractStreamProcessor<T, T> {
     }
 
     @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
-        super.beforeProcessing(processorContext);
+    public void before(ProcessorContext processorContext) {
+        super.before(processorContext);
         index = 0;
     }
 

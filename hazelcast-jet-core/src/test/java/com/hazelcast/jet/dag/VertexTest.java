@@ -20,16 +20,15 @@ import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.data.DataWriter;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.List;
 
 import static com.hazelcast.jet.JetTestSupport.createVertex;
 import static org.junit.Assert.assertEquals;
@@ -46,7 +45,7 @@ public class VertexTest {
         Class<TestProcessors.Noop> procesorClass = TestProcessors.Noop.class;
         Vertex v1 = createVertex(name, procesorClass);
         assertEquals(name, v1.getName());
-        assertEquals(procesorClass.getName(), v1.getDescriptor().getContainerProcessorClazz());
+        assertEquals(procesorClass.getName(), v1.getProcessorClass());
     }
 
     @Test
@@ -87,9 +86,7 @@ public class VertexTest {
         Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
         Vertex output = createVertex("output", TestProcessors.Noop.class);
 
-        Edge edge = new Edge.EdgeBuilder("edge", v1, output)
-                .shuffling(true)
-                .build();
+        Edge edge = new Edge("edge", v1, output, true);
         v1.addOutputVertex(output, edge);
 
         assertTrue(v1.hasOutputShuffler());

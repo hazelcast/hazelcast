@@ -23,7 +23,6 @@ import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
-
 import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;

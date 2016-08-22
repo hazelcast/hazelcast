@@ -28,8 +28,7 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
-import com.hazelcast.jet.processor.ContainerProcessor;
-import com.hazelcast.jet.processor.ProcessorDescriptor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -113,7 +112,7 @@ public final class StreamUtil {
         return new EdgeBuilder(randomName(), from, to);
     }
 
-    public static VertexBuilder vertexBuilder(Class<? extends ContainerProcessor> clazz) {
+    public static VertexBuilder vertexBuilder(Class<? extends Processor> clazz) {
         return new VertexBuilder(clazz);
     }
 
@@ -126,13 +125,13 @@ public final class StreamUtil {
 
     public static class VertexBuilder {
 
-        private final Class<? extends ContainerProcessor> clazz;
+        private final Class<? extends Processor> clazz;
         private final List<Object> args = new ArrayList<>();
         private Integer taskCount;
         private String name;
         private DAG dag;
 
-        public VertexBuilder(Class<? extends ContainerProcessor> clazz) {
+        public VertexBuilder(Class<? extends Processor> clazz) {
             this.clazz = clazz;
         }
 
@@ -157,10 +156,10 @@ public final class StreamUtil {
         }
 
         public Vertex build() {
-            Vertex vertex = new Vertex(name == null ? randomName() : name,
-                    ProcessorDescriptor.builder(clazz, args.toArray())
-                            .withTaskCount(taskCount == null ? Runtime.getRuntime().availableProcessors() : taskCount)
-                            .build());
+            Vertex vertex = new Vertex(name == null ? randomName() : name)
+                    .processorClass(clazz)
+                    .processorArgs(args.toArray())
+                    .parallelism(taskCount == null ? Runtime.getRuntime().availableProcessors() : taskCount);
             if (dag != null) {
                 dag.addVertex(vertex);
             }
@@ -184,26 +183,19 @@ public final class StreamUtil {
         throw new IllegalArgumentException(object + " is not of a known proxy type");
     }
 
-    public static class EdgeBuilder extends Edge.EdgeBuilder {
-
-        private DAG dag;
+    public static class EdgeBuilder extends Edge {
 
         public EdgeBuilder(String name, Vertex from, Vertex to) {
             super(name, from, to);
         }
 
         public EdgeBuilder addToDAG(DAG dag) {
-            this.dag = dag;
+            dag.addEdge(this);
             return this;
         }
 
-        @Override
         public Edge build() {
-            Edge edge = super.build();
-            if (dag != null) {
-                dag.addEdge(edge);
-            }
-            return edge;
+            return this;
         }
     }
 }

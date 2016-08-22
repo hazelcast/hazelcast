@@ -38,7 +38,7 @@ import com.hazelcast.jet.impl.container.DefaultProcessorContext;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -69,7 +69,7 @@ public class DefaultContainerTask extends AbstractTask
     private final NodeEngine nodeEngine;
 
     private final ProcessingContainer container;
-    private final ContainerProcessor processor;
+    private final Processor processor;
     private final ContainerContext containerContext;
     private final JobContext jobContext;
     private final TaskProcessorFactory taskProcessorFactory;
@@ -106,7 +106,7 @@ public class DefaultContainerTask extends AbstractTask
         this.containerContext = container.getContainerContext();
         this.jobContext = container.getJobContext();
         this.nodeEngine = container.getJobContext().getNodeEngine();
-        Supplier<ContainerProcessor> processorFactory = container.getContainerProcessorFactory();
+        Supplier<Processor> processorFactory = container.getContainerProcessorFactory();
         this.processor = processorFactory == null ? null : processorFactory.get();
         this.processorContext = new DefaultProcessorContext(taskContext, this.containerContext);
         this.logger = nodeEngine.getLogger(getClass());
@@ -208,7 +208,7 @@ public class DefaultContainerTask extends AbstractTask
     @Override
     public void beforeProcessing() {
         try {
-            processor.beforeProcessing(processorContext);
+            processor.before(processorContext);
         } catch (Throwable error) {
             afterProcessing();
             handleProcessingError(error);
@@ -311,7 +311,7 @@ public class DefaultContainerTask extends AbstractTask
 
     private void afterProcessing() {
         try {
-            processor.afterProcessing(processorContext);
+            processor.after(processorContext);
         } catch (Throwable error) {
             handleProcessingError(error);
         }
