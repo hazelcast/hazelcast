@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
@@ -39,7 +40,7 @@ public final class NodeExtensionFactory {
                 Class<NodeExtension> clazz = iter.next();
                 if (!(clazz.equals(DefaultNodeExtension.class))) {
                     if (clazz.getName().equals(DefaultNodeExtension.class.getName())) {
-                        node.nodeEngine.getLogger(NodeExtensionFactory.class).warning(
+                        Logger.getLogger(NodeExtensionFactory.class).warning(
                                 "DefaultNodeExtension class has been loaded by two different class-loaders. "
                                         + "Are you running Hazelcast in an OSGi environment? "
                                         + "If so, set the bundle class-loader in the Config using the setClassloader() method");
