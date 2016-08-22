@@ -77,4 +77,11 @@ public class MapSink implements Sink {
     public String getName() {
         return name;
     }
+
+    @Override
+    public String toString() {
+        return "MapSink{"
+                + "name='" + name + '\''
+                + '}';
+    }
 }

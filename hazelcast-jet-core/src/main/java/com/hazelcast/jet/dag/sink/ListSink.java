@@ -66,4 +66,11 @@ public class ListSink implements Sink {
     public String getName() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "ListSink{"
+                + "name='" + name + '\''
+                + '}';
+    }
 }

@@ -245,16 +245,10 @@ public class Edge implements Serializable {
 
     @Override
     public String toString() {
-        return "EdgeImpl{"
-                + "to=" + to
+        return "Edge{"
+                + "from=" + from
+                + ", to=" + to
                 + ", name='" + name + '\''
-                + ", from=" + from
-                + ", shuffled=" + shuffled
-                + ", hashingStrategy=" + hashingStrategy
-                + ", shufflingStrategy=" + shufflingStrategy
-                + ", processingStrategy=" + processingStrategy
-                + ", partitioningStrategy=" + partitioningStrategy
-                + ", dataTransferringStrategy=" + dataTransferringStrategy
                 + '}';
     }
 
