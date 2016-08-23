@@ -63,8 +63,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class DurableExecutorServiceProxy extends AbstractDistributedObject<DistributedDurableExecutorService>
         implements DurableExecutorService {
 
-    private static final FutureUtil.ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
-            logAllExceptions("Exception while ExecutorService shutdown", Level.FINEST);
+    private final FutureUtil.ExceptionHandler whileShutdownExceptionHandler;
 
     private final Random random = new Random();
 
@@ -76,6 +75,8 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
         super(nodeEngine, service);
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        this.whileShutdownExceptionHandler = logAllExceptions(nodeEngine.getLogger(DurableExecutorServiceProxy.class),
+                "Exception while ExecutorService shutdown", Level.FINEST);
     }
 
     @Override
@@ -192,7 +193,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
             }
         }
 
-        waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+        waitWithDeadline(calls, 1, TimeUnit.SECONDS, whileShutdownExceptionHandler);
     }
 
     @Override

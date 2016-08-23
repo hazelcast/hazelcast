@@ -25,7 +25,7 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggerFactory;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -84,11 +84,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private volatile boolean active = true;
     private final byte version;
 
-    private final ILogger logger;
+    private ILogger logger = Logger.getLogger(InternalSerializationService.class);
 
     AbstractSerializationService(InputOutputFactory inputOutputFactory, byte version, ClassLoader classLoader,
                                  ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy,
-                                 int initialOutputBufferSize, BufferPoolFactory bufferPoolFactory, LoggerFactory loggerFactory) {
+                                 int initialOutputBufferSize,
+                                 BufferPoolFactory bufferPoolFactory) {
         this.inputOutputFactory = inputOutputFactory;
         this.version = version;
         this.classLoader = classLoader;
@@ -97,7 +98,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.outputBufferSize = initialOutputBufferSize;
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, bufferPoolFactory);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
-        this.logger = loggerFactory.getLogger(AbstractSerializationService.class);
     }
 
     //region Serialization Service

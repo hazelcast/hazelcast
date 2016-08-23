@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.memory.impl;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Bits;
 import sun.misc.Unsafe;
 

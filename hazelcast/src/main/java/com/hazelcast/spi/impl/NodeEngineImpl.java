@@ -47,6 +47,7 @@ import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
@@ -330,6 +331,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public ILogger getLogger(Class clazz) {
         return loggingService.getLogger(clazz);
+    }
+
+    @Override
+    public LoggerFactory getLoggerFactory() {
+        return loggingService;
     }
 
     @Override

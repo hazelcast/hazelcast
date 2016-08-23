@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;

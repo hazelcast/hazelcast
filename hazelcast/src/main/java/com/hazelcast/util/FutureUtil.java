@@ -16,7 +16,6 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -71,23 +70,6 @@ public final class FutureUtil {
                 if (LOGGER.isFinestEnabled()) {
                     LOGGER.finest("Member left while waiting for futures...", throwable);
                 }
-            }
-        }
-    };
-
-    /**
-     * This ExceptionHandler rethrows {@link java.util.concurrent.ExecutionException}s and logs
-     * {@link com.hazelcast.core.MemberLeftException}s to the log.
-     */
-    public static final ExceptionHandler RETHROW_EXECUTION_EXCEPTION = new ExceptionHandler() {
-        @Override
-        public void handleException(Throwable throwable) {
-            if (throwable instanceof MemberLeftException) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Member left while waiting for futures...", throwable);
-                }
-            } else if (throwable instanceof ExecutionException) {
-                throw new HazelcastException(throwable);
             }
         }
     };
@@ -153,26 +135,6 @@ public final class FutureUtil {
      * This ExceptionHandler rethrows {@link java.util.concurrent.ExecutionException}s and logs
      * {@link com.hazelcast.core.MemberLeftException}s to the log.
      *
-     * @param message the log message to appear in the logs before the stacktrace
-     * @param level   the log level to be used for logging
-     */
-    @PrivateApi
-    public static ExceptionHandler logAllExceptions(final String message, final Level level) {
-        if (LOGGER.isLoggable(level)) {
-            return new ExceptionHandler() {
-                @Override
-                public void handleException(Throwable throwable) {
-                    LOGGER.log(level, message, throwable);
-                }
-            };
-        }
-        return IGNORE_ALL_EXCEPTIONS;
-    }
-
-    /**
-     * This ExceptionHandler rethrows {@link java.util.concurrent.ExecutionException}s and logs
-     * {@link com.hazelcast.core.MemberLeftException}s to the log.
-     *
      * @param logger the ILogger instance to be used for logging
      * @param level  the log level to be used for logging
      */
@@ -183,25 +145,6 @@ public final class FutureUtil {
                 @Override
                 public void handleException(Throwable throwable) {
                     logger.log(level, "Exception occurred", throwable);
-                }
-            };
-        }
-        return IGNORE_ALL_EXCEPTIONS;
-    }
-
-    /**
-     * This ExceptionHandler rethrows {@link java.util.concurrent.ExecutionException}s and logs
-     * {@link com.hazelcast.core.MemberLeftException}s to the log.
-     *
-     * @param level the log level to be used for logging
-     */
-    @PrivateApi
-    public static ExceptionHandler logAllExceptions(final Level level) {
-        if (LOGGER.isLoggable(level)) {
-            return new ExceptionHandler() {
-                @Override
-                public void handleException(Throwable throwable) {
-                    LOGGER.log(level, "Exception occurred", throwable);
                 }
             };
         }
@@ -355,11 +298,12 @@ public final class FutureUtil {
 
     /**
      * Check if all futures are done
+     *
      * @param futures
      * @return true if all futures are done. false otherwise
      */
     public static boolean allDone(Collection<Future> futures) {
-        for (Future f: futures) {
+        for (Future f : futures) {
             if (!f.isDone()) {
                 return false;
             }
@@ -369,11 +313,12 @@ public final class FutureUtil {
 
     /**
      * Rethrow exeception of the fist future that completed with an exception
+     *
      * @param futures
      * @throws Exception
      */
     public static void checkAllDone(Collection<Future> futures) throws Exception {
-        for (Future f: futures) {
+        for (Future f : futures) {
             if (f.isDone()) {
                 f.get();
             }
@@ -382,12 +327,13 @@ public final class FutureUtil {
 
     /**
      * Get all futures that are done
+     *
      * @param futures
      * @return list of completed futures
      */
     public static List<Future> getAllDone(Collection<Future> futures) {
         List<Future> doneFutures = new ArrayList<Future>();
-        for (Future f: futures) {
+        for (Future f : futures) {
             if (f.isDone()) {
                 doneFutures.add(f);
             }

@@ -97,7 +97,7 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public SocketInterceptor createSocketInterceptor() {
-        if(logger != null) {
+        if (logger != null) {
             logger.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
         }
         return null;

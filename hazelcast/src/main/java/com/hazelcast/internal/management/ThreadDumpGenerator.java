@@ -17,7 +17,6 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
