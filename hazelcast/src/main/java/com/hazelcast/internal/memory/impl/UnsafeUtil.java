@@ -43,8 +43,6 @@ public final class UnsafeUtil {
      */
     static final Unsafe UNSAFE;
 
-    private static final ILogger LOGGER = Logger.getLogger(UnsafeUtil.class);
-
     static {
         Unsafe unsafe;
         try {
@@ -55,7 +53,6 @@ public final class UnsafeUtil {
             }
         } catch (Throwable t) {
             unsafe = null;
-            LOGGER.warning("Unable to get an instance of Unsafe. Unsafe-based operations will be unavailable", t);
         }
         UNSAFE = unsafe;
         UNSAFE_AVAILABLE = UNSAFE != null;
