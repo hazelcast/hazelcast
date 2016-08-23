@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.logging.Logger;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
+import com.hazelcast.util.EmptyStatement;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -61,7 +61,7 @@ public final class AddressHelper {
         try {
             inetAddress = InetAddress.getByName(scopedAddress);
         } catch (UnknownHostException ignored) {
-            Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
+            EmptyStatement.ignore(ignored);
         }
 
         int possiblePort = port;

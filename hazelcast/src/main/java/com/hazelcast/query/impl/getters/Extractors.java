@@ -18,6 +18,9 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggerFactory;
+import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
@@ -49,9 +52,12 @@ public final class Extractors {
     private final EvictableGetterCache getterCache;
     private final DefaultArgumentParser argumentsParser;
 
+    private final ILogger logger;
+
     // TODO InternalSerializationService should be passed in constructor
-    public Extractors(List<MapAttributeConfig> mapAttributeConfigs, ClassLoader classLoader) {
-        this.extractors = ExtractorHelper.instantiateExtractors(mapAttributeConfigs, classLoader);
+    public Extractors(List<MapAttributeConfig> mapAttributeConfigs, ClassLoader classLoader, LoggerFactory loggerFactory) {
+        this.logger = loggerFactory.getLogger(getClass());
+        this.extractors = ExtractorHelper.instantiateExtractors(mapAttributeConfigs, classLoader, logger);
         this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE, MAX_GETTERS_PER_CLASS_IN_CACHE,
                 EVICTION_PERCENTAGE);
         this.argumentsParser = new DefaultArgumentParser();
@@ -127,7 +133,7 @@ public final class Extractors {
     }
 
     public static Extractors empty() {
-        return new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
+        return new Extractors(Collections.<MapAttributeConfig>emptyList(), null, new NoLogFactory());
     }
 
 }

@@ -108,7 +108,8 @@ public class MapContainer {
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         initWanReplication(nodeEngine);
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
-        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
+        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader(),
+                mapServiceContext.getNodeEngine().getLoggerFactory());
         this.indexes = new Indexes((InternalSerializationService) serializationService, extractors);
         this.memberNearCacheInvalidationEnabled = hasMemberNearCache() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
         this.mapStoreContext = createMapStoreContext(this);

@@ -111,14 +111,15 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
 
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, getAsyncExecutor());
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, getAsyncExecutor(), nodeEngine.getLoggerFactory());
         execute(rf);
         return rf;
     }
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, result, getAsyncExecutor());
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, result, getAsyncExecutor(),
+                nodeEngine.getLoggerFactory());
         execute(rf);
         return rf;
     }

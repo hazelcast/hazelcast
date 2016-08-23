@@ -17,7 +17,7 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 
 import java.util.concurrent.Callable;
@@ -38,13 +38,13 @@ public class CompletableFutureTask<V> extends AbstractCompletableFuture<V> imple
 
     private volatile Thread runner;
 
-    public CompletableFutureTask(Callable<V> callable, ExecutorService asyncExecutor) {
-        super(asyncExecutor, Logger.getLogger(CompletableFutureTask.class));
+    public CompletableFutureTask(Callable<V> callable, ExecutorService asyncExecutor, LoggerFactory loggerFactory) {
+        super(asyncExecutor, loggerFactory.getLogger(CompletableFutureTask.class));
         this.callable = callable;
     }
 
-    public CompletableFutureTask(Runnable runnable, V result, ExecutorService asyncExecutor) {
-        super(asyncExecutor, Logger.getLogger(CompletableFutureTask.class));
+    public CompletableFutureTask(Runnable runnable, V result, ExecutorService asyncExecutor, LoggerFactory loggerFactory) {
+        super(asyncExecutor, loggerFactory.getLogger(CompletableFutureTask.class));
         this.callable = Executors.callable(runnable, result);
     }
 

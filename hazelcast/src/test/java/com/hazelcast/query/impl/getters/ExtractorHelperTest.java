@@ -2,6 +2,7 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -255,12 +256,12 @@ public class ExtractorHelperTest {
 
     private ValueExtractor instantiateExtractor(MapAttributeConfig mapAttributeConfig) {
         return ExtractorHelper.instantiateExtractor(mapAttributeConfig,
-                useClassloader ? this.getClass().getClassLoader() : null);
+                useClassloader ? this.getClass().getClassLoader() : null, Logger.noLogger());
     }
 
     private Map<String, ValueExtractor> instantiateExtractors(List<MapAttributeConfig> mapAttributeConfigs) {
         return ExtractorHelper.instantiateExtractors(mapAttributeConfigs,
-                useClassloader ? this.getClass().getClassLoader() : null);
+                useClassloader ? this.getClass().getClassLoader() : null, Logger.noLogger());
     }
 
 }

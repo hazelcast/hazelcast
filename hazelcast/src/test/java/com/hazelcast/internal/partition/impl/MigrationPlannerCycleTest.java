@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -34,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class MigrationPlannerCycleTest {
 
-    private MigrationPlanner migrationPlanner = new MigrationPlanner();
+    private MigrationPlanner migrationPlanner = new MigrationPlanner(Logger.noLogger());
 
     @Test
     public void testCycle1()

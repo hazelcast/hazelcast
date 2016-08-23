@@ -16,10 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -49,15 +46,13 @@ import java.util.WeakHashMap;
 public abstract class AbstractHazelcastCachingProvider
         implements CachingProvider {
 
-    protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
-
     protected static final String INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE =
             "Not available Hazelcast instance. "
-            + "Please specify your Hazelcast configuration file path via "
-            + "\"HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION\" property or "
-            + "specify Hazelcast instance name via "
-            + "\"HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME\" property "
-            + "in \"properties\" parameter.";
+                    + "Please specify your Hazelcast configuration file path via "
+                    + "\"HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION\" property or "
+                    + "specify Hazelcast instance name via "
+                    + "\"HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME\" property "
+                    + "in \"properties\" parameter.";
 
     protected volatile HazelcastInstance hazelcastInstance;
 

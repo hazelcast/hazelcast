@@ -45,6 +45,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     private final ExecutorService userExecutor;
     private final ScheduledExecutorService internalExecutor;
+    private final LoggingService loggingService;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader,
                                       HazelcastProperties properties, int poolSize, LoggingService loggingService) {
@@ -56,8 +57,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         if (executorPoolSize <= 0) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
-        logger = loggingService.getLogger(ClientExecutionService.class);
-        internalExecutor = new ScheduledThreadPoolExecutor(internalPoolSize,
+        this.logger = loggingService.getLogger(ClientExecutionService.class);
+        this.loggingService = loggingService;
+        this.internalExecutor = new ScheduledThreadPoolExecutor(internalPoolSize,
                 new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -67,7 +69,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                     }
                 });
 
-        userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
+        this.userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
                 new RejectedExecutionHandler() {
@@ -86,7 +88,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {
-        CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, internalExecutor);
+        CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, internalExecutor, loggingService);
         internalExecutor.submit(futureTask);
         return futureTask;
     }
@@ -98,14 +100,14 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     @Override
     public ICompletableFuture<?> submit(Runnable task) {
-        CompletableFutureTask futureTask = new CompletableFutureTask(task, null, getAsyncExecutor());
+        CompletableFutureTask futureTask = new CompletableFutureTask(task, null, getAsyncExecutor(), loggingService);
         userExecutor.submit(futureTask);
         return futureTask;
     }
 
     @Override
     public <T> ICompletableFuture<T> submit(Callable<T> task) {
-        CompletableFutureTask<T> futureTask = new CompletableFutureTask<T>(task, getAsyncExecutor());
+        CompletableFutureTask<T> futureTask = new CompletableFutureTask<T>(task, getAsyncExecutor(), loggingService);
         userExecutor.submit(futureTask);
         return futureTask;
     }
