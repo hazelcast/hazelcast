@@ -20,7 +20,6 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -44,7 +43,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     private final ClientEndpointManagerImpl clientEndpointManager;
     private final ClientEngine clientEngine;
     private final long heartbeatTimeoutSeconds;
-    private final ILogger logger = Logger.getLogger(ClientHeartbeatMonitor.class);
+    private final ILogger logger;
     private final ExecutionService executionService;
 
     public ClientHeartbeatMonitor(ClientEndpointManagerImpl endpointManager,
@@ -55,6 +54,7 @@ public class ClientHeartbeatMonitor implements Runnable {
         this.clientEngine = clientEngine;
         this.executionService = executionService;
         this.heartbeatTimeoutSeconds = getHeartbeatTimeout(hazelcastProperties);
+        this.logger = clientEngine.getLogger(ClientHeartbeatMonitor.class);
     }
 
     private long getHeartbeatTimeout(HazelcastProperties hazelcastProperties) {

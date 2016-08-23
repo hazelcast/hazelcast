@@ -28,35 +28,33 @@ import java.lang.management.ThreadMXBean;
  */
 public final class ThreadDumpGenerator {
 
-    private static final ILogger LOGGER = Logger.getLogger(ThreadDumpGenerator.class);
-
     private ThreadDumpGenerator() {
     }
 
-    public static String dumpAllThreads() {
-        LOGGER.finest("Generating full thread dump...");
+    public static String dumpAllThreads(ILogger logger) {
+        logger.finest("Generating full thread dump...");
         StringBuilder s = new StringBuilder();
         s.append("Full thread dump ");
-        return dump(getAllThreads(), s);
+        return dump(getAllThreads(), s, logger);
     }
 
-    public static String dumpDeadlocks() {
-        LOGGER.finest("Generating dead-locked threads dump...");
+    public static String dumpDeadlocks(ILogger logger) {
+        logger.finest("Generating dead-locked threads dump...");
         StringBuilder s = new StringBuilder();
         s.append("Deadlocked thread dump ");
-        return dump(findDeadlockedThreads(), s);
+        return dump(findDeadlockedThreads(), s, logger);
     }
 
-    private static String dump(ThreadInfo[] infos, StringBuilder s) {
+    private static String dump(ThreadInfo[] infos, StringBuilder s, ILogger logger) {
         header(s);
         appendThreadInfos(infos, s);
-        if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest("\n" + s);
+        if (logger.isFinestEnabled()) {
+            logger.finest("\n" + s);
         }
         return s.toString();
     }
 
-    public static ThreadInfo[] findDeadlockedThreads() {
+    private static ThreadInfo[] findDeadlockedThreads() {
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         if (threadMXBean.isSynchronizerUsageSupported()) {
             long[] deadlockedThreads = threadMXBean.findDeadlockedThreads();
@@ -70,7 +68,7 @@ public final class ThreadDumpGenerator {
         }
     }
 
-    public static ThreadInfo[] getAllThreads() {
+    private static ThreadInfo[] getAllThreads() {
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         if (threadMXBean.isObjectMonitorUsageSupported()
                 && threadMXBean.isSynchronizerUsageSupported()) {

@@ -23,7 +23,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
@@ -36,14 +36,16 @@ import java.util.logging.Level;
  */
 class MultiMapEventsDispatcher {
 
-    private final ILogger logger = Logger.getLogger(MultiMapEventsDispatcher.class);
+    private final ILogger logger;
 
     private final ClusterService clusterService;
     private final MultiMapService multiMapService;
 
-    public MultiMapEventsDispatcher(MultiMapService multiMapService, ClusterService clusterService) {
+    public MultiMapEventsDispatcher(MultiMapService multiMapService, ClusterService clusterService,
+                                    LoggerFactory loggerFactory) {
         this.multiMapService = multiMapService;
         this.clusterService = clusterService;
+        this.logger = loggerFactory.getLogger(MultiMapEventsDispatcher.class);
     }
 
     private void incrementEventStats(IMapEvent event) {

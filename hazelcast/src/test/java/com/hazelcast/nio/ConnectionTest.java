@@ -21,6 +21,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.ThreadDumpGenerator;
+import com.hazelcast.logging.Logger;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -247,7 +248,7 @@ public class ConnectionTest {
         try {
             assertTrue(latch.await(1, TimeUnit.MINUTES));
         } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.dumpAllThreads());
+            System.err.println(ThreadDumpGenerator.dumpAllThreads(Logger.getLogger(getClass())));
             throw e;
         } finally {
             for (Socket socket : sockets) {

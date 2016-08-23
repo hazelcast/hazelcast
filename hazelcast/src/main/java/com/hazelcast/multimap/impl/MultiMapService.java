@@ -91,7 +91,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         partitionContainers = new MultiMapPartitionContainer[partitionCount];
         this.logger = nodeEngine.getLogger(MultiMapService.class);
-        dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
+        dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService(), nodeEngine.getLoggerFactory());
         publisher = new MultiMapEventsPublisher(nodeEngine);
     }
 

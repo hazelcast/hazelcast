@@ -44,6 +44,10 @@ public final class Logger {
         return loggerFactory.getLogger(name);
     }
 
+    public static ILogger noLogger() {
+        return new NoLogFactory.NoLogger();
+    }
+
     public static LoggerFactory newLoggerFactory(String loggerType) {
         LoggerFactory loggerFactory = null;
         String loggerClass = System.getProperty("hazelcast.logging.class");

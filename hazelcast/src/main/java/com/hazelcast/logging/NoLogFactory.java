@@ -26,6 +26,11 @@ public class NoLogFactory implements LoggerFactory {
         return noLogger;
     }
 
+    @Override
+    public ILogger getLogger(Class type) {
+        return noLogger;
+    }
+
     static class NoLogger implements ILogger {
         @Override public void finest(String message) {
         }

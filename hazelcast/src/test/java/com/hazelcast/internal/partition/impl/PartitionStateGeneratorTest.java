@@ -25,6 +25,9 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.membergroup.ConfigMemberGroupFactory;
 import com.hazelcast.partition.membergroup.DefaultMemberGroup;
@@ -162,7 +165,7 @@ public class PartitionStateGeneratorTest {
     }
 
     private void test(MemberGroupFactory memberGroupFactory) throws Exception {
-        PartitionStateGenerator generator = new PartitionStateGeneratorImpl();
+        PartitionStateGenerator generator = new PartitionStateGeneratorImpl(new NoLogFactory());
         int maxSameHostCount = 3;
         int[] partitionCounts = new int[]{271, 787, 1549, 3217};
         int[] members = new int[]{3, 6, 9, 10, 11, 17, 57, 100, 130, 77, 179, 93, 37, 26, 15, 5};

@@ -46,6 +46,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -699,6 +700,10 @@ public class Node {
         setJoined();
         getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
         getClusterService().setClusterId(UuidUtil.createClusterUuid());
+    }
+
+    public LoggingService getLoggingService() {
+        return loggingService;
     }
 
     public Config getConfig() {

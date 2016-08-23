@@ -44,8 +44,6 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  */
 public class RequestMapDataOperation extends Operation {
 
-    private static ILogger logger = Logger.getLogger(RequestMapDataOperation.class.getName());
-
     String name;
 
     public RequestMapDataOperation() {
@@ -57,19 +55,19 @@ public class RequestMapDataOperation extends Operation {
 
     @Override
     public void run() throws Exception {
-        logger.finest("Caller { " + getCallerAddress() + " } requested copy of map -> " + name
+        getLogger().finest("Caller { " + getCallerAddress() + " } requested copy of map -> " + name
                 + ", on partition -> " + getPartitionId());
         ReplicatedMapService service = getService();
         PartitionContainer container = service.getPartitionContainer(getPartitionId());
         ReplicatedRecordStore store = container.getRecordStore(name);
         if (store == null) {
-            logger.finest("No data is found on this store to respond data request");
+            getLogger().finest("No data is found on this store to respond data request");
             return;
         }
         long version = store.getVersion();
         Set<RecordMigrationInfo> recordSet = getRecordSet(store);
         if (recordSet.isEmpty()) {
-            logger.finest("No data is found on this store to respond data request");
+            getLogger().finest("No data is found on this store to respond data request");
             return;
         }
         SyncReplicatedMapDataOperation op = new SyncReplicatedMapDataOperation(name, recordSet, version);
