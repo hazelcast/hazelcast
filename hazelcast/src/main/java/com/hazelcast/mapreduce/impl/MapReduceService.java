@@ -22,7 +22,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
 import com.hazelcast.mapreduce.impl.operation.CancelJobSupervisorOperation;
@@ -60,8 +59,6 @@ public class MapReduceService
 
     public static final String SERVICE_NAME = "hz:impl:mapReduceService";
 
-    private static final ILogger LOGGER = Logger.getLogger(MapReduceService.class);
-
     private static final int DEFAULT_RETRY_SLEEP_MILLIS = 100;
 
     private final ConstructorFunction<String, NodeJobTracker> constructor = new ConstructorFunction<String, NodeJobTracker>() {
@@ -81,14 +78,17 @@ public class MapReduceService
     private final NodeEngineImpl nodeEngine;
     private final Config config;
 
+    private final ILogger logger;
+
     public MapReduceService(NodeEngine nodeEngine) {
         this.config = nodeEngine.getConfig();
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.clusterService = nodeEngine.getClusterService();
-        this.partitionService =  nodeEngine.getPartitionService();
+        this.partitionService = nodeEngine.getPartitionService();
 
         this.jobTrackers = new ConcurrentHashMap<String, NodeJobTracker>();
         this.jobSupervisors = new ConcurrentHashMap<JobSupervisorKey, JobSupervisor>();
+        this.logger = nodeEngine.getLogger(MapReduceService.class);
     }
 
     public JobTracker getJobTracker(String name) {
@@ -109,7 +109,7 @@ public class MapReduceService
                         ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId);
                         processRequest(member.getAddress(), operation);
                     } catch (Exception ignore) {
-                        LOGGER.finest("Member might be already unavailable", ignore);
+                        logger.finest("Member might be already unavailable", ignore);
                     }
                 }
             }
@@ -205,7 +205,7 @@ public class MapReduceService
             throws ExecutionException, InterruptedException {
 
         InvocationBuilder invocation = nodeEngine.getOperationService()
-                                                 .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
+                .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
 
         Future<R> future = invocation.invoke();
         return future.get();

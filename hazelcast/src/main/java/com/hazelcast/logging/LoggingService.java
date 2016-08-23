@@ -18,12 +18,8 @@ package com.hazelcast.logging;
 
 import java.util.logging.Level;
 
-public interface LoggingService {
+public interface LoggingService extends LoggerFactory {
     void addLogListener(Level level, LogListener logListener);
 
     void removeLogListener(LogListener logListener);
-
-    ILogger getLogger(String name);
-
-    ILogger getLogger(Class type);
 }

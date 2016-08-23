@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -66,7 +67,7 @@ public final class IOUtil {
      * format is changed, this extraction method must be changed as well.
      */
     public static long extractOperationCallId(Data data, InternalSerializationService serializationService)
-    throws IOException {
+            throws IOException {
         ObjectDataInput input = serializationService.createObjectDataInput(data);
         boolean identified = input.readBoolean();
         if (identified) {
@@ -209,7 +210,7 @@ public final class IOUtil {
                 int count = inflater.inflate(buf);
                 bos.write(buf, 0, count);
             } catch (DataFormatException e) {
-                Logger.getLogger(IOUtil.class).finest("Decompression failed", e);
+                EmptyStatement.ignore(e);
             }
         }
         bos.close();
@@ -274,6 +275,7 @@ public final class IOUtil {
 
     /**
      * Quietly attempts to close a {@link Closeable} resource, swallowing any exception.
+     *
      * @param closeable the resource to close. If {@code null}, no action is taken.
      */
     public static void closeResource(Closeable closeable) {
@@ -313,7 +315,7 @@ public final class IOUtil {
      * First attempts to perform a direct, atomic rename; if that fails, checks whether the target exists,
      * deletes it, and retries. Throws an exception in each case where the rename failed.
      *
-     * @param fileNow describes an existing file
+     * @param fileNow  describes an existing file
      * @param fileToBe describes the desired pathname for the file
      */
     public static void rename(File fileNow, File fileToBe) {

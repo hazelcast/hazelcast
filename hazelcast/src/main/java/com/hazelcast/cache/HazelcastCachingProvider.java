@@ -18,10 +18,9 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.EmptyStatement;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -73,7 +72,6 @@ public final class HazelcastCachingProvider
     public static final String HAZELCAST_INSTANCE_ITSELF = "hazelcast.instance.itself";
 
     private static final String CLIENT_CACHING_PROVIDER_CLASS = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 
     private final CachingProvider delegate;
 
@@ -103,7 +101,7 @@ public final class HazelcastCachingProvider
         try {
             return ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
         } catch (Exception e) {
-            LOGGER.finest("Could not load client CachingProvider! Fallback to server one... " + e.toString());
+            EmptyStatement.ignore(e);
         }
         return null;
     }

@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -44,7 +45,7 @@ import static org.mockito.Mockito.verify;
 public class MigrationPlannerTest {
 
     private MigrationDecisionCallback callback = mock(MigrationDecisionCallback.class);
-    private MigrationPlanner migrationPlanner = new MigrationPlanner();
+    private MigrationPlanner migrationPlanner = new MigrationPlanner(Logger.noLogger());
 
     @Test
     public void test_MOVE()

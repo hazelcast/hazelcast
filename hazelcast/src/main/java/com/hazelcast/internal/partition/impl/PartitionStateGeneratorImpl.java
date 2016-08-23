@@ -21,7 +21,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.SingleMemberGroup;
@@ -39,15 +39,20 @@ import java.util.Set;
 
 final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
-    private static final ILogger LOGGER = Logger.getLogger(PartitionStateGenerator.class);
-
     private static final int DEFAULT_RETRY_MULTIPLIER = 10;
 
     private static final float RANGE_CHECK_RATIO = 1.1f;
+
     private static final int MAX_RETRY_COUNT = 3;
     private static final int AGGRESSIVE_RETRY_THRESHOLD = 1;
     private static final int AGGRESSIVE_INDEX_THRESHOLD = 3;
     private static final int MIN_AVG_OWNER_DIFF = 3;
+
+    private final ILogger logger;
+
+    public PartitionStateGeneratorImpl(LoggerFactory loggerFactory) {
+        this.logger = loggerFactory.getLogger(PartitionStateGeneratorImpl.class);
+    }
 
     @Override
     public Address[][] arrange(Collection<MemberGroup> memberGroups, InternalPartition[] currentState) {
@@ -65,8 +70,8 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             boolean aggressive = tryCount >= AGGRESSIVE_RETRY_THRESHOLD;
             tryArrange(state, groups, partitionCount, aggressive);
             if (tryCount++ > 0) {
-                if (LOGGER.isFineEnabled()) {
-                    LOGGER.fine("Re-trying partition arrangement. Count: " + tryCount);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Re-trying partition arrangement. Count: " + tryCount);
                 }
             }
         } while (tryCount < MAX_RETRY_COUNT && !areGroupsBalanced(groups, partitionCount));
@@ -343,11 +348,11 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 continue;
             }
             if (memberGroup instanceof SingleMemberGroup || memberGroup.size() == 1) {
-                nodeGroup = new SingleNodeGroup();
+                nodeGroup = new SingleNodeGroup(logger);
                 MemberImpl next = (MemberImpl) memberGroup.iterator().next();
                 nodeGroup.addNode(next.getAddress());
             } else {
-                nodeGroup = new DefaultNodeGroup();
+                nodeGroup = new DefaultNodeGroup(logger);
                 Iterator<Member> iter = memberGroup.iterator();
                 while (iter.hasNext()) {
                     MemberImpl next = (MemberImpl) iter.next();
@@ -372,8 +377,8 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
                 if ((partitionCountOfGroup < avgPartitionPerGroup / ratio)
                         || (partitionCountOfGroup > avgPartitionPerGroup * ratio)) {
-                    if (LOGGER.isFineEnabled()) {
-                        LOGGER.fine("Not well balanced! Replica: " + i + ", PartitionCount: "
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Not well balanced! Replica: " + i + ", PartitionCount: "
                                 + partitionCountOfGroup + ", AvgPartitionCount: " + avgPartitionPerGroup);
                     }
                     return false;
@@ -407,9 +412,16 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private static class DefaultNodeGroup implements NodeGroup {
+
+        final ILogger logger;
+
         final PartitionTable groupPartitionTable = new PartitionTable();
         final Map<Address, PartitionTable> nodePartitionTables = new HashMap<Address, PartitionTable>();
         final LinkedList<Integer> partitionQ = new LinkedList<Integer>();
+
+        DefaultNodeGroup(ILogger logger) {
+            this.logger = logger;
+        }
 
         @Override
         public void addNode(Address address) {
@@ -453,12 +465,12 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         public boolean ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
                 String error = "Address does not belong to this group: " + address.toString();
-                LOGGER.warning(error);
+                logger.warning(error);
                 return false;
             }
             if (containsPartition(partitionId)) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Partition[" + partitionId + "] is already owned by this group!");
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Partition[" + partitionId + "] is already owned by this group!");
                 }
                 return false;
             }
@@ -565,14 +577,20 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private static class SingleNodeGroup implements NodeGroup {
+
+        final ILogger logger;
         final PartitionTable nodeTable = new PartitionTable();
         Address address;
         Set<Address> nodes;
 
+        SingleNodeGroup(ILogger logger) {
+            this.logger = logger;
+        }
+
         @Override
         public void addNode(Address addr) {
             if (address != null) {
-                LOGGER.warning("Single node group already has an address => " + address);
+                logger.warning("Single node group already has an address => " + address);
                 return;
             }
             this.address = addr;
@@ -612,12 +630,12 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         public boolean ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
                 String error = address + " is different from this node's " + this.address;
-                LOGGER.warning(error);
+                logger.warning(error);
                 return false;
             }
             if (containsPartition(partitionId)) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Partition[" + partitionId + "] is already owned by this node " + address);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Partition[" + partitionId + "] is already owned by this node " + address);
                 }
                 return false;
             }

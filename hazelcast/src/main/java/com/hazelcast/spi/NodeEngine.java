@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumService;
@@ -187,6 +188,12 @@ public interface NodeEngine {
     ILogger getLogger(Class clazz);
 
     /**
+     * Gets the logger factory.
+     * @return the LoggerFactory.
+     */
+    LoggerFactory getLoggerFactory();
+
+    /**
      * Serializes an object to a {@link Data}.
      * <p/>
      * This method can safely be called with a {@link Data} instance. In that case, that instance is returned.
@@ -242,7 +249,7 @@ public interface NodeEngine {
      * Gets the service with the given name.
      *
      * @param serviceName the name of the service
-     * @param <T> the type of the service.
+     * @param <T>         the type of the service.
      * @return the found service, or HazelcastException in case of failure. Null will not be returned.
      */
     <T> T getService(String serviceName);

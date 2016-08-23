@@ -68,10 +68,12 @@ public class ProxyServiceImpl
     public static final String SERVICE_NAME = "hz:core:proxyService";
 
     private static final int TRY_COUNT = 10;
+
     private static final long DESTROY_TIMEOUT_SECONDS = 30;
 
     final NodeEngineImpl nodeEngine;
     final ILogger logger;
+
     final ConcurrentMap<String, DistributedObjectListener> listeners =
             new ConcurrentHashMap<String, DistributedObjectListener>();
 
@@ -90,18 +92,20 @@ public class ProxyServiceImpl
     @Probe(name = "destroyedCount", level = MANDATORY)
     private final MwCounter destroyedCounter = newMwCounter();
 
-    private final ExceptionHandler destroyProxyExceptionHandler = new ExceptionHandler() {
-        @Override
-        public void handleException(Throwable throwable) {
-            boolean causedByInactiveInstance = peel(throwable) instanceof HazelcastInstanceNotActiveException;
-            Level level = causedByInactiveInstance ? FINEST : WARNING;
-            logger.log(level, "Error while destroying a proxy.", throwable);
-        }
-    };
+    private final ExceptionHandler destroyProxyExceptionHandler;
 
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
+        this.destroyProxyExceptionHandler = new ExceptionHandler() {
+            @Override
+            public void handleException(Throwable throwable) {
+                boolean causedByInactiveInstance = peel(throwable) instanceof HazelcastInstanceNotActiveException;
+                Level level = causedByInactiveInstance ? FINEST : WARNING;
+                logger.log(level, "Error while destroying a proxy.", throwable);
+            }
+        };
+
     }
 
     @Override

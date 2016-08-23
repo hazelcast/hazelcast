@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -65,7 +66,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
             futures.add(executorService.submit(new SimpleTask(waitLock)));
         }
 
-        waitWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
+        waitWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Logger.noLogger(), Level.WARNING));
     }
 
     @Test
@@ -78,7 +79,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
             futures.add(executorService.submit(new SimpleTask(waitLock)));
         }
 
-        waitWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
+        waitWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Logger.noLogger(), Level.WARNING));
     }
 
     @Test
@@ -91,7 +92,8 @@ public class FutureUtilTest extends HazelcastTestSupport {
             futures.add(executorService.submit(new SimpleCallable(waitLock, i + 1)));
         }
 
-        Collection<Integer> result = returnWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
+        Collection<Integer> result = returnWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Logger.noLogger(),
+                Level.WARNING));
         assertEquals(2, result.size());
 
         Integer[] array = result.toArray(new Integer[result.size()]);
@@ -109,7 +111,8 @@ public class FutureUtilTest extends HazelcastTestSupport {
             futures.add(executorService.submit(new SimpleCallable(waitLock, i + 1)));
         }
 
-        Collection<Integer> result = returnWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
+        Collection<Integer> result = returnWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Logger.noLogger(),
+                Level.WARNING));
         assertEquals(2, result.size());
 
         Integer[] array = result.toArray(new Integer[result.size()]);

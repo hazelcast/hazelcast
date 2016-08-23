@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 
 import java.util.Arrays;
@@ -48,10 +47,6 @@ class MigrationPlanner {
     private final ILogger logger;
     private final Address[] state = new Address[InternalPartition.MAX_REPLICA_COUNT];
     private final Set<Address> verificationSet = new HashSet<Address>();
-
-    MigrationPlanner() {
-        logger = Logger.getLogger(getClass());
-    }
 
     MigrationPlanner(ILogger logger) {
         this.logger = logger;
@@ -291,8 +286,8 @@ class MigrationPlanner {
                 }
                 assert verificationSet.add(address)
                         : "Migration decision algorithm failed! DUPLICATE REPLICA ADDRESSES! INITIAL: " + Arrays
-                                .toString(oldAddresses) + ", CURRENT: " + Arrays.toString(state) + ", FINAL: " + Arrays
-                                .toString(newAddresses);
+                        .toString(oldAddresses) + ", CURRENT: " + Arrays.toString(state) + ", FINAL: " + Arrays
+                        .toString(newAddresses);
             }
         } finally {
             verificationSet.clear();

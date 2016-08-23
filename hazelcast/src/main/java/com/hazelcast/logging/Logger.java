@@ -26,15 +26,32 @@ public final class Logger {
     private Logger() {
     }
 
+    /**
+     * @param clazz class to take the logger name from
+     * @return the logger
+     * Use LoggingService instead. Do not log in static context unless absolutely necessary
+     */
     public static ILogger getLogger(Class clazz) {
         return getLogger(clazz.getName());
     }
 
+    /**
+     * @param name name of the logger
+     * @return the logger
+     * Use LoggingService instead. Do not log in static context unless absolutely necessary
+     */
     public static ILogger getLogger(String name) {
         //noinspection DoubleCheckedLocking
         if (loggerFactory == null) {
             //noinspection SynchronizationOnStaticField
             synchronized (FACTORY_LOCK) {
+                if (loggerFactory == null) {
+                    // init static logger with user-specified custom logger class
+                    String loggerClass = System.getProperty("hazelcast.logging.class");
+                    if (loggerClass != null) {
+                        loggerFactory = loadLoggerFactory(loggerClass);
+                    }
+                }
                 if (loggerFactory == null) {
                     String loggerType = System.getProperty("hazelcast.logging.type");
                     loggerFactory = newLoggerFactory(loggerType);
@@ -44,6 +61,11 @@ public final class Logger {
         return loggerFactory.getLogger(name);
     }
 
+    public static ILogger noLogger() {
+        return new NoLogFactory.NoLogger();
+    }
+
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public static LoggerFactory newLoggerFactory(String loggerType) {
         LoggerFactory loggerFactory = null;
         String loggerClass = System.getProperty("hazelcast.logging.class");
@@ -70,6 +92,17 @@ public final class Logger {
         if (loggerFactory == null) {
             loggerFactory = new StandardLoggerFactory();
         }
+
+        // init static field as early as possible
+        if (Logger.loggerFactory == null) {
+            //noinspection SynchronizationOnStaticField
+            synchronized (FACTORY_LOCK) {
+                if (Logger.loggerFactory == null) {
+                    Logger.loggerFactory = loggerFactory;
+                }
+            }
+        }
+
         return loggerFactory;
     }
 

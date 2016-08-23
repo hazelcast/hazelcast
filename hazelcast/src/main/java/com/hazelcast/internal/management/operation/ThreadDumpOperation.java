@@ -24,7 +24,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- *  Operation for generating thread dumps.
+ * Operation for generating thread dumps.
  */
 public class ThreadDumpOperation extends Operation {
 
@@ -41,7 +41,8 @@ public class ThreadDumpOperation extends Operation {
 
     @Override
     public void run() throws Exception {
-        result = dumpDeadlocks ? ThreadDumpGenerator.dumpDeadlocks() : ThreadDumpGenerator.dumpAllThreads();
+        result = dumpDeadlocks ? ThreadDumpGenerator.dumpDeadlocks(getLogger())
+                : ThreadDumpGenerator.dumpAllThreads(getLogger());
     }
 
     public Object getResponse() {

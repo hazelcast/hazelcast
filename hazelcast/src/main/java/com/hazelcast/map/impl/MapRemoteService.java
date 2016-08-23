@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
@@ -35,16 +36,18 @@ class MapRemoteService implements RemoteService {
 
     protected final MapServiceContext mapServiceContext;
     protected final NodeEngine nodeEngine;
+    protected final ILogger logger;
 
     MapRemoteService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.logger = nodeEngine.getLogger(MapRemoteService.class);
     }
 
     @Override
     public DistributedObject createDistributedObject(String name) {
         MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
-        checkMapConfig(mapConfig);
+        checkMapConfig(mapConfig, logger);
 
         if (mapConfig.isNearCacheEnabled()) {
             checkNotNative(mapConfig.getNearCacheConfig().getInMemoryFormat());

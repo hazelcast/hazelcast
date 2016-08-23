@@ -32,7 +32,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
@@ -46,13 +45,14 @@ import static com.hazelcast.map.impl.MapConfigValidator.checkNotNative;
 
 public class DefaultClientExtension implements ClientExtension {
 
-    protected static final ILogger LOGGER = Logger.getLogger(ClientExtension.class);
+    protected ILogger logger;
 
     protected volatile HazelcastClientInstanceImpl client;
 
     @Override
     public void beforeStart(HazelcastClientInstanceImpl client) {
         this.client = client;
+        this.logger = client.getLoggingService().getLogger(DefaultClientExtension.class);
     }
 
     @Override
@@ -97,7 +97,9 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public SocketInterceptor createSocketInterceptor() {
-        LOGGER.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
+        if (logger != null) {
+            logger.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
+        }
         return null;
     }
 

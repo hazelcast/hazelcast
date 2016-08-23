@@ -75,8 +75,7 @@ public class ExecutorServiceProxy
     private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS = AtomicIntegerFieldUpdater
             .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
 
-    private static final ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
-            logAllExceptions("Exception while ExecutorService shutdown", Level.FINEST);
+    private final ExceptionHandler whileShutdownExceptionHandler;
 
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
@@ -93,6 +92,8 @@ public class ExecutorServiceProxy
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.logger = nodeEngine.getLogger(ExecutorServiceProxy.class);
+        this.whileShutdownExceptionHandler = logAllExceptions(nodeEngine.getLogger(ExecutorServiceProxy.class),
+                "Exception while ExecutorService shutdown", Level.FINEST);
         getLocalExecutorStats();
     }
 
@@ -561,7 +562,7 @@ public class ExecutorServiceProxy
             }
         }
 
-        waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+        waitWithDeadline(calls, 1, TimeUnit.SECONDS, whileShutdownExceptionHandler);
     }
 
     private InternalCompletableFuture submitShutdownOperation(OperationService operationService, Member member) {

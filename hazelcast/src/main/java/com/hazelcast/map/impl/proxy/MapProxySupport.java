@@ -35,6 +35,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -187,6 +188,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
 
+    private final ILogger logger;
+
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(nodeEngine, service);
         this.name = name;
@@ -209,6 +212,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
+        this.logger = nodeEngine.getLogger(MapProxySupport.class);
     }
 
     @Override
@@ -582,7 +586,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             // it's just waiting for them to be loaded. Timeout failure doesn't mean anything negative here.
             // This call just introduces some ordering of requests.
             FutureUtil.waitWithDeadline(singleton(loadingFuture), CHECK_IF_LOADED_TIMEOUT_SECONDS, SECONDS,
-                    logAllExceptions(WARNING));
+                    logAllExceptions(logger, WARNING));
 
             OperationFactory opFactory = new PartitionCheckIfLoadedOperationFactory(name);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);

@@ -2,6 +2,7 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -70,7 +71,7 @@ public class ExtractorsTest {
     public void getGetter_extractor_cachingWorks() {
         // GIVEN
         MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
-        Extractors extractors = new Extractors(asList(config), useClassloader ? this.getClass().getClassLoader() : null);
+        Extractors extractors = new Extractors(asList(config), useClassloader ? this.getClass().getClassLoader() : null, new NoLogFactory());
 
         // WHEN
         Getter getterFirstInvocation = extractors.getGetter(UNUSED, bond, "gimmePower");
@@ -85,7 +86,7 @@ public class ExtractorsTest {
     public void extract_extractor_correctValue() {
         // GIVEN
         MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
-        Extractors extractors = new Extractors(asList(config), useClassloader ? this.getClass().getClassLoader() : null);
+        Extractors extractors = new Extractors(asList(config), useClassloader ? this.getClass().getClassLoader() : null, new NoLogFactory());
 
         // WHEN
         Object power = extractors.extract(UNUSED, bond, "gimmePower");
@@ -133,7 +134,7 @@ public class ExtractorsTest {
     }
 
     private static Extractors extractors() {
-        return new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
+        return new Extractors(Collections.<MapAttributeConfig>emptyList(), null, new NoLogFactory());
     }
 
 }
