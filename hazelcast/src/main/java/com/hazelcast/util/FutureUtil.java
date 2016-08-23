@@ -18,7 +18,6 @@ package com.hazelcast.util;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionTimedOutException;
@@ -36,7 +35,7 @@ import java.util.logging.Level;
 /**
  * This utility class contains convenience methods to work with multiple
  * futures at the same time, e.g.
- * {@link #waitWithDeadline(java.util.Collection, long, java.util.concurrent.TimeUnit, long, java.util.concurrent.TimeUnit)}
+ * {@link #waitWithDeadline
  */
 public final class FutureUtil {
 
@@ -56,21 +55,6 @@ public final class FutureUtil {
     public static final ExceptionHandler IGNORE_ALL_EXCEPTIONS = new ExceptionHandler() {
         @Override
         public void handleException(Throwable throwable) {
-        }
-    };
-
-    /**
-     * Ignores all exceptions but still logs {@link com.hazelcast.core.MemberLeftException} per future and just tries
-     * to finish all of the given ones. This is the default behavior if nothing else is given.
-     */
-    public static final ExceptionHandler IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT = new ExceptionHandler() {
-        @Override
-        public void handleException(Throwable throwable) {
-            if (throwable instanceof MemberLeftException) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Member left while waiting for futures...", throwable);
-                }
-            }
         }
     };
 
@@ -104,8 +88,6 @@ public final class FutureUtil {
             throw ExceptionUtil.rethrow(throwable);
         }
     };
-
-    private static final ILogger LOGGER = Logger.getLogger(FutureUtil.class);
 
     private FutureUtil() {
     }
@@ -152,24 +134,10 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures, long timeout, TimeUnit timeUnit) {
-        return returnWithDeadline(futures, timeout, timeUnit, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
-    }
-
-    @PrivateApi
     public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures, long timeout, TimeUnit timeUnit,
                                                        ExceptionHandler exceptionHandler) {
 
         return returnWithDeadline(futures, timeout, timeUnit, timeout, timeUnit, exceptionHandler);
-    }
-
-    @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures,
-                                                       long overallTimeout, TimeUnit overallTimeUnit,
-                                                       long perFutureTimeout, TimeUnit perFutureTimeUnit) {
-
-        return returnWithDeadline(futures, overallTimeout, overallTimeUnit, perFutureTimeout, perFutureTimeUnit,
-                IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi
@@ -202,8 +170,17 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit) {
-        waitWithDeadline(futures, timeout, timeUnit, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
+    public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit, final ILogger logger) {
+        waitWithDeadline(futures, timeout, timeUnit, new ExceptionHandler() {
+            @Override
+            public void handleException(Throwable throwable) {
+                if (throwable instanceof MemberLeftException) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Member left while waiting for futures...", throwable);
+                    }
+                }
+            }
+        });
     }
 
     @PrivateApi
@@ -225,14 +202,6 @@ public final class FutureUtil {
                                         ExceptionHandler exceptionHandler) {
 
         waitWithDeadline(futures, timeout, timeUnit, timeout, timeUnit, exceptionHandler);
-    }
-
-    @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
-                                        long perFutureTimeout, TimeUnit perFutureTimeUnit) {
-
-        waitWithDeadline(futures, overallTimeout, overallTimeUnit, perFutureTimeout, perFutureTimeUnit,
-                IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi

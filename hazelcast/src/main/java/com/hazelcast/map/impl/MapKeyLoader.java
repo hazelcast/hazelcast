@@ -315,7 +315,7 @@ public class MapKeyLoader {
             // Re-ordering of in-flight operations can happen during a partition migration. We are waiting here
             // for all LoadAllOperation(s) to be ACKed by receivers and only then we send them the LoadStatusOperation
             // See https://github.com/hazelcast/hazelcast/issues/4024 for additional details
-            FutureUtil.waitWithDeadline(futures, KEY_DISTRIBUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+            FutureUtil.waitWithDeadline(futures, KEY_DISTRIBUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, logger);
 
         } catch (Exception caught) {
             loadError = caught;

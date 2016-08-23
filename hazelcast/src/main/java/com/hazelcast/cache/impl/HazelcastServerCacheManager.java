@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -61,6 +62,7 @@ public class HazelcastServerCacheManager
     private final HazelcastInstanceImpl instance;
     private final NodeEngine nodeEngine;
     private final ICacheService cacheService;
+    private final ILogger logger;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
@@ -82,6 +84,7 @@ public class HazelcastServerCacheManager
         }
         nodeEngine = instance.node.getNodeEngine();
         cacheService = nodeEngine.getService(ICacheService.SERVICE_NAME);
+        logger = nodeEngine.getLogger(HazelcastServerCacheManager.class);
     }
 
     @Override
@@ -111,11 +114,11 @@ public class HazelcastServerCacheManager
                 CacheManagementConfigOperation op =
                         new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan, enabled);
                 Future future = nodeEngine.getOperationService()
-                                          .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
             }
         }
-        waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS, logger);
     }
 
     @Override
@@ -181,7 +184,7 @@ public class HazelcastServerCacheManager
     @Override
     protected <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
         CacheProxy<K, V> cacheProxy = (CacheProxy<K, V>) instance.getCacheManager()
-                                                                 .getCacheByFullName(cacheConfig.getNameWithPrefix());
+                .getCacheByFullName(cacheConfig.getNameWithPrefix());
         cacheProxy.setCacheManager(this);
         return cacheProxy;
     }
@@ -192,7 +195,7 @@ public class HazelcastServerCacheManager
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         InternalCompletableFuture<CacheConfig> f =
                 nodeEngine.getOperationService()
-                          .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                        .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.join();
     }
 
