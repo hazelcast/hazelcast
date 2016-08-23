@@ -29,9 +29,8 @@ public final class Logger {
     /**
      * @param clazz class to take the logger name from
      * @return the logger
-     * @deprecated Use LoggingService instead. Do not log in static context.
+     * Use LoggingService instead. Do not log in static context unless absolutely necessary
      */
-    @Deprecated
     public static ILogger getLogger(Class clazz) {
         return getLogger(clazz.getName());
     }
@@ -39,9 +38,8 @@ public final class Logger {
     /**
      * @param name name of the logger
      * @return the logger
-     * @deprecated Use LoggingService instead. Do not log in static context.
+     * Use LoggingService instead. Do not log in static context unless absolutely necessary
      */
-    @Deprecated
     public static ILogger getLogger(String name) {
         //noinspection DoubleCheckedLocking
         if (loggerFactory == null) {
