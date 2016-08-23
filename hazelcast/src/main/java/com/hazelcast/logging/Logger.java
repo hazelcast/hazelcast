@@ -67,6 +67,7 @@ public final class Logger {
         return new NoLogFactory.NoLogger();
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public static LoggerFactory newLoggerFactory(String loggerType) {
         LoggerFactory loggerFactory = null;
         String loggerClass = System.getProperty("hazelcast.logging.class");
