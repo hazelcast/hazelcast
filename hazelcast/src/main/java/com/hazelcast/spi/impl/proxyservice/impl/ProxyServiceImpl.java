@@ -55,17 +55,17 @@ import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.WARNING;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService,
         EventPublishingService<DistributedObjectEventPacket, Object>, MetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:proxyService";
-
-    private static final ExceptionHandler DESTROY_PROXY_EXCEPTION_HANDLER = logAllExceptions(Level.WARNING);
 
     private static final int TRY_COUNT = 10;
     private static final long DESTROY_TIMEOUT_SECONDS = 30;
@@ -89,6 +89,15 @@ public class ProxyServiceImpl
     private final MwCounter createdCounter = newMwCounter();
     @Probe(name = "destroyedCount", level = MANDATORY)
     private final MwCounter destroyedCounter = newMwCounter();
+
+    private final ExceptionHandler destroyProxyExceptionHandler = new ExceptionHandler() {
+        @Override
+        public void handleException(Throwable throwable) {
+            boolean causedByInactiveInstance = peel(throwable) instanceof HazelcastInstanceNotActiveException;
+            Level level = causedByInactiveInstance ? FINEST : WARNING;
+            logger.log(level, "Error while destroying a proxy.", throwable);
+        }
+    };
 
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -159,7 +168,7 @@ public class ProxyServiceImpl
 
         destroyLocalDistributedObject(serviceName, name, true);
 
-        waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, DESTROY_PROXY_EXCEPTION_HANDLER);
+        waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, destroyProxyExceptionHandler);
     }
 
     public void destroyLocalDistributedObject(String serviceName, String name, boolean fireEvent) {
