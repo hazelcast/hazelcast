@@ -165,25 +165,27 @@ public class MockConnectionManager implements ConnectionManager {
 
     public void destroyConnection(final Connection connection) {
         final Address endPoint = connection.getEndPoint();
-        final boolean removed = mapConnections.remove(endPoint, connection);
-        if (!removed) {
-            return;
-        }
+        if (null != endPoint && mapConnections.remove(endPoint, connection)) {
+            logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
 
-        logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
-        ioService.getEventService().executeEventCallback(new StripedRunnable() {
-            @Override
-            public void run() {
-                for (ConnectionListener listener : connectionListeners) {
-                    listener.connectionRemoved(connection);
+            connection.close(null, null);
+
+            ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                @Override
+                public void run() {
+                    for (ConnectionListener listener : connectionListeners) {
+                        listener.connectionRemoved(connection);
+                    }
                 }
-            }
 
-            @Override
-            public int getKey() {
-                return endPoint.hashCode();
-            }
-        });
+                @Override
+                public int getKey() {
+                    return endPoint.hashCode();
+                }
+            });
+        } else {
+            connection.close(null, null);
+        }
     }
 
     @Override
