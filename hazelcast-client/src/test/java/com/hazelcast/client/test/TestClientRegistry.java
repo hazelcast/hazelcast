@@ -147,8 +147,10 @@ public class TestClientRegistry {
                 }
                 Node node = TestUtil.getNode(instance);
                 Address localAddress = new Address(host, ports.incrementAndGet());
-                return new MockedClientConnection(client, connectionIdGen.incrementAndGet(),
-                        node.nodeEngine, address, localAddress, stateMap);
+                MockedClientConnection connection = new MockedClientConnection(client,
+                        connectionIdGen.incrementAndGet(), node.nodeEngine, address, localAddress, stateMap);
+                LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
+                return connection;
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e, IOException.class);
             }
