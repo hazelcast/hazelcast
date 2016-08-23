@@ -16,9 +16,7 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.spi.properties.GroupProperty;
 
 public final class Logger {
 
@@ -50,6 +48,13 @@ public final class Logger {
             //noinspection SynchronizationOnStaticField
             synchronized (FACTORY_LOCK) {
                 if (loggerFactory == null) {
+                    // init static logger with user-specified custom logger class
+                    String loggerClass = System.getProperty("hazelcast.logging.class");
+                    if (loggerClass != null) {
+                        loggerFactory = loadLoggerFactory(loggerClass);
+                    }
+                }
+                if (loggerFactory == null) {
                     String loggerType = System.getProperty("hazelcast.logging.type");
                     loggerFactory = newLoggerFactory(loggerType);
                 }
@@ -57,37 +62,6 @@ public final class Logger {
         }
         return loggerFactory.getLogger(name);
     }
-
-    /**
-     * @param clazz class to take the logger name from
-     * @return the logger
-     * @deprecated Use LoggingService instead. Do not log in static context.
-     */
-    @Deprecated
-    public static ILogger getLogger(Class clazz, Config config) {
-        return getLogger(clazz.getName(), config);
-    }
-
-    /**
-     * @param name name of the logger
-     * @return the logger
-     * @deprecated Use LoggingService instead. Do not log in static context.
-     */
-    @Deprecated
-    public static ILogger getLogger(String name, Config config) {
-        //noinspection DoubleCheckedLocking
-        if (loggerFactory == null) {
-            //noinspection SynchronizationOnStaticField
-            synchronized (FACTORY_LOCK) {
-                if (loggerFactory == null) {
-                    String loggerType = config != null ? config.getProperty(GroupProperty.LOGGING_TYPE.getName()) : null;
-                    loggerFactory = newLoggerFactory(loggerType);
-                }
-            }
-        }
-        return loggerFactory.getLogger(name);
-    }
-
 
     public static ILogger noLogger() {
         return new NoLogFactory.NoLogger();
@@ -119,6 +93,17 @@ public final class Logger {
         if (loggerFactory == null) {
             loggerFactory = new StandardLoggerFactory();
         }
+
+        // init static field as early as possible
+        if (Logger.loggerFactory == null) {
+            //noinspection SynchronizationOnStaticField
+            synchronized (FACTORY_LOCK) {
+                if (Logger.loggerFactory == null) {
+                    Logger.loggerFactory = loggerFactory;
+                }
+            }
+        }
+
         return loggerFactory;
     }
 
