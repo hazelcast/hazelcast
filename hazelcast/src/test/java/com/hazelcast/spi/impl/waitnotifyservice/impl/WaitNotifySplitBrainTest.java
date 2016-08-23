@@ -3,7 +3,7 @@ package com.hazelcast.spi.impl.waitnotifyservice.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.Member;
-import com.hazelcast.spi.impl.SplitBrainTestSupport;
+import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -19,8 +19,8 @@ public class WaitNotifySplitBrainTest extends SplitBrainTestSupport {
     private String queueName;
 
     @Override
-    protected void onBeforeSplitBrainCreated() {
-        HazelcastInstance hz1 = getAllInstances()[0];
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
+        HazelcastInstance hz1 = instances[0];
         queueName = generateKeyOwnedBy(hz1);
         final IQueue<Object> queue = hz1.getQueue(queueName);
 
@@ -29,8 +29,7 @@ public class WaitNotifySplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainHealed() {
-        HazelcastInstance[] instances = getAllInstances();
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         assertOnlyOwnerHasWaitingOperationsEventually(queueName, instances);
 
         final IQueue<Object> queue = instances[0].getQueue(queueName);
