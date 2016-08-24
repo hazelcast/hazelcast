@@ -50,11 +50,11 @@ public class NearCacheStalenessTest extends HazelcastTestSupport {
     private final String MAP_NAME = randomMapName();
     private final AtomicBoolean stop = new AtomicBoolean(false);
 
-    private IMap map1;
-    private IMap map2;
+    private IMap<Integer, Integer> map1;
+    private IMap<Integer, Integer> map2;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         Config config = getConfig();
 
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
@@ -101,41 +101,39 @@ public class NearCacheStalenessTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        // give some-time to receive possible latest invalidations.
+        // give some-time to receive possible latest invalidations
         sleepSeconds(10);
 
         assertNoStaleDataExistInNearCache(map1);
-
     }
 
-    protected void assertNoStaleDataExistInNearCache(IMap map) {
-        // 1. Get all entries when near-cache is full, so some values will come from near-cache.
-        Map fromNearCache = getAllEntries(map);
+    private void assertNoStaleDataExistInNearCache(IMap<Integer, Integer> map) {
+        // 1. get all entries when Near Cache is full, so some values will come from Near Cache
+        Map<Integer, Integer> fromNearCache = getAllEntries(map);
 
-        // 2. Clear near-cache
+        // 2. clear Near Cache
         ((NearCachedMapProxyImpl) map).getNearCache().clear();
 
-        // 3. Get all values when near-cache is empty, these requests
-        // will go to underlying IMap directly because near-cache is empty.
-        Map fromIMap = getAllEntries(map);
+        // 3. get all values when Near Cache is empty, these requests
+        // will go directly to underlying IMap because Near Cache is empty
+        Map<Integer, Integer> fromIMap = getAllEntries(map);
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
             assertEquals(fromIMap.get(i), fromNearCache.get(i));
         }
     }
 
-    protected HashMap getAllEntries(IMap iMap) {
-        HashMap localMap = new HashMap(ENTRY_COUNT);
+    private HashMap<Integer, Integer> getAllEntries(IMap<Integer, Integer> iMap) {
+        HashMap<Integer, Integer> localMap = new HashMap<Integer, Integer>(ENTRY_COUNT);
         for (int i = 0; i < ENTRY_COUNT; i++) {
             localMap.put(i, iMap.get(i));
         }
         return localMap;
     }
 
-    protected NearCacheConfig newNearCacheConfig() {
+    private NearCacheConfig newNearCacheConfig() {
         return new NearCacheConfig();
     }
-
 
     private class NearCacheInvalidator extends Thread {
 
@@ -146,7 +144,6 @@ public class NearCacheStalenessTest extends HazelcastTestSupport {
             }
         }
     }
-
 
     private class NearCachePutter extends Thread {
 

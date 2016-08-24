@@ -54,11 +54,11 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
     private HazelcastInstance member;
     private HazelcastInstance client;
 
-    private IMap clientMap;
-    private IMap memberMap;
+    private IMap<Integer, Integer> clientMap;
+    private IMap<Integer, Integer> memberMap;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         ClientConfig clientConfig = getClientConfig(MAP_NAME);
 
         member = Hazelcast.newHazelcastInstance();
@@ -68,8 +68,7 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
         clientMap = client.getMap(MAP_NAME);
     }
 
-    // overridden
-    protected ClientConfig getClientConfig(String mapName) {
+    private ClientConfig getClientConfig(String mapName) {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
 
         ClientConfig clientConfig = new ClientConfig();
@@ -77,14 +76,14 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
         return clientConfig;
     }
 
-    protected NearCacheConfig getNearCacheConfig(String mapName) {
+    private NearCacheConfig getNearCacheConfig(String mapName) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig(mapName);
         nearCacheConfig.setInvalidateOnChange(true);
         return nearCacheConfig;
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         client.shutdown();
         member.shutdown();
     }
@@ -115,31 +114,30 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        // give some-time to receive possible latest invalidations.
+        // give some-time to receive possible latest invalidation events
         sleepSeconds(5);
 
         assertNoStaleDataExistInNearCache(clientMap);
-
     }
 
-    protected void assertNoStaleDataExistInNearCache(IMap map) {
-        // 1. Get all entries when near-cache is full, so some values will come from near-cache.
-        Map fromNearCache = getAllEntries(map);
+    private void assertNoStaleDataExistInNearCache(IMap<Integer, Integer> map) {
+        // 1. get all entries when Near Cache is full, so some values will come from Near Cache
+        Map<Integer, Integer> fromNearCache = getAllEntries(map);
 
-        // 2. Clear near-cache
+        // 2. clear the Near Cache
         ((NearCachedClientMapProxy) map).getNearCache().clear();
 
-        // 3. Get all values when near-cache is empty, these requests
-        // will go to underlying IMap directly because near-cache is empty.
-        Map fromIMap = getAllEntries(map);
+        // 3. get all values when Near Cache is empty,
+        // these requests will go directly to underlying IMap because Near Cache is empty
+        Map<Integer, Integer> fromIMap = getAllEntries(map);
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
             assertEquals(fromIMap.get(i), fromNearCache.get(i));
         }
     }
 
-    protected HashMap getAllEntries(IMap iMap) {
-        HashMap localMap = new HashMap(ENTRY_COUNT);
+    private HashMap<Integer, Integer> getAllEntries(IMap<Integer, Integer> iMap) {
+        HashMap<Integer, Integer> localMap = new HashMap<Integer, Integer>(ENTRY_COUNT);
         for (int i = 0; i < ENTRY_COUNT; i++) {
             localMap.put(i, iMap.get(i));
         }
@@ -157,7 +155,6 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
             }
         }
     }
-
 
     private class NearCachePutter extends Thread {
 

@@ -29,40 +29,35 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
- * Invalidates any map operation starter node's near cache immediately.
+ * Invalidates any map operation starter node's Near Cache immediately.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport {
 
-    private static final int numIterations = 1000;
+    private static final int INSTANCE_COUNT = 2;
+    private static final int NUM_ITERATIONS = 1000;
+    private static final long TIMEOUT = 100L;
+    private static final TimeUnit TIME_UNIT = TimeUnit.MILLISECONDS;
+    private static final String MAP_NAME = NearCacheLocalImmediateInvalidateTest.class.getCanonicalName();
 
-    private static final long timeout = 100L;
-
-    private static final int instanceCount = 2;
-
-    private static final TimeUnit timeunit = TimeUnit.MILLISECONDS;
-
-    public static final String mapName = NearCacheLocalImmediateInvalidateTest.class.getCanonicalName();
-
-    private HazelcastInstance hcInstance;
-
-    private HazelcastInstance hcInstance2;
+    private HazelcastInstance hzInstance1;
+    private HazelcastInstance hzInstance2;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         Config config = createConfig();
         // create Hazelcast instance
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        hcInstance = factory.newHazelcastInstance(config);
-        hcInstance2 = factory.newHazelcastInstance(config);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
+        hzInstance1 = factory.newHazelcastInstance(config);
+        hzInstance2 = factory.newHazelcastInstance(config);
     }
 
     protected Config createConfig() {
         // create config
         Config config = new Config();
-        // configure near cache
-        MapConfig mapConfig = config.getMapConfig(mapName + "*");
+        // configure Near Cache
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME + "*");
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setEvictionPolicy("NONE");
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -71,44 +66,46 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
     }
 
     @After
-    public void tearDown() throws Exception {
-        hcInstance.getLifecycleService().shutdown();
-        hcInstance2.getLifecycleService().shutdown();
+    public void tearDown() {
+        hzInstance1.getLifecycleService().shutdown();
+        hzInstance2.getLifecycleService().shutdown();
     }
 
     @Test
     public void testRemove() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "remove_" + String.valueOf(k);
             String value = "merhaba-" + key;
             // test
             String value0 = map.put(key, value);
-            String value1 = map.get(key); // this brings the value into the NearCache
+            // this brings the value into the Near Cache
+            String value1 = map.get(key);
             String value2 = map.remove(key);
-            String value3 = map.get(key); // here we _might_ still see the value
+            // here we _might_ still see the value
+            String value3 = map.get(key);
 
             assertNull(value0);
             assertEquals(value, value1);
             assertEquals(value, value2);
             assertNull(value3);
-
         }
     }
 
     @Test
     public void testDelete() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "delete_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // test
             String value0 = map.put(key, value);
-            String value1 = map.get(key); // this brings the value into the NearCache
+            // this brings the value into the NearCache
+            String value1 = map.get(key);
             map.delete(key);
-            String value3 = map.get(key); // here we _might_ still see the value
-            // assert
+            // here we _might_ still see the value
+            String value3 = map.get(key);
+
             assertNull(value0);
             assertEquals(value, value1);
             assertNull(value3);
@@ -117,16 +114,18 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testRemoveValue() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "removevalue_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
+
             String value0 = map.put(key, value);
-            String value1 = map.get(key); // this brings the value into the NearCache
+            // this brings the value into the NearCache
+            String value1 = map.get(key);
             map.remove(key, value);
-            String value3 = map.get(key); // here we _might_ still see the value
-            // assert
+            // here we _might_ still see the value
+            String value3 = map.get(key);
+
             assertNull(value0);
             assertEquals(value, value1);
             assertNull(value3);
@@ -135,16 +134,18 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testTryRemove() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "tryremove_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
+
             String value0 = map.put(key, value);
-            String value1 = map.get(key); // this brings the value into the NearCache
-            map.tryRemove(key, timeout, timeunit);
-            String value3 = map.get(key); // here we _might_ still see the value
-            // assert
+            // this brings the value into the NearCache
+            String value1 = map.get(key);
+            map.tryRemove(key, TIMEOUT, TIME_UNIT);
+            // here we _might_ still see the value
+            String value3 = map.get(key);
+
             assertNull(value0);
             assertEquals(value, value1);
             assertNull(value3);
@@ -153,14 +154,14 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testRemoveAsync() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "removeasync_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // test
             String value0 = map.put(key, value);
-            String value1 = map.get(key); // this brings the value into the NearCache
+            // this brings the value into the NearCache
+            String value1 = map.get(key);
             Future<String> future = map.removeAsync(key);
             String value2 = null;
             try {
@@ -168,8 +169,9 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             } catch (Exception e) {
                 fail("Exception in future.get(): " + e.getMessage());
             }
-            String value3 = map.get(key); // here we _might_ still see the value
-            // assert
+            // here we _might_ still see the value
+            String value3 = map.get(key);
+
             assertNull(value0);
             assertEquals(value, value1);
             assertEquals(value, value2);
@@ -181,15 +183,17 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testPut() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "put_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
-            String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
+
+            // this brings the NULL_OBJECT into the NearCache
+            String value0 = map.get(key);
             String value1 = map.put(key, value);
-            String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
-            // assert
+            // here we _might_ still see the NULL_OBJECT
+            String value2 = map.get(key);
+
             assertNull(value0);
             assertNull(value1);
             assertEquals(value, value2);
@@ -198,15 +202,17 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testTryPut() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "tryput_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
-            String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
-            map.tryPut(key, value, timeout, timeunit);
-            String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
-            // assert
+
+            // this brings the NULL_OBJECT into the NearCache
+            String value0 = map.get(key);
+            map.tryPut(key, value, TIMEOUT, TIME_UNIT);
+            // here we _might_ still see the NULL_OBJECT
+            String value2 = map.get(key);
+
             assertNull(value0);
             assertEquals(value, value2);
         }
@@ -214,15 +220,17 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testPutIfAbsent() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "putifabsent_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
-            String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
+
+            // this brings the NULL_OBJECT into the NearCache
+            String value0 = map.get(key);
             String value1 = map.putIfAbsent(key, value);
-            String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
-            // assert
+            // here we _might_ still see the NULL_OBJECT
+            String value2 = map.get(key);
+
             assertNull(value0);
             assertEquals(value, value2);
             assertNull(value1);
@@ -231,15 +239,17 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testPutTransient() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "puttransient_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
-            String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
-            map.putTransient(key, value, 0, timeunit);
-            String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
-            // assert
+
+            // this brings the NULL_OBJECT into the NearCache
+            String value0 = map.get(key);
+            map.putTransient(key, value, 0, TIME_UNIT);
+            // here we _might_ still see the NULL_OBJECT
+            String value2 = map.get(key);
+
             assertNull(value0);
             assertEquals(value, value2);
         }
@@ -247,12 +257,13 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testPutAsync() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "putasync_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
-            String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
+
+            // this brings the NULL_OBJECT into the Near Cache
+            String value0 = map.get(key);
             Future<String> future = map.putAsync(key, value);
             String value1 = null;
             try {
@@ -260,26 +271,28 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             } catch (Exception e) {
                 fail("Exception in future.get(): " + e.getMessage());
             }
-            String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
-            // assert
+            // here we _might_ still see the NULL_OBJECT
+            String value2 = map.get(key);
+
             assertNull(value0);
             assertNull(value1);
             assertEquals(value, value2);
         }
     }
 
-
     @Test
     public void testEvict() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "evict_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
+
             String value0 = map.put(key, value);
-            String value1 = map.get(key); // this brings the value into the NearCache
+            // this brings the value into the NearCache
+            String value1 = map.get(key);
             map.evict(key);
-            String value3 = map.get(key); // here we _might_ still see the value
+            // here we _might_ still see the value
+            String value3 = map.get(key);
 
             assertNull(value0);
             assertEquals(value, value1);
@@ -289,35 +302,37 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testSet() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "set_" + String.valueOf(k);
             String value = "merhaba-" + key;
-            // test
-            String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
+
+            // this brings the NULL_OBJECT into the Near Cache
+            String value0 = map.get(key);
             map.set(key, value);
-            String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
-            // assert
+            // here we _might_ still see the NULL_OBJECT
+            String value2 = map.get(key);
+
             assertNull(value0);
             assertEquals(value, value2);
-
-
         }
     }
 
     @Test
     public void testReplace() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
-        for (int k = 0; k < numIterations; k++) {
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "replace_" + String.valueOf(k);
             String value = "merhaba-" + key;
             String valueNew = "merhaba-new" + key;
-            // test
+
             map.put(key, value);
-            String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
+            // this brings the NULL_OBJECT into the NearCache
+            String value0 = map.get(key);
             map.replace(key, valueNew);
-            String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
-            // assert
+            // here we _might_ still see the NULL_OBJECT
+            String value2 = map.get(key);
+
             assertNotNull(value0);
             assertEquals(valueNew, value2);
         }
@@ -325,39 +340,43 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Test
     public void testExecuteOnKey() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
         // loop over several keys to make sure we have keys on both instances
-        for (int k = 0; k < numIterations; k++) {
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "executeOnKey_" + String.valueOf(k);
-            // bring null local cache.
-            final String expectedNull = map.get(key);
+            // bring null local cache
+            String expectedNull = map.get(key);
             assertNull(expectedNull);
-            final Object o = map.executeOnKey(key, new WritingEntryProcessor());
-            final String newValue = (String) o;
+            Object o = map.executeOnKey(key, new WritingEntryProcessor());
+            String newValue = (String) o;
             String value2 = map.get(key);
             assertEquals(newValue, value2);
         }
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testExecuteOnKeys() {
-        final IMap<String, String> map = hcInstance.getMap(getMapName());
+        IMap<String, String> map = hzInstance1.getMap(getMapName());
         // loop over several keys to make sure we have keys on both instances
-        for (int k = 0; k < numIterations; k++) {
+        for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "executeOnKeys_" + String.valueOf(k);
-            // bring null to local cache.
-            final String expectedNull = map.get(key);
+            // bring null to local cache
+            String expectedNull = map.get(key);
             assertNull(expectedNull);
-            final HashSet<String> keys = new HashSet<String>();
+            HashSet<String> keys = new HashSet<String>();
             keys.add(key);
-            final Object o = map.executeOnKeys(keys, new WritingEntryProcessor());
-            final Map<String, String> result = (Map) o;
+            Map<String, String> result = (Map) map.executeOnKeys(keys, new WritingEntryProcessor());
             for (Map.Entry<String, String> e : result.entrySet()) {
-                final String newValue = e.getValue();
-                final String cachedValue = map.get(e.getKey());
+                String newValue = e.getValue();
+                String cachedValue = map.get(e.getKey());
                 assertEquals(newValue, cachedValue);
             }
         }
+    }
+
+    private static String getMapName() {
+        return randomMapName(MAP_NAME);
     }
 
     /**
@@ -373,9 +392,4 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             return "new value";
         }
     }
-
-    private static String getMapName() {
-        return randomMapName(mapName);
-    }
-
 }

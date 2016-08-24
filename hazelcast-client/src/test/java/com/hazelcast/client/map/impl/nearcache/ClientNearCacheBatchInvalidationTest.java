@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
@@ -51,12 +50,12 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
     protected String mapName = randomMapName();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
     @Test
-    public void testBatchInvalidationRemovesEntries() throws Exception {
+    public void testBatchInvalidationRemovesEntries() {
         Config config = getConfig();
         configureBatching(config, true, 10, 1);
         HazelcastInstance server = factory.newHazelcastInstance(config);
@@ -76,22 +75,21 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
             serverMap.put(i, i);
         }
 
-        // fill near-cache on client
+        // fill Near Cache on client
         for (int i = 0; i < size; i++) {
             clientMap.get(i);
         }
 
-        // generate invalidation data.
+        // generate invalidation data
         for (int i = 0; i < size; i++) {
             serverMap.put(i, i);
         }
 
         assertNearCacheSizeEventually(clientMap, 0);
-
     }
 
     @Test
-    public void testHigherBatchSize_shouldNotCauseAnyInvalidation_onClient() throws Exception {
+    public void testHigherBatchSize_shouldNotCauseAnyInvalidation_onClient() {
         Config config = getConfig();
         configureBatching(config, true, Integer.MAX_VALUE, Integer.MAX_VALUE);
         HazelcastInstance server = factory.newHazelcastInstance(config);
@@ -112,12 +110,12 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
             serverMap.put(i, i);
         }
 
-        // fill near-cache on client
+        // fill Near Cache on client
         for (int i = 0; i < size; i++) {
             clientMap.get(i);
         }
 
-        // generate invalidation data.
+        // generate invalidation data
         for (int i = 0; i < size; i++) {
             serverMap.put(i, i);
         }
@@ -126,7 +124,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapClear_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
+    public void testMapClear_shouldClearNearCaches_onOwnerAndBackupNodes() {
         Config config = getConfig();
         configureBatching(config, true, 10, 1);
         HazelcastInstance server = factory.newHazelcastInstance(config);
@@ -147,7 +145,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
             serverMap.put(i, i);
         }
 
-        // fill near-cache on client
+        // fill Near Cache on client
         for (int i = 0; i < size; i++) {
             clientMap.get(i);
         }
@@ -157,9 +155,8 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
         assertNearCacheSizeEventually(clientMap, 0);
     }
 
-
     @Test
-    public void testMapEvictAll_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
+    public void testMapEvictAll_shouldClearNearCaches_onOwnerAndBackupNodes() {
         Config config = getConfig();
         configureBatching(config, true, 10, 1);
         HazelcastInstance server = factory.newHazelcastInstance(config);
@@ -180,7 +177,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
             serverMap.put(i, i);
         }
 
-        // fill near-cache on client
+        // fill Near Cache on client
         for (int i = 0; i < size; i++) {
             clientMap.get(i);
         }
@@ -190,7 +187,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
         assertNearCacheSizeEventually(clientMap, 0);
     }
 
-    protected ClientConfig newClientConfig(String mapName) {
+    private ClientConfig newClientConfig(String mapName) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInMemoryFormat(getNearCacheInMemoryFormat());
         nearCacheConfig.setName(mapName);
@@ -204,20 +201,20 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
         return clientConfig;
     }
 
-    protected InMemoryFormat getNearCacheInMemoryFormat() {
+    private InMemoryFormat getNearCacheInMemoryFormat() {
         return OBJECT;
     }
 
-    protected void configureBatching(Config config, boolean enableBatching, int batchSize, int period) {
+    private void configureBatching(Config config, boolean enableBatching, int batchSize, int period) {
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(enableBatching));
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), valueOf(batchSize));
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), valueOf(period));
     }
 
-    protected void assertNearCacheSizeEventually(final IMap map, final int nearCacheSize) {
+    private void assertNearCacheSizeEventually(final IMap map, final int nearCacheSize) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 NearCache nearCache = ((NearCachedClientMapProxy) map).getNearCache();
 
                 assertEquals(nearCacheSize, nearCache.size());
