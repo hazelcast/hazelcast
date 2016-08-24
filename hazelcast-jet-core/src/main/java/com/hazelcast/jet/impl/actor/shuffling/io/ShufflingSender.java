@@ -20,9 +20,9 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.dag.sink.AbstractHazelcastWriter;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -39,7 +39,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     private final int containerID;
     private final byte[] jobNameBytes;
-    private final RingBufferActor ringBufferActor;
+    private final RingbufferActor ringbufferActor;
     private final ChunkedOutputStream serializer;
     private final ObjectDataOutputStream dataOutputStream;
     private final SerializationOptimizer optimizer;
@@ -53,9 +53,9 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         this.containerID = containerContext.getID();
         String jobName = containerContext.getJobContext().getName();
         this.jobNameBytes = ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(jobName);
-        this.ringBufferActor = new RingBufferActor(nodeEngine, containerContext.getJobContext(), containerTask,
+        this.ringbufferActor = new RingbufferActor(nodeEngine, containerContext.getJobContext(), containerTask,
                 containerContext.getVertex());
-        this.serializer = new ChunkedOutputStream(this.ringBufferActor, containerContext, taskID);
+        this.serializer = new ChunkedOutputStream(this.ringbufferActor, containerContext, taskID);
         this.optimizer = containerTask.getTaskContext().getSerializationOptimizer();
         this.dataOutputStream = new ObjectDataOutputStream(
                 this.serializer, (InternalSerializationService) nodeEngine.getSerializationService());
@@ -74,7 +74,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         serializer.flushSender();
         JetPacket packet = new JetPacket(taskID, containerID, jobNameBytes);
         packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK_SENT);
-        ringBufferActor.consumeObject(packet);
+        ringbufferActor.consumeObject(packet);
         return chunk.size();
     }
 
@@ -88,19 +88,19 @@ public class ShufflingSender extends AbstractHazelcastWriter {
             }
             chunkBuffer.reset();
         }
-        return ringBufferActor.flush();
+        return ringbufferActor.flush();
     }
 
     @Override
     public boolean isFlushed() {
-        boolean result = ringBufferActor.isFlushed();
+        boolean result = ringbufferActor.isFlushed();
         checkClosed(result);
         return result;
     }
 
     private void checkClosed(boolean result) {
         if ((result) && (closed)) {
-            ringBufferActor.close();
+            ringbufferActor.close();
         }
     }
 
@@ -113,7 +113,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     protected void onOpen() {
         closed = false;
         isFlushed = true;
-        ringBufferActor.open();
+        ringbufferActor.open();
     }
 
     @Override
@@ -137,8 +137,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     private void writePacket(JetPacket packet) {
         try {
-            ringBufferActor.consumeObject(packet);
-            ringBufferActor.flush();
+            ringbufferActor.consumeObject(packet);
+            ringbufferActor.flush();
         } catch (Exception e) {
             throw JetUtil.reThrow(e);
         }
@@ -157,7 +157,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         }
     }
 
-    public RingBufferActor getRingBufferActor() {
-        return ringBufferActor;
+    public RingbufferActor getRingbufferActor() {
+        return ringbufferActor;
     }
 }

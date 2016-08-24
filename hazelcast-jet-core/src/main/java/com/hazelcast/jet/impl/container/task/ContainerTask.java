@@ -23,25 +23,25 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.executor.TaskContext;
 import com.hazelcast.jet.impl.actor.ComposedActor;
-import com.hazelcast.jet.impl.actor.DefaultComposedActor;
 import com.hazelcast.jet.impl.actor.ObjectActor;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.DefaultProcessorContext;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -52,9 +52,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+/**
+ * Interface which represents container's execution task
+ */
 @SuppressWarnings("checkstyle:methodcount")
-public class DefaultContainerTask extends AbstractTask
-        implements ContainerTask {
+public class ContainerTask extends Task {
 
     @SuppressWarnings("ThrowableInstanceNeverThrown")
     private static final InterruptedException INTERRUPTED_EXCEPTION =
@@ -77,10 +79,10 @@ public class DefaultContainerTask extends AbstractTask
     private final AtomicInteger activeProducersCounter = new AtomicInteger(0);
     private final AtomicInteger activeReceiversCounter = new AtomicInteger(0);
     private final AtomicInteger finalizedReceiversCounter = new AtomicInteger(0);
-    private final Collection<ObjectConsumer> consumers = new CopyOnWriteArrayList<ObjectConsumer>();
-    private final Collection<ObjectProducer> producers = new CopyOnWriteArrayList<ObjectProducer>();
-    private final Map<Address, ShufflingReceiver> shufflingReceivers = new ConcurrentHashMap<Address, ShufflingReceiver>();
-    private final Map<Address, ShufflingSender> shufflingSenders = new ConcurrentHashMap<Address, ShufflingSender>();
+    private final Collection<ObjectConsumer> consumers = new CopyOnWriteArrayList<>();
+    private final Collection<ObjectProducer> producers = new CopyOnWriteArrayList<>();
+    private final Map<Address, ShufflingReceiver> shufflingReceivers = new ConcurrentHashMap<>();
+    private final Map<Address, ShufflingSender> shufflingSenders = new ConcurrentHashMap<>();
     private final TaskContext taskContext;
     private final ProcessorContext processorContext;
     private volatile TaskProcessor taskProcessor;
@@ -93,26 +95,31 @@ public class DefaultContainerTask extends AbstractTask
     private volatile boolean finalizationStarted;
     private volatile Throwable error;
 
-    public DefaultContainerTask(ProcessingContainer container,
-                                Vertex vertex,
-                                TaskProcessorFactory taskProcessorFactory,
-                                int taskID,
-                                TaskContext taskContext) {
+    public ContainerTask(ProcessingContainer container,
+                         Vertex vertex,
+                         TaskProcessorFactory taskProcessorFactory,
+                         int taskID,
+                         TaskContext taskContext) {
         this.taskID = taskID;
         this.vertex = vertex;
         this.container = container;
         this.taskContext = taskContext;
         this.taskProcessorFactory = taskProcessorFactory;
-        this.containerContext = container.getContainerContext();
-        this.jobContext = container.getJobContext();
-        this.nodeEngine = container.getJobContext().getNodeEngine();
+        containerContext = container.getContainerContext();
+        jobContext = container.getJobContext();
+        nodeEngine = container.getJobContext().getNodeEngine();
         Supplier<Processor> processorFactory = container.getContainerProcessorFactory();
-        this.processor = processorFactory == null ? null : processorFactory.get();
-        this.processorContext = new DefaultProcessorContext(taskContext, this.containerContext);
-        this.logger = nodeEngine.getLogger(getClass());
+        processor = processorFactory == null ? null : processorFactory.get();
+        processorContext = new DefaultProcessorContext(taskContext, containerContext);
+        logger = nodeEngine.getLogger(getClass());
     }
 
-    @Override
+    /**
+     * Start tasks' execution
+     * Initialize initial state of the task
+     *
+     * @param producers - list of the input producers
+     */
     public void start(List<? extends ObjectProducer> producers) {
         if (producers != null && !producers.isEmpty()) {
             for (ObjectProducer producer : producers) {
@@ -123,75 +130,115 @@ public class DefaultContainerTask extends AbstractTask
         onStart();
     }
 
-    @Override
+    /**
+     * Interrupts tasks execution
+     *
+     * @param error - the reason of the interruption
+     */
     public void interrupt(Throwable error) {
         if (interrupted.compareAndSet(false, true)) {
-            this.error = error;
+            error = error;
         }
     }
 
-    @Override
+    /**
+     * Performs registration of sink writers
+     *
+     * @param sinkWriters - list of the input sink writers
+     */
     public void registerSinkWriters(List<DataWriter> sinkWriters) {
         consumers.addAll(sinkWriters);
     }
 
-    @Override
+    /**
+     * @param channel         - data channel for corresponding edge
+     * @param edge            - corresponding edge
+     * @param targetContainer - source container of the channel
+     * @return - composed actor with actors of channel
+     */
     public ComposedActor registerOutputChannel(DataChannel channel, Edge edge, ProcessingContainer targetContainer) {
         List<ObjectActor> actors = new ArrayList<ObjectActor>(targetContainer.getContainerTasks().length);
 
         for (int i = 0; i < targetContainer.getContainerTasks().length; i++) {
-            ObjectActor actor = new RingBufferActor(nodeEngine, jobContext, this, vertex, edge);
+            ObjectActor actor = new RingbufferActor(nodeEngine, jobContext, this, vertex, edge);
 
             if (channel.isShuffled()) {
                 //output
-                actor = new ShufflingActor(actor, nodeEngine, containerContext);
+                actor = new ShufflingActor(actor, nodeEngine);
             }
             actors.add(actor);
         }
 
-        ComposedActor composed = new DefaultComposedActor(this, actors, vertex, edge, containerContext);
+        ComposedActor composed = new ComposedActor(this, actors, vertex, edge, containerContext);
         consumers.add(composed);
 
         return composed;
     }
 
-    @Override
-    public void handleProducerCompleted(ObjectProducer actor) {
+    /**
+     * Handled on input producer's completion
+     *
+     * @param producer - finished input producer
+     */
+    public void handleProducerCompleted(ObjectProducer producer) {
         activeProducersCounter.decrementAndGet();
     }
 
-    @Override
+    /**
+     * Register shuffling receiver for the corresponding node with address member
+     *
+     * @param address  - member's address
+     * @param receiver - corresponding shuffling receiver
+     */
     public void registerShufflingReceiver(Address address, ShufflingReceiver receiver) {
         shufflingReceivers.put(address, receiver);
         receiver.registerCompletionHandler(producer -> activeReceiversCounter.decrementAndGet());
     }
 
-    @Override
+    /**
+     * @return - task context
+     */
     public TaskContext getTaskContext() {
         return taskContext;
     }
 
-    @Override
+    /**
+     * @param endPoint - jet-Address of the corresponding shuffling-receiver
+     * @return - corresponding shuffling-receiver
+     */
     public ShufflingReceiver getShufflingReceiver(Address endPoint) {
         return shufflingReceivers.get(endPoint);
     }
 
-    @Override
+    /**
+     * @return - corresponding DAG's vertex
+     */
     public Vertex getVertex() {
         return containerContext.getVertex();
     }
 
-    @Override
+    /**
+     * Start finalization of the task
+     */
     public void startFinalization() {
         finalizationStarted = true;
     }
 
-    @Override
+    /**
+     * Register shuffling sender for the corresponding node with address member
+     *
+     * @param address - member's address
+     * @param sender  - corresponding shuffling sender
+     */
     public void registerShufflingSender(Address address, ShufflingSender sender) {
         shufflingSenders.put(address, sender);
     }
 
-    @Override
+    /**
+     * Init task, perform initialization actions before task being executed
+     * The strict rule is that this method will be executed synchronously on
+     * all nodes in cluster before any real task's  execution
+     */
     public void init() {
         error = null;
         taskProcessor.onOpen();
@@ -205,7 +252,10 @@ public class DefaultContainerTask extends AbstractTask
         finalizedReceiversCounter.set(shufflingReceivers.values().size());
     }
 
-    @Override
+    /***
+     * Will be invoked immediately before task was submitted into the executor,
+     * strictly from executor-thread
+     */
     public void beforeProcessing() {
         try {
             processor.before(processorContext);
@@ -215,16 +265,22 @@ public class DefaultContainerTask extends AbstractTask
         }
     }
 
-    @Override
+    /**
+     * Execute next iteration of task
+     *
+     * @param didWorkHolder flag to set to indicate that the task did something useful
+     * @return - true - if task should be executed again, false if task should be removed from executor
+     * @throws Exception if any exception
+     */
     public boolean execute(BooleanHolder didWorkHolder) {
-        TaskProcessor processor = this.taskProcessor;
+        TaskProcessor processor = taskProcessor;
         boolean classLoaderChanged = false;
         ClassLoader classLoader = null;
 
         if (contextClassLoader != null) {
             classLoader = Thread.currentThread().getContextClassLoader();
             if (contextClassLoader != classLoader) {
-                Thread.currentThread().setContextClassLoader(this.contextClassLoader);
+                Thread.currentThread().setContextClassLoader(contextClassLoader);
                 classLoaderChanged = true;
             }
         }
@@ -366,7 +422,7 @@ public class DefaultContainerTask extends AbstractTask
         }
 
         if (!sendersClosed) {
-            for (ShufflingSender sender : this.sendersArray) {
+            for (ShufflingSender sender : sendersArray) {
                 sender.close();
             }
             sendersClosed = true;
@@ -418,7 +474,7 @@ public class DefaultContainerTask extends AbstractTask
             success &= sender.isFlushed();
         }
 
-        this.sendersFlushed = success;
+        sendersFlushed = success;
         return success;
     }
 
@@ -426,7 +482,7 @@ public class DefaultContainerTask extends AbstractTask
         logger.warning(error.getMessage(), error);
 
         try {
-            this.container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_ERROR, error);
+            container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_ERROR, error);
         } catch (Throwable e) {
             logger.warning("Exception in the task message=" + e.getMessage(), e);
         } finally {

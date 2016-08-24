@@ -20,16 +20,16 @@ import com.hazelcast.jet.impl.util.BooleanHolder;
 
 /**
  * Represents abstract task
- *
+ * <p/>
  * Tasks can be:
- *
+ * <p/>
  * <ul>
- *     <li>Container execution task</li>
- *     <li>Network socket writer</li>
- *     <li>Network socket reader</li>
+ * <li>Container execution task</li>
+ * <li>Network socket writer</li>
+ * <li>Network socket reader</li>
  * </ul>
- *
- *
+ * <p/>
+ * <p/>
  * General architecture of any tasks usage is:
  * <pre>
  *      Producer_1                  Consumer_1
@@ -43,9 +43,9 @@ import com.hazelcast.jet.impl.util.BooleanHolder;
  *
  *      Producer_n                  Consumer_K
  * </pre>
- *
+ * <p/>
  * Examples of producers and consumers:
- *
+ * <p/>
  * <pre>
  *     Network socketChannel,
  *     Files,
@@ -54,31 +54,58 @@ import com.hazelcast.jet.impl.util.BooleanHolder;
  *     Previous RingBuffer with data from the previous container
  * </pre>
  */
-public interface Task {
+public abstract class Task {
+
+    protected volatile ClassLoader contextClassLoader;
+
     /**
      * @param classLoader - set classLoader to be used as T
      */
-    void setThreadContextClassLoaders(ClassLoader classLoader);
+    public void setThreadContextClassLoader(ClassLoader classLoader) {
+        this.contextClassLoader = classLoader;
+    }
 
     /**
      * Init task, perform initialization actions before task being executed
      * The strict rule is that this method will be executed synchronously on
      * all nodes in cluster before any real task's  execution
      */
-    void init();
+    public void init() {
 
-    /***
-     * Will be invoked immediately before task was submitted into the executor,
-     * strictly from executor-thread
+    }
+
+    /**
+     * Destroy task
+     * Task can not be executed again after destroy
      */
-    void beforeProcessing();
+    public void destroy() {
+
+    }
 
     /**
      * Interrupts tasks execution
      *
      * @param error - the reason of the interruption
      */
-    void interrupt(Throwable error);
+    public void interrupt(Throwable error) {
+
+    }
+
+    /***
+     * Will be invoked immediately before task was submitted into the executor,
+     * strictly from executor-thread
+     */
+    public void beforeProcessing() {
+
+    }
+
+    /**
+     * Performs finalization actions after execution
+     * Task can be inited and executed again
+     */
+    public void finalizeTask() {
+
+    }
 
     /**
      * Execute next iteration of task
@@ -87,17 +114,5 @@ public interface Task {
      * @return - true - if task should be executed again, false if task should be removed from executor
      * @throws Exception if any exception
      */
-    boolean execute(BooleanHolder didWorkHolder) throws Exception;
-
-    /**
-     * Performs finalization actions after execution
-     * Task can be inited and executed again
-     */
-    void finalizeTask();
-
-    /**
-     * Destroy task
-     * Task can not be executed again after destroy
-     */
-    void destroy();
+    public abstract boolean execute(BooleanHolder didWorkHolder) throws Exception;
 }

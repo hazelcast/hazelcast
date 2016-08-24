@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.statemachine.container.requests;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
-public class ContainerExecuteRequest implements ContainerRequest<ProcessingContainerEvent, Dummy> {
+public class ContainerExecuteRequest implements StateMachineRequest<ProcessingContainerEvent, Dummy> {
     @Override
     public ProcessingContainerEvent getContainerEvent() {
         return ProcessingContainerEvent.EXECUTE;

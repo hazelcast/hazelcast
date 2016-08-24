@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
-public class FinalizeJobRequest implements ContainerRequest<JobManagerEvent, Dummy> {
+public class FinalizeJobRequest implements StateMachineRequest<JobManagerEvent, Dummy> {
     @Override
     public JobManagerEvent getContainerEvent() {
         return JobManagerEvent.FINALIZE;

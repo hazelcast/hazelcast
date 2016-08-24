@@ -90,11 +90,6 @@ public class ShufflingConsumer implements ObjectConsumer {
         return this.baseConsumer.getHashingStrategy();
     }
 
-    @Override
-    public boolean consume(ProducerInputStream chunk) {
-        return consumeChunk(chunk) > 0;
-    }
-
     public NodeEngineImpl getNodeEngine() {
         return nodeEngine;
     }

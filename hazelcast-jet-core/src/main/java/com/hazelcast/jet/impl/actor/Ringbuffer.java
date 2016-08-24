@@ -23,7 +23,7 @@ import com.hazelcast.jet.data.io.ProducerInputStream;
  *
  * @param <T> - type of the content in the ring buffer;
  */
-public interface RingBuffer<T> {
+public interface Ringbuffer<T> {
     /**
      * Acquire specified amount of elements in buffer;
      *

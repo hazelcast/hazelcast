@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.statemachine.container.requests;
 
 
-import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
 /**
  * State-machine request which accept event that container has been interrupted;
  */
-public class ContainerInterruptedRequest implements ContainerRequest<ProcessingContainerEvent, Throwable> {
+public class ContainerInterruptedRequest implements StateMachineRequest<ProcessingContainerEvent, Throwable> {
     private final Throwable error;
 
     public ContainerInterruptedRequest(Throwable error) {

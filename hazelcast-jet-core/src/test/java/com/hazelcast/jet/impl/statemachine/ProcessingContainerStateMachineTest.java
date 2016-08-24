@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.statemachine;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.ExecutorContext;
-import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
@@ -214,7 +213,7 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
         assertEquals(ProcessingContainerState.FINALIZED, stateMachine.currentState());
     }
 
-    private ProcessingContainerResponse processRequest(ContainerRequest request) throws InterruptedException, java.util.concurrent.ExecutionException {
+    private ProcessingContainerResponse processRequest(StateMachineRequest request) throws InterruptedException, java.util.concurrent.ExecutionException {
         Future<ProcessingContainerResponse> future = stateMachine.handleRequest(request);
         executor.wakeUp();
         return future.get();

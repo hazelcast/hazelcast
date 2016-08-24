@@ -18,14 +18,12 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
-import com.hazelcast.jet.impl.data.io.SocketReader;
-import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -40,8 +38,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DefaultSocketReader
-        extends AbstractNetworkTask implements SocketReader {
+/**
+ * Represents abstract task to read from network socket;
+ *
+ * The architecture is following:
+ *
+ *
+ * <pre>
+ *  SocketChannel (JetAddress)  -&gt; SocketReader -&gt; Consumer(ringBuffer)
+ * </pre>
+ */
+public class SocketReader
+        extends NetworkTask {
     protected volatile ByteBuffer receiveBuffer;
     protected boolean isBufferActive;
 
@@ -49,15 +57,15 @@ public class DefaultSocketReader
     private final Address jetAddress;
     private final JobContext jobContext;
     private final ObjectIOStream<JetPacket> buffer;
-    private final List<RingBufferActor> consumers = new ArrayList<RingBufferActor>();
+    private final List<RingbufferActor> consumers = new ArrayList<RingbufferActor>();
     private final Map<Address, SocketWriter> writers = new HashMap<Address, SocketWriter>();
 
     private JetPacket packet;
     private volatile boolean socketAssigned;
     private final byte[] jobNameBytes;
 
-    public DefaultSocketReader(JobContext jobContext,
-                               Address jetAddress) {
+    public SocketReader(JobContext jobContext,
+                        Address jetAddress) {
         super(jobContext.getNodeEngine(), jetAddress);
 
         this.jetAddress = jetAddress;
@@ -69,7 +77,7 @@ public class DefaultSocketReader
         this.buffer = new ObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
-    public DefaultSocketReader(NodeEngine nodeEngine) {
+    public SocketReader(NodeEngine nodeEngine) {
         super(nodeEngine, null);
         this.jetAddress = null;
         this.socketAssigned = true;
@@ -79,6 +87,11 @@ public class DefaultSocketReader
         this.buffer = new ObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
+    /**
+         * Init task, perform initialization actions before task being executed
+         * The strict rule is that this method will be executed synchronously on
+         * all nodes in cluster before any real task's  execution
+         */
     public void init() {
         super.init();
         socketAssigned = false;
@@ -231,9 +244,8 @@ public class DefaultSocketReader
         }
     }
 
-    protected boolean consumePacket(JetPacket packet) throws Exception {
-        buffer.consume(packet);
-        return true;
+    protected boolean consumePacket(JetPacket packet)  {
+        return buffer.consume(packet);
     }
 
     private void flush() throws Exception {
@@ -256,7 +268,9 @@ public class DefaultSocketReader
         writers.get(jetAddress).sendServicePacket(jetPacket);
     }
 
-    @Override
+    /**
+         * @return - true of last write to the consumer-queue has been flushed;
+         */
     public boolean isFlushed() {
         boolean isFlushed = true;
 
@@ -267,7 +281,13 @@ public class DefaultSocketReader
         return isFlushed;
     }
 
-    @Override
+    /**
+         * Assign corresponding socketChannel to reader-task;
+         *
+         * @param socketChannel  - network socketChannel;
+         * @param receiveBuffer  - byteBuffer to be used to read data from socket;
+         * @param isBufferActive - true , if buffer can be used for read (not all data has been read), false otherwise
+         */
     public void setSocketChannel(SocketChannel socketChannel,
                                  ByteBuffer receiveBuffer,
                                  boolean isBufferActive) {
@@ -284,12 +304,21 @@ public class DefaultSocketReader
         socketAssigned = true;
     }
 
-    @Override
-    public void registerConsumer(RingBufferActor ringBufferActor) {
-        consumers.add(ringBufferActor);
+    /**
+         * Register output ringBuffer consumer;
+         *
+         * @param ringbufferActor - corresponding output consumer;
+         */
+    public void registerConsumer(RingbufferActor ringbufferActor) {
+        consumers.add(ringbufferActor);
     }
 
-    @Override
+    /**
+         * Assigns corresponding socket writer on the opposite node;
+         *
+         * @param writeAddress - JET's member node address;
+         * @param socketWriter - SocketWriter task;
+         */
     public void assignWriter(Address writeAddress,
                              SocketWriter socketWriter) {
         writers.put(writeAddress, socketWriter);

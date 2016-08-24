@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.actor;
 
-import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 
 /**
  * This is an abstract interface for each actor in the system which

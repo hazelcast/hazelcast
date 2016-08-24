@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -36,11 +36,11 @@ public class ChunkedOutputStream extends OutputStream {
     private final int containerID;
     private final int shufflingBytesSize;
     private final byte[] jobNameBytyes;
-    private final RingBufferActor ringBufferActor;
+    private final RingbufferActor ringbufferActor;
 
-    public ChunkedOutputStream(RingBufferActor ringBufferActor, ContainerContext containerContext, int taskID) {
+    public ChunkedOutputStream(RingbufferActor ringbufferActor, ContainerContext containerContext, int taskID) {
         this.taskID = taskID;
-        this.ringBufferActor = ringBufferActor;
+        this.ringbufferActor = ringbufferActor;
         this.shufflingBytesSize = containerContext.getJobContext().getJobConfig().getShufflingBatchSizeBytes();
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
         String jobName = containerContext.getJobContext().getName();
@@ -77,7 +77,7 @@ public class ChunkedOutputStream extends OutputStream {
 
                 packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK);
 
-                ringBufferActor.consumeObject(packet);
+                ringbufferActor.consumeObject(packet);
             }
         } finally {
             Arrays.fill(buffer, (byte) 0);

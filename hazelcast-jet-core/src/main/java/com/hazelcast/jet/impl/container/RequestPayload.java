@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.jet.impl.statemachine.StateMachineEvent;
-import com.hazelcast.jet.impl.statemachine.StateMachineOutput;
+import com.hazelcast.jet.impl.statemachine.StateMachineResponse;
 import com.hazelcast.jet.impl.util.BasicCompletableFuture;
 
-public class RequestPayload<SI extends StateMachineEvent, SO extends StateMachineOutput> {
+public class RequestPayload<SI extends StateMachineEvent, SO extends StateMachineResponse> {
     private final BasicCompletableFuture<SO> future;
     private final Object payload;
     private final SI event;

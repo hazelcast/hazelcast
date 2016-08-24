@@ -21,8 +21,8 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithReferenceStrategy;
-import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.actor.ringbuffer.RingbufferWithReferenceStrategy;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
@@ -37,12 +37,12 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class RingBufferActor implements ObjectActor {
+public class RingbufferActor implements ObjectActor {
     private final Edge edge;
     private final Vertex vertex;
     private final ContainerTask sourceTask;
     private final Object[] producerChunk;
-    private final RingBuffer<Object> ringBuffer;
+    private final Ringbuffer<Object> ringbuffer;
     private final ObjectIOStream<Object> flushBuffer;
     private final List<ProducerCompletionHandler> completionHandlers;
     private int producedCount;
@@ -50,14 +50,14 @@ public class RingBufferActor implements ObjectActor {
     private int currentFlushedCount;
     private volatile boolean isClosed;
 
-    public RingBufferActor(NodeEngine nodeEngine,
+    public RingbufferActor(NodeEngine nodeEngine,
                            JobContext jobContext,
                            ContainerTask sourceTask,
                            Vertex vertex) {
         this(nodeEngine, jobContext, sourceTask, vertex, null, false);
     }
 
-    public RingBufferActor(NodeEngine nodeEngine,
+    public RingbufferActor(NodeEngine nodeEngine,
                            JobContext jobContext,
                            ContainerTask sourceTask,
                            Vertex vertex,
@@ -65,7 +65,7 @@ public class RingBufferActor implements ObjectActor {
         this(nodeEngine, jobContext, sourceTask, vertex, edge, true);
     }
 
-    public RingBufferActor(NodeEngine nodeEngine,
+    public RingbufferActor(NodeEngine nodeEngine,
                            JobContext jobContext,
                            ContainerTask sourceTask,
                            Vertex vertex,
@@ -80,8 +80,8 @@ public class RingBufferActor implements ObjectActor {
         int ringbufferSize = jobConfig.getRingbufferSize();
         this.flushBuffer = new ObjectIOStream<>(new Object[objectChunkSize]);
         this.completionHandlers = new CopyOnWriteArrayList<>();
-        this.ringBuffer = new RingBufferWithReferenceStrategy<>(ringbufferSize,
-                nodeEngine.getLogger(RingBufferActor.class)
+        this.ringbuffer = new RingbufferWithReferenceStrategy<>(ringbufferSize,
+                nodeEngine.getLogger(RingbufferActor.class)
         );
 
         if (registerListener) {
@@ -98,20 +98,15 @@ public class RingBufferActor implements ObjectActor {
             return 0;
         }
 
-        int acquired = this.ringBuffer.acquire(this.flushBuffer.size() - this.currentFlushedCount);
+        int acquired = this.ringbuffer.acquire(this.flushBuffer.size() - this.currentFlushedCount);
 
         if (acquired <= 0) {
             return 0;
         }
 
-        this.ringBuffer.commit(this.flushBuffer, this.currentFlushedCount);
+        this.ringbuffer.commit(this.flushBuffer, this.currentFlushedCount);
 
         return acquired;
-    }
-
-    @Override
-    public boolean consume(ProducerInputStream<Object> chunk) {
-        return consumeChunk(chunk) > 0;
     }
 
     @Override
@@ -168,7 +163,7 @@ public class RingBufferActor implements ObjectActor {
 
     @Override
     public Object[] produce() {
-        this.producedCount = this.ringBuffer.fetch(this.producerChunk);
+        this.producedCount = this.ringbuffer.fetch(this.producerChunk);
 
         if (this.producedCount <= 0) {
             return null;
@@ -216,7 +211,7 @@ public class RingBufferActor implements ObjectActor {
 
     @Override
     public void open() {
-        this.ringBuffer.reset();
+        this.ringbuffer.reset();
         this.isClosed = false;
     }
 

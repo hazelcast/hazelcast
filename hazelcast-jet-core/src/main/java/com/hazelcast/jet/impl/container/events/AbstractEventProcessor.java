@@ -18,14 +18,14 @@ package com.hazelcast.jet.impl.container.events;
 
 
 import com.hazelcast.jet.container.ContainerListener;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerListenerCaller;
-import com.hazelcast.jet.impl.container.ContainerRequest;
-import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.logging.ILogger;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,7 +62,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         this.logger = this.jobContext.getNodeEngine().getLogger(getClass());
     }
 
-    protected <P> void handleContainerRequest(ContainerRequest<ProcessingContainerEvent, P> request) {
+    protected <P> void handleContainerRequest(StateMachineRequest<ProcessingContainerEvent, P> request) {
         this.container.handleContainerRequest(request);
     }
 

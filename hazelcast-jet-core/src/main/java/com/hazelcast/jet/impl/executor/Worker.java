@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.executor;
 
-import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.logging.ILogger;
@@ -121,7 +121,7 @@ public abstract class Worker implements Runnable {
             tasks.add(task);
             workingTaskCount.incrementAndGet();
 
-            if (logger.isFinestEnabled() && task instanceof DefaultContainerTask) {
+            if (logger.isFinestEnabled() && task instanceof ContainerTask) {
                 logger.finest("Incoming=" + task.getClass() + " size=" + tasks.size()
                         + " idx=" + this + " wtc=" + workingTaskCount.get()
                 );
@@ -146,7 +146,7 @@ public abstract class Worker implements Runnable {
                 tasks.remove(idx);
                 onTaskDeactivation();
 
-                if (task instanceof DefaultContainerTask) {
+                if (task instanceof ContainerTask) {
                     logger.fine("Task removed " + tasks.size() + " workingTaskCount="
                             + workingTaskCount.get() + " " + this);
                 }

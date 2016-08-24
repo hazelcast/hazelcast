@@ -17,23 +17,21 @@
 package com.hazelcast.jet.impl.actor.ringbuffer;
 
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.RingBuffer;
+import com.hazelcast.jet.impl.actor.Ringbuffer;
 import com.hazelcast.jet.impl.data.BufferAware;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.util.Arrays;
 
 @SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")
 @SuppressWarnings({
         "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
 })
-abstract class RingBufferPadByReference {
+abstract class RingBufferPadByValue {
     protected long p1, p2, p3, p4, p5, p6, p7;
 }
 
 @SuppressWarnings("checkstyle:magicnumber")
-abstract class RingBufferFieldsByReference<T> extends RingBufferPadByReference {
+abstract class RingBufferFieldsByValue<T> extends RingBufferPadByValue {
     protected static final int BUFFER_PAD;
 
     static {
@@ -43,15 +41,18 @@ abstract class RingBufferFieldsByReference<T> extends RingBufferPadByReference {
                         UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class)
                         :
                         1;
+
         BUFFER_PAD = 128 / scale;
     }
 
     protected final long indexMask;
     protected final T[] entries;
     protected final int bufferSize;
+    protected final DataTransferringStrategy<T> dataTransferringStrategy;
 
-    RingBufferFieldsByReference(
-            int bufferSize
+    RingBufferFieldsByValue(
+            int bufferSize,
+            DataTransferringStrategy<T> dataTransferringStrategy
     ) {
         this.bufferSize = bufferSize;
 
@@ -63,8 +64,14 @@ abstract class RingBufferFieldsByReference<T> extends RingBufferPadByReference {
             throw new IllegalArgumentException("bufferSize must be a power of 2");
         }
 
+        this.dataTransferringStrategy = dataTransferringStrategy;
+
         this.indexMask = bufferSize - 1;
         this.entries = (T[]) new Object[bufferSize + 2 * BUFFER_PAD];
+
+        for (int i = 0; i < this.entries.length; i++) {
+            this.entries[i] = dataTransferringStrategy.newInstance();
+        }
     }
 }
 
@@ -72,20 +79,18 @@ abstract class RingBufferFieldsByReference<T> extends RingBufferPadByReference {
 @SuppressWarnings({
         "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
 })
-public final class RingBufferWithReferenceStrategy<T> extends RingBufferFieldsByReference<T> implements RingBuffer<T> {
+public final class RingbufferWithValueStrategy<T> extends RingBufferFieldsByValue<T> implements Ringbuffer<T> {
     public static final long INITIAL_CURSOR_VALUE = 0L;
-    private final PaddedLong readSequencer = new PaddedLong(RingBufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
-    private final PaddedLong writeSequencer = new PaddedLong(RingBufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
-    private final PaddedLong availableSequencer = new PaddedLong(RingBufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
-    private final ILogger logger;
+    private final PaddedLong readSequencer = new PaddedLong(RingbufferWithValueStrategy.INITIAL_CURSOR_VALUE);
+    private final PaddedLong writeSequencer = new PaddedLong(RingbufferWithValueStrategy.INITIAL_CURSOR_VALUE);
+    private final PaddedLong availableSequencer = new PaddedLong(RingbufferWithValueStrategy.INITIAL_CURSOR_VALUE);
     protected long p1, p2, p3, p4, p5, p6, p7;
 
-    public RingBufferWithReferenceStrategy(
+    public RingbufferWithValueStrategy(
             int bufferSize,
-            ILogger logger
+            DataTransferringStrategy<T> dataTransferringStrategy
     ) {
-        super(bufferSize);
-        this.logger = logger;
+        super(bufferSize, dataTransferringStrategy);
     }
 
     @Override
@@ -112,36 +117,24 @@ public final class RingBufferWithReferenceStrategy<T> extends RingBufferFieldsBy
         long writerSequencerValue = this.writeSequencer.getValue();
         long availableSequencerValue = this.availableSequencer.getValue();
 
-        int entriesStart = (int) (BUFFER_PAD + ((availableSequencerValue & this.indexMask)));
+        int entriesStart = (int) (BUFFER_PAD + ((availableSequencerValue & indexMask)));
         int count = (int) (writerSequencerValue - availableSequencerValue);
-        int window = this.entries.length - BUFFER_PAD - entriesStart;
+        int window = entries.length - BUFFER_PAD - entriesStart;
 
         T[] buffer = ((BufferAware<T>) chunk).getBuffer();
 
         if (count <= window) {
-            System.arraycopy(
-                    buffer,
-                    consumed,
-                    entries,
-                    entriesStart,
-                    count
-            );
+            for (int i = 0; i < count; i++) {
+                this.dataTransferringStrategy.copy(buffer[consumed + i], this.entries[entriesStart + i]);
+            }
         } else {
-            System.arraycopy(
-                    buffer,
-                    consumed,
-                    this.entries,
-                    entriesStart,
-                    window
-            );
+            for (int i = 0; i < window; i++) {
+                this.dataTransferringStrategy.copy(buffer[consumed + i], this.entries[entriesStart + i]);
+            }
 
-            System.arraycopy(
-                    buffer,
-                    consumed + window,
-                    this.entries,
-                    BUFFER_PAD,
-                    count - window
-            );
+            for (int i = 0; i < count - window; i++) {
+                this.dataTransferringStrategy.copy(buffer[consumed + window + i], this.entries[BUFFER_PAD + i]);
+            }
         }
 
         this.availableSequencer.setValue(writerSequencerValue);
@@ -157,13 +150,20 @@ public final class RingBufferWithReferenceStrategy<T> extends RingBufferFieldsBy
         int window = this.entries.length - BUFFER_PAD - entriesStart;
 
         if (count <= window) {
-            System.arraycopy(this.entries, entriesStart, chunk, 0, count);
-            Arrays.fill(this.entries, entriesStart, entriesStart + count, null);
+            for (int i = 0; i < count; i++) {
+                this.dataTransferringStrategy.copy(this.entries[entriesStart + i], chunk[i]);
+                this.dataTransferringStrategy.clean(this.entries[entriesStart + i]);
+            }
         } else {
-            System.arraycopy(this.entries, entriesStart, chunk, 0, window);
-            Arrays.fill(this.entries, entriesStart, entriesStart + window, null);
-            System.arraycopy(this.entries, BUFFER_PAD, chunk, window, count - window);
-            Arrays.fill(this.entries, BUFFER_PAD, BUFFER_PAD + count - window, null);
+            for (int i = 0; i < window; i++) {
+                this.dataTransferringStrategy.copy(this.entries[entriesStart + i], chunk[i]);
+                this.dataTransferringStrategy.clean(this.entries[entriesStart + i]);
+            }
+
+            for (int i = 0; i < count - window; i++) {
+                this.dataTransferringStrategy.copy(this.entries[BUFFER_PAD + i], chunk[window + i]);
+                this.dataTransferringStrategy.clean(this.entries[BUFFER_PAD + i]);
+            }
         }
 
         this.readSequencer.setValue(this.readSequencer.getValue() + count);
@@ -175,6 +175,5 @@ public final class RingBufferWithReferenceStrategy<T> extends RingBufferFieldsBy
         this.readSequencer.setValue(0);
         this.writeSequencer.setValue(0);
         this.availableSequencer.setValue(0);
-        Arrays.fill(this.entries, null);
     }
 }

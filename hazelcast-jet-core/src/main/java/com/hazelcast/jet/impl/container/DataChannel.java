@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.container;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.impl.actor.ComposedActor;
 import com.hazelcast.jet.impl.actor.ObjectActor;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 
 import java.util.ArrayList;
 import java.util.List;

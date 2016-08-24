@@ -40,40 +40,40 @@ public class ChunkedInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
-        if (this.buffer == null) {
-            if (this.iterator == null) {
-                this.iterator = this.packetStream.iterator();
+        if (buffer == null) {
+            if (iterator == null) {
+                iterator = packetStream.iterator();
             }
-            this.buffer = this.iterator.next().toByteArray();
+            buffer = iterator.next().toByteArray();
         }
         try {
-            if (this.bufferIdx == this.buffer.length - BUFFER_OFFSET - 1) {
+            if (bufferIdx == buffer.length - BUFFER_OFFSET - 1) {
                 try {
-                    return this.buffer[BUFFER_OFFSET + this.bufferIdx] & MASK;
+                    return buffer[BUFFER_OFFSET + bufferIdx] & MASK;
                 } finally {
-                    this.buffer = null;
-                    this.bufferIdx = 0;
+                    buffer = null;
+                    bufferIdx = 0;
                 }
             } else {
                 try {
-                    return this.buffer[BUFFER_OFFSET + this.bufferIdx] & MASK;
+                    return buffer[BUFFER_OFFSET + bufferIdx] & MASK;
                 } finally {
-                    this.bufferIdx++;
+                    bufferIdx++;
                 }
             }
         } finally {
-            if ((this.iterator != null) && (!this.iterator.hasNext())) {
-                this.packetStream.reset();
-                this.iterator = null;
+            if ((iterator != null) && (!iterator.hasNext())) {
+                packetStream.reset();
+                iterator = null;
             }
         }
     }
 
     public void onOpen() {
-        if (this.buffer != null) {
-            Arrays.fill(this.buffer, (byte) 0);
+        if (buffer != null) {
+            Arrays.fill(buffer, (byte) 0);
         }
 
-        this.bufferIdx = 0;
+        bufferIdx = 0;
     }
 }

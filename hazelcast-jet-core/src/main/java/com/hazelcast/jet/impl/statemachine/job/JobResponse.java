@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.statemachine.job;
 
-import com.hazelcast.jet.impl.statemachine.StateMachineOutput;
+import com.hazelcast.jet.impl.statemachine.StateMachineResponse;
 
 /**
  * Return job response;
  * SUCCESS - if last state-machine's transition was success;
  * FAILURE - if last state-machine's transition was failure;
  */
-public interface JobResponse extends StateMachineOutput {
+public interface JobResponse extends StateMachineResponse {
     JobResponse SUCCESS = new JobResponse() {
         @Override
         public boolean isSuccess() {

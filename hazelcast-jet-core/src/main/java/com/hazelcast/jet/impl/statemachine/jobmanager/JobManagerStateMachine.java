@@ -21,13 +21,13 @@ import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.statemachine.AbstractStateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import com.hazelcast.spi.NodeEngine;
 import java.util.Map;
 
-public class JobManagerStateMachine extends AbstractStateMachine<JobManagerEvent, JobManagerState, JobManagerResponse> {
+public class JobManagerStateMachine extends StateMachine<JobManagerEvent, JobManagerState, JobManagerResponse> {
 
     private static final Map<JobManagerState, Map<JobManagerEvent, JobManagerState>>
             STATE_TRANSITION_MATRIX =
