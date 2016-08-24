@@ -18,13 +18,12 @@ import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapNearCacheLiteMemberTest {
 
-    private TestHazelcastFactory factory;
-
     private String mapName;
 
-    private HazelcastInstance client;
+    private TestHazelcastFactory factory;
 
     private HazelcastInstance lite;
+    private HazelcastInstance client;
 
     @Before
     public void init() {
@@ -41,26 +40,22 @@ public class ClientMapNearCacheLiteMemberTest {
     }
 
     @Test
-    public void testPut()
-            throws Exception {
+    public void testPut() {
         NearCacheLiteMemberTest.testPut(client, lite, mapName);
     }
 
     @Test
-    public void testPutAll()
-            throws Exception {
+    public void testPutAll() {
         NearCacheLiteMemberTest.testPutAll(client, lite, mapName);
     }
 
     @Test
-    public void testPutTransient()
-            throws Exception {
+    public void testPutTransient() {
         NearCacheLiteMemberTest.testPutTransient(client, lite, mapName);
     }
 
     @Test
-    public void testSet()
-            throws Exception {
+    public void testSet() {
         NearCacheLiteMemberTest.testSet(client, lite, mapName);
     }
 
@@ -75,8 +70,7 @@ public class ClientMapNearCacheLiteMemberTest {
     }
 
     @Test
-    public void testUpdateWithPutAll()
-            throws Exception {
+    public void testUpdateWithPutAll() {
         NearCacheLiteMemberTest.testUpdateWithPutAll(client, lite, mapName);
     }
 
@@ -101,8 +95,7 @@ public class ClientMapNearCacheLiteMemberTest {
     }
 
     @Test
-    public void testClear()
-            throws Exception {
+    public void testClear() {
         NearCacheLiteMemberTest.testClear(client, lite, mapName);
     }
 
@@ -120,5 +113,4 @@ public class ClientMapNearCacheLiteMemberTest {
     public void testExecuteOnKeys() {
         NearCacheLiteMemberTest.testExecuteOnKeys(client, lite, mapName);
     }
-
 }

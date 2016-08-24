@@ -21,28 +21,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static java.lang.Integer.parseInt;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * A test to ensure no lost invalidations on the near cache.
- * <p>
+ * A test to ensure no lost invalidations on the Near Cache.
+ *
  * Issue: https://github.com/hazelcast/hazelcast/issues/4671
- * <p>
+ *
  * Thansk Lukas Blunschi for this test (https://github.com/lukasblu).
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class NearCacheStaleReadTest extends HazelcastTestSupport {
 
-    private static final Logger logger = Logger.getLogger(NearCacheStaleReadTest.class);
+    private static final int NUM_GETTERS = 7;
+    private static final int MAX_RUNTIME = 30;
+    private static final String KEY = "key123";
+    private static final String MAP_NAME = "testMap" + NearCacheStaleReadTest.class.getSimpleName();
 
-    private static final int numGetters = 7;
-
-    private static final int maxRuntime = 30;
-
-    private static final String mapName = "testMap" + NearCacheStaleReadTest.class.getSimpleName();
-
-    private static final String key = "key123";
+    private static final Logger LOGGER = Logger.getLogger(NearCacheStaleReadTest.class);
 
     private IMap<String, String> map;
 
@@ -61,7 +60,6 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
     }
 
     private void testNoLostInvalidations(boolean strict) throws Exception {
-
         // create hazelcast config
         Config config = getConfig();
         config.setProperty("hazelcast.logging.type", "log4j");
@@ -69,18 +67,18 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
         // we use a single node only - do not search for others
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
-        // configure near cache
+        // configure Near Cache
         NearCacheConfig nearCacheConfig = getNearCacheConfig();
 
-        // enable near cache
-        MapConfig mapConfig = config.getMapConfig(mapName);
+        // enable Near Cache
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME);
         mapConfig.setNearCacheConfig(nearCacheConfig);
 
         // create Hazelcast instance
-        HazelcastInstance hcInstance = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hzInstance = Hazelcast.newHazelcastInstance(config);
 
         // get hazelcast map
-        map = hcInstance.getMap(mapName);
+        map = hzInstance.getMap(MAP_NAME);
 
         // run test
         runTestInternal();
@@ -88,63 +86,64 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
         // test eventually consistent
         Thread.sleep(5000);
         int valuePutLast = valuePut.get();
-        String valueMapStr = map.get(key);
-        int valueMap = Integer.parseInt(valueMapStr);
+        String valueMapStr = map.get(KEY);
+        int valueMap = parseInt(valueMapStr);
 
         // fail if not eventually consistent
         String msg = null;
         if (valueMap < valuePutLast) {
-            msg = "Near cache did *not* become consistent. (valueMap = " + valueMap + ", valuePut = " + valuePutLast + ").";
+            msg = "Near Cache did *not* become consistent. (valueMap = " + valueMap + ", valuePut = " + valuePutLast + ").";
 
-            // flush near cache and re-fetch value
+            // flush Near Cache and re-fetch value
             ((NearCachedMapProxyImpl) map).getNearCache().clear();
-            String valueMap2Str = map.get(key);
-            int valueMap2 = Integer.parseInt(valueMap2Str);
+            String valueMap2Str = map.get(KEY);
+            int valueMap2 = parseInt(valueMap2Str);
 
             // test again
             if (valueMap2 < valuePutLast) {
                 msg += " Unexpected inconsistency! (valueMap2 = " + valueMap2 + ", valuePut = " + valuePutLast + ").";
             } else {
-                msg += " Flushing the near cache cleared the inconsistency. (valueMap2 = " + valueMap2 + ", valuePut = " + valuePutLast + ").";
+                msg += " Flushing the Near Cache cleared the inconsistency. (valueMap2 = " + valueMap2
+                        + ", valuePut = " + valuePutLast + ").";
             }
         }
 
         // stop hazelcast
-        hcInstance.getLifecycleService().terminate();
+        hzInstance.getLifecycleService().terminate();
 
         // fail after stopping hazelcast instance
         if (msg != null) {
-            logger.warn(msg);
+            LOGGER.warn(msg);
             fail(msg);
         }
 
         // fail if strict is required and assertion was violated
         if (strict && assertionViolationCount.get() > 0) {
             msg = "Assertion violated " + assertionViolationCount.get() + " times.";
-            logger.warn(msg);
+            LOGGER.warn(msg);
             fail(msg);
         }
     }
 
     protected NearCacheConfig getNearCacheConfig() {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setCacheLocalEntries(true); // this enables caching of local entries
+        // this enables caching of local entries
+        nearCacheConfig.setCacheLocalEntries(true);
         nearCacheConfig.setInMemoryFormat(OBJECT);
         return nearCacheConfig;
     }
 
     private void runTestInternal() throws Exception {
-
         // start 1 putter thread (put0)
         Thread threadPut = new Thread(new PutRunnable(), "put0");
         threadPut.start();
 
         // wait for putter thread to start before starting getter threads
-        Thread.sleep(300);
+        sleepMillis(300);
 
         // start numGetters getter threads (get0-numGetters)
         List<Thread> threads = new ArrayList<Thread>();
-        for (int i = 0; i < numGetters; i++) {
+        for (int i = 0; i < NUM_GETTERS; i++) {
             Thread thread = new Thread(new GetRunnable(), "get" + i);
             threads.add(thread);
         }
@@ -154,11 +153,11 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
 
         // stop after maxRuntime seconds
         int i = 0;
-        while (!stop.get() && i++ < maxRuntime) {
-            Thread.sleep(1000);
+        while (!stop.get() && i++ < MAX_RUNTIME) {
+            sleepMillis(1000);
         }
         if (!stop.get()) {
-            logger.info("Problem did not occur within " + maxRuntime + "s.");
+            LOGGER.info("Problem did not occur within " + MAX_RUNTIME + "s.");
         }
         stop.set(true);
         threadPut.join();
@@ -171,45 +170,45 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
 
         @Override
         public void run() {
-            logger.info(Thread.currentThread().getName() + " started.");
+            LOGGER.info(Thread.currentThread().getName() + " started.");
             int i = 0;
             while (!stop.get()) {
                 i++;
 
                 // put new value and update last state
-                // note: the value in the map/near cache is *always* larger or equal to valuePut
+                // note: the value in the map/Near Cache is *always* larger or equal to valuePut
                 // assertion: valueMap >= valuePut
-                map.put(key, String.valueOf(i));
+                map.put(KEY, String.valueOf(i));
                 valuePut.set(i);
 
                 // check if we see our last update
-                String valueMapStr = map.get(key);
+                String valueMapStr = map.get(KEY);
                 if (valueMapStr == null) {
                     continue;
                 }
-                int valueMap = Integer.parseInt(valueMapStr);
+                int valueMap = parseInt(valueMapStr);
                 if (valueMap != i) {
                     assertionViolationCount.incrementAndGet();
-                    logger.warn("Assertion violated! (valueMap = " + valueMap + ", i = " + i + ")");
+                    LOGGER.warn("Assertion violated! (valueMap = " + valueMap + ", i = " + i + ")");
 
-                    // sleep to ensure near cache invalidation is really lost
+                    // sleep to ensure Near Cache invalidation is really lost
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
-                        logger.warn("Interrupted: " + e.getMessage());
+                        LOGGER.warn("Interrupted: " + e.getMessage());
                     }
 
                     // test again and stop if really lost
-                    valueMapStr = map.get(key);
-                    valueMap = Integer.parseInt(valueMapStr);
+                    valueMapStr = map.get(KEY);
+                    valueMap = parseInt(valueMapStr);
                     if (valueMap != i) {
-                        logger.warn("Near cache invalidation lost! (valueMap = " + valueMap + ", i = " + i + ")");
+                        LOGGER.warn("Near Cache invalidation lost! (valueMap = " + valueMap + ", i = " + i + ")");
                         failed.set(true);
                         stop.set(true);
                     }
                 }
             }
-            logger.info(Thread.currentThread().getName() + " performed " + i + " operations.");
+            LOGGER.info(Thread.currentThread().getName() + " performed " + i + " operations.");
         }
 
     }
@@ -218,19 +217,17 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
 
         @Override
         public void run() {
-            logger.info(Thread.currentThread().getName() + " started.");
+            LOGGER.info(Thread.currentThread().getName() + " started.");
             int n = 0;
             while (!stop.get()) {
                 n++;
 
-                // blindly get the value - to trigger issue - and
-                // parse the value - to get some CPU load
-                String valueMapStr = map.get(key);
-                Integer.parseInt(valueMapStr);
+                // blindly get the value (to trigger the issue) and parse the value (to get some CPU load)
+                String valueMapStr = map.get(KEY);
+                int i = parseInt(valueMapStr);
+                assertEquals("" + i, valueMapStr);
             }
-            logger.info(Thread.currentThread().getName() + " performed " + n + " operations.");
+            LOGGER.info(Thread.currentThread().getName() + " performed " + n + " operations.");
         }
-
     }
-
 }
