@@ -17,33 +17,62 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.util.StringUtil;
 
 public final class Logger {
 
     private static volatile LoggerFactory loggerFactory;
+
     private static final Object FACTORY_LOCK = new Object();
 
     private Logger() {
     }
 
+    /**
+     * @param clazz class to take the logger name from
+     * @return the logger
+     * Use LoggingService instead if possible. Do not log in static context if possible.
+     */
     public static ILogger getLogger(Class clazz) {
         return getLogger(clazz.getName());
     }
 
+    /**
+     * @param name name of the logger
+     * @return the logger
+     * Use LoggingService instead if possible. Do not log in static context if possible.
+     */
     public static ILogger getLogger(String name) {
+        LoggerFactory loggerFactoryToUse = loggerFactory;
         //noinspection DoubleCheckedLocking
         if (loggerFactory == null) {
             //noinspection SynchronizationOnStaticField
             synchronized (FACTORY_LOCK) {
                 if (loggerFactory == null) {
+                    // init static logger with user-specified custom logger class
+                    String loggerClass = System.getProperty("hazelcast.logging.class");
+                    if (!StringUtil.isNullOrEmpty(loggerClass)) {
+                        loggerFactory = loadLoggerFactory(loggerClass);
+                        loggerFactoryToUse = loggerFactory;
+                    }
+                }
+                if (loggerFactory == null) {
                     String loggerType = System.getProperty("hazelcast.logging.type");
-                    loggerFactory = newLoggerFactory(loggerType);
+                    loggerFactoryToUse = newLoggerFactory(loggerType);
+                    if (!StringUtil.isNullOrEmpty(loggerType)) {
+                        loggerFactory = loggerFactoryToUse;
+                    }
                 }
             }
         }
-        return loggerFactory.getLogger(name);
+        return loggerFactoryToUse.getLogger(name);
     }
 
+    public static ILogger noLogger() {
+        return new NoLogFactory.NoLogger();
+    }
+
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public static LoggerFactory newLoggerFactory(String loggerType) {
         LoggerFactory loggerFactory = null;
         String loggerClass = System.getProperty("hazelcast.logging.class");
@@ -70,6 +99,17 @@ public final class Logger {
         if (loggerFactory == null) {
             loggerFactory = new StandardLoggerFactory();
         }
+
+        // init static field as early as possible
+        if (Logger.loggerFactory == null) {
+            //noinspection SynchronizationOnStaticField
+            synchronized (FACTORY_LOCK) {
+                if (Logger.loggerFactory == null) {
+                    Logger.loggerFactory = loggerFactory;
+                }
+            }
+        }
+
         return loggerFactory;
     }
 
