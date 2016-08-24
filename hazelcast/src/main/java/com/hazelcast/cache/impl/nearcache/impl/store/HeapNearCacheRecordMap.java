@@ -102,7 +102,7 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
             if (remove(evictionCandidate.getAccessor()) != null) {
                 actualEvictedCount++;
                 if (evictionListener != null) {
-                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable());
+                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
                 }
             }
         }
@@ -113,5 +113,4 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
     public Iterable<NearCacheEvictableSamplingEntry> sample(int sampleCount) {
         return super.getRandomSamples(sampleCount);
     }
-
 }

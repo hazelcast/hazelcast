@@ -32,10 +32,9 @@ public interface EvictionListener<A, E extends Evictable> {
     /**
      * Called when an {@link Evictable} entry is evicted.
      *
-     * @param evictedEntryAccessor  Accessor of the {@link Evictable} entry
-     *                              that is evicted.
-     * @param evictedEntry          {@link Evictable} entry that is evicted.
+     * @param evictedEntryAccessor Accessor of the {@link Evictable} entry that is evicted.
+     * @param evictedEntry         {@link Evictable} entry that is evicted.
+     * @param wasExpired           {@code true} if the entry was evicted due to expiration, {@code false} otherwise
      */
-    void onEvict(A evictedEntryAccessor, E evictedEntry);
-
+    void onEvict(A evictedEntryAccessor, E evictedEntry, boolean wasExpired);
 }

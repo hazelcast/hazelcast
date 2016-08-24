@@ -131,4 +131,34 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithObjectInMemoryFormat() throws Exception {
         putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat.OBJECT);
     }
+
+    @Test
+    public void testNearCacheEviction_withObjectInMemoryFormat() {
+        testNearCacheEviction(InMemoryFormat.OBJECT);
+    }
+
+    @Test
+    public void testNearCacheEviction_withBinaryInMemoryFormat() {
+        testNearCacheEviction(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void testNearCacheTTLRecordsExpired_withObjectInMemoryFormat() {
+        testNearCacheExpiration_withTTL(InMemoryFormat.OBJECT);
+    }
+
+    @Test
+    public void testNearCacheTTLRecordsExpired_withBinaryInMemoryFormat() {
+        testNearCacheExpiration_withTTL(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void testNearCacheIdleRecordsExpired_withObjectInMemoryFormat() {
+        testNearCacheExpiration_withMaxIdle(InMemoryFormat.OBJECT);
+    }
+
+    @Test
+    public void testNearCacheIdleRecordsExpired_withBinaryInMemoryFormat() {
+        testNearCacheExpiration_withMaxIdle(InMemoryFormat.BINARY);
+    }
 }

@@ -203,7 +203,7 @@ public class CacheRecordHashMap
             if (remove(evictionCandidate.getAccessor()) != null) {
                 actualEvictedCount++;
                 if (evictionListener != null) {
-                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable());
+                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
                 }
             }
         }

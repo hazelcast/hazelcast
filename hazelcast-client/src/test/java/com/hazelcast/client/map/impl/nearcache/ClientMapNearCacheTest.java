@@ -23,6 +23,7 @@ import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -31,7 +32,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.nearcache.NearCacheTestSupport;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
@@ -48,26 +49,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
-import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -75,7 +68,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapNearCacheTest {
+public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
     @Parameterized.Parameter
     public boolean batchInvalidationEnabled;
@@ -84,11 +77,6 @@ public class ClientMapNearCacheTest {
     public static Iterable<Object[]> parameters() {
         return Arrays.asList(new Object[]{TRUE}, new Object[]{FALSE});
     }
-
-    protected static int MAX_CACHE_SIZE = 100;
-
-    private static final int MAX_TTL_SECONDS = 3;
-    private static final int MAX_IDLE_SECONDS = 1;
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -115,7 +103,7 @@ public class ClientMapNearCacheTest {
         // getAll() generates the Near Cache hits
         map.getAll(keys);
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
     }
@@ -141,16 +129,16 @@ public class ClientMapNearCacheTest {
     public void testGetAsync() throws Exception {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
 
-
         int size = 1009;
+        populateMap(map, size);
         populateNearCache(map, size);
 
         // generate Near Cache hits with async call
         for (int i = 0; i < size; i++) {
-            Future async = map.getAsync(i);
-            async.get();
+            Future future = map.getAsync(i);
+            future.get();
         }
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
     }
@@ -161,20 +149,16 @@ public class ClientMapNearCacheTest {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
 
         int size = 1239;
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
+        populateMap(map, size);
         // populate Near Cache
         for (int i = 0; i < size; i++) {
-            Future async = map.getAsync(i);
-            async.get();
+            Future future = map.getAsync(i);
+            future.get();
         }
         // generate Near Cache hits
-        for (int i = 0; i < size; i++) {
-            map.get(i);
-        }
+        populateNearCache(map, size);
 
-        long ownedEntryCount = getOwnedEntryCount(map);
+        long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
         assertTrue("Near Cache must have some entries but current size is = " + ownedEntryCount, ownedEntryCount > 0);
     }
 
@@ -186,6 +170,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -207,6 +192,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -228,6 +214,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -249,6 +236,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -270,6 +258,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -291,6 +280,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -312,6 +302,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -333,6 +324,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -354,6 +346,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -375,6 +368,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -396,6 +390,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -414,9 +409,11 @@ public class ClientMapNearCacheTest {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -435,9 +432,11 @@ public class ClientMapNearCacheTest {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
@@ -456,9 +455,11 @@ public class ClientMapNearCacheTest {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         clientMap.evictAll();
@@ -475,7 +476,8 @@ public class ClientMapNearCacheTest {
         int mapSize = 1000;
         String mapName = randomMapName();
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         Config config = server.getConfig();
         SimpleMapStore store = new SimpleMapStore();
@@ -486,6 +488,7 @@ public class ClientMapNearCacheTest {
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         clientMap.loadAll(true);
@@ -502,7 +505,8 @@ public class ClientMapNearCacheTest {
         int mapSize = 1000;
         String mapName = randomMapName();
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         Config config = member.getConfig();
         SimpleMapStore store = new SimpleMapStore();
@@ -513,6 +517,7 @@ public class ClientMapNearCacheTest {
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         IMap<Integer, Integer> map = member.getMap(mapName);
@@ -530,7 +535,8 @@ public class ClientMapNearCacheTest {
         int mapSize = 1000;
         String mapName = randomMapName();
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         Config config = server.getConfig();
         SimpleMapStore store = new SimpleMapStore();
@@ -565,7 +571,8 @@ public class ClientMapNearCacheTest {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
@@ -595,7 +602,8 @@ public class ClientMapNearCacheTest {
         String mapName = randomMapName();
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
 
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
@@ -625,9 +633,11 @@ public class ClientMapNearCacheTest {
         String mapName = randomMapName();
         Random random = new Random();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         int randomKey = random.nextInt(mapSize);
@@ -646,9 +656,11 @@ public class ClientMapNearCacheTest {
         String mapName = randomMapName();
         Random random = new Random();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -680,9 +692,11 @@ public class ClientMapNearCacheTest {
         String mapName = randomMapName();
         Random random = new Random();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory,
+                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         int randomKey = random.nextInt(mapSize);
@@ -705,6 +719,7 @@ public class ClientMapNearCacheTest {
         HazelcastInstance client = getClient(hazelcastFactory, nearCacheConfig);
 
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
         populateNearCache(clientMap, mapSize);
 
         clientMap.destroy();
@@ -723,6 +738,7 @@ public class ClientMapNearCacheTest {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newInvalidationEnabledNearCacheConfig());
 
         int size = 1247;
+        populateMap(map, size);
         populateNearCache(map, size);
 
         for (int i = 0; i < size; i++) {
@@ -737,6 +753,7 @@ public class ClientMapNearCacheTest {
 
 
         int size = 1278;
+        populateMap(map, size);
         populateNearCache(map, size);
 
         for (int i = 0; i < size; i++) {
@@ -744,7 +761,7 @@ public class ClientMapNearCacheTest {
             map.get(i);
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
     }
@@ -762,7 +779,7 @@ public class ClientMapNearCacheTest {
             map.get(i);
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         System.out.println("stats = " + stats);
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
@@ -772,7 +789,7 @@ public class ClientMapNearCacheTest {
     public void testIssue2009() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newInvalidationEnabledNearCacheConfig());
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertNotNull(stats);
     }
 
@@ -786,7 +803,7 @@ public class ClientMapNearCacheTest {
             map.put(i, i);
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertNotNull(stats);
     }
 
@@ -799,7 +816,7 @@ public class ClientMapNearCacheTest {
             map.get("NOT_THERE" + i);
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(expectedCacheMisses, stats.getMisses());
         assertEquals(expectedCacheMisses, stats.getOwnedEntryCount());
     }
@@ -813,7 +830,7 @@ public class ClientMapNearCacheTest {
             map.get("NOT_THERE");
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(1, stats.getOwnedEntryCount());
         assertEquals(expectedCacheMisses, stats.getMisses());
     }
@@ -823,58 +840,38 @@ public class ClientMapNearCacheTest {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newInvalidationEnabledNearCacheConfig());
 
         int size = 1113;
+        populateMap(map, size);
         populateNearCache(map, size);
 
         for (int i = 0; i < size; i++) {
             map.remove(i);
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(0, stats.getOwnedEntryCount());
         assertEquals(size, stats.getMisses());
     }
 
     @Test
-    public void testNearCacheMaxSize() {
-        final IMap<Integer, Integer> map = getNearCachedMapFromClient(newMaxSizeNearCacheConfig());
+    public void testNearCacheEviction() {
+        NearCacheConfig nearCacheConfig = newNearCacheConfigWithEntryCountEviction(EvictionPolicy.LRU, MAX_CACHE_SIZE);
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
 
-        populateNearCache(map, MAX_CACHE_SIZE + 1);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
-            }
-        });
+        testNearCacheEviction(map, MAX_CACHE_SIZE);
     }
 
     @Test
-    public void testNearCacheIdleRecordsEvicted() {
+    public void testNearCacheTTLExpiration() {
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(newTTLNearCacheConfig());
+
+        testNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_TTL_SECONDS);
+    }
+
+    @Test
+    public void testNearCacheMaxIdleRecordsExpired() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newMaxIdleSecondsNearCacheConfig());
 
-        int size = 147;
-        populateNearCache(map, size);
-
-        // generate Near Cache hits
-        for (int i = 0; i < size; i++) {
-            map.get(i);
-        }
-
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        long hitsBeforeIdleExpire = stats.getHits();
-        long missesBeforeIdleExpire = stats.getMisses();
-
-        sleepSeconds(MAX_IDLE_SECONDS + 1);
-
-        for (int i = 0; i < size; i++) {
-            map.get(i);
-        }
-        stats = map.getLocalMapStats().getNearCacheStats();
-
-        assertEquals("as the hits are not equal, the entries were not cleared from Near Cache after MAX_IDLE_SECONDS",
-                hitsBeforeIdleExpire, stats.getHits());
-        assertNotEquals("as the misses are equal, the entries were not cleared from Near Cache after MAX_IDLE_SECONDS",
-                missesBeforeIdleExpire, stats.getMisses());
+        testNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
     }
 
     @Test
@@ -960,6 +957,7 @@ public class ClientMapNearCacheTest {
         final IMap<Integer, Integer> map = client.getMap(mapName);
 
         final int size = 147;
+        populateMap(map, size);
         populateNearCache(map, size);
 
         server.getMap(mapName).clear();
@@ -979,6 +977,7 @@ public class ClientMapNearCacheTest {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newInvalidationEnabledNearCacheConfig());
 
         int size = 147;
+        populateMap(map, size);
         populateNearCache(map, size);
 
         map.clear();
@@ -993,6 +992,7 @@ public class ClientMapNearCacheTest {
     public void receives_one_clearEvent_after_mapClear_call_from_client() {
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig());
+        populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
@@ -1019,6 +1019,7 @@ public class ClientMapNearCacheTest {
     public void receives_one_clearEvent_after_mapClear_call_from_member() {
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig());
+        populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // member comes
@@ -1047,6 +1048,7 @@ public class ClientMapNearCacheTest {
     public void receives_one_clearEvent_after_mapEvictAll_call_from_client() {
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig());
+        populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
@@ -1073,6 +1075,7 @@ public class ClientMapNearCacheTest {
     public void receives_one_clearEvent_after_mapEvictAll_call_from_member() {
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig());
+        populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // member comes
@@ -1105,6 +1108,7 @@ public class ClientMapNearCacheTest {
 
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig());
+        populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
@@ -1138,6 +1142,7 @@ public class ClientMapNearCacheTest {
 
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig());
+        populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
@@ -1179,55 +1184,13 @@ public class ClientMapNearCacheTest {
         final IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoneNearCacheConfig());
 
         int mapSize = MAX_CACHE_SIZE * 2;
+        populateMap(map, mapSize);
         populateNearCache(map, mapSize);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 assertThatOwnedEntryCountEquals(map, MAX_CACHE_SIZE);
-            }
-        });
-    }
-
-    @Test
-    public void testNearCacheTTLCleanup_triggeredViaPut() {
-        final IMap<Integer, Integer> map = getNearCachedMapFromClient(newTTLNearCacheConfig());
-
-        final int size = 100;
-        populateNearCache(map, size);
-
-        assertThatOwnedEntryCountEquals(map, size);
-
-        sleepSeconds(MAX_TTL_SECONDS + 1);
-
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                // map.put() triggers Near Cache eviction/expiration process, but we need to call this on every assert,
-                // since the Near Cache has a cooldown for TTL cleanups, which may not be over after populateNearCache()
-                triggerEviction(map);
-                assertThatOwnedEntryCountIsSmallerThan(map, size);
-            }
-        });
-    }
-
-    @Test
-    public void testNearCacheTTLCleanup_triggeredViaGet() {
-        final IMap<Integer, Integer> map = getNearCachedMapFromClient(newTTLNearCacheConfig());
-
-        final int size = 100;
-        populateNearCache(map, size);
-
-        assertThatOwnedEntryCountEquals(map, size);
-
-        sleepSeconds(MAX_TTL_SECONDS + 1);
-
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                // map.get() triggers Near Cache eviction/expiration process, but we need to call this on every assert,
-                // since the Near Cache has a cooldown for TTL cleanups, which may not be over after populateNearCache()
-                map.get(0);
-
-                assertThatOwnedEntryCountIsSmallerThan(map, size);
             }
         });
     }
@@ -1242,6 +1205,7 @@ public class ClientMapNearCacheTest {
                 .setImplementation(new MapStoreAdapter());
 
         IMap<Integer, Integer> map = getNearCachedMapFromClient(config, newInvalidationEnabledNearCacheConfig());
+        populateMap(map, 10);
         populateNearCache(map, 10);
 
         map.destroy();
@@ -1266,71 +1230,30 @@ public class ClientMapNearCacheTest {
         getNearCachedMapFromClient(nearCacheConfig);
     }
 
-    protected void populateNearCache(IMap<Integer, Integer> map, int size) {
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-        // populate Near Cache
-        for (int i = 0; i < size; i++) {
-            map.get(i);
-        }
-    }
-
-    protected void assertThatOwnedEntryCountEquals(IMap<Integer, Integer> clientMap, long expected) {
-        long ownedEntryCount = getOwnedEntryCount(clientMap);
-        assertEquals(expected, ownedEntryCount);
-    }
-
-    protected void assertThatOwnedEntryCountIsSmallerThan(IMap<Integer, Integer> clientMap, long expected) {
-        long ownedEntryCount = getOwnedEntryCount(clientMap);
-        assertTrue(format("ownedEntryCount should be smaller than %d, but was %d", expected, ownedEntryCount),
-                ownedEntryCount < expected);
-    }
-
-    protected long getOwnedEntryCount(IMap<Integer, Integer> map) {
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        return stats.getOwnedEntryCount();
-    }
-
-    protected void triggerEviction(IMap<Integer, Integer> map) {
-        map.put(0, 0);
-    }
-
     protected NearCacheConfig newNoneNearCacheConfig() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
-        nearCacheConfig.setEvictionPolicy("NONE");
-
-        return nearCacheConfig;
-    }
-
-    protected NearCacheConfig newNearCacheConfig() {
-        return new NearCacheConfig();
+        return newNearCacheConfigWithEntryCountEviction(EvictionPolicy.NONE, MAX_CACHE_SIZE)
+                .setInvalidateOnChange(true);
     }
 
     protected NearCacheConfig newRandomNearCacheConfig() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
-        nearCacheConfig.setEvictionPolicy("RANDOM");
-
-        return nearCacheConfig;
+        return newNearCacheConfigWithEntryCountEviction(EvictionPolicy.RANDOM, MAX_CACHE_SIZE)
+                .setInvalidateOnChange(true);
     }
 
     protected NearCacheConfig newLRUMaxSizeConfig() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
-        nearCacheConfig.setEvictionPolicy("LRU");
-        return nearCacheConfig;
+        return newNearCacheConfigWithEntryCountEviction(EvictionPolicy.LRU, MAX_CACHE_SIZE)
+                .setInvalidateOnChange(true);
     }
 
     protected NearCacheConfig newLFUMaxSizeNearCacheConfig() {
+        return newNearCacheConfigWithEntryCountEviction(EvictionPolicy.LFU, MAX_CACHE_SIZE)
+                .setInvalidateOnChange(true);
+    }
+
+    protected NearCacheConfig newTTLNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
-        nearCacheConfig.setEvictionPolicy("LFU");
+        nearCacheConfig.setInvalidateOnChange(false);
+        nearCacheConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
 
         return nearCacheConfig;
     }
@@ -1339,14 +1262,6 @@ public class ClientMapNearCacheTest {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(false);
         nearCacheConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
-        return nearCacheConfig;
-    }
-
-    protected NearCacheConfig newTTLNearCacheConfig() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(false);
-        nearCacheConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
-
         return nearCacheConfig;
     }
 
@@ -1361,14 +1276,6 @@ public class ClientMapNearCacheTest {
         nearCacheConfig.setInvalidateOnChange(true);
         nearCacheConfig.setCacheLocalEntries(true);
         nearCacheConfig.setName(name);
-        return nearCacheConfig;
-    }
-
-    protected NearCacheConfig newMaxSizeNearCacheConfig() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
-        nearCacheConfig.setInvalidateOnChange(false);
-
         return nearCacheConfig;
     }
 
@@ -1414,6 +1321,7 @@ public class ClientMapNearCacheTest {
 
     protected void assertNearCacheInvalidation_whenMaxSizeExceeded(NearCacheConfig config) {
         final IMap<Integer, Integer> map = getNearCachedMapFromClient(config);
+        populateMap(map, MAX_CACHE_SIZE);
         populateNearCache(map, MAX_CACHE_SIZE);
 
         triggerEviction(map);
@@ -1423,45 +1331,6 @@ public class ClientMapNearCacheTest {
                 assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
             }
         });
-    }
-
-    private static class SimpleMapStore<K, V> extends MapStoreAdapter<K, V> {
-
-        private final Map<K, V> store = new ConcurrentHashMap<K, V>();
-
-        @Override
-        public void delete(final K key) {
-            store.remove(key);
-        }
-
-        @Override
-        public V load(final K key) {
-            return store.get(key);
-        }
-
-        @Override
-        public void store(final K key, final V value) {
-            store.put(key, value);
-        }
-
-        public Set<K> loadAllKeys() {
-            return store.keySet();
-        }
-
-        @Override
-        public void storeAll(final Map<K, V> kvMap) {
-            store.putAll(kvMap);
-        }
-    }
-
-    private static class IncrementEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
-        @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
-            int currentValue = entry.getValue();
-            int newValue = currentValue + 1000;
-            entry.setValue(newValue);
-            return newValue;
-        }
     }
 
     private static class ClearEventCounterEventHandler extends AbstractEventHandler implements EventHandler<ClientMessage> {

@@ -38,6 +38,12 @@ public class NearCacheStatsImplTest {
 
         nearCacheStats.setMisses(304);
         nearCacheStats.incrementMisses();
+
+        nearCacheStats.setEvictions(222);
+        nearCacheStats.incrementEvictions();
+
+        nearCacheStats.setExpirations(123);
+        nearCacheStats.incrementExpirations();
     }
 
     @Test
@@ -47,6 +53,8 @@ public class NearCacheStatsImplTest {
         assertEquals(1280, nearCacheStats.getOwnedEntryMemoryCost());
         assertEquals(602, nearCacheStats.getHits());
         assertEquals(305, nearCacheStats.getMisses());
+        assertEquals(223, nearCacheStats.getEvictions());
+        assertEquals(124, nearCacheStats.getExpirations());
         assertNotNull(nearCacheStats.toString());
     }
 
@@ -61,6 +69,8 @@ public class NearCacheStatsImplTest {
         assertEquals(1280, deserialized.getOwnedEntryMemoryCost());
         assertEquals(602, deserialized.getHits());
         assertEquals(305, deserialized.getMisses());
+        assertEquals(223, deserialized.getEvictions());
+        assertEquals(124, deserialized.getExpirations());
         assertNotNull(deserialized.toString());
     }
 
