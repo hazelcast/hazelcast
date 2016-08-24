@@ -32,6 +32,29 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     private HazelcastInstance[] instances;
     private int[] brains;
 
+    private static final SplitBrainAction BLOCK_COMMUNICATION = new SplitBrainAction() {
+        @Override
+        public void apply(HazelcastInstance h1, HazelcastInstance h2) {
+            blockCommunicationBetween(h1, h2);
+        }
+    };
+
+    private static final SplitBrainAction UNBLOCK_COMMUNICATION = new SplitBrainAction() {
+        @Override
+        public void apply(HazelcastInstance h1, HazelcastInstance h2) {
+            unblockCommunicationBetween(h1, h2);
+        }
+    };
+
+    private static final SplitBrainAction CLOSE_CONNECTION = new SplitBrainAction() {
+        @Override
+        public void apply(HazelcastInstance h1, HazelcastInstance h2) {
+            closeConnectionBetween(h1, h2);
+        }
+    };
+
+
+
     @Before
     public final void setUpInternals() {
         final Config config = config();
@@ -102,17 +125,20 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     @Test
     public void testSplitBrain() throws Exception {
-
         for (int i = 0; i < iterations(); i++) {
-            onBeforeSplitBrainCreated(instances);
-
-            createSplitBrain();
-            Brains brains = getBrains();
-            onAfterSplitBrainCreated(brains.getFirstHalf(), brains.getSecondHalf());
-
-            healSplitBrain();
-            onAfterSplitBrainHealed(instances);
+            doIteration();
         }
+    }
+
+    private void doIteration() throws Exception {
+        onBeforeSplitBrainCreated(instances);
+
+        createSplitBrain();
+        Brains brains = getBrains();
+        onAfterSplitBrainCreated(brains.getFirstHalf(), brains.getSecondHalf());
+
+        healSplitBrain();
+        onAfterSplitBrainHealed(instances);
     }
 
     private HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
@@ -141,14 +167,13 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     private void createSplitBrain() {
-        int firstHalfSize = brains[0];
-
-        blockCommunications(firstHalfSize);
-        closeExistingConnections(firstHalfSize);
-        assertSplitBrainCreated(firstHalfSize);
+        blockCommunications();
+        closeExistingConnections();
+        assertSplitBrainCreated();
     }
 
-    private void assertSplitBrainCreated(int firstHalfSize) {
+    private void assertSplitBrainCreated() {
+        int firstHalfSize = brains[0];
         for (int isolatedIndex = 0; isolatedIndex < firstHalfSize; isolatedIndex++) {
             HazelcastInstance isolatedInstance = instances[isolatedIndex];
             assertClusterSizeEventually(firstHalfSize, isolatedInstance);
@@ -159,62 +184,24 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         }
     }
 
-    private void closeExistingConnections(int firstHalfSize) {
-        for (int isolatedIndex = 0; isolatedIndex < firstHalfSize; isolatedIndex++) {
-            HazelcastInstance isolatedInstance = instances[isolatedIndex];
-            for (int i = firstHalfSize; i < instances.length; i++) {
-                HazelcastInstance currentInstance = instances[i];
-                closeConnectionBetween(isolatedInstance, currentInstance);
-            }
-        }
+    private void closeExistingConnections() {
+        applyOnBrains(CLOSE_CONNECTION);
     }
 
-    private void blockCommunications(int firstHalfSize) {
-        for (int isolatedIndex = 0; isolatedIndex < firstHalfSize; isolatedIndex++) {
-            HazelcastInstance isolatedInstance = instances[isolatedIndex];
-            FirewallingMockConnectionManager isolatedCM = getFireWalledConnectionManager(isolatedInstance);
-            for (int i = firstHalfSize; i < instances.length; i++) {
-                HazelcastInstance currentInstance = instances[i];
-                Node currentNode = getNode(currentInstance);
-                isolatedCM.block(currentNode.getThisAddress());
-            }
-
-            Node isolatedNode = getNode(isolatedInstance);
-            for (int i = firstHalfSize; i < instances.length; i++) {
-                HazelcastInstance currentInstance = instances[i];
-                FirewallingMockConnectionManager currentCM = getFireWalledConnectionManager(currentInstance);
-                currentCM.block(isolatedNode.getThisAddress());
-            }
-        }
+    private void blockCommunications() {
+        applyOnBrains(BLOCK_COMMUNICATION);
     }
 
     private void healSplitBrain() {
-        int firstHalfSize = brains[0];
-
-        for (int isolatedIndex = 0; isolatedIndex < firstHalfSize; isolatedIndex++) {
-            HazelcastInstance isolatedInstance = instances[isolatedIndex];
-            FirewallingMockConnectionManager isolatedCM = getFireWalledConnectionManager(isolatedInstance);
-            for (int i = 1; i < instances.length; i++) {
-                HazelcastInstance currentInstance = instances[i];
-                Node currentNode = getNode(currentInstance);
-                isolatedCM.unblock(currentNode.getThisAddress());
-            }
-        }
-
-        for (int isolatedIndex = 0; isolatedIndex < firstHalfSize; isolatedIndex++) {
-            HazelcastInstance isolatedInstance = instances[isolatedIndex];
-            Node isolatedNode = getNode(isolatedInstance);
-            for (int i = 1; i < instances.length; i++) {
-                HazelcastInstance currentInstance = instances[i];
-                FirewallingMockConnectionManager currentCM = getFireWalledConnectionManager(currentInstance);
-                currentCM.unblock(isolatedNode.getThisAddress());
-            }
-        }
-
+        unblockCommunication();
         for (HazelcastInstance hz : instances) {
             assertClusterSizeEventually(instances.length, hz);
         }
         waitAllForSafeState(instances);
+    }
+
+    private void unblockCommunication() {
+        applyOnBrains(UNBLOCK_COMMUNICATION);
     }
 
     private static FirewallingMockConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
@@ -234,6 +221,39 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
             }
         }
         return new Brains(firstHalf, secondHalf);
+    }
+
+    private void applyOnBrains(SplitBrainAction action) {
+        int firstHalfSize = brains[0];
+        for (int isolatedIndex = 0; isolatedIndex < firstHalfSize; isolatedIndex++) {
+            HazelcastInstance isolatedInstance = instances[isolatedIndex];
+            for (int i = firstHalfSize; i < instances.length; i++) {
+                HazelcastInstance currentInstance = instances[i];
+                action.apply(isolatedInstance, currentInstance);
+            }
+        }
+    }
+
+    private static void blockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
+        FirewallingMockConnectionManager h1CM = getFireWalledConnectionManager(h1);
+        FirewallingMockConnectionManager h2CM = getFireWalledConnectionManager(h2);
+        Node h1Node = getNode(h1);
+        Node h2Node = getNode(h2);
+        h1CM.block(h2Node.getThisAddress());
+        h2CM.block(h1Node.getThisAddress());
+    }
+
+    private static void unblockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
+        FirewallingMockConnectionManager h1CM = getFireWalledConnectionManager(h1);
+        FirewallingMockConnectionManager h2CM = getFireWalledConnectionManager(h2);
+        Node h1Node = getNode(h1);
+        Node h2Node = getNode(h2);
+        h1CM.unblock(h2Node.getThisAddress());
+        h2CM.unblock(h1Node.getThisAddress());
+    }
+
+    private interface SplitBrainAction {
+        void apply(HazelcastInstance h1, HazelcastInstance h2);
     }
 
     private class Brains {
