@@ -366,9 +366,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public void destroyConnection(final Connection connection, final String reason, final Throwable cause) {
-        Address endpoint = connection.getEndPoint();
+        Address endPoint = connection.getEndPoint();
         ClientConnection conn = (ClientConnection) connection;
-        if (endpoint != null && connections.remove(endpoint, conn)) {
+        if (endPoint != null && connections.remove(endPoint, conn)) {
+            logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
+
             conn.close(reason, cause);
             for (ConnectionListener connectionListener : connectionListeners) {
                 connectionListener.connectionRemoved(conn);

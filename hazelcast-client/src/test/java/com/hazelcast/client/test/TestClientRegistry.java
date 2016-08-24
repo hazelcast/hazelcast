@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class TestClientRegistry {
@@ -67,17 +68,17 @@ public class TestClientRegistry {
         this.nodeRegistry = nodeRegistry;
     }
 
-
-    ClientConnectionManagerFactory createClientServiceFactory(Address clientAddress) {
-        return new MockClientConnectionManagerFactory(clientAddress);
+    public ClientConnectionManagerFactory createClientServiceFactory(String host, AtomicInteger ports) {
+        return new MockClientConnectionManagerFactory(host, ports);
     }
 
     private class MockClientConnectionManagerFactory implements ClientConnectionManagerFactory {
+        private final String host;
+        private final AtomicInteger ports;
 
-        private final Address clientAddress;
-
-        public MockClientConnectionManagerFactory(Address clientAddress) {
-            this.clientAddress = clientAddress;
+        public MockClientConnectionManagerFactory(String host, AtomicInteger ports) {
+            this.host = host;
+            this.ports = ports;
         }
 
         @Override
@@ -94,26 +95,29 @@ public class TestClientRegistry {
                     throw e;
                 }
             } else if (discoveryService != null) {
-                addressTranslator = new DiscoveryAddressTranslator(discoveryService, client.getProperties().getBoolean(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
+                addressTranslator = new DiscoveryAddressTranslator(discoveryService,
+                        client.getProperties().getBoolean(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
             } else {
                 addressTranslator = new DefaultAddressTranslator();
             }
-            return new MockClientConnectionManager(client, addressTranslator, clientAddress);
+            return new MockClientConnectionManager(client, addressTranslator, host, ports);
         }
     }
 
 
     public class MockClientConnectionManager extends ClientConnectionManagerImpl {
 
-        private final Address clientAddress;
+        private final String host;
+        private final AtomicInteger ports;
         private final HazelcastClientInstanceImpl client;
         private final Map<Address, State> stateMap = new ConcurrentHashMap<Address, State>();
 
         public MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
-                                           Address clientAddress) {
+                                           String host, AtomicInteger ports) {
             super(client, addressTranslator);
             this.client = client;
-            this.clientAddress = clientAddress;
+            this.host = host;
+            this.ports = ports;
         }
 
         @Override
@@ -142,8 +146,11 @@ public class TestClientRegistry {
                     throw new IOException("Can not connected to " + address + ": instance does not exist");
                 }
                 Node node = TestUtil.getNode(instance);
-                return new MockedClientConnection(client, connectionIdGen.incrementAndGet(),
-                        node.nodeEngine, address, clientAddress, stateMap);
+                Address localAddress = new Address(host, ports.incrementAndGet());
+                MockedClientConnection connection = new MockedClientConnection(client,
+                        connectionIdGen.incrementAndGet(), node.nodeEngine, address, localAddress, stateMap);
+                LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
+                return connection;
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e, IOException.class);
             }

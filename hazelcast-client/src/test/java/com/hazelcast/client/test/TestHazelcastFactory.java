@@ -68,7 +68,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
                 Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             }
             ClientConnectionManagerFactory clientConnectionManagerFactory =
-                    clientRegistry.createClientServiceFactory(createAddress("127.0.0.1", clientPorts.incrementAndGet()));
+                    clientRegistry.createClientServiceFactory("127.0.0.1", clientPorts);
             AddressProvider testAddressProvider = createAddressProvider(config);
             HazelcastClientInstanceImpl client =
                     new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory, testAddressProvider);
