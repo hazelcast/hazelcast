@@ -22,12 +22,10 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
@@ -55,16 +53,9 @@ public class DefaultComposedActor implements ComposedActor {
         this.vertex = vertex;
         this.processingStrategy = edge.getProcessingStrategy();
         this.consumers = actors.toArray(new ObjectActor[actors.size()]);
-
-        PartitioningStrategy partitioningStrategy = edge.getPartitioningStrategy() == null
-                ?
-                StringPartitioningStrategy.INSTANCE
-                :
-                edge.getPartitioningStrategy();
-
-        this.calculationStrategy = new CalculationStrategyImpl(
+        this.calculationStrategy = new CalculationStrategy(
                 edge.getHashingStrategy(),
-                partitioningStrategy,
+                edge.getPartitioningStrategy(),
                 containerContext
         );
     }

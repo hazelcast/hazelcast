@@ -16,12 +16,13 @@
 
 package com.hazelcast.jet.io;
 
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class Pair<K, V> {
+public class Pair<K, V> implements PartitionAware<K> {
     protected K key;
     protected V value;
 
@@ -94,5 +95,10 @@ public class Pair<K, V> {
                 + "key=" + key
                 + ", value=" + value
                 + '}';
+    }
+
+    @Override
+    public K getPartitionKey() {
+        return getKey();
     }
 }

@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.hazelcast.util.UuidUtil;
 import org.apache.log4j.Level;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -96,4 +98,7 @@ public class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
+    protected static String randomJobName() {
+        return UuidUtil.newUnsecureUuidString().replaceAll("-", "");
+    }
 }

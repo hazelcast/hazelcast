@@ -20,8 +20,8 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -33,14 +33,14 @@ import java.util.Collection;
 
 public class MultiMapPartitionWriter extends AbstractHazelcastWriter {
     private final MultiMapContainer container;
-    private final CalculationStrategyImpl calculationStrategy;
+    private final CalculationStrategy calculationStrategy;
 
     public MultiMapPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId, String name) {
         super(containerDescriptor, partitionId);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         MultiMapService service = nodeEngine.getService(MultiMapService.SERVICE_NAME);
         this.container = service.getOrCreateCollectionContainer(getPartitionId(), name);
-        this.calculationStrategy = new CalculationStrategyImpl(DefaultHashingStrategy.INSTANCE,
+        this.calculationStrategy = new CalculationStrategy(DefaultHashingStrategy.INSTANCE,
                 StringPartitioningStrategy.INSTANCE, containerDescriptor);
     }
 

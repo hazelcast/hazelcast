@@ -22,7 +22,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.map.impl.MapContainer;
@@ -30,7 +29,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -50,9 +49,9 @@ public class MapPartitionWriter extends AbstractHazelcastWriter {
         this.recordStore = mapServiceContext.getPartitionContainer(getPartitionId()).getRecordStore(name);
         PartitioningStrategy partitioningStrategy = mapContainer.getPartitioningStrategy();
         if (partitioningStrategy == null) {
-            partitioningStrategy = StringPartitioningStrategy.INSTANCE;
+            partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         }
-        this.calculationStrategy = new CalculationStrategyImpl(DefaultHashingStrategy.INSTANCE,
+        this.calculationStrategy = new CalculationStrategy(DefaultHashingStrategy.INSTANCE,
                 partitioningStrategy, containerDescriptor);
     }
 
