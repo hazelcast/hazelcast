@@ -25,33 +25,34 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class QueueEvictionTest extends HazelcastTestSupport {
 
-
-    //what are you testing? The intent is not clear
     @Test
-    public void testQueueEviction() throws Exception {
-        final Config config = new Config();
-        config.getQueueConfig("q").setEmptyQueueTtl(2);
-        final HazelcastInstance hz = createHazelcastInstance(config);
-        final IQueue<Object> q = hz.getQueue("q");
+    public void testQueueEviction_whenTtlIsSet_thenTakeThrowsException() throws Exception {
+        String queueName = randomString();
+
+        Config config = new Config();
+        config.getQueueConfig(queueName).setEmptyQueueTtl(2);
+        HazelcastInstance hz = createHazelcastInstance(config);
+        IQueue<Object> queue = hz.getQueue(queueName);
 
         try {
-            assertTrue(q.offer("item"));
-            assertEquals("item", q.poll());
-            q.take();
+            assertTrue(queue.offer("item"));
+            assertEquals("item", queue.poll());
+
+            queue.take();
             fail();
         } catch (DistributedObjectDestroyedException expected) {
-
+            ignore(expected);
         }
-        q.size();
-
+        assertEquals(0, queue.size());
     }
 
-    // TODO: Can you come up with a better name. A name with a number is not very informative.
     @Test
-    public void testQueueEviction2() throws Exception {
-        final Config config = new Config();
-        config.getQueueConfig("q2").setEmptyQueueTtl(0);
-        final HazelcastInstance hz = createHazelcastInstance(config);
+    public void testQueueEviction_whenTtlIsZero_thenListenersAreNeverthelessExecuted() throws Exception {
+        String queueName = randomString();
+
+        Config config = new Config();
+        config.getQueueConfig(queueName).setEmptyQueueTtl(0);
+        HazelcastInstance hz = createHazelcastInstance(config);
 
         final CountDownLatch latch = new CountDownLatch(2);
         hz.addDistributedObjectListener(new DistributedObjectListener() {
@@ -64,11 +65,10 @@ public class QueueEvictionTest extends HazelcastTestSupport {
             }
         });
 
-        final IQueue<Object> q = hz.getQueue("q2");
-        q.offer("item");
-        q.poll();
+        IQueue<Object> queue = hz.getQueue(queueName);
+        assertTrue(queue.offer("item"));
+        assertEquals("item", queue.poll());
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
-
 }

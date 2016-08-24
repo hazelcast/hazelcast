@@ -34,32 +34,30 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueueListenerTest extends HazelcastTestSupport {
 
-    private static final String Q_NAME = "Q";
-    private static final int TOTAL_QPUT = 2000;
+    private static final String QUEUE_NAME = "Q";
+    private static final int TOTAL_QUEUE_PUT = 2000;
 
-    private final Config cfg = new Config();
-    private final SimpleItemListener simpleItemListener = new SimpleItemListener(TOTAL_QPUT);
+    private final CountdownItemListener countdownItemListener = new CountdownItemListener(TOTAL_QUEUE_PUT, 0);
     private final ItemListenerConfig itemListenerConfig = new ItemListenerConfig();
-    private final QueueConfig qConfig = new QueueConfig();
+    private final QueueConfig queueConfig = new QueueConfig();
+    private final Config config = new Config();
 
-    //TODO: Don't add a number to a test to test a diferent case. I guess it was already in the system.
     @Test
-    public void testQueueEviction2() throws Exception {
-        final Config config = new Config();
-        config.getQueueConfig("q2").setEmptyQueueTtl(0);
-        final HazelcastInstance hz = createHazelcastInstance(config);
+    public void testListener_withEvictionViaTTL() throws Exception {
+        Config config = new Config();
+        config.getQueueConfig("queueWithTTL").setEmptyQueueTtl(0);
+        HazelcastInstance hz = createHazelcastInstance(config);
+
         final CountDownLatch latch = new CountDownLatch(2);
         hz.addDistributedObjectListener(new DistributedObjectListener() {
             @Override
@@ -73,104 +71,90 @@ public class QueueListenerTest extends HazelcastTestSupport {
             }
         });
 
-        final IQueue<Object> q = hz.getQueue("q2");
-        q.offer("item");
-        q.poll();
+        IQueue<Object> queue = hz.getQueue("queueWithTTL");
+        queue.offer("item");
+        queue.poll();
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
-    public void testConfigListenerRegistration() throws InterruptedException {
-        final Config config = new Config();
-        final String name = "queue";
-        final QueueConfig queueConfig = config.getQueueConfig(name);
-        final DummyListener dummyListener = new DummyListener();
-        final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(dummyListener, true);
+    public void testConfigListenerRegistration() throws Exception {
+        Config config = new Config();
+        String name = "queue";
+        QueueConfig queueConfig = config.getQueueConfig(name);
+        CountdownItemListener listener = new CountdownItemListener(1, 1);
+        ItemListenerConfig itemListenerConfig = new ItemListenerConfig(listener, true);
         queueConfig.addItemListenerConfig(itemListenerConfig);
-        final HazelcastInstance instance = createHazelcastInstance(config);
-        final IQueue<String> queue = instance.getQueue(name);
-        queue.offer("item");
-        queue.poll();
-        assertTrue(dummyListener.latch.await(10, TimeUnit.SECONDS));
-    }
-
-    private static class DummyListener implements ItemListener, Serializable {
-        final CountDownLatch latch = new CountDownLatch(2);
-
-        DummyListener() {
-        }
-
-        @Override
-        public void itemAdded(ItemEvent item) {
-            latch.countDown();
-        }
-
-        @Override
-        public void itemRemoved(ItemEvent item) {
-            latch.countDown();
-        }
-    }
-
-    @Test
-    public void testItemListener_addedToQueueConfig_Issue366() throws InterruptedException {
-        itemListenerConfig.setImplementation(simpleItemListener);
-        itemListenerConfig.setIncludeValue(true);
-
-        qConfig.setName(Q_NAME);
-        qConfig.addItemListenerConfig(itemListenerConfig);
-        cfg.addQueueConfig(qConfig);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance node1 = factory.newHazelcastInstance(cfg);
-        IQueue<Integer> queue = node1.getQueue(Q_NAME);
-        for (int i = 0; i < TOTAL_QPUT / 2; i++) {
-            queue.put(i);
-        }
-        HazelcastInstance node2 = factory.newHazelcastInstance(cfg);
-        for (int i = 0; i < TOTAL_QPUT / 4; i++) {
-            queue.put(i);
-        }
-        assertTrue(simpleItemListener.added.await(3, TimeUnit.SECONDS));
-    }
-
-    @Test
-    public void testListeners() throws InterruptedException {
-        final String name = randomString();
-        HazelcastInstance instance = createHazelcastInstance();
-        final CountDownLatch latch = new CountDownLatch(20);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         IQueue<String> queue = instance.getQueue(name);
-        TestItemListener listener = new TestItemListener(latch);
-        final String id = queue.addItemListener(listener, true);
-        for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+        queue.offer("item");
+        queue.poll();
+
+        assertTrue(listener.added.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testItemListener_addedToQueueConfig_Issue366() throws Exception {
+        itemListenerConfig.setImplementation(countdownItemListener);
+        itemListenerConfig.setIncludeValue(true);
+
+        queueConfig.setName(QUEUE_NAME);
+        queueConfig.addItemListenerConfig(itemListenerConfig);
+        config.addQueueConfig(queueConfig);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        IQueue<Integer> queue = instance.getQueue(QUEUE_NAME);
+        for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
+            queue.put(i);
         }
-        for (int i = 0; i < 10; i++) {
+        factory.newHazelcastInstance(config);
+        for (int i = 0; i < TOTAL_QUEUE_PUT / 4; i++) {
+            queue.put(i);
+        }
+        assertTrue(countdownItemListener.added.await(3, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testListeners() throws Exception {
+        String queueName = randomString();
+        HazelcastInstance instance = createHazelcastInstance();
+        IQueue<String> queue = instance.getQueue(queueName);
+
+        TestItemListener listener = new TestItemListener(TOTAL_QUEUE_PUT);
+        String listenerId = queue.addItemListener(listener, true);
+
+        for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
+            queue.offer("item-" + i);
+        }
+        for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
             queue.poll();
         }
+        assertTrue(listener.latch.await(5, TimeUnit.SECONDS));
 
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-        queue.removeItemListener(id);
+        queue.removeItemListener(listenerId);
         queue.offer("item-a");
         queue.poll();
         assertTrue(listener.notCalled.get());
     }
 
     private static class TestItemListener implements ItemListener<String> {
-        int offer;
-        int poll;
+
         CountDownLatch latch;
         AtomicBoolean notCalled;
+        int offer;
+        int poll;
 
-        TestItemListener(CountDownLatch latch) {
-            this.latch = latch;
+        TestItemListener(int count) {
+            this.latch = new CountDownLatch(count);
             this.notCalled = new AtomicBoolean(true);
         }
 
         @Override
         public void itemAdded(ItemEvent item) {
-            if (item.getItem().equals("item" + offer++)) {
+            if (item.getItem().equals("item-" + offer++)) {
                 latch.countDown();
             } else {
                 notCalled.set(false);
@@ -179,7 +163,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
 
         @Override
         public void itemRemoved(ItemEvent item) {
-            if (item.getItem().equals("item" + poll++)) {
+            if (item.getItem().equals("item-" + poll++)) {
                 latch.countDown();
             } else {
                 notCalled.set(false);
@@ -187,11 +171,14 @@ public class QueueListenerTest extends HazelcastTestSupport {
         }
     }
 
-    private static class SimpleItemListener implements ItemListener {
-        public CountDownLatch added;
+    private static class CountdownItemListener implements ItemListener {
 
-        public SimpleItemListener(int CountDown) {
-            added = new CountDownLatch(CountDown);
+        public CountDownLatch added;
+        public CountDownLatch removed;
+
+        CountdownItemListener(int expectedAdded, int expectedRemoved) {
+            added = new CountDownLatch(expectedAdded);
+            removed = new CountDownLatch(expectedRemoved);
         }
 
         @Override
@@ -201,6 +188,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
 
         @Override
         public void itemRemoved(ItemEvent itemEvent) {
+            removed.countDown();
         }
     }
 }

@@ -46,9 +46,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -80,17 +80,17 @@ public class QueueStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue1401QueueStoreWithTxnPoll() {
-        final MyQueueStore store = new MyQueueStore();
-        final Config config = new Config();
-        final QueueConfig qConfig = config.getQueueConfig("test");
-        qConfig.setMaxSize(10);
-        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
-        queueStoreConfig.setStoreImplementation(store);
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        queueStoreConfig.setStoreImplementation(new MyQueueStore());
         queueStoreConfig.setEnabled(true);
         queueStoreConfig.setProperty("binary", "false");
         queueStoreConfig.setProperty("memory-limit", "0");
         queueStoreConfig.setProperty("bulk-load", "100");
-        qConfig.setQueueStoreConfig(queueStoreConfig);
+
+        Config config = new Config();
+        QueueConfig queueConfig = config.getQueueConfig("test");
+        queueConfig.setMaxSize(10);
+        queueConfig.setQueueStoreConfig(queueStoreConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
 
@@ -99,13 +99,13 @@ public class QueueStoreTest extends HazelcastTestSupport {
             context.beginTransaction();
 
             TransactionalQueue<String> queue = context.getQueue("test");
-            String queue_data = queue.poll();
-            assertNotNull(queue_data);
+            String queueData = queue.poll();
+            assertNotNull(queueData);
             context.commitTransaction();
         }
     }
 
-    static class MyQueueStore implements QueueStore, Serializable {
+    private static class MyQueueStore implements QueueStore<Object>, Serializable {
 
         static final Map<Long, Object> map = new HashMap<Long, Object>();
 
@@ -122,43 +122,50 @@ public class QueueStoreTest extends HazelcastTestSupport {
             map.put(15L, "tortuga");
         }
 
+        @Override
         public void store(Long key, Object value) {
             map.put(key, value);
         }
 
-        public void storeAll(Map map) {
-            map.putAll(map);
+        @Override
+        public void storeAll(Map<Long, Object> valueMap) {
+            map.putAll(valueMap);
         }
 
+        @Override
         public void delete(Long key) {
             map.remove(key);
         }
 
-        public void deleteAll(Collection keys) {
-            for (Object key : keys) {
+        @Override
+        public void deleteAll(Collection<Long> keys) {
+            for (Long key : keys) {
                 map.remove(key);
             }
         }
 
+        @Override
         public Object load(Long key) {
             return map.get(key);
         }
 
-        public Map loadAll(Collection keys) {
-            Map m = new HashMap();
-            for (Object key : keys) {
-                m.put(key, map.get(key));
+        @Override
+        public Map<Long, Object> loadAll(Collection<Long> keys) {
+            Map<Long, Object> resultMap = new HashMap<Long, Object>();
+            for (Long key : keys) {
+                resultMap.put(key, map.get(key));
             }
-            return m;
+            return resultMap;
         }
 
+        @Override
         public Set<Long> loadAllKeys() {
             return map.keySet();
         }
     }
 
     @Test
-    public void testQueueStore() throws InterruptedException {
+    public void testQueueStore() throws Exception {
         Config config = new Config();
         int maxSize = 2000;
         QueueConfig queueConfig = config.getQueueConfig("testQueueStore");
@@ -198,19 +205,19 @@ public class QueueStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testStoreId_whenNodeDown() {
-        final Config config = new Config();
-        final QueueConfig queueConfig = config.getQueueConfig("default");
-        final IdCheckerQueueStore idCheckerQueueStore = new IdCheckerQueueStore();
-        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        Config config = new Config();
+        QueueConfig queueConfig = config.getQueueConfig("default");
+        IdCheckerQueueStore idCheckerQueueStore = new IdCheckerQueueStore();
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         queueStoreConfig.setEnabled(true).setStoreImplementation(idCheckerQueueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
-        final String name = generateKeyOwnedBy(instance1);
-        final IQueue<Object> queue = instance2.getQueue(name);
+        String name = generateKeyOwnedBy(instance1);
+        IQueue<Object> queue = instance2.getQueue(name);
         queue.offer(randomString());
         queue.offer(randomString());
         queue.offer(randomString());
@@ -222,47 +229,46 @@ public class QueueStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueStoreFactory() {
-        final String queueName = randomString();
-        final Config config = new Config();
-        final QueueConfig queueConfig = config.getQueueConfig(queueName);
-        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        String queueName = randomString();
+        Config config = new Config();
+        QueueConfig queueConfig = config.getQueueConfig(queueName);
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         queueStoreConfig.setEnabled(true);
-        final QueueStoreFactory queueStoreFactory = new SimpleQueueStoreFactory();
+        QueueStoreFactory queueStoreFactory = new SimpleQueueStoreFactory();
         queueStoreConfig.setFactoryImplementation(queueStoreFactory);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
 
-        final IQueue<Integer> queue = instance.getQueue(queueName);
+        IQueue<Integer> queue = instance.getQueue(queueName);
         queue.add(1);
 
-        final QueueStore queueStore = queueStoreFactory.newQueueStore(queueName, null);
-        final TestQueueStore testQueueStore = (TestQueueStore) queueStore;
-        final int size = testQueueStore.store.size();
+        QueueStore queueStore = queueStoreFactory.newQueueStore(queueName, null);
+        TestQueueStore testQueueStore = (TestQueueStore) queueStore;
+        int size = testQueueStore.store.size();
 
         assertEquals("Queue store size should be 1 but found " + size, 1, size);
     }
 
-
     @Test
     public void testQueueStoreFactoryIsNotInitialized_whenDisabledInQueueStoreConfig() {
-        final String queueName = randomString();
-        final Config config = new Config();
-        final QueueConfig queueConfig = config.getQueueConfig(queueName);
-        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        String queueName = randomString();
+        Config config = new Config();
+        QueueConfig queueConfig = config.getQueueConfig(queueName);
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         queueStoreConfig.setEnabled(false);
-        final QueueStoreFactory queueStoreFactory = new SimpleQueueStoreFactory();
+        QueueStoreFactory queueStoreFactory = new SimpleQueueStoreFactory();
         queueStoreConfig.setFactoryImplementation(queueStoreFactory);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
 
-        final IQueue<Integer> queue = instance.getQueue(queueName);
+        IQueue<Integer> queue = instance.getQueue(queueName);
         queue.add(1);
 
-        final QueueStore queueStore = queueStoreFactory.newQueueStore(queueName, null);
-        final TestQueueStore testQueueStore = (TestQueueStore) queueStore;
-        final int size = testQueueStore.store.size();
+        QueueStore queueStore = queueStoreFactory.newQueueStore(queueName, null);
+        TestQueueStore testQueueStore = (TestQueueStore) queueStore;
+        int size = testQueueStore.store.size();
 
         assertEquals("Expected not queue store operation" +
                 " since we disabled it in QueueStoreConfig but found initialized ", 0, size);
@@ -270,32 +276,29 @@ public class QueueStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueStore_withBinaryModeOn() {
-        final String queueName = randomString();
-        // create queue store config.
-        final QueueStoreConfig queueStoreConfig = getBinaryQueueStoreConfig();
-        // create queue config.
-        final QueueConfig queueConfig = new QueueConfig();
+        String queueName = randomString();
+        QueueStoreConfig queueStoreConfig = getBinaryQueueStoreConfig();
+        QueueConfig queueConfig = new QueueConfig();
         queueConfig.setName(queueName);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
-        // create config.
-        final Config config = new Config();
+        Config config = new Config();
         config.addQueueConfig(queueConfig);
 
         HazelcastInstance node = createHazelcastInstance(config);
-        final IQueue<Integer> queue = node.getQueue(queueName);
+        IQueue<Integer> queue = node.getQueue(queueName);
         queue.add(1);
         queue.add(2);
         queue.add(3);
 
-        // this triggers bulk loading.
-        final int value = queue.peek();
+        // this triggers bulk loading
+        int value = queue.peek();
 
         assertEquals(1, value);
     }
 
     private QueueStoreConfig getBinaryQueueStoreConfig() {
-        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
-        final QueueStore<Data> binaryQueueStore = new BasicQueueStore<Data>();
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        QueueStore<Data> binaryQueueStore = new BasicQueueStore<Data>();
         queueStoreConfig.setStoreImplementation(binaryQueueStore);
         queueStoreConfig.setEnabled(true);
         queueStoreConfig.setProperty("binary", "true");
@@ -304,12 +307,12 @@ public class QueueStoreTest extends HazelcastTestSupport {
         return queueStoreConfig;
     }
 
-
     static class SimpleQueueStoreFactory implements QueueStoreFactory<Integer> {
 
         private final ConcurrentMap<String, QueueStore> stores = new ConcurrentHashMap<String, QueueStore>();
 
         @Override
+        @SuppressWarnings("unchecked")
         public QueueStore<Integer> newQueueStore(String name, Properties properties) {
             return ConcurrencyUtil.getOrPutIfAbsent(stores, name, new ConstructorFunction<String, QueueStore>() {
                 @Override
@@ -360,10 +363,12 @@ public class QueueStoreTest extends HazelcastTestSupport {
         }
     }
 
-
-    public static class TestQueueStore implements QueueStore {
+    public static class TestQueueStore implements QueueStore<Integer> {
 
         final Map<Long, Integer> store = new LinkedHashMap<Long, Integer>();
+        final AtomicInteger callCount = new AtomicInteger();
+        final AtomicInteger destroyCount = new AtomicInteger();
+
         final CountDownLatch latchStore;
         final CountDownLatch latchStoreAll;
         final CountDownLatch latchDelete;
@@ -371,9 +376,6 @@ public class QueueStoreTest extends HazelcastTestSupport {
         final CountDownLatch latchLoad;
         final CountDownLatch latchLoadAllKeys;
         final CountDownLatch latchLoadAll;
-        final AtomicInteger callCount = new AtomicInteger();
-        final AtomicInteger initCount = new AtomicInteger();
-        final AtomicInteger destroyCount = new AtomicInteger();
 
         private boolean loadAllKeys = true;
 
@@ -381,19 +383,15 @@ public class QueueStoreTest extends HazelcastTestSupport {
             this(0, 0, 0, 0, 0, 0);
         }
 
-        public TestQueueStore(int expectedStore, int expectedDelete, int expectedLoad) {
-            this(expectedStore, 0, expectedDelete, 0, expectedLoad, 0);
-        }
-
-        public TestQueueStore(int expectedStore, int expectedStoreAll, int expectedDelete,
-                              int expectedDeleteAll, int expectedLoad, int expectedLoadAll) {
+        TestQueueStore(int expectedStore, int expectedStoreAll, int expectedDelete,
+                       int expectedDeleteAll, int expectedLoad, int expectedLoadAll) {
             this(expectedStore, expectedStoreAll, expectedDelete, expectedDeleteAll,
                     expectedLoad, expectedLoadAll, 0);
         }
 
-        public TestQueueStore(int expectedStore, int expectedStoreAll, int expectedDelete,
-                              int expectedDeleteAll, int expectedLoad, int expectedLoadAll,
-                              int expectedLoadAllKeys) {
+        TestQueueStore(int expectedStore, int expectedStoreAll, int expectedDelete,
+                       int expectedDeleteAll, int expectedLoad, int expectedLoadAll,
+                       int expectedLoadAllKeys) {
             latchStore = new CountDownLatch(expectedStore);
             latchStoreAll = new CountDownLatch(expectedStoreAll);
             latchDelete = new CountDownLatch(expectedDelete);
@@ -415,63 +413,61 @@ public class QueueStoreTest extends HazelcastTestSupport {
             destroyCount.incrementAndGet();
         }
 
-        public int getInitCount() {
-            return initCount.get();
-        }
-
-        public int getDestroyCount() {
-            return destroyCount.get();
-        }
-
-        public void assertAwait(int seconds) throws InterruptedException {
-            assertTrue("Store remaining: " + latchStore.getCount(), latchStore.await(seconds, TimeUnit.SECONDS));
-            assertTrue("Store-all remaining: " + latchStoreAll.getCount(), latchStoreAll.await(seconds, TimeUnit.SECONDS));
-            assertTrue("Delete remaining: " + latchDelete.getCount(), latchDelete.await(seconds, TimeUnit.SECONDS));
-            assertTrue("Delete-all remaining: " + latchDeleteAll.getCount(), latchDeleteAll.await(seconds, TimeUnit.SECONDS));
-            assertTrue("Load remaining: " + latchLoad.getCount(), latchLoad.await(seconds, TimeUnit.SECONDS));
-            assertTrue("Load-al remaining: " + latchLoadAll.getCount(), latchLoadAll.await(seconds, TimeUnit.SECONDS));
-            assertTrue("Load-all keys remaining: " + latchLoadAllKeys.getCount(), latchLoadAllKeys.await(seconds, TimeUnit.SECONDS));
+        void assertAwait(int seconds) throws Exception {
+            assertTrue("Store remaining: " + latchStore.getCount(), latchStore.await(seconds, SECONDS));
+            assertTrue("Store-all remaining: " + latchStoreAll.getCount(), latchStoreAll.await(seconds, SECONDS));
+            assertTrue("Delete remaining: " + latchDelete.getCount(), latchDelete.await(seconds, SECONDS));
+            assertTrue("Delete-all remaining: " + latchDeleteAll.getCount(), latchDeleteAll.await(seconds, SECONDS));
+            assertTrue("Load remaining: " + latchLoad.getCount(), latchLoad.await(seconds, SECONDS));
+            assertTrue("Load-al remaining: " + latchLoadAll.getCount(), latchLoadAll.await(seconds, SECONDS));
+            assertTrue("Load-all keys remaining: " + latchLoadAllKeys.getCount(), latchLoadAllKeys.await(seconds, SECONDS));
         }
 
         Map getStore() {
             return store;
         }
 
-        public Set loadAllKeys() {
+        @Override
+        public Set<Long> loadAllKeys() {
             callCount.incrementAndGet();
             latchLoadAllKeys.countDown();
             if (!loadAllKeys) return null;
             return store.keySet();
         }
 
-        public void store(Long key, Object value) {
-            store.put(key, (Integer) value);
+        @Override
+        public void store(Long key, Integer value) {
+            store.put(key, value);
             callCount.incrementAndGet();
             latchStore.countDown();
         }
 
-        public void storeAll(Map map) {
+        @Override
+        public void storeAll(Map<Long, Integer> map) {
             store.putAll(map);
             callCount.incrementAndGet();
             latchStoreAll.countDown();
         }
 
+        @Override
         public void delete(Long key) {
             store.remove(key);
             callCount.incrementAndGet();
             latchDelete.countDown();
         }
 
-        public Object load(Long key) {
+        @Override
+        public Integer load(Long key) {
             callCount.incrementAndGet();
             latchLoad.countDown();
             return store.get(key);
         }
 
-        public Map loadAll(Collection keys) {
-            Map map = new HashMap(keys.size());
-            for (Object key : keys) {
-                Object value = store.get(key);
+        @Override
+        public Map<Long, Integer> loadAll(Collection<Long> keys) {
+            Map<Long, Integer> map = new HashMap<Long, Integer>(keys.size());
+            for (Long key : keys) {
+                Integer value = store.get(key);
                 if (value != null) {
                     map.put(key, value);
                 }
@@ -481,15 +477,15 @@ public class QueueStoreTest extends HazelcastTestSupport {
             return map;
         }
 
-        public void deleteAll(Collection keys) {
-            for (Object key : keys) {
+        @Override
+        public void deleteAll(Collection<Long> keys) {
+            for (Long key : keys) {
                 store.remove(key);
             }
             callCount.incrementAndGet();
             latchDeleteAll.countDown();
         }
     }
-
 
     public static class BasicQueueStore<T> implements QueueStore<T> {
 
@@ -547,7 +543,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
          * to obtain the value. Implementation can use any means of loading the given key;
          * such as an O/R mapping tool, simple SQL or reading a file etc.
          *
-         * @param key
+         * @param key key to load
          * @return value of the key
          */
         @Override
@@ -582,5 +578,4 @@ public class QueueStoreTest extends HazelcastTestSupport {
             return store.keySet();
         }
     }
-
 }

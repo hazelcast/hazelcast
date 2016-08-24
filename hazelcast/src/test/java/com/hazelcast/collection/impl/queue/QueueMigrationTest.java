@@ -22,14 +22,13 @@ import static org.junit.Assert.assertEquals;
 public class QueueMigrationTest extends HazelcastTestSupport {
 
     private IQueue<Object> queue;
-    private HazelcastInstance local;
     private HazelcastInstance remote1;
     private HazelcastInstance remote2;
 
     @Before
     public void setup() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(3).newInstances();
-        local = cluster[0];
+        HazelcastInstance local = cluster[0];
         remote1 = cluster[1];
         remote2 = cluster[2];
 
@@ -40,9 +39,9 @@ public class QueueMigrationTest extends HazelcastTestSupport {
     @Test
     public void test() {
         List<Object> expectedItems = new LinkedList<Object>();
-        for (int k = 0; k < 100; k++) {
-            queue.add(k);
-            expectedItems.add(k);
+        for (int i = 0; i < 100; i++) {
+            queue.add(i);
+            expectedItems.add(i);
         }
 
         remote1.shutdown();

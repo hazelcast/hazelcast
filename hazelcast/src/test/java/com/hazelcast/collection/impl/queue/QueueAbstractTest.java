@@ -26,11 +26,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -85,18 +87,20 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void testOffer_whenNullArgument() {
         try {
             queue.offer(null);
             fail();
         } catch (NullPointerException expected) {
+            ignore(expected);
         }
 
         assertTrue(queue.isEmpty());
     }
 
     @Test
-    public void testOfferWithTimeout() throws InterruptedException {
+    public void testOfferWithTimeout() {
         OfferThread offerThread = new OfferThread(queue);
         for (int i = 0; i < queueConfig.getMaxSize(); i++) {
             queue.offer("item" + i);
@@ -179,6 +183,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
             queue.remove(null);
             fail();
         } catch (NullPointerException expected) {
+            ignore(expected);
         }
 
         assertEquals(1, queue.size());
@@ -191,7 +196,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
-        List list = new ArrayList(10);
+        List<String> list = new ArrayList<String>(10);
 
         assertEquals(10, queue.drainTo(list));
         assertEquals(10, list.size());
@@ -202,12 +207,13 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testDrainTo_whenQueueEmpty() {
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
 
         assertEquals(0, queue.drainTo(list));
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void testDrainTo_whenCollectionNull() {
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
@@ -217,6 +223,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
             queue.drainTo(null);
             fail();
         } catch (NullPointerException expected) {
+            ignore(expected);
         }
         assertEquals(10, queue.size());
     }
@@ -226,7 +233,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
-        List list = new ArrayList(10);
+        List<String> list = new ArrayList<String>(10);
 
         queue.drainTo(list, 4);
         assertEquals(4, list.size());
@@ -235,6 +242,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void testDrainToWithMaxElement_whenCollectionNull() {
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
@@ -244,6 +252,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
             queue.drainTo(null, 4);
             fail();
         } catch (NullPointerException expected) {
+            ignore(expected);
         }
 
         assertEquals(10, queue.size());
@@ -254,7 +263,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
 
         assertEquals(10, queue.drainTo(list, -4));
         assertEquals(0, queue.size());
@@ -296,7 +305,8 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         try {
             queue.addAll(list);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
+            ignore(expected);
         }
     }
 
@@ -341,6 +351,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
+    @SuppressWarnings("ConstantConditions")
     public void testContainsAll_whenNull() {
         queue.containsAll(null);
     }
@@ -359,11 +370,13 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void testAddAll_whenNullCollection() {
         try {
             queue.addAll(null);
             fail();
         } catch (NullPointerException expected) {
+            ignore(expected);
         }
 
         assertEquals(0, queue.size());
@@ -374,10 +387,8 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
-        List<String> list = new ArrayList<String>();
-
         assertEquals(10, queue.size());
-        assertTrue(queue.addAll(list));
+        assertTrue(queue.addAll(Collections.<String>emptyList()));
         assertEquals(10, queue.size());
     }
 
@@ -411,6 +422,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void testRetainAll_whenCollectionNull() {
         queue.add("item3");
         queue.add("item4");
@@ -419,7 +431,8 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         try {
             queue.retainAll(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
+            ignore(expected);
         }
         assertEquals(3, queue.size());
     }
@@ -429,9 +442,8 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
-        List list = new ArrayList();
 
-        assertTrue(queue.retainAll(list));
+        assertTrue(queue.retainAll(emptyList()));
         assertEquals(0, queue.size());
     }
 
@@ -440,7 +452,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
         list.add(null);
 
         assertTrue(queue.retainAll(list));
@@ -464,6 +476,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
+    @SuppressWarnings("ConstantConditions")
     public void testRemoveAll_whenCollectionNull() {
         queue.removeAll(null);
     }
@@ -473,9 +486,8 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
-        List<String> list = new ArrayList<String>();
 
-        assertFalse(queue.removeAll(list));
+        assertFalse(queue.removeAll(Collections.<String>emptyList()));
         assertEquals(3, queue.size());
     }
 
@@ -510,9 +522,10 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     }
 
     private static class OfferThread extends Thread {
-        IQueue queue;
 
-        OfferThread(IQueue queue) {
+        IQueue<String> queue;
+
+        OfferThread(IQueue<String> queue) {
             this.queue = queue;
         }
 
@@ -527,6 +540,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     }
 
     private static class PollThread extends Thread {
+
         IQueue queue;
 
         PollThread(IQueue queue) {
