@@ -59,7 +59,7 @@ public class EdgeTest {
         Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
         Edge edge = new Edge("edge", v1, v2);
         assertEquals(DefaultHashingStrategy.INSTANCE, edge.getHashingStrategy());
-        assertEquals(StringPartitioningStrategy.INSTANCE, edge.getPartitioningStrategy());
+        assertEquals(StringAndPartitionAwarePartitioningStrategy.INSTANCE, edge.getPartitioningStrategy());
         assertEquals(ProcessingStrategy.ROUND_ROBIN, edge.getProcessingStrategy());
     }
 

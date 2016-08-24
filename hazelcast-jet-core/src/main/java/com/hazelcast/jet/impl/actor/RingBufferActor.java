@@ -29,7 +29,7 @@ import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Arrays;
@@ -237,7 +237,8 @@ public class RingBufferActor implements ObjectActor {
 
     @Override
     public PartitioningStrategy getPartitionStrategy() {
-        return this.edge == null ? StringPartitioningStrategy.INSTANCE : this.edge.getPartitioningStrategy();
+        return this.edge == null ? StringAndPartitionAwarePartitioningStrategy.INSTANCE
+                : this.edge.getPartitioningStrategy();
     }
 
     @Override

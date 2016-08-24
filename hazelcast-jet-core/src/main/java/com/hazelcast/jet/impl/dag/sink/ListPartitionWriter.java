@@ -23,7 +23,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
@@ -43,7 +42,7 @@ public class ListPartitionWriter extends AbstractHazelcastWriter {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         ListService service = nodeEngine.getService(ListService.SERVICE_NAME);
         this.listContainer = service.getOrCreateContainer(name, false);
-        this.calculationStrategy = new CalculationStrategyImpl(
+        this.calculationStrategy = new CalculationStrategy(
                 DefaultHashingStrategy.INSTANCE, getPartitionStrategy(), containerDescriptor);
     }
 

@@ -16,31 +16,51 @@
 
 package com.hazelcast.jet.strategy;
 
+
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.container.ContainerDescriptor;
 
 /**
- * Represents abstract calculation strategy
- *
- * It wraps 2 notions:
+ * Default calculation strategy implementation;
+ * <p/>
+ * Calculation strategy joins 2 abstractions:
  * <pre>
- *          PartitioningStrategy
- *          HashingStrategy
- *      </pre>
- *
- * See corresponding JavaDocs for
- * {@link com.hazelcast.core.PartitioningStrategy},
- * {@link HashingStrategy}
+ *      -   HashingStrategy
+ *      -   PartitioningStrategy
+ * </pre>
  */
-public interface CalculationStrategy {
+public class CalculationStrategy {
+
+    private final HashingStrategy hashingStrategy;
+    private final ContainerDescriptor containerDescriptor;
+    private final PartitioningStrategy partitioningStrategy;
+
+    /**
+     * Creates a new calculation strategy
+     */
+    public CalculationStrategy(
+            HashingStrategy hashingStrategy,
+            PartitioningStrategy partitioningStrategy,
+            ContainerDescriptor containerDescriptor
+    ) {
+        this.hashingStrategy = hashingStrategy;
+        this.containerDescriptor = containerDescriptor;
+        this.partitioningStrategy = partitioningStrategy;
+    }
+
     /**
      * @return corresponding partitioningStrategy
      */
-    PartitioningStrategy getPartitioningStrategy();
+    public PartitioningStrategy getPartitioningStrategy() {
+        return this.partitioningStrategy;
+    }
 
     /**
      * @return corresponding hashingStrategy
      */
-    HashingStrategy getHashingStrategy();
+    public HashingStrategy getHashingStrategy() {
+        return this.hashingStrategy;
+    }
 
     /**
      * Calculates hash of the corresponding object
@@ -48,5 +68,38 @@ public interface CalculationStrategy {
      * @param object object for hash calculation
      * @return corresponding hash
      */
-    int hash(Object object);
+    @SuppressWarnings("unchecked")
+    public int hash(Object object) {
+        final Object partitionKey = partitioningStrategy.getPartitionKey(object);
+        return hashingStrategy.hash(object, partitionKey, containerDescriptor);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CalculationStrategy that = (CalculationStrategy) o;
+
+        if (!hashingStrategy.equals(that.hashingStrategy)) {
+            return false;
+        }
+        if (!containerDescriptor.equals(that.containerDescriptor)) {
+            return false;
+        }
+        return partitioningStrategy.equals(that.partitioningStrategy);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = hashingStrategy.hashCode();
+        result = 31 * result + containerDescriptor.hashCode();
+        result = 31 * result + partitioningStrategy.hashCode();
+        return result;
+    }
 }

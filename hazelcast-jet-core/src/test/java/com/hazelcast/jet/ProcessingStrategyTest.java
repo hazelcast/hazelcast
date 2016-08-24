@@ -11,6 +11,7 @@ import com.hazelcast.jet.job.Job;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,17 +33,31 @@ public class ProcessingStrategyTest extends JetTestSupport {
 
     @Test
     public void testRoundRobin() throws Exception {
-        int count = getCountWithStrategy(false);
-        assertEquals(count, COUNT);
+        int count = getCountWithStrategy(false, false);
+        assertEquals(COUNT, count);
+    }
+
+    @Test
+    public void testShuffledRoundRobin() throws Exception {
+        int count = getCountWithStrategy(false, true);
+        assertEquals(COUNT, count);
     }
 
     @Test
     public void testBroadcast() throws Exception {
-        int count = getCountWithStrategy(true);
-        assertEquals(count, COUNT * PARALLELISM);
+        int count = getCountWithStrategy(true, false);
+        assertEquals(COUNT * PARALLELISM, count);
     }
 
-    private int getCountWithStrategy(boolean broadcast) throws Exception {
+    //https://github.com/hazelcast/hazelcast-jet/issues/126
+    @Test
+    @Ignore
+    public void testShuffledBroadcast() throws Exception {
+        int count = getCountWithStrategy(true, true);
+        assertEquals(COUNT * PARALLELISM * NODE_COUNT, count);
+    }
+
+    private int getCountWithStrategy(boolean broadcast, boolean shuffled) throws Exception {
         IList<Integer> source = getList(instance);
         IList<Integer> sink = getList(instance);
         fillListWithInts(source, COUNT);
@@ -59,11 +74,14 @@ public class ProcessingStrategyTest extends JetTestSupport {
 
         Edge edge = new Edge("edge", producer, consumer);
         if (broadcast) {
-            edge.broadcast();
+            edge = edge.broadcast();
+        }
+        if (shuffled) {
+            edge = edge.shuffled();
         }
         dag.addEdge(edge);
 
-        Job job = JetEngine.getJob(instance, edge.getProcessingStrategy().toString(), dag);
+        Job job = JetEngine.getJob(instance, randomJobName(), dag);
         execute(job);
 
         return sink.size();

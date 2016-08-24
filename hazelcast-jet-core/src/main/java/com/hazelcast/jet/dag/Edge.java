@@ -18,17 +18,18 @@ package com.hazelcast.jet.dag;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
+
 import java.io.Serializable;
 
 /**
  * Represents an edge between two vertices in a DAG
  */
 public class Edge implements Serializable {
+
     private Vertex to;
     private String name;
     private Vertex from;
@@ -64,21 +65,20 @@ public class Edge implements Serializable {
                 Vertex from,
                 Vertex to,
                 boolean shuffled) {
-        this(name, from, to, shuffled, null, null, null, null, null);
+        this(name, from, to, shuffled, null, null, null, null);
     }
 
     /**
      * Creates an edge between two vertices.
      *
-     * @param name                     name of the edge
-     * @param from                     the origin vertex
-     * @param to                       the destination vertex
-     * @param shuffled                 shuffling property
-     * @param shufflingStrategy        shuffling strategy
-     * @param processingStrategy       processing strategy
-     * @param partitioningStrategy     partitioning strategy
-     * @param hashingStrategy          hashing strategy
-     * @param dataTransferringStrategy data transfer strategy
+     * @param name                 name of the edge
+     * @param from                 the origin vertex
+     * @param to                   the destination vertex
+     * @param shuffled             shuffling property
+     * @param shufflingStrategy    shuffling strategy
+     * @param processingStrategy   processing strategy
+     * @param partitioningStrategy partitioning strategy
+     * @param hashingStrategy      hashing strategy
      */
     public Edge(String name,
                 Vertex from,
@@ -87,15 +87,14 @@ public class Edge implements Serializable {
                 ShufflingStrategy shufflingStrategy,
                 ProcessingStrategy processingStrategy,
                 PartitioningStrategy partitioningStrategy,
-                HashingStrategy hashingStrategy,
-                DataTransferringStrategy dataTransferringStrategy) {
+                HashingStrategy hashingStrategy) {
         this.to = to;
         this.name = name;
         this.from = from;
         this.shuffled = shuffled;
         this.shufflingStrategy = shufflingStrategy;
         this.hashingStrategy = nvl(hashingStrategy, DefaultHashingStrategy.INSTANCE);
-        this.partitioningStrategy = nvl(partitioningStrategy, StringPartitioningStrategy.INSTANCE);
+        this.partitioningStrategy = nvl(partitioningStrategy, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         this.processingStrategy = nvl(processingStrategy, ProcessingStrategy.ROUND_ROBIN);
     }
 

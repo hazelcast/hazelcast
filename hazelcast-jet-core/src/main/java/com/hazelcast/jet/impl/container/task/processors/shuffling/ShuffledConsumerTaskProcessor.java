@@ -24,12 +24,11 @@ import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.processors.ConsumerTaskProcessor;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -38,6 +37,7 @@ import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.HashUtil;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -95,9 +95,9 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
         initMarkers();
 
-        this.partitionedWriters = new HashMap<CalculationStrategy, Map<Integer, List<ObjectConsumer>>>();
+        this.partitionedWriters = new HashMap<>();
 
-        Set<CalculationStrategy> strategies = new HashSet<CalculationStrategy>();
+        Set<CalculationStrategy> strategies = new HashSet<>();
         List<ObjectConsumer> nonPartitionedConsumers = new ArrayList<ObjectConsumer>(this.shuffledConsumers.length);
         Set<Address> nonPartitionedAddresses = new HashSet<Address>(this.shuffledConsumers.length);
 
@@ -225,7 +225,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                                         Map<Address, Address> hzToJetAddressMapping,
                                         ObjectConsumer consumer
     ) {
-        CalculationStrategy calculationStrategy = new CalculationStrategyImpl(
+        CalculationStrategy calculationStrategy = new CalculationStrategy(
                 consumer.getHashingStrategy(),
                 consumer.getPartitionStrategy(),
                 this.containerContext

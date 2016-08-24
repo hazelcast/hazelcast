@@ -28,7 +28,7 @@ import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -127,7 +127,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     @Override
     public PartitioningStrategy getPartitionStrategy() {
-        return StringPartitioningStrategy.INSTANCE;
+        return StringAndPartitionAwarePartitioningStrategy.INSTANCE;
     }
 
     @Override
