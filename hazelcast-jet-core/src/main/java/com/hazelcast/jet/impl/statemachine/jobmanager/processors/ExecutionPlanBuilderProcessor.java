@@ -28,11 +28,9 @@ import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.processor.ContainerProcessor;
-import com.hazelcast.jet.processor.ProcessorDescriptor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
-
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -55,10 +53,9 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
             new IFunction<Vertex, ProcessingContainer>() {
                 @Override
                 public ProcessingContainer apply(Vertex vertex) {
-                    ProcessorDescriptor descriptor = vertex.getDescriptor();
-                    String className = descriptor.getContainerProcessorClazz();
-                    Object[] args = descriptor.getArgs();
-                    Supplier<ContainerProcessor> processorFactory = containerProcessorFactory(className, args);
+                    String className = vertex.getProcessorClass();
+                    Object[] args = vertex.getProcessorArgs();
+                    Supplier<Processor> processorFactory = containerProcessorFactory(className, args);
                     ProcessingContainer container = new ProcessingContainer(
                             vertex, processorFactory, nodeEngine, jobContext);
                     jobManager.registerContainer(vertex, container);
@@ -116,9 +113,9 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
     }
 
     @SuppressWarnings("unchecked")
-    private Supplier<ContainerProcessor> containerProcessorFactory(String className, Object... args) {
+    private Supplier<Processor> containerProcessorFactory(String className, Object... args) {
         try {
-            Constructor<ContainerProcessor> resultConstructor = getConstructor(className, args);
+            Constructor<Processor> resultConstructor = getConstructor(className, args);
             return () -> {
                 try {
                     return resultConstructor.newInstance(args);
@@ -131,9 +128,9 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
         }
     }
 
-    private Constructor<ContainerProcessor> getConstructor(String className, Object[] args) throws ClassNotFoundException {
-        Class<ContainerProcessor> clazz =
-                (Class<ContainerProcessor>) Class.forName(className, true, this.jobClassLoader);
+    private Constructor<Processor> getConstructor(String className, Object[] args) throws ClassNotFoundException {
+        Class<Processor> clazz =
+                (Class<Processor>) Class.forName(className, true, this.jobClassLoader);
         int i = 0;
         Class[] argsClasses = new Class[args.length];
         for (Object obj : args) {
@@ -153,7 +150,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<
                     }
                 }
                 if (valid) {
-                    return (Constructor<ContainerProcessor>) constructor;
+                    return (Constructor<Processor>) constructor;
                 }
             }
         }

@@ -19,11 +19,11 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
 public abstract class TestProcessors {
 
-    public static class Noop implements ContainerProcessor {
+    public static class Noop implements Processor {
         @Override
         public boolean process(ProducerInputStream inputStream,
                                ConsumerOutputStream outputStream,

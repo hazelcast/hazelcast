@@ -28,7 +28,7 @@ import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -83,7 +83,7 @@ public class ConsumerProducerTest extends JetTestSupport {
         Job job = JetEngine.getJob(instance, "emptyProducerWithConsumer", dag);
         execute(job);
 
-        assertEquals(TASK_COUNT * NODE_COUNT, sinkList.size());
+        assertEquals(PARALLELISM * NODE_COUNT, sinkList.size());
     }
 
     @Test
@@ -107,10 +107,10 @@ public class ConsumerProducerTest extends JetTestSupport {
     }
 
     public static class FinalizingProcessor
-            implements ContainerProcessor<Pair<Integer, String>, Pair<Integer, String>> {
+            implements Processor<Pair<Integer, String>, Pair<Integer, String>> {
         @Override
-        public boolean finalizeProcessor(ConsumerOutputStream<Pair<Integer, String>> outputStream,
-                                         ProcessorContext processorContext) throws Exception {
+        public boolean complete(ConsumerOutputStream<Pair<Integer, String>> outputStream,
+                                ProcessorContext processorContext) throws Exception {
             outputStream.consume(new JetPair<>(0, "empty"));
             return true;
         }

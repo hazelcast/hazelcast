@@ -41,7 +41,7 @@ public class CombinerProcessor<T, R> extends AbstractStreamProcessor<T, R> {
 
 
     @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
+    public void before(ProcessorContext processorContext) {
         result = null;
     }
 

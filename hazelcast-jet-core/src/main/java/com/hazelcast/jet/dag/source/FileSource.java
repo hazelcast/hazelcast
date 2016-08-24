@@ -43,7 +43,7 @@ public class FileSource implements Source {
     @Override
     public ObjectProducer[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
         File file = new File(this.name);
-        int chunkCount = vertex.getDescriptor().getTaskCount();
+        int chunkCount = vertex.getParallelism();
         long[] chunks = JetUtil.splitFile(file, chunkCount);
         ObjectProducer[] readers = new ObjectProducer[chunkCount];
         for (int i = 0; i < chunkCount; i++) {

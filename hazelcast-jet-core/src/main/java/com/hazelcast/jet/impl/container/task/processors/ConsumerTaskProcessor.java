@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -32,7 +32,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class ConsumerTaskProcessor implements TaskProcessor {
     protected static final Object[] DUMMY_CHUNK = new Object[0];
     protected final ObjectConsumer[] consumers;
-    protected final ContainerProcessor processor;
+    protected final Processor processor;
     protected final ContainerContext containerContext;
     protected final ObjectIOStream pairInputStream;
     protected final ObjectIOStream pairOutputStream;
@@ -46,7 +46,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public ConsumerTaskProcessor(ObjectConsumer[] consumers,
-                                 ContainerProcessor processor,
+                                 Processor processor,
                                  ContainerContext containerContext,
                                  ProcessorContext processorContext) {
         checkNotNull(consumers);
@@ -82,7 +82,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
             return consumeChunkAndResetOutputIfSuccess();
         } else {
             if (finalizationStarted) {
-                finalizationFinished = processor.finalizeProcessor(pairOutputStream, processorContext);
+                finalizationFinished = processor.complete(pairOutputStream, processorContext);
             } else {
                 if (producersWriteFinished) {
                     return true;

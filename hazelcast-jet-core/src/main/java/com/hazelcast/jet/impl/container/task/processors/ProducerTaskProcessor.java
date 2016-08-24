@@ -25,7 +25,7 @@ import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -34,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class ProducerTaskProcessor implements TaskProcessor {
     protected final int taskID;
     protected final ObjectProducer[] producers;
-    protected final ContainerProcessor processor;
+    protected final Processor processor;
     protected final ContainerContext containerContext;
     protected final ProcessorContext processorContext;
     protected final ObjectIOStream objectInputStream;
@@ -51,7 +51,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     private boolean producersWriteFinished;
 
     public ProducerTaskProcessor(ObjectProducer[] producers,
-                                 ContainerProcessor processor,
+                                 Processor processor,
                                  ContainerContext containerContext,
                                  ProcessorContext processorContext,
                                  int taskID) {
@@ -87,7 +87,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
         int producersCount = producers.length;
 
         if (finalizationStarted) {
-            finalizationFinished = processor.finalizeProcessor(pairOutputStream, processorContext);
+            finalizationFinished = processor.complete(pairOutputStream, processorContext);
 
             return !processOutputStream();
         } else if (this.pendingProducer != null) {

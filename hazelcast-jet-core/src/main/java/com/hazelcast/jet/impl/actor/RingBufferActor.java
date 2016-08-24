@@ -22,19 +22,16 @@ import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithReferenceStrategy;
-import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithValueStrategy;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -81,35 +78,14 @@ public class RingBufferActor implements ObjectActor {
         int objectChunkSize = jobConfig.getChunkSize();
         this.producerChunk = new Object[objectChunkSize];
         int ringbufferSize = jobConfig.getRingbufferSize();
-        this.flushBuffer = new ObjectIOStream<Object>(new Object[objectChunkSize]);
-        this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
-        boolean byReference = edge == null || edge.getDataTransferringStrategy().byReference();
-
-        this.ringBuffer = byReference
-                ?
-                new RingBufferWithReferenceStrategy<Object>(
-                        ringbufferSize,
-                        nodeEngine.getLogger(RingBufferActor.class)
-                )
-                :
-                new RingBufferWithValueStrategy<Object>(
-                        ringbufferSize,
-                        edge.getDataTransferringStrategy()
-                );
-
-        if (!byReference) {
-            for (int i = 0; i < this.producerChunk.length; i++) {
-                this.producerChunk[i] = edge.getDataTransferringStrategy().newInstance();
-            }
-        }
+        this.flushBuffer = new ObjectIOStream<>(new Object[objectChunkSize]);
+        this.completionHandlers = new CopyOnWriteArrayList<>();
+        this.ringBuffer = new RingBufferWithReferenceStrategy<>(ringbufferSize,
+                nodeEngine.getLogger(RingBufferActor.class)
+        );
 
         if (registerListener) {
-            jobContext.registerJobListener(new JobListener() {
-                @Override
-                public void onJobExecuted(JobContext jobContext) {
-                    clear();
-                }
-            });
+            jobContext.registerJobListener(jobContext1 -> clear());
         }
     }
 

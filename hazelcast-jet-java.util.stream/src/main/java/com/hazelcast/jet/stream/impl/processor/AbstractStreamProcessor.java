@@ -20,13 +20,13 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Iterator;
 import java.util.function.Function;
 
-abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Pair, Pair> {
+abstract class AbstractStreamProcessor<IN, OUT> implements Processor<Pair, Pair> {
 
     protected ILogger logger;
 
@@ -41,7 +41,7 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Pa
     }
 
     @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
+    public void before(ProcessorContext processorContext) {
         if (logger == null) {
             this.logger = processorContext.getNodeEngine().getLogger(this.getClass().getName()
                     + "." + processorContext.getVertex().getName());
@@ -57,8 +57,8 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Pa
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Pair> outputStream,
-                                     ProcessorContext processorContext) throws Exception {
+    public boolean complete(ConsumerOutputStream<Pair> outputStream,
+                            ProcessorContext processorContext) throws Exception {
         mappingOutputStream.setOutputStream(outputStream);
         return finalize(mappingOutputStream, processorContext.getConfig().getChunkSize());
     }

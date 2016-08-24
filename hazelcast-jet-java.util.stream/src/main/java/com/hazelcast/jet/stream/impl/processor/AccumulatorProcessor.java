@@ -41,7 +41,7 @@ public class AccumulatorProcessor<IN, OUT> extends AbstractStreamProcessor<IN, O
     }
 
     @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
+    public void before(ProcessorContext processorContext) {
         result = identity;
     }
 

@@ -31,7 +31,7 @@ import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.processors.ConsumerTaskProcessor;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategyAware;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
@@ -68,7 +68,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private boolean localSuccess;
 
     public ShuffledConsumerTaskProcessor(ObjectConsumer[] consumers,
-                                         ContainerProcessor processor,
+                                         Processor processor,
                                          ContainerContext containerContext,
                                          ProcessorContext processorContext,
                                          int taskID) {
@@ -76,7 +76,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     public ShuffledConsumerTaskProcessor(ObjectConsumer[] consumers,
-                                         ContainerProcessor processor,
+                                         Processor processor,
                                          ContainerContext containerContext,
                                          ProcessorContext processorContext,
                                          int taskID,

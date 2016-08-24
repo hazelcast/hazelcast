@@ -68,9 +68,7 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         edgeBuilder(previous, vertex)
                 .addToDAG(dag)
-                .shuffling(true)
-                .shufflingStrategy(new IListBasedShufflingStrategy(randomName()))
-                .build();
+                .shuffled(new IListBasedShufflingStrategy(randomName()));
 
         return vertex;
     }

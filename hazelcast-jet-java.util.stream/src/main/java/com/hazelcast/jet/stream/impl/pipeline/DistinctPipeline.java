@@ -20,7 +20,6 @@ import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -66,8 +65,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         if (previous != distinct) {
             edgeBuilder(previous, distinct)
                     .addToDAG(dag)
-                    .processingStrategy(ProcessingStrategy.PARTITIONING)
-                    .build();
+                    .partitioned();
         }
 
         Vertex combiner = vertexBuilder(DistinctProcessor.class)
@@ -77,9 +75,8 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         edgeBuilder(distinct, combiner)
                 .addToDAG(dag)
-                .shuffling(true)
-                .processingStrategy(ProcessingStrategy.PARTITIONING)
-                .build();
+                .partitioned()
+                .shuffled();
 
         return combiner;
     }

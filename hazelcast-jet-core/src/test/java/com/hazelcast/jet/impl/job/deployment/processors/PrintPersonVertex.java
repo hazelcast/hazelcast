@@ -3,11 +3,11 @@ package com.hazelcast.jet.impl.job.deployment.processors;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
 import static org.junit.Assert.fail;
 
-public class PrintPersonVertex implements ContainerProcessor {
+public class PrintPersonVertex implements Processor {
 
     public PrintPersonVertex() {
     }

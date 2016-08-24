@@ -26,12 +26,12 @@ import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.shuffling.ShuffledActorTaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.shuffling.ShuffledConsumerTaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.shuffling.ShuffledReceiverConsumerTaskProcessor;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
 public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
     @Override
     public TaskProcessor consumerTaskProcessor(ObjectConsumer[] consumers,
-                                               ContainerProcessor processor,
+                                               Processor processor,
                                                ContainerContext containerContext,
                                                ProcessorContext processorContext,
                                                Vertex vertex,
@@ -50,7 +50,7 @@ public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
     @Override
     public TaskProcessor actorTaskProcessor(ObjectProducer[] producers,
                                             ObjectConsumer[] consumers,
-                                            ContainerProcessor processor,
+                                            Processor processor,
                                             ContainerContext containerContext,
                                             ProcessorContext processorContext,
                                             Vertex vertex,

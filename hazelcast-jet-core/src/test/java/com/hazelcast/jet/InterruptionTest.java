@@ -25,7 +25,7 @@ import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.job.Job;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -144,7 +144,7 @@ public class InterruptionTest extends JetTestSupport {
         }
     }
 
-    public static class ExceptionProcessor implements ContainerProcessor {
+    public static class ExceptionProcessor implements Processor {
 
         private static final String ERROR_MESSAGE = "exception";
 
@@ -154,9 +154,9 @@ public class InterruptionTest extends JetTestSupport {
         }
     }
 
-    public static class SlowProcessor implements ContainerProcessor {
+    public static class SlowProcessor implements Processor {
 
-        private static final CountDownLatch latch = new CountDownLatch(TASK_COUNT);
+        private static final CountDownLatch latch = new CountDownLatch(PARALLELISM);
         private boolean started;
 
         @Override

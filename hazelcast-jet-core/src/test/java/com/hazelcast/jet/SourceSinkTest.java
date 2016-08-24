@@ -34,7 +34,7 @@ import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.jet.strategy.SingleNodeShufflingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -148,11 +148,9 @@ public class SourceSinkTest extends JetTestSupport {
         dag.addVertex(vertex1);
         dag.addVertex(vertex2);
 
-        Edge edge = new Edge.EdgeBuilder("edge", vertex1, vertex2)
-                .shuffling(true)
-                .shufflingStrategy(new SingleNodeShufflingStrategy(
-                        instance.getCluster().getLocalMember().getAddress()))
-                .build();
+        Edge edge = new Edge("edge", vertex1, vertex2)
+                .shuffled()
+                .shuffled(new SingleNodeShufflingStrategy(instance.getCluster().getLocalMember().getAddress()));
         dag.addEdge(edge);
 
         Job job = JetEngine.getJob(instance, "fileToFile", dag);
@@ -173,7 +171,7 @@ public class SourceSinkTest extends JetTestSupport {
         return input;
     }
 
-    public static class Parser implements ContainerProcessor<Pair<Integer, String>, Pair<Integer, Integer>> {
+    public static class Parser implements Processor<Pair<Integer, String>, Pair<Integer, Integer>> {
         @Override
         public boolean process(ProducerInputStream<Pair<Integer, String>> inputStream,
                                ConsumerOutputStream<Pair<Integer, Integer>> outputStream,

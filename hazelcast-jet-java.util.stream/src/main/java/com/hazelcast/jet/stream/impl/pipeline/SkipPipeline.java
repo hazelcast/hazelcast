@@ -57,8 +57,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         // if upstream is not ordered, we need to shuffle data to one node
         if (!upstream.isOrdered()) {
-            edgeBuilder.shuffling(true)
-                    .shufflingStrategy(new IListBasedShufflingStrategy(randomName()));
+            edgeBuilder.shuffled(new IListBasedShufflingStrategy(randomName()));
         }
         edgeBuilder
                 .addToDAG(dag)

@@ -18,8 +18,7 @@ package com.hazelcast.jet.dag;
 
 import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.processor.ProcessorDescriptor;
-
+import com.hazelcast.jet.processor.Processor;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +31,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class Vertex implements Serializable {
     private String name;
-    private ProcessorDescriptor descriptor;
+    private String processorClass;
+    private Object[] processorArgs;
+    private int parallelism = 1;
 
     private List<Edge> inputEdges = new ArrayList<Edge>();
     private List<Edge> outputEdges = new ArrayList<Edge>();
@@ -42,17 +43,27 @@ public class Vertex implements Serializable {
     private List<Vertex> outputVertices = new ArrayList<Vertex>();
 
     /**
-     * Constructs a new vertex with given name and processor descriptor
+     * Constructs a new vertex
+     *
      * @param name name of the vertex
-     * @param descriptor processor information for this vertex.
      */
-    public Vertex(String name,
-                      ProcessorDescriptor descriptor) {
-        checkNotNull(descriptor);
+    public Vertex(String name) {
         checkNotNull(name);
-
         this.name = name;
-        this.descriptor = descriptor;
+    }
+
+    /**
+     * Constructs a new vertex
+     *
+     * @param name           name of the vertex
+     * @param processorClass class name of the processor
+     * @param processorArgs  constructor arguments of the processor
+     */
+    public Vertex(String name, Class<? extends Processor> processorClass, Object... processorArgs) {
+        checkNotNull(name);
+        this.name = name;
+        this.processorClass = processorClass.getName();
+        this.processorArgs = processorArgs;
     }
 
     /**
@@ -60,6 +71,51 @@ public class Vertex implements Serializable {
      */
     public String getName() {
         return this.name;
+    }
+
+    /**
+     * @return number of parallel instances of this vertex
+     */
+    public int getParallelism() {
+        return parallelism;
+    }
+
+    /**
+     * Sets the number of parallel instances of this vertex
+     */
+    public Vertex parallelism(int parallelism) {
+        this.parallelism = parallelism;
+        return this;
+    }
+
+    /**
+     * @return constructor arguments for the processor
+     */
+    public Object[] getProcessorArgs() {
+        return processorArgs;
+    }
+
+    /**
+     * Sets the constructor arguments for the processor
+     */
+    public Vertex processorArgs(Object[] processorArgs) {
+        this.processorArgs = processorArgs;
+        return this;
+    }
+
+    /**
+     * @return name of the processor class
+     */
+    public String getProcessorClass() {
+        return processorClass;
+    }
+
+    /**
+     * Sets the name of the processor class
+     */
+    public Vertex processorClass(Class processorClass) {
+        this.processorClass = processorClass.getName();
+        return this;
     }
 
     /**
@@ -142,13 +198,6 @@ public class Vertex implements Serializable {
      */
     public List<Sink> getSinks() {
         return Collections.unmodifiableList(this.sinks);
-    }
-
-    /**
-     * @return processor descriptor of vertex
-     */
-    public ProcessorDescriptor getDescriptor() {
-        return this.descriptor;
     }
 
     /**

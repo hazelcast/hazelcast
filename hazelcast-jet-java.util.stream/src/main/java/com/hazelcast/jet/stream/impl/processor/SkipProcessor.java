@@ -34,7 +34,7 @@ public class SkipProcessor<T> extends AbstractStreamProcessor<T, T> {
     }
 
     @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
+    public void before(ProcessorContext processorContext) {
         index = 0;
     }
 

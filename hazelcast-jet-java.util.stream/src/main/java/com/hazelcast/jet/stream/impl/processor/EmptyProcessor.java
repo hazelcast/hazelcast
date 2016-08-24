@@ -20,9 +20,9 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.ContainerProcessor;
+import com.hazelcast.jet.processor.Processor;
 
-public class EmptyProcessor implements ContainerProcessor<Pair, Pair> {
+public class EmptyProcessor implements Processor<Pair, Pair> {
 
     @Override
     public boolean process(ProducerInputStream<Pair> inputStream, ConsumerOutputStream<Pair> outputStream,

@@ -62,7 +62,7 @@ public class DistinctProcessor<T> extends AbstractStreamProcessor<T, T> {
     }
 
     @Override
-    public void afterProcessing(ProcessorContext processorContext) {
+    public void after(ProcessorContext processorContext) {
         this.iterator = null;
         this.map.clear();
     }
