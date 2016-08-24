@@ -19,7 +19,6 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.ExceptionUtil;
@@ -37,13 +36,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WanReplicationServiceImpl implements WanReplicationService {
 
     private final Node node;
-    private final ILogger logger;
 
     private final Map<String, WanReplicationPublisherDelegate> wanReplications = initializeWanReplicationPublisherMapping();
 
     public WanReplicationServiceImpl(Node node) {
         this.node = node;
-        this.logger = node.getLogger(WanReplicationServiceImpl.class.getName());
     }
 
     @Override

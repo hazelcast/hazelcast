@@ -53,13 +53,11 @@ import java.nio.ByteBuffer;
  * +-----------------------------+                                 |
  * |                      Message Payload Data                    ...
  * |                                                              ...
- *
  * </pre>
  */
 public class ClientMessage
         extends MessageFlyweight
         implements OutboundFrame {
-
 
     /**
      * Current protocol version
@@ -91,10 +89,8 @@ public class ClientMessage
      */
     public static final int HEADER_SIZE;
 
-
     private static final String PROP_HAZELCAST_PROTOCOL_UNSAFE = "hazelcast.protocol.unsafe.enabled";
     private static final boolean USE_UNSAFE = Boolean.getBoolean(PROP_HAZELCAST_PROTOCOL_UNSAFE);
-    private static final int INITIAL_BUFFER_SIZE = 1024;
 
     private static final int FRAME_LENGTH_FIELD_OFFSET = 0;
     private static final int VERSION_FIELD_OFFSET = FRAME_LENGTH_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
@@ -103,7 +99,6 @@ public class ClientMessage
     private static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
     private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     private static final int DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
-
 
     static {
 
@@ -296,20 +291,20 @@ public class ClientMessage
         byte[] byteArray = buffer.byteArray();
         int size = getFrameLength();
 
-        // the number of bytes that can be written to the bb.
+        // the number of bytes that can be written to the bb
         int bytesWritable = dst.remaining();
 
-        // the number of bytes that need to be written.
+        // the number of bytes that need to be written
         int bytesNeeded = size - writeOffset;
 
         int bytesWrite;
         boolean done;
         if (bytesWritable >= bytesNeeded) {
-            // All bytes for the value are available.
+            // all bytes for the value are available
             bytesWrite = bytesNeeded;
             done = true;
         } else {
-            // Not all bytes for the value are available. Write as much as is available.
+            // not all bytes for the value are available. Write as much as is available
             bytesWrite = bytesWritable;
             done = false;
         }
@@ -318,7 +313,7 @@ public class ClientMessage
         writeOffset += bytesWrite;
 
         if (done) {
-            //clear the write offset so that same client message can be resend if needed.
+            // clear the write offset so that same client message can be resend if needed
             writeOffset = 0;
         }
         return done;
@@ -327,10 +322,10 @@ public class ClientMessage
     public boolean readFrom(ByteBuffer src) {
         int frameLength = 0;
         if (this.buffer == null) {
-            //init internal buffer
+            // init internal buffer
             final int remaining = src.remaining();
             if (remaining < Bits.INT_SIZE_IN_BYTES) {
-                //we don't have even the frame length ready
+                // we don't have even the frame length ready
                 return false;
             }
             frameLength = Bits.readIntL(src.array(), src.position());

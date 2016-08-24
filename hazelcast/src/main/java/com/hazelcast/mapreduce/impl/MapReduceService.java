@@ -62,8 +62,6 @@ public class MapReduceService
 
     private static final ILogger LOGGER = Logger.getLogger(MapReduceService.class);
 
-    private static final int DEFAULT_RETRY_SLEEP_MILLIS = 100;
-
     private final ConstructorFunction<String, NodeJobTracker> constructor = new ConstructorFunction<String, NodeJobTracker>() {
         @Override
         public NodeJobTracker createNew(String arg) {
