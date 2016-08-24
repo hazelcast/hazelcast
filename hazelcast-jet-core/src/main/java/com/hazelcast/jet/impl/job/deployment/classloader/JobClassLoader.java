@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.job.deployment.classloader;
 
+import com.hazelcast.jet.impl.job.deployment.DeploymentDescriptor;
 import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
 import com.hazelcast.jet.impl.job.deployment.JetClassLoaderException;
-import com.hazelcast.jet.impl.job.deployment.DeploymentDescriptor;
 import com.hazelcast.jet.impl.util.JetUtil;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -256,38 +256,40 @@ public class JobClassLoader extends ClassLoader {
 
         @Override
         public Class loadClass(String className, boolean resolveIt) {
-            Class result;
-            byte[] classBytes;
+            synchronized (getClassLoadingLock(className)) {
+                Class result;
+                byte[] classBytes;
 
-            result = classes.get(className);
+                result = classes.get(className);
 
-            if (result != null) {
+                if (result != null) {
+                    return result;
+                }
+
+                classBytes = classBytes(className);
+
+                if (classBytes == null) {
+                    return null;
+                }
+
+                result = defineClass(className, classBytes, 0, classBytes.length);
+
+                if (result == null) {
+                    return null;
+                }
+
+                if (result.getPackage() == null) {
+                    int lastDotIndex = className.lastIndexOf('.');
+                    String packageName = (lastDotIndex >= 0) ? className.substring(0, lastDotIndex) : "";
+                    definePackage(packageName, null, null, null, null, null, null, null);
+                }
+
+                if (resolveIt) {
+                    resolveClass(result);
+                }
+                classes.put(className, result);
                 return result;
             }
-
-            classBytes = classBytes(className);
-
-            if (classBytes == null) {
-                return null;
-            }
-
-            result = defineClass(className, classBytes, 0, classBytes.length);
-
-            if (result == null) {
-                return null;
-            }
-
-            if (result.getPackage() == null) {
-                int lastDotIndex = className.lastIndexOf('.');
-                String packageName = (lastDotIndex >= 0) ? className.substring(0, lastDotIndex) : "";
-                definePackage(packageName, null, null, null, null, null, null, null);
-            }
-
-            if (resolveIt) {
-                resolveClass(result);
-            }
-            classes.put(className, result);
-            return result;
         }
 
 
