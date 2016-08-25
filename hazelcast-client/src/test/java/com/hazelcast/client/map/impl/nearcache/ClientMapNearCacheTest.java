@@ -85,9 +85,10 @@ public class ClientMapNearCacheTest {
         return Arrays.asList(new Object[]{TRUE}, new Object[]{FALSE});
     }
 
+    protected static int MAX_CACHE_SIZE = 100;
+
     private static final int MAX_TTL_SECONDS = 3;
     private static final int MAX_IDLE_SECONDS = 1;
-    private static int MAX_CACHE_SIZE = 100;
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -1257,7 +1258,7 @@ public class ClientMapNearCacheTest {
         assertNull(map.getAsync(1).get());
     }
 
-    private void populateNearCache(IMap<Integer, Integer> map, int size) {
+    protected void populateNearCache(IMap<Integer, Integer> map, int size) {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
@@ -1267,27 +1268,27 @@ public class ClientMapNearCacheTest {
         }
     }
 
-    private void assertThatOwnedEntryCountEquals(IMap<Integer, Integer> clientMap, long expected) {
+    protected void assertThatOwnedEntryCountEquals(IMap<Integer, Integer> clientMap, long expected) {
         long ownedEntryCount = getOwnedEntryCount(clientMap);
         assertEquals(expected, ownedEntryCount);
     }
 
-    private void assertThatOwnedEntryCountIsSmallerThan(IMap<Integer, Integer> clientMap, long expected) {
+    protected void assertThatOwnedEntryCountIsSmallerThan(IMap<Integer, Integer> clientMap, long expected) {
         long ownedEntryCount = getOwnedEntryCount(clientMap);
         assertTrue(format("ownedEntryCount should be smaller than %d, but was %d", expected, ownedEntryCount),
                 ownedEntryCount < expected);
     }
 
-    private long getOwnedEntryCount(IMap<Integer, Integer> map) {
+    protected long getOwnedEntryCount(IMap<Integer, Integer> map) {
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         return stats.getOwnedEntryCount();
     }
 
-    private void triggerEviction(IMap<Integer, Integer> map) {
+    protected void triggerEviction(IMap<Integer, Integer> map) {
         map.put(0, 0);
     }
 
-    private NearCacheConfig newNoneNearCacheConfig() {
+    protected NearCacheConfig newNoneNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
@@ -1296,11 +1297,11 @@ public class ClientMapNearCacheTest {
         return nearCacheConfig;
     }
 
-    private NearCacheConfig newNearCacheConfig() {
+    protected NearCacheConfig newNearCacheConfig() {
         return new NearCacheConfig();
     }
 
-    private NearCacheConfig newRandomNearCacheConfig() {
+    protected NearCacheConfig newRandomNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
@@ -1309,7 +1310,7 @@ public class ClientMapNearCacheTest {
         return nearCacheConfig;
     }
 
-    private NearCacheConfig newLRUMaxSizeConfig() {
+    protected NearCacheConfig newLRUMaxSizeConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
@@ -1317,7 +1318,7 @@ public class ClientMapNearCacheTest {
         return nearCacheConfig;
     }
 
-    private NearCacheConfig newLFUMaxSizeNearCacheConfig() {
+    protected NearCacheConfig newLFUMaxSizeNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
@@ -1326,14 +1327,14 @@ public class ClientMapNearCacheTest {
         return nearCacheConfig;
     }
 
-    private NearCacheConfig newMaxIdleSecondsNearCacheConfig() {
+    protected NearCacheConfig newMaxIdleSecondsNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(false);
         nearCacheConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
         return nearCacheConfig;
     }
 
-    private NearCacheConfig newTTLNearCacheConfig() {
+    protected NearCacheConfig newTTLNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(false);
         nearCacheConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
@@ -1341,13 +1342,13 @@ public class ClientMapNearCacheTest {
         return nearCacheConfig;
     }
 
-    private NearCacheConfig newInvalidationEnabledNearCacheConfig() {
+    protected NearCacheConfig newInvalidationEnabledNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         return nearCacheConfig;
     }
 
-    private NearCacheConfig newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(String name) {
+    protected NearCacheConfig newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(String name) {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         nearCacheConfig.setCacheLocalEntries(true);
@@ -1355,7 +1356,7 @@ public class ClientMapNearCacheTest {
         return nearCacheConfig;
     }
 
-    private NearCacheConfig newMaxSizeNearCacheConfig() {
+    protected NearCacheConfig newMaxSizeNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setMaxSize(MAX_CACHE_SIZE);
         nearCacheConfig.setInvalidateOnChange(false);
@@ -1363,30 +1364,30 @@ public class ClientMapNearCacheTest {
         return nearCacheConfig;
     }
 
-    private Config newConfig() {
+    protected Config newConfig() {
         Config config = new Config();
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), String.valueOf(batchInvalidationEnabled));
         return config;
     }
 
-    private NearCacheConfig newNoInvalidationNearCacheConfig() {
+    protected NearCacheConfig newNoInvalidationNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         nearCacheConfig.setInvalidateOnChange(false);
         return nearCacheConfig;
     }
 
-    private HazelcastInstance getClient(TestHazelcastFactory testHazelcastFactory, NearCacheConfig nearCacheConfig) {
+    protected HazelcastInstance getClient(TestHazelcastFactory testHazelcastFactory, NearCacheConfig nearCacheConfig) {
         ClientConfig clientConfig = newClientConfig();
         clientConfig.addNearCacheConfig(nearCacheConfig);
         return testHazelcastFactory.newHazelcastClient(clientConfig);
     }
 
-    private <K, V> IMap<K, V> getNearCachedMapFromClient(NearCacheConfig nearCacheConfig) {
+    protected <K, V> IMap<K, V> getNearCachedMapFromClient(NearCacheConfig nearCacheConfig) {
         return getNearCachedMapFromClient(newConfig(), nearCacheConfig);
     }
 
-    private <K, V> IMap<K, V> getNearCachedMapFromClient(Config config, NearCacheConfig nearCacheConfig) {
+    protected <K, V> IMap<K, V> getNearCachedMapFromClient(Config config, NearCacheConfig nearCacheConfig) {
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(config);
 
@@ -1399,11 +1400,11 @@ public class ClientMapNearCacheTest {
         return client.getMap(mapName);
     }
 
-    private ClientConfig newClientConfig() {
+    protected ClientConfig newClientConfig() {
         return new ClientConfig();
     }
 
-    private void assertNearCacheInvalidation_whenMaxSizeExceeded(NearCacheConfig config) {
+    protected void assertNearCacheInvalidation_whenMaxSizeExceeded(NearCacheConfig config) {
         final IMap<Integer, Integer> map = getNearCachedMapFromClient(config);
         populateNearCache(map, MAX_CACHE_SIZE);
 

@@ -68,7 +68,7 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
         clientMap = client.getMap(MAP_NAME);
     }
 
-    private ClientConfig getClientConfig(String mapName) {
+    protected ClientConfig getClientConfig(String mapName) {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
 
         ClientConfig clientConfig = new ClientConfig();
