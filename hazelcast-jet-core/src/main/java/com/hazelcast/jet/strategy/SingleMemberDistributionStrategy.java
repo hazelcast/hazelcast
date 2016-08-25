@@ -16,33 +16,38 @@
 
 package com.hazelcast.jet.strategy;
 
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 
 import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * A shuffling strategy which shuffles all data to a single node, identified by the given address
  */
-public class SingleNodeShufflingStrategy implements ShufflingStrategy {
+public class SingleMemberDistributionStrategy implements MemberDistributionStrategy {
 
-    private final int port;
     private final String host;
+    private final int port;
 
     /**
      * Constructs the strategy with the given address
      */
-    public SingleNodeShufflingStrategy(Address address) {
-        this.host = address.getHost();
-        this.port = address.getPort();
+    public SingleMemberDistributionStrategy(Member member) {
+        host = member.getAddress().getHost();
+        port = member.getAddress().getPort();
 
     }
 
     @Override
-    public Address[] getShufflingAddress(ContainerDescriptor containerDescriptor) {
+    public Collection<Member> getTargetMembers(ContainerContext containerContext) {
         try {
-            return new Address[]{new Address(host, port)};
+            MemberImpl member = new MemberImpl(new Address(host, port), false);
+            return Collections.<Member>singletonList(member);
         } catch (UnknownHostException e) {
             throw JetUtil.reThrow(e);
         }

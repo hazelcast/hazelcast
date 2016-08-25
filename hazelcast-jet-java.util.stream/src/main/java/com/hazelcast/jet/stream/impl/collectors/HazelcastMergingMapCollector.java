@@ -73,7 +73,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
 
         edgeBuilder(merger, combiner)
                 .addToDAG(dag)
-                .shuffled()
+                .distributed()
                 .partitioned();
 
         combiner.addSink(new MapSink(mapName));

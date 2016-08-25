@@ -30,7 +30,7 @@ import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.DefaultProcessorContext;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
@@ -72,7 +72,7 @@ public class ContainerTask extends Task {
 
     private final ProcessingContainer container;
     private final Processor processor;
-    private final ContainerContext containerContext;
+    private final ContainerContextImpl containerContext;
     private final JobContext jobContext;
     private final TaskProcessorFactory taskProcessorFactory;
     private final AtomicBoolean interrupted = new AtomicBoolean(false);

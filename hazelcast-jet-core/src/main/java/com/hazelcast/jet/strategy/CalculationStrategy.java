@@ -18,7 +18,7 @@ package com.hazelcast.jet.strategy;
 
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 
 /**
  * Default calculation strategy implementation;
@@ -32,7 +32,7 @@ import com.hazelcast.jet.container.ContainerDescriptor;
 public class CalculationStrategy {
 
     private final HashingStrategy hashingStrategy;
-    private final ContainerDescriptor containerDescriptor;
+    private final ContainerContext containerContext;
     private final PartitioningStrategy partitioningStrategy;
 
     /**
@@ -41,10 +41,10 @@ public class CalculationStrategy {
     public CalculationStrategy(
             HashingStrategy hashingStrategy,
             PartitioningStrategy partitioningStrategy,
-            ContainerDescriptor containerDescriptor
+            ContainerContext containerContext
     ) {
         this.hashingStrategy = hashingStrategy;
-        this.containerDescriptor = containerDescriptor;
+        this.containerContext = containerContext;
         this.partitioningStrategy = partitioningStrategy;
     }
 
@@ -71,7 +71,7 @@ public class CalculationStrategy {
     @SuppressWarnings("unchecked")
     public int hash(Object object) {
         final Object partitionKey = partitioningStrategy.getPartitionKey(object);
-        return hashingStrategy.hash(object, partitionKey, containerDescriptor);
+        return hashingStrategy.hash(object, partitionKey, containerContext);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class CalculationStrategy {
         if (!hashingStrategy.equals(that.hashingStrategy)) {
             return false;
         }
-        if (!containerDescriptor.equals(that.containerDescriptor)) {
+        if (!containerContext.equals(that.containerContext)) {
             return false;
         }
         return partitioningStrategy.equals(that.partitioningStrategy);
@@ -98,7 +98,7 @@ public class CalculationStrategy {
     @Override
     public int hashCode() {
         int result = hashingStrategy.hashCode();
-        result = 31 * result + containerDescriptor.hashCode();
+        result = 31 * result + containerContext.hashCode();
         result = 31 * result + partitioningStrategy.hashCode();
         return result;
     }

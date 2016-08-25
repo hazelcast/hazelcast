@@ -39,7 +39,7 @@ public class DataChannel {
         this.sourceContainer = sourceContainer;
         this.targetContainer = targetContainer;
 
-        this.isShuffled = edge.isShuffled();
+        this.isShuffled = !edge.isLocal();
         this.actors = new ArrayList<>();
 
         init();

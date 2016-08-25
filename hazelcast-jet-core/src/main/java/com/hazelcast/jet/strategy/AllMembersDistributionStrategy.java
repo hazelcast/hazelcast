@@ -17,29 +17,25 @@
 package com.hazelcast.jet.strategy;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.nio.Address;
+import com.hazelcast.jet.container.ContainerContext;
 
 import java.util.Set;
 
 /**
- * Shuffling Strategy that broadcasts emitted objects to all nodes
+ * DistributedStrategy that broadcasts emitted objects to all members
  */
-public class BroadcastShufflingStrategy implements ShufflingStrategy {
+public final class AllMembersDistributionStrategy implements MemberDistributionStrategy {
 
     /**
-     *  Static instance of BroadcastShufflingStrategy
+     * Singleton instance of AllMembersDistributionStrategy
      */
-    public static final ShufflingStrategy INSTANCE = new BroadcastShufflingStrategy();
+    public static final MemberDistributionStrategy INSTANCE = new AllMembersDistributionStrategy();
+
+    private AllMembersDistributionStrategy() {
+    }
 
     @Override
-    public Address[] getShufflingAddress(ContainerDescriptor containerDescriptor) {
-        Set<Member> members = containerDescriptor.getNodeEngine().getClusterService().getMembers();
-        Address[] addresses = new Address[members.size()];
-        int i = 0;
-        for (Member member : members) {
-            addresses[i++] = member.getAddress();
-        }
-        return addresses;
+    public Set<Member> getTargetMembers(ContainerContext containerContext) {
+        return containerContext.getNodeEngine().getClusterService().getMembers();
     }
 }

@@ -20,12 +20,12 @@ package com.hazelcast.jet.impl.dag.source;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.pair.JetPairConverter;
 import com.hazelcast.jet.impl.data.pair.JetPairIterator;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -50,9 +50,9 @@ public class MapPartitionReader extends AbstractHazelcastReader<JetPair> {
         }
     };
 
-    public MapPartitionReader(ContainerDescriptor containerDescriptor, String name, int partitionId) {
-        super(containerDescriptor, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
+    public MapPartitionReader(ContainerContext containerContext, String name, int partitionId) {
+        super(containerContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         this.mapConfig = nodeEngine.getConfig().getMapConfig(name);
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
@@ -61,7 +61,7 @@ public class MapPartitionReader extends AbstractHazelcastReader<JetPair> {
         partitioningStrategy = partitioningStrategy == null ? StringAndPartitionAwarePartitioningStrategy.INSTANCE
                 : partitioningStrategy;
         this.calculationStrategy = new CalculationStrategy(
-                DefaultHashingStrategy.INSTANCE, partitioningStrategy, this.containerDescriptor);
+                SerializedHashingStrategy.INSTANCE, partitioningStrategy, this.containerContext);
     }
 
     @Override

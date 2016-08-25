@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.dag.source;
 
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 
@@ -35,10 +35,10 @@ public interface Source extends Serializable {
     /**
      * Array of the input readers
      *
-     * @param containerDescriptor descriptor of the corresponding container
+     * @param containerContext descriptor of the corresponding container
      * @param vertex              corresponding vertex
      * @return list of the input readers
      */
-    ObjectProducer[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex);
+    ObjectProducer[] getReaders(ContainerContext containerContext, Vertex vertex);
 
 }

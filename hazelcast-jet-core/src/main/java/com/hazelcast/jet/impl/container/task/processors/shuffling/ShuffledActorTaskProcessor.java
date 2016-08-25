@@ -21,7 +21,7 @@ import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
@@ -44,7 +44,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     public ShuffledActorTaskProcessor(ObjectProducer[] producers,
                                       ObjectConsumer[] consumers,
                                       Processor processor,
-                                      ContainerContext containerContext,
+                                      ContainerContextImpl containerContext,
                                       ProcessorContext processorContext,
                                       TaskProcessor senderConsumerProcessor,
                                       TaskProcessor receiverConsumerProcessor,

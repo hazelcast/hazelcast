@@ -206,7 +206,7 @@ public class Vertex implements Serializable {
      */
     public boolean hasOutputShuffler() {
         for (Edge edge : this.outputEdges) {
-            if (edge.isShuffled()) {
+            if (!edge.isLocal()) {
                 return true;
             }
         }

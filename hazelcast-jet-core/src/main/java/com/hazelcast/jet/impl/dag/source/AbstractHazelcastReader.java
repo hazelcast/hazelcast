@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractHazelcastReader<V> implements ObjectProducer {
     protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
-    protected final ContainerDescriptor containerDescriptor;
+    protected final ContainerContext containerContext;
     protected final ILogger logger;
     protected long position;
     protected Iterator<V> iterator;
@@ -107,17 +107,17 @@ public abstract class AbstractHazelcastReader<V> implements ObjectProducer {
     private volatile boolean isReadRequested;
 
     public AbstractHazelcastReader(
-            ContainerDescriptor containerDescriptor, String name, int partitionId,
+            ContainerContext containerContext, String name, int partitionId,
             DataTransferringStrategy dataTransferringStrategy
     ) {
         this.name = name;
         this.partitionId = partitionId;
-        this.containerDescriptor = containerDescriptor;
-        this.nodeEngine = containerDescriptor.getNodeEngine();
+        this.containerContext = containerContext;
+        this.nodeEngine = containerContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
         this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
-        JobConfig config = containerDescriptor.getConfig();
+        JobConfig config = containerContext.getConfig();
         this.awaitSecondsTime = config.getSecondsToAwait();
         this.chunkSize = config.getChunkSize();
         this.buffer = new Object[this.chunkSize];

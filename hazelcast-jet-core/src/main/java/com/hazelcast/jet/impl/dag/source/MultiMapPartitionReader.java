@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.dag.source;
 
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.pair.JetPairConverter;
 import com.hazelcast.jet.impl.data.pair.JetPairIterator;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -61,11 +61,11 @@ public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
                 }
             };
 
-    public MultiMapPartitionReader(ContainerDescriptor containerDescriptor, String name, int partitionId) {
-        super(containerDescriptor, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
+    public MultiMapPartitionReader(ContainerContext containerContext, String name, int partitionId) {
+        super(containerContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         this.calculationStrategy = new CalculationStrategy(
-                DefaultHashingStrategy.INSTANCE, StringAndPartitionAwarePartitioningStrategy.INSTANCE,
-                containerDescriptor);
+                SerializedHashingStrategy.INSTANCE, StringAndPartitionAwarePartitioningStrategy.INSTANCE,
+                containerContext);
     }
 
     @Override

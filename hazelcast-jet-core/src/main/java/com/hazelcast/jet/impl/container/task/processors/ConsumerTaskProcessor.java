@@ -21,7 +21,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.processor.Processor;
@@ -33,7 +33,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected static final Object[] DUMMY_CHUNK = new Object[0];
     protected final ObjectConsumer[] consumers;
     protected final Processor processor;
-    protected final ContainerContext containerContext;
+    protected final ContainerContextImpl containerContext;
     protected final ObjectIOStream pairInputStream;
     protected final ObjectIOStream pairOutputStream;
     protected boolean producersWriteFinished;
@@ -47,7 +47,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public ConsumerTaskProcessor(ObjectConsumer[] consumers,
                                  Processor processor,
-                                 ContainerContext containerContext,
+                                 ContainerContextImpl containerContext,
                                  ProcessorContext processorContext) {
         checkNotNull(consumers);
         checkNotNull(processor);

@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.dag.source;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.pair.JetPairConverter;
@@ -38,8 +38,8 @@ public class ListPartitionReader extends AbstractHazelcastReader<JetPair> {
     private final JetPairConverter<CollectionItem> pairConverter =
             (item, ss) -> new JetPair<>(item.getItemId(), ss.toObject(item.getValue()), getPartitionId());
 
-    public ListPartitionReader(ContainerDescriptor containerDescriptor, String name) {
-        super(containerDescriptor, name, getPartitionId(containerDescriptor.getNodeEngine(), name),
+    public ListPartitionReader(ContainerContext containerContext, String name) {
+        super(containerContext, name, getPartitionId(containerContext.getNodeEngine(), name),
                 ByReferenceDataTransferringStrategy.INSTANCE);
     }
 

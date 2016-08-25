@@ -17,7 +17,7 @@
 package com.hazelcast.jet.dag;
 
 import com.hazelcast.jet.TestProcessors;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataWriter;
@@ -86,7 +86,7 @@ public class VertexTest {
         Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
         Vertex output = createVertex("output", TestProcessors.Noop.class);
 
-        Edge edge = new Edge("edge", v1, output, true);
+        Edge edge = new Edge("edge", v1, output, false);
         v1.addOutputVertex(output, edge);
 
         assertTrue(v1.hasOutputShuffler());
@@ -105,7 +105,7 @@ public class VertexTest {
         final String sourceTapName = "sourceTapName";
         Source source = new Source() {
             @Override
-            public ObjectProducer[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
+            public ObjectProducer[] getReaders(ContainerContext containerDescriptor, Vertex vertex) {
                 return new ObjectProducer[0];
             }
 
@@ -127,7 +127,7 @@ public class VertexTest {
         final String sinkTapName = "sinkTapWithWriterStrategyName";
         Sink sink = new Sink() {
             @Override
-            public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerDescriptor containerDescriptor) {
+            public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerContext containerDescriptor) {
                 return new DataWriter[0];
             }
 

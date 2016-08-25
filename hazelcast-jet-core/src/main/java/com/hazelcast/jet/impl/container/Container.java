@@ -49,7 +49,7 @@ public abstract class Container
     private final int id;
 
     private final NodeEngine nodeEngine;
-    private final ContainerContext containerContext;
+    private final ContainerContextImpl containerContext;
     private final JobContext jobContext;
     private final StateMachine<SI, SS, SO> stateMachine;
 
@@ -67,7 +67,7 @@ public abstract class Container
         this.stateMachine = stateMachineFactory.newStateMachine(name, this, nodeEngine, jobContext);
         this.jobContext = jobContext;
         this.id = jobContext.getContainerIDGenerator().incrementAndGet();
-        this.containerContext = new ContainerContext(nodeEngine, jobContext, this.id, vertex);
+        this.containerContext = new ContainerContextImpl(nodeEngine, jobContext, this.id, vertex);
     }
 
     /**
@@ -104,7 +104,7 @@ public abstract class Container
     /**
          * @return context of container
          */
-    public ContainerContext getContainerContext() {
+    public ContainerContextImpl getContainerContext() {
         return containerContext;
     }
 

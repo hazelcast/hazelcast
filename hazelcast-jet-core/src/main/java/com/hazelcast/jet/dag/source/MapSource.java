@@ -17,7 +17,7 @@
 package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.dag.source.MapPartitionReader;
@@ -51,18 +51,18 @@ public class MapSource implements Source {
     }
 
     @Override
-    public ObjectProducer[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex) {
-        List<Integer> localPartitions = JetUtil.getLocalPartitions(containerDescriptor.getNodeEngine());
+    public ObjectProducer[] getReaders(ContainerContext containerContext, Vertex vertex) {
+        List<Integer> localPartitions = JetUtil.getLocalPartitions(containerContext.getNodeEngine());
         ObjectProducer[] readers = new ObjectProducer[localPartitions.size()];
         for (int i = 0; i < localPartitions.size(); i++) {
             int partitionId = localPartitions.get(i);
-            readers[i] = getReader(containerDescriptor, partitionId);
+            readers[i] = getReader(containerContext, partitionId);
         }
         return readers;
     }
 
-    protected ObjectProducer getReader(ContainerDescriptor containerDescriptor, int partitionId) {
-        return new MapPartitionReader(containerDescriptor, name, partitionId);
+    protected ObjectProducer getReader(ContainerContext containerContext, int partitionId) {
+        return new MapPartitionReader(containerContext, name, partitionId);
     }
 
     @Override

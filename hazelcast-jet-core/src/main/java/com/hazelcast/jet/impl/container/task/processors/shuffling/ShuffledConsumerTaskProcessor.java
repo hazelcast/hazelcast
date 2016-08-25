@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.container.task.processors.shuffling;
 
 
+import com.hazelcast.core.Member;
 import com.hazelcast.jet.PartitionIdAware;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ProcessorContext;
@@ -24,7 +25,7 @@ import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
@@ -33,7 +34,7 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategyAware;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.HashUtil;
@@ -62,14 +63,14 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final Map<CalculationStrategy, Map<Integer, List<ObjectConsumer>>> partitionedWriters;
     private final ObjectConsumer[] markers;
     private final Map<ObjectConsumer, Integer> markersCache = new IdentityHashMap<ObjectConsumer, Integer>();
-    private final ContainerContext containerContext;
+    private final ContainerContextImpl containerContext;
     private int lastConsumedSize;
     private boolean chunkInProgress;
     private boolean localSuccess;
 
     public ShuffledConsumerTaskProcessor(ObjectConsumer[] consumers,
                                          Processor processor,
-                                         ContainerContext containerContext,
+                                         ContainerContextImpl containerContext,
                                          ProcessorContext processorContext,
                                          int taskID) {
         this(consumers, processor, containerContext, processorContext, taskID, false);
@@ -77,7 +78,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     public ShuffledConsumerTaskProcessor(ObjectConsumer[] consumers,
                                          Processor processor,
-                                         ContainerContext containerContext,
+                                         ContainerContextImpl containerContext,
                                          ProcessorContext processorContext,
                                          int taskID,
                                          boolean receiver) {
@@ -101,7 +102,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         List<ObjectConsumer> nonPartitionedConsumers = new ArrayList<ObjectConsumer>(this.shuffledConsumers.length);
         Set<Address> nonPartitionedAddresses = new HashSet<Address>(this.shuffledConsumers.length);
 
-        // Process shuffled consumers
+        // Process distributed consumers
         initCalculationStrategies(
                 strategies,
                 nonPartitionedConsumers,
@@ -129,7 +130,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         return filtered.toArray(new ObjectConsumer[filtered.size()]);
     }
 
-    private int chunkSize(ContainerContext containerContext) {
+    private int chunkSize(ContainerContextImpl containerContext) {
         JobConfig jobConfig = containerContext.getJobContext().getJobConfig();
         return jobConfig.getChunkSize();
     }
@@ -145,7 +146,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private void initSenders(ContainerContext containerContext, int taskID, boolean receiver) {
+    private void initSenders(ContainerContextImpl containerContext, int taskID, boolean receiver) {
         JobManager jobManager = containerContext.getJobContext().getJobManager();
 
         ProcessingContainer processingContainer = jobManager.getContainerByVertex(containerContext.getVertex());
@@ -168,7 +169,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         Map<Address, Address> hzToJetAddressMapping = jobManager.getJobContext().getHzToJetAddressMapping();
         List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
         for (ObjectConsumer consumer : this.shuffledConsumers) {
-            ShufflingStrategy shufflingStrategy = consumer.getShufflingStrategy();
+            MemberDistributionStrategy memberDistributionStrategy = consumer.getMemberDistributionStrategy();
             initConsumerCalculationStrategy(
                     strategies,
                     localPartitions,
@@ -176,7 +177,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                     nonPartitionedAddresses,
                     hzToJetAddressMapping,
                     consumer,
-                    shufflingStrategy
+                    memberDistributionStrategy
             );
         }
     }
@@ -187,13 +188,14 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                                                  Set<Address> nonPartitionedAddresses,
                                                  Map<Address, Address> hzToJetAddressMapping,
                                                  ObjectConsumer consumer,
-                                                 ShufflingStrategy shufflingStrategy) {
-        if (shufflingStrategy != null) {
-            Address[] addresses = shufflingStrategy.getShufflingAddress(this.containerContext);
+                                                 MemberDistributionStrategy memberDistributionStrategy) {
+        if (memberDistributionStrategy != null) {
+            Set<Member> members = new HashSet<>(memberDistributionStrategy.getTargetMembers(containerContext));
 
-            if (addresses != null) {
-                for (Address address : addresses) {
-                    if (address.equals(this.nodeEngine.getThisAddress())) {
+            if (members != null) {
+                for (Member member : members) {
+                    Address address = member.getAddress();
+                    if (address.equals(nodeEngine.getThisAddress())) {
                         nonPartitionedConsumers.add(
                                 consumer
                         );

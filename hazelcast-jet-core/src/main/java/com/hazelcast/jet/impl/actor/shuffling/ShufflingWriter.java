@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.actor.shuffling;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.spi.NodeEngine;
 
 public class ShufflingWriter extends ShufflingConsumer implements DataWriter {
@@ -55,8 +55,8 @@ public class ShufflingWriter extends ShufflingConsumer implements DataWriter {
     }
 
     @Override
-    public ShufflingStrategy getShufflingStrategy() {
-        return dataWriter.getShufflingStrategy();
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return dataWriter.getMemberDistributionStrategy();
     }
 
     @Override

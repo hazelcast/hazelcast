@@ -338,7 +338,7 @@ public class JobManager
      * @param receiver         registered receiver;
      */
     public void registerShufflingReceiver(int taskID,
-                                          ContainerContext containerContext,
+                                          ContainerContextImpl containerContext,
                                           Address address,
                                           ShufflingReceiver receiver) {
         ProcessingContainer processingContainer = containersCache.get(containerContext.getID());
@@ -356,7 +356,7 @@ public class JobManager
      * @param sender           registered sender;
      */
     public void registerShufflingSender(int taskID,
-                                        ContainerContext containerContext,
+                                        ContainerContextImpl containerContext,
                                         Address address,
                                         ShufflingSender sender) {
         ProcessingContainer processingContainer = containersCache.get(containerContext.getID());

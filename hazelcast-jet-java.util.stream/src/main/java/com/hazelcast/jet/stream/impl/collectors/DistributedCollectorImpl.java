@@ -22,7 +22,7 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
+import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -121,7 +121,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
         edgeBuilder(accumulatorVertex, combinerVertex)
                 .addToDAG(dag)
-                .shuffled(new IListBasedShufflingStrategy(randomName()));
+                .distributed(new SinglePartitionDistributionStrategy(randomName()));
 
         return combinerVertex;
     }

@@ -8,11 +8,10 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.job.Job;
-import com.hazelcast.jet.strategy.BroadcastShufflingStrategy;
+import com.hazelcast.jet.strategy.AllMembersDistributionStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -21,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ProcessingStrategyTest extends JetTestSupport {
+public class RoutingStrategyTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 3;
     private static final int COUNT = 10_000;
@@ -39,7 +38,7 @@ public class ProcessingStrategyTest extends JetTestSupport {
     }
 
     @Test
-    public void testShuffledRoundRobin() throws Exception {
+    public void testDistributedRoundRobin() throws Exception {
         int count = getCountWithStrategy(false, true);
         assertEquals(COUNT, count);
     }
@@ -51,7 +50,7 @@ public class ProcessingStrategyTest extends JetTestSupport {
     }
 
     @Test
-    public void testShuffledBroadcast() throws Exception {
+    public void testDistributedBroadcast() throws Exception {
         int count = getCountWithStrategy(true, true);
         assertEquals(COUNT * PARALLELISM * NODE_COUNT, count);
     }
@@ -76,9 +75,9 @@ public class ProcessingStrategyTest extends JetTestSupport {
             edge = edge.broadcast();
         }
         if (shuffled && broadcast) {
-            edge = edge.shuffled(BroadcastShufflingStrategy.INSTANCE);
+            edge = edge.distributed(AllMembersDistributionStrategy.INSTANCE);
         } else if (shuffled) {
-            edge = edge.shuffled();
+            edge = edge.distributed();
         }
         dag.addEdge(edge);
 

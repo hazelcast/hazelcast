@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
+import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -68,7 +68,7 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         edgeBuilder(previous, vertex)
                 .addToDAG(dag)
-                .shuffled(new IListBasedShufflingStrategy(randomName()));
+                .distributed(new SinglePartitionDistributionStrategy(randomName()));
 
         return vertex;
     }
