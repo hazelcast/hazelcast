@@ -67,6 +67,7 @@ import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -862,6 +863,7 @@ public class ClientMapNearCacheTest {
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         long hitsBeforeIdleExpire = stats.getHits();
+        long missesBeforeIdleExpire = stats.getMisses();
 
         sleepSeconds(MAX_IDLE_SECONDS + 1);
 
@@ -870,8 +872,10 @@ public class ClientMapNearCacheTest {
         }
         stats = map.getLocalMapStats().getNearCacheStats();
 
-        assertEquals("as the hits are not equal, the entries were not cleared from near cash after MAX_IDLE_SECONDS",
-                hitsBeforeIdleExpire, stats.getHits(), size);
+        assertEquals("as the hits are not equal, the entries were not cleared from Near Cache after MAX_IDLE_SECONDS",
+                hitsBeforeIdleExpire, stats.getHits());
+        assertNotEquals("as the misses are equal, the entries were not cleared from Near Cache after MAX_IDLE_SECONDS",
+                missesBeforeIdleExpire, stats.getMisses());
     }
 
     @Test

@@ -194,7 +194,6 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
         fireTtlCleanup();
         NearCacheRecord record = cache.get(key);
         if (record != null) {
-            record.access();
             if (record.isExpired(maxIdleMillis, timeToLiveMillis)) {
                 cache.remove(key);
                 stats.incrementMisses();
@@ -205,6 +204,7 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
                 return NULL_OBJECT;
             }
             stats.incrementHits();
+            record.access();
             return inMemoryFormat.equals(InMemoryFormat.BINARY)
                     ? context.getSerializationService().toObject(record.getValue()) : record.getValue();
         } else {
