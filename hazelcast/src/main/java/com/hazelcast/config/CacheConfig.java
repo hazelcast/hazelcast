@@ -55,9 +55,9 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 public class CacheConfig<K, V>
         extends AbstractCacheConfig<K, V> {
 
-    private String name;
-    private String managerPrefix;
-    private String uriString;
+    private String name="";
+    private String managerPrefix="";
+    private String uriString="";
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
@@ -70,7 +70,7 @@ public class CacheConfig<K, V>
 
     private WanReplicationRef wanReplicationRef;
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
-    private String quorumName;
+    private String quorumName="";
     private String mergePolicy = CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY;
 
     /**
