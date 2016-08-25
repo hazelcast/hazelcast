@@ -8,6 +8,7 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.job.Job;
+import com.hazelcast.jet.strategy.BroadcastShufflingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -49,9 +50,7 @@ public class ProcessingStrategyTest extends JetTestSupport {
         assertEquals(COUNT * PARALLELISM, count);
     }
 
-    //https://github.com/hazelcast/hazelcast-jet/issues/126
     @Test
-    @Ignore
     public void testShuffledBroadcast() throws Exception {
         int count = getCountWithStrategy(true, true);
         assertEquals(COUNT * PARALLELISM * NODE_COUNT, count);
@@ -76,7 +75,9 @@ public class ProcessingStrategyTest extends JetTestSupport {
         if (broadcast) {
             edge = edge.broadcast();
         }
-        if (shuffled) {
+        if (shuffled && broadcast) {
+            edge = edge.shuffled(BroadcastShufflingStrategy.INSTANCE);
+        } else if (shuffled) {
             edge = edge.shuffled();
         }
         dag.addEdge(edge);
