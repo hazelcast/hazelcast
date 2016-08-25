@@ -77,7 +77,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
         edgeBuilder(merger, combiner)
                 .addToDAG(dag)
-                .shuffled()
+                .distributed()
                 .partitioned();
 
         combiner.addSink(new MapSink(mapName));

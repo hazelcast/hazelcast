@@ -21,7 +21,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -75,9 +75,8 @@ public class ShufflingConsumer implements ObjectConsumer {
         return this.baseConsumer.lastConsumedCount();
     }
 
-    @Override
-    public ShufflingStrategy getShufflingStrategy() {
-        return this.baseConsumer.getShufflingStrategy();
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return this.baseConsumer.getMemberDistributionStrategy();
     }
 
     @Override

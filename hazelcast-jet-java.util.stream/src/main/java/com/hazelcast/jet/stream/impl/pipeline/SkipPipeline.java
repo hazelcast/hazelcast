@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
+import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -57,7 +57,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         // if upstream is not ordered, we need to shuffle data to one node
         if (!upstream.isOrdered()) {
-            edgeBuilder.shuffled(new IListBasedShufflingStrategy(randomName()));
+            edgeBuilder.distributed(new SinglePartitionDistributionStrategy(randomName()));
         }
         edgeBuilder
                 .addToDAG(dag)

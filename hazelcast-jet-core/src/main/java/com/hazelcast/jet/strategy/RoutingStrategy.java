@@ -16,28 +16,26 @@
 
 package com.hazelcast.jet.strategy;
 
-import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.nio.Address;
-
 import java.io.Serializable;
 
 /**
- * Strategy which determines Hazelcast's nodes addresses where data should be sent
- * during shuffling process between vertices
- *
- * For example:
- * <pre>
- *     IListBasedShufflingStrategy
- *
- *     will sent all to data to the node which holds corresponding Hazelcast IList data
- * </pre>
+ * Determines how data should be passed from producers to consumers
  */
-public interface ShufflingStrategy extends Serializable {
+public enum RoutingStrategy implements Serializable {
     /**
-     * List of the address
-     *
-     * @param containerDescriptor descriptor of container
-     * @return list address where data should be sent
+     * Next chunk will be sent from producer to the consumer in a round robin fashion
      */
-    Address[] getShufflingAddress(ContainerDescriptor containerDescriptor);
+    ROUND_ROBIN,
+    /**
+     * The output of the producer will be available to all consumers
+     */
+    BROADCAST,
+    /**
+     * The output of the producer will be partitioned and the partitions will be allocated
+     * between consumers, with the same consumer always receiving the same partitions.
+     *
+     * {@see HashingStrategy},
+     * {@see com.hazelcast.core.PartitioningStrategy}
+     */
+    PARTITIONED
 }

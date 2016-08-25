@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.spi.NodeEngine;
@@ -38,7 +38,7 @@ public class ChunkedOutputStream extends OutputStream {
     private final byte[] jobNameBytyes;
     private final RingbufferActor ringbufferActor;
 
-    public ChunkedOutputStream(RingbufferActor ringbufferActor, ContainerContext containerContext, int taskID) {
+    public ChunkedOutputStream(RingbufferActor ringbufferActor, ContainerContextImpl containerContext, int taskID) {
         this.taskID = taskID;
         this.ringbufferActor = ringbufferActor;
         this.shufflingBytesSize = containerContext.getJobContext().getJobConfig().getShufflingBatchSizeBytes();

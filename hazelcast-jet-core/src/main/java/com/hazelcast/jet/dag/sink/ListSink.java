@@ -17,7 +17,7 @@
 package com.hazelcast.jet.dag.sink;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingWriter;
 import com.hazelcast.jet.impl.dag.sink.ListPartitionWriter;
@@ -48,10 +48,10 @@ public class ListSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerDescriptor containerDescriptor) {
+    public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerContext containerContext) {
         return new DataWriter[]{
                 new ShufflingWriter(
-                        new ListPartitionWriter(containerDescriptor, name),
+                        new ListPartitionWriter(containerContext, name),
                         nodeEngine
                 ),
         };

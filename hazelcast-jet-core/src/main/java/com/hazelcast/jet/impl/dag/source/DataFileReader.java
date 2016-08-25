@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.dag.source;
 
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.io.Pair;
 
@@ -26,8 +26,8 @@ public class DataFileReader extends AbstractHazelcastReader<Pair<Integer, String
     private final long end;
     private final long start;
 
-    public DataFileReader(ContainerDescriptor containerDescriptor, int partitionId, String name, long start, long end) {
-        super(containerDescriptor, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
+    public DataFileReader(ContainerContext containerContext, int partitionId, String name, long start, long end) {
+        super(containerContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         this.end = end;
         this.start = start;
     }

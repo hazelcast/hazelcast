@@ -20,10 +20,10 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -36,14 +36,14 @@ public class ListPartitionWriter extends AbstractHazelcastWriter {
     private final ListContainer listContainer;
     private final CalculationStrategy calculationStrategy;
 
-    public ListPartitionWriter(ContainerDescriptor containerDescriptor, String name) {
-        super(containerDescriptor, getPartitionId(name, containerDescriptor.getNodeEngine()));
+    public ListPartitionWriter(ContainerContext containerContext, String name) {
+        super(containerContext, getPartitionId(name, containerContext.getNodeEngine()));
         this.name = name;
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         ListService service = nodeEngine.getService(ListService.SERVICE_NAME);
         this.listContainer = service.getOrCreateContainer(name, false);
         this.calculationStrategy = new CalculationStrategy(
-                DefaultHashingStrategy.INSTANCE, getPartitionStrategy(), containerDescriptor);
+                SerializedHashingStrategy.INSTANCE, getPartitionStrategy(), containerContext);
     }
 
     private static int getPartitionId(String name, NodeEngine nodeEngine) {

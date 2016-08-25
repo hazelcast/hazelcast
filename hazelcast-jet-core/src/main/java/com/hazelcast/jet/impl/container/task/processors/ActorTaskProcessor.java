@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.container.task.processors;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.processor.Processor;
 
@@ -30,7 +30,7 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
 
     public ActorTaskProcessor(ObjectProducer[] producers,
                               Processor processor,
-                              ContainerContext containerContext,
+                              ContainerContextImpl containerContext,
                               ProcessorContext processorContext,
                               TaskProcessor consumerProcessor,
                               int taskID) {

@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.actor.ObjectActor;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.spi.NodeEngine;
 
 public class ShufflingActor extends ShufflingProducer implements ObjectActor {
@@ -76,9 +76,8 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
         return objectConsumer.lastConsumedCount();
     }
 
-    @Override
-    public ShufflingStrategy getShufflingStrategy() {
-        return this.objectConsumer.getShufflingStrategy();
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return this.objectConsumer.getMemberDistributionStrategy();
     }
 
     @Override

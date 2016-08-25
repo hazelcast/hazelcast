@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.container.events;
 
 import com.hazelcast.jet.container.ContainerListener;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
@@ -28,7 +28,7 @@ public class TaskEventExecutionErrorProcessor extends AbstractEventProcessor {
                                                AtomicInteger interruptedTasks,
                                                AtomicInteger readyForFinalizationTasksCounter,
                                                ContainerTask[] containerTasks,
-                                               ContainerContext containerContext,
+                                               ContainerContextImpl containerContext,
                                                ProcessingContainer processingContainer) {
         super(
                 completedTasks,

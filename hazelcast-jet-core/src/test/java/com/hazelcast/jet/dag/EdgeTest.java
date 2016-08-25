@@ -17,11 +17,10 @@
 package com.hazelcast.jet.dag;
 
 import com.hazelcast.jet.TestProcessors;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
+import com.hazelcast.jet.strategy.RoutingStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -58,9 +57,9 @@ public class EdgeTest {
         Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
         Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
         Edge edge = new Edge("edge", v1, v2);
-        assertEquals(DefaultHashingStrategy.INSTANCE, edge.getHashingStrategy());
+        assertEquals(SerializedHashingStrategy.INSTANCE, edge.getHashingStrategy());
         assertEquals(StringAndPartitionAwarePartitioningStrategy.INSTANCE, edge.getPartitioningStrategy());
-        assertEquals(ProcessingStrategy.ROUND_ROBIN, edge.getProcessingStrategy());
+        assertEquals(RoutingStrategy.ROUND_ROBIN, edge.getRoutingStrategy());
     }
 
 
@@ -68,16 +67,16 @@ public class EdgeTest {
     public void testEdgeBuilder() throws Exception {
         Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
         Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
-        IListBasedShufflingStrategy shufflingStrategy = new IListBasedShufflingStrategy("test");
+        SinglePartitionDistributionStrategy shufflingStrategy = new SinglePartitionDistributionStrategy("test");
         Edge edge = new Edge("edge", v1, v2)
-                .shuffled(shufflingStrategy)
-                .partitioned(StringAndPartitionAwarePartitioningStrategy.INSTANCE, DefaultHashingStrategy.INSTANCE)
+                .distributed(shufflingStrategy)
+                .partitioned(StringAndPartitionAwarePartitioningStrategy.INSTANCE, SerializedHashingStrategy.INSTANCE)
                 .broadcast();
-        assertEquals(DefaultHashingStrategy.INSTANCE, edge.getHashingStrategy());
+        assertEquals(SerializedHashingStrategy.INSTANCE, edge.getHashingStrategy());
         assertEquals(StringAndPartitionAwarePartitioningStrategy.INSTANCE, edge.getPartitioningStrategy());
-        assertEquals(ProcessingStrategy.BROADCAST, edge.getProcessingStrategy());
-        assertEquals(true, edge.isShuffled());
-        assertEquals(shufflingStrategy, edge.getShufflingStrategy());
+        assertEquals(RoutingStrategy.BROADCAST, edge.getRoutingStrategy());
+        assertEquals(false, edge.isLocal());
+        assertEquals(shufflingStrategy, edge.getMemberDistributionStrategy());
     }
 
 }

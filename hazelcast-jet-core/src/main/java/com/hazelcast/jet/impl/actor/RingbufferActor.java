@@ -25,10 +25,10 @@ import com.hazelcast.jet.impl.actor.ringbuffer.RingbufferWithReferenceStrategy;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -225,9 +225,8 @@ public class RingbufferActor implements ObjectActor {
         return this.lastConsumedCount;
     }
 
-    @Override
-    public ShufflingStrategy getShufflingStrategy() {
-        return this.edge == null ? null : this.edge.getShufflingStrategy();
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return this.edge == null ? null : this.edge.getMemberDistributionStrategy();
     }
 
     @Override
@@ -238,6 +237,6 @@ public class RingbufferActor implements ObjectActor {
 
     @Override
     public HashingStrategy getHashingStrategy() {
-        return this.edge == null ? DefaultHashingStrategy.INSTANCE : this.edge.getHashingStrategy();
+        return this.edge == null ? SerializedHashingStrategy.INSTANCE : this.edge.getHashingStrategy();
     }
 }

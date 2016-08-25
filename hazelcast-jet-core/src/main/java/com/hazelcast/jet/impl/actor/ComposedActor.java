@@ -20,12 +20,12 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.RoutingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
@@ -36,7 +36,7 @@ public class ComposedActor implements ObjectActor {
     private final Vertex vertex;
     private final ContainerTask task;
     private final ObjectActor[] consumers;
-    private final ProcessingStrategy processingStrategy;
+    private final RoutingStrategy routingStrategy;
     private final CalculationStrategy calculationStrategy;
 
     private int nextActorId;
@@ -47,11 +47,11 @@ public class ComposedActor implements ObjectActor {
             List<ObjectActor> actors,
             Vertex vertex,
             Edge edge,
-            ContainerContext containerContext) {
+            ContainerContextImpl containerContext) {
         this.edge = edge;
         this.task = task;
         this.vertex = vertex;
-        this.processingStrategy = edge.getProcessingStrategy();
+        this.routingStrategy = edge.getRoutingStrategy();
         this.consumers = actors.toArray(new ObjectActor[actors.size()]);
         this.calculationStrategy = new CalculationStrategy(
                 edge.getHashingStrategy(),
@@ -86,14 +86,14 @@ public class ComposedActor implements ObjectActor {
 
     @Override
     public int consumeObject(Object object) {
-        if (this.processingStrategy == ProcessingStrategy.ROUND_ROBIN) {
+        if (this.routingStrategy == RoutingStrategy.ROUND_ROBIN) {
             this.consumers[nextActorId].consumeObject(object);
             next();
-        } else if (this.processingStrategy == ProcessingStrategy.BROADCAST) {
+        } else if (this.routingStrategy == RoutingStrategy.BROADCAST) {
             for (ObjectActor actor : this.consumers) {
                 actor.consumeObject(object);
             }
-        } else if (this.processingStrategy == ProcessingStrategy.PARTITIONING) {
+        } else if (this.routingStrategy == RoutingStrategy.PARTITIONED) {
             int objectPartitionId = calculatePartitionIndex(object);
             int idx = Math.abs(objectPartitionId) % this.consumers.length;
             this.consumers[idx].consumeObject(object);
@@ -104,14 +104,14 @@ public class ComposedActor implements ObjectActor {
 
     @Override
     public int consumeChunk(ProducerInputStream<Object> chunk) {
-        if (this.processingStrategy == ProcessingStrategy.ROUND_ROBIN) {
+        if (this.routingStrategy == RoutingStrategy.ROUND_ROBIN) {
             this.consumers[nextActorId].consumeChunk(chunk);
             next();
-        } else if (this.processingStrategy == ProcessingStrategy.BROADCAST) {
+        } else if (this.routingStrategy == RoutingStrategy.BROADCAST) {
             for (ObjectActor actor : this.consumers) {
                 actor.consumeChunk(chunk);
             }
-        } else if (this.processingStrategy == ProcessingStrategy.PARTITIONING) {
+        } else if (this.routingStrategy == RoutingStrategy.PARTITIONED) {
             for (Object object : chunk) {
                 consumeObject(object);
             }
@@ -156,9 +156,8 @@ public class ComposedActor implements ObjectActor {
         return isFlushed;
     }
 
-    @Override
-    public ShufflingStrategy getShufflingStrategy() {
-        return this.edge.getShufflingStrategy();
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return this.edge.getMemberDistributionStrategy();
     }
 
     @Override

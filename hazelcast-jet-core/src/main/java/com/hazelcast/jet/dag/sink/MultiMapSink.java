@@ -17,7 +17,7 @@
 package com.hazelcast.jet.dag.sink;
 
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.dag.sink.MultiMapPartitionWriter;
 
@@ -45,8 +45,8 @@ public class MultiMapSink extends MapSink {
     }
 
     @Override
-    protected DataWriter getPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId) {
-        return new MultiMapPartitionWriter(containerDescriptor, partitionId, getName());
+    protected DataWriter getPartitionWriter(ContainerContext containerContext, int partitionId) {
+        return new MultiMapPartitionWriter(containerContext, partitionId, getName());
     }
 
     @Override

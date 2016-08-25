@@ -18,15 +18,15 @@ package com.hazelcast.jet.impl.dag.sink;
 
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -43,7 +43,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
     protected final InternalOperationService internalOperationService;
 
-    protected final ContainerDescriptor containerDescriptor;
+    protected final ContainerContext containerContext;
 
     protected final ObjectIOStream<Object> chunkBuffer;
 
@@ -55,7 +55,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     private final NodeEngine nodeEngine;
     private final int awaitInSecondsTime;
 
-    private final ShufflingStrategy shufflingStrategy;
+    private final MemberDistributionStrategy memberDistributionStrategy;
     private final PartitionSpecificRunnable partitionSpecificRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -91,20 +91,20 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     private int lastConsumedCount;
     private boolean isClosed;
 
-    protected AbstractHazelcastWriter(ContainerDescriptor containerDescriptor,
+    protected AbstractHazelcastWriter(ContainerContext containerContext,
                                       int partitionId) {
-        checkNotNull(containerDescriptor);
+        checkNotNull(containerContext);
         this.partitionId = partitionId;
-        this.nodeEngine = containerDescriptor.getNodeEngine();
+        this.nodeEngine = containerContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
-        this.containerDescriptor = containerDescriptor;
-        JobConfig jobConfig = containerDescriptor.getConfig();
+        this.containerContext = containerContext;
+        JobConfig jobConfig = containerContext.getConfig();
         this.awaitInSecondsTime = jobConfig.getSecondsToAwait();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
         int pairChunkSize = jobConfig.getChunkSize();
         this.chunkBuffer = new ObjectIOStream<Object>(new Object[pairChunkSize]);
         this.chunkInputStream = new ObjectIOStream<Object>(new Object[pairChunkSize]);
-        this.shufflingStrategy = null;
+        this.memberDistributionStrategy = null;
     }
 
     private void pushWriteRequest() {
@@ -222,14 +222,13 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         return true;
     }
 
-    @Override
-    public ShufflingStrategy getShufflingStrategy() {
-        return this.shufflingStrategy;
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return this.memberDistributionStrategy;
     }
 
     @Override
     public HashingStrategy getHashingStrategy() {
-        return DefaultHashingStrategy.INSTANCE;
+        return SerializedHashingStrategy.INSTANCE;
     }
 
 

@@ -18,32 +18,32 @@ package com.hazelcast.jet.impl.strategy;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.HashUtil;
 
 /**
- * Default hashing strategy based on Hazelcast partition-id calculation;
+ * Hashing strategy based on Hazelcast serialization
  */
-public final class DefaultHashingStrategy implements HashingStrategy {
+public final class SerializedHashingStrategy implements HashingStrategy {
     /**
-     * Default singleton instance for the default hashing strategy;
+     * Singleton instance
      */
-    public static final HashingStrategy INSTANCE = new DefaultHashingStrategy();
+    public static final HashingStrategy INSTANCE = new SerializedHashingStrategy();
 
-    private DefaultHashingStrategy() {
+    private SerializedHashingStrategy() {
     }
 
     @Override
     public int hash(Object object,
                     Object partitionKey,
-                    ContainerDescriptor containerDescriptor) {
+                    ContainerContext containerContext) {
         if (partitionKey instanceof Data) {
             return ((Data) partitionKey).getPartitionHash();
         }
 
-        InternalSerializationService serializationService = (InternalSerializationService) containerDescriptor
+        InternalSerializationService serializationService = (InternalSerializationService) containerContext
                 .getNodeEngine().getSerializationService();
         byte[] bytes = serializationService.toBytes(partitionKey);
         return HashUtil.MurmurHash3_x86_32(bytes, HeapData.DATA_OFFSET, bytes.length - HeapData.DATA_OFFSET);

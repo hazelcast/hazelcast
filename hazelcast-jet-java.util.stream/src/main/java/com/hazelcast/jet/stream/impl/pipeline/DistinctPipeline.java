@@ -76,7 +76,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         edgeBuilder(distinct, combiner)
                 .addToDAG(dag)
                 .partitioned()
-                .shuffled();
+                .distributed();
 
         return combiner;
     }

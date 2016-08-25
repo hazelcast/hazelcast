@@ -21,7 +21,7 @@ import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.ContainerListenerCaller;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
@@ -37,7 +37,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected final AtomicInteger completedTasks;
     protected final AtomicInteger interruptedTasks;
     protected final ContainerTask[] containerTasks;
-    protected final ContainerContext containerContext;
+    protected final ContainerContextImpl containerContext;
     protected final JobContext jobContext;
     protected final AtomicInteger readyForFinalizationTasksCounter;
     protected final JobManager jobManager;
@@ -48,7 +48,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             AtomicInteger interruptedTasks,
             AtomicInteger readyForFinalizationTasksCounter,
             ContainerTask[] containerTasks,
-            ContainerContext containerContext,
+            ContainerContextImpl containerContext,
             ProcessingContainer container
     ) {
         this.container = container;

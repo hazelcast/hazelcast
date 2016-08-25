@@ -21,7 +21,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -35,7 +35,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     protected final int taskID;
     protected final ObjectProducer[] producers;
     protected final Processor processor;
-    protected final ContainerContext containerContext;
+    protected final ContainerContextImpl containerContext;
     protected final ProcessorContext processorContext;
     protected final ObjectIOStream objectInputStream;
     protected final ObjectIOStream pairOutputStream;
@@ -52,7 +52,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
     public ProducerTaskProcessor(ObjectProducer[] producers,
                                  Processor processor,
-                                 ContainerContext containerContext,
+                                 ContainerContextImpl containerContext,
                                  ProcessorContext processorContext,
                                  int taskID) {
         checkNotNull(processor);

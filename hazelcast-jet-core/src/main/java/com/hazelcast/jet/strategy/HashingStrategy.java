@@ -16,29 +16,21 @@
 
 package com.hazelcast.jet.strategy;
 
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 
 import java.io.Serializable;
 
 /**
- * Strategy to calculate hash for data passed between JET containers
- *
- * Used for example to determine correct task which should consume data
- *
- * For example object can be a pair, partitionKey fields to be used for hash calculation
+ * Strategy to calculate the hash for a given object and partition key
  *
  * @param <O> type of the input object
- * @param <K> type of the partitionKey
+ * @param <K> type of the partition key
  */
 public interface HashingStrategy<O, K> extends Serializable {
 
     /**
-     * Calculates the hash for a given object and partition key
-     * @param object the object to calculate the hash for
-     * @param partitionKey the partition key for the given object, calculated by the
-     *                     given @{code PartitioningStrategy}
-     * @param containerDescriptor context for the container where the hash is calculated
-     * @return the calculated hash for the object
+     * Calculate the hash for a given object and partition key
+     * @return calculated 32-bit hash value
      */
-    int hash(O object, K partitionKey, ContainerDescriptor containerDescriptor);
+    int hash(O object, K partitionKey, ContainerContext containerContext);
 }

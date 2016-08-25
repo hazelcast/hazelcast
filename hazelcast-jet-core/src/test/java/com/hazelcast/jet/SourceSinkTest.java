@@ -35,7 +35,7 @@ import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.strategy.SingleNodeShufflingStrategy;
+import com.hazelcast.jet.strategy.SingleMemberDistributionStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.File;
@@ -149,8 +149,8 @@ public class SourceSinkTest extends JetTestSupport {
         dag.addVertex(vertex2);
 
         Edge edge = new Edge("edge", vertex1, vertex2)
-                .shuffled()
-                .shuffled(new SingleNodeShufflingStrategy(instance.getCluster().getLocalMember().getAddress()));
+                .distributed()
+                .distributed(new SingleMemberDistributionStrategy(instance.getCluster().getLocalMember()));
         dag.addEdge(edge);
 
         Job job = JetEngine.getJob(instance, "fileToFile", dag);

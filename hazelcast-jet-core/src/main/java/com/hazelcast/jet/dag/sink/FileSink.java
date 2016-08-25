@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.dag.sink;
 
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.dag.sink.DataFileWriter;
 import com.hazelcast.jet.impl.dag.sink.FileOutputStream;
 import com.hazelcast.spi.NodeEngine;
 
 /**
- *  A sink which uses a file as output.
+ * A sink which uses a file as output.
  */
 public class FileSink implements Sink {
 
@@ -32,6 +32,7 @@ public class FileSink implements Sink {
 
     /**
      * Constructs a sink with the given filename
+     *
      * @param filename the output filename
      */
     public FileSink(String filename) {
@@ -40,9 +41,9 @@ public class FileSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerDescriptor containerDescriptor) {
-        return new DataWriter[] {
-                new DataFileWriter(containerDescriptor, 0, fileOutputStream),
+    public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerContext containerContext) {
+        return new DataWriter[]{
+                new DataFileWriter(containerContext, 0, fileOutputStream),
         };
     }
 

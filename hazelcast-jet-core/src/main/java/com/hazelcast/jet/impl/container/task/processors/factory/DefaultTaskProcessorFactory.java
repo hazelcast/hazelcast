@@ -20,7 +20,7 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.container.task.TaskProcessorFactory;
 import com.hazelcast.jet.impl.container.task.processors.ActorTaskProcessor;
@@ -34,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     @Override
     public TaskProcessor simpleTaskProcessor(Processor processor,
-                                             ContainerContext containerContext,
+                                             ContainerContextImpl containerContext,
                                              ProcessorContext processorContext,
                                              Vertex vertex,
                                              int taskID) {
@@ -44,7 +44,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     @Override
     public TaskProcessor consumerTaskProcessor(ObjectConsumer[] consumers,
                                                Processor processor,
-                                               ContainerContext containerContext,
+                                               ContainerContextImpl containerContext,
                                                ProcessorContext processorContext,
                                                Vertex vertex,
                                                int taskID) {
@@ -54,7 +54,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     @Override
     public TaskProcessor producerTaskProcessor(ObjectProducer[] producers,
                                                Processor processor,
-                                               ContainerContext containerContext,
+                                               ContainerContextImpl containerContext,
                                                ProcessorContext processorContext,
                                                Vertex vertex,
                                                int taskID) {
@@ -65,7 +65,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     public TaskProcessor actorTaskProcessor(ObjectProducer[] producers,
                                             ObjectConsumer[] consumers,
                                             Processor processor,
-                                            ContainerContext containerContext,
+                                            ContainerContextImpl containerContext,
                                             ProcessorContext processorContext,
                                             Vertex vertex,
                                             int taskID) {
@@ -81,7 +81,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
 
     public TaskProcessor getTaskProcessor(ObjectProducer[] producers,
                                           ObjectConsumer[] consumers,
-                                          ContainerContext containerContext,
+                                          ContainerContextImpl containerContext,
                                           ProcessorContext processorContext,
                                           Processor processor,
                                           Vertex vertex,

@@ -31,10 +31,10 @@ import java.io.Serializable;
 
 public class DefaultProcessorContext implements ProcessorContext {
     private final TaskContext taskContext;
-    private final ContainerContext containerContext;
+    private final ContainerContextImpl containerContext;
 
     public DefaultProcessorContext(TaskContext taskContext,
-                                   ContainerContext containerContext) {
+                                   ContainerContextImpl containerContext) {
         this.taskContext = taskContext;
         this.containerContext = containerContext;
     }

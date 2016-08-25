@@ -22,5 +22,5 @@ import com.hazelcast.jet.executor.TaskContext;
 /**
  * Represents context of processing container
  */
-public interface ProcessorContext extends ContainerDescriptor, TaskContext {
+public interface ProcessorContext extends ContainerContext, TaskContext {
 }

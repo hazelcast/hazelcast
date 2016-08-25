@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.actor;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 
 /**
  * This is an abstract interface for each consumer in the system
@@ -76,7 +76,7 @@ public interface ObjectConsumer {
      * @return pair consumer's shuffling strategy
      * null if consumer doesn't support shuffling
      */
-    ShufflingStrategy getShufflingStrategy();
+    MemberDistributionStrategy getMemberDistributionStrategy();
 
     /**
      * @return the partitioning strategy

@@ -20,8 +20,8 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.dag.sink.FileSink;
 import com.hazelcast.jet.dag.source.FileSource;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -248,12 +248,12 @@ public class DAGTest {
         Vertex v3 = createVertex("v3", TestProcessors.Noop.class);
 
         Edge e1 = new Edge("e1", v1, v2)
-                .partitioned(StringAndPartitionAwarePartitioningStrategy.INSTANCE, DefaultHashingStrategy.INSTANCE)
-                .shuffled(new IListBasedShufflingStrategy("e1"))
+                .partitioned(StringAndPartitionAwarePartitioningStrategy.INSTANCE, SerializedHashingStrategy.INSTANCE)
+                .distributed(new SinglePartitionDistributionStrategy("e1"))
                 .broadcast();
         Edge e2 = new Edge("e2", v2, v3)
-                .partitioned(StringPartitioningStrategy.INSTANCE, DefaultHashingStrategy.INSTANCE)
-                .shuffled(new IListBasedShufflingStrategy("e2"));
+                .partitioned(StringPartitioningStrategy.INSTANCE, SerializedHashingStrategy.INSTANCE)
+                .distributed(new SinglePartitionDistributionStrategy("e2"));
 
         dag.addVertex(v1);
         dag.addVertex(v2);

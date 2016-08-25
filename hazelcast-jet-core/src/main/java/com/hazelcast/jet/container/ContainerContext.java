@@ -28,7 +28,7 @@ import java.io.Serializable;
 /**
  * Interface which describe container's internal entries and let's manage container-level structures
  */
-public interface ContainerDescriptor {
+public interface ContainerContext {
     /**
      * @return Hazelcast nodeEngine
      */

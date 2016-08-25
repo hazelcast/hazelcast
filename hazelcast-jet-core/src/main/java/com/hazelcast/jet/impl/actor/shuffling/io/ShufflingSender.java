@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.dag.sink.AbstractHazelcastWriter;
 import com.hazelcast.jet.impl.data.io.JetPacket;
@@ -45,7 +45,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     private final SerializationOptimizer optimizer;
     private volatile boolean closed;
 
-    public ShufflingSender(ContainerContext containerContext, int taskID, ContainerTask containerTask, Address address) {
+    public ShufflingSender(ContainerContextImpl containerContext, int taskID, ContainerTask containerTask, Address address) {
         super(containerContext, -1);
         this.taskID = taskID;
         this.address = address;

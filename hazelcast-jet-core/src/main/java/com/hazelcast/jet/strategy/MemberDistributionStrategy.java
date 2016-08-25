@@ -16,27 +16,22 @@
 
 package com.hazelcast.jet.strategy;
 
+import com.hazelcast.core.Member;
+import com.hazelcast.jet.container.ContainerContext;
+
 import java.io.Serializable;
+import java.util.Collection;
 
 /**
- * Strategy which determines how data should be passed
- * from one JET container to another
+ * Strategy which determines which nodes the data should be distributed to.
+ * The {@link RoutingStrategy} on the edge will determine which consumers
+ * will receive the data on the target node.
  */
-public enum ProcessingStrategy implements Serializable {
+public interface MemberDistributionStrategy extends Serializable {
     /**
-     * Next chunk will be passed to the next task one by one
+     * Returns the set of members which the data should be distributed to. The data will be distributed
+     * to all the members in the given list and then routed according to the {@link RoutingStrategy}
+     * of the edge.
      */
-    ROUND_ROBIN,
-    /**
-     * Data will be passed to all accessible vertices of next container
-     */
-    BROADCAST,
-    /**
-     * Data will be passed in accordance object's hash which will be calculated using classes:
-     *
-     * {@link HashingStrategy},
-     * {@link CalculationStrategy},
-     * {@link com.hazelcast.core.PartitioningStrategy}
-     */
-    PARTITIONING
+    Collection<Member> getTargetMembers(ContainerContext containerContext);
 }

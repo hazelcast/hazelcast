@@ -19,10 +19,10 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -38,9 +38,9 @@ public class MapPartitionWriter extends AbstractHazelcastWriter {
     private final RecordStore recordStore;
     private final CalculationStrategy calculationStrategy;
 
-    public MapPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId, String name) {
-        super(containerDescriptor, partitionId);
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
+    public MapPartitionWriter(ContainerContext containerContext, int partitionId, String name) {
+        super(containerContext, partitionId);
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
 
@@ -51,8 +51,8 @@ public class MapPartitionWriter extends AbstractHazelcastWriter {
         if (partitioningStrategy == null) {
             partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         }
-        this.calculationStrategy = new CalculationStrategy(DefaultHashingStrategy.INSTANCE,
-                partitioningStrategy, containerDescriptor);
+        this.calculationStrategy = new CalculationStrategy(SerializedHashingStrategy.INSTANCE,
+                partitioningStrategy, containerContext);
     }
 
     @Override

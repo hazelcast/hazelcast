@@ -22,7 +22,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
-import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.data.io.ObjectIOStream;
@@ -39,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ShufflingReceiver implements ObjectProducer {
 
     private final ObjectDataInput in;
-    private final ContainerContext containerContext;
+    private final ContainerContextImpl containerContext;
     private final List<ProducerCompletionHandler> handlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
     private final ChunkedInputStream chunkReceiver;
     private final RingbufferActor ringbufferActor;
@@ -57,7 +57,7 @@ public class ShufflingReceiver implements ObjectProducer {
     private volatile boolean finalized;
 
 
-    public ShufflingReceiver(ContainerContext containerContext, ContainerTask containerTask) {
+    public ShufflingReceiver(ContainerContextImpl containerContext, ContainerTask containerTask) {
         this.containerContext = containerContext;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         JobContext jobContext = containerContext.getJobContext();

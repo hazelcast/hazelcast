@@ -17,10 +17,10 @@
 package com.hazelcast.jet.dag;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
-import com.hazelcast.jet.strategy.ShufflingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
+import com.hazelcast.jet.strategy.RoutingStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 
 import java.io.Serializable;
@@ -33,11 +33,11 @@ public class Edge implements Serializable {
     private Vertex to;
     private String name;
     private Vertex from;
-    private boolean shuffled;
+    private boolean isLocal = true;
 
     private HashingStrategy hashingStrategy;
-    private ShufflingStrategy shufflingStrategy;
-    private ProcessingStrategy processingStrategy;
+    private MemberDistributionStrategy memberDistributionStrategy;
+    private RoutingStrategy routingStrategy;
     private PartitioningStrategy partitioningStrategy;
 
     /**
@@ -50,52 +50,40 @@ public class Edge implements Serializable {
     public Edge(String name,
                 Vertex from,
                 Vertex to) {
-        this(name, from, to, false);
+        this(name, from, to, true);
     }
 
     /**
      * Creates an edge between two vertices.
      *
-     * @param name     name of the edge
-     * @param from     the origin vertex
-     * @param to       the destination vertex
-     * @param shuffled shuffling property
+     * @param name        name of the edge
+     * @param from        the origin vertex
+     * @param to          the destination vertex
+     * @param isLocal     sets if the edge is local
      */
-    public Edge(String name,
+    Edge(String name,
                 Vertex from,
                 Vertex to,
-                boolean shuffled) {
-        this(name, from, to, shuffled, null, null, null, null);
+                boolean isLocal) {
+        this(name, from, to, isLocal, null, null, null, null);
     }
 
-    /**
-     * Creates an edge between two vertices.
-     *
-     * @param name                 name of the edge
-     * @param from                 the origin vertex
-     * @param to                   the destination vertex
-     * @param shuffled             shuffling property
-     * @param shufflingStrategy    shuffling strategy
-     * @param processingStrategy   processing strategy
-     * @param partitioningStrategy partitioning strategy
-     * @param hashingStrategy      hashing strategy
-     */
-    public Edge(String name,
+    Edge(String name,
                 Vertex from,
                 Vertex to,
-                boolean shuffled,
-                ShufflingStrategy shufflingStrategy,
-                ProcessingStrategy processingStrategy,
+                boolean isLocal,
+                MemberDistributionStrategy memberDistributionStrategy,
+                RoutingStrategy routingStrategy,
                 PartitioningStrategy partitioningStrategy,
                 HashingStrategy hashingStrategy) {
         this.to = to;
         this.name = name;
         this.from = from;
-        this.shuffled = shuffled;
-        this.shufflingStrategy = shufflingStrategy;
-        this.hashingStrategy = nvl(hashingStrategy, DefaultHashingStrategy.INSTANCE);
+        this.isLocal = isLocal;
+        this.memberDistributionStrategy = memberDistributionStrategy;
+        this.hashingStrategy = nvl(hashingStrategy, SerializedHashingStrategy.INSTANCE);
         this.partitioningStrategy = nvl(partitioningStrategy, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
-        this.processingStrategy = nvl(processingStrategy, ProcessingStrategy.ROUND_ROBIN);
+        this.routingStrategy = nvl(routingStrategy, RoutingStrategy.ROUND_ROBIN);
     }
 
     private <T> T nvl(T value, T defaultValue) {
@@ -110,12 +98,10 @@ public class Edge implements Serializable {
     }
 
     /**
-     * @return true if edge will take into account cluster
-     * false if data through edge's channel will be passed only
-     * locally without shuffling
+     * Returns if the edge is local
      */
-    public boolean isShuffled() {
-        return this.shuffled;
+    public boolean isLocal() {
+        return isLocal;
     }
 
     /**
@@ -133,109 +119,133 @@ public class Edge implements Serializable {
     }
 
     /**
-     * @return Edge's shuffling strategy
+     * @return the member distribution strategy for the edge
      */
-    public ShufflingStrategy getShufflingStrategy() {
-        return this.shufflingStrategy;
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return memberDistributionStrategy;
     }
 
     /**
-     * @return Edge's processing strategy
+     * @return the routing strategy for the edge
      */
-    public ProcessingStrategy getProcessingStrategy() {
-        return this.processingStrategy;
+    public RoutingStrategy getRoutingStrategy() {
+        return routingStrategy;
     }
 
     /**
-     * @return Edge's partitioning strategy
+     * @return the partitioning strategy for the edge
      */
     public PartitioningStrategy getPartitioningStrategy() {
-        return this.partitioningStrategy;
+        return partitioningStrategy;
     }
 
     /**
-     * @return Edge's hashing strategy
+     * @return the hashing strategy for the edge
      */
     public HashingStrategy getHashingStrategy() {
-        return this.hashingStrategy;
+        return hashingStrategy;
     }
 
-
     /**
-     * Set if the edge is shuffled
-     *
-     * @return the builder
+     * Sets the edge to be distributed. The output of the producers will be consumed by consumers on other
+     * members. When a {@link MemberDistributionStrategy} is not provided, the record will be consumed by the
+     * member which is the owner of the partition the record belongs to.
+     * If there are several consumers in the target member, the consumer will be determined by
+     * {@link RoutingStrategy}
      */
-    public Edge shuffled() {
-        this.shuffled = true;
+    public Edge distributed() {
+        isLocal = false;
         return this;
     }
 
     /**
-     * Set the shuffling strategy on the edge
-     *
-     * @param shufflingStrategy the shuffling strategy to set
-     * @return the builder
+     * Sets the edge to be local only. The output of the producers will only be consumed by consumers on the same
+     * member.
+     * The specific consumer instance will be determined by {@link RoutingStrategy}
      */
-    public Edge shuffled(ShufflingStrategy shufflingStrategy) {
-        this.shuffled = true;
-        this.shufflingStrategy = shufflingStrategy;
+    public Edge local() {
+        isLocal = true;
         return this;
     }
 
     /**
-     * Set the processing strategy for the edge to broadcast
+     * Sets the edge to be distributed. The output of the producers will be consumed by consumers on other
+     * members. The member or members to consume will be determined by the {@link MemberDistributionStrategy}.
+     * If there are several consumers in the target member(s), the consumer will be determined by
+     * {@link RoutingStrategy}
+     * @see com.hazelcast.jet.strategy.AllMembersDistributionStrategy
+     * @see com.hazelcast.jet.strategy.SingleMemberDistributionStrategy
+     */
+    public Edge distributed(MemberDistributionStrategy distributionStrategy) {
+        this.isLocal = false;
+        this.memberDistributionStrategy = distributionStrategy;
+        return this;
+    }
+
+    /**
+     * Sets the {@link RoutingStrategy} for the edge to broadcast.
+     * The output of the producer vertex will be available to all instances of the consumer vertex.
      *
-     * @return the builder
+     * @link RoutingStrategy.BROADCAST
      */
     public Edge broadcast() {
-        this.processingStrategy = ProcessingStrategy.BROADCAST;
+        this.routingStrategy = RoutingStrategy.BROADCAST;
         return this;
     }
 
     /**
-     * Set the processing strategy for the edge to partitioned
+     * Sets the {@link RoutingStrategy} for the edge to partitioned.
+     * The output of the producer vertex will be partitioned and the partitions will be allocated
+     * between instances of the consumer vertex, with the same consumer always receiving the same partitions.
      *
-     * @return the builder
+     * @link RoutingStrategy.PARTITIONED
      */
     public Edge partitioned() {
-        this.processingStrategy = ProcessingStrategy.PARTITIONING;
+        this.routingStrategy = RoutingStrategy.PARTITIONED;
         return this;
     }
 
     /**
-     * Set the processing strategy for the edge to partitioned
+     * Sets the {@link RoutingStrategy} for the edge to partitioned with a custom partitioning strategy.
+     * <p/>
+     * The output of the producer vertex will be partitioned and the partitions will be allocated
+     * between instances of the consumer vertex, with the same consumer always receiving the same partitions.
      *
-     * @param partitioningStrategy the partitioning strategy to set
-     * @return the builder
+     * @link RoutingStrategy.PARTITIONED
      */
     public Edge partitioned(PartitioningStrategy partitioningStrategy) {
-        this.processingStrategy = ProcessingStrategy.PARTITIONING;
+        this.routingStrategy = RoutingStrategy.PARTITIONED;
         this.partitioningStrategy = partitioningStrategy;
         return this;
     }
 
     /**
-     * Set the processing strategy for the edge to partitioned
+     * Sets the {@link RoutingStrategy} for the edge to partitioned with a custom hashing strategy.
+     * <p/>
+     * The output of the producer vertex will be partitioned and the partitions will be allocated
+     * between instances of the consumer vertex, with the same consumer always receiving the same partitions.
      *
-     * @param hashingStrategy the hashing strategy to set
-     * @return the builder
+     * @link RoutingStrategy.PARTITIONED
+     * @see HashingStrategy
      */
     public Edge partitioned(HashingStrategy hashingStrategy) {
-        this.processingStrategy = ProcessingStrategy.PARTITIONING;
+        this.routingStrategy = RoutingStrategy.PARTITIONED;
         this.hashingStrategy = hashingStrategy;
         return this;
     }
 
     /**
-     * Set the processing strategy for the edge to partitioned
+     * Sets the {@link RoutingStrategy} for the edge to partitioned with a custom partitioning and hashing strategy.
+     * <p/>
+     * The output of the producer vertex will be partitioned and the partitions will be allocated
+     * between instances of the consumer vertex, with the same consumer always receiving the same partitions.
      *
-     * @param partitioningStrategy the partitioning strategy to set
-     * @param hashingStrategy      the hashing strategy to set
-     * @return the builder
+     * @link RoutingStrategy.PARTITIONED
+     * @see HashingStrategy
+     * @see PartitioningStrategy
      */
     public Edge partitioned(PartitioningStrategy partitioningStrategy, HashingStrategy hashingStrategy) {
-        this.processingStrategy = ProcessingStrategy.PARTITIONING;
+        this.routingStrategy = RoutingStrategy.PARTITIONED;
         this.partitioningStrategy = partitioningStrategy;
         this.hashingStrategy = hashingStrategy;
         return this;
@@ -258,7 +268,7 @@ public class Edge implements Serializable {
 
         Edge edge = (Edge) o;
 
-        if (shuffled != edge.shuffled) {
+        if (isLocal != edge.isLocal) {
             return false;
         }
 
@@ -288,15 +298,15 @@ public class Edge implements Serializable {
             return false;
         }
 
-        if (shufflingStrategy != null
+        if (memberDistributionStrategy != null
                 ?
-                !shufflingStrategy.equals(edge.shufflingStrategy)
+                !memberDistributionStrategy.equals(edge.memberDistributionStrategy)
                 :
-                edge.shufflingStrategy != null) {
+                edge.memberDistributionStrategy != null) {
             return false;
         }
 
-        if (processingStrategy != edge.processingStrategy) {
+        if (routingStrategy != edge.routingStrategy) {
             return false;
         }
 
@@ -316,10 +326,10 @@ public class Edge implements Serializable {
         int result = to != null ? to.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (from != null ? from.hashCode() : 0);
-        result = 31 * result + (shuffled ? 1 : 0);
+        result = 31 * result + (isLocal ? 1 : 0);
         result = 31 * result + (hashingStrategy != null ? hashingStrategy.getClass().hashCode() : 0);
-        result = 31 * result + (shufflingStrategy != null ? shufflingStrategy.hashCode() : 0);
-        result = 31 * result + (processingStrategy != null ? processingStrategy.getClass().hashCode() : 0);
+        result = 31 * result + (memberDistributionStrategy != null ? memberDistributionStrategy.hashCode() : 0);
+        result = 31 * result + (routingStrategy != null ? routingStrategy.getClass().hashCode() : 0);
         result = 31 * result + (partitioningStrategy != null ? partitioningStrategy.getClass().hashCode() : 0);
         return result;
     }
