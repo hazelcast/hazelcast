@@ -26,7 +26,7 @@ import com.hazelcast.jet.strategy.ShufflingStrategy;
  * which consumes pair
  */
 
-public interface ObjectConsumer extends Consumer<ProducerInputStream<Object>> {
+public interface ObjectConsumer {
 
     /**
      * @param chunk - chunk of Pairs to consume
@@ -87,4 +87,5 @@ public interface ObjectConsumer extends Consumer<ProducerInputStream<Object>> {
      * @return hashing strategy
      */
     HashingStrategy getHashingStrategy();
+
 }

@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.container;
+package com.hazelcast.jet.impl.statemachine;
 
-import com.hazelcast.jet.impl.statemachine.StateMachineOutput;
+import java.io.Serializable;
 
 /**
- * Abstract response of container's state-machine;
+ * Represents output of the abstract state-machine;
  */
-public interface ContainerResponse extends StateMachineOutput {
+public interface StateMachineResponse extends Serializable {
     /**
-     * Indicates last state-machine transitions state;
-     *
-     * @return - true - execution was success , false - otherwise;
+     * @return - true transition was success ,else - otherwise;
      */
     boolean isSuccess();
 }

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.container.processingcontainer;
 
-import com.hazelcast.jet.impl.container.ContainerResponse;
+import com.hazelcast.jet.impl.statemachine.StateMachineResponse;
 
-public interface ProcessingContainerResponse extends ContainerResponse {
+public interface ProcessingContainerResponse extends StateMachineResponse {
     ProcessingContainerResponse SUCCESS = (ProcessingContainerResponse) () -> true;
     ProcessingContainerResponse FAILURE = (ProcessingContainerResponse) () -> false;
 

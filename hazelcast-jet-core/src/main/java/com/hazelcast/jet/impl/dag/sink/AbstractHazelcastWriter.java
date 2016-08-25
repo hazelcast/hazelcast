@@ -107,11 +107,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         this.shufflingStrategy = null;
     }
 
-    @Override
-    public boolean consume(ProducerInputStream<Object> chunk) {
-        return consumeChunk(chunk) > 0;
-    }
-
     private void pushWriteRequest() {
         this.future.reset();
         this.internalOperationService.execute(this.partitionSpecificRunnable);

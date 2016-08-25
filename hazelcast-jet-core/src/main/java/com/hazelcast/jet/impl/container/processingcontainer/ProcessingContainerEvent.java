@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.container.processingcontainer;
 
-import com.hazelcast.jet.impl.container.ContainerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineEvent;
 
-public enum ProcessingContainerEvent implements ContainerEvent {
+public enum ProcessingContainerEvent implements StateMachineEvent {
     START,
     EXECUTE,
     EXECUTION_COMPLETED,

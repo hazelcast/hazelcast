@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerState;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
@@ -50,6 +51,7 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +64,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class JobManager
-        extends AbstractContainer<JobManagerEvent, JobManagerState, JobManagerResponse> {
+        extends Container<JobManagerEvent, JobManagerState, JobManagerResponse> {
 
     @SuppressWarnings("ThrowableInstanceNeverThrown")
     private static final InterruptedException JOB_INTERRUPTED_EXCEPTION =
@@ -342,7 +344,7 @@ public class JobManager
         ProcessingContainer processingContainer = containersCache.get(containerContext.getID());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
         containerTask.registerShufflingReceiver(address, receiver);
-        discoveryService.getSocketReaders().get(address).registerConsumer(receiver.getRingBufferActor());
+        discoveryService.getSocketReaders().get(address).registerConsumer(receiver.getRingbufferActor());
     }
 
     /**
@@ -360,7 +362,7 @@ public class JobManager
         ProcessingContainer processingContainer = containersCache.get(containerContext.getID());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
         containerTask.registerShufflingSender(address, sender);
-        discoveryService.getSocketWriters().get(address).registerProducer(sender.getRingBufferActor());
+        discoveryService.getSocketWriters().get(address).registerProducer(sender.getRingbufferActor());
     }
 
     /**

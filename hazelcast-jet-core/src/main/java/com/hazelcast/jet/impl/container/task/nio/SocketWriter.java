@@ -19,12 +19,12 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.nio.Address;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -35,14 +35,23 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class DefaultSocketWriter
-        extends AbstractNetworkTask implements SocketWriter {
+/**
+ * Represents task to write to network socket
+ * <p/>
+ * The architecture is following:
+ * <p/>
+ * <pre>
+ *  Producer(ringBuffer)  -&gt; SocketWriter -&gt; SocketChannel (JetAddress)
+ *  </pre>
+ */
+public class SocketWriter
+        extends NetworkTask {
     private final byte[] membersBytes;
     private final ByteBuffer sendByteBuffer;
     private final byte[] jobNameBytes;
     private final InetSocketAddress inetSocketAddress;
     private final JobContext jobContext;
-    private final List<RingBufferActor> producers = new ArrayList<RingBufferActor>();
+    private final List<RingbufferActor> producers = new ArrayList<RingbufferActor>();
     private final Queue<JetPacket> servicePackets = new ConcurrentLinkedQueue<JetPacket>();
 
     private int lastFrameId = -1;
@@ -52,8 +61,8 @@ public class DefaultSocketWriter
     private Object[] currentFrames;
     private boolean memberEventSent;
 
-    public DefaultSocketWriter(JobContext jobContext,
-                               Address jetAddress) {
+    public SocketWriter(JobContext jobContext,
+                        Address jetAddress) {
         super(jobContext.getNodeEngine(), jetAddress);
 
         this.inetSocketAddress = new InetSocketAddress(jetAddress.getHost(), jetAddress.getPort());
@@ -78,6 +87,11 @@ public class DefaultSocketWriter
         reset();
     }
 
+    /**
+     * Init task, perform initialization actions before task being executed
+     * The strict rule is that this method will be executed synchronously on
+     * all nodes in cluster before any real task's  execution
+     */
     public void init() {
         super.init();
         memberEventSent = false;
@@ -267,7 +281,9 @@ public class DefaultSocketWriter
     }
 
 
-    @Override
+    /**
+     * Close network socket;
+     */
     public void closeSocket() {
         if (socketChannel != null) {
             try {
@@ -314,13 +330,20 @@ public class DefaultSocketWriter
         //socketChannel.socket().setSendBufferSize(1);
     }
 
-    @Override
-    public void registerProducer(RingBufferActor ringBufferActor) {
-        producers.add(ringBufferActor);
+    /**
+     * @param ringbufferActor - input producer;
+     */
+    public void registerProducer(RingbufferActor ringbufferActor) {
+        producers.add(ringbufferActor);
     }
 
-    @Override
+    /**
+     * Sends service packet on output node - it will be processed in urgent mode;
+     *
+     * @param jetPacket - Jet network packet;
+     */
     public void sendServicePacket(JetPacket jetPacket) {
         servicePackets.offer(jetPacket);
     }
+
 }

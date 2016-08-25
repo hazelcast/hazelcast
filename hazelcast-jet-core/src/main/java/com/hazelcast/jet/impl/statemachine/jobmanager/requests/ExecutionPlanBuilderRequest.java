@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
-public class ExecutionPlanBuilderRequest implements ContainerRequest<JobManagerEvent, DAG> {
+public class ExecutionPlanBuilderRequest implements StateMachineRequest<JobManagerEvent, DAG> {
     private final DAG dag;
 
     public ExecutionPlanBuilderRequest(DAG dag) {

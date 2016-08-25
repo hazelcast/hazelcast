@@ -24,8 +24,8 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.container.DiscoveryService;
 import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.data.io.SocketReader;
-import com.hazelcast.jet.impl.data.io.SocketWriter;
+import com.hazelcast.jet.impl.container.task.nio.SocketReader;
+import com.hazelcast.jet.impl.container.task.nio.SocketWriter;
 import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
 import com.hazelcast.jet.impl.job.deployment.DeploymentStorageFactory;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
@@ -36,6 +36,8 @@ import com.hazelcast.jet.job.JobListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
+import com.hazelcast.util.IConcurrentMap;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +65,7 @@ public class JobContext {
     private final JobStateMachine jobStateMachine;
     private final Map<String, Object> jobVariables = new ConcurrentHashMap<>();
     private final List<JobListener> jobListeners = new CopyOnWriteArrayList<>();
-    private final com.hazelcast.util.IConcurrentMap<String, List<ContainerListener>> containerListeners =
+    private final IConcurrentMap<String, List<ContainerListener>> containerListeners =
             new ConcurrentReferenceHashMap<String, List<ContainerListener>>();
 
     private final Address localJetAddress;

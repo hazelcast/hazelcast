@@ -21,8 +21,6 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.data.io.NetworkTask;
-import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
@@ -35,13 +33,13 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 
-public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
+public class SocketThreadAcceptor extends SocketReader {
     private final ServerSocketChannel serverSocketChannel;
     private final JobService jobService;
 
     private long lastConnectionsTimeChecking = -1;
 
-    public DefaultSocketThreadAcceptor(
+    public SocketThreadAcceptor(
             JobService jobService,
             NodeEngine nodeEngine,
             ServerSocketChannel serverSocketChannel
@@ -51,7 +49,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
         this.jobService = jobService;
     }
 
-    protected boolean consumePacket(JetPacket packet) throws Exception {
+    protected boolean consumePacket(JetPacket packet) {
         if (packet.getHeader() == JetPacket.HEADER_JET_MEMBER_EVENT) {
             NodeEngine nodeEngine = this.jobService.getNodeEngine();
 
@@ -74,7 +72,6 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
                 alignBuffer(this.receiveBuffer);
             }
         }
-
         return false;
     }
 

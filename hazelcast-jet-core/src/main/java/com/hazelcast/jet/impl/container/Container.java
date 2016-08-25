@@ -17,60 +17,101 @@
 package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.StateMachineResponse;
 import com.hazelcast.jet.impl.statemachine.StateMachineState;
 import com.hazelcast.spi.NodeEngine;
 
 /**
- * Interface which represents abstract JET-container;
+ * Interface which represents abstract JET-container
  * Containers:
  * <p/>
  * <pre>
- *     1) Job Manager;
- *     2) Processing container;
+ *     1) Job Manager
+ *     2) Processing container
  * </pre>
  *
- * @param <SI> - type of the input container state-machine event;
- * @param <SS> - type of the  container's state;
- * @param <SO> - type of the output;
+ * @param <SI> type of the input container state-machine event
+ * @param <SS> type of the  container's state
+ * @param <SO> type of the output
  */
-public interface Container
-        <SI extends ContainerEvent,
+public abstract class Container
+        <SI extends StateMachineEvent,
                 SS extends StateMachineState,
-                SO extends ContainerResponse> extends StateMachineRequestProcessor<SI> {
-    /**
-     * @return - Hazelcast nodeEngine object;
-     */
-    NodeEngine getNodeEngine();
+                SO extends StateMachineResponse>
+        implements StateMachineRequestProcessor<SI> {
+    private final int id;
+
+    private final NodeEngine nodeEngine;
+    private final ContainerContext containerContext;
+    private final JobContext jobContext;
+    private final StateMachine<SI, SS, SO> stateMachine;
+
+    protected Container(StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
+                        NodeEngine nodeEngine, JobContext jobContext
+    ) {
+        this(null, stateMachineFactory, nodeEngine, jobContext);
+    }
+
+    protected Container(Vertex vertex, StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
+                        NodeEngine nodeEngine, JobContext jobContext
+    ) {
+        this.nodeEngine = nodeEngine;
+        String name = vertex == null ? jobContext.getName() : vertex.getName();
+        this.stateMachine = stateMachineFactory.newStateMachine(name, this, nodeEngine, jobContext);
+        this.jobContext = jobContext;
+        this.id = jobContext.getContainerIDGenerator().incrementAndGet();
+        this.containerContext = new ContainerContext(nodeEngine, jobContext, this.id, vertex);
+    }
 
     /**
-     * @return - corresponding container state-machine;
-     */
-    StateMachine<SI, SS, SO> getStateMachine();
+         * @return Hazelcast nodeEngine object
+         */
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
 
     /**
-     * @return - JET-job context;
-     */
-    JobContext getJobContext();
+         * Handle's container's request with state-machine's input event
+         *
+         * @param request corresponding request
+         * @param <P>   type of request payload
+         * @return awaiting future
+         */
+    public <P> ICompletableFuture<SO> handleContainerRequest(StateMachineRequest<SI, P> request) {
+        try {
+            return stateMachine.handleRequest(request);
+        } finally {
+            wakeUpExecutor();
+        }
+    }
+
+    protected abstract void wakeUpExecutor();
 
     /**
-     * @return - context of container;
-     */
-    ContainerContext getContainerContext();
+         * @return JET-job context
+         */
+    public JobContext getJobContext() {
+        return jobContext;
+    }
 
     /**
-     * @return - container's identifier;
-     */
-    int getID();
+         * @return context of container
+         */
+    public ContainerContext getContainerContext() {
+        return containerContext;
+    }
 
     /**
-     * Handle's container's request with state-machine's input event;
-     *
-     * @param event - corresponding request;
-     * @param <P>   - type of request payload;
-     * @return - awaiting future;
-     */
-    <P> ICompletableFuture<SO> handleContainerRequest(ContainerRequest<SI, P> event);
+         * @return container's identifier
+         */
+    public int getID() {
+        return id;
+    }
 }

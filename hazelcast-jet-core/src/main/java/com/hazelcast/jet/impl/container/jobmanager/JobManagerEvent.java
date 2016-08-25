@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.container.jobmanager;
 
-import com.hazelcast.jet.impl.container.ContainerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineEvent;
 
 /**
  * Represents event for the job manager;
  */
-public enum JobManagerEvent implements ContainerEvent {
+public enum JobManagerEvent implements StateMachineEvent {
     /**
      * Submit-dag event;
      */

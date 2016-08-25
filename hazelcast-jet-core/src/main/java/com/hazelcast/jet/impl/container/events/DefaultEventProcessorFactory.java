@@ -17,9 +17,10 @@
 package com.hazelcast.jet.impl.container.events;
 
 import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
+
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,7 +32,7 @@ import static com.hazelcast.jet.impl.container.task.TaskEvent.TASK_READY_FOR_FIN
 
 public class DefaultEventProcessorFactory implements EventProcessorFactory {
     private final Map<TaskEvent, EventProcessor> processorMap =
-            new IdentityHashMap<TaskEvent, EventProcessor>();
+            new IdentityHashMap<>();
 
     public DefaultEventProcessorFactory(AtomicInteger completedTasks,
                                         AtomicInteger interruptedTasks,

@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
-import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
-public class ExecutionErrorRequest implements ContainerRequest<JobManagerEvent, Throwable> {
+public class ExecutionErrorRequest implements StateMachineRequest<JobManagerEvent, Throwable> {
     private final Throwable error;
 
     public ExecutionErrorRequest(Throwable error) {

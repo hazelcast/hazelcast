@@ -20,8 +20,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ObjectActor;
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.spi.NodeEngine;
@@ -31,8 +30,7 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
     private final ObjectConsumer objectConsumer;
 
     public ShufflingActor(ObjectActor baseActor,
-                          NodeEngine nodeEngine,
-                          ContainerContext containerContext) {
+                          NodeEngine nodeEngine) {
         super(baseActor);
         this.baseActor = baseActor;
         this.objectConsumer = new ShufflingConsumer(baseActor, nodeEngine);
@@ -40,7 +38,7 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
 
     @Override
     public ContainerTask getSourceTask() {
-        return this.baseActor.getSourceTask();
+        return baseActor.getSourceTask();
     }
 
     @Override
@@ -93,8 +91,4 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
         return objectConsumer.getHashingStrategy();
     }
 
-    @Override
-    public boolean consume(ProducerInputStream<Object> inputStream) {
-        return this.objectConsumer.consume(inputStream);
-    }
 }

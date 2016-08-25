@@ -19,11 +19,11 @@ package com.hazelcast.jet.impl.container.events;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerListenerCaller;
-import com.hazelcast.jet.impl.container.ContainerRequest;
-import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptedRequest;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -66,7 +66,7 @@ public class TaskEventCompletedProcessor extends AbstractEventProcessor {
         }
     }
 
-    private <P> void handle(ContainerRequest<ProcessingContainerEvent, P> request,
+    private <P> void handle(StateMachineRequest<ProcessingContainerEvent, P> request,
                             ContainerListenerCaller containerListenerCaller) {
         try {
             handleContainerRequest(request);

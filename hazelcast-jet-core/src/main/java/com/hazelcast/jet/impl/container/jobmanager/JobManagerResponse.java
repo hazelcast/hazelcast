@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.container.jobmanager;
 
-import com.hazelcast.jet.impl.container.ContainerResponse;
+import com.hazelcast.jet.impl.statemachine.StateMachineResponse;
 
 /**
  * Return job response;
  * SUCCESS - if job's execution was success;
  * FAILURE - if job's execution was not success;
  */
-public interface JobManagerResponse extends ContainerResponse {
+public interface JobManagerResponse extends StateMachineResponse {
     JobManagerResponse SUCCESS = (JobManagerResponse) () -> true;
     JobManagerResponse FAILURE = (JobManagerResponse) () -> false;
 

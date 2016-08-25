@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.impl.container.task.nio;
 
-import com.hazelcast.jet.impl.container.task.AbstractTask;
-import com.hazelcast.jet.impl.data.io.NetworkTask;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -26,8 +25,10 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
-public abstract class AbstractNetworkTask extends AbstractTask
-        implements NetworkTask {
+/**
+ * Represents abstract task to write/read data to/from network;
+ */
+public abstract class NetworkTask extends Task {
 
     protected final ILogger logger;
     protected final Address jetAddress;
@@ -41,13 +42,17 @@ public abstract class AbstractNetworkTask extends AbstractTask
     protected volatile SocketChannel socketChannel;
     protected volatile long lastExecutionTimeOut = -1;
 
-    public AbstractNetworkTask(NodeEngine nodeEngine,
-                               Address jetAddress) {
+    public NetworkTask(NodeEngine nodeEngine,
+                       Address jetAddress) {
         this.jetAddress = jetAddress;
         logger = nodeEngine.getLogger(getClass());
     }
 
-    @Override
+    /**
+     * Init task, perform initialization actions before task being executed
+     * The strict rule is that this method will be executed synchronously on
+     * all nodes in cluster before any real task's  execution
+     */
     public void init() {
         closeSocket();
 
@@ -68,16 +73,27 @@ public abstract class AbstractNetworkTask extends AbstractTask
         inProgress = false;
     }
 
-    @Override
+    /**
+     * Interrupts tasks execution
+     *
+     * @param error - the reason of the interruption
+     */
     public void interrupt(Throwable error) {
         interrupted = true;
     }
 
+    /**
+     * Performs finalization actions after execution
+     * Task can be inited and executed again
+     */
     public void finalizeTask() {
         finalized = true;
     }
 
-    @Override
+    /**
+     * Destroy task
+     * Task can not be executed again after destroy
+     */
     public void destroy() {
         try {
             closeSocket();
@@ -105,7 +121,13 @@ public abstract class AbstractNetworkTask extends AbstractTask
 
     protected abstract boolean onExecute(BooleanHolder payload) throws Exception;
 
-    @Override
+    /**
+     * Execute next iteration of task
+     *
+     * @param didWorkHolder flag to set to indicate that the task did something useful
+     * @return - true - if task should be executed again, false if task should be removed from executor
+     * @throws Exception if any exception
+     */
     public boolean execute(BooleanHolder didWorkHolder) throws Exception {
         stamp();
 
@@ -120,7 +142,9 @@ public abstract class AbstractNetworkTask extends AbstractTask
         }
     }
 
-    @Override
+    /**
+     * Close network socket;
+     */
     public void closeSocket() {
         if (socketChannel != null) {
             try {
@@ -132,12 +156,19 @@ public abstract class AbstractNetworkTask extends AbstractTask
         }
     }
 
+    /**
+     * @return - true if task working currently, false - otherwise;
+     */
     public boolean inProgress() {
         return inProgress;
     }
 
-    @Override
+    /**
+     * @return - lst millisecond timestamp when task worked with network (read/write);
+     */
     public long lastTimeStamp() {
         return lastExecutionTimeOut;
     }
+
+
 }

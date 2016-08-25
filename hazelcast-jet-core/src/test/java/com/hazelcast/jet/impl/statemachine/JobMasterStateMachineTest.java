@@ -4,7 +4,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.ExecutorContext;
-import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
@@ -283,7 +282,7 @@ public class JobMasterStateMachineTest extends HazelcastTestSupport {
     }
 
 
-    private JobManagerResponse processRequest(ContainerRequest request) throws InterruptedException, java.util.concurrent.ExecutionException {
+    private JobManagerResponse processRequest(StateMachineRequest request) throws InterruptedException, java.util.concurrent.ExecutionException {
         Future<JobManagerResponse> future = stateMachine.handleRequest(request);
         executor.wakeUp();
         return future.get();

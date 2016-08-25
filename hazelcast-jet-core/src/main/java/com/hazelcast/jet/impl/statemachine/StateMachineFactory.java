@@ -27,7 +27,7 @@ import com.hazelcast.spi.NodeEngine;
  */
 public interface StateMachineFactory
         <Input extends StateMachineEvent,
-                SM extends StateMachine<Input, ?, ?>> {
+                SM> {
     /**
      * Creates new stateMachine
      *

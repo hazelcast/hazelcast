@@ -26,7 +26,7 @@ import com.hazelcast.jet.impl.container.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
-import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.container.task.DefaultTaskContext;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
 import com.hazelcast.jet.impl.container.task.TaskProcessorFactory;
@@ -55,7 +55,7 @@ import static java.util.stream.Collectors.toList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ProcessingContainer extends
-        AbstractContainer<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse> {
+        Container<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse> {
 
     private static final StateMachineFactory<ProcessingContainerEvent,
             StateMachine<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse>>
@@ -113,12 +113,13 @@ public class ProcessingContainer extends
 
     private void buildTasks() {
         ContainerTask[] containerTasks = getContainerTasks();
+        ClassLoader classLoader = getJobContext().getDeploymentStorage().getClassLoader();
         for (int taskIndex = 0; taskIndex < this.parallelism; taskIndex++) {
             int taskID = taskIdGenerator.incrementAndGet();
-            containerTasks[taskIndex] = new DefaultContainerTask(this, getVertex(), taskProcessorFactory,
+            containerTasks[taskIndex] = new ContainerTask(this, getVertex(), taskProcessorFactory,
                     taskID, new DefaultTaskContext(parallelism, taskIndex, getJobContext()));
             getJobContext().getExecutorContext().getProcessingTasks().add(containerTasks[taskIndex]);
-            containerTasks[taskIndex].setThreadContextClassLoaders(getJobContext().getDeploymentStorage().getClassLoader());
+            containerTasks[taskIndex].setThreadContextClassLoader(classLoader);
             containerTasksCache.put(taskID, containerTasks[taskIndex]);
         }
     }

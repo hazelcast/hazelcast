@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.container.events;
 
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 

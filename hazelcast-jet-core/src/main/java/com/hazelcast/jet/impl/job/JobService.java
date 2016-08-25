@@ -24,7 +24,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
-import com.hazelcast.jet.impl.container.task.nio.DefaultSocketThreadAcceptor;
+import com.hazelcast.jet.impl.container.task.nio.SocketThreadAcceptor;
 import com.hazelcast.jet.impl.executor.BalancedExecutor;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.FinalizeJobRequest;
@@ -153,7 +153,7 @@ public class JobService implements RemoteService {
     private List<Task> createAcceptorTask(NodeEngine nodeEngine) {
         List<Task> taskList = new ArrayList<Task>();
         taskList.add(
-                new DefaultSocketThreadAcceptor(this, nodeEngine, serverSocketChannel)
+                new SocketThreadAcceptor(this, nodeEngine, serverSocketChannel)
         );
         return taskList;
     }

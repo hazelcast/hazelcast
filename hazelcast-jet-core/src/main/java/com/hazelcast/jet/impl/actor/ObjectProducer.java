@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.impl.actor;
 
-import com.hazelcast.jet.impl.data.CompletionAwareProducer;
-
 /**
  * This is an abstract interface for each producer in the system
  * which produce data objects
  */
-public interface ObjectProducer extends Producer<Object[]>, CompletionAwareProducer {
+public interface ObjectProducer {
     /**
      * @return last produced object's count
      */
@@ -48,4 +46,15 @@ public interface ObjectProducer extends Producer<Object[]>, CompletionAwareProdu
      */
     void close();
 
+    /**
+     * Method to produce an abstract entry
+     *
+     * @return produced entry
+     * @throws Exception if any exception
+     */
+    Object[] produce() throws Exception;
+
+    void registerCompletionHandler(ProducerCompletionHandler runnable);
+
+    void handleProducerCompleted();
 }

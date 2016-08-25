@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.statemachine.container.requests;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
 /**
  * State-machine request which force start containers;
  */
-public class ContainerStartRequest implements ContainerRequest<ProcessingContainerEvent, Dummy> {
+public class ContainerStartRequest implements StateMachineRequest<ProcessingContainerEvent, Dummy> {
     @Override
     public ProcessingContainerEvent getContainerEvent() {
         return ProcessingContainerEvent.START;

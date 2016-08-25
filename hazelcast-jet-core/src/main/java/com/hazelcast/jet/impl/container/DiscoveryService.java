@@ -17,13 +17,11 @@
 package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.JobService;
-import com.hazelcast.jet.impl.container.task.nio.DefaultSocketReader;
-import com.hazelcast.jet.impl.container.task.nio.DefaultSocketWriter;
-import com.hazelcast.jet.impl.data.io.SocketReader;
-import com.hazelcast.jet.impl.data.io.SocketWriter;
-import com.hazelcast.jet.impl.executor.Task;
+import com.hazelcast.jet.impl.container.task.nio.SocketReader;
+import com.hazelcast.jet.impl.container.task.nio.SocketWriter;
 import com.hazelcast.jet.impl.operation.DiscoveryOperation;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
@@ -103,7 +101,7 @@ public class DiscoveryService {
             if (!member.localMember()) {
                 Address jetAddress = map.get(member);
 
-                SocketReader socketReader = new DefaultSocketReader(
+                SocketReader socketReader = new SocketReader(
                         jobContext,
                         jetAddress
                 );
@@ -112,7 +110,7 @@ public class DiscoveryService {
                         socketReader
                 );
 
-                SocketWriter socketWriter = new DefaultSocketWriter(
+                SocketWriter socketWriter = new SocketWriter(
                         jobContext,
                         jetAddress
                 );

@@ -21,7 +21,7 @@ import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerE
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
-import com.hazelcast.jet.impl.statemachine.AbstractStateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import com.hazelcast.spi.NodeEngine;
@@ -29,7 +29,7 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.Map;
 
 public class ProcessingContainerStateMachine extends
-        AbstractStateMachine<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse> {
+        StateMachine<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse> {
 
     private static final Map<ProcessingContainerState, Map<ProcessingContainerEvent, ProcessingContainerState>>
             STATE_TRANSITION_MATRIX =
