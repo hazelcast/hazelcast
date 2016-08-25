@@ -35,11 +35,12 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport {
 
+    protected static final String MAP_NAME = NearCacheLocalImmediateInvalidateTest.class.getCanonicalName();
+
     private static final int INSTANCE_COUNT = 2;
     private static final int NUM_ITERATIONS = 1000;
     private static final long TIMEOUT = 100L;
     private static final TimeUnit TIME_UNIT = TimeUnit.MILLISECONDS;
-    private static final String MAP_NAME = NearCacheLocalImmediateInvalidateTest.class.getCanonicalName();
 
     private HazelcastInstance hzInstance1;
     private HazelcastInstance hzInstance2;

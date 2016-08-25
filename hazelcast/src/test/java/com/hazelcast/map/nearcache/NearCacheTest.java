@@ -139,7 +139,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
     }
 
-    private NearCacheConfig newNearCacheConfig() {
+    protected NearCacheConfig newNearCacheConfig() {
         return new NearCacheConfig();
     }
 
@@ -853,7 +853,7 @@ public class NearCacheTest extends HazelcastTestSupport {
      * This method continuously triggers the eviction to bring the Near Cache size under the configured max-size.
      * Only needed for testing purposes.
      */
-    private void triggerNearCacheEviction(IMap<Integer, Integer> map) {
+    protected void triggerNearCacheEviction(IMap<Integer, Integer> map) {
         populateMap(map, 1);
         pullEntriesToNearCache(map, 1);
     }
@@ -1018,7 +1018,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         });
     }
 
-    private void pullEntriesToNearCache(IMap<Integer, Integer> map, int mapSize) {
+    protected void pullEntriesToNearCache(IMap<Integer, Integer> map, int mapSize) {
         for (int i = 0; i < mapSize; i++) {
             map.get(i);
         }

@@ -131,7 +131,7 @@ public class NearCacheStalenessTest extends HazelcastTestSupport {
         return localMap;
     }
 
-    private NearCacheConfig newNearCacheConfig() {
+    protected NearCacheConfig newNearCacheConfig() {
         return new NearCacheConfig();
     }
 
