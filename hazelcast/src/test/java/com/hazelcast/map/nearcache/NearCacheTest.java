@@ -22,7 +22,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
@@ -34,6 +33,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -70,6 +70,7 @@ import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -77,6 +78,9 @@ import static org.junit.Assert.assertTrue;
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheTest extends HazelcastTestSupport {
+
+    private static final int MAX_TTL_SECONDS = 1;
+    private static final int MAX_IDLE_SECONDS = 1;
 
     @Parameterized.Parameter
     public boolean batchInvalidationEnabled;
@@ -202,7 +206,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertTrue(
                 format("Near Cache misses should be > %d but were %d", 400, stats.getOwnedEntryCount()),
                 stats.getOwnedEntryCount() > 400
@@ -218,7 +222,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        stats = map.getLocalMapStats().getNearCacheStats();
+        stats = getNearCacheStats(map);
         assertTrue(
                 format("Near Cache hits should be > %d but were %d", 400, stats.getHits()),
                 stats.getHits() > 400
@@ -454,7 +458,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
 
         // check Near Cache hits
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(
                 format("Near Cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
                 expectedNearCacheHits, stats.getHits());
@@ -488,7 +492,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertEquals(0, allEntries.size());
 
         // check Near Cache hits
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(
                 format("Near Cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
                 expectedNearCacheHits,
@@ -522,7 +526,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             map.getAsync(i);
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertTrue(
                 format("Near Cache hits should be > %d but were %d", expectedNearCacheHits, stats.getHits()),
                 stats.getHits() > expectedNearCacheHits
@@ -586,7 +590,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             assertNull(async.get());
         }
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = getNearCacheStats(map);
         assertEquals(
                 format("Near Cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
                 expectedNearCacheHits,
@@ -615,7 +619,7 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         map.loadAll(keys, true);
 
-        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats nearCacheStats = getNearCacheStats(map);
         assertEquals(0, nearCacheStats.getOwnedEntryCount());
     }
 
@@ -638,7 +642,7 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         map.loadAll(true);
 
-        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats nearCacheStats = getNearCacheStats(map);
         assertEquals(0, nearCacheStats.getOwnedEntryCount());
     }
 
@@ -663,7 +667,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             map.replace(i, i, mapSize - 1 - i);
         }
 
-        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats nearCacheStats = getNearCacheStats(map);
         assertEquals(0, nearCacheStats.getOwnedEntryCount());
     }
 
@@ -709,7 +713,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         }, callback);
 
         latch.await(3, TimeUnit.SECONDS);
-        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats nearCacheStats = getNearCacheStats(map);
         assertEquals(mapSize - 1, nearCacheStats.getOwnedEntryCount());
     }
 
@@ -759,7 +763,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                NearCacheStats stats = getNearCacheStats(map);
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 triggerNearCacheEviction(map);
                 assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
@@ -779,7 +783,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                NearCacheStats stats = getNearCacheStats(map);
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 triggerNearCacheEviction(map);
                 assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
@@ -799,7 +803,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                NearCacheStats stats = getNearCacheStats(map);
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 triggerNearCacheEviction(map);
                 assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
@@ -819,7 +823,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                NearCacheStats stats = getNearCacheStats(map);
                 final long ownedEntryCount = stats.getOwnedEntryCount();
                 assertEquals(maxSize, ownedEntryCount);
             }
@@ -884,7 +888,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         int mapSize = 3;
         CountDownLatch latch = new CountDownLatch(mapSize);
 
-        addListener(map, latch);
+        addEntryEvictedListener(map, latch);
         populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.SECONDS);
         pullEntriesToNearCache(map, mapSize);
 
@@ -925,12 +929,88 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertTrueEventually(task);
     }
 
+    @Test
+    public void testNearCacheTTLRecordsEvicted() {
+        final int size = 147;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig()
+                .setCacheLocalEntries(true)
+                .setTimeToLiveSeconds(MAX_TTL_SECONDS)
+        );
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        final IMap<Integer, Integer> map = instance.getMap(mapName);
+        populateMap(map, size);
+
+        // populate Near Cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+
+        assertEquals("we expected to have all map entries in the Near Cache", size, getNearCacheStats(map).getOwnedEntryCount());
+
+        sleepSeconds(MAX_TTL_SECONDS + 1);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                // map.get() triggers Near Cache eviction/expiration process,
+                // but we need to call this on every assert since the Near Cache has a cooldown for TTL cleanups
+                map.get(0);
+
+                assertTrue("we expected some entries to be evicted from the Near Cache",
+                        getNearCacheStats(map).getOwnedEntryCount() < size);
+            }
+        });
+    }
+
+    @Test
+    public void testNearCacheIdleRecordsEvicted() {
+        int size = 147;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig()
+                .setCacheLocalEntries(true)
+                .setMaxIdleSeconds(MAX_IDLE_SECONDS)
+        );
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        populateMap(map, size);
+
+        // populate Near Cache and generate Near Cache hits
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+            map.get(i);
+        }
+
+        NearCacheStats stats = getNearCacheStats(map);
+        long hitsBeforeIdleExpire = stats.getHits();
+        long missesBeforeIdleExpire = stats.getMisses();
+
+        sleepSeconds(MAX_IDLE_SECONDS + 1);
+
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        stats = getNearCacheStats(map);
+
+        assertEquals("as the hits are not equal, the entries were not cleared from Near Cache after MAX_IDLE_SECONDS",
+                hitsBeforeIdleExpire, stats.getHits());
+        assertNotEquals("as the misses are equal, the entries were not cleared from Near Cache after MAX_IDLE_SECONDS",
+                missesBeforeIdleExpire, stats.getMisses());
+    }
+
     private void waitUntilEvictionEventsReceived(CountDownLatch latch) {
         assertOpenEventually(latch);
     }
 
-    private void addListener(IMap<Integer, Integer> map, final CountDownLatch latch) {
-        map.addLocalEntryListener(new EntryAdapter<Integer, Integer>() {
+    private void addEntryEvictedListener(IMap<Integer, Integer> map, final CountDownLatch latch) {
+        map.addLocalEntryListener(new EntryEvictedListener<Integer, Integer>() {
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
                 latch.countDown();
@@ -984,6 +1064,10 @@ public class NearCacheTest extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getNearCacheProvider().getOrCreateNearCache(mapName);
+    }
+
+    private NearCacheStats getNearCacheStats(IMap<Integer, Integer> map) {
+        return map.getLocalMapStats().getNearCacheStats();
     }
 
     private static class SimpleMapStore<K, V> extends MapStoreAdapter<K, V> {
