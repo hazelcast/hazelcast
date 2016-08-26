@@ -27,7 +27,7 @@ import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.task.nio.SocketReader;
 import com.hazelcast.jet.impl.container.task.nio.SocketWriter;
 import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
-import com.hazelcast.jet.impl.job.deployment.DeploymentStorageFactory;
+import com.hazelcast.jet.impl.job.deployment.DiskDeploymentStorage;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
@@ -37,7 +37,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.IConcurrentMap;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +88,7 @@ public class JobContext {
         this.jobConfig = jobConfig;
         this.executorContext = new ExecutorContext(this.name, this.jobConfig, nodeEngine,
                 jobService.getNetworkExecutor(), jobService.getProcessingExecutor());
-        this.deploymentStorage = DeploymentStorageFactory.getDeploymentStorage(this, name);
+        this.deploymentStorage = new DiskDeploymentStorage(this, name);
         this.jobStateMachine = STATE_MACHINE_FACTORY.newStateMachine(name, new JobStateMachineRequestProcessor(this),
                 nodeEngine, this);
         this.hzToAddressMapping = new HashMap<>();

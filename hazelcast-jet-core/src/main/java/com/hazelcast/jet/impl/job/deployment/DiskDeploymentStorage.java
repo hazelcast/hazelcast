@@ -26,7 +26,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
 
@@ -43,23 +46,20 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
     }
 
     private File createJobDirectory(String jobName, String containerDir) {
-        File dir;
-        String postFix = "";
-        int count = 1;
-
+        Path jobPath = Paths.get(containerDir + File.pathSeparator + "job_" + jobName);
+        int directoryNameCounter = 0;
         do {
-            dir = new File(containerDir + File.pathSeparator + "job_" + postFix + jobName);
-            postFix = String.valueOf(count);
-            count++;
-            int max = config.getJobDirectoryCreationAttemptsCount();
-            if (count > max) {
-                throw new JetException(
-                        "Default job directory creation attempts count exceeded, directory -> "
-                                + containerDir + ", attempt count -> " + max
-                );
+            try {
+                jobPath = Files.createDirectory(jobPath);
+            } catch (FileAlreadyExistsException e) {
+                jobPath = Paths.get(containerDir + File.pathSeparator + "job_" + jobName + "_"
+                        + directoryNameCounter++);
+            } catch (IOException e) {
+                throw JetUtil.reThrow(e);
             }
-        } while (!dir.mkdir());
-        return dir;
+
+        } while (!jobPath.toFile().exists());
+        return jobPath.toFile();
     }
 
     private String createContainerDirectory() {
@@ -67,6 +67,13 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
         if (containerDir == null) {
             try {
                 containerDir = Files.createTempDirectory("hazelcast-jet-").toString();
+            } catch (IOException e) {
+                throw JetUtil.reThrow(e);
+            }
+        } else {
+            Path path = Paths.get(containerDir);
+            try {
+                Files.createDirectories(path);
             } catch (IOException e) {
                 throw JetUtil.reThrow(e);
             }
