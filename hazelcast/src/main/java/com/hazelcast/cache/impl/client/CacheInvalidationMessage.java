@@ -26,7 +26,7 @@ import java.io.IOException;
 
 public abstract class CacheInvalidationMessage implements IdentifiedDataSerializable {
 
-    protected String name;
+    protected String name="";
 
     public CacheInvalidationMessage() {
     }
