@@ -95,28 +95,6 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 .setInMemoryFormat(inMemoryFormat);
     }
 
-    protected class NearCacheTestContext {
-
-        protected final HazelcastClientProxy client;
-        protected final SerializationService serializationService;
-        protected final HazelcastClientCacheManager cacheManager;
-        protected final NearCacheManager nearCacheManager;
-        protected final ICache<Object, String> cache;
-        protected final NearCache<Data, String> nearCache;
-
-        NearCacheTestContext(HazelcastClientProxy client,
-                             HazelcastClientCacheManager cacheManager, NearCacheManager nearCacheManager,
-                             ICache<Object, String> cache, NearCache<Data, String> nearCache) {
-            this.client = client;
-            this.serializationService = client.getSerializationService();
-            this.cacheManager = cacheManager;
-            this.nearCacheManager = nearCacheManager;
-            this.cache = cache;
-            this.nearCache = nearCache;
-        }
-
-    }
-
     protected String generateValueFromKey(Integer key) {
         return "Value-" + key;
     }
