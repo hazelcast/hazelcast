@@ -222,10 +222,6 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     public void write() throws Exception {
-        if (!connection.isAlive()) {
-            return;
-        }
-
         if (writeHandler == null) {
             logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             createWriter(CLUSTER);
