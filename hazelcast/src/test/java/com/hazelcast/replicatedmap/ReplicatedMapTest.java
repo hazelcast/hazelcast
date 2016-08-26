@@ -55,7 +55,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ReplicatedMapTest extends ReplicatedMapBaseTest {
+public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
     @Test
     public void testEmptyMapIsEmpty() throws Exception {
