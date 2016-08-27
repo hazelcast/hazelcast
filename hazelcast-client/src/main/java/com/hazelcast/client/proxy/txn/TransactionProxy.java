@@ -23,11 +23,11 @@ import com.hazelcast.client.impl.protocol.codec.TransactionCommitCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionRollbackCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -50,6 +50,7 @@ final class TransactionProxy {
     private final HazelcastClientInstanceImpl client;
     private final long threadId = ThreadUtil.getThreadId();
     private final ClientConnection connection;
+    private final ILogger logger;
 
     private String txnId;
     private State state = NO_TXN;
@@ -59,6 +60,7 @@ final class TransactionProxy {
         this.options = options;
         this.client = client;
         this.connection = connection;
+        this.logger = client.getLoggingService().getLogger(TransactionProxy.class);
     }
 
     public String getTxnId() {
@@ -121,8 +123,8 @@ final class TransactionProxy {
             try {
                 ClientMessage request = TransactionRollbackCodec.encodeRequest(txnId, threadId);
                 invoke(request);
-            } catch (Exception ignored) {
-                EmptyStatement.ignore(ignored);
+            } catch (Exception exception) {
+                logger.warning("Exception while rolling back the transaction", exception);
             }
             state = ROLLED_BACK;
         } finally {
