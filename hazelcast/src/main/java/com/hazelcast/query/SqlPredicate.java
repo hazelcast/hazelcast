@@ -319,7 +319,7 @@ public class SqlPredicate
         Predicate[] predicates;
         if (klass.isInstance(predicateLeft)) {
             subpredicatesLeft = ((CompoundPredicate) predicateLeft).getPredicates();
-            if (predicateRight instanceof CompoundPredicate) {
+            if (predicateRight.getClass() == klass) {
                 subpredicatesRight = ((CompoundPredicate) predicateRight).getPredicates();
             } else {
                 subpredicatesRight = new Predicate[] {predicateRight};
