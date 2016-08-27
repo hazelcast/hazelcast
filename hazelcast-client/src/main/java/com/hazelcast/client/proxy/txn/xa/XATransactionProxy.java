@@ -24,12 +24,12 @@ import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.transaction.xa.XAException;
@@ -56,6 +56,7 @@ public class XATransactionProxy {
     private final ClientConnection connection;
     private final SerializableXID xid;
     private final int timeout;
+    private final ILogger logger;
 
     private Transaction.State state = NO_TXN;
     private volatile String txnId;
@@ -66,6 +67,7 @@ public class XATransactionProxy {
         this.connection = connection;
         this.timeout = timeout;
         this.xid = new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
+        this.logger = client.getLoggingService().getLogger(XATransactionProxy.class);
     }
 
     void begin() {
@@ -119,8 +121,8 @@ public class XATransactionProxy {
         try {
             ClientMessage request = XATransactionRollbackCodec.encodeRequest(txnId);
             invoke(request);
-        } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
+        } catch (Exception exception) {
+            logger.warning("Exception while rolling back the transaction", exception);
         }
         state = ROLLED_BACK;
     }
