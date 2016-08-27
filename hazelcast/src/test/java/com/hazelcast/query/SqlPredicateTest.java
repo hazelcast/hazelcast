@@ -67,12 +67,99 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SqlPredicateTest {
 
     final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
+    static final String[] TEST_MATCHING_SQL_PREDICATES = new String[] {
+            "name = 'Joe' and age = 25 and (city = 'austin' or city = 'AUSTIN')",
+            "name = 'Joe' or city = 'Athens'",
+            "(name = 'Jane' or name = 'Joe' or city = 'AUSTIN') and age = 25",
+            "(name = 'Jane' or name = 'Joe' or city = 'AUSTIN') and age = 25 and salary = 0",
+            "(name = 'Jane' or name = 'Joe') and age = 25 and salary = 0 or age = 24",
+            "name = 'Jane' or age = 25 and name = 'Joe'", // correct precedence is "name = 'Jane' or (age = 25 and name = 'Joe')
+            "age = 35 or age = 24 or age = 31 or (name = 'Joe' and age = 25)",
+            };
+
+    static final String[] TEST_NOT_MATCHING_SQL_PREDICATES = new String[] {
+            "name = 'Joe' and age = 21 and (city = 'austin' or city = 'ATHENS')",
+            "name = 'Jane' or city = 'Athens'",
+            "(name = 'Jane' or name = 'Catie' or city = 'San Jose') and age = 25",
+            "(name = 'Joe' or name = 'Catie' or city = 'San Jose') and age = 21",
+            "(name = 'Jane' or name = 'Joe' or city = 'AUSTIN') and age = 25 and salary = 10",
+            "(name = 'Jane' or name = 'Catie' or city = 'San Jose') and age = 25 and salary = 10",
+            "(name = 'Jane' or name = 'Joe') and age = 25 and salary = 13 or age = 24",
+            "name = 'Jane' or age = 25 and name = 'Catie'",
+            "age = 35 or age = 24 or age = 31 or (name = 'Joe' and age = 27)",
+            };
+
+    @Test
+    public void testSqlPredicates() {
+        Employee employee = new Employee("Joe", "AUSTIN", 25, true, 0);
+        for (String s : TEST_MATCHING_SQL_PREDICATES) {
+            try {
+                assertSqlTrue(s, employee);
+            }
+            catch (AssertionError assertionError) {
+                fail("Failed matching SQL predicate \"" + s + '"');
+            }
+        }
+        for (String s : TEST_NOT_MATCHING_SQL_PREDICATES) {
+            try {
+                assertSqlFalse(s, employee);
+            }
+            catch (AssertionError assertionError) {
+                fail("Failed non-matching SQL predicate \"" + s + '"');
+            }
+        }
+    }
+
+    public static class Record {
+        private String str1, str2, str3;
+
+        public Record(String str1, String str2, String str3) {
+            this.str1 = str1;
+            this.str2 = str2;
+            this.str3 = str3;
+        }
+
+        public String getStr1() {
+            return str1;
+        }
+
+        public void setStr1(String str1) {
+            this.str1 = str1;
+        }
+
+        public String getStr2() {
+            return str2;
+        }
+
+        public void setStr2(String str2) {
+            this.str2 = str2;
+        }
+
+        public String getStr3() {
+            return str3;
+        }
+
+        public void setStr3(String str3) {
+            this.str3 = str3;
+        }
+    }
+
+    // ZD issue 1950
+    @Test
+    public void testRecordPredicate() {
+        Record record = new Record("ONE", "TWO", "THREE");
+        SqlPredicate predicate = new SqlPredicate("str1 = 'ONE' AND str2 = 'TWO' AND (str3 = 'THREE' OR str3 = 'three')");
+        Map.Entry entry = createEntry("1", record);
+        assertTrue(predicate.apply(entry));
+    }
 
     @Test
     public void testEqualsWhenSqlMatches() {
