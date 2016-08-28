@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
+import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -68,13 +69,6 @@ final class SerializerHookLoader {
         if (serializerConfigs != null) {
             for (SerializerConfig serializerConfig : serializerConfigs) {
                 Serializer serializer = serializerConfig.getImplementation();
-                if (serializer == null) {
-                    try {
-                        serializer = ClassLoaderUtil.newInstance(classLoader, serializerConfig.getClassName());
-                    } catch (Exception e) {
-                        throw new HazelcastSerializationException(e);
-                    }
-                }
                 Class serializationType = serializerConfig.getTypeClass();
                 if (serializationType == null) {
                     try {
@@ -83,9 +77,32 @@ final class SerializerHookLoader {
                         throw new HazelcastSerializationException(e);
                     }
                 }
+                if (serializer == null) {
+                    serializer = createSerializerInstance(serializerConfig, serializationType);
+                }
                 register(serializationType, serializer);
             }
         }
+    }
+
+    private Serializer createSerializerInstance(SerializerConfig serializerConfig, Class serializationType) {
+        Serializer serializer;
+        try {
+            Class<?> clazz = ClassLoaderUtil.loadClass(classLoader, serializerConfig.getClassName());
+            try {
+                Constructor<?> constructor = clazz.getDeclaredConstructor(Class.class);
+                constructor.setAccessible(true);
+                serializer = (Serializer) constructor.newInstance(serializationType);
+            } catch (NoSuchMethodException e) {
+                //fallback to no-arg contructor
+                Constructor<?> constructor = clazz.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                serializer = (Serializer) constructor.newInstance();
+            }
+        } catch (Exception e) {
+            throw new HazelcastSerializationException(e);
+        }
+        return serializer;
     }
 
     Map<Class, Object> getSerializers() {
