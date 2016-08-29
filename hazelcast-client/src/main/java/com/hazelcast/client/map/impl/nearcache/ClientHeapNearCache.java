@@ -38,12 +38,12 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.config.EvictionPolicy.NONE;
+
 /**
- * Implementation of the {@link NearCache}.
- * <p/>
- * todo: improve javadoc.
+ * {@link NearCache} implementation for on-heap IMap on clients.
  *
- * @param <K>
+ * @param <K> type of the {@link NearCache} key
  */
 public class ClientHeapNearCache<K> implements NearCache<K, Object> {
 
@@ -57,70 +57,71 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
      */
     private static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
 
+    private final ConcurrentMap<K, NearCacheRecord> cache;
+    private final String mapName;
+    private final ClientExecutionServiceImpl executionService;
+    private final SerializationService serializationService;
+
+    private final InMemoryFormat inMemoryFormat;
     private final int maxSize;
     private final long maxIdleMillis;
     private final long timeToLiveMillis;
     private final boolean invalidateOnChange;
     private final EvictionPolicy evictionPolicy;
-    private final InMemoryFormat inMemoryFormat;
-    private final String mapName;
-    private final ClientContext context;
     private final AtomicBoolean canCleanUp;
     private final AtomicBoolean canEvict;
-    private final ConcurrentMap<K, NearCacheRecord> cache;
     private final NearCacheStatsImpl stats;
     private final Comparator<NearCacheRecord> selectedComparator;
 
     private volatile long lastCleanup;
 
     public ClientHeapNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
+        this.cache = new ConcurrentHashMap<K, NearCacheRecord>();
         this.mapName = mapName;
-        this.context = context;
-        maxSize = nearCacheConfig.getMaxSize();
-        maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
-        inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        this.executionService = (ClientExecutionServiceImpl) context.getExecutionService();
+        this.serializationService = context.getSerializationService();
+
+        this.inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         if (inMemoryFormat != InMemoryFormat.BINARY && inMemoryFormat != InMemoryFormat.OBJECT) {
             throw new IllegalArgumentException("Illegal in-memory-format: " + inMemoryFormat);
         }
-        timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
-        invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
-        evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
-        selectedComparator = NearCacheRecord.getComparator(evictionPolicy);
-        cache = new ConcurrentHashMap<K, NearCacheRecord>();
-        canCleanUp = new AtomicBoolean(true);
-        canEvict = new AtomicBoolean(true);
-        lastCleanup = Clock.currentTimeMillis();
-        stats = new NearCacheStatsImpl();
+        this.maxSize = nearCacheConfig.getMaxSize();
+        this.maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
+        this.timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
+        this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
+        this.evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
+        this.canCleanUp = new AtomicBoolean(true);
+        this.canEvict = new AtomicBoolean(true);
+        this.stats = new NearCacheStatsImpl();
+        this.selectedComparator = NearCacheRecord.getComparator(evictionPolicy);
+        this.lastCleanup = Clock.currentTimeMillis();
     }
 
     @Override
-    public void put(K key, Object object) {
+    public void put(K key, Object value) {
         fireTtlCleanup();
-        if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
+        if (evictionPolicy == NONE && cache.size() >= maxSize) {
             return;
         }
-        if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
+        if (evictionPolicy != NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        Object value = null;
-        if (object != null) {
-            SerializationService serializationService = context.getSerializationService();
-            if (inMemoryFormat == InMemoryFormat.BINARY) {
-                value = serializationService.toData(object);
-            } else if (inMemoryFormat == InMemoryFormat.OBJECT) {
-                value = serializationService.toObject(object);
-            } else {
-                throw new IllegalArgumentException();
-            }
+        Object candidate;
+        if (value == null) {
+            candidate = NULL_OBJECT;
+        } else if (inMemoryFormat == InMemoryFormat.OBJECT) {
+            candidate = serializationService.toObject(value);
+        } else {
+            candidate = serializationService.toData(value);
         }
-        value = value == null ? NULL_OBJECT : value;
-        cache.put(key, new NearCacheRecord(key, value));
+
+        NearCacheRecord record = new NearCacheRecord(key, candidate);
+        cache.put(key, record);
     }
 
     private void fireEvictCache() {
         if (canEvict.compareAndSet(true, false)) {
             try {
-                final ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) context.getExecutionService();
                 executionService.executeInternal(new Runnable() {
                     public void run() {
                         try {
@@ -161,7 +162,6 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
 
         if (canCleanUp.compareAndSet(true, false)) {
             try {
-                ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) context.getExecutionService();
                 executionService.executeInternal(new Runnable() {
                     public void run() {
                         try {
@@ -206,7 +206,7 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
             stats.incrementHits();
             record.access();
             return inMemoryFormat.equals(InMemoryFormat.BINARY)
-                    ? context.getSerializationService().toObject(record.getValue()) : record.getValue();
+                    ? serializationService.toObject(record.getValue()) : record.getValue();
         } else {
             stats.incrementMisses();
             return null;
@@ -219,21 +219,8 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
     }
 
     @Override
-    public NearCacheStatsImpl getNearCacheStats() {
-        long ownedEntryCount = 0;
-        long ownedEntryMemory = 0;
-        for (NearCacheRecord record : cache.values()) {
-            ownedEntryCount++;
-            ownedEntryMemory += record.getCost();
-        }
-        stats.setOwnedEntryCount(ownedEntryCount);
-        stats.setOwnedEntryMemoryCost(ownedEntryMemory);
-        return stats;
-    }
-
-    @Override
-    public Object selectToSave(Object... candidates) {
-        throw new UnsupportedOperationException();
+    public boolean isInvalidateOnChange() {
+        return invalidateOnChange;
     }
 
     @Override
@@ -252,8 +239,8 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
     }
 
     @Override
-    public boolean isInvalidateOnChange() {
-        return invalidateOnChange;
+    public Object selectToSave(Object... candidates) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -261,4 +248,16 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
         return inMemoryFormat;
     }
 
+    @Override
+    public NearCacheStatsImpl getNearCacheStats() {
+        long ownedEntryCount = 0;
+        long ownedEntryMemoryCost = 0;
+        for (NearCacheRecord record : cache.values()) {
+            ownedEntryCount++;
+            ownedEntryMemoryCost += record.getCost();
+        }
+        stats.setOwnedEntryCount(ownedEntryCount);
+        stats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
+        return stats;
+    }
 }

@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -46,9 +45,7 @@ public class NearCacheProvider {
         @Override
         public NearCache createNew(String mapName) {
             MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-            SizeEstimator nearCacheSizeEstimator = mapContainer.getNearCacheSizeEstimator();
-            NearCacheImpl nearCache = new NearCacheImpl(mapName, nodeEngine);
-            nearCache.setNearCacheSizeEstimator(nearCacheSizeEstimator);
+            NearCacheImpl nearCache = new NearCacheImpl(mapName, nodeEngine, mapContainer.getNearCacheSizeEstimator());
 
             int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
             return wrapAsStaleReadPreventerNearCache(nearCache, partitionCount);
@@ -135,4 +132,3 @@ public class NearCacheProvider {
         return nearCacheInvalidator;
     }
 }
-

@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl;
 
-
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.map.impl.nearcache.NearCacheRecord;
 import com.hazelcast.map.impl.nearcache.NearCacheSizeEstimator;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
@@ -26,25 +26,25 @@ import static com.hazelcast.config.InMemoryFormat.BINARY;
 /**
  * Static factory methods for various size estimators.
  */
-public final class SizeEstimators {
+public final class SizeEstimatorFactory {
 
     /**
      * Returns zero for all estimations.
      */
     private static final SizeEstimator ZERO_SIZE_ESTIMATOR = new ZeroSizeEstimator();
 
-    private SizeEstimators() {
+    private SizeEstimatorFactory() {
     }
 
     public static SizeEstimator createMapSizeEstimator(InMemoryFormat inMemoryFormat) {
         if (BINARY.equals(inMemoryFormat)) {
             return new BinaryMapSizeEstimator();
-        } else {
-            return ZERO_SIZE_ESTIMATOR;
         }
+        return ZERO_SIZE_ESTIMATOR;
     }
 
-    public static SizeEstimator createNearCacheSizeEstimator(NearCacheConfig nearCacheConfig) {
+    @SuppressWarnings("unchecked")
+    public static SizeEstimator<NearCacheRecord> createNearCacheSizeEstimator(NearCacheConfig nearCacheConfig) {
         if (nearCacheConfig == null) {
             return ZERO_SIZE_ESTIMATOR;
         }
@@ -52,9 +52,8 @@ public final class SizeEstimators {
         InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         if (BINARY.equals(inMemoryFormat)) {
             return new NearCacheSizeEstimator();
-        } else {
-            return ZERO_SIZE_ESTIMATOR;
         }
+        return ZERO_SIZE_ESTIMATOR;
     }
 
     private static class ZeroSizeEstimator implements SizeEstimator {
@@ -66,7 +65,6 @@ public final class SizeEstimators {
 
         @Override
         public void add(long size) {
-
         }
 
         @Override
@@ -76,8 +74,6 @@ public final class SizeEstimators {
 
         @Override
         public void reset() {
-
         }
     }
-
 }
