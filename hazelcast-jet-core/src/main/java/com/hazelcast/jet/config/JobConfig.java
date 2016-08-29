@@ -76,8 +76,6 @@ public class JobConfig implements Serializable {
 
     private String deploymentDirectory;
 
-    private int jobDirectoryCreationAttemptsCount = DEFAULT_APP_ATTEMPTS_COUNT;
-
     private int secondsToAwait = JetConfig.DEFAULT_SECONDS_TO_AWAIT;
 
     private int ringbufferSize = DEFAULT_QUEUE_SIZE;
@@ -147,26 +145,6 @@ public class JobConfig implements Serializable {
      */
     public JobConfig setDeploymentDirectory(String deploymentDirectory) {
         this.deploymentDirectory = deploymentDirectory;
-        return this;
-    }
-
-    /**
-     * Gets the maximum number of attempts to create a temp directory during deployment
-     *
-     * @return the number of attempts
-     */
-    public int getJobDirectoryCreationAttemptsCount() {
-        return jobDirectoryCreationAttemptsCount;
-    }
-
-    /**
-     * Sets the maximum number of attempts to create a temp directory during deployment
-     *
-     * @param count the maximum number of attempts
-     * @return the current job configuration
-     */
-    public JobConfig setJobDirectoryCreationAttemptsCount(int count) {
-        this.jobDirectoryCreationAttemptsCount = count;
         return this;
     }
 
