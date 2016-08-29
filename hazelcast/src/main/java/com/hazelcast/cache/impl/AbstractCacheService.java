@@ -58,6 +58,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 
 public abstract class AbstractCacheService
@@ -140,7 +141,7 @@ public abstract class AbstractCacheService
         }
 
         for (String objectName : configs.keySet()) {
-            sendInvalidationEvent(objectName, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
+            sendInvalidationEvent(objectName, null, SOURCE_NOT_AVAILABLE);
         }
     }
 
@@ -288,6 +289,7 @@ public abstract class AbstractCacheService
         CacheConfig config = deleteCacheConfig(name);
         if (destroy) {
             destroySegments(name);
+            sendInvalidationEvent(name, null, SOURCE_NOT_AVAILABLE);
         } else {
             closeSegments(name);
         }

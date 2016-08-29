@@ -134,21 +134,20 @@ public class CacheDestroyTest extends CacheTestSupport {
 
         cache.destroy();
 
-        // Make sure that one event is received
+        // Make sure that at least 1 invalidation event has been received
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                assertEquals(1, counter.get());
+                assertTrue(counter.get() >= 1);
             }
         }, 2);
-
-        // Make sure that the callback is not called for a while
+        // Make sure that no more than INSTNACE_COUNT events are received ever
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                assertTrue(counter.get() <= 1);
+                assertTrue(counter.get() <= INSTANCE_COUNT);
             }
         }, 3);
 
