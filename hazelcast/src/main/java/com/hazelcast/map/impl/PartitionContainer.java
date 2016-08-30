@@ -164,7 +164,8 @@ public class PartitionContainer {
         if (mapServiceContext.removeMapContainer(mapContainer)) {
             mapContainer.onDestroy();
         }
-        PartitioningStrategyFactory.removePartitioningStrategyFromCache(mapContainer.getName());
+        PartitioningStrategyFactory.removePartitioningStrategyFromCache(mapServiceContext.getNodeEngine(),
+                mapContainer.getName());
     }
 
     private void clearLockStore(String name) {
