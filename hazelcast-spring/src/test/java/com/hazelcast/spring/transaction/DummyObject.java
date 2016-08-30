@@ -32,4 +32,9 @@ public class DummyObject implements Serializable {
     public void setString(String string) {
         this.string = string;
     }
+
+    @Override
+    public String toString() {
+        return "DummyObject{" + "id=" + id + '}';
+    }
 }
