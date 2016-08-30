@@ -35,6 +35,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
@@ -247,14 +248,23 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         list.offer(LifecycleState.CLIENT_CONNECTED);
         list.offer(LifecycleState.CLIENT_DISCONNECTED);
         list.offer(LifecycleState.CLIENT_CONNECTED);
+        list.offer(LifecycleState.CLIENT_DISCONNECTED);
+        list.offer(LifecycleState.SHUTTING_DOWN);
+        list.offer(LifecycleState.SHUTDOWN);
 
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch latch = new CountDownLatch(list.size());
+        final CountDownLatch connectedLatch = new CountDownLatch(2);
         LifecycleListener listener = new LifecycleListener() {
             public void stateChanged(LifecycleEvent event) {
+                Logger.getLogger(getClass()).info("stateChanged: " + event);
                 final LifecycleState state = list.poll();
-                if (state != null && state.equals(event.getState())) {
+                LifecycleState eventState = event.getState();
+                if (state != null && state.equals(eventState)) {
                     latch.countDown();
+                }
+                if (LifecycleState.CLIENT_CONNECTED.equals(eventState)) {
+                    connectedLatch.countDown();
                 }
             }
         };
@@ -262,13 +272,19 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(listenerConfig);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
-        hazelcastFactory.newHazelcastClient(clientConfig);
+        HazelcastInstance hazelcastClient = hazelcastFactory.newHazelcastClient(clientConfig);
 
         hazelcastFactory.shutdownAllMembers();
 
         hazelcastFactory.newHazelcastInstance();
 
-        assertTrue("LifecycleState failed", latch.await(60, TimeUnit.SECONDS));
+        assertTrue("LifecycleState failed. Expected two CLIENT_CONNECTED events!" , connectedLatch.await(60, TimeUnit.SECONDS));
+
+        hazelcastFactory.shutdownAllMembers();
+
+        hazelcastClient.shutdown();
+
+        assertTrue("LifecycleState failed" , latch.await(60, TimeUnit.SECONDS));
     }
 
 

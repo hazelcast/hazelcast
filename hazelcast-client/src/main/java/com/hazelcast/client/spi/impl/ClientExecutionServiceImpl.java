@@ -27,6 +27,7 @@ import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -45,6 +46,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     private final ExecutorService userExecutor;
     private final ScheduledExecutorService internalExecutor;
+    private final ExecutorService singleThreadExecutor;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader,
                                       HazelcastProperties properties, int poolSize, LoggingService loggingService) {
@@ -78,11 +80,16 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                     }
                 });
 
-
+        singleThreadExecutor = Executors
+                .newSingleThreadExecutor(new PoolExecutorThreadFactory(threadGroup, name + ".internal-st-", classLoader));
     }
 
     public void executeInternal(Runnable runnable) {
         internalExecutor.execute(runnable);
+    }
+
+    public void executeInternalSingleThread(Runnable runnable) {
+        singleThreadExecutor.execute(runnable);
     }
 
     public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {

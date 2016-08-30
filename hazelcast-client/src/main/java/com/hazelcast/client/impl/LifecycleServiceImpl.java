@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -78,15 +79,22 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void fireLifecycleEvent(LifecycleEvent.LifecycleState lifecycleState) {
-        LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycleState);
+        final LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycleState);
         String revision = buildInfo.getRevision();
         revision = revision == null || revision.isEmpty() ? "" : " - " + revision;
         getLogger().info("HazelcastClient " + buildInfo.getVersion() + " ("
                 + buildInfo.getBuild() + revision + ") is "
                 + lifecycleEvent.getState());
-        for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
-            lifecycleListener.stateChanged(lifecycleEvent);
-        }
+
+        ClientExecutionServiceImpl clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        clientExecutionService.executeInternalSingleThread(new Runnable() {
+            @Override
+            public void run() {
+                for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
+                    lifecycleListener.stateChanged(lifecycleEvent);
+                }
+            }
+        });
     }
 
     public void setStarted() {
