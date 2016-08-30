@@ -56,10 +56,13 @@ public class TestSerializerHook implements SerializerHook {
 
     public static class TestSerializerWithTypeConstructor implements StreamSerializer {
 
-        private final Class<?> clazz;
+        private Class<?> clazz;
 
         public TestSerializerWithTypeConstructor(Class<?> clazz) {
             this.clazz = clazz;
+        }
+
+        public TestSerializerWithTypeConstructor() {
         }
 
         public Class<?> getClazz() {

@@ -42,6 +42,9 @@ final class SerializerHookLoader {
 
     private static final String FACTORY_ID = "com.hazelcast.SerializerHook";
 
+    private final boolean useDefaultConstructorOnly =
+            Boolean.getBoolean("hazelcast.compat.serializers.use.default.constructor.only");
+
     private final Map<Class, Object> serializers = new HashMap<Class, Object>();
     private final Collection<SerializerConfig> serializerConfigs;
     private final ClassLoader classLoader;
@@ -86,23 +89,30 @@ final class SerializerHookLoader {
     }
 
     private Serializer createSerializerInstance(SerializerConfig serializerConfig, Class serializationType) {
-        Serializer serializer;
         try {
-            Class<?> clazz = ClassLoaderUtil.loadClass(classLoader, serializerConfig.getClassName());
-            try {
-                Constructor<?> constructor = clazz.getDeclaredConstructor(Class.class);
-                constructor.setAccessible(true);
-                serializer = (Serializer) constructor.newInstance(serializationType);
-            } catch (NoSuchMethodException e) {
-                //fallback to no-arg contructor
-                Constructor<?> constructor = clazz.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                serializer = (Serializer) constructor.newInstance();
+            String className = serializerConfig.getClassName();
+            if (useDefaultConstructorOnly) {
+                return ClassLoaderUtil.newInstance(classLoader, className);
+            } else {
+                return createSerializerInstanceWithFallback(serializationType, className);
             }
         } catch (Exception e) {
             throw new HazelcastSerializationException(e);
         }
-        return serializer;
+    }
+
+    private Serializer createSerializerInstanceWithFallback(Class serializationType, String className) throws Exception {
+        Class<?> clazz = ClassLoaderUtil.loadClass(classLoader, className);
+        try {
+            Constructor<?> constructor = clazz.getDeclaredConstructor(Class.class);
+            constructor.setAccessible(true);
+            return (Serializer) constructor.newInstance(serializationType);
+        } catch (NoSuchMethodException e) {
+            //fallback to no-arg constructor
+            Constructor<?> constructor = clazz.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return (Serializer) constructor.newInstance();
+        }
     }
 
     Map<Class, Object> getSerializers() {
