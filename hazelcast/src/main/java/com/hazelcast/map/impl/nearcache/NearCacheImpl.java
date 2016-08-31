@@ -43,56 +43,58 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 
 /**
- * NearCache.
+ * {@link NearCache} implementation for on-heap IMap on members.
  */
 public class NearCacheImpl implements NearCache<Data, Object> {
 
     public static final String NEAR_CACHE_EXECUTOR_NAME = "hz:near-cache";
 
     private static final double EVICTION_FACTOR = 0.2;
-    private static final int CLEANUP_INTERVAL = 5000;
+    private static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
 
-    private final int maxSize;
+    private final ConcurrentMap<Data, NearCacheRecord> cache;
     private final String mapName;
+    private final ExecutionService executionService;
+    private final SerializationService serializationService;
+    private final SizeEstimator<NearCacheRecord> nearCacheSizeEstimator;
+
+    private final InMemoryFormat inMemoryFormat;
+    private final int maxSize;
     private final long maxIdleMillis;
     private final long timeToLiveMillis;
+    private final boolean invalidateOnChange;
     private final EvictionPolicy evictionPolicy;
-    private final InMemoryFormat inMemoryFormat;
-    private final NodeEngine nodeEngine;
     private final AtomicBoolean canCleanUp;
     private final AtomicBoolean canEvict;
-    private final ConcurrentMap<Data, NearCacheRecord> cache;
-    private final NearCacheStatsImpl nearCacheStats;
-    private final SerializationService serializationService;
+    private final NearCacheStatsImpl stats;
     private final Comparator<NearCacheRecord> selectedComparator;
-    private final boolean invalidateOnChange;
-
-    private SizeEstimator nearCacheSizeEstimator;
 
     private volatile long lastCleanup;
 
     /**
-     * @param mapName    name of map which owns near cache.
+     * @param mapName    name of the map which owns near cache.
      * @param nodeEngine node engine.
      */
-    public NearCacheImpl(String mapName, NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
+    public NearCacheImpl(String mapName, NodeEngine nodeEngine, SizeEstimator<NearCacheRecord> nearCacheSizeEstimator) {
+        this.cache = new ConcurrentHashMap<Data, NearCacheRecord>();
+        this.mapName = mapName;
+        this.executionService = nodeEngine.getExecutionService();
+        this.serializationService = nodeEngine.getSerializationService();
+        this.nearCacheSizeEstimator = nearCacheSizeEstimator;
+
         Config config = nodeEngine.getConfig();
         NearCacheConfig nearCacheConfig = config.findMapConfig(mapName).getNearCacheConfig();
+        this.inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         this.maxSize = nearCacheConfig.getMaxSize() <= 0 ? Integer.MAX_VALUE : nearCacheConfig.getMaxSize();
         this.maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
-        this.inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         this.timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
+        this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         this.evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
-        this.selectedComparator = NearCacheRecord.getComparator(evictionPolicy);
-        this.cache = new ConcurrentHashMap<Data, NearCacheRecord>();
         this.canCleanUp = new AtomicBoolean(true);
         this.canEvict = new AtomicBoolean(true);
-        this.nearCacheStats = new NearCacheStatsImpl();
+        this.stats = new NearCacheStatsImpl();
+        this.selectedComparator = NearCacheRecord.getComparator(evictionPolicy);
         this.lastCleanup = Clock.currentTimeMillis();
-        this.serializationService = nodeEngine.getSerializationService();
-        this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
-        this.mapName = mapName;
     }
 
     // TODO this operation returns the given value in near-cache memory format (data or object)?
@@ -105,46 +107,27 @@ public class NearCacheImpl implements NearCache<Data, Object> {
         if (evictionPolicy != NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
+        Object candidate;
         if (value == null) {
-            value = NULL_OBJECT;
+            candidate = NULL_OBJECT;
+        } else if (inMemoryFormat == InMemoryFormat.OBJECT) {
+            candidate = serializationService.toObject(value);
         } else {
-            value = inMemoryFormat.equals(InMemoryFormat.OBJECT)
-                    ? serializationService.toObject(value) : serializationService.toData(value);
+            candidate = serializationService.toData(value);
         }
-        final NearCacheRecord record = new NearCacheRecord(key, value);
+
+        NearCacheRecord record = new NearCacheRecord(key, candidate);
         NearCacheRecord previous = cache.put(key, record);
+
         updateSizeEstimator(calculateCost(record));
         if (previous != null) {
             updateSizeEstimator(-calculateCost(previous));
         }
     }
 
-    @Override
-    public NearCacheStatsImpl getNearCacheStats() {
-        return createNearCacheStats();
-    }
-
-    @Override
-    public Object selectToSave(Object... candidates) {
-        throw new UnsupportedOperationException();
-    }
-
-    private NearCacheStatsImpl createNearCacheStats() {
-        long ownedEntryCount = 0;
-        long ownedEntryMemoryCost = 0;
-        for (NearCacheRecord record : cache.values()) {
-            ownedEntryCount++;
-            ownedEntryMemoryCost += record.getCost();
-        }
-        nearCacheStats.setOwnedEntryCount(ownedEntryCount);
-        nearCacheStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
-        return nearCacheStats;
-    }
-
     private void fireEvictCache() {
         if (canEvict.compareAndSet(true, false)) {
             try {
-                final ExecutionService executionService = nodeEngine.getExecutionService();
                 executionService.execute(NEAR_CACHE_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         try {
@@ -162,7 +145,6 @@ public class NearCacheImpl implements NearCache<Data, Object> {
                         } finally {
                             canEvict.set(true);
                         }
-
                         if (cache.size() >= maxSize && canEvict.compareAndSet(true, false)) {
                             try {
                                 executionService.execute(NEAR_CACHE_EXECUTOR_NAME, this);
@@ -181,21 +163,21 @@ public class NearCacheImpl implements NearCache<Data, Object> {
     }
 
     private void fireTtlCleanup() {
-        if (Clock.currentTimeMillis() < (lastCleanup + CLEANUP_INTERVAL)) {
+        if (Clock.currentTimeMillis() < (lastCleanup + TTL_CLEANUP_INTERVAL_MILLS)) {
             return;
         }
 
         if (canCleanUp.compareAndSet(true, false)) {
             try {
-                nodeEngine.getExecutionService().execute(NEAR_CACHE_EXECUTOR_NAME, new Runnable() {
+                executionService.execute(NEAR_CACHE_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         try {
                             lastCleanup = Clock.currentTimeMillis();
                             for (Map.Entry<Data, NearCacheRecord> entry : cache.entrySet()) {
                                 if (entry.getValue().isExpired(maxIdleMillis, timeToLiveMillis)) {
-                                    final Data key = entry.getKey();
-                                    final NearCacheRecord record = cache.remove(key);
-                                    //if a mapping exists.
+                                    Data key = entry.getKey();
+                                    NearCacheRecord record = cache.remove(key);
+                                    // if a mapping exists
                                     if (record != null) {
                                         updateSizeEstimator(-calculateCost(record));
                                     }
@@ -227,22 +209,22 @@ public class NearCacheImpl implements NearCache<Data, Object> {
             if (record.isExpired(maxIdleMillis, timeToLiveMillis)) {
                 cache.remove(key);
                 updateSizeEstimator(-calculateCost(record));
-                nearCacheStats.incrementMisses();
+                stats.incrementMisses();
                 return null;
             }
-            nearCacheStats.incrementHits();
+            stats.incrementHits();
             record.access();
             return record.getValue();
         } else {
-            nearCacheStats.incrementMisses();
+            stats.incrementMisses();
             return null;
         }
     }
 
     @Override
     public boolean remove(Data key) {
-        final NearCacheRecord record = cache.remove(key);
-        // if a mapping exists for the key.
+        NearCacheRecord record = cache.remove(key);
+        // if a mapping exists for the key
         if (record != null) {
             updateSizeEstimator(-calculateCost(record));
             return true;
@@ -273,28 +255,37 @@ public class NearCacheImpl implements NearCache<Data, Object> {
     }
 
     @Override
+    public Object selectToSave(Object... candidates) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
     }
 
+    @Override
+    public NearCacheStatsImpl getNearCacheStats() {
+        long ownedEntryCount = 0;
+        long ownedEntryMemoryCost = 0;
+        for (NearCacheRecord record : cache.values()) {
+            ownedEntryCount++;
+            ownedEntryMemoryCost += record.getCost();
+        }
+        stats.setOwnedEntryCount(ownedEntryCount);
+        stats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
+        return stats;
+    }
+
     private void resetSizeEstimator() {
-        getNearCacheSizeEstimator().reset();
+        nearCacheSizeEstimator.reset();
     }
 
     private void updateSizeEstimator(long size) {
-        getNearCacheSizeEstimator().add(size);
+        nearCacheSizeEstimator.add(size);
     }
 
     private long calculateCost(NearCacheRecord record) {
-        return getNearCacheSizeEstimator().calculateSize(record);
+        return nearCacheSizeEstimator.calculateSize(record);
     }
-
-    public SizeEstimator getNearCacheSizeEstimator() {
-        return nearCacheSizeEstimator;
-    }
-
-    public void setNearCacheSizeEstimator(SizeEstimator nearCacheSizeEstimator) {
-        this.nearCacheSizeEstimator = nearCacheSizeEstimator;
-    }
-
 }

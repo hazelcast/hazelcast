@@ -31,7 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
+import static com.hazelcast.map.impl.SizeEstimatorFactory.createMapSizeEstimator;
 
 /**
  * Default implementation of {@link Storage} layer used by a {@link RecordStore}

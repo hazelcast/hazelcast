@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
+import com.hazelcast.map.impl.nearcache.NearCacheRecord;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
@@ -49,7 +50,7 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
+import static com.hazelcast.map.impl.SizeEstimatorFactory.createNearCacheSizeEstimator;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 import static java.lang.System.getProperty;
@@ -64,7 +65,7 @@ public class MapContainer {
     protected final MapServiceContext mapServiceContext;
     protected final Indexes indexes;
     protected final Extractors extractors;
-    protected final SizeEstimator nearCacheSizeEstimator;
+    protected final SizeEstimator<NearCacheRecord> nearCacheSizeEstimator;
     protected final PartitioningStrategy partitioningStrategy;
     protected final MapStoreContext mapStoreContext;
     protected final SerializationService serializationService;
@@ -226,7 +227,7 @@ public class MapContainer {
         return partitioningStrategy;
     }
 
-    public SizeEstimator getNearCacheSizeEstimator() {
+    public SizeEstimator<NearCacheRecord> getNearCacheSizeEstimator() {
         return nearCacheSizeEstimator;
     }
 

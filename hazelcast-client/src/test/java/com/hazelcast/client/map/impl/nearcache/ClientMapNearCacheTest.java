@@ -1258,6 +1258,14 @@ public class ClientMapNearCacheTest {
         assertNull(map.getAsync(1).get());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testNearCache_whenInMemoryFormatIsNative_thenThrowIllegalArgumentException() {
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        nearCacheConfig.setInMemoryFormat(InMemoryFormat.NATIVE);
+
+        getNearCachedMapFromClient(nearCacheConfig);
+    }
+
     protected void populateNearCache(IMap<Integer, Integer> map, int size) {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
