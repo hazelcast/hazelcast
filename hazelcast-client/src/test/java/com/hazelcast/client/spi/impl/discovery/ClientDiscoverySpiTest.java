@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressTranslator;
-import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;

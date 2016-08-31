@@ -6,14 +6,15 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
-import java.util.Arrays;
-import java.util.Iterator;
-import javax.cache.Cache;
-import javax.cache.CacheManager;
-import javax.cache.spi.CachingProvider;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.spi.CachingProvider;
+import java.util.Arrays;
+import java.util.Iterator;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;

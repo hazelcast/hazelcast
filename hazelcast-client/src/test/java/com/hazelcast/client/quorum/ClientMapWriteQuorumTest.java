@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.TestLoggingEntryProcessor;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
@@ -44,8 +45,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
-
-import com.hazelcast.map.TestLoggingEntryProcessor;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
