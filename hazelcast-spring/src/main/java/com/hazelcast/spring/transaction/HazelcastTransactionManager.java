@@ -26,6 +26,7 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.AbstractPlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.ResourceTransactionManager;
+import org.springframework.transaction.support.SmartTransactionObject;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
@@ -148,6 +149,12 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
     }
 
     @Override
+    protected void doSetRollbackOnly(DefaultTransactionStatus status) throws TransactionException {
+        HazelcastTransactionObject trx = (HazelcastTransactionObject) status.getTransaction();
+        trx.setRollbackOnly();
+    }
+
+    @Override
     protected void doRollback(DefaultTransactionStatus status) throws TransactionException {
         HazelcastTransactionObject txObject = (HazelcastTransactionObject) status.getTransaction();
         if (status.isDebug()) {
@@ -170,10 +177,11 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
         txObject.getTransactionContextHolder().clear();
     }
 
-    private static class HazelcastTransactionObject {
+    private static class HazelcastTransactionObject implements SmartTransactionObject {
 
         private TransactionContextHolder transactionContextHolder;
         private boolean newTransactionContextHolder;
+        private boolean rollbackOnly;
 
         public void setTransactionContextHolder(TransactionContextHolder transactionContextHolder,
                                                 boolean newTransactionContextHolder) {
@@ -191,6 +199,20 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
 
         public boolean hasTransaction() {
             return this.transactionContextHolder != null && this.transactionContextHolder.isTransactionActive();
+        }
+
+        public void setRollbackOnly() {
+            this.rollbackOnly = true;
+        }
+
+        @Override
+        public boolean isRollbackOnly() {
+            return rollbackOnly;
+        }
+
+        @Override
+        public void flush() {
+            // no-op
         }
     }
 }

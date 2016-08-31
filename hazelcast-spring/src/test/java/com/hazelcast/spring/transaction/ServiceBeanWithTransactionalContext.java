@@ -24,14 +24,28 @@ public class ServiceBeanWithTransactionalContext {
 
     public void putWithException(DummyObject object) {
         put(object);
-        throw new RuntimeException("oops, let's rollback!");
+        throw new DummyException("oops, let's rollback!");
     }
 
     public void putUsingOtherBean_sameTransaction(DummyObject object) {
         otherService.put(object);
     }
 
+    public void putUsingOtherBean_withExceptionInOtherBean_sameTransaction(DummyObject object,
+                                                                           DummyObject otherObject) {
+        put(object);
+        otherService.putWithException(otherObject);
+    }
+
+    public void putUsingOtherBean_withExceptionInThisBean_sameTransaction(DummyObject object,
+                                                                        DummyObject otherObject) {
+        otherService.put(otherObject);
+        putWithException(object);
+    }
+
     public void putUsingOtherBean_newTransaction(DummyObject object) {
         otherService.putInNewTransaction(object);
     }
+
+
 }

@@ -8,7 +8,9 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionalTaskContext;
+
 import org.junit.*;
+import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
@@ -25,11 +27,15 @@ public class TestSpringManagedHazelcastTransaction {
 
     @BeforeClass
     @AfterClass
-    public static void cleanup() {
+    public static void shutdownHazecast() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
+    @Before
+    public void clearHazecastData() {
+        instance.getMap("dummyObjectMap").clear();
+    }
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -87,15 +93,10 @@ public class TestSpringManagedHazelcastTransaction {
     @Test
     public void transactionalServiceBeanInvocation_rollback() {
         // when
-        RuntimeException expectedEx = null;
-
         try {
             service.putWithException(new DummyObject(1L, "magic"));
-        } catch (RuntimeException ex) {
-            expectedEx = ex;
-        } finally {
+        } catch (DummyException ex) {
             // then
-            Assert.assertNotNull(expectedEx);
             Assert.assertEquals(0L, instance.getMap("dummyObjectMap").size());
         }
     }
@@ -111,6 +112,42 @@ public class TestSpringManagedHazelcastTransaction {
 
         // then
         Assert.assertEquals(1L, instance.getMap("dummyObjectMap").size());
+    }
+
+    /**
+     * Tests that if propagation is set to {@link org.springframework.transaction.annotation.Propagation#REQUIRED REQUIRED},
+     * and exception happens in nested @Transactional code then all changes in nested and contained @Transactional blocks
+     * will be rolled back.
+     */
+    @Test
+    public void transactionalServiceBeanInvocation_nestedWithPropagationRequired_exceptionInNested() {
+        // when
+        try {
+            service.putUsingOtherBean_withExceptionInOtherBean_sameTransaction(
+                    new DummyObject(1L, "magic"),
+                    new DummyObject(2L, "magic2"));
+        } catch(DummyException e) {
+            // then
+            Assert.assertEquals(0L, instance.getMap("dummyObjectMap").size());
+        }
+    }
+
+    /**
+     * Tests that if propagation is set to {@link org.springframework.transaction.annotation.Propagation#REQUIRED REQUIRED},
+     * and exception happens in contained @Transactional code then all changes in nested and contained @Transactional blocks
+     * will be rolled back.
+     */
+    @Test
+    public void transactionalServiceBeanInvocation_nestedWithPropagationRequired_exceptionInContaining() {
+        // when
+        try {
+            service.putUsingOtherBean_withExceptionInThisBean_sameTransaction(
+                    new DummyObject(1L, "magic"),
+                    new DummyObject(2L, "magic2"));
+        } catch(DummyException e) {
+            // then
+            Assert.assertEquals(0L, instance.getMap("dummyObjectMap").size());
+        }
     }
 
     /**
