@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.internal.memory.impl.HeapMemoryManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;

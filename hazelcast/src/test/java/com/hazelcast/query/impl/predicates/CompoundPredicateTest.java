@@ -16,7 +16,9 @@ import org.reflections.util.ConfigurationBuilder;
 
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test all classes which implement CompoundStatement in package com.hazelcast.query.impl.predicates

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.memory.impl.HeapMemoryManager;
 import com.hazelcast.internal.util.collection.HsaHeapMemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
