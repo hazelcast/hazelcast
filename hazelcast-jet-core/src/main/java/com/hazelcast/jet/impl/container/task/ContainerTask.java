@@ -23,9 +23,9 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.executor.TaskContext;
 import com.hazelcast.jet.impl.actor.ComposedActor;
-import com.hazelcast.jet.impl.actor.ObjectActor;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Actor;
+import com.hazelcast.jet.impl.actor.Consumer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
@@ -79,8 +79,8 @@ public class ContainerTask extends Task {
     private final AtomicInteger activeProducersCounter = new AtomicInteger(0);
     private final AtomicInteger activeReceiversCounter = new AtomicInteger(0);
     private final AtomicInteger finalizedReceiversCounter = new AtomicInteger(0);
-    private final Collection<ObjectConsumer> consumers = new CopyOnWriteArrayList<>();
-    private final Collection<ObjectProducer> producers = new CopyOnWriteArrayList<>();
+    private final Collection<Consumer> consumers = new CopyOnWriteArrayList<>();
+    private final Collection<Producer> producers = new CopyOnWriteArrayList<>();
     private final Map<Address, ShufflingReceiver> shufflingReceivers = new ConcurrentHashMap<>();
     private final Map<Address, ShufflingSender> shufflingSenders = new ConcurrentHashMap<>();
     private final TaskContext taskContext;
@@ -120,9 +120,9 @@ public class ContainerTask extends Task {
      *
      * @param producers - list of the input producers
      */
-    public void start(List<? extends ObjectProducer> producers) {
+    public void start(List<? extends Producer> producers) {
         if (producers != null && !producers.isEmpty()) {
-            for (ObjectProducer producer : producers) {
+            for (Producer producer : producers) {
                 this.producers.add(producer);
                 producer.registerCompletionHandler(this::handleProducerCompleted);
             }
@@ -157,10 +157,10 @@ public class ContainerTask extends Task {
      * @return - composed actor with actors of channel
      */
     public ComposedActor registerOutputChannel(DataChannel channel, Edge edge, ProcessingContainer targetContainer) {
-        List<ObjectActor> actors = new ArrayList<ObjectActor>(targetContainer.getContainerTasks().length);
+        List<Actor> actors = new ArrayList<Actor>(targetContainer.getContainerTasks().length);
 
         for (int i = 0; i < targetContainer.getContainerTasks().length; i++) {
-            ObjectActor actor = new RingbufferActor(nodeEngine, jobContext, this, vertex, edge);
+            Actor actor = new RingbufferActor(nodeEngine, jobContext, this, vertex, edge);
 
             if (channel.isShuffled()) {
                 //output
@@ -180,7 +180,7 @@ public class ContainerTask extends Task {
      *
      * @param producer - finished input producer
      */
-    public void handleProducerCompleted(ObjectProducer producer) {
+    public void handleProducerCompleted(Producer producer) {
         activeProducersCounter.decrementAndGet();
     }
 
@@ -346,8 +346,8 @@ public class ContainerTask extends Task {
     }
 
     private void onStart() {
-        ObjectProducer[] producers = this.producers.toArray(new ObjectProducer[this.producers.size()]);
-        ObjectConsumer[] consumers = this.consumers.toArray(new ObjectConsumer[this.consumers.size()]);
+        Producer[] producers = this.producers.toArray(new Producer[this.producers.size()]);
+        Consumer[] consumers = this.consumers.toArray(new Consumer[this.consumers.size()]);
 
         taskProcessor = taskProcessorFactory.getTaskProcessor(
                 producers,

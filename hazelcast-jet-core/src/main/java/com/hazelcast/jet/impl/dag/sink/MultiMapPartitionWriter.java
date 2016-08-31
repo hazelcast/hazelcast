@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.dag.sink;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerContext;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -45,9 +45,9 @@ public class MultiMapPartitionWriter extends AbstractHazelcastWriter {
     }
 
     @Override
-    protected void processChunk(ProducerInputStream chunk) {
-        for (int i = 0; i < chunk.size(); i++) {
-            JetPair<Object, Object[]> pair = (JetPair) chunk.get(i);
+    protected void processChunk(InputChunk inputChunk) {
+        for (int i = 0; i < inputChunk.size(); i++) {
+            JetPair<Object, Object[]> pair = (JetPair) inputChunk.get(i);
             Data dataKey = pair.getComponentData(0, calculationStrategy, getNodeEngine().getSerializationService());
             Collection<MultiMapRecord> coll = container.getMultiMapValueOrNull(dataKey).getCollection(false);
             long recordId = container.nextId();

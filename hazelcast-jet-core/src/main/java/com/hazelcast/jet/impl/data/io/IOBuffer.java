@@ -16,17 +16,16 @@
 
 package com.hazelcast.jet.impl.data.io;
 
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.data.BufferAware;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class ObjectIOStream<T> implements ProducerInputStream<T>, ConsumerOutputStream<T>, BufferAware<T> {
+public class IOBuffer<T> implements InputChunk<T>, OutputCollector<T> {
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE;
     private final Iterator<T> iterator = new DataIterator();
     private final DataTransferringStrategy dataTransferringStrategy;
@@ -34,13 +33,13 @@ public class ObjectIOStream<T> implements ProducerInputStream<T>, ConsumerOutput
     private T[] buffer;
     private int currentIdx;
 
-    public ObjectIOStream(T[] buffer) {
+    public IOBuffer(T[] buffer) {
         this(buffer, ByReferenceDataTransferringStrategy.INSTANCE);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public ObjectIOStream(T[] buffer,
-                          DataTransferringStrategy dataTransferringStrategy) {
+    public IOBuffer(T[] buffer,
+                    DataTransferringStrategy dataTransferringStrategy) {
         this.buffer = buffer;
         this.dataTransferringStrategy = dataTransferringStrategy;
         initBuffer();
@@ -73,7 +72,7 @@ public class ObjectIOStream<T> implements ProducerInputStream<T>, ConsumerOutput
     }
 
     @Override
-    public boolean consume(T object) {
+    public void collect(T object) {
         if (this.buffer == null) {
             this.buffer = (T[]) new Object[1];
             initBuffer();
@@ -89,35 +88,32 @@ public class ObjectIOStream<T> implements ProducerInputStream<T>, ConsumerOutput
         } else {
             this.dataTransferringStrategy.copy(object, this.buffer[this.size++]);
         }
-
-        return true;
     }
 
     @Override
-    public void consumeChunk(T[] chunk, int actualSize) {
-        if (this.buffer.length < actualSize) {
-            expand(actualSize);
+    public void collect(T[] chunk, int size) {
+        if (this.buffer.length < size) {
+            expand(size);
         }
 
         if (this.dataTransferringStrategy.byReference()) {
-            System.arraycopy(chunk, 0, this.buffer, 0, actualSize);
+            System.arraycopy(chunk, 0, this.buffer, 0, size);
         } else {
-            for (int i = 0; i < actualSize; i++) {
+            for (int i = 0; i < size; i++) {
                 this.dataTransferringStrategy.copy(chunk[i], this.buffer[this.size++]);
             }
         }
 
-        this.size = actualSize;
+        this.size = size;
     }
 
     @Override
-    public void consumeStream(ProducerInputStream<T> inputStream) {
-        consumeChunk(((BufferAware<T>) inputStream).getBuffer(), inputStream.size());
+    public void collect(InputChunk<T> chunk) {
+        collect(((IOBuffer<T>) chunk).toArray(), chunk.size());
     }
 
-    @Override
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public T[] getBuffer() {
+    public T[] toArray() {
         return this.buffer;
     }
 

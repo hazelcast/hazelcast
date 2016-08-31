@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerContext;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractHazelcastReader<V> implements ObjectProducer {
+public abstract class AbstractHazelcastReader<V> implements Producer {
     protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
     protected final ContainerContext containerContext;

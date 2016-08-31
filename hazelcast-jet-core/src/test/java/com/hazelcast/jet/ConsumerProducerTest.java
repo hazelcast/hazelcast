@@ -25,7 +25,7 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.ListSink;
 import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
@@ -109,9 +109,9 @@ public class ConsumerProducerTest extends JetTestSupport {
     public static class FinalizingProcessor
             implements Processor<Pair<Integer, String>, Pair<Integer, String>> {
         @Override
-        public boolean complete(ConsumerOutputStream<Pair<Integer, String>> outputStream,
+        public boolean complete(OutputCollector<Pair<Integer, String>> output,
                                 ProcessorContext processorContext) throws Exception {
-            outputStream.consume(new JetPair<>(0, "empty"));
+            output.collect(new JetPair<>(0, "empty"));
             return true;
         }
     }

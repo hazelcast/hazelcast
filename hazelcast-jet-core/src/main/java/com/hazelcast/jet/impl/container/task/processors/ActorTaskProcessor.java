@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.container.task.processors;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.processor.Processor;
@@ -28,7 +28,7 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
 
     private final TaskProcessor consumerProcessor;
 
-    public ActorTaskProcessor(ObjectProducer[] producers,
+    public ActorTaskProcessor(Producer[] producers,
                               Processor processor,
                               ContainerContextImpl containerContext,
                               ProcessorContext processorContext,
@@ -38,14 +38,14 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
         this.consumerProcessor = consumerProcessor;
     }
 
-    public boolean onChunk(ProducerInputStream inputStream) throws Exception {
-        boolean success = this.consumerProcessor.onChunk(inputStream);
+    public boolean onChunk(InputChunk inputChunk) throws Exception {
+        boolean success = this.consumerProcessor.onChunk(inputChunk);
         this.consumed = this.consumerProcessor.consumed();
         return success;
     }
 
     public boolean process() throws Exception {
-        if (this.pairOutputStream.size() == 0) {
+        if (this.outputBuffer.size() == 0) {
             boolean result = super.process();
 
             if (!this.produced) {
@@ -54,11 +54,11 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
 
             return result;
         } else {
-            boolean success = onChunk(this.pairOutputStream);
+            boolean success = onChunk(this.outputBuffer);
 
             if (success) {
                 checkFinalization();
-                this.pairOutputStream.reset();
+                this.outputBuffer.reset();
             }
 
             return success;

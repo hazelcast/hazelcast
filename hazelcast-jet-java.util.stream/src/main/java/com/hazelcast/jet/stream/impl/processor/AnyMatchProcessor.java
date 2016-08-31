@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 
 import java.util.function.Function;
@@ -44,13 +44,13 @@ public class AnyMatchProcessor<T> extends AbstractStreamProcessor<T, Boolean> {
     }
 
     @Override
-    protected boolean process(ProducerInputStream<T> inputStream,
-                              ConsumerOutputStream<Boolean> outputStream) throws Exception {
+    protected boolean process(InputChunk<T> input,
+                              OutputCollector<Boolean> output) throws Exception {
         if (match) {
             return true;
         }
 
-        for (T t : inputStream) {
+        for (T t : input) {
             if (predicate.test(t)) {
                 match = true;
                 return true;
@@ -60,8 +60,8 @@ public class AnyMatchProcessor<T> extends AbstractStreamProcessor<T, Boolean> {
     }
 
     @Override
-    protected boolean finalize(ConsumerOutputStream<Boolean> outputStream, final int chunkSize) throws Exception {
-        outputStream.consume(match);
+    protected boolean finalize(OutputCollector<Boolean> output, final int chunkSize) throws Exception {
+        output.collect(match);
         return true;
     }
 }

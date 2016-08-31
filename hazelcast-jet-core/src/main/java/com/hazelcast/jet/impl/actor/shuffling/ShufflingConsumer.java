@@ -18,31 +18,31 @@ package com.hazelcast.jet.impl.actor.shuffling;
 
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class ShufflingConsumer implements ObjectConsumer {
-    private final ObjectConsumer baseConsumer;
+public class ShufflingConsumer implements Consumer {
+    private final Consumer baseConsumer;
     private final NodeEngineImpl nodeEngine;
 
-    public ShufflingConsumer(ObjectConsumer baseConsumer,
+    public ShufflingConsumer(Consumer baseConsumer,
                              NodeEngine nodeEngine) {
         this.baseConsumer = baseConsumer;
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) {
-        return this.baseConsumer.consumeChunk(chunk);
+    public int consume(InputChunk<Object> chunk) {
+        return this.baseConsumer.consume(chunk);
     }
 
     @Override
-    public int consumeObject(Object object) {
-        return this.baseConsumer.consumeObject(object);
+    public int consume(Object object) {
+        return this.baseConsumer.consume(object);
     }
 
     @Override

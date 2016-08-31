@@ -22,8 +22,8 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.source.MapSource;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -149,7 +149,7 @@ public class InterruptionTest extends JetTestSupport {
         private static final String ERROR_MESSAGE = "exception";
 
         @Override
-        public boolean process(ProducerInputStream inputStream, ConsumerOutputStream outputStream, String sourceName, ProcessorContext processorContext) throws Exception {
+        public boolean process(InputChunk input, OutputCollector output, String sourceName, ProcessorContext context) throws Exception {
             throw new Exception(ERROR_MESSAGE);
         }
     }
@@ -160,9 +160,9 @@ public class InterruptionTest extends JetTestSupport {
         private boolean started;
 
         @Override
-        public boolean process(ProducerInputStream inputStream,
-                               ConsumerOutputStream outputStream,
-                               String sourceName, ProcessorContext processorContext) throws Exception {
+        public boolean process(InputChunk input,
+                               OutputCollector output,
+                               String sourceName, ProcessorContext context) throws Exception {
             if (!started) {
                 latch.countDown();
                 started = true;

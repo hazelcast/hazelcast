@@ -19,13 +19,13 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.SerializationOptimizer;
@@ -36,14 +36,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class ShufflingReceiver implements ObjectProducer {
+public class ShufflingReceiver implements Producer {
 
     private final ObjectDataInput in;
     private final ContainerContextImpl containerContext;
     private final List<ProducerCompletionHandler> handlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
     private final ChunkedInputStream chunkReceiver;
     private final RingbufferActor ringbufferActor;
-    private final ObjectIOStream<JetPacket> packetBuffers;
+    private final IOBuffer<JetPacket> packetBuffers;
     private final SerializationOptimizer optimizer;
 
     private Object[] dataChunkBuffer;
@@ -65,7 +65,7 @@ public class ShufflingReceiver implements ObjectProducer {
         int chunkSize = jobConfig.getChunkSize();
         this.ringbufferActor = new RingbufferActor(nodeEngine, containerContext.getJobContext(), containerTask,
                 containerContext.getVertex());
-        this.packetBuffers = new ObjectIOStream<>(new JetPacket[chunkSize]);
+        this.packetBuffers = new IOBuffer<>(new JetPacket[chunkSize]);
         this.chunkReceiver = new ChunkedInputStream(this.packetBuffers);
         this.in = new ObjectDataInputStream(chunkReceiver,
                 (InternalSerializationService) nodeEngine.getSerializationService());
@@ -88,7 +88,7 @@ public class ShufflingReceiver implements ObjectProducer {
     }
 
     public boolean consume(JetPacket packet) {
-        ringbufferActor.consumeObject(packet);
+        ringbufferActor.consume(packet);
         return true;
     }
 
@@ -126,7 +126,7 @@ public class ShufflingReceiver implements ObjectProducer {
             } else if (packet.getHeader() == JetPacket.HEADER_JET_SHUFFLER_CLOSED) {
                 finalized = true;
             } else {
-                packetBuffers.consume(packet);
+                packetBuffers.collect(packet);
             }
         }
         reset();

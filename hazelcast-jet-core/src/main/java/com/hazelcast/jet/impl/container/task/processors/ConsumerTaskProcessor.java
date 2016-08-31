@@ -19,11 +19,11 @@ package com.hazelcast.jet.impl.container.task.processors;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.processor.Processor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -31,11 +31,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ConsumerTaskProcessor implements TaskProcessor {
     protected static final Object[] DUMMY_CHUNK = new Object[0];
-    protected final ObjectConsumer[] consumers;
+    protected final Consumer[] consumers;
     protected final Processor processor;
     protected final ContainerContextImpl containerContext;
-    protected final ObjectIOStream pairInputStream;
-    protected final ObjectIOStream pairOutputStream;
+    protected final IOBuffer inputBuffer;
+    protected final IOBuffer outputBuffer;
     protected boolean producersWriteFinished;
     protected final ProcessorContext processorContext;
     protected final ConsumersProcessor consumersProcessor;
@@ -45,7 +45,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected boolean finalizationStarted;
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public ConsumerTaskProcessor(ObjectConsumer[] consumers,
+    public ConsumerTaskProcessor(Consumer[] consumers,
                                  Processor processor,
                                  ContainerContextImpl containerContext,
                                  ProcessorContext processorContext) {
@@ -59,10 +59,10 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         this.processorContext = processorContext;
         this.containerContext = containerContext;
         this.consumersProcessor = new ConsumersProcessor(consumers);
-        this.pairInputStream = new ObjectIOStream<Object>(DUMMY_CHUNK);
+        this.inputBuffer = new IOBuffer<Object>(DUMMY_CHUNK);
         JobConfig jobConfig = containerContext.getConfig();
-        int pairChunkSize = jobConfig.getChunkSize();
-        this.pairOutputStream = new ObjectIOStream<Object>(new Object[pairChunkSize]);
+        int chunkSize = jobConfig.getChunkSize();
+        this.outputBuffer = new IOBuffer<Object>(new Object[chunkSize]);
         reset();
     }
 
@@ -78,19 +78,19 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public boolean process() throws Exception {
-        if (pairOutputStream.size() > 0) {
+        if (outputBuffer.size() > 0) {
             return consumeChunkAndResetOutputIfSuccess();
         } else {
             if (finalizationStarted) {
-                finalizationFinished = processor.complete(pairOutputStream, processorContext);
+                finalizationFinished = processor.complete(outputBuffer, processorContext);
             } else {
                 if (producersWriteFinished) {
                     return true;
                 }
-                processor.process(pairInputStream, pairOutputStream, null, processorContext);
+                processor.process(inputBuffer, outputBuffer, null, processorContext);
             }
 
-            if (pairOutputStream.size() > 0) {
+            if (outputBuffer.size() > 0) {
                 return consumeChunkAndResetOutputIfSuccess();
             } else {
                 checkFinalization();
@@ -102,10 +102,10 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     @SuppressWarnings("unchecked")
     private boolean consumeChunkAndResetOutputIfSuccess() throws Exception {
-        boolean success = onChunk(pairOutputStream);
+        boolean success = onChunk(outputBuffer);
 
         if (success) {
-            pairOutputStream.reset();
+            outputBuffer.reset();
             checkFinalization();
         }
 
@@ -113,11 +113,11 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean onChunk(ProducerInputStream<Object> inputStream) throws Exception {
+    public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
         this.consumed = false;
 
-        if (inputStream.size() > 0) {
-            boolean success = consumersProcessor.process(inputStream);
+        if (inputChunk.size() > 0) {
+            boolean success = consumersProcessor.process(inputChunk);
             boolean consumed = consumersProcessor.isConsumed();
 
             if (success) {
@@ -152,12 +152,12 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     private void resetConsumers() {
         consumed = false;
-        pairOutputStream.reset();
+        outputBuffer.reset();
         consumersProcessor.reset();
     }
 
     public void onOpen() {
-        for (ObjectConsumer consumer : consumers) {
+        for (Consumer consumer : consumers) {
             consumer.open();
         }
         reset();
@@ -166,7 +166,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     @Override
     public void onClose() {
         reset();
-        for (ObjectConsumer consumer : consumers) {
+        for (Consumer consumer : consumers) {
             if (!consumer.isShuffled()) {
                 consumer.close();
             }

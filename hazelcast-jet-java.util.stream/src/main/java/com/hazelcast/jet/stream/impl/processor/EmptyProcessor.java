@@ -17,17 +17,17 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.Processor;
 
 public class EmptyProcessor implements Processor<Pair, Pair> {
 
     @Override
-    public boolean process(ProducerInputStream<Pair> inputStream, ConsumerOutputStream<Pair> outputStream,
-                           String sourceName, ProcessorContext processorContext) throws Exception {
-        outputStream.consumeStream(inputStream);
+    public boolean process(InputChunk<Pair> input, OutputCollector<Pair> output,
+                           String sourceName, ProcessorContext context) throws Exception {
+        output.collect(input);
         return true;
     }
 }

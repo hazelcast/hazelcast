@@ -17,28 +17,27 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 
 /**
  * This is an abstract interface for each consumer in the system
- * which consumes pair
+ * which consumes
  */
-
-public interface ObjectConsumer {
+public interface Consumer {
 
     /**
-     * @param chunk - chunk of Pairs to consume
+     * @param chunk chunk of objects to consume
      * @return really consumed amount of pairs
      */
-    int consumeChunk(ProducerInputStream<Object> chunk);
+    int consume(InputChunk<Object> chunk);
 
     /**
-     * @param object - object to consume
+     * @param object object to consume
      * @return 1 if pair was consumed , 0 otherwise
      */
-    int consumeObject(Object object);
+    int consume(Object object);
 
     /**
      * @return true if consumer supports shuffling, false otherwise

@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet.impl.actor.ringbuffer;
 
-import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.Ringbuffer;
-import com.hazelcast.jet.impl.data.BufferAware;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -113,7 +112,7 @@ public final class RingbufferWithValueStrategy<T> extends RingBufferFieldsByValu
     }
 
     @Override
-    public void commit(ProducerInputStream<T> chunk, int consumed) {
+    public void commit(IOBuffer<T> chunk, int consumed) {
         long writerSequencerValue = this.writeSequencer.getValue();
         long availableSequencerValue = this.availableSequencer.getValue();
 
@@ -121,7 +120,7 @@ public final class RingbufferWithValueStrategy<T> extends RingBufferFieldsByValu
         int count = (int) (writerSequencerValue - availableSequencerValue);
         int window = entries.length - BUFFER_PAD - entriesStart;
 
-        T[] buffer = ((BufferAware<T>) chunk).getBuffer();
+        T[] buffer = chunk.toArray();
 
         if (count <= window) {
             for (int i = 0; i < count; i++) {

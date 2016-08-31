@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.container.task.processors.shuffling;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Consumer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
@@ -26,7 +26,7 @@ import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.ActorTaskProcessor;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.nio.Address;
@@ -34,15 +34,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
-    private final ObjectProducer[] receivers;
-    private final ObjectIOStream<Object> receivedPairStream;
+    private final Producer[] receivers;
+    private final IOBuffer<Object> receiveBuffer;
     private final TaskProcessor receiverConsumerProcessor;
     private int nextReceiverIdx;
     private boolean receiversClosed;
     private boolean receiversProduced;
 
-    public ShuffledActorTaskProcessor(ObjectProducer[] producers,
-                                      ObjectConsumer[] consumers,
+    public ShuffledActorTaskProcessor(Producer[] producers,
+                                      Consumer[] consumers,
                                       Processor processor,
                                       ContainerContextImpl containerContext,
                                       ProcessorContext processorContext,
@@ -51,7 +51,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
                                       int taskID) {
         super(producers, processor, containerContext, processorContext, senderConsumerProcessor, taskID);
         this.receiverConsumerProcessor = receiverConsumerProcessor;
-        List<ObjectProducer> receivers = new ArrayList<ObjectProducer>();
+        List<Producer> receivers = new ArrayList<Producer>();
         JobManager jobManager = containerContext.getJobContext().getJobManager();
         ProcessingContainer processingContainer = jobManager.getContainerByVertex(containerContext.getVertex());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
@@ -64,15 +64,15 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         }
 
         int chunkSize = containerContext.getJobContext().getJobConfig().getChunkSize();
-        this.receivedPairStream = new ObjectIOStream<Object>(new Object[chunkSize]);
-        this.receivers = receivers.toArray(new ObjectProducer[receivers.size()]);
+        this.receiveBuffer = new IOBuffer<Object>(new Object[chunkSize]);
+        this.receivers = receivers.toArray(new Producer[receivers.size()]);
     }
 
     @Override
     public void onOpen() {
         super.onOpen();
 
-        for (ObjectProducer receiver : this.receivers) {
+        for (Producer receiver : this.receivers) {
             receiver.open();
         }
     }
@@ -85,18 +85,18 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
 
     @Override
     public boolean process() throws Exception {
-        if (this.receivedPairStream.size() > 0) {
+        if (this.receiveBuffer.size() > 0) {
             produced = false;
             receiversProduced = false;
 
-            boolean success = this.receiverConsumerProcessor.onChunk(this.receivedPairStream);
+            boolean success = this.receiverConsumerProcessor.onChunk(this.receiveBuffer);
 
             if (success) {
-                this.receivedPairStream.reset();
+                this.receiveBuffer.reset();
             }
 
             return success;
-        } else if (this.pairOutputStream.size() > 0) {
+        } else if (this.outputBuffer.size() > 0) {
             return super.process();
         } else {
             boolean success;
@@ -105,7 +105,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
                 success = processReceivers();
 
                 if (success) {
-                    this.receivedPairStream.reset();
+                    this.receiveBuffer.reset();
                 }
             } else {
                 receiversProduced = false;
@@ -133,14 +133,14 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         for (int i = startFrom; i < this.receivers.length; i++) {
             lastIdx = i;
 
-            ObjectProducer receiver = this.receivers[i];
+            Producer receiver = this.receivers[i];
             Object[] outChunk = receiver.produce();
 
             if (!JetUtil.isEmpty(outChunk)) {
                 produced = true;
-                this.receivedPairStream.consumeChunk(outChunk, receiver.lastProducedCount());
+                this.receiveBuffer.collect(outChunk, receiver.lastProducedCount());
 
-                if (!this.receiverConsumerProcessor.onChunk(this.receivedPairStream)) {
+                if (!this.receiverConsumerProcessor.onChunk(this.receiveBuffer)) {
                     this.nextReceiverIdx = (lastIdx + 1) % this.receivers.length;
                     this.receiversProduced = true;
                     return false;

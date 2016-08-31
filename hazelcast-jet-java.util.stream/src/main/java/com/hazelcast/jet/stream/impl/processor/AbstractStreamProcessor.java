@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.Processor;
 import com.hazelcast.logging.ILogger;
@@ -30,14 +30,14 @@ abstract class AbstractStreamProcessor<IN, OUT> implements Processor<Pair, Pair>
 
     protected ILogger logger;
 
-    private final MappingProducerInputStream mappinginputStream;
-    private final MappingConsumerOutputStream mappingOutputStream;
+    private final MappingInputChunk mappingInput;
+    private final MappingOutputCollector mappingOutput;
 
     public AbstractStreamProcessor(Function<Pair, IN> inputMapper,
                                    Function<OUT, Pair> outputMapper) {
 
-        this.mappinginputStream = new MappingProducerInputStream(inputMapper);
-        this.mappingOutputStream = new MappingConsumerOutputStream(outputMapper);
+        this.mappingInput = new MappingInputChunk(inputMapper);
+        this.mappingOutput = new MappingOutputCollector(outputMapper);
     }
 
     @Override
@@ -49,53 +49,53 @@ abstract class AbstractStreamProcessor<IN, OUT> implements Processor<Pair, Pair>
     }
 
     @Override
-    public boolean process(ProducerInputStream<Pair> inputStream, ConsumerOutputStream<Pair> outputStream,
-                           String sourceName, ProcessorContext processorContext) throws Exception {
-        mappinginputStream.setInputStream(inputStream);
-        mappingOutputStream.setOutputStream(outputStream);
-        return process(mappinginputStream, mappingOutputStream);
+    public boolean process(InputChunk<Pair> input, OutputCollector<Pair> output,
+                           String sourceName, ProcessorContext context) throws Exception {
+        mappingInput.setInput(input);
+        mappingOutput.setOutput(output);
+        return process(mappingInput, mappingOutput);
     }
 
     @Override
-    public boolean complete(ConsumerOutputStream<Pair> outputStream,
+    public boolean complete(OutputCollector<Pair> output,
                             ProcessorContext processorContext) throws Exception {
-        mappingOutputStream.setOutputStream(outputStream);
-        return finalize(mappingOutputStream, processorContext.getConfig().getChunkSize());
+        mappingOutput.setOutput(output);
+        return finalize(mappingOutput, processorContext.getConfig().getChunkSize());
     }
 
-    protected abstract boolean process(ProducerInputStream<IN> inputStream,
-                                       ConsumerOutputStream<OUT> outputStream) throws Exception;
+    protected abstract boolean process(InputChunk<IN> input,
+                                       OutputCollector<OUT> output) throws Exception;
 
-    protected boolean finalize(ConsumerOutputStream<OUT> outputStream, final int chunkSize) throws Exception {
+    protected boolean finalize(OutputCollector<OUT> outputCollectorStream, final int chunkSize) throws Exception {
         return true;
     }
 
-    public class MappingProducerInputStream implements ProducerInputStream<IN> {
+    public class MappingInputChunk implements InputChunk<IN> {
 
-        private ProducerInputStream<Pair> inputStream;
+        private InputChunk<Pair> input;
         private final Function<Pair, IN> inputMapper;
 
-        public MappingProducerInputStream(Function<Pair, IN> inputMapper) {
+        public MappingInputChunk(Function<Pair, IN> inputMapper) {
             this.inputMapper = inputMapper;
         }
 
-        private void setInputStream(ProducerInputStream<Pair> inputStream) {
-            this.inputStream = inputStream;
+        private void setInput(InputChunk<Pair> input) {
+            this.input = input;
         }
 
         @Override
         public IN get(int idx) {
-            return inputMapper.apply(inputStream.get(idx));
+            return inputMapper.apply(input.get(idx));
         }
 
         @Override
         public int size() {
-            return inputStream.size();
+            return input.size();
         }
 
         @Override
         public Iterator<IN> iterator() {
-            Iterator<Pair> iterator = inputStream.iterator();
+            Iterator<Pair> iterator = input.iterator();
 
             return new Iterator<IN>() {
                 @Override
@@ -111,34 +111,34 @@ abstract class AbstractStreamProcessor<IN, OUT> implements Processor<Pair, Pair>
         }
     }
 
-    public class MappingConsumerOutputStream implements ConsumerOutputStream<OUT> {
+    public class MappingOutputCollector implements OutputCollector<OUT> {
 
-        private ConsumerOutputStream<Pair> outputStream;
+        private OutputCollector<Pair> outputCollector;
         private final Function<OUT, Pair> outputMapper;
 
-        public MappingConsumerOutputStream(Function<OUT, Pair> outputMapper) {
+        public MappingOutputCollector(Function<OUT, Pair> outputMapper) {
             this.outputMapper = outputMapper;
         }
 
-        private void setOutputStream(ConsumerOutputStream<Pair> outputStream) {
-            this.outputStream = outputStream;
+        private void setOutput(OutputCollector<Pair> outputCollector) {
+            this.outputCollector = outputCollector;
         }
 
         @Override
-        public void consumeStream(ProducerInputStream<OUT> inputStream) {
-            for (OUT out : inputStream) {
-                outputStream.consume(outputMapper.apply(out));
+        public void collect(InputChunk<OUT> chunk) {
+            for (OUT out : chunk) {
+                outputCollector.collect(outputMapper.apply(out));
             }
         }
 
         @Override
-        public void consumeChunk(OUT[] chunk, int actualSize) {
+        public void collect(OUT[] chunk, int size) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean consume(OUT object) {
-            return outputStream.consume(outputMapper.apply(object));
+        public void collect(OUT object) {
+            outputCollector.collect(outputMapper.apply(object));
         }
     }
 }

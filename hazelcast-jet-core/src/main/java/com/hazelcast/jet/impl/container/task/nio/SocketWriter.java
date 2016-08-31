@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
@@ -201,7 +201,7 @@ public class SocketWriter
             boolean activeProducer = false;
 
             for (int i = startFrom; i < producers.size(); i++) {
-                ObjectProducer producer = producers.get(i);
+                Producer producer = producers.get(i);
 
                 currentFrames = producer.produce();
 

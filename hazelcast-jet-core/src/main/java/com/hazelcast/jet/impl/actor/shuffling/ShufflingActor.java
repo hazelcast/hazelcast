@@ -17,23 +17,23 @@
 package com.hazelcast.jet.impl.actor.shuffling;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.ObjectActor;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.actor.Actor;
+import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.spi.NodeEngine;
 
-public class ShufflingActor extends ShufflingProducer implements ObjectActor {
-    private final ObjectActor baseActor;
-    private final ObjectConsumer objectConsumer;
+public class ShufflingActor extends ShufflingProducer implements Actor {
+    private final Actor baseActor;
+    private final Consumer consumer;
 
-    public ShufflingActor(ObjectActor baseActor,
+    public ShufflingActor(Actor baseActor,
                           NodeEngine nodeEngine) {
         super(baseActor);
         this.baseActor = baseActor;
-        this.objectConsumer = new ShufflingConsumer(baseActor, nodeEngine);
+        this.consumer = new ShufflingConsumer(baseActor, nodeEngine);
     }
 
     @Override
@@ -42,18 +42,18 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) {
-        return this.objectConsumer.consumeChunk(chunk);
+    public int consume(InputChunk<Object> chunk) {
+        return this.consumer.consume(chunk);
     }
 
     @Override
-    public int consumeObject(Object object) {
-        return this.objectConsumer.consumeObject(object);
+    public int consume(Object object) {
+        return this.consumer.consume(object);
     }
 
     @Override
     public boolean isShuffled() {
-        return this.objectConsumer.isShuffled();
+        return this.consumer.isShuffled();
     }
 
     @Override
@@ -63,31 +63,31 @@ public class ShufflingActor extends ShufflingProducer implements ObjectActor {
 
     @Override
     public int flush() {
-        return this.objectConsumer.flush();
+        return this.consumer.flush();
     }
 
     @Override
     public boolean isFlushed() {
-        return this.objectConsumer.isFlushed();
+        return this.consumer.isFlushed();
     }
 
     @Override
     public int lastConsumedCount() {
-        return objectConsumer.lastConsumedCount();
+        return consumer.lastConsumedCount();
     }
 
     public MemberDistributionStrategy getMemberDistributionStrategy() {
-        return this.objectConsumer.getMemberDistributionStrategy();
+        return this.consumer.getMemberDistributionStrategy();
     }
 
     @Override
     public PartitioningStrategy getPartitionStrategy() {
-        return objectConsumer.getPartitionStrategy();
+        return consumer.getPartitionStrategy();
     }
 
     @Override
     public HashingStrategy getHashingStrategy() {
-        return objectConsumer.getHashingStrategy();
+        return consumer.getHashingStrategy();
     }
 
 }

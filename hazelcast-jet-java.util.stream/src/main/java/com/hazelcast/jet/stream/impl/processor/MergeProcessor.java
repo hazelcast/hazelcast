@@ -17,9 +17,9 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.Processor;
 
@@ -39,43 +39,43 @@ public class MergeProcessor<K, V> implements Processor<Pair<K, V>, Pair<K, V>> {
     }
 
     @Override
-    public boolean process(ProducerInputStream<Pair<K, V>> inputStream,
-                           ConsumerOutputStream<Pair<K, V>> outputStream,
-                           String sourceName, ProcessorContext processorContext) throws Exception {
-        for (Pair<K, V> input : inputStream) {
-            V value = this.cache.get(input.getKey());
+    public boolean process(InputChunk<Pair<K, V>> inputChunk,
+                           OutputCollector<Pair<K, V>> output,
+                           String sourceName, ProcessorContext context) throws Exception {
+        for (Pair<K, V> input : inputChunk) {
+            V value = cache.get(input.getKey());
             if (value == null) {
-                this.cache.put(input.getKey(), input.getValue());
+                cache.put(input.getKey(), input.getValue());
             } else {
-                this.cache.put(input.getKey(), this.merger.apply(value, input.getValue()));
+                cache.put(input.getKey(), merger.apply(value, input.getValue()));
             }
         }
         return true;
     }
 
     @Override
-    public boolean complete(ConsumerOutputStream<Pair<K, V>> outputStream,
+    public boolean complete(OutputCollector<Pair<K, V>> output,
                             ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
         try {
             if (finalizationIterator == null) {
-                this.finalizationIterator = this.cache.entrySet().iterator();
+                finalizationIterator = cache.entrySet().iterator();
             }
 
             int idx = 0;
             while (this.finalizationIterator.hasNext()) {
-                Map.Entry<K, V> next = this.finalizationIterator.next();
-                outputStream.consume(new JetPair<>(next.getKey(), next.getValue()));
+                Map.Entry<K, V> next = finalizationIterator.next();
+                output.collect(new JetPair<>(next.getKey(), next.getValue()));
                 if (idx == processorContext.getConfig().getChunkSize() - 1) {
                     break;
                 }
                 idx++;
             }
-            finalized = !this.finalizationIterator.hasNext();
+            finalized = !finalizationIterator.hasNext();
         } finally {
             if (finalized) {
-                this.finalizationIterator = null;
-                this.cache.clear();
+                finalizationIterator = null;
+                cache.clear();
             }
         }
         return finalized;

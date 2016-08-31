@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.actor;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -31,11 +31,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class ComposedActor implements ObjectActor {
+public class ComposedActor implements Actor {
     private final Edge edge;
     private final Vertex vertex;
     private final ContainerTask task;
-    private final ObjectActor[] consumers;
+    private final Actor[] consumers;
     private final RoutingStrategy routingStrategy;
     private final CalculationStrategy calculationStrategy;
 
@@ -44,7 +44,7 @@ public class ComposedActor implements ObjectActor {
 
     public ComposedActor(
             ContainerTask task,
-            List<ObjectActor> actors,
+            List<Actor> actors,
             Vertex vertex,
             Edge edge,
             ContainerContextImpl containerContext) {
@@ -52,7 +52,7 @@ public class ComposedActor implements ObjectActor {
         this.task = task;
         this.vertex = vertex;
         this.routingStrategy = edge.getRoutingStrategy();
-        this.consumers = actors.toArray(new ObjectActor[actors.size()]);
+        this.consumers = actors.toArray(new Actor[actors.size()]);
         this.calculationStrategy = new CalculationStrategy(
                 edge.getHashingStrategy(),
                 edge.getPartitioningStrategy(),
@@ -67,14 +67,14 @@ public class ComposedActor implements ObjectActor {
 
     @Override
     public void registerCompletionHandler(ProducerCompletionHandler runnable) {
-        for (ObjectActor actor : this.consumers) {
+        for (Actor actor : this.consumers) {
             actor.registerCompletionHandler(runnable);
         }
     }
 
     @Override
     public void handleProducerCompleted() {
-        for (ObjectActor actor : this.consumers) {
+        for (Actor actor : this.consumers) {
             actor.handleProducerCompleted();
         }
     }
@@ -85,35 +85,35 @@ public class ComposedActor implements ObjectActor {
     }
 
     @Override
-    public int consumeObject(Object object) {
+    public int consume(Object object) {
         if (this.routingStrategy == RoutingStrategy.ROUND_ROBIN) {
-            this.consumers[nextActorId].consumeObject(object);
+            this.consumers[nextActorId].consume(object);
             next();
         } else if (this.routingStrategy == RoutingStrategy.BROADCAST) {
-            for (ObjectActor actor : this.consumers) {
-                actor.consumeObject(object);
+            for (Actor actor : this.consumers) {
+                actor.consume(object);
             }
         } else if (this.routingStrategy == RoutingStrategy.PARTITIONED) {
             int objectPartitionId = calculatePartitionIndex(object);
             int idx = Math.abs(objectPartitionId) % this.consumers.length;
-            this.consumers[idx].consumeObject(object);
+            this.consumers[idx].consume(object);
         }
 
         return 1;
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) {
+    public int consume(InputChunk<Object> chunk) {
         if (this.routingStrategy == RoutingStrategy.ROUND_ROBIN) {
-            this.consumers[nextActorId].consumeChunk(chunk);
+            this.consumers[nextActorId].consume(chunk);
             next();
         } else if (this.routingStrategy == RoutingStrategy.BROADCAST) {
-            for (ObjectActor actor : this.consumers) {
-                actor.consumeChunk(chunk);
+            for (Actor actor : this.consumers) {
+                actor.consume(chunk);
             }
         } else if (this.routingStrategy == RoutingStrategy.PARTITIONED) {
             for (Object object : chunk) {
-                consumeObject(object);
+                consume(object);
             }
         }
 
@@ -138,7 +138,7 @@ public class ComposedActor implements ObjectActor {
     public int flush() {
         int flushed = 0;
 
-        for (ObjectActor actor : this.consumers) {
+        for (Actor actor : this.consumers) {
             flushed += actor.flush();
         }
 
@@ -149,7 +149,7 @@ public class ComposedActor implements ObjectActor {
     public boolean isFlushed() {
         boolean isFlushed = true;
 
-        for (ObjectActor actor : this.consumers) {
+        for (Actor actor : this.consumers) {
             isFlushed &= actor.isFlushed();
         }
 
@@ -174,7 +174,7 @@ public class ComposedActor implements ObjectActor {
     public boolean isShuffled() {
         boolean isShuffled = true;
 
-        for (ObjectActor actor : this.consumers) {
+        for (Actor actor : this.consumers) {
             isShuffled &= actor.isShuffled();
         }
 
@@ -190,7 +190,7 @@ public class ComposedActor implements ObjectActor {
     public boolean isClosed() {
         boolean isClosed = true;
 
-        for (ObjectActor actor : this.consumers) {
+        for (Actor actor : this.consumers) {
             isClosed &= actor.isClosed();
         }
 
@@ -199,14 +199,14 @@ public class ComposedActor implements ObjectActor {
 
     @Override
     public void open() {
-        for (ObjectActor actor : this.consumers) {
+        for (Actor actor : this.consumers) {
             actor.open();
         }
     }
 
     @Override
     public void close() {
-        for (ObjectActor actor : this.consumers) {
+        for (Actor actor : this.consumers) {
             actor.close();
         }
     }
@@ -224,7 +224,7 @@ public class ComposedActor implements ObjectActor {
     /**
          * @return parties of the composed actor
          */
-    public ObjectActor[] getParties() {
+    public Actor[] getParties() {
         return this.consumers;
     }
 }

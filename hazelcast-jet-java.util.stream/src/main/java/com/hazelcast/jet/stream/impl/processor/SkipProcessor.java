@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 
 import java.util.function.Function;
@@ -39,11 +39,11 @@ public class SkipProcessor<T> extends AbstractStreamProcessor<T, T> {
     }
 
     @Override
-    protected boolean process(ProducerInputStream<T> inputStream,
-                              ConsumerOutputStream<T> outputStream) throws Exception {
-        for (T input : inputStream) {
+    protected boolean process(InputChunk<T> inputChunk,
+                              OutputCollector<T> output) throws Exception {
+        for (T input : inputChunk) {
             if (index >= skip) {
-                outputStream.consume(input);
+                output.collect(input);
             } else {
                 index++;
             }

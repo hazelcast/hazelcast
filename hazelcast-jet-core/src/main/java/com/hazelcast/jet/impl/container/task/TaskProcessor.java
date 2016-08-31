@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.container.task;
 
 
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
 
 /**
  * Processor to execute inside task
@@ -41,11 +41,11 @@ public interface TaskProcessor {
     /**
      * Invoked on reading of next chunk;
      *
-     * @param inputStream - next chunk of data;
+     * @param inputChunk - next chunk of data;
      * @return true - if last processing execution was success, false otherwise;
      * @throws Exception if any exception
      */
-    boolean onChunk(ProducerInputStream<Object> inputStream) throws Exception;
+    boolean onChunk(InputChunk<Object> inputChunk) throws Exception;
 
     /**
      * Indicates of some data were produced after last invocation

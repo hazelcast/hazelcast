@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 public class RoutingStrategyTest extends JetTestSupport {
 
-    private static final int NODE_COUNT = 3;
+    private static final int NODE_COUNT = 1;
     private static final int COUNT = 10_000;
     private static HazelcastInstance instance;
 

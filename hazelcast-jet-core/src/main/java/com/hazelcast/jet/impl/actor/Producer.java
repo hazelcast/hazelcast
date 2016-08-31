@@ -20,7 +20,7 @@ package com.hazelcast.jet.impl.actor;
  * This is an abstract interface for each producer in the system
  * which produce data objects
  */
-public interface ObjectProducer {
+public interface Producer {
     /**
      * @return last produced object's count
      */
