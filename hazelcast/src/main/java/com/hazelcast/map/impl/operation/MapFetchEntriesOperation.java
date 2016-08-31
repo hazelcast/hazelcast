@@ -20,6 +20,7 @@ import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ReadonlyOperation;
+
 import java.io.IOException;
 
 public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOperation {

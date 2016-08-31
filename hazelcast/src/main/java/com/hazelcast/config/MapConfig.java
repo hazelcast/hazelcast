@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.eviction.LRUEvictionPolicy;
+import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.eviction.RandomEvictionPolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.partition.IPartition;

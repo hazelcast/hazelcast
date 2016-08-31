@@ -30,10 +30,10 @@ import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.impl.DataAwareMessage;
 import com.hazelcast.topic.impl.TopicService;
 
-import static com.hazelcast.util.HashUtil.hashToIndex;
-
 import java.security.Permission;
 import java.util.Random;
+
+import static com.hazelcast.util.HashUtil.hashToIndex;
 
 public class TopicAddMessageListenerMessageTask
         extends AbstractCallableMessageTask<TopicAddMessageListenerCodec.RequestParameters>

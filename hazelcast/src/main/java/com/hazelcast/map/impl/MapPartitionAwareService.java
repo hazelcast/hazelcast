@@ -21,8 +21,8 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareService;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 import java.util.Collection;
 
