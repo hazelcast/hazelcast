@@ -101,6 +101,9 @@ public final class FactoryIdHelper {
     public static final String PREDICATE_DS_FACTORY = "hazelcast.serialization.ds.predicate";
     public static final int PREDICATE_DS_FACTORY_ID = -32;
 
+    public static final String HLL_DS_FACTORY = "hazelcast.serialization.ds.hll";
+    public static final int HLL_DS_FACTORY_ID = -33;
+
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";

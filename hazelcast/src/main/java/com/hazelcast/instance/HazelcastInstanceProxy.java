@@ -21,6 +21,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.ICardinalityEstimator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IAtomicLong;
@@ -271,6 +272,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public HazelcastXAResource getXAResource() {
         return getOriginal().getXAResource();
+    }
+
+    @Override
+    public ICardinalityEstimator getHyperLogLog(String name) {
+        return getOriginal().getHyperLogLog(name);
     }
 
     @Override

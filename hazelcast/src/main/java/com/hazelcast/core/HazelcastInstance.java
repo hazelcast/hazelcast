@@ -416,6 +416,8 @@ public interface HazelcastInstance {
      */
     ICacheManager getCacheManager();
 
+    ICardinalityEstimator getHyperLogLog(String name);
+
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.
      */
