@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.executor;
 
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.ArrayList;
 import java.util.List;
 

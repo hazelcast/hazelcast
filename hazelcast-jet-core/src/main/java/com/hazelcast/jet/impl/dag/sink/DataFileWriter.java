@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.dag.sink;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
@@ -27,10 +27,10 @@ public class DataFileWriter extends AbstractHazelcastWriter {
 
     private boolean closed = true;
 
-    public DataFileWriter(ContainerContext containerContext, int partitionID, FileOutputStream fileOutputStream) {
-        super(containerContext, partitionID);
+    public DataFileWriter(JobContext jobContext, int partitionID, FileOutputStream fileOutputStream) {
+        super(jobContext, partitionID);
         this.fileOutputStream = fileOutputStream;
-        containerContext.registerJobListener(jobContext -> closeFile());
+        jobContext.registerJobListener(jc -> closeFile());
     }
 
     @Override

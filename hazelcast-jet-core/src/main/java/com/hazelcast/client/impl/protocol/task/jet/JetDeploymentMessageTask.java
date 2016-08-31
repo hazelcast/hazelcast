@@ -20,8 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetDeploymentCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.job.deployment.Chunk;
-import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.operation.DeployChunkOperation;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
 
 public class JetDeploymentMessageTask extends JetMessageTask<JetDeploymentCodec.RequestParameters> {

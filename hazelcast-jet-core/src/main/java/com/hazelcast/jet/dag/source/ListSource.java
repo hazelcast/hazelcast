@@ -17,10 +17,10 @@
 package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.dag.source.ListPartitionReader;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 
 /**
@@ -49,12 +49,12 @@ public class ListSource implements Source {
     }
 
     @Override
-    public Producer[] getProducers(ContainerContext containerContext, Vertex vertex) {
-        int partitionId = ListPartitionReader.getPartitionId(containerContext.getNodeEngine(), this.name);
-        if (JetUtil.isPartitionLocal(containerContext.getNodeEngine(), partitionId)) {
+    public Producer[] getProducers(JobContext jobContext, Vertex vertex) {
+        int partitionId = ListPartitionReader.getPartitionId(jobContext.getNodeEngine(), this.name);
+        if (JetUtil.isPartitionLocal(jobContext.getNodeEngine(), partitionId)) {
             ListPartitionReader reader =
-                    new ListPartitionReader(containerContext, name);
-            return new Producer[] {reader};
+                    new ListPartitionReader(jobContext, name);
+            return new Producer[]{reader};
         }
         return new Producer[0];
     }

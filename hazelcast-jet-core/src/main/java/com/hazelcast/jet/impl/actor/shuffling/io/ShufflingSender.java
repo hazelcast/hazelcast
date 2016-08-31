@@ -21,23 +21,23 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
-import com.hazelcast.jet.impl.container.ContainerContextImpl;
-import com.hazelcast.jet.impl.container.task.ContainerTask;
+import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.dag.sink.AbstractHazelcastWriter;
 import com.hazelcast.jet.impl.data.io.JetPacket;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-
 import java.io.IOException;
 
 public class ShufflingSender extends AbstractHazelcastWriter {
+    private final int vertexManagerId;
     private final int taskID;
     private final Address address;
 
-    private final int containerID;
     private final byte[] jobNameBytes;
     private final RingbufferActor ringbufferActor;
     private final ChunkedOutputStream serializer;
@@ -45,18 +45,18 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     private final SerializationOptimizer optimizer;
     private volatile boolean closed;
 
-    public ShufflingSender(ContainerContextImpl containerContext, int taskID, ContainerTask containerTask, Address address) {
-        super(containerContext, -1);
-        this.taskID = taskID;
+    public ShufflingSender(JobContext jobContext, ProcessorContext processorContext, int vertexManagerId,
+                           int taskId, VertexTask vertexTask, Address address) {
+        super(jobContext, -1);
+        this.vertexManagerId = vertexManagerId;
+        this.taskID = taskId;
         this.address = address;
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
-        this.containerID = containerContext.getID();
-        String jobName = containerContext.getJobContext().getName();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
+        String jobName = jobContext.getName();
         this.jobNameBytes = ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(jobName);
-        this.ringbufferActor = new RingbufferActor(nodeEngine, containerContext.getJobContext(), containerTask,
-                containerContext.getVertex());
-        this.serializer = new ChunkedOutputStream(this.ringbufferActor, containerContext, taskID);
-        this.optimizer = containerTask.getTaskContext().getSerializationOptimizer();
+        this.ringbufferActor = new RingbufferActor(nodeEngine, jobContext, vertexTask, processorContext.getVertex());
+        this.serializer = new ChunkedOutputStream(this.ringbufferActor, jobContext, vertexManagerId, taskId);
+        this.optimizer = vertexTask.getTaskContext().getSerializationOptimizer();
         this.dataOutputStream = new ObjectDataOutputStream(
                 this.serializer, (InternalSerializationService) nodeEngine.getSerializationService());
     }
@@ -72,7 +72,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
             throw JetUtil.reThrow(e);
         }
         serializer.flushSender();
-        JetPacket packet = new JetPacket(taskID, containerID, jobNameBytes);
+        JetPacket packet = new JetPacket(taskID, vertexManagerId, jobNameBytes);
         packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK_SENT);
         ringbufferActor.consume(packet);
         return chunk.size();
@@ -148,7 +148,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     public void close() {
         if (!closed) {
             try {
-                JetPacket packet = new JetPacket(taskID, containerID, jobNameBytes);
+                JetPacket packet = new JetPacket(taskID, vertexManagerId, jobNameBytes);
                 packet.setHeader(JetPacket.HEADER_JET_SHUFFLER_CLOSED);
                 writePacket(packet);
             } finally {

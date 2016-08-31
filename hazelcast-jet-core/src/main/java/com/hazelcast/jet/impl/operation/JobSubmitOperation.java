@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionPlanBuilderRequest;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionPlanReadyRequest;
@@ -53,13 +53,13 @@ public class JobSubmitOperation extends AsyncJetOperation {
         JobManager jobManager = jobContext.getJobManager();
 
         ICompletableFuture<JobManagerResponse> builderFuture =
-                jobManager.handleContainerRequest(new ExecutionPlanBuilderRequest(this.dag));
+                jobManager.handleRequest(new ExecutionPlanBuilderRequest(this.dag));
 
-        builderFuture.andThen(new ContainerRequestCallback(this, "Unable to submit DAG", () -> {
+        builderFuture.andThen(new JobManagerRequestCallback(this, "Unable to submit DAG", () -> {
             ICompletableFuture<JobManagerResponse> readyFuture
-                    = jobManager.handleContainerRequest(new ExecutionPlanReadyRequest());
+                    = jobManager.handleRequest(new ExecutionPlanReadyRequest());
 
-            readyFuture.andThen(new ContainerRequestCallback(JobSubmitOperation.this,
+            readyFuture.andThen(new JobManagerRequestCallback(JobSubmitOperation.this,
                     "Unable to submit DAG", () -> {
                 jobManager.setDag(dag);
                 sendResponse(true);

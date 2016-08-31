@@ -19,12 +19,12 @@ package com.hazelcast.jet.impl.job;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.CombinedJetException;
+import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.job.deployment.ChunkIterator;
-import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -76,8 +76,8 @@ public abstract class JobClusterService<Payload> {
     /**
      * Performs deployment operation
      *
-     * @param resources classpath resources
-     * @param jobStateMachine    manager to work with job state-machine
+     * @param resources       classpath resources
+     * @param jobStateMachine manager to work with job state-machine
      */
     public void deploy(Set<DeploymentConfig> resources, JobStateMachine jobStateMachine) {
         new OperationExecutor(

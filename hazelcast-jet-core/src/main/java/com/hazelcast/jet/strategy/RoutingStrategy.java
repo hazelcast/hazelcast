@@ -33,7 +33,7 @@ public enum RoutingStrategy implements Serializable {
     /**
      * The output of the producer will be partitioned and the partitions will be allocated
      * between consumers, with the same consumer always receiving the same partitions.
-     *
+     * <p>
      * {@see HashingStrategy},
      * {@see com.hazelcast.core.PartitioningStrategy}
      */

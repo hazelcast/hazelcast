@@ -18,19 +18,19 @@ package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
-import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.ExecutorContext;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecuteRequest;
+import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerExecuteRequest;
 import com.hazelcast.logging.ILogger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class ExecuteJobProcessor implements ContainerPayloadProcessor<Dummy> {
+public class ExecuteJobProcessor implements VertexRunnerPayloadProcessor<Dummy> {
     private final long secondsToAwait;
     private final ExecutorContext executorContext;
     private final JobManager jobManager;
@@ -49,7 +49,7 @@ public class ExecuteJobProcessor implements ContainerPayloadProcessor<Dummy> {
     public void process(Dummy payload) throws Exception {
         jobManager.registerExecution();
 
-        startContainers();
+        startRunners();
 
         List<Task> networkTasks = jobContext.getExecutorContext().getNetworkTasks();
         List<Task> processingTasks = jobContext.getExecutorContext().getProcessingTasks();
@@ -76,13 +76,13 @@ public class ExecuteJobProcessor implements ContainerPayloadProcessor<Dummy> {
         }
     }
 
-    private void startContainers() throws Exception {
+    private void startRunners() throws Exception {
         Iterator<Vertex> iterator = jobManager.getDag().getRevertedTopologicalVertexIterator();
 
         while (iterator.hasNext()) {
             Vertex vertex = iterator.next();
-            ProcessingContainer processingContainer = jobManager.getContainerByVertex(vertex);
-            processingContainer.handleContainerRequest(new ContainerExecuteRequest()).get(secondsToAwait, TimeUnit.SECONDS);
+            VertexRunner vertexRunner = jobManager.getRunnerByVertex(vertex);
+            vertexRunner.handleRequest(new VertexRunnerExecuteRequest()).get(secondsToAwait, TimeUnit.SECONDS);
         }
     }
 }

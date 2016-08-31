@@ -27,7 +27,7 @@ public class JobStateMachineRequest implements StateMachineRequest<JobEvent, Dum
     }
 
     @Override
-    public JobEvent getContainerEvent() {
+    public JobEvent getEvent() {
         return this.event;
     }
 

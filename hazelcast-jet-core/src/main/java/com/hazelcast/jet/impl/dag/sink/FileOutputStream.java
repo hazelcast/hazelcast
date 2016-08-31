@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.dag.sink;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.JetUtil;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;

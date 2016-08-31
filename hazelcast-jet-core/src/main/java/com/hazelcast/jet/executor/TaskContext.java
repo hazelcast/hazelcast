@@ -18,7 +18,6 @@ package com.hazelcast.jet.executor;
 
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.io.SerializationOptimizer;
-
 import java.io.Serializable;
 
 /**
@@ -26,12 +25,12 @@ import java.io.Serializable;
  */
 public interface TaskContext {
     /**
-     * @return general number of task in the current container
+     * @return general number of task in the current vertex runner
      */
     int getTaskCount();
 
     /**
-     * @return number of the current task inside the container
+     * @return number of the current task inside the vertex runner
      */
     int getTaskNumber();
 

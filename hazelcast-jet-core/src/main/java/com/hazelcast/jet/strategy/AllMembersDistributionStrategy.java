@@ -17,8 +17,7 @@
 package com.hazelcast.jet.strategy;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.container.ContainerContext;
-
+import com.hazelcast.jet.impl.job.JobContext;
 import java.util.Set;
 
 /**
@@ -35,7 +34,7 @@ public final class AllMembersDistributionStrategy implements MemberDistributionS
     }
 
     @Override
-    public Set<Member> getTargetMembers(ContainerContext containerContext) {
-        return containerContext.getNodeEngine().getClusterService().getMembers();
+    public Set<Member> getTargetMembers(JobContext jobContext) {
+        return jobContext.getNodeEngine().getClusterService().getMembers();
     }
 }

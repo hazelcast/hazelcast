@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.strategy;
 
-import com.hazelcast.jet.container.ContainerContext;
-
+import com.hazelcast.jet.impl.job.JobContext;
 import java.io.Serializable;
 
 /**
@@ -30,7 +29,8 @@ public interface HashingStrategy<O, K> extends Serializable {
 
     /**
      * Calculate the hash for a given object and partition key
+     *
      * @return calculated 32-bit hash value
      */
-    int hash(O object, K partitionKey, ContainerContext containerContext);
+    int hash(O object, K partitionKey, JobContext jobContext);
 }

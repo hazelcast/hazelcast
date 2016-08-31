@@ -26,7 +26,7 @@ import java.io.Serializable;
  * <p>
  * <pre>
  *     JET-job;
- *     JET-container;
+ *     JET-vertex runner;
  *     JET-job-manager;
  * </pre>
  */

@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.data.pair;
 
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.spi.serialization.SerializationService;
-
 import java.util.Iterator;
 
 public class JetPairIterator<R> implements Iterator<JetPair> {

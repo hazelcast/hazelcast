@@ -22,9 +22,9 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
-import com.hazelcast.jet.impl.container.task.nio.SocketThreadAcceptor;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
+import com.hazelcast.jet.impl.runtime.task.nio.SocketThreadAcceptor;
 import com.hazelcast.jet.impl.executor.BalancedExecutor;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.FinalizeJobRequest;
@@ -117,12 +117,12 @@ public class JobService implements RemoteService {
             throw new JetException("No job with name " + objectName + " found.");
         }
         JobManager jobManager = jobContext.getJobManager();
-        ICompletableFuture<JobManagerResponse> future = jobManager.handleContainerRequest(new FinalizeJobRequest());
+        ICompletableFuture<JobManagerResponse> future = jobManager.handleRequest(new FinalizeJobRequest());
         JobManagerResponse response = uncheckedGet(future);
         if (response.isSuccess()) {
             jobContext.getDeploymentStorage().cleanup();
             jobContext.getExecutorContext().getJobStateMachineExecutor().shutdown();
-            jobContext.getExecutorContext().getDataContainerStateMachineExecutor().shutdown();
+            jobContext.getExecutorContext().getVertexManagerStateMachineExecutor().shutdown();
             jobContext.getExecutorContext().getJobManagerStateMachineExecutor().shutdown();
             jobContextMap.remove(objectName);
         } else {

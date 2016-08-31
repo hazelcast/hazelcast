@@ -18,7 +18,7 @@ package com.hazelcast.jet.strategy;
 
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.container.ContainerContext;
+import com.hazelcast.jet.impl.job.JobContext;
 
 /**
  * Default calculation strategy implementation;
@@ -32,7 +32,7 @@ import com.hazelcast.jet.container.ContainerContext;
 public class CalculationStrategy {
 
     private final HashingStrategy hashingStrategy;
-    private final ContainerContext containerContext;
+    private final JobContext jobContext;
     private final PartitioningStrategy partitioningStrategy;
 
     /**
@@ -41,10 +41,10 @@ public class CalculationStrategy {
     public CalculationStrategy(
             HashingStrategy hashingStrategy,
             PartitioningStrategy partitioningStrategy,
-            ContainerContext containerContext
+            JobContext jobContext
     ) {
         this.hashingStrategy = hashingStrategy;
-        this.containerContext = containerContext;
+        this.jobContext = jobContext;
         this.partitioningStrategy = partitioningStrategy;
     }
 
@@ -71,7 +71,7 @@ public class CalculationStrategy {
     @SuppressWarnings("unchecked")
     public int hash(Object object) {
         final Object partitionKey = partitioningStrategy.getPartitionKey(object);
-        return hashingStrategy.hash(object, partitionKey, containerContext);
+        return hashingStrategy.hash(object, partitionKey, jobContext);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class CalculationStrategy {
         if (!hashingStrategy.equals(that.hashingStrategy)) {
             return false;
         }
-        if (!containerContext.equals(that.containerContext)) {
+        if (!jobContext.equals(that.jobContext)) {
             return false;
         }
         return partitioningStrategy.equals(that.partitioningStrategy);
@@ -98,7 +98,7 @@ public class CalculationStrategy {
     @Override
     public int hashCode() {
         int result = hashingStrategy.hashCode();
-        result = 31 * result + containerContext.hashCode();
+        result = 31 * result + jobContext.hashCode();
         result = 31 * result + partitioningStrategy.hashCode();
         return result;
     }

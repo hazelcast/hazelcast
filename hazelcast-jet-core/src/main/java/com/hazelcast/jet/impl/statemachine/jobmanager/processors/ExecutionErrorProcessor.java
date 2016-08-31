@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
-import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
-import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.logging.ILogger;
 
-public class ExecutionErrorProcessor implements ContainerPayloadProcessor<Throwable> {
+public class ExecutionErrorProcessor implements VertexRunnerPayloadProcessor<Throwable> {
 
     private final JobManager jobManager;
     private final ILogger logger;
 
     public ExecutionErrorProcessor(JobManager jobManager) {
-        logger = jobManager.getNodeEngine().getLogger(getClass());
+        logger = jobManager.getJobContext().getNodeEngine().getLogger(getClass());
         this.jobManager = jobManager;
     }
 
@@ -37,8 +37,8 @@ public class ExecutionErrorProcessor implements ContainerPayloadProcessor<Throwa
             logger.severe(error.getMessage(), error);
         }
 
-        for (ProcessingContainer container : jobManager.containers()) {
-            container.interrupt(error);
+        for (VertexRunner runner : jobManager.runners()) {
+            runner.interrupt(error);
         }
     }
 }

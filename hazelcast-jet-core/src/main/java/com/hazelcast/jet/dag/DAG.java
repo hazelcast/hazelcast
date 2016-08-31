@@ -35,15 +35,15 @@ import java.util.Stack;
 
 /**
  * Direct acyclic graph representation
- *
+ * <p>
  * DAG describes topology of calculation flow
- *
+ * <p>
  * <pre>
  *
  *     Vertex1 -&gt; Vertex2  -&gt; Vertex3
  *                            -&gt; Vertex4
  * </pre>
- *
+ * <p>
  * Data will be passed from vertex to vertex
  */
 public class DAG implements DataSerializable {
@@ -141,9 +141,9 @@ public class DAG implements DataSerializable {
 
     /**
      * Validate DAG's consistency
-     *
+     * <p>
      * It checks:
-     *
+     * <p>
      * <pre>
      *        duplicate of vertices names
      *        duplicate of edges names

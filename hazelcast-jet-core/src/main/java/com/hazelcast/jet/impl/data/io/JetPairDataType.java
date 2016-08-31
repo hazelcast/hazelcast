@@ -21,7 +21,6 @@ import com.hazelcast.jet.io.DataType;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
 import java.io.IOException;
 
 public final class JetPairDataType implements DataType {

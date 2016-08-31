@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.actor;
 
-import com.hazelcast.jet.impl.container.task.ContainerTask;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
 
 /**
  * This is an abstract interface for each actor in the system which
@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.container.task.ContainerTask;
  */
 public interface Actor extends Producer, Consumer {
     /**
-     * @return container's task it belongs to
+     * @return vertex task it belongs to
      */
-    ContainerTask getSourceTask();
+    VertexTask getSourceTask();
 }

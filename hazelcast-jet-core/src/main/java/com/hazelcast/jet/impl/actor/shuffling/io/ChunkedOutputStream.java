@@ -19,8 +19,8 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
-import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.data.io.JetPacket;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.spi.NodeEngine;
 import java.io.IOException;
@@ -33,20 +33,20 @@ public class ChunkedOutputStream extends OutputStream {
     private int bufferSize;
     private final int taskID;
     private final byte[] buffer;
-    private final int containerID;
+    private final int vertexManagerId;
     private final int shufflingBytesSize;
     private final byte[] jobNameBytyes;
     private final RingbufferActor ringbufferActor;
 
-    public ChunkedOutputStream(RingbufferActor ringbufferActor, ContainerContextImpl containerContext, int taskID) {
-        this.taskID = taskID;
+    public ChunkedOutputStream(RingbufferActor ringbufferActor, JobContext jobContext, int vertexManagerId, int taskId) {
+        this.taskID = taskId;
         this.ringbufferActor = ringbufferActor;
-        this.shufflingBytesSize = containerContext.getJobContext().getJobConfig().getShufflingBatchSizeBytes();
+        this.shufflingBytesSize = jobContext.getJobConfig().getShufflingBatchSizeBytes();
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
-        String jobName = containerContext.getJobContext().getName();
-        NodeEngine nodeEngine = containerContext.getJobContext().getNodeEngine();
+        String jobName = jobContext.getName();
+        NodeEngine nodeEngine = jobContext.getNodeEngine();
         this.jobNameBytyes = ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(jobName);
-        this.containerID = containerContext.getID();
+        this.vertexManagerId = vertexManagerId;
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ChunkedOutputStream extends OutputStream {
 
                 JetPacket packet = new JetPacket(
                         taskID,
-                        containerID,
+                        vertexManagerId,
                         jobNameBytyes,
                         buffer
                 );

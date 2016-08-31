@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.JobExecuteOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
+import com.hazelcast.jet.impl.operation.JobExecuteOperation;
 import com.hazelcast.nio.Connection;
 
 public class JetExecuteMessageTask

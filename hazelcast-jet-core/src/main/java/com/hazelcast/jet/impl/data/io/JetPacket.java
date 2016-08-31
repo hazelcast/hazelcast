@@ -40,7 +40,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     public static final int HEADER_JET_DATA_CHUNK_SENT = 11;
     public static final int HEADER_JET_SHUFFLER_CLOSED = 12;
     public static final int HEADER_JET_DATA_NO_APP_FAILURE = 13;
-    public static final int HEADER_JET_DATA_NO_CONTAINER_FAILURE = 14;
+    public static final int HEADER_JET_DATA_NO_VERTEX_RUNNER_FAILURE = 14;
     public static final int HEADER_JET_DATA_NO_TASK_FAILURE = 15;
     public static final int HEADER_JET_DATA_NO_MEMBER_FAILURE = 16;
     public static final int HEADER_JET_CHUNK_WRONG_CHUNK_FAILURE = 17;
@@ -55,7 +55,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     private static final short PERSIST_VALUE = 5;
     private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
     private static final short PERSIST_TASK_ID = 10;
-    private static final short PERSIST_CONTAINER = 11;
+    private static final short PERSIST_VERTEX_RUNNER = 11;
     private static final short PERSIST_APPLICATION_SIZE = 12;
     private static final short PERSIST_APPLICATION = 13;
     protected short header;
@@ -65,8 +65,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     private int size;
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
     private short persistStatus;
-    private int taskID;
-    private int containerId;
+    private int taskId;
+    private int vertexRunnerId;
     private Address remoteMember;
     private byte[] jobNameBytes;
 
@@ -85,30 +85,30 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public JetPacket(int containerId,
+    public JetPacket(int vertexRunnerId,
                      byte[] jobNameBytes
     ) {
-        this(-1, containerId, jobNameBytes, null);
+        this(-1, vertexRunnerId, jobNameBytes, null);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public JetPacket(int taskID,
-                     int containerId,
+    public JetPacket(int taskId,
+                     int vertexRunnerId,
                      byte[] jobNameBytes
     ) {
-        this(taskID, containerId, jobNameBytes, null);
+        this(taskId, vertexRunnerId, jobNameBytes, null);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public JetPacket(int taskID,
-                     int containerId,
+    public JetPacket(int taskId,
+                     int vertexRunnerId,
                      byte[] jobNameBytes,
                      byte[] payload
     ) {
         this(payload, -1);
 
-        this.taskID = taskID;
-        this.containerId = containerId;
+        this.taskId = taskId;
+        this.vertexRunnerId = vertexRunnerId;
         this.jobNameBytes = jobNameBytes;
     }
 
@@ -148,7 +148,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
             return false;
         }
 
-        if (!writeContainer(destination)) {
+        if (!writeVertexRunner(destination)) {
             return false;
         }
 
@@ -203,7 +203,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
             return false;
         }
 
-        if (!readContainer(source)) {
+        if (!readVertexRunner(source)) {
             return false;
         }
 
@@ -227,7 +227,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
                 return false;
             }
 
-            destination.putInt(this.taskID);
+            destination.putInt(this.taskId);
             setPersistStatus(PERSIST_TASK_ID);
         }
         return true;
@@ -239,35 +239,35 @@ public final class JetPacket extends HeapData implements OutboundFrame {
             if (source.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
-            this.taskID = source.getInt();
+            this.taskId = source.getInt();
             setPersistStatus(PERSIST_TASK_ID);
         }
         return true;
     }
 
-    private boolean writeContainer(ByteBuffer destination) {
-        if (!isPersistStatusSet(PERSIST_CONTAINER)) {
+    private boolean writeVertexRunner(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_VERTEX_RUNNER)) {
             if (destination.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
 
-            destination.putInt(this.containerId);
-            setPersistStatus(PERSIST_CONTAINER);
+            destination.putInt(this.vertexRunnerId);
+            setPersistStatus(PERSIST_VERTEX_RUNNER);
         }
 
         return true;
     }
 
-    // ========================= container =================================================
+    // ========================= vertex runner =================================================
 
-    private boolean readContainer(ByteBuffer source) {
-        if (!isPersistStatusSet(PERSIST_CONTAINER)) {
+    private boolean readVertexRunner(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_VERTEX_RUNNER)) {
             if (source.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
 
-            this.containerId = source.getInt();
-            setPersistStatus(PERSIST_CONTAINER);
+            this.vertexRunnerId = source.getInt();
+            setPersistStatus(PERSIST_VERTEX_RUNNER);
         }
 
         return true;
@@ -345,12 +345,12 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return true;
     }
 
-    public int getTaskID() {
-        return this.taskID;
+    public int getTaskId() {
+        return this.taskId;
     }
 
-    public int getContainerId() {
-        return this.containerId;
+    public int getVertexRunnerId() {
+        return this.vertexRunnerId;
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -520,8 +520,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     public String toString() {
         final StringBuilder sb = new StringBuilder("JetPacket{").append("header=").
                 append(header).
-                append(", containerId=").append(this.containerId).
-                append(", taskID=").append(this.taskID).
+                append(", vertexRunnerId=").append(this.vertexRunnerId).
+                append(", taskId=").append(this.taskId).
                 append('}');
 
         return sb.toString();
@@ -579,10 +579,10 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         if (persistStatus != jetPacket.persistStatus) {
             return false;
         }
-        if (taskID != jetPacket.taskID) {
+        if (taskId != jetPacket.taskId) {
             return false;
         }
-        if (containerId != jetPacket.containerId) {
+        if (vertexRunnerId != jetPacket.vertexRunnerId) {
             return false;
         }
         if (remoteMember != null ? !remoteMember.equals(jetPacket.remoteMember) : jetPacket.remoteMember != null) {
@@ -600,8 +600,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         result = 31 * result + valueOffset;
         result = 31 * result + size;
         result = 31 * result + (int) persistStatus;
-        result = 31 * result + taskID;
-        result = 31 * result + containerId;
+        result = 31 * result + taskId;
+        result = 31 * result + vertexRunnerId;
         result = 31 * result + (remoteMember != null ? remoteMember.hashCode() : 0);
         result = 31 * result + (jobNameBytes != null ? Arrays.hashCode(jobNameBytes) : 0);
         return result;

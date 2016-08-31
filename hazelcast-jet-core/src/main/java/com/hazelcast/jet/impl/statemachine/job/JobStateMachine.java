@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.impl.statemachine.job;
 
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
-import com.hazelcast.spi.NodeEngine;
-
 import java.util.Map;
 
 public class JobStateMachine
@@ -143,13 +141,12 @@ public class JobStateMachine
 
     public JobStateMachine(String name,
                            StateMachineRequestProcessor<JobEvent> processor,
-                           NodeEngine nodeEngine,
                            JobContext jobContext) {
-        super(name, STATE_TRANSITION_MATRIX, processor, nodeEngine, jobContext);
+        super(name, STATE_TRANSITION_MATRIX, processor, jobContext);
     }
 
     public JobStateMachine(String name) {
-        super(name, STATE_TRANSITION_MATRIX, null, null, null);
+        super(name, STATE_TRANSITION_MATRIX, null, null);
     }
 
     @Override

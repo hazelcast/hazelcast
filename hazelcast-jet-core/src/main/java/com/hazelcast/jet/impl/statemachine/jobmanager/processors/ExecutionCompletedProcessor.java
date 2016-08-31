@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 
-public class ExecutionCompletedProcessor implements ContainerPayloadProcessor<Dummy> {
+public class ExecutionCompletedProcessor implements VertexRunnerPayloadProcessor<Dummy> {
     @Override
     public void process(Dummy payload) throws Exception {
 

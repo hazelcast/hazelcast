@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
-import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
+import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
 public class ExecutionErrorRequest implements StateMachineRequest<JobManagerEvent, Throwable> {
@@ -27,7 +27,7 @@ public class ExecutionErrorRequest implements StateMachineRequest<JobManagerEven
     }
 
     @Override
-    public JobManagerEvent getContainerEvent() {
+    public JobManagerEvent getEvent() {
         return JobManagerEvent.EXECUTION_ERROR;
     }
 

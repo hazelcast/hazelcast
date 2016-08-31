@@ -16,10 +16,8 @@
 
 package com.hazelcast.jet.processor;
 
-import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.io.OutputCollector;
-
 import java.io.Serializable;
 
 /**

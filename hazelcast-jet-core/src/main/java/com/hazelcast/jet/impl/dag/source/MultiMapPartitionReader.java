@@ -16,22 +16,18 @@
 
 package com.hazelcast.jet.impl.dag.source;
 
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.pair.JetPairConverter;
 import com.hazelcast.jet.impl.data.pair.JetPairIterator;
-import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
-import com.hazelcast.jet.strategy.CalculationStrategy;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -40,7 +36,6 @@ import java.util.Map.Entry;
 
 
 public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
-    private final CalculationStrategy calculationStrategy;
     private final JetPairConverter<Entry<Data, MultiMapValue>> pairConverter =
             new JetPairConverter<Entry<Data, MultiMapValue>>() {
                 @Override
@@ -61,11 +56,8 @@ public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
                 }
             };
 
-    public MultiMapPartitionReader(ContainerContext containerContext, String name, int partitionId) {
-        super(containerContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
-        this.calculationStrategy = new CalculationStrategy(
-                SerializedHashingStrategy.INSTANCE, StringAndPartitionAwarePartitioningStrategy.INSTANCE,
-                containerContext);
+    public MultiMapPartitionReader(JobContext jobContext, String name, int partitionId) {
+        super(jobContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
     }
 
     @Override

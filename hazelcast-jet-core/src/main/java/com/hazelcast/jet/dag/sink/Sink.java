@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet.dag.sink;
 
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.jet.impl.job.JobContext;
 import java.io.Serializable;
 
 /**
@@ -28,12 +27,9 @@ public interface Sink extends Serializable {
     /**
      * Return writers for the corresponding
      *
-     * @param nodeEngine          Hazelcast nodeEngine
-     * @param containerContext descriptor of the container
      * @return list of the data writers
      */
-    DataWriter[] getWriters(NodeEngine nodeEngine,
-                            ContainerContext containerContext);
+    DataWriter[] getWriters(JobContext jobContext);
 
     /**
      * Returns <tt>true</tt>if sink is partitioned.

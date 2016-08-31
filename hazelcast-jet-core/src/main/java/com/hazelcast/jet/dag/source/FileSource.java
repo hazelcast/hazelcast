@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.dag.source;
 
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.dag.source.DataFileReader;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
-
 import java.io.File;
 
 /**
@@ -41,7 +40,7 @@ public class FileSource implements Source {
     }
 
     @Override
-    public Producer[] getProducers(ContainerContext containerContext, Vertex vertex) {
+    public Producer[] getProducers(JobContext jobContext, Vertex vertex) {
         File file = new File(this.name);
         int chunkCount = vertex.getParallelism();
         long[] chunks = JetUtil.splitFile(file, chunkCount);
@@ -55,8 +54,8 @@ public class FileSource implements Source {
 
             long end = i < chunkCount - 1 ? chunks[i + 1] : file.length();
 
-            int partitionId = i % containerContext.getNodeEngine().getPartitionService().getPartitionCount();
-            readers[i] = new DataFileReader(containerContext, partitionId, name, start, end);
+            int partitionId = i % jobContext.getNodeEngine().getPartitionService().getPartitionCount();
+            readers[i] = new DataFileReader(jobContext, partitionId, name, start, end);
         }
         return readers;
     }

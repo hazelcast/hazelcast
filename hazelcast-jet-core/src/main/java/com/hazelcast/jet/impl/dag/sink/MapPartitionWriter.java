@@ -19,9 +19,9 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.map.impl.MapContainer;
@@ -38,9 +38,9 @@ public class MapPartitionWriter extends AbstractHazelcastWriter {
     private final RecordStore recordStore;
     private final CalculationStrategy calculationStrategy;
 
-    public MapPartitionWriter(ContainerContext containerContext, int partitionId, String name) {
-        super(containerContext, partitionId);
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
+    public MapPartitionWriter(JobContext jobContext, int partitionId, String name) {
+        super(jobContext, partitionId);
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
 
@@ -52,7 +52,7 @@ public class MapPartitionWriter extends AbstractHazelcastWriter {
             partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         }
         this.calculationStrategy = new CalculationStrategy(SerializedHashingStrategy.INSTANCE,
-                partitioningStrategy, containerContext);
+                partitioningStrategy, jobContext);
     }
 
     @Override

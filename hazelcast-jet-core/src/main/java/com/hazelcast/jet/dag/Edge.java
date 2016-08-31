@@ -22,7 +22,6 @@ import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.jet.strategy.RoutingStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-
 import java.io.Serializable;
 
 /**
@@ -56,26 +55,26 @@ public class Edge implements Serializable {
     /**
      * Creates an edge between two vertices.
      *
-     * @param name        name of the edge
-     * @param from        the origin vertex
-     * @param to          the destination vertex
-     * @param isLocal     sets if the edge is local
+     * @param name    name of the edge
+     * @param from    the origin vertex
+     * @param to      the destination vertex
+     * @param isLocal sets if the edge is local
      */
     Edge(String name,
-                Vertex from,
-                Vertex to,
-                boolean isLocal) {
+         Vertex from,
+         Vertex to,
+         boolean isLocal) {
         this(name, from, to, isLocal, null, null, null, null);
     }
 
     Edge(String name,
-                Vertex from,
-                Vertex to,
-                boolean isLocal,
-                MemberDistributionStrategy memberDistributionStrategy,
-                RoutingStrategy routingStrategy,
-                PartitioningStrategy partitioningStrategy,
-                HashingStrategy hashingStrategy) {
+         Vertex from,
+         Vertex to,
+         boolean isLocal,
+         MemberDistributionStrategy memberDistributionStrategy,
+         RoutingStrategy routingStrategy,
+         PartitioningStrategy partitioningStrategy,
+         HashingStrategy hashingStrategy) {
         this.to = to;
         this.name = name;
         this.from = from;
@@ -173,6 +172,7 @@ public class Edge implements Serializable {
      * members. The member or members to consume will be determined by the {@link MemberDistributionStrategy}.
      * If there are several consumers in the target member(s), the consumer will be determined by
      * {@link RoutingStrategy}
+     *
      * @see com.hazelcast.jet.strategy.AllMembersDistributionStrategy
      * @see com.hazelcast.jet.strategy.SingleMemberDistributionStrategy
      */

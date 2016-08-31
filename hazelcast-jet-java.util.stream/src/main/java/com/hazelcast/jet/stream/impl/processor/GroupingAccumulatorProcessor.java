@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.OutputCollector;
-import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.Processor;
-
+import com.hazelcast.jet.processor.ProcessorContext;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;

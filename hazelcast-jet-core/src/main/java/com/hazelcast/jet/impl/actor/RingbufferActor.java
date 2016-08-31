@@ -22,7 +22,7 @@ import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingbufferWithReferenceStrategy;
-import com.hazelcast.jet.impl.container.task.ContainerTask;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
@@ -40,7 +40,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class RingbufferActor implements Actor {
     private final Edge edge;
     private final Vertex vertex;
-    private final ContainerTask sourceTask;
+    private final VertexTask sourceTask;
     private final Object[] producerChunk;
     private final Ringbuffer<Object> ringbuffer;
     private final IOBuffer<Object> flushBuffer;
@@ -52,14 +52,14 @@ public class RingbufferActor implements Actor {
 
     public RingbufferActor(NodeEngine nodeEngine,
                            JobContext jobContext,
-                           ContainerTask sourceTask,
+                           VertexTask sourceTask,
                            Vertex vertex) {
         this(nodeEngine, jobContext, sourceTask, vertex, null, false);
     }
 
     public RingbufferActor(NodeEngine nodeEngine,
                            JobContext jobContext,
-                           ContainerTask sourceTask,
+                           VertexTask sourceTask,
                            Vertex vertex,
                            Edge edge) {
         this(nodeEngine, jobContext, sourceTask, vertex, edge, true);
@@ -67,7 +67,7 @@ public class RingbufferActor implements Actor {
 
     public RingbufferActor(NodeEngine nodeEngine,
                            JobContext jobContext,
-                           ContainerTask sourceTask,
+                           VertexTask sourceTask,
                            Vertex vertex,
                            Edge edge,
                            boolean registerListener) {
@@ -178,7 +178,7 @@ public class RingbufferActor implements Actor {
     }
 
     @Override
-    public ContainerTask getSourceTask() {
+    public VertexTask getSourceTask() {
         return this.sourceTask;
     }
 

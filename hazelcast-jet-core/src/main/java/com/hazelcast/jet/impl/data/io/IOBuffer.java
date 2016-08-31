@@ -21,7 +21,6 @@ import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.Arrays;
 import java.util.Iterator;
 

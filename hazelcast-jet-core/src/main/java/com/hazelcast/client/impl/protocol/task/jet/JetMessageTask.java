@@ -27,7 +27,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-
 import java.security.Permission;
 
 public abstract class JetMessageTask<P> extends AbstractMessageTask<P> implements ExecutionCallback<Object> {

@@ -20,7 +20,6 @@ import com.hazelcast.jet.impl.actor.Ringbuffer;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.Arrays;
 
 @SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")

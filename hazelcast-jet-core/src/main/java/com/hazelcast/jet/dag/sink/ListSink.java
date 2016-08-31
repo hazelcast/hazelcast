@@ -17,11 +17,10 @@
 package com.hazelcast.jet.dag.sink;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingWriter;
 import com.hazelcast.jet.impl.dag.sink.ListPartitionWriter;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.jet.impl.job.JobContext;
 
 /**
  * A sink which uses a Hazelcast {@code IList} as output.
@@ -48,11 +47,11 @@ public class ListSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerContext containerContext) {
+    public DataWriter[] getWriters(JobContext jobContext) {
         return new DataWriter[]{
                 new ShufflingWriter(
-                        new ListPartitionWriter(containerContext, name),
-                        nodeEngine
+                        new ListPartitionWriter(jobContext, name),
+                        jobContext.getNodeEngine()
                 ),
         };
     }

@@ -17,12 +17,11 @@
 package com.hazelcast.jet.dag;
 
 import com.hazelcast.jet.TestProcessors;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.actor.Producer;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.util.List;
@@ -105,7 +104,7 @@ public class VertexTest {
         final String sourceTapName = "sourceTapName";
         Source source = new Source() {
             @Override
-            public Producer[] getProducers(ContainerContext containerDescriptor, Vertex vertex) {
+            public Producer[] getProducers(JobContext jobContext, Vertex vertex) {
                 return new Producer[0];
             }
 
@@ -127,7 +126,7 @@ public class VertexTest {
         final String sinkTapName = "sinkTapWithWriterStrategyName";
         Sink sink = new Sink() {
             @Override
-            public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerContext containerDescriptor) {
+            public DataWriter[] getWriters(JobContext jobContext) {
                 return new DataWriter[0];
             }
 

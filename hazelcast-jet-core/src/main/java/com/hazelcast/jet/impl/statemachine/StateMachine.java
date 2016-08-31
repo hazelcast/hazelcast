@@ -18,16 +18,14 @@ package com.hazelcast.jet.impl.statemachine;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.container.RequestPayload;
-import com.hazelcast.jet.impl.executor.Task;
+import com.hazelcast.jet.impl.runtime.RequestPayload;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
+import com.hazelcast.jet.impl.executor.Task;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BasicCompletableFuture;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.NodeEngine;
-
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -40,12 +38,12 @@ import java.util.concurrent.LinkedBlockingDeque;
  * <p>
  * All main operations under main objects are performed via state-machine's transition
  * <p>
- * For example if we ned to start container it will work like:
+ * For example if we ned to start vertex runner it will work like:
  * <p>
  * <pre>
  *      START__EVENT -&gt
- *      CONTAINER_STATE_MACHINE
- *              -&gt Execution of request processor (here we can start container)
+ *      VERTEX_RUNNER_STATE_MACHINE
+ *              -&gt Execution of request processor (here we can start vertex runner)
  *              -&gt transition to the next state
  *              -&gt output
  * </pre>
@@ -75,7 +73,6 @@ public abstract class StateMachine
     protected StateMachine(String name,
                            Map<State, Map<Input, State>> stateTransitionMatrix,
                            StateMachineRequestProcessor<Input> processor,
-                           NodeEngine nodeEngine,
                            JobContext jobContext) {
         this.name = name;
         this.processor = processor;
@@ -83,7 +80,7 @@ public abstract class StateMachine
         this.stateTransitionMatrix = stateTransitionMatrix;
         this.logger = Logger.getLogger(StateMachine.class);
 
-        if (nodeEngine != null) {
+        if (jobContext != null) {
             getExecutor().addTask(new EventsProcessor(this.eventsQueue));
         }
     }
@@ -93,23 +90,23 @@ public abstract class StateMachine
     protected abstract State defaultState();
 
     /**
-         * @return current state of the state-Machine
-         */
+     * @return current state of the state-Machine
+     */
     public State currentState() {
         return state;
     }
 
     /**
-         * Executes transition of the state-machine in accordance with request
-         *
-         * @param request corresponding request
-         * @param <P>     type of the payload
-         * @return awaiting future with results of transition
-         */
+     * Executes transition of the state-machine in accordance with request
+     *
+     * @param request corresponding request
+     * @param <P>     type of the payload
+     * @return awaiting future with results of transition
+     */
     public <P> ICompletableFuture<Output> handleRequest(StateMachineRequest<Input, P> request) {
         BasicCompletableFuture<Output> future = new BasicCompletableFuture<>(jobContext.getNodeEngine(), logger);
         RequestPayload<Input, Output> payload =
-                new RequestPayload<>(request.getContainerEvent(), future, request.getPayload());
+                new RequestPayload<>(request.getEvent(), future, request.getPayload());
 
         if (!this.eventsQueue.offer(payload)) {
             throw new JetException("Can't add request to the stateMachine " + name);
@@ -121,8 +118,8 @@ public abstract class StateMachine
     protected abstract Output output(Input input, State nextState);
 
     /**
-         * @return output of transition
-         */
+     * @return output of transition
+     */
     public Output getOutput() {
         return output;
     }
