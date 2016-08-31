@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 
 import java.util.function.BiFunction;
@@ -46,17 +46,17 @@ public class AccumulatorProcessor<IN, OUT> extends AbstractStreamProcessor<IN, O
     }
 
     @Override
-    protected boolean process(ProducerInputStream<IN> inputStream, ConsumerOutputStream<OUT> outputStream)
+    protected boolean process(InputChunk<IN> inputChunk, OutputCollector<OUT> output)
             throws Exception {
-        for (IN input : inputStream) {
+        for (IN input : inputChunk) {
             result = accumulator.apply(result, input);
         }
         return true;
     }
 
     @Override
-    protected boolean finalize(ConsumerOutputStream<OUT> outputStream, int chunkSize) throws Exception {
-        outputStream.consume(result);
+    protected boolean finalize(OutputCollector<OUT> output, int chunkSize) throws Exception {
+        output.collect(result);
         return true;
     }
 }

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.io.Pair;
 
 import java.util.Iterator;
@@ -41,15 +41,15 @@ public class LimitProcessor<T> extends AbstractStreamProcessor<T, T> {
     }
 
     @Override
-    protected boolean process(ProducerInputStream<T> inputStream,
-                              ConsumerOutputStream<T> outputStream) throws Exception {
+    protected boolean process(InputChunk<T> inputChunk,
+                              OutputCollector<T> output) throws Exception {
         if (index >= limit) {
             return true;
         }
 
-        for (Iterator<T> iterator = inputStream.iterator(); iterator.hasNext() && index < limit; index++) {
-            this.logger.info("process: " + index);
-            outputStream.consume(iterator.next());
+        for (Iterator<T> iterator = inputChunk.iterator(); iterator.hasNext() && index < limit; index++) {
+            logger.info("process: " + index);
+            output.collect(iterator.next());
         }
         return true;
     }

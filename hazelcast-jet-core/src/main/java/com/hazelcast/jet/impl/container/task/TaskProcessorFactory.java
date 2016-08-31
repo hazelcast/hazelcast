@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.container.task;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Consumer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.processor.Processor;
 
@@ -57,7 +57,7 @@ public interface TaskProcessorFactory {
      * @param taskID           - id of task;
      * @return - task processor;
      */
-    TaskProcessor consumerTaskProcessor(ObjectConsumer[] consumers,
+    TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                         Processor processor,
                                         ContainerContextImpl containerContext,
                                         ProcessorContext processorContext, Vertex vertex,
@@ -74,7 +74,7 @@ public interface TaskProcessorFactory {
      * @param taskID           -   id of task;
      * @return - task processor;
      */
-    TaskProcessor producerTaskProcessor(ObjectProducer[] producers,
+    TaskProcessor producerTaskProcessor(Producer[] producers,
                                         Processor processor,
                                         ContainerContextImpl containerContext,
                                         ProcessorContext processorContext, Vertex vertex,
@@ -90,8 +90,8 @@ public interface TaskProcessorFactory {
      * @param taskID           - id of task;
      * @return - task processor;
      */
-    TaskProcessor actorTaskProcessor(ObjectProducer[] producers,
-                                     ObjectConsumer[] consumers,
+    TaskProcessor actorTaskProcessor(Producer[] producers,
+                                     Consumer[] consumers,
                                      Processor processor,
                                      ContainerContextImpl containerContext,
                                      ProcessorContext processorContext, Vertex vertex,
@@ -109,8 +109,8 @@ public interface TaskProcessorFactory {
      * @param taskID           - id of task;
      * @return - task processor;
      */
-    TaskProcessor getTaskProcessor(ObjectProducer[] producers,
-                                   ObjectConsumer[] consumers,
+    TaskProcessor getTaskProcessor(Producer[] producers,
+                                   Consumer[] consumers,
                                    ContainerContextImpl containerContext,
                                    ProcessorContext processorContext,
                                    Processor processor,

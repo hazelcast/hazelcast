@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 
@@ -39,15 +39,15 @@ public class TransformProcessor extends AbstractStreamProcessor<Object, Object> 
     }
 
     @Override
-    protected boolean process(ProducerInputStream<Object> inputStream,
-                              ConsumerOutputStream<Object> outputStream) throws Exception {
-        for (Object input : inputStream) {
-            processInputs(input, outputStream, 0);
+    protected boolean process(InputChunk<Object> inputChunk,
+                              OutputCollector<Object> output) throws Exception {
+        for (Object input : inputChunk) {
+            processInputs(input, output, 0);
         }
         return true;
     }
 
-    private void processInputs(Object input, ConsumerOutputStream<Object> outputStream, int startIndex) throws Exception {
+    private void processInputs(Object input, OutputCollector<Object> output, int startIndex) throws Exception {
         for (int i = startIndex; i < operations.length; i++) {
             TransformOperation operation = operations[i];
             switch (operation.getType()) {
@@ -63,7 +63,7 @@ public class TransformProcessor extends AbstractStreamProcessor<Object, Object> 
                     Stream stream = (Stream) ((Function) operation.getFunction()).apply(input);
                     Iterator iterator = stream.iterator();
                     while (iterator.hasNext()) {
-                        processInputs(iterator.next(), outputStream, i + 1);
+                        processInputs(iterator.next(), output, i + 1);
                     }
                     stream.close();
                     return;
@@ -71,6 +71,6 @@ public class TransformProcessor extends AbstractStreamProcessor<Object, Object> 
                     throw new JetException("Unknown case: " + operation.getType());
             }
         }
-        outputStream.consume(input);
+        output.collect(input);
     }
 }

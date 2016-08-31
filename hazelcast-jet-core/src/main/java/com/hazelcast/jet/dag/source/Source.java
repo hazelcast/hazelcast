@@ -18,7 +18,7 @@ package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Producer;
 
 import java.io.Serializable;
 
@@ -33,12 +33,12 @@ public interface Source extends Serializable {
     String getName();
 
     /**
-     * Array of the input readers
+     * Array of the input producers
      *
      * @param containerContext descriptor of the corresponding container
      * @param vertex              corresponding vertex
      * @return list of the input readers
      */
-    ObjectProducer[] getReaders(ContainerContext containerContext, Vertex vertex);
+    Producer[] getProducers(ContainerContext containerContext, Vertex vertex);
 
 }

@@ -77,7 +77,7 @@ public class ChunkedOutputStream extends OutputStream {
 
                 packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK);
 
-                ringbufferActor.consumeObject(packet);
+                ringbufferActor.consume(packet);
             }
         } finally {
             Arrays.fill(buffer, (byte) 0);

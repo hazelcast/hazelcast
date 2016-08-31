@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.Processor;
@@ -39,11 +39,11 @@ public class GroupingAccumulatorProcessor<K, V, A, R> implements Processor<Pair<
     }
 
     @Override
-    public boolean process(ProducerInputStream<Pair<K, V>> inputStream,
-                           ConsumerOutputStream<Pair<K, A>> outputStream,
+    public boolean process(InputChunk<Pair<K, V>> inputChunk,
+                           OutputCollector<Pair<K, A>> output,
                            String sourceName,
-                           ProcessorContext processorContext) throws Exception {
-        for (Pair<K, V> input : inputStream) {
+                           ProcessorContext context) throws Exception {
+        for (Pair<K, V> input : inputChunk) {
             A value = this.cache.get(input.getKey());
             if (value == null) {
                 value = collector.supplier().get();
@@ -55,7 +55,7 @@ public class GroupingAccumulatorProcessor<K, V, A, R> implements Processor<Pair<
     }
 
     @Override
-    public boolean complete(ConsumerOutputStream<Pair<K, A>> outputStream,
+    public boolean complete(OutputCollector<Pair<K, A>> output,
                             ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
         try {
@@ -65,7 +65,7 @@ public class GroupingAccumulatorProcessor<K, V, A, R> implements Processor<Pair<
             int idx = 0;
             while (this.finalizationIterator.hasNext()) {
                 Map.Entry<K, A> next = this.finalizationIterator.next();
-                outputStream.consume(new JetPair<>(next.getKey(), next.getValue()));
+                output.collect(new JetPair<>(next.getKey(), next.getValue()));
                 if (idx == processorContext.getConfig().getChunkSize() - 1) {
                     break;
                 }

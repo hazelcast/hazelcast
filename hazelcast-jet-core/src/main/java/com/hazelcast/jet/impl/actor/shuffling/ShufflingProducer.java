@@ -16,53 +16,53 @@
 
 package com.hazelcast.jet.impl.actor.shuffling;
 
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 
-public class ShufflingProducer implements ObjectProducer {
-    private final ObjectProducer objectProducer;
+public class ShufflingProducer implements Producer {
+    private final Producer producer;
 
-    public ShufflingProducer(ObjectProducer objectProducer) {
-        this.objectProducer = objectProducer;
+    public ShufflingProducer(Producer producer) {
+        this.producer = producer;
     }
 
     @Override
     public Object[] produce() throws Exception {
-        return this.objectProducer.produce();
+        return this.producer.produce();
     }
 
     @Override
     public int lastProducedCount() {
-        return this.objectProducer.lastProducedCount();
+        return this.producer.lastProducedCount();
     }
 
     @Override
     public String getName() {
-        return objectProducer.getName();
+        return producer.getName();
     }
 
     @Override
     public boolean isClosed() {
-        return objectProducer.isClosed();
+        return producer.isClosed();
     }
 
     @Override
     public void open() {
-        objectProducer.open();
+        producer.open();
     }
 
     @Override
     public void close() {
-        objectProducer.close();
+        producer.close();
     }
 
     @Override
     public void registerCompletionHandler(ProducerCompletionHandler runnable) {
-        objectProducer.registerCompletionHandler(runnable);
+        producer.registerCompletionHandler(runnable);
     }
 
     @Override
     public void handleProducerCompleted() {
-        objectProducer.handleProducerCompleted();
+        producer.handleProducerCompleted();
     }
 }

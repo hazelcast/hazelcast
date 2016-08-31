@@ -14,16 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.data;
+package com.hazelcast.jet.data.io;
 
 /**
- * Represents all entries with buffer;
+ * Collects output data from a processor
  *
- * @param <T> - type of objects in buffer;
+ * @param <T> type of output objects
  */
-public interface BufferAware<T> {
+public interface OutputCollector<T> {
+
     /**
-     * @return - buffer with objects;
+     * Collect a given input chunk
      */
-    T[] getBuffer();
+    void collect(InputChunk<T> chunk);
+
+    /**
+     * Collect array of objects with given size
+     */
+    void collect(T[] buffer, int size);
+
+    /**
+     * Collect a single object
+     */
+    void collect(T object);
 }

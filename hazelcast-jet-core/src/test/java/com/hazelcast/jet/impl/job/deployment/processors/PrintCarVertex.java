@@ -1,8 +1,8 @@
 package com.hazelcast.jet.impl.job.deployment.processors;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.processor.Processor;
 import org.junit.Assert;
 
@@ -12,9 +12,9 @@ public class PrintCarVertex implements Processor {
     }
 
     @Override
-    public boolean process(ProducerInputStream inputStream,
-                           ConsumerOutputStream outputStream,
-                           String sourceName, ProcessorContext processorContext) throws Exception {
+    public boolean process(InputChunk input,
+                           OutputCollector output,
+                           String sourceName, ProcessorContext context) throws Exception {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         contextClassLoader.loadClass("com.sample.pojo.car.Car");
@@ -23,7 +23,7 @@ public class PrintCarVertex implements Processor {
             Assert.fail();
         } catch (ClassNotFoundException ignored) {
         }
-        outputStream.consumeStream(inputStream);
+        output.collect(input);
         return true;
     }
 }

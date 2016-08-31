@@ -21,7 +21,7 @@ import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -105,8 +105,8 @@ public class VertexTest {
         final String sourceTapName = "sourceTapName";
         Source source = new Source() {
             @Override
-            public ObjectProducer[] getReaders(ContainerContext containerDescriptor, Vertex vertex) {
-                return new ObjectProducer[0];
+            public Producer[] getProducers(ContainerContext containerDescriptor, Vertex vertex) {
+                return new Producer[0];
             }
 
             @Override

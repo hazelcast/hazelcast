@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.container.task.processors.factory;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Consumer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.container.task.TaskProcessorFactory;
@@ -42,7 +42,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     }
 
     @Override
-    public TaskProcessor consumerTaskProcessor(ObjectConsumer[] consumers,
+    public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,
                                                ContainerContextImpl containerContext,
                                                ProcessorContext processorContext,
@@ -52,7 +52,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     }
 
     @Override
-    public TaskProcessor producerTaskProcessor(ObjectProducer[] producers,
+    public TaskProcessor producerTaskProcessor(Producer[] producers,
                                                Processor processor,
                                                ContainerContextImpl containerContext,
                                                ProcessorContext processorContext,
@@ -62,8 +62,8 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     }
 
     @Override
-    public TaskProcessor actorTaskProcessor(ObjectProducer[] producers,
-                                            ObjectConsumer[] consumers,
+    public TaskProcessor actorTaskProcessor(Producer[] producers,
+                                            Consumer[] consumers,
                                             Processor processor,
                                             ContainerContextImpl containerContext,
                                             ProcessorContext processorContext,
@@ -79,8 +79,8 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
         );
     }
 
-    public TaskProcessor getTaskProcessor(ObjectProducer[] producers,
-                                          ObjectConsumer[] consumers,
+    public TaskProcessor getTaskProcessor(Producer[] producers,
+                                          Consumer[] consumers,
                                           ContainerContextImpl containerContext,
                                           ProcessorContext processorContext,
                                           Processor processor,

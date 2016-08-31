@@ -23,8 +23,8 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.source.MapSource;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.counters.LongCounter;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
@@ -83,12 +83,12 @@ public class AccumulatorTest extends JetTestSupport {
         }
 
         @Override
-        public boolean process(ProducerInputStream inputStream,
-                               ConsumerOutputStream outputStream,
+        public boolean process(InputChunk input,
+                               OutputCollector output,
                                String sourceName,
-                               ProcessorContext processorContext) throws Exception {
-            Accumulator<Long, Long> accumulator = processorContext.<Long, Long>getAccumulator(ACCUMULATOR_KEY);
-            accumulator.add((long) inputStream.size());
+                               ProcessorContext context) throws Exception {
+            Accumulator<Long, Long> accumulator = context.<Long, Long>getAccumulator(ACCUMULATOR_KEY);
+            accumulator.add((long) input.size());
             return true;
         }
     }

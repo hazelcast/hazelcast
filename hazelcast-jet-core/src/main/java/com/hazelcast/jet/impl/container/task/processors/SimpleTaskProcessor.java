@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.container.task.processors;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.processor.Processor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -30,8 +30,8 @@ public class SimpleTaskProcessor implements TaskProcessor {
     protected boolean finalizationStarted;
     protected boolean producersWriteFinished;
     private final Processor processor;
-    private final ObjectIOStream pairInputStream;
-    private final ObjectIOStream pairOutputStream;
+    private final IOBuffer inputBuffer;
+    private final IOBuffer outputBuffer;
     private boolean finalized;
     private final ProcessorContext processorContext;
 
@@ -40,8 +40,8 @@ public class SimpleTaskProcessor implements TaskProcessor {
         checkNotNull(processor);
         this.processor = processor;
         this.processorContext = processorContext;
-        this.pairInputStream = new ObjectIOStream<>(DUMMY_CHUNK);
-        this.pairOutputStream = new ObjectIOStream<>(DUMMY_CHUNK);
+        this.inputBuffer = new IOBuffer<>(DUMMY_CHUNK);
+        this.outputBuffer = new IOBuffer<>(DUMMY_CHUNK);
     }
 
     @Override
@@ -51,10 +51,10 @@ public class SimpleTaskProcessor implements TaskProcessor {
             if (producersWriteFinished) {
                 return true;
             }
-            processor.process(pairInputStream, pairOutputStream, null, processorContext);
+            processor.process(inputBuffer, outputBuffer, null, processorContext);
             return true;
         } else {
-            finalized = processor.complete(pairOutputStream, processorContext);
+            finalized = processor.complete(outputBuffer, processorContext);
             return true;
         }
     }
@@ -67,8 +67,8 @@ public class SimpleTaskProcessor implements TaskProcessor {
     @Override
     public void reset() {
         finalized = false;
-        pairInputStream.reset();
-        pairOutputStream.reset();
+        inputBuffer.reset();
+        outputBuffer.reset();
         finalizationStarted = false;
         producersWriteFinished = false;
     }
@@ -94,7 +94,7 @@ public class SimpleTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean onChunk(ProducerInputStream pairOutputStream) throws Exception {
+    public boolean onChunk(InputChunk inputChunk) throws Exception {
         return true;
     }
 

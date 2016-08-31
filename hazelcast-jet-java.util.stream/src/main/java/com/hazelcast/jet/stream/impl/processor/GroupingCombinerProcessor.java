@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.Processor;
@@ -39,15 +39,15 @@ public class GroupingCombinerProcessor<K, V, A, R> implements Processor<Pair<K, 
     }
 
     @Override
-    public boolean process(ProducerInputStream<Pair<K, A>> inputStream,
-                           ConsumerOutputStream<Pair<K, R>> outputStream,
+    public boolean process(InputChunk<Pair<K, A>> inputChunk,
+                           OutputCollector<Pair<K, R>> output,
                            String sourceName,
-                           ProcessorContext processorContext) throws Exception {
-        for (Pair<K, A> input : inputStream) {
-            A value = this.cache.get(input.getKey());
+                           ProcessorContext context) throws Exception {
+        for (Pair<K, A> input : inputChunk) {
+            A value = cache.get(input.getKey());
             if (value == null) {
                 value = collector.supplier().get();
-                this.cache.put(input.getKey(), value);
+                cache.put(input.getKey(), value);
             }
             collector.combiner().apply(value, input.getValue());
         }
@@ -55,30 +55,30 @@ public class GroupingCombinerProcessor<K, V, A, R> implements Processor<Pair<K, 
     }
 
     @Override
-    public boolean complete(ConsumerOutputStream<Pair<K, R>> outputStream,
+    public boolean complete(OutputCollector<Pair<K, R>> output,
                             ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
         try {
             if (finalizationIterator == null) {
-                this.finalizationIterator = this.cache.entrySet().iterator();
+                finalizationIterator = cache.entrySet().iterator();
             }
 
             int idx = 0;
-            while (this.finalizationIterator.hasNext()) {
-                Map.Entry<K, A> next = this.finalizationIterator.next();
+            while (finalizationIterator.hasNext()) {
+                Map.Entry<K, A> next = finalizationIterator.next();
                 K key = next.getKey();
                 R value = collector.finisher().apply(next.getValue());
-                outputStream.consume(new JetPair<>(key, value));
+                output.collect(new JetPair<>(key, value));
                 if (idx == processorContext.getConfig().getChunkSize() - 1) {
                     break;
                 }
                 idx++;
             }
-            finalized = !this.finalizationIterator.hasNext();
+            finalized = !finalizationIterator.hasNext();
         } finally {
             if (finalized) {
-                this.finalizationIterator = null;
-                this.cache.clear();
+                finalizationIterator = null;
+                cache.clear();
             }
         }
         return finalized;

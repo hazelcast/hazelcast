@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerContext;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -52,13 +52,13 @@ public class ListPartitionWriter extends AbstractHazelcastWriter {
     }
 
     @Override
-    protected void processChunk(ProducerInputStream<Object> chunk) {
-        for (int i = 0; i < chunk.size(); i++) {
-            final JetPair pair = (JetPair) chunk.get(i);
+    protected void processChunk(InputChunk<Object> inputChunk) {
+        for (int i = 0; i < inputChunk.size(); i++) {
+            final JetPair pair = (JetPair) inputChunk.get(i);
             if (pair == null) {
                 continue;
             }
-            if (!listContainer.hasEnoughCapacity(chunk.size())) {
+            if (!listContainer.hasEnoughCapacity(inputChunk.size())) {
                 throw new IllegalStateException("IList " + name + " capacity exceeded");
             }
             if (!(pair.get(0) instanceof Number)) {

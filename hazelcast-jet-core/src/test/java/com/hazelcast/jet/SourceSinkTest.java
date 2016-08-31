@@ -30,8 +30,8 @@ import com.hazelcast.jet.dag.source.FileSource;
 import com.hazelcast.jet.dag.source.ListSource;
 import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
@@ -173,12 +173,12 @@ public class SourceSinkTest extends JetTestSupport {
 
     public static class Parser implements Processor<Pair<Integer, String>, Pair<Integer, Integer>> {
         @Override
-        public boolean process(ProducerInputStream<Pair<Integer, String>> inputStream,
-                               ConsumerOutputStream<Pair<Integer, Integer>> outputStream,
-                               String sourceName, ProcessorContext processorContext) throws Exception {
-            for (Pair<Integer, String> pair : inputStream) {
+        public boolean process(InputChunk<Pair<Integer, String>> input,
+                               OutputCollector<Pair<Integer, Integer>> output,
+                               String sourceName, ProcessorContext context) throws Exception {
+            for (Pair<Integer, String> pair : input) {
                 int val = Integer.parseInt(pair.getValue());
-                outputStream.consume(new JetPair<>(val, val));
+                output.collect(new JetPair<>(val, val));
             }
             return true;
         }

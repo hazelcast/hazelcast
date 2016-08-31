@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.actor;
 
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 
 /**
  * Abstract interface fo ringBuffers;
@@ -35,10 +35,10 @@ public interface Ringbuffer<T> {
     /**
      * Write specified amount of elements into the acquired cells;
      *
-     * @param chunk    -   chunk with data;
+     * @param buffer   -   buffer with data;
      * @param consumed -   amount of elements to write;
      */
-    void commit(ProducerInputStream<T> chunk, int consumed);
+    void commit(IOBuffer<T> buffer, int consumed);
 
     /**
      * Copy data from the buffer into the specified chunk;

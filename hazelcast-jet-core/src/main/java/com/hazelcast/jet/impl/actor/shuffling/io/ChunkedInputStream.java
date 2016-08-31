@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,13 +29,13 @@ public class ChunkedInputStream extends InputStream {
     private static final int MASK = 0xff;
 
     private static final int BUFFER_OFFSET = HeapData.DATA_OFFSET;
-    private final ObjectIOStream<JetPacket> packetStream;
+    private final IOBuffer<JetPacket> packetStream;
     private byte[] buffer;
     private int bufferIdx;
     private Iterator<JetPacket> iterator;
 
-    public ChunkedInputStream(ObjectIOStream<JetPacket> packetStream) {
-        this.packetStream = packetStream;
+    public ChunkedInputStream(IOBuffer<JetPacket> packetBuffer) {
+        this.packetStream = packetBuffer;
     }
 
     @Override

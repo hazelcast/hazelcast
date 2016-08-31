@@ -17,18 +17,18 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.processor.Processor;
 
 public abstract class TestProcessors {
 
     public static class Noop implements Processor {
         @Override
-        public boolean process(ProducerInputStream inputStream,
-                               ConsumerOutputStream outputStream,
-                               String sourceName, ProcessorContext processorContext) throws Exception {
-            outputStream.consumeStream(inputStream);
+        public boolean process(InputChunk input,
+                               OutputCollector output,
+                               String sourceName, ProcessorContext context) throws Exception {
+            output.collect(input);
             return true;
         }
     }

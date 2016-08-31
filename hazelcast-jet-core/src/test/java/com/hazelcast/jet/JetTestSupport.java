@@ -38,7 +38,7 @@ import org.junit.BeforeClass;
 public class JetTestSupport extends HazelcastTestSupport {
 
     protected static TestHazelcastFactory hazelcastInstanceFactory;
-    protected static final int PARALLELISM = 8;
+    protected static final int PARALLELISM = 1;
 
     @BeforeClass
     public static void setUpFactory() {

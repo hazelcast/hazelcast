@@ -19,11 +19,11 @@ package com.hazelcast.jet.impl.container.task.processors;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.Processor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -33,24 +33,24 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ProducerTaskProcessor implements TaskProcessor {
     protected final int taskID;
-    protected final ObjectProducer[] producers;
+    protected final Producer[] producers;
     protected final Processor processor;
     protected final ContainerContextImpl containerContext;
     protected final ProcessorContext processorContext;
-    protected final ObjectIOStream objectInputStream;
-    protected final ObjectIOStream pairOutputStream;
+    protected final IOBuffer inputBuffer;
+    protected final IOBuffer outputBuffer;
     protected boolean produced;
     protected boolean finalized;
     protected boolean finalizationStarted;
     protected boolean finalizationFinished;
-    protected ObjectProducer pendingProducer;
+    protected Producer pendingProducer;
     private int nextProducerIdx;
 
     private boolean producingReadFinished;
 
     private boolean producersWriteFinished;
 
-    public ProducerTaskProcessor(ObjectProducer[] producers,
+    public ProducerTaskProcessor(Producer[] producers,
                                  Processor processor,
                                  ContainerContextImpl containerContext,
                                  ProcessorContext processorContext,
@@ -63,12 +63,12 @@ public class ProducerTaskProcessor implements TaskProcessor {
         this.processorContext = processorContext;
         this.containerContext = containerContext;
         JobConfig jobConfig = containerContext.getJobContext().getJobConfig();
-        int pairChunkSize = jobConfig.getChunkSize();
-        this.objectInputStream = new ObjectIOStream<>(new Object[pairChunkSize]);
-        this.pairOutputStream = new ObjectIOStream<>(new Object[pairChunkSize]);
+        int chunkSize = jobConfig.getChunkSize();
+        this.inputBuffer = new IOBuffer<>(new Object[chunkSize]);
+        this.outputBuffer = new IOBuffer<>(new Object[chunkSize]);
     }
 
-    public boolean onChunk(ProducerInputStream inputStream) throws Exception {
+    public boolean onChunk(InputChunk inputChunk) throws Exception {
         return true;
     }
 
@@ -87,7 +87,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
         int producersCount = producers.length;
 
         if (finalizationStarted) {
-            finalizationFinished = processor.complete(pairOutputStream, processorContext);
+            finalizationFinished = processor.complete(outputBuffer, processorContext);
 
             return !processOutputStream();
         } else if (this.pendingProducer != null) {
@@ -106,7 +106,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
         for (int idx = startFrom; idx < producersCount; idx++) {
             lastIdx = idx;
-            ObjectProducer producer = this.producers[idx];
+            Producer producer = this.producers[idx];
 
             Object[] inChunk = producer.produce();
 
@@ -116,7 +116,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
             produced = true;
 
-            this.objectInputStream.consumeChunk(
+            this.inputBuffer.collect(
                     inChunk,
                     producer.lastProducedCount()
             );
@@ -146,8 +146,8 @@ public class ProducerTaskProcessor implements TaskProcessor {
         return producersWriteFinished ? 0 : nextProducerIdx;
     }
 
-    private boolean processProducer(ObjectProducer producer) throws Exception {
-        if (!processor.process(objectInputStream, pairOutputStream, producer.getName(), processorContext)) {
+    private boolean processProducer(Producer producer) throws Exception {
+        if (!processor.process(inputBuffer, outputBuffer, producer.getName(), processorContext)) {
             pendingProducer = producer;
         } else {
             pendingProducer = null;
@@ -158,22 +158,22 @@ public class ProducerTaskProcessor implements TaskProcessor {
             return false;
         }
 
-        pairOutputStream.reset();
+        outputBuffer.reset();
         return pendingProducer == null;
     }
 
 
     private boolean processOutputStream() throws Exception {
-        if (pairOutputStream.size() == 0) {
+        if (outputBuffer.size() == 0) {
             checkFinalization();
             return true;
         } else {
-            if (!onChunk(pairOutputStream)) {
+            if (!onChunk(outputBuffer)) {
                 produced = true;
                 return false;
             } else {
                 checkFinalization();
-                pairOutputStream.reset();
+                outputBuffer.reset();
                 return true;
             }
         }
@@ -203,7 +203,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
     @Override
     public void onOpen() {
-        for (ObjectProducer producer : this.producers) {
+        for (Producer producer : this.producers) {
             producer.open();
         }
         reset();
@@ -211,7 +211,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
     @Override
     public void onClose() {
-        for (ObjectProducer producer : this.producers) {
+        for (Producer producer : this.producers) {
             producer.close();
         }
     }
@@ -234,8 +234,8 @@ public class ProducerTaskProcessor implements TaskProcessor {
     private void resetProducers() {
         produced = false;
         nextProducerIdx = 0;
-        pairOutputStream.reset();
-        objectInputStream.reset();
+        outputBuffer.reset();
+        inputBuffer.reset();
     }
 
     @Override

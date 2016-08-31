@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.container.JobManager;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -56,7 +56,7 @@ public class SocketReader
     private final int chunkSize;
     private final Address jetAddress;
     private final JobContext jobContext;
-    private final ObjectIOStream<JetPacket> buffer;
+    private final IOBuffer<JetPacket> buffer;
     private final List<RingbufferActor> consumers = new ArrayList<RingbufferActor>();
     private final Map<Address, SocketWriter> writers = new HashMap<Address, SocketWriter>();
 
@@ -74,7 +74,7 @@ public class SocketReader
                 (InternalSerializationService) jobContext.getNodeEngine().getSerializationService();
         this.jobNameBytes = serializationService.toBytes(this.jobContext.getName());
         this.chunkSize = jobContext.getJobConfig().getChunkSize();
-        this.buffer = new ObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
+        this.buffer = new IOBuffer<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
     public SocketReader(NodeEngine nodeEngine) {
@@ -84,7 +84,7 @@ public class SocketReader
         this.jobContext = null;
         this.chunkSize = JobConfig.DEFAULT_CHUNK_SIZE;
         this.jobNameBytes = null;
-        this.buffer = new ObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
+        this.buffer = new IOBuffer<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
     /**
@@ -245,7 +245,8 @@ public class SocketReader
     }
 
     protected boolean consumePacket(JetPacket packet)  {
-        return buffer.consume(packet);
+        buffer.collect(packet);
+        return true;
     }
 
     private void flush() throws Exception {

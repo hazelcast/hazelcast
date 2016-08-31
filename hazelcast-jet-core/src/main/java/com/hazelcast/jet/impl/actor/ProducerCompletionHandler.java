@@ -25,5 +25,5 @@ public interface ProducerCompletionHandler {
      *
      * @param producer - producer which has been completed
      */
-    void onComplete(ObjectProducer producer);
+    void onComplete(Producer producer);
 }

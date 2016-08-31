@@ -18,7 +18,7 @@ package com.hazelcast.jet.dag.source;
 
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.jet.container.ContainerContext;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.dag.source.MultiMapPartitionReader;
 
 /**
@@ -45,7 +45,7 @@ public class MultiMapSource extends MapSource {
     }
 
     @Override
-    protected ObjectProducer getReader(ContainerContext containerContext, int partitionId) {
+    protected Producer getReader(ContainerContext containerContext, int partitionId) {
         return new MultiMapPartitionReader(containerContext, getName(), partitionId);
     }
 

@@ -16,41 +16,41 @@
 
 package com.hazelcast.jet.impl.container.task.processors;
 
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.actor.Consumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ConsumersProcessor {
-    private final ObjectConsumer[] consumers;
+    private final Consumer[] consumers;
     private boolean consumed;
-    private ProducerInputStream inputStream;
+    private InputChunk inputChunk;
 
-    public ConsumersProcessor(ObjectConsumer[] consumers) {
+    public ConsumersProcessor(Consumer[] consumers) {
         this.consumers = consumers;
     }
 
-    public boolean process(ProducerInputStream inputStream) throws Exception {
+    public boolean process(InputChunk inputChunk) throws Exception {
         boolean success = true;
         boolean consumed = false;
 
-        if (this.inputStream == null) {
-            this.inputStream = inputStream;
+        if (this.inputChunk == null) {
+            this.inputChunk = inputChunk;
 
-            for (ObjectConsumer consumer : this.consumers) {
-                consumer.consumeChunk(inputStream);
+            for (Consumer consumer : this.consumers) {
+                consumer.consume(inputChunk);
                 success = success && consumer.isFlushed();
                 consumed = consumed || consumer.lastConsumedCount() > 0;
             }
         } else {
-            for (ObjectConsumer consumer : this.consumers) {
+            for (Consumer consumer : this.consumers) {
                 success = success & consumer.isFlushed();
                 consumed = consumed || consumer.lastConsumedCount() > 0;
             }
         }
 
         if (success) {
-            this.inputStream = null;
+            this.inputChunk = null;
         }
 
         this.consumed = consumed;
@@ -63,6 +63,6 @@ public class ConsumersProcessor {
 
     public void reset() {
         this.consumed = false;
-        this.inputStream = null;
+        this.inputChunk = null;
     }
 }

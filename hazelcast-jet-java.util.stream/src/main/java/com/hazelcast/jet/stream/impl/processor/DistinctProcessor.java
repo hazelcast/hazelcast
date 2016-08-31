@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 
 import java.util.HashMap;
@@ -37,22 +37,22 @@ public class DistinctProcessor<T> extends AbstractStreamProcessor<T, T> {
     }
 
     @Override
-    protected boolean process(ProducerInputStream<T> inputStream, ConsumerOutputStream<T> outputStream) throws Exception {
-        for (T t : inputStream) {
+    protected boolean process(InputChunk<T> input, OutputCollector<T> output) throws Exception {
+        for (T t : input) {
             map.put(t, true);
         }
         return true;
     }
 
     @Override
-    protected boolean finalize(ConsumerOutputStream<T> outputStream, final int chunkSize) throws Exception {
+    protected boolean finalize(OutputCollector<T> output, final int chunkSize) throws Exception {
         if (iterator == null) {
             iterator = map.keySet().iterator();
         }
         int i = 0;
         while (iterator.hasNext()) {
             T key = iterator.next();
-            outputStream.consume(key);
+            output.collect(key);
 
             if (chunkSize == ++i) {
                 return false;

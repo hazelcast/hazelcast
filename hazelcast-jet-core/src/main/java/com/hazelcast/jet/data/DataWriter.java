@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.data;
 
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
+import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.Shuffler;
 
 /**
  * Represents abstract writer to some sink
  */
-public interface DataWriter extends ObjectConsumer, Shuffler {
+public interface DataWriter extends Consumer, Shuffler {
 
     /**
      * @return true if write is partition-aware, else otherwise

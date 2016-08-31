@@ -20,8 +20,8 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class AbstractHazelcastWriter implements DataWriter {
-    protected final ObjectIOStream<Object> chunkInputStream;
+    protected final IOBuffer<Object> outputBuffer;
 
     protected final SettableFuture<Boolean> future = SettableFuture.create();
 
@@ -45,7 +45,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
     protected final ContainerContext containerContext;
 
-    protected final ObjectIOStream<Object> chunkBuffer;
+    protected final IOBuffer<Object> chunkBuffer;
 
     protected final ILogger logger;
 
@@ -65,7 +65,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         @Override
         public void run() {
             try {
-                processChunk(chunkInputStream);
+                processChunk(outputBuffer);
                 future.set(true);
             } catch (Throwable e) {
                 future.setException(e);
@@ -102,8 +102,8 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         this.awaitInSecondsTime = jobConfig.getSecondsToAwait();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
         int pairChunkSize = jobConfig.getChunkSize();
-        this.chunkBuffer = new ObjectIOStream<Object>(new Object[pairChunkSize]);
-        this.chunkInputStream = new ObjectIOStream<Object>(new Object[pairChunkSize]);
+        this.chunkBuffer = new IOBuffer<>(new Object[pairChunkSize]);
+        this.outputBuffer = new IOBuffer<>(new Object[pairChunkSize]);
         this.memberDistributionStrategy = null;
     }
 
@@ -114,16 +114,16 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) {
-        this.chunkInputStream.consumeStream(chunk);
+    public int consume(InputChunk<Object> chunk) {
+        this.outputBuffer.collect(chunk);
         pushWriteRequest();
         this.lastConsumedCount = chunk.size();
         return chunk.size();
     }
 
     @Override
-    public int consumeObject(Object object) {
-        this.chunkBuffer.consume(object);
+    public int consume(Object object) {
+        this.chunkBuffer.collect(object);
         this.lastConsumedCount = 1;
         return 1;
     }
@@ -131,13 +131,13 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     @Override
     public int flush() {
         try {
-            return chunkBuffer.size() > 0 ? consumeChunk(chunkBuffer) : 0;
+            return chunkBuffer.size() > 0 ? consume(chunkBuffer) : 0;
         } catch (Exception e) {
             throw JetUtil.reThrow(e);
         }
     }
 
-    protected abstract void processChunk(ProducerInputStream<Object> inputStream);
+    protected abstract void processChunk(InputChunk<Object> inputChunk);
 
     @Override
     public int getPartitionId() {
@@ -196,7 +196,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
                     } finally {
                         this.chunkBuffer.reset();
                         this.isFlushed = true;
-                        this.chunkInputStream.reset();
+                        this.outputBuffer.reset();
                     }
                 }
 

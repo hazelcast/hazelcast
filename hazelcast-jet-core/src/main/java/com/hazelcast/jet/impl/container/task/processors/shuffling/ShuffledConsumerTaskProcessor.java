@@ -22,8 +22,8 @@ import com.hazelcast.jet.PartitionIdAware;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
+import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.JobManager;
@@ -55,20 +55,20 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final NodeEngine nodeEngine;
     private final DataWriter[] sendersArray;
     private final boolean hasLocalConsumers;
-    private final ObjectConsumer[] shuffledConsumers;
+    private final Consumer[] shuffledConsumers;
     private final Address[] nonPartitionedAddresses;
-    private final ObjectConsumer[] nonPartitionedWriters;
+    private final Consumer[] nonPartitionedWriters;
     private final CalculationStrategy[] calculationStrategies;
     private final Map<Address, DataWriter> senders = new HashMap<Address, DataWriter>();
-    private final Map<CalculationStrategy, Map<Integer, List<ObjectConsumer>>> partitionedWriters;
-    private final ObjectConsumer[] markers;
-    private final Map<ObjectConsumer, Integer> markersCache = new IdentityHashMap<ObjectConsumer, Integer>();
+    private final Map<CalculationStrategy, Map<Integer, List<Consumer>>> partitionedWriters;
+    private final Consumer[] markers;
+    private final Map<Consumer, Integer> markersCache = new IdentityHashMap<Consumer, Integer>();
     private final ContainerContextImpl containerContext;
     private int lastConsumedSize;
     private boolean chunkInProgress;
     private boolean localSuccess;
 
-    public ShuffledConsumerTaskProcessor(ObjectConsumer[] consumers,
+    public ShuffledConsumerTaskProcessor(Consumer[] consumers,
                                          Processor processor,
                                          ContainerContextImpl containerContext,
                                          ProcessorContext processorContext,
@@ -76,7 +76,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         this(consumers, processor, containerContext, processorContext, taskID, false);
     }
 
-    public ShuffledConsumerTaskProcessor(ObjectConsumer[] consumers,
+    public ShuffledConsumerTaskProcessor(Consumer[] consumers,
                                          Processor processor,
                                          ContainerContextImpl containerContext,
                                          ProcessorContext processorContext,
@@ -92,14 +92,14 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         this.hasLocalConsumers = this.consumers.length > 0;
 
         this.shuffledConsumers = filterConsumers(consumers, true);
-        this.markers = new ObjectConsumer[this.sendersArray.length + this.shuffledConsumers.length];
+        this.markers = new Consumer[this.sendersArray.length + this.shuffledConsumers.length];
 
         initMarkers();
 
         this.partitionedWriters = new HashMap<>();
 
         Set<CalculationStrategy> strategies = new HashSet<>();
-        List<ObjectConsumer> nonPartitionedConsumers = new ArrayList<ObjectConsumer>(this.shuffledConsumers.length);
+        List<Consumer> nonPartitionedConsumers = new ArrayList<Consumer>(this.shuffledConsumers.length);
         Set<Address> nonPartitionedAddresses = new HashSet<Address>(this.shuffledConsumers.length);
 
         // Process distributed consumers
@@ -111,23 +111,23 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
         this.receiver = receiver;
         this.calculationStrategies = strategies.toArray(new CalculationStrategy[strategies.size()]);
-        this.nonPartitionedWriters = nonPartitionedConsumers.toArray(new ObjectConsumer[nonPartitionedConsumers.size()]);
+        this.nonPartitionedWriters = nonPartitionedConsumers.toArray(new Consumer[nonPartitionedConsumers.size()]);
         this.nonPartitionedAddresses = nonPartitionedAddresses.toArray(new Address[nonPartitionedAddresses.size()]);
         this.chunkSize = chunkSize(containerContext);
 
         resetState();
     }
 
-    private static ObjectConsumer[] filterConsumers(ObjectConsumer[] consumers, boolean isShuffled) {
-        List<ObjectConsumer> filtered = new ArrayList<ObjectConsumer>(consumers.length);
+    private static Consumer[] filterConsumers(Consumer[] consumers, boolean isShuffled) {
+        List<Consumer> filtered = new ArrayList<Consumer>(consumers.length);
 
-        for (ObjectConsumer consumer : consumers) {
+        for (Consumer consumer : consumers) {
             if (consumer.isShuffled() == isShuffled) {
                 filtered.add(consumer);
             }
         }
 
-        return filtered.toArray(new ObjectConsumer[filtered.size()]);
+        return filtered.toArray(new Consumer[filtered.size()]);
     }
 
     private int chunkSize(ContainerContextImpl containerContext) {
@@ -141,7 +141,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         for (DataWriter sender : this.sendersArray) {
             this.markersCache.put(sender, position++);
         }
-        for (ObjectConsumer shuffledConsumer : this.shuffledConsumers) {
+        for (Consumer shuffledConsumer : this.shuffledConsumers) {
             this.markersCache.put(shuffledConsumer, position++);
         }
     }
@@ -162,13 +162,13 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void initCalculationStrategies(Set<CalculationStrategy> strategies,
-                                           List<ObjectConsumer> nonPartitionedConsumers,
+                                           List<Consumer> nonPartitionedConsumers,
                                            Set<Address> nonPartitionedAddresses) {
 
         JobManager jobManager = this.containerContext.getJobContext().getJobManager();
         Map<Address, Address> hzToJetAddressMapping = jobManager.getJobContext().getHzToJetAddressMapping();
         List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
-        for (ObjectConsumer consumer : this.shuffledConsumers) {
+        for (Consumer consumer : this.shuffledConsumers) {
             MemberDistributionStrategy memberDistributionStrategy = consumer.getMemberDistributionStrategy();
             initConsumerCalculationStrategy(
                     strategies,
@@ -184,10 +184,10 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     private void initConsumerCalculationStrategy(Set<CalculationStrategy> strategies,
                                                  List<Integer> localPartitions,
-                                                 List<ObjectConsumer> nonPartitionedConsumers,
+                                                 List<Consumer> nonPartitionedConsumers,
                                                  Set<Address> nonPartitionedAddresses,
                                                  Map<Address, Address> hzToJetAddressMapping,
-                                                 ObjectConsumer consumer,
+                                                 Consumer consumer,
                                                  MemberDistributionStrategy memberDistributionStrategy) {
         if (memberDistributionStrategy != null) {
             Set<Member> members = new HashSet<>(memberDistributionStrategy.getTargetMembers(containerContext));
@@ -222,10 +222,10 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     private void initConsumerPartitions(Set<CalculationStrategy> strategies,
                                         List<Integer> localPartitions,
-                                        List<ObjectConsumer> nonPartitionedConsumers,
+                                        List<Consumer> nonPartitionedConsumers,
                                         Set<Address> nonPartitionedAddresses,
                                         Map<Address, Address> hzToJetAddressMapping,
-                                        ObjectConsumer consumer
+                                        Consumer consumer
     ) {
         CalculationStrategy calculationStrategy = new CalculationStrategy(
                 consumer.getHashingStrategy(),
@@ -260,7 +260,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
 
         strategies.add(calculationStrategy);
-        Map<Integer, List<ObjectConsumer>> map = this.partitionedWriters.get(calculationStrategy);
+        Map<Integer, List<Consumer>> map = this.partitionedWriters.get(calculationStrategy);
 
         if (map == null) {
             map = new HashMap<>();
@@ -276,7 +276,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private void processWriterPartition(List<ObjectConsumer> nonPartitionedConsumers,
+    private void processWriterPartition(List<Consumer> nonPartitionedConsumers,
                                         Set<Address> nonPartitionedAddresses,
                                         Map<Address, Address> hzToJetAddressMapping,
                                         DataWriter writer) {
@@ -291,8 +291,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private List<ObjectConsumer> processPartition(Map<Integer, List<ObjectConsumer>> map, int partitionId) {
-        List<ObjectConsumer> partitionOwnerWriters = map.get(partitionId);
+    private List<Consumer> processPartition(Map<Integer, List<Consumer>> map, int partitionId) {
+        List<Consumer> partitionOwnerWriters = map.get(partitionId);
 
         if (partitionOwnerWriters == null) {
             partitionOwnerWriters = new ArrayList<>();
@@ -305,8 +305,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     public void onOpen() {
         super.onOpen();
 
-        for (ObjectConsumer objectConsumer : this.shuffledConsumers) {
-            objectConsumer.open();
+        for (Consumer consumer : this.shuffledConsumers) {
+            consumer.open();
         }
 
         for (DataWriter pairWriter : this.sendersArray) {
@@ -319,8 +319,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     public void onClose() {
         super.onClose();
 
-        for (ObjectConsumer objectConsumer : this.shuffledConsumers) {
-            objectConsumer.close();
+        for (Consumer consumer : this.shuffledConsumers) {
+            consumer.close();
         }
 
         for (DataWriter pairWriter : this.sendersArray) {
@@ -335,20 +335,20 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     @Override
-    public boolean onChunk(ProducerInputStream<Object> chunk) throws Exception {
-        if (chunk.size() > 0) {
+    public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
+        if (inputChunk.size() > 0) {
             boolean success = false;
             boolean consumed;
 
             /// Local consumers
-            consumed = processLocalConsumers(chunk);
+            consumed = processLocalConsumers(inputChunk);
 
             // Shufflers
-            boolean chunkPooled = this.lastConsumedSize >= chunk.size();
+            boolean chunkPooled = this.lastConsumedSize >= inputChunk.size();
 
             if ((!chunkInProgress) && (!chunkPooled)) {
-                this.lastConsumedSize = processShufflers(chunk, this.lastConsumedSize);
-                chunkPooled = this.lastConsumedSize >= chunk.size();
+                this.lastConsumedSize = processShufflers(inputChunk, this.lastConsumedSize);
+                chunkPooled = this.lastConsumedSize >= inputChunk.size();
                 this.chunkInProgress = true;
                 consumed = true;
             }
@@ -384,7 +384,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private boolean processLocalConsumers(ProducerInputStream<Object> chunk) throws Exception {
+    private boolean processLocalConsumers(InputChunk<Object> chunk) throws Exception {
         boolean consumed = false;
 
         if (!this.receiver) {
@@ -403,14 +403,14 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             flushed &= sender.isFlushed();
         }
 
-        for (ObjectConsumer objectConsumer : this.shuffledConsumers) {
-            flushed &= objectConsumer.isFlushed();
+        for (Consumer consumer : this.shuffledConsumers) {
+            flushed &= consumer.isFlushed();
         }
 
         return flushed;
     }
 
-    private int processShufflers(ProducerInputStream<Object> chunk, int lastConsumedSize) throws Exception {
+    private int processShufflers(InputChunk<Object> chunk, int lastConsumedSize) throws Exception {
         if (this.calculationStrategies.length > 0) {
             int toIdx = Math.min(lastConsumedSize + this.chunkSize, chunk.size());
             int consumedSize = 0;
@@ -437,8 +437,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void flush() {
-        for (ObjectConsumer objectConsumer : this.shuffledConsumers) {
-            objectConsumer.flush();
+        for (Consumer consumer : this.shuffledConsumers) {
+            consumer.flush();
         }
 
         if (!this.receiver) {
@@ -455,8 +455,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             CalculationStrategy objectCalculationStrategy,
             boolean markedNonPartitionedRemotes
     ) throws Exception {
-        Map<Integer, List<ObjectConsumer>> cache = this.partitionedWriters.get(calculationStrategy);
-        List<ObjectConsumer> writers = null;
+        Map<Integer, List<Consumer>> cache = this.partitionedWriters.get(calculationStrategy);
+        List<Consumer> writers = null;
 
         if (cache.size() > 0) {
             if (
@@ -543,33 +543,33 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void sendToMarked(Object object) throws Exception {
-        for (ObjectConsumer marker : this.markers) {
+        for (Consumer marker : this.markers) {
             if (marker != null) {
-                marker.consumeObject(object);
+                marker.consume(object);
             }
         }
     }
 
-    private void markConsumer(ObjectConsumer consumer) {
+    private void markConsumer(Consumer consumer) {
         int position = this.markersCache.get(consumer);
         this.markers[position] = consumer;
     }
 
-    private void writeToNonPartitionedLocals(ProducerInputStream<Object> chunk) throws Exception {
-        for (ObjectConsumer nonPartitionedWriter : this.nonPartitionedWriters) {
-            nonPartitionedWriter.consumeChunk(chunk);
+    private void writeToNonPartitionedLocals(InputChunk<Object> chunk) throws Exception {
+        for (Consumer nonPartitionedWriter : this.nonPartitionedWriters) {
+            nonPartitionedWriter.consume(chunk);
         }
     }
 
-    private void sendToNonPartitionedRemotes(ProducerInputStream<Object> chunk) throws Exception {
+    private void sendToNonPartitionedRemotes(InputChunk<Object> chunk) throws Exception {
         for (Address remoteAddress : this.nonPartitionedAddresses) {
-            this.senders.get(remoteAddress).consumeChunk(chunk);
+            this.senders.get(remoteAddress).consume(chunk);
         }
     }
 
     private void writeToNonPartitionedLocals(Object object) throws Exception {
-        for (ObjectConsumer nonPartitionedWriter : this.nonPartitionedWriters) {
-            nonPartitionedWriter.consumeObject(object);
+        for (Consumer nonPartitionedWriter : this.nonPartitionedWriters) {
+            nonPartitionedWriter.consume(object);
         }
     }
 

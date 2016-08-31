@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.dag.sink;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerContext;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
@@ -34,10 +34,10 @@ public class DataFileWriter extends AbstractHazelcastWriter {
     }
 
     @Override
-    protected void processChunk(ProducerInputStream stream) {
+    protected void processChunk(InputChunk inputChunk) {
         checkFileOpen();
         StringBuilder sb = new StringBuilder();
-        for (Object o : stream) {
+        for (Object o : inputChunk) {
             Pair t = (Pair) o;
             for (int i = 0; i < 2; i++) {
                 sb.append(t.get(i).toString()).append(" ");

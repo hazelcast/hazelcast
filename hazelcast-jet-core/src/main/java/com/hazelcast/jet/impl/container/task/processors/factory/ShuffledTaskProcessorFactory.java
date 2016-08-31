@@ -19,8 +19,8 @@ package com.hazelcast.jet.impl.container.task.processors.factory;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Consumer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.container.ContainerContextImpl;
 import com.hazelcast.jet.impl.container.task.TaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.shuffling.ShuffledActorTaskProcessor;
@@ -30,14 +30,14 @@ import com.hazelcast.jet.processor.Processor;
 
 public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
     @Override
-    public TaskProcessor consumerTaskProcessor(ObjectConsumer[] consumers,
+    public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,
                                                ContainerContextImpl containerContext,
                                                ProcessorContext processorContext,
                                                Vertex vertex,
                                                int taskID) {
         return actorTaskProcessor(
-                new ObjectProducer[0],
+                new Producer[0],
                 consumers,
                 processor,
                 containerContext,
@@ -48,8 +48,8 @@ public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
     }
 
     @Override
-    public TaskProcessor actorTaskProcessor(ObjectProducer[] producers,
-                                            ObjectConsumer[] consumers,
+    public TaskProcessor actorTaskProcessor(Producer[] producers,
+                                            Consumer[] consumers,
                                             Processor processor,
                                             ContainerContextImpl containerContext,
                                             ProcessorContext processorContext,

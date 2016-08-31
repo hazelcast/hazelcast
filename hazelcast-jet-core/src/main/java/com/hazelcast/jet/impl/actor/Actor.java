@@ -14,33 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.data.io;
+package com.hazelcast.jet.impl.actor;
 
-import java.util.Iterator;
+import com.hazelcast.jet.impl.container.task.ContainerTask;
 
 /**
- * Represents abstract inputStream to read objects
- *
- * @param <T> type of objects
+ * This is an abstract interface for each actor in the system which
+ * consumes or produces objects
  */
-public interface ProducerInputStream<T> extends Iterable<T> {
+public interface Actor extends Producer, Consumer {
     /**
-     * Return object with corresponding index
-     *
-     * @param idx index
-     * @return object
+     * @return container's task it belongs to
      */
-    T get(int idx);
-
-    /**
-     * @return size of the inputStream
-     */
-    int size();
-
-    /**
-     * Creates and return iterator over objects in inputStream
-     *
-     * @return iterator over inputStream
-     */
-    Iterator<T> iterator();
+    ContainerTask getSourceTask();
 }

@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.impl.actor.ComposedActor;
-import com.hazelcast.jet.impl.actor.ObjectActor;
+import com.hazelcast.jet.impl.actor.Actor;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
 
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ public class DataChannel {
     }
 
     public void close() {
-        for (ObjectActor actor : getActors()) {
+        for (Actor actor : getActors()) {
             actor.handleProducerCompleted();
         }
     }

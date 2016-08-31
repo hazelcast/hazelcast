@@ -20,10 +20,10 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingbufferWithReferenceStrategy;
 import com.hazelcast.jet.impl.container.task.ContainerTask;
-import com.hazelcast.jet.impl.data.io.ObjectIOStream;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -37,13 +37,13 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class RingbufferActor implements ObjectActor {
+public class RingbufferActor implements Actor {
     private final Edge edge;
     private final Vertex vertex;
     private final ContainerTask sourceTask;
     private final Object[] producerChunk;
     private final Ringbuffer<Object> ringbuffer;
-    private final ObjectIOStream<Object> flushBuffer;
+    private final IOBuffer<Object> flushBuffer;
     private final List<ProducerCompletionHandler> completionHandlers;
     private int producedCount;
     private int lastConsumedCount;
@@ -78,7 +78,7 @@ public class RingbufferActor implements ObjectActor {
         int objectChunkSize = jobConfig.getChunkSize();
         this.producerChunk = new Object[objectChunkSize];
         int ringbufferSize = jobConfig.getRingbufferSize();
-        this.flushBuffer = new ObjectIOStream<>(new Object[objectChunkSize]);
+        this.flushBuffer = new IOBuffer<>(new Object[objectChunkSize]);
         this.completionHandlers = new CopyOnWriteArrayList<>();
         this.ringbuffer = new RingbufferWithReferenceStrategy<>(ringbufferSize,
                 nodeEngine.getLogger(RingbufferActor.class)
@@ -110,18 +110,18 @@ public class RingbufferActor implements ObjectActor {
     }
 
     @Override
-    public int consumeChunk(ProducerInputStream<Object> chunk) {
+    public int consume(InputChunk<Object> chunk) {
         this.currentFlushedCount = 0;
         this.lastConsumedCount = 0;
-        this.flushBuffer.consumeStream(chunk);
+        this.flushBuffer.collect(chunk);
         return chunk.size();
     }
 
     @Override
-    public int consumeObject(Object object) {
+    public int consume(Object object) {
         this.currentFlushedCount = 0;
         this.lastConsumedCount = 0;
-        this.flushBuffer.consume(object);
+        this.flushBuffer.collect(object);
         return 1;
     }
 

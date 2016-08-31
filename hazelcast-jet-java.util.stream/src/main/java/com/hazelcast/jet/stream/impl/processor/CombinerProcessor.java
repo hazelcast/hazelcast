@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 
 import java.util.function.BinaryOperator;
@@ -46,9 +46,9 @@ public class CombinerProcessor<T, R> extends AbstractStreamProcessor<T, R> {
     }
 
     @Override
-    protected boolean process(ProducerInputStream<T> inputStream, ConsumerOutputStream<R> outputStream)
+    protected boolean process(InputChunk<T> inputChunk, OutputCollector<R> output)
             throws Exception {
-        for (T input : inputStream) {
+        for (T input : inputChunk) {
             if (result != null) {
                 result = combiner.apply(result, input);
             } else {
@@ -59,9 +59,9 @@ public class CombinerProcessor<T, R> extends AbstractStreamProcessor<T, R> {
     }
 
     @Override
-    protected boolean finalize(ConsumerOutputStream<R> outputStream, int chunkSize) throws Exception {
+    protected boolean finalize(OutputCollector<R> output, int chunkSize) throws Exception {
         if (result != null) {
-            outputStream.consume(finisher.apply(result));
+            output.collect(finisher.apply(result));
         }
         return true;
     }

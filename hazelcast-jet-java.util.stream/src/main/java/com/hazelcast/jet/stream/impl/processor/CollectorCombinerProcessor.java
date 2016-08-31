@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 
 import java.util.function.BiConsumer;
@@ -43,9 +43,9 @@ public class CollectorCombinerProcessor<T> extends AbstractStreamProcessor<T, T>
     }
 
     @Override
-    protected boolean process(ProducerInputStream<T> inputStream, ConsumerOutputStream<T> outputStream)
+    protected boolean process(InputChunk<T> inputChunk, OutputCollector<T> output)
             throws Exception {
-        for (T input : inputStream) {
+        for (T input : inputChunk) {
             if (result != null) {
                 combiner.accept(result, input);
             } else {
@@ -56,9 +56,9 @@ public class CollectorCombinerProcessor<T> extends AbstractStreamProcessor<T, T>
     }
 
     @Override
-    protected boolean finalize(ConsumerOutputStream<T> outputStream, int chunkSize) throws Exception {
+    protected boolean finalize(OutputCollector<T> output, int chunkSize) throws Exception {
         if (result != null) {
-            outputStream.consume(result);
+            output.collect(result);
         }
         return true;
     }

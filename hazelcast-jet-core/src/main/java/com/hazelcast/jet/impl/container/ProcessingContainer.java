@@ -20,7 +20,7 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.sink.Sink;
 import com.hazelcast.jet.dag.source.Source;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
 import com.hazelcast.jet.impl.container.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
@@ -75,7 +75,7 @@ public class ProcessingContainer extends
 
     private final List<DataChannel> outputChannels;
 
-    private final List<ObjectProducer> sourcesProducers;
+    private final List<Producer> sourcesProducers;
 
     private final TaskProcessorFactory taskProcessorFactory;
 
@@ -211,13 +211,13 @@ public class ProcessingContainer extends
         if (taskCount == 0) {
             throw new IllegalStateException("No containerTasks for container");
         }
-        List<ObjectProducer> producers = new ArrayList<>(sourcesProducers);
-        List<ObjectProducer>[] tasksProducers = new List[taskCount];
+        List<Producer> producers = new ArrayList<>(sourcesProducers);
+        List<Producer>[] tasksProducers = new List[taskCount];
         for (int taskIdx = 0; taskIdx < getContainerTasks().length; taskIdx++) {
             tasksProducers[taskIdx] = new ArrayList<>();
         }
         int taskId = 0;
-        for (ObjectProducer producer : producers) {
+        for (Producer producer : producers) {
             tasksProducers[taskId].add(producer);
             taskId = (taskId + 1) % taskCount;
         }
@@ -226,7 +226,7 @@ public class ProcessingContainer extends
         }
     }
 
-    private void startTask(List<ObjectProducer> producers, int taskIdx) {
+    private void startTask(List<Producer> producers, int taskIdx) {
         for (DataChannel channel : getInputChannels()) {
             producers.addAll(channel.getActors()
                     .stream()
@@ -312,14 +312,14 @@ public class ProcessingContainer extends
     private void buildSources() {
         if (getVertex().getSources().size() > 0) {
             for (Source source : getVertex().getSources()) {
-                List<ObjectProducer> readers = getDataReaders(source);
+                List<Producer> readers = getDataReaders(source);
                 sourcesProducers.addAll(readers);
             }
         }
     }
 
-    private List<ObjectProducer> getDataReaders(Source source) {
-        return Arrays.asList(source.getReaders(getContainerContext(), getVertex()));
+    private List<Producer> getDataReaders(Source source) {
+        return Arrays.asList(source.getProducers(getContainerContext(), getVertex()));
     }
 
     private List<DataWriter> getDataWriters(Sink sink) {

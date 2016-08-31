@@ -24,10 +24,11 @@ import com.hazelcast.jet.impl.job.JobProxy;
 import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.job.client.ClientJobProxy;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.job.Job;
+
 import java.util.Set;
 
+import static com.hazelcast.jet.impl.util.JetUtil.checkJobName;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -35,10 +36,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class JetEngine {
     private JetEngine() {
-    }
-
-    private static void checkJobName(String jobName) {
-        JetUtil.checkJobName(jobName);
     }
 
     /**
