@@ -26,9 +26,10 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
+
+import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.List;
-import javax.cache.Cache;
 
 /**
  * Client side cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
