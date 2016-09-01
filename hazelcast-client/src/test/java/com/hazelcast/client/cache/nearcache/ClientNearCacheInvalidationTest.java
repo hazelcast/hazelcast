@@ -61,9 +61,9 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test that near cache invalidation events are delivered when a cache is:
  * <ul>
- *     <li><code>clear</code>ed</li>
- *     <li><code>destroy</code>ed (with <code>Cache.destroy()</code></li>
- *     <li>destroyed by its client-side <code>CacheManager.destroyCache</code></li>
+ * <li><code>clear</code>ed</li>
+ * <li><code>destroy</code>ed (with <code>Cache.destroy()</code></li>
+ * <li>destroyed by its client-side <code>CacheManager.destroyCache</code></li>
  * </ul>
  * and <b>not delivered</b> when a cache is closed (<code>Cache.close()</code>).
  * Respective operations are tested when executed either from member or client-side Cache proxies with the exception of
@@ -143,7 +143,6 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
         for (int i = 0; i < 1000; i++) {
             testContext.memberCache.put(Integer.toString(i), Integer.toString(i));
         }
-
     }
 
     @After
@@ -153,7 +152,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void when_cacheDestroyed_invalidationEventIsReceived() {
-        final AtomicInteger counter = new AtomicInteger();
+        AtomicInteger counter = new AtomicInteger();
         registerInvalidationListener(counter);
         destroy();
         assertInvalidationEventCountNeverExceeds(counter, MEMBER_COUNT);
@@ -161,7 +160,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void when_cacheCleared_invalidationEventIsReceived() {
-        final AtomicInteger counter = new AtomicInteger();
+        AtomicInteger counter = new AtomicInteger();
         registerInvalidationListener(counter);
         clear();
         assertInvalidationEventCountNeverExceeds(counter, 1);
@@ -169,17 +168,19 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void when_cacheClosed_invalidationEventIsNotReceived() {
-        final AtomicInteger counter = new AtomicInteger();
+        AtomicInteger counter = new AtomicInteger();
         registerInvalidationListener(counter);
         close();
         assertInvalidationEventNeverReceived(counter);
     }
 
-    // When CacheManager.destroyCache is invoked from client-side CacheManager, an invalidation event is received
-    // When invoked from a member-side CacheManager, invalidation event is not received.
+    /**
+     * When CacheManager.destroyCache() is invoked from client-side CacheManager, an invalidation event is received.
+     * When invoked from a member-side CacheManager, invalidation event is not received.
+     */
     @Test
     public void when_cacheManagerDestroyCacheInvoked_invalidationEventMayBeReceived() {
-        final AtomicInteger counter = new AtomicInteger();
+        AtomicInteger counter = new AtomicInteger();
         registerInvalidationListener(counter);
         destroyCacheFromCacheManager();
         if (invokeCacheOperationsFromMember) {
@@ -194,13 +195,15 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void when_shuttingDown_invalidationEventIsNotReceived() {
-        final AtomicInteger counter = new AtomicInteger();
+        AtomicInteger counter = new AtomicInteger();
         registerInvalidationListener(counter);
         shutdown();
         assertInvalidationEventNeverReceived(counter);
     }
 
-    // Assert that the counter is eventually incremented to at least 1 and stays less than or equal to maximumEventCount
+    /**
+     * Asserts that the counter is eventually incremented to at least 1 and stays less than or equal to maximumEventCount.
+     */
     private void assertInvalidationEventCountNeverExceeds(final AtomicInteger counter, final int maximumEventCount) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -262,35 +265,6 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
         };
     }
 
-    private final class NearCacheInvalidationHandler
-            extends CacheAddInvalidationListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
-
-        private final AtomicInteger counter;
-
-        public NearCacheInvalidationHandler(AtomicInteger counter) {
-            this.counter = counter;
-        }
-
-        @Override
-        public void handle(String name, Data key, String sourceUuid) {
-            counter.incrementAndGet();
-        }
-
-        @Override
-        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids) {
-            counter.incrementAndGet();
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
-    }
-
     private void clear() {
         if (invokeCacheOperationsFromMember) {
             testContext.memberCache.clear();
@@ -318,8 +292,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     private void shutdown() {
         if (invokeCacheOperationsFromMember) {
             testContext.member.shutdown();
-        }
-        else {
+        } else {
             testContext.client.shutdown();
         }
     }
@@ -338,13 +311,42 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         return new NearCacheConfig()
-                .setName(DEFAULT_CACHE_NAME)
-                .setInMemoryFormat(inMemoryFormat);
+                .setInMemoryFormat(inMemoryFormat)
+                .setName(DEFAULT_CACHE_NAME);
     }
 
     protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
-        CacheConfig cacheConfig = new CacheConfig().setName(DEFAULT_CACHE_NAME).setInMemoryFormat(inMemoryFormat)
+        return new CacheConfig().setName(DEFAULT_CACHE_NAME)
+                .setInMemoryFormat(inMemoryFormat)
                 .setBackupCount(1);
-        return cacheConfig;
+    }
+
+    private final class NearCacheInvalidationHandler
+            extends CacheAddInvalidationListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private final AtomicInteger counter;
+
+        NearCacheInvalidationHandler(AtomicInteger counter) {
+            this.counter = counter;
+        }
+
+        @Override
+        public void handle(String name, Data key, String sourceUuid) {
+            counter.incrementAndGet();
+        }
+
+        @Override
+        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids) {
+            counter.incrementAndGet();
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+        }
+
+        @Override
+        public void onListenerRegister() {
+        }
     }
 }

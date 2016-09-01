@@ -23,8 +23,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ExecutionException;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientNearCacheTest extends ClientNearCacheTestSupport {
@@ -90,14 +88,12 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
-    public void testLoadAllNearCacheInvalidationBinary()
-            throws InterruptedException {
+    public void testLoadAllNearCacheInvalidationBinary() throws Exception {
         testLoadAllNearCacheInvalidation(InMemoryFormat.BINARY);
     }
 
     @Test
-    public void testLoadAllNearCacheInvalidationObject()
-            throws InterruptedException {
+    public void testLoadAllNearCacheInvalidationObject() throws Exception {
         testLoadAllNearCacheInvalidation(InMemoryFormat.OBJECT);
     }
 
@@ -127,15 +123,12 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
-    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithBinaryInMemoryFormat()
-            throws ExecutionException, InterruptedException {
+    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithBinaryInMemoryFormat() throws Exception {
         putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat.BINARY);
     }
 
     @Test
-    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithObjectInMemoryFormat()
-            throws ExecutionException, InterruptedException {
+    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithObjectInMemoryFormat() throws Exception {
         putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat.OBJECT);
     }
-
 }

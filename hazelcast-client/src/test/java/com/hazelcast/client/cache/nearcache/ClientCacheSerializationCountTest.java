@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache.nearcache;
 
-
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
@@ -29,6 +28,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
@@ -56,48 +56,118 @@ import static org.junit.Assert.assertEquals;
 public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
 
     static final String CACHE_NAME = randomString();
+
+    private static final AtomicInteger SERIALIZE_COUNT = new AtomicInteger();
+    private static final AtomicInteger DESERIALIZE_COUNT = new AtomicInteger();
+
     TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     NearCache nearCache;
     ICache<String, SerializationCountingData> cache;
 
-    private static final AtomicInteger serializeCount = new AtomicInteger();
-    private static final AtomicInteger deserializeCount = new AtomicInteger();
-
-    static class SerializationCountingData implements Portable {
-        public static int FACTORY_ID = 1;
-        public static int CLASS_ID = 1;
-
-        public SerializationCountingData() {
-
-        }
-
-        @Override
-        public int getFactoryId() {
-            return FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return CLASS_ID;
-        }
-
-        @Override
-        public void writePortable(PortableWriter writer) throws IOException {
-            serializeCount.incrementAndGet();
-        }
-
-        @Override
-        public void readPortable(PortableReader reader) throws IOException {
-            deserializeCount.incrementAndGet();
-        }
-
-    }
-
     @After
     public void tearDown() {
-        deserializeCount.set(0);
-        serializeCount.set(0);
+        DESERIALIZE_COUNT.set(0);
+        SERIALIZE_COUNT.set(0);
         hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void testDeserializationCountWith_ObjectNearCache_cacheLocalUpdatePolicy() {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT, LocalUpdatePolicy.CACHE);
+        prepareCache(nearCacheConfig);
+
+        String key = randomString();
+        SerializationCountingData value = new SerializationCountingData();
+        cache.put(key, value);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, nearCache.size());
+            }
+        });
+        assertAndReset(1, 0);
+
+        cache.get(key);
+        assertAndReset(0, 0);
+
+        cache.get(key);
+        assertAndReset(0, 0);
+    }
+
+    @Test
+    public void testDeserializationCountWith_BinaryNearCache_cacheLocalUpdatePolicy() {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY, LocalUpdatePolicy.CACHE);
+        prepareCache(nearCacheConfig);
+
+        String key = randomString();
+        SerializationCountingData value = new SerializationCountingData();
+        cache.put(key, value);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, nearCache.size());
+            }
+        });
+        assertAndReset(1, 0);
+
+        cache.get(key);
+        assertAndReset(0, 1);
+
+        cache.get(key);
+        assertAndReset(0, 1);
+    }
+
+    @Test
+    public void testDeserializationCountWith_ObjectNearCache_invalidateLocalUpdatePolicy() {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT, LocalUpdatePolicy.INVALIDATE);
+        prepareCache(nearCacheConfig);
+
+        String key = randomString();
+        SerializationCountingData value = new SerializationCountingData();
+        cache.put(key, value);
+        assertAndReset(1, 0);
+
+        cache.get(key);
+        assertAndReset(0, 1);
+
+        cache.get(key);
+        assertAndReset(0, 0);
+    }
+
+    @Test
+    public void testDeserializationCountWith_BinaryNearCache_invalidateLocalUpdatePolicy() {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY, LocalUpdatePolicy.INVALIDATE);
+        prepareCache(nearCacheConfig);
+
+        String key = randomString();
+        SerializationCountingData value = new SerializationCountingData();
+        cache.put(key, value);
+        assertAndReset(1, 0);
+
+        cache.get(key);
+        assertAndReset(0, 1);
+
+        cache.get(key);
+        assertAndReset(0, 1);
+    }
+
+    @Test
+    public void testDeserializationCountWithoutNearCache() {
+        prepareCache(null);
+
+        SerializationCountingData value = new SerializationCountingData();
+
+        String key = randomString();
+        cache.put(key, value);
+        assertAndReset(1, 0);
+
+        cache.get(key);
+        assertAndReset(0, 1);
+
+        cache.get(key);
+        assertAndReset(0, 1);
     }
 
     protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
@@ -106,8 +176,7 @@ public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
                 .setInMemoryFormat(inMemoryFormat);
     }
 
-    protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat
-            , NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
+    protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat, LocalUpdatePolicy localUpdatePolicy) {
         return new NearCacheConfig()
                 .setName(CACHE_NAME)
                 .setLocalUpdatePolicy(localUpdatePolicy)
@@ -141,109 +210,6 @@ public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
         });
     }
 
-    @Test
-    public void testDeserializationCountWith_ObjectNearCache_cacheLocalUpdatePolicy() {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT
-                , NearCacheConfig.LocalUpdatePolicy.CACHE);
-        prepareCache(nearCacheConfig);
-
-        final String key = randomString();
-        SerializationCountingData value = new SerializationCountingData();
-        cache.put(key, value);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, nearCache.size());
-            }
-        });
-        assertAndReset(1, 0);
-
-        cache.get(key);
-        assertAndReset(0, 0);
-
-        cache.get(key);
-        assertAndReset(0, 0);
-    }
-
-    @Test
-    public void testDeserializationCountWith_BinaryNearCache_cacheLocalUpdatePolicy() {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY
-                , NearCacheConfig.LocalUpdatePolicy.CACHE);
-        prepareCache(nearCacheConfig);
-
-        String key = randomString();
-        SerializationCountingData value = new SerializationCountingData();
-        cache.put(key, value);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, nearCache.size());
-            }
-        });
-        assertAndReset(1, 0);
-
-        cache.get(key);
-        assertAndReset(0, 1);
-
-        cache.get(key);
-        assertAndReset(0, 1);
-    }
-
-    @Test
-    public void testDeserializationCountWith_ObjectNearCache_invalidateLocalUpdatePolicy() {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT
-                , NearCacheConfig.LocalUpdatePolicy.INVALIDATE);
-        prepareCache(nearCacheConfig);
-
-        String key = randomString();
-        SerializationCountingData value = new SerializationCountingData();
-        cache.put(key, value);
-        assertAndReset(1, 0);
-
-        cache.get(key);
-        assertAndReset(0, 1);
-
-        cache.get(key);
-        assertAndReset(0, 0);
-    }
-
-    @Test
-    public void testDeserializationCountWith_BinaryNearCache_invalidateLocalUpdatePolicy() {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY
-                , NearCacheConfig.LocalUpdatePolicy.INVALIDATE);
-        prepareCache(nearCacheConfig);
-
-        String key = randomString();
-        SerializationCountingData value = new SerializationCountingData();
-        cache.put(key, value);
-        assertAndReset(1, 0);
-
-        cache.get(key);
-        assertAndReset(0, 1);
-
-        cache.get(key);
-        assertAndReset(0, 1);
-    }
-
-    @Test
-    public void testDeserializationCountWithoutNearCache() {
-        prepareCache(null);
-
-        SerializationCountingData value = new SerializationCountingData();
-
-        String key = randomString();
-        cache.put(key, value);
-        assertAndReset(1, 0);
-
-        cache.get(key);
-        assertAndReset(0, 1);
-
-        cache.get(key);
-        assertAndReset(0, 1);
-    }
-
     private void prepareCache(NearCacheConfig nearCacheConfig) {
         hazelcastFactory.newHazelcastInstance(createConfig());
 
@@ -267,9 +233,36 @@ public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
 
 
     private void assertAndReset(int serializeCount, int deserializeCount) {
-        assertEquals(serializeCount, this.serializeCount.getAndSet(0));
-        assertEquals(deserializeCount, this.deserializeCount.getAndSet(0));
+        assertEquals(serializeCount, SERIALIZE_COUNT.getAndSet(0));
+        assertEquals(deserializeCount, DESERIALIZE_COUNT.getAndSet(0));
     }
 
+    static class SerializationCountingData implements Portable {
 
+        static int FACTORY_ID = 1;
+        static int CLASS_ID = 1;
+
+        public SerializationCountingData() {
+        }
+
+        @Override
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            SERIALIZE_COUNT.incrementAndGet();
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            DESERIALIZE_COUNT.incrementAndGet();
+        }
+    }
 }
