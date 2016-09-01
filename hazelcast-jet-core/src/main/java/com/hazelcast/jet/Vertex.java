@@ -120,8 +120,9 @@ public class Vertex implements Serializable {
      *
      * @param source corresponding source
      */
-    public void addSource(Source source) {
+    public Vertex addSource(Source source) {
         this.sources.add(source);
+        return this;
     }
 
     /**
@@ -129,8 +130,9 @@ public class Vertex implements Serializable {
      *
      * @param sink corresponding sink
      */
-    public void addSink(Sink sink) {
+    public Vertex addSink(Sink sink) {
         this.sinks.add(sink);
+        return this;
     }
 
     /**

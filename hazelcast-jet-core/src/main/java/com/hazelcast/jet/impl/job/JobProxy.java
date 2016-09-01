@@ -23,17 +23,13 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
-import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class JobProxy extends AbstractDistributedObject<JobService> implements Job {
     private final String name;
@@ -43,15 +39,10 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
 
     public JobProxy(String name, JobService jobService, NodeEngine nodeEngine) {
         super(nodeEngine, jobService);
-
         this.name = name;
-        String hzName = nodeEngine.getHazelcastInstance().getName();
-
-        ExecutorService executorService = newCachedThreadPool(new JetThreadFactory("job-invoker-thread-" + name, hzName));
-
         hazelcastInstance = nodeEngine.getHazelcastInstance();
         jobStateMachine = new JobStateMachine(name);
-        jobClusterService = new ServerJobClusterService(name, executorService, nodeEngine);
+        jobClusterService = new ServerJobClusterService(name, nodeEngine);
     }
 
     public void init(JobConfig config) {
@@ -79,7 +70,7 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
     @Override
     protected boolean preDestroy() {
         try {
-            jobClusterService.destroy(jobStateMachine).get();
+            jobClusterService.destroy(jobStateMachine);
             return true;
         } catch (Exception e) {
             throw JetUtil.reThrow(e);

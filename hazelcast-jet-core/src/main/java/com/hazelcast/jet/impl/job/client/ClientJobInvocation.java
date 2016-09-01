@@ -19,8 +19,11 @@ package com.hazelcast.jet.impl.job.client;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.jet.impl.job.AbstractJobInvocation;
 import com.hazelcast.nio.Address;
+import java.util.concurrent.CompletableFuture;
 
 public class ClientJobInvocation<T> extends AbstractJobInvocation<ClientMessage, T> {
     private final HazelcastClientInstanceImpl client;
@@ -34,7 +37,21 @@ public class ClientJobInvocation<T> extends AbstractJobInvocation<ClientMessage,
 
     @Override
     @SuppressWarnings("unchecked")
-    protected T execute(ClientMessage operation, Address address) throws Exception {
-        return (T) new ClientInvocation(this.client, operation, address).invoke().get();
+    protected CompletableFuture<T> getFuture() {
+        CompletableFuture<T> completableFuture = new CompletableFuture<>();
+        ClientInvocation clientInvocation = new ClientInvocation(this.client, operation, address);
+        ClientInvocationFuture future = clientInvocation.invoke();
+        future.andThen(new ExecutionCallback<ClientMessage>() {
+            @Override
+            public void onResponse(ClientMessage clientMessage) {
+                completableFuture.complete((T) clientMessage);
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                completableFuture.completeExceptionally(throwable);
+            }
+        });
+        return completableFuture;
     }
 }

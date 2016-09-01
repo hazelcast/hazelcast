@@ -17,30 +17,17 @@
 package com.hazelcast.jet.impl.job;
 
 import com.hazelcast.nio.Address;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 
-public abstract class AbstractJobInvocation<Instance, T> implements Callable<T> {
-    private final Address address;
-    private final Instance operation;
+public abstract class AbstractJobInvocation<Instance, T> {
+    protected final Address address;
+    protected final Instance operation;
 
     public AbstractJobInvocation(Instance operation, Address address) {
         this.address = address;
         this.operation = operation;
     }
 
-    @Override
-    public T call() throws Exception {
-        try {
-            return execute(operation, address);
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof Exception) {
-                throw (Exception) e.getCause();
-            }
-            throw e;
-        }
-    }
-
     @SuppressWarnings("unchecked")
-    protected abstract T execute(Instance operation, Address address) throws Exception;
+    protected abstract CompletableFuture<T> getFuture() throws Exception;
 }

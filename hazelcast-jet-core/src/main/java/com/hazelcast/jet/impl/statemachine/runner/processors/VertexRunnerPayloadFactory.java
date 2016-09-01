@@ -30,7 +30,7 @@ public final class VertexRunnerPayloadFactory {
             case START:
                 return new VertexRunnerStartProcessor(runner);
             case EXECUTE:
-                return new VertexExecuteProcessor();
+                return new VertexRunnerExecuteProcessor();
             case INTERRUPT:
                 return new VertexRunnerInterruptProcessor(runner);
             case INTERRUPTED:

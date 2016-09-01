@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.statemachine.runner.processors;
 import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 
-public class VertexExecuteProcessor implements VertexRunnerPayloadProcessor<Dummy> {
+public class VertexRunnerExecuteProcessor implements VertexRunnerPayloadProcessor<Dummy> {
     @Override
     public void process(Dummy payload) throws Exception {
 

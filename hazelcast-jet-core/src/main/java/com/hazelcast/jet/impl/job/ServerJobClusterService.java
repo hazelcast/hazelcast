@@ -36,17 +36,16 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 
 public class ServerJobClusterService extends JobClusterService<JetOperation> {
     private final NodeEngine nodeEngine;
 
-    public ServerJobClusterService(String name, ExecutorService executorService, NodeEngine nodeEngine) {
-        super(name, executorService);
-
+    public ServerJobClusterService(String name, NodeEngine nodeEngine) {
+        super(name);
         this.nodeEngine = nodeEngine;
     }
 
@@ -99,8 +98,8 @@ public class ServerJobClusterService extends JobClusterService<JetOperation> {
     }
 
     @Override
-    protected <T> Callable<T> createInvocation(Member member, Supplier<JetOperation> factory) {
-        return new ServerJobInvocation<>(factory.get(), member.getAddress(), nodeEngine);
+    protected <T> CompletableFuture<T> createInvocation(Member member, Supplier<JetOperation> factory) {
+        return new ServerJobInvocation<T>(factory.get(), member.getAddress(), nodeEngine).getFuture();
     }
 
     @Override
@@ -109,7 +108,7 @@ public class ServerJobClusterService extends JobClusterService<JetOperation> {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception {
-        return (Map<String, Accumulator>) callable.call();
+    public Map<String, Accumulator> readAccumulatorsResponse(Future future) throws Exception {
+        return (Map<String, Accumulator>) future.get();
     }
 }
