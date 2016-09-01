@@ -79,11 +79,13 @@ This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
 *3.7.1 Fixes*
 
+- Behavior of JCache near cache invalidation events changed: (i) the method Cache.close now delivers near cache invalidation events, (ii) the method Cache.destroy no longer delivers invalidation events, (iii) the method CacheManager.destroyCache when invoked from a client-side cache manager no longer delivers invalidation events. [8801]
 - Aggressive SQL predicate flattening may result in wrong parsing of SQL. [8799]
 - To properly configure within Spring context, incorrect client defaults should be fixed. [8761]
 - NullPointerException is thrown when the class DefaultNodeExtension has been loaded by two different class loaders. [8755]
 - HazelcastInstanceNotActive exception is thrown which is misleading. When a remote member is shutdown while destroying a proxy, no warnings should be logged. [8736]
 - Test failure fixes: [8702], [8694], [8460], [7022]
+- Missing dependency for JSPC plugin should be added. [297]
 
 
 *3.7 Fixes*
