@@ -37,5 +37,4 @@ public class NearCacheManagerTest extends NearCacheManagerTestSupport {
     public void destroyNearCacheAndDestroyAllNearCaches() {
         doDestroyNearCacheAndDestroyAllNearCaches();
     }
-
 }
