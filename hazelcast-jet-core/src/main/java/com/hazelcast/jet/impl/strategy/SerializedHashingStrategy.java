@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.strategy;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.container.ContainerContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.HashUtil;
@@ -38,12 +38,12 @@ public final class SerializedHashingStrategy implements HashingStrategy {
     @Override
     public int hash(Object object,
                     Object partitionKey,
-                    ContainerContext containerContext) {
+                    JobContext jobContext) {
         if (partitionKey instanceof Data) {
             return ((Data) partitionKey).getPartitionHash();
         }
 
-        InternalSerializationService serializationService = (InternalSerializationService) containerContext
+        InternalSerializationService serializationService = (InternalSerializationService) jobContext
                 .getNodeEngine().getSerializationService();
         byte[] bytes = serializationService.toBytes(partitionKey);
         return HashUtil.MurmurHash3_x86_32(bytes, HeapData.DATA_OFFSET, bytes.length - HeapData.DATA_OFFSET);

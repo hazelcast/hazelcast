@@ -19,13 +19,13 @@ package com.hazelcast.jet.impl.job.client;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetFinishDeploymentCodec;
+import com.hazelcast.client.impl.protocol.codec.JetDeploymentCodec;
 import com.hazelcast.client.impl.protocol.codec.JetEventCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.JetFinishDeploymentCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetAccumulatorsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetInitCodec;
 import com.hazelcast.client.impl.protocol.codec.JetInterruptCodec;
-import com.hazelcast.client.impl.protocol.codec.JetDeploymentCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.config.JobConfig;

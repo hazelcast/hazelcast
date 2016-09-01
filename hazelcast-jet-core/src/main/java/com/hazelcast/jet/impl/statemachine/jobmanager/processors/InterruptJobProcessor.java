@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
-import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptRequest;
+import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.VertexRunner;
+import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerInterruptRequest;
 import java.util.concurrent.TimeUnit;
 
-public class InterruptJobProcessor implements ContainerPayloadProcessor<Dummy> {
+public class InterruptJobProcessor implements VertexRunnerPayloadProcessor<Dummy> {
     private final int secondToAwait;
     private final JobManager jobManager;
 
@@ -36,8 +36,8 @@ public class InterruptJobProcessor implements ContainerPayloadProcessor<Dummy> {
     public void process(Dummy payload) throws Exception {
         jobManager.registerInterruption();
 
-        for (ProcessingContainer container : jobManager.containers()) {
-            container.handleContainerRequest(new ContainerInterruptRequest()).get(secondToAwait, TimeUnit.SECONDS);
+        for (VertexRunner runner : jobManager.runners()) {
+            runner.handleRequest(new VertexRunnerInterruptRequest()).get(secondToAwait, TimeUnit.SECONDS);
         }
     }
 }

@@ -2,11 +2,11 @@ package com.hazelcast.jet.impl.statemachine;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.job.ExecutorContext;
-import com.hazelcast.jet.impl.container.jobmanager.JobManagerResponse;
-import com.hazelcast.jet.impl.container.jobmanager.JobManagerState;
+import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
+import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
+import com.hazelcast.jet.impl.job.ExecutorContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.jobmanager.JobManagerStateMachine;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecuteJobRequest;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionCompletedRequest;
@@ -23,13 +23,12 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.executor.ManagedExecutorService;
+import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -323,7 +322,7 @@ public class JobMasterStateMachineTest extends HazelcastTestSupport {
 
             executor = new StateMachineExecutor(randomName(), 1, 1, nodeEngine);
             when(executorContext.getJobManagerStateMachineExecutor()).thenReturn(executor);
-            stateMachine = new JobManagerStateMachine(randomName(), requestProcessor, nodeEngine, context);
+            stateMachine = new JobManagerStateMachine(randomName(), requestProcessor, context);
             return this;
         }
     }

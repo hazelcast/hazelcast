@@ -17,11 +17,10 @@
 package com.hazelcast.jet.strategy;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.container.ContainerContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
-
 import java.util.Collection;
 import java.util.Collections;
 
@@ -41,8 +40,8 @@ public class SinglePartitionDistributionStrategy implements MemberDistributionSt
     }
 
     @Override
-    public Collection<Member> getTargetMembers(ContainerContext containerContext) {
-        NodeEngine nodeEngine = containerContext.getNodeEngine();
+    public Collection<Member> getTargetMembers(JobContext jobContext) {
+        NodeEngine nodeEngine = jobContext.getNodeEngine();
 
         int partitionId = nodeEngine.getPartitionService().getPartitionId(
                 nodeEngine.getSerializationService().toData(

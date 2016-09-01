@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.statemachine;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.job.ExecutorContext;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
+import com.hazelcast.jet.impl.job.ExecutorContext;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobResponse;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
@@ -32,14 +32,16 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.executor.ManagedExecutorService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
+import static com.hazelcast.jet.impl.statemachine.job.JobEvent.DEPLOYMENT_FAILURE;
+import static com.hazelcast.jet.impl.statemachine.job.JobEvent.DEPLOYMENT_START;
+import static com.hazelcast.jet.impl.statemachine.job.JobEvent.DEPLOYMENT_SUCCESS;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.EXECUTION_FAILURE;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.EXECUTION_START;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.EXECUTION_SUCCESS;
@@ -51,9 +53,6 @@ import static com.hazelcast.jet.impl.statemachine.job.JobEvent.INIT_SUCCESS;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.INTERRUPTION_FAILURE;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.INTERRUPTION_START;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.INTERRUPTION_SUCCESS;
-import static com.hazelcast.jet.impl.statemachine.job.JobEvent.DEPLOYMENT_FAILURE;
-import static com.hazelcast.jet.impl.statemachine.job.JobEvent.DEPLOYMENT_START;
-import static com.hazelcast.jet.impl.statemachine.job.JobEvent.DEPLOYMENT_SUCCESS;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.SUBMIT_FAILURE;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.SUBMIT_START;
 import static com.hazelcast.jet.impl.statemachine.job.JobEvent.SUBMIT_SUCCESS;
@@ -650,7 +649,7 @@ public class JobStateMachineTest extends HazelcastTestSupport {
             when(context.getNodeEngine()).thenReturn(nodeEngine);
             executor = new StateMachineExecutor(randomName(), 1, 1, nodeEngine);
             when(executorContext.getJobStateMachineExecutor()).thenReturn(executor);
-            stateMachine = new JobStateMachine(randomName(), requestProcessor, nodeEngine, context);
+            stateMachine = new JobStateMachine(randomName(), requestProcessor, context);
             return this;
         }
     }

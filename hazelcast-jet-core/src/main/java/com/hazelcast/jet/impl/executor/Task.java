@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.util.BooleanHolder;
  * Tasks can be:
  * <p/>
  * <ul>
- * <li>Container execution task</li>
+ * <li>Vertex execution task</li>
  * <li>Network socket writer</li>
  * <li>Network socket reader</li>
  * </ul>
@@ -51,7 +51,7 @@ import com.hazelcast.jet.impl.util.BooleanHolder;
  *     Files,
  *     Hazelcast structures,
  *     HDFS,
- *     Previous RingBuffer with data from the previous container
+ *     Previous RingBuffer with data from the previous vertex runner
  * </pre>
  */
 public abstract class Task {

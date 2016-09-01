@@ -19,27 +19,20 @@ package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.JetPair;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.pair.JetPairConverter;
 import com.hazelcast.jet.impl.data.pair.JetPairIterator;
-import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
-import com.hazelcast.jet.strategy.CalculationStrategy;
-import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
 public class MapPartitionReader extends AbstractHazelcastReader<JetPair> {
     private final MapConfig mapConfig;
-    private final CalculationStrategy calculationStrategy;
 
     private final JetPairConverter<Record> pairConverter = new JetPairConverter<Record>() {
         @Override
@@ -50,18 +43,10 @@ public class MapPartitionReader extends AbstractHazelcastReader<JetPair> {
         }
     };
 
-    public MapPartitionReader(ContainerContext containerContext, String name, int partitionId) {
-        super(containerContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
+    public MapPartitionReader(JobContext jobContext, String name, int partitionId) {
+        super(jobContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
         this.mapConfig = nodeEngine.getConfig().getMapConfig(name);
-        MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
-        MapServiceContext mapServiceContext = service.getMapServiceContext();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        PartitioningStrategy partitioningStrategy = mapContainer.getPartitioningStrategy();
-        partitioningStrategy = partitioningStrategy == null ? StringAndPartitionAwarePartitioningStrategy.INSTANCE
-                : partitioningStrategy;
-        this.calculationStrategy = new CalculationStrategy(
-                SerializedHashingStrategy.INSTANCE, partitioningStrategy, this.containerContext);
     }
 
     @Override

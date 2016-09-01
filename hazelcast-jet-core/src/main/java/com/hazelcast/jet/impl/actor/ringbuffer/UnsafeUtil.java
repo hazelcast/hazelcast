@@ -20,11 +20,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.util.ExceptionUtil;
-import sun.misc.Unsafe;
-
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.misc.Unsafe;
 
 import static com.hazelcast.util.QuickMath.normalize;
 

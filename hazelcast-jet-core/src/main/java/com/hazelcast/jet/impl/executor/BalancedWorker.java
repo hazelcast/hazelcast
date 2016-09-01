@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.executor;
 
 import com.hazelcast.logging.ILogger;
-
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;

@@ -17,13 +17,11 @@
 package com.hazelcast.jet.dag.sink;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingWriter;
 import com.hazelcast.jet.impl.dag.sink.MapPartitionWriter;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.spi.NodeEngine;
-
 import java.util.List;
 
 /**
@@ -51,21 +49,21 @@ public class MapSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerContext containerContext) {
-        List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
+    public DataWriter[] getWriters(JobContext jobContext) {
+        List<Integer> localPartitions = JetUtil.getLocalPartitions(jobContext.getNodeEngine());
         DataWriter[] writers = new DataWriter[localPartitions.size()];
         for (int i = 0; i < localPartitions.size(); i++) {
             int partitionId = localPartitions.get(i);
             writers[i] = new ShufflingWriter(
-                    getPartitionWriter(containerContext, partitionId),
-                    nodeEngine
+                    getPartitionWriter(jobContext, partitionId),
+                    jobContext.getNodeEngine()
             );
         }
         return writers;
     }
 
-    protected DataWriter getPartitionWriter(ContainerContext containerContext, int partitionId) {
-        return new MapPartitionWriter(containerContext, partitionId, name);
+    protected DataWriter getPartitionWriter(JobContext jobContext, int partitionId) {
+        return new MapPartitionWriter(jobContext, partitionId, name);
     }
 
     @Override

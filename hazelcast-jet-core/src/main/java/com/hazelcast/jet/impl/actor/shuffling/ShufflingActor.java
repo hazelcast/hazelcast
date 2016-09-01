@@ -20,7 +20,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.actor.Actor;
 import com.hazelcast.jet.impl.actor.Consumer;
-import com.hazelcast.jet.impl.container.task.ContainerTask;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.spi.NodeEngine;
@@ -37,7 +37,7 @@ public class ShufflingActor extends ShufflingProducer implements Actor {
     }
 
     @Override
-    public ContainerTask getSourceTask() {
+    public VertexTask getSourceTask() {
         return baseActor.getSourceTask();
     }
 

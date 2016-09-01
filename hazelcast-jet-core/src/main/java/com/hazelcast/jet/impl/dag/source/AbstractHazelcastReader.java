@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
@@ -27,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -36,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractHazelcastReader<V> implements Producer {
     protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
-    protected final ContainerContext containerContext;
     protected final ILogger logger;
     protected long position;
     protected Iterator<V> iterator;
@@ -107,17 +105,16 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
     private volatile boolean isReadRequested;
 
     public AbstractHazelcastReader(
-            ContainerContext containerContext, String name, int partitionId,
+            JobContext jobContext, String name, int partitionId,
             DataTransferringStrategy dataTransferringStrategy
     ) {
         this.name = name;
         this.partitionId = partitionId;
-        this.containerContext = containerContext;
-        this.nodeEngine = containerContext.getNodeEngine();
+        this.nodeEngine = jobContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
         this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
-        JobConfig config = containerContext.getConfig();
+        JobConfig config = jobContext.getJobConfig();
         this.awaitSecondsTime = config.getSecondsToAwait();
         this.chunkSize = config.getChunkSize();
         this.buffer = new Object[this.chunkSize];

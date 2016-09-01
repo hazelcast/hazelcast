@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-
 import java.io.IOException;
 
 /**
@@ -64,9 +63,9 @@ public class JetPair<K, V> extends Pair<K, V> {
     /**
      * Retrieves the component at the specified index as a {@code Data} instance.
      *
-     * @param index component index: 0 for key, 1 for value
+     * @param index               component index: 0 for key, 1 for value
      * @param calculationStrategy used to calculate the partition hash, which is a part of the {@code Data} format
-     * @param serService Hazelcast serialization service which will serialize the component
+     * @param serService          Hazelcast serialization service which will serialize the component
      * @return the Data instance representing the component's value
      */
     public Data getComponentData(int index, CalculationStrategy calculationStrategy, SerializationService serService) {

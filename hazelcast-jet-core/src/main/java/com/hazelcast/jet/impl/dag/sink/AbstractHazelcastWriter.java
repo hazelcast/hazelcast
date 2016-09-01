@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.dag.sink;
 
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.container.ContainerContext;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
@@ -31,7 +31,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -42,8 +41,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     protected final SettableFuture<Boolean> future = SettableFuture.create();
 
     protected final InternalOperationService internalOperationService;
-
-    protected final ContainerContext containerContext;
 
     protected final IOBuffer<Object> chunkBuffer;
 
@@ -91,14 +88,12 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     private int lastConsumedCount;
     private boolean isClosed;
 
-    protected AbstractHazelcastWriter(ContainerContext containerContext,
-                                      int partitionId) {
-        checkNotNull(containerContext);
+    protected AbstractHazelcastWriter(JobContext jobContext, int partitionId) {
+        checkNotNull(jobContext);
         this.partitionId = partitionId;
-        this.nodeEngine = containerContext.getNodeEngine();
+        this.nodeEngine = jobContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
-        this.containerContext = containerContext;
-        JobConfig jobConfig = containerContext.getConfig();
+        JobConfig jobConfig = jobContext.getJobConfig();
         this.awaitInSecondsTime = jobConfig.getSecondsToAwait();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
         int pairChunkSize = jobConfig.getChunkSize();

@@ -24,9 +24,9 @@ package com.hazelcast.jet.impl.statemachine;
  */
 public interface StateMachineRequest<E extends StateMachineEvent, P> {
     /**
-     * @return - event of the container;
+     * @return - event of the state machine;
      */
-    E getContainerEvent();
+    E getEvent();
 
     /**
      * @return - payload;

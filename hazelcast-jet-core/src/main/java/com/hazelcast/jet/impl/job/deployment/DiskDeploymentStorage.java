@@ -41,18 +41,17 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
     public DiskDeploymentStorage(JobContext jobContext, String jobName) {
         super(jobContext.getJobConfig());
         this.logger = jobContext.getNodeEngine().getLogger(getClass());
-        String containerDir = createContainerDirectory();
-        this.jobDirectory = createJobDirectory(jobName, containerDir);
+        this.jobDirectory = createJobDirectory(jobName, getDeploymentDirectory());
     }
 
-    private File createJobDirectory(String jobName, String containerDir) {
-        Path jobPath = Paths.get(containerDir + File.pathSeparator + "job_" + jobName);
+    private File createJobDirectory(String jobName, String deploymentDirectory) {
+        Path jobPath = Paths.get(deploymentDirectory + File.pathSeparator + "job_" + jobName);
         int directoryNameCounter = 0;
         do {
             try {
                 jobPath = Files.createDirectory(jobPath);
             } catch (FileAlreadyExistsException e) {
-                jobPath = Paths.get(containerDir + File.pathSeparator + "job_" + jobName + "_"
+                jobPath = Paths.get(deploymentDirectory + File.pathSeparator + "job_" + jobName + "_"
                         + directoryNameCounter++);
             } catch (IOException e) {
                 throw JetUtil.reThrow(e);
@@ -62,23 +61,23 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
         return jobPath.toFile();
     }
 
-    private String createContainerDirectory() {
-        String containerDir = this.config.getDeploymentDirectory();
-        if (containerDir == null) {
+    private String getDeploymentDirectory() {
+        String deploymentDirectory = config.getDeploymentDirectory();
+        if (deploymentDirectory == null) {
             try {
-                containerDir = Files.createTempDirectory("hazelcast-jet-").toString();
+                deploymentDirectory = Files.createTempDirectory("hazelcast-jet-").toString();
             } catch (IOException e) {
                 throw JetUtil.reThrow(e);
             }
         } else {
-            Path path = Paths.get(containerDir);
+            Path path = Paths.get(deploymentDirectory);
             try {
                 Files.createDirectories(path);
             } catch (IOException e) {
                 throw JetUtil.reThrow(e);
             }
         }
-        return containerDir;
+        return deploymentDirectory;
     }
 
     @Override

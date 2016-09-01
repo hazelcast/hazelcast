@@ -22,9 +22,9 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * Represents abstract converter from Java-representation onto the pair representation;
- *
+ * <p>
  * For example Map's entry {@literal <Key,Value>} will be represented as
- *
+ * <p>
  * Pair with [Key] as key part and [Value] as value part;
  *
  * @param <R> - type of the input Java-object;

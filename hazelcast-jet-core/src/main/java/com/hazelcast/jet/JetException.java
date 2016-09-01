@@ -22,6 +22,7 @@ package com.hazelcast.jet;
 public class JetException extends RuntimeException {
     /**
      * Constructs an exception with a given message
+     *
      * @param message exception message
      */
     public JetException(String message) {

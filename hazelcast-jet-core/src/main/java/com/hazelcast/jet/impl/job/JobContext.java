@@ -19,20 +19,18 @@ package com.hazelcast.jet.impl.job;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.container.DiscoveryService;
-import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.task.nio.SocketReader;
-import com.hazelcast.jet.impl.container.task.nio.SocketWriter;
 import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
 import com.hazelcast.jet.impl.job.deployment.DiskDeploymentStorage;
-import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
-import com.hazelcast.jet.impl.statemachine.job.JobEvent;
+import com.hazelcast.jet.impl.runtime.DiscoveryService;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.task.nio.SocketReader;
+import com.hazelcast.jet.impl.runtime.task.nio.SocketWriter;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachineRequestProcessor;
 import com.hazelcast.jet.job.JobListener;
+import com.hazelcast.jet.runtime.VertexRunnerListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
@@ -47,16 +45,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class JobContext {
-    private static final StateMachineFactory<JobEvent, JobStateMachine> STATE_MACHINE_FACTORY = JobStateMachine::new;
 
-    private static final IFunction<String, List<ContainerListener>> FUNCTION_FACTORY =
-            (IFunction<String, List<ContainerListener>>) input -> new CopyOnWriteArrayList<>();
+    private static final IFunction<String, List<VertexRunnerListener>> FUNCTION_FACTORY =
+            (IFunction<String, List<VertexRunnerListener>>) input -> new CopyOnWriteArrayList<>();
 
     private final String name;
 
     private final NodeEngine nodeEngine;
     private final AtomicReference<Address> owner;
-    private final AtomicInteger containerIdGenerator;
+    private final AtomicInteger vertexRunnerIdGenerator;
     private final JobManager jobManager;
     private final DeploymentStorage deploymentStorage;
     private final Map<Address, Address> hzToAddressMapping;
@@ -64,8 +61,8 @@ public class JobContext {
     private final JobStateMachine jobStateMachine;
     private final Map<String, Object> jobVariables = new ConcurrentHashMap<>();
     private final List<JobListener> jobListeners = new CopyOnWriteArrayList<>();
-    private final IConcurrentMap<String, List<ContainerListener>> containerListeners =
-            new ConcurrentReferenceHashMap<String, List<ContainerListener>>();
+    private final IConcurrentMap<String, List<VertexRunnerListener>> vertexRunnerListeners =
+            new ConcurrentReferenceHashMap<String, List<VertexRunnerListener>>();
 
     private final Address localJetAddress;
 
@@ -84,13 +81,12 @@ public class JobContext {
         this.nodeEngine = nodeEngine;
         this.localJetAddress = localJetAddress;
         this.owner = new AtomicReference<>();
-        this.containerIdGenerator = new AtomicInteger(0);
+        this.vertexRunnerIdGenerator = new AtomicInteger(0);
         this.jobConfig = jobConfig;
         this.executorContext = new ExecutorContext(this.name, this.jobConfig, nodeEngine,
                 jobService.getNetworkExecutor(), jobService.getProcessingExecutor());
         this.deploymentStorage = new DiskDeploymentStorage(this, name);
-        this.jobStateMachine = STATE_MACHINE_FACTORY.newStateMachine(name, new JobStateMachineRequestProcessor(this),
-                nodeEngine, this);
+        this.jobStateMachine = new JobStateMachine(name, new JobStateMachineRequestProcessor(this), this);
         this.hzToAddressMapping = new HashMap<>();
         this.accumulators = new CopyOnWriteArrayList<>();
         this.jobManager = createApplicationMaster(nodeEngine);
@@ -169,10 +165,10 @@ public class JobContext {
     }
 
     /**
-     * @return all registered container's listeners
+     * @return all registered vertex runner listeners
      */
-    public ConcurrentMap<String, List<ContainerListener>> getContainerListeners() {
-        return containerListeners;
+    public ConcurrentMap<String, List<VertexRunnerListener>> getVertexRunnerListeners() {
+        return vertexRunnerListeners;
     }
 
     /**
@@ -183,10 +179,10 @@ public class JobContext {
     }
 
     /**
-     * @return generator for the container's ids
+     * @return generator for the vertex runner ids
      */
-    public AtomicInteger getContainerIDGenerator() {
-        return containerIdGenerator;
+    public AtomicInteger getVertexRunnerIdGenerator() {
+        return vertexRunnerIdGenerator;
     }
 
     /**
@@ -225,14 +221,14 @@ public class JobContext {
     }
 
     /**
-     * Register container listener for the corresponding vertex
+     * Register vertex runner listener for the corresponding vertex
      *
-     * @param vertexName        name of the corresponding vertex
-     * @param containerListener container listener
+     * @param vertexName           name of the corresponding vertex
+     * @param vertexRunnerListener vertex runner listener
      */
-    public void registerContainerListener(String vertexName, ContainerListener containerListener) {
-        List<ContainerListener> listeners = containerListeners.applyIfAbsent(vertexName, FUNCTION_FACTORY);
-        listeners.add(containerListener);
+    public void registerVertexRunnerListener(String vertexName, VertexRunnerListener vertexRunnerListener) {
+        List<VertexRunnerListener> listeners = vertexRunnerListeners.applyIfAbsent(vertexName, FUNCTION_FACTORY);
+        listeners.add(vertexRunnerListener);
     }
 
     /**

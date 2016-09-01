@@ -16,14 +16,13 @@
 
 package com.hazelcast.jet.impl.executor;
 
-import com.hazelcast.jet.impl.container.task.ContainerTask;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -121,7 +120,7 @@ public abstract class Worker implements Runnable {
             tasks.add(task);
             workingTaskCount.incrementAndGet();
 
-            if (logger.isFinestEnabled() && task instanceof ContainerTask) {
+            if (logger.isFinestEnabled() && task instanceof VertexTask) {
                 logger.finest("Incoming=" + task.getClass() + " size=" + tasks.size()
                         + " idx=" + this + " wtc=" + workingTaskCount.get()
                 );
@@ -146,7 +145,7 @@ public abstract class Worker implements Runnable {
                 tasks.remove(idx);
                 onTaskDeactivation();
 
-                if (task instanceof ContainerTask) {
+                if (task instanceof VertexTask) {
                     logger.fine("Task removed " + tasks.size() + " workingTaskCount="
                             + workingTaskCount.get() + " " + this);
                 }
@@ -203,7 +202,7 @@ public abstract class Worker implements Runnable {
     }
 
     /**
-     * @return number of tasks inside container
+     * @return number of tasks inside vertex runner
      */
     public int getWorkingTaskCount() {
         return workingTaskCount.get();

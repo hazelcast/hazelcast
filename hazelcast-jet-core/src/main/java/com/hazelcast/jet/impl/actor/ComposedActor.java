@@ -20,21 +20,20 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.impl.container.ContainerContextImpl;
-import com.hazelcast.jet.impl.container.task.ContainerTask;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.RoutingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
+import com.hazelcast.jet.strategy.RoutingStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.List;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ComposedActor implements Actor {
     private final Edge edge;
     private final Vertex vertex;
-    private final ContainerTask task;
+    private final VertexTask task;
     private final Actor[] consumers;
     private final RoutingStrategy routingStrategy;
     private final CalculationStrategy calculationStrategy;
@@ -43,11 +42,11 @@ public class ComposedActor implements Actor {
     private int lastConsumedCount;
 
     public ComposedActor(
-            ContainerTask task,
+            VertexTask task,
             List<Actor> actors,
             Vertex vertex,
             Edge edge,
-            ContainerContextImpl containerContext) {
+            JobContext jobContext) {
         this.edge = edge;
         this.task = task;
         this.vertex = vertex;
@@ -56,12 +55,12 @@ public class ComposedActor implements Actor {
         this.calculationStrategy = new CalculationStrategy(
                 edge.getHashingStrategy(),
                 edge.getPartitioningStrategy(),
-                containerContext
+                jobContext
         );
     }
 
     @Override
-    public ContainerTask getSourceTask() {
+    public VertexTask getSourceTask() {
         return task;
     }
 
@@ -222,8 +221,8 @@ public class ComposedActor implements Actor {
     }
 
     /**
-         * @return parties of the composed actor
-         */
+     * @return parties of the composed actor
+     */
     public Actor[] getParties() {
         return this.consumers;
     }

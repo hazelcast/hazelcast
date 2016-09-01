@@ -17,8 +17,7 @@
 package com.hazelcast.jet.strategy;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.container.ContainerContext;
-
+import com.hazelcast.jet.impl.job.JobContext;
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -32,6 +31,8 @@ public interface MemberDistributionStrategy extends Serializable {
      * Returns the set of members which the data should be distributed to. The data will be distributed
      * to all the members in the given list and then routed according to the {@link RoutingStrategy}
      * of the edge.
+     *
+     * @param jobContext
      */
-    Collection<Member> getTargetMembers(ContainerContext containerContext);
+    Collection<Member> getTargetMembers(JobContext jobContext);
 }

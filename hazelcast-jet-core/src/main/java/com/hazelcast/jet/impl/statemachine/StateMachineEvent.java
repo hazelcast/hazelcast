@@ -20,12 +20,12 @@ import java.io.Serializable;
 
 /**
  * Represents event of the abstract state-machine;
- *
+ * <p>
  * Examples of state-machines:
- *
+ * <p>
  * <pre>
  *     Jet-job
- *     Jet-container
+ *     Jet-vertex runner
  *     Jet-job manager
  * </pre>
  */

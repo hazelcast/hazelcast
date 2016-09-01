@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
@@ -29,6 +28,7 @@ import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.processor.ProcessorContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;

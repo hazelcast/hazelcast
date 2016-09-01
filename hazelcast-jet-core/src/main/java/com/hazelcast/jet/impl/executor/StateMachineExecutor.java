@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.executor;
 
 import com.hazelcast.spi.NodeEngine;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class StateMachineExecutor extends AbstractExecutor<StateMachineWorker> {

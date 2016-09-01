@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.processor.ProcessorContext;
 
 public abstract class TestProcessors {
 

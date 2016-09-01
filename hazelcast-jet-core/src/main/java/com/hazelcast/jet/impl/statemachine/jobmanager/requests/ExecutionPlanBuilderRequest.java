@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.container.jobmanager.JobManagerEvent;
+import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
 public class ExecutionPlanBuilderRequest implements StateMachineRequest<JobManagerEvent, DAG> {
@@ -28,7 +28,7 @@ public class ExecutionPlanBuilderRequest implements StateMachineRequest<JobManag
     }
 
     @Override
-    public JobManagerEvent getContainerEvent() {
+    public JobManagerEvent getEvent() {
         return JobManagerEvent.SUBMIT_DAG;
     }
 

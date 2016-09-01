@@ -30,7 +30,7 @@ import java.util.List;
 public class ExecutorContext {
     private final List<Task> networkTasks;
     private final BalancedExecutor networkExecutor;
-    private final StateMachineExecutor containerStateMachineExecutor;
+    private final StateMachineExecutor vertexManagerStateMachineExecutor;
     private final BalancedExecutor processingExecutor;
     private final StateMachineExecutor jobStateMachineExecutor;
     private final List<Task> processingTasks;
@@ -49,8 +49,8 @@ public class ExecutorContext {
         this.networkTasks = new ArrayList<>();
         this.processingTasks = new ArrayList<>();
 
-        this.containerStateMachineExecutor =
-                new StateMachineExecutor(name + "-container-state_machine", 1, awaitingTimeOut, nodeEngine);
+        this.vertexManagerStateMachineExecutor =
+                new StateMachineExecutor(name + "-vertex-manager-state_machine", 1, awaitingTimeOut, nodeEngine);
 
         this.jobStateMachineExecutor =
                 new StateMachineExecutor(name + "-job-state_machine", 1, awaitingTimeOut, nodeEngine);
@@ -67,10 +67,10 @@ public class ExecutorContext {
     }
 
     /**
-     * @return executor for processing container state-machine
+     * @return executor for vertex manager state-machine
      */
-    public StateMachineExecutor getDataContainerStateMachineExecutor() {
-        return containerStateMachineExecutor;
+    public StateMachineExecutor getVertexManagerStateMachineExecutor() {
+        return vertexManagerStateMachineExecutor;
     }
 
     /**

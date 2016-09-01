@@ -23,6 +23,7 @@ public interface PartitionIdAware {
 
     /**
      * Returns the partition id for the object
+     *
      * @return the partition id for the object
      */
     int getPartitionId();

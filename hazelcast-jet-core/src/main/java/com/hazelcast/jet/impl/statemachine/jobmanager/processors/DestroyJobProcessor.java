@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.JobManager;
-import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
-import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.util.JetUtil;
 import java.util.List;
 
-public class DestroyJobProcessor implements ContainerPayloadProcessor<Dummy> {
+public class DestroyJobProcessor implements VertexRunnerPayloadProcessor<Dummy> {
     private final JobManager jobManager;
     private final List<Task> networkTasks;
 
@@ -38,9 +38,9 @@ public class DestroyJobProcessor implements ContainerPayloadProcessor<Dummy> {
         Throwable error = null;
 
         try {
-            for (ProcessingContainer container : jobManager.containers()) {
+            for (VertexRunner runner : jobManager.runners()) {
                 try {
-                    container.destroy();
+                    runner.destroy();
                 } catch (Throwable e) {
                     error = e;
                 }

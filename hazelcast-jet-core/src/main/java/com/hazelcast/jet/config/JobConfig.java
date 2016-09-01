@@ -53,7 +53,7 @@ public class JobConfig implements Serializable {
     public static final int DEFAULT_APP_ATTEMPTS_COUNT = 100;
 
     /**
-     * Default chunk size for data passed between JET-containers
+     * Default chunk size for data passed between JET-runners
      */
     public static final int DEFAULT_CHUNK_SIZE = 256;
 
@@ -63,7 +63,7 @@ public class JobConfig implements Serializable {
     public static final int DEFAULT_TCP_BUFFER_SIZE = 1024;
 
     /**
-     * Default size for the queues used to pass data between containers
+     * Default size for the queues used to pass data between runners
      */
     private static final int DEFAULT_QUEUE_SIZE = 65536;
 
@@ -190,7 +190,7 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Gets the size of the chunk that will be processed at each call in {@code ContainerProcessor.process}
+     * Gets the size of the chunk that will be processed at each call in {@code Processor.process}
      *
      * @return the chunk size
      */
@@ -199,7 +199,7 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Sets the size of the chunk that will be processed at each call in {@code ContainerProcessor.process}
+     * Sets the size of the chunk that will be processed at each call in {@code Processor.process}
      *
      * @param chunkSize the chunk size
      * @return the current job configuration

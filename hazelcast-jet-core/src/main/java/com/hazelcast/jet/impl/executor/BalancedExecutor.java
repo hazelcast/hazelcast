@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.executor;
 
 import com.hazelcast.spi.NodeEngine;
-
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,7 +59,6 @@ public class BalancedExecutor extends AbstractExecutor<BalancedWorker> {
 
     /**
      * Submit tasks represented by taskContext to be executed
-     *
      */
     public void submitTaskContext(List<Task> tasks) {
         int idx = 0;
