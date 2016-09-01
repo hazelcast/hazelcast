@@ -20,7 +20,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,7 +27,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.List;
-
 
 import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -40,7 +38,6 @@ import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;

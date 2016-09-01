@@ -33,7 +33,6 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
