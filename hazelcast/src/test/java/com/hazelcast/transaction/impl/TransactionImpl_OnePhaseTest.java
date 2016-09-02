@@ -2,9 +2,6 @@ package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;

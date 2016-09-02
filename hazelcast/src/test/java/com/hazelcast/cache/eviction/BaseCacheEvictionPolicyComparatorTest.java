@@ -13,7 +13,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 

@@ -5,7 +5,6 @@ import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
