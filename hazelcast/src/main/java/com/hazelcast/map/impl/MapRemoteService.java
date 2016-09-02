@@ -23,8 +23,8 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
-import static com.hazelcast.map.impl.MapConfigValidator.checkNotNative;
 import static com.hazelcast.map.impl.MapConfigValidator.checkMapConfig;
+import static com.hazelcast.map.impl.MapConfigValidator.checkNotNative;
 
 /**
  * Defines remote service behavior of map service.

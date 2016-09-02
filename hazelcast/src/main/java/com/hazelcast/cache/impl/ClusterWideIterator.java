@@ -21,9 +21,10 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.serialization.SerializationService;
+
+import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.List;
-import javax.cache.Cache;
 
 /**
  * Cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
