@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.operation.JobSubmitOperation;
 import com.hazelcast.nio.Connection;

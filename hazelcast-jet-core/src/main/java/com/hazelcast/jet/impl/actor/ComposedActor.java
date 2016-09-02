@@ -17,16 +17,16 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.dag.Edge;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.jet.strategy.RoutingStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.List;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -44,18 +44,16 @@ public class ComposedActor implements Actor {
     public ComposedActor(
             VertexTask task,
             List<Actor> actors,
-            Vertex vertex,
-            Edge edge,
-            JobContext jobContext) {
+            Edge edge) {
         this.edge = edge;
         this.task = task;
-        this.vertex = vertex;
+        this.vertex = task.getVertex();
         this.routingStrategy = edge.getRoutingStrategy();
         this.consumers = actors.toArray(new Actor[actors.size()]);
         this.calculationStrategy = new CalculationStrategy(
                 edge.getHashingStrategy(),
                 edge.getPartitioningStrategy(),
-                jobContext
+                task.getTaskContext().getJobContext()
         );
     }
 

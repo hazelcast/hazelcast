@@ -19,18 +19,18 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
-import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.SerializationOptimizer;
-import com.hazelcast.jet.processor.ProcessorContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -43,7 +43,7 @@ public class ShufflingReceiver implements Producer {
     private final RingbufferActor ringbufferActor;
     private final IOBuffer<JetPacket> packetBuffers;
     private final SerializationOptimizer optimizer;
-    private final ProcessorContext processorContext;
+    private final String name;
 
     private Object[] dataChunkBuffer;
     private Object[] packets;
@@ -56,16 +56,17 @@ public class ShufflingReceiver implements Producer {
     private volatile boolean finalized;
 
 
-    public ShufflingReceiver(JobContext jobContext, ProcessorContext processorContext, VertexTask vertexTask) {
-        this.processorContext = processorContext;
+    public ShufflingReceiver(VertexTask vertexTask) {
+        JobContext jobContext = vertexTask.getTaskContext().getJobContext();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
         JobConfig jobConfig = jobContext.getJobConfig();
         int chunkSize = jobConfig.getChunkSize();
-        this.ringbufferActor = new RingbufferActor(nodeEngine, jobContext, vertexTask, processorContext.getVertex());
+        this.ringbufferActor = new RingbufferActor(vertexTask);
         this.packetBuffers = new IOBuffer<>(new JetPacket[chunkSize]);
         this.chunkReceiver = new ChunkedInputStream(this.packetBuffers);
         this.in = new ObjectDataInputStream(chunkReceiver,
                 (InternalSerializationService) nodeEngine.getSerializationService());
+        this.name = vertexTask.getVertex().getName();
         optimizer = vertexTask.getTaskContext().getSerializationOptimizer();
     }
 
@@ -159,7 +160,7 @@ public class ShufflingReceiver implements Producer {
 
     @Override
     public String getName() {
-        return processorContext.getVertex().getName();
+        return name;
     }
 
     @Override

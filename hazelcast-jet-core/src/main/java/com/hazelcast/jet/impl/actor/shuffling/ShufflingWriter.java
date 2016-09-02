@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.actor.shuffling;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.data.DataWriter;
+import com.hazelcast.jet.runtime.DataWriter;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.spi.NodeEngine;
 

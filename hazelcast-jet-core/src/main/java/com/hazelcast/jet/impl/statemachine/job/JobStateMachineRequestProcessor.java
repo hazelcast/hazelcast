@@ -20,7 +20,7 @@ import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
-import com.hazelcast.jet.job.JobListener;
+import com.hazelcast.jet.runtime.JobListener;
 import java.util.ArrayList;
 import java.util.List;
 

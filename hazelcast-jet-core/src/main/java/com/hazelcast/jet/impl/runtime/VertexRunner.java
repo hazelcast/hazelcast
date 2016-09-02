@@ -17,39 +17,36 @@
 package com.hazelcast.jet.impl.runtime;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.sink.Sink;
-import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.Sink;
+import com.hazelcast.jet.Source;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.runtime.events.DefaultEventProcessorFactory;
 import com.hazelcast.jet.impl.runtime.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerResponse;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerState;
-import com.hazelcast.jet.impl.runtime.task.DefaultTaskContext;
+import com.hazelcast.jet.impl.runtime.task.TaskContextImpl;
 import com.hazelcast.jet.impl.runtime.task.TaskEvent;
-import com.hazelcast.jet.impl.runtime.task.TaskProcessorFactory;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.runtime.task.processors.factory.DefaultTaskProcessorFactory;
-import com.hazelcast.jet.impl.runtime.task.processors.factory.ShuffledTaskProcessorFactory;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.statemachine.runner.VertexRunnerStateMachine;
 import com.hazelcast.jet.impl.statemachine.runner.processors.VertexRunnerPayloadFactory;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerFinalizedRequest;
-import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.Processor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toList;
 
@@ -57,69 +54,83 @@ import static java.util.stream.Collectors.toList;
 public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEvent> {
 
     private final Vertex vertex;
-
     private final Map<Integer, VertexTask> vertexTaskMap = new ConcurrentHashMap<>();
-
-    private final int parallelism;
-
     private final int awaitSecondsTimeOut;
-
     private final VertexTask[] vertexTasks;
-
-    private final List<DataChannel> inputChannels;
-
-    private final List<DataChannel> outputChannels;
-
-    private final List<Producer> sourcesProducers;
-
-    private final TaskProcessorFactory taskProcessorFactory;
-
+    private final List<DataChannel> inputChannels = new ArrayList<>();
+    private final List<DataChannel> outputChannels = new ArrayList<>();
+    private final List<Producer> sourcesProducers = new ArrayList<>();
     private final EventProcessorFactory eventProcessorFactory;
 
-    private final Supplier<Processor> processorSupplier;
-
-    private final AtomicInteger taskIdGenerator = new AtomicInteger(0);
     private final int id;
     private final JobContext jobContext;
     private final StateMachine<VertexRunnerEvent, VertexRunnerState, VertexRunnerResponse> stateMachine;
 
-    public VertexRunner(Vertex vertex, Supplier<Processor> processorSupplier,
-                        JobContext jobContext) {
+    public VertexRunner(int id, Vertex vertex, JobContext jobContext) {
         this.stateMachine = new VertexRunnerStateMachine(vertex.getName(), this, jobContext);
         this.jobContext = jobContext;
-        this.id = jobContext.getVertexRunnerIdGenerator().incrementAndGet();
+        this.id = id;
         this.vertex = vertex;
-        this.inputChannels = new ArrayList<>();
-        this.outputChannels = new ArrayList<>();
-        this.taskProcessorFactory = isShuffled(vertex) ? new ShuffledTaskProcessorFactory()
-                : new DefaultTaskProcessorFactory();
-        this.parallelism = vertex.getParallelism();
-        this.sourcesProducers = new ArrayList<>();
-        this.processorSupplier = processorSupplier;
-        this.vertexTasks = new VertexTask[this.parallelism];
+        this.vertexTasks = new VertexTask[vertex.getParallelism()];
         this.awaitSecondsTimeOut = getJobContext().getJobConfig().getSecondsToAwait();
-        AtomicInteger readyForFinalizationTasksCounter = new AtomicInteger(0);
-        readyForFinalizationTasksCounter.set(this.parallelism);
-        AtomicInteger completedTasks = new AtomicInteger(0);
-        AtomicInteger interruptedTasks = new AtomicInteger(0);
-        this.eventProcessorFactory = new DefaultEventProcessorFactory(completedTasks, interruptedTasks,
-                readyForFinalizationTasksCounter, this.vertexTasks, this);
+        this.eventProcessorFactory = new EventProcessorFactory(this);
+
         buildTasks();
         buildSources();
         buildSinks();
     }
 
     private void buildTasks() {
-        VertexTask[] vertexTasks = getVertexTasks();
         ClassLoader classLoader = getJobContext().getDeploymentStorage().getClassLoader();
-        for (int taskIndex = 0; taskIndex < this.parallelism; taskIndex++) {
-            int taskID = taskIdGenerator.incrementAndGet();
-            vertexTasks[taskIndex] = new VertexTask(this, getVertex(), taskProcessorFactory,
-                    taskID, new DefaultTaskContext(parallelism, taskIndex, getJobContext()));
+        for (int taskIndex = 0; taskIndex < vertexTasks.length; taskIndex++) {
+            Processor processor = createProcessor(vertex.getProcessorClass(), vertex.getProcessorArgs());
+            vertexTasks[taskIndex] = new VertexTask(this, getVertex(),
+                    new TaskContextImpl(vertex, jobContext, processor, taskIndex));
             getJobContext().getExecutorContext().getProcessingTasks().add(vertexTasks[taskIndex]);
             vertexTasks[taskIndex].setThreadContextClassLoader(classLoader);
-            vertexTaskMap.put(taskID, vertexTasks[taskIndex]);
+            vertexTaskMap.put(taskIndex, vertexTasks[taskIndex]);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Processor createProcessor(String className, Object... args) {
+        ClassLoader classLoader = jobContext.getDeploymentStorage().getClassLoader();
+        try {
+            Constructor<Processor> resultConstructor = findConstructor(classLoader, className, args);
+            return resultConstructor.newInstance(args);
+        } catch (Exception e) {
+            throw JetUtil.reThrow(e);
+        }
+    }
+
+    private static Constructor<Processor> findConstructor(ClassLoader classLoader, String className, Object[] args)
+            throws ClassNotFoundException {
+        Class<Processor> clazz = (Class<Processor>) Class.forName(className, true, classLoader);
+        int i = 0;
+        Class[] argsClasses = new Class[args.length];
+        for (Object obj : args) {
+            if (obj != null) {
+                argsClasses[i++] = obj.getClass();
+            }
+        }
+        for (Constructor constructor : clazz.getConstructors()) {
+            if (constructor.getParameterTypes().length == argsClasses.length) {
+                boolean valid = true;
+                Class[] parameterTypes = constructor.getParameterTypes();
+                for (int idx = 0; idx < argsClasses.length; idx++) {
+                    Class argsClass = argsClasses[idx];
+                    if ((argsClass != null) && !parameterTypes[idx].isAssignableFrom(argsClass)) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) {
+                    return (Constructor<Processor>) constructor;
+                }
+            }
+        }
+        throw new IllegalStateException(
+                "No constructor with arguments" + Arrays.toString(argsClasses) + " className=" + className);
     }
 
     /**
@@ -141,13 +152,6 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
      */
     public void handleTaskEvent(VertexTask vertexTask, TaskEvent event, Throwable error) {
         this.eventProcessorFactory.getEventProcessor(event).process(vertexTask, event, error);
-    }
-
-    /**
-     * @return - user-level processor supplier;
-     */
-    public final Supplier<Processor> getProcessorSupplier() {
-        return processorSupplier;
     }
 
     /**
@@ -265,21 +269,6 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         getJobContext().getExecutorContext().getVertexManagerStateMachineExecutor().wakeUp();
     }
 
-    private boolean isShuffled(Vertex vertex) {
-        return (hasOutputShuffler(vertex) && clusterHasMultipleMembers()) || hasSink(vertex);
-    }
-
-    private boolean clusterHasMultipleMembers() {
-        return getJobContext().getNodeEngine().getClusterService().getMembers().size() > 1;
-    }
-
-    private boolean hasOutputShuffler(Vertex vertex) {
-        return vertex.hasOutputShuffler();
-    }
-
-    private boolean hasSink(Vertex vertex) {
-        return vertex.getSinks().size() > 0;
-    }
 
     private void buildSinks() {
         List<Sink> sinks = getVertex().getSinks();

@@ -30,7 +30,7 @@ import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.job.JobClusterService;
 import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;

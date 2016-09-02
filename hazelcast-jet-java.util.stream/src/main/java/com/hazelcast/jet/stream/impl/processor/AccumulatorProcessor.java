@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.data.io.OutputCollector;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.ProcessorContext;
+
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -40,7 +41,7 @@ public class AccumulatorProcessor<IN, OUT> extends AbstractStreamProcessor<IN, O
     }
 
     @Override
-    public void before(ProcessorContext processorContext) {
+    public void before(TaskContext taskContext) {
         result = identity;
     }
 

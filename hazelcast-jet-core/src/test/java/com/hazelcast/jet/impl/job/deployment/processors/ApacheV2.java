@@ -1,9 +1,9 @@
 package com.hazelcast.jet.impl.job.deployment.processors;
 
-import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.data.io.OutputCollector;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet.Processor;
+
 import java.io.BufferedReader;
 import java.net.URL;
 import java.nio.file.Files;
@@ -20,7 +20,7 @@ public class ApacheV2 implements Processor {
     @Override
     public boolean process(InputChunk input,
                            OutputCollector output,
-                           String sourceName, ProcessorContext context) throws Exception {
+                           String sourceName) throws Exception {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         URL resource = contextClassLoader.getResource("apachev2");

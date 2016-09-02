@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors;
 
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.Processor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -33,12 +33,12 @@ public class SimpleTaskProcessor implements TaskProcessor {
     private final IOBuffer inputBuffer;
     private final IOBuffer outputBuffer;
     private boolean finalized;
-    private final ProcessorContext processorContext;
+    private final TaskContext taskContext;
 
-    public SimpleTaskProcessor(Processor processor, ProcessorContext processorContext) {
+    public SimpleTaskProcessor(Processor processor, TaskContext taskContext) {
         checkNotNull(processor);
         this.processor = processor;
-        this.processorContext = processorContext;
+        this.taskContext = taskContext;
         this.inputBuffer = new IOBuffer<>(DUMMY_CHUNK);
         this.outputBuffer = new IOBuffer<>(DUMMY_CHUNK);
     }
@@ -50,10 +50,10 @@ public class SimpleTaskProcessor implements TaskProcessor {
             if (producersWriteFinished) {
                 return true;
             }
-            processor.process(inputBuffer, outputBuffer, null, processorContext);
+            processor.process(inputBuffer, outputBuffer, null);
             return true;
         } else {
-            finalized = processor.complete(outputBuffer, processorContext);
+            finalized = processor.complete(outputBuffer);
             return true;
         }
     }

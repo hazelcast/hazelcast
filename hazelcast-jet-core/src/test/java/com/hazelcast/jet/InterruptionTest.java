@@ -18,28 +18,24 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.source.MapSource;
-import com.hazelcast.jet.data.io.OutputCollector;
-import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.job.Job;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.source.MapSource;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.OutputCollector;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -149,7 +145,7 @@ public class InterruptionTest extends JetTestSupport {
         private static final String ERROR_MESSAGE = "exception";
 
         @Override
-        public boolean process(InputChunk input, OutputCollector output, String sourceName, ProcessorContext context) throws Exception {
+        public boolean process(InputChunk input, OutputCollector output, String sourceName) throws Exception {
             throw new Exception(ERROR_MESSAGE);
         }
     }
@@ -162,7 +158,7 @@ public class InterruptionTest extends JetTestSupport {
         @Override
         public boolean process(InputChunk input,
                                OutputCollector output,
-                               String sourceName, ProcessorContext context) throws Exception {
+                               String sourceName) throws Exception {
             if (!started) {
                 latch.countDown();
                 started = true;

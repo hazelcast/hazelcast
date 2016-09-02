@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
-import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 import com.hazelcast.jet.impl.runtime.JobManager;

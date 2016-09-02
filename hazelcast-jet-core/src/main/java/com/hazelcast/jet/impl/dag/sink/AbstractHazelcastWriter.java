@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.dag.sink;
 
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
@@ -31,6 +31,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;

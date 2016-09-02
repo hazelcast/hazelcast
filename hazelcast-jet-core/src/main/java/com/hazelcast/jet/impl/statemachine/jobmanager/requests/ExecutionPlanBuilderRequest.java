@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
-import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 

@@ -20,7 +20,7 @@ package com.hazelcast.jet.impl.job;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
 import com.hazelcast.jet.impl.job.deployment.DiskDeploymentStorage;
 import com.hazelcast.jet.impl.runtime.DiscoveryService;
@@ -29,19 +29,19 @@ import com.hazelcast.jet.impl.runtime.task.nio.SocketReader;
 import com.hazelcast.jet.impl.runtime.task.nio.SocketWriter;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachineRequestProcessor;
-import com.hazelcast.jet.job.JobListener;
+import com.hazelcast.jet.runtime.JobListener;
 import com.hazelcast.jet.runtime.VertexRunnerListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.IConcurrentMap;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class JobContext {
@@ -53,7 +53,6 @@ public class JobContext {
 
     private final NodeEngine nodeEngine;
     private final AtomicReference<Address> owner;
-    private final AtomicInteger vertexRunnerIdGenerator;
     private final JobManager jobManager;
     private final DeploymentStorage deploymentStorage;
     private final Map<Address, Address> hzToAddressMapping;
@@ -65,14 +64,10 @@ public class JobContext {
             new ConcurrentReferenceHashMap<String, List<VertexRunnerListener>>();
 
     private final Address localJetAddress;
-
     private final ExecutorContext executorContext;
-
     private final Map<Address, SocketWriter> socketWriters = new HashMap<>();
-
     private final Map<Address, SocketReader> socketReaders = new HashMap<>();
-
-    private final List<ConcurrentMap<String, Accumulator>> accumulators;
+    private final List<Map<String, Accumulator>> accumulators;
 
     public JobContext(
             String name, NodeEngine nodeEngine, Address localJetAddress, JobConfig jobConfig, JobService jobService
@@ -81,7 +76,6 @@ public class JobContext {
         this.nodeEngine = nodeEngine;
         this.localJetAddress = localJetAddress;
         this.owner = new AtomicReference<>();
-        this.vertexRunnerIdGenerator = new AtomicInteger(0);
         this.jobConfig = jobConfig;
         this.executorContext = new ExecutorContext(this.name, this.jobConfig, nodeEngine,
                 jobService.getNetworkExecutor(), jobService.getProcessingExecutor());
@@ -179,13 +173,6 @@ public class JobContext {
     }
 
     /**
-     * @return generator for the vertex runner ids
-     */
-    public AtomicInteger getVertexRunnerIdGenerator() {
-        return vertexRunnerIdGenerator;
-    }
-
-    /**
      * @return direct acyclic graph corresponding to job
      */
     public DAG getDAG() {
@@ -276,7 +263,7 @@ public class JobContext {
     @SuppressWarnings("unchecked")
     public Map<String, Accumulator> getAccumulators() {
         Map<String, Accumulator> map = new HashMap<>();
-        for (ConcurrentMap<String, Accumulator> concurrentMap : accumulators) {
+        for (Map<String, Accumulator> concurrentMap : accumulators) {
             for (Map.Entry<String, Accumulator> entry : concurrentMap.entrySet()) {
                 String key = entry.getKey();
                 Accumulator accumulator = entry.getValue();
@@ -294,7 +281,7 @@ public class JobContext {
     /**
      * @param accumulatorMap map with accumulators
      */
-    public void registerAccumulators(ConcurrentMap<String, Accumulator> accumulatorMap) {
+    public void registerAccumulators(Map<String, Accumulator> accumulatorMap) {
         accumulators.add(accumulatorMap);
     }
 }

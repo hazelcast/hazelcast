@@ -16,93 +16,73 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors.factory;
 
-import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.impl.actor.Consumer;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessorFactory;
 import com.hazelcast.jet.impl.runtime.task.processors.ActorTaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.processors.ConsumerTaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.processors.ProducerTaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.processors.SimpleTaskProcessor;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.Processor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     @Override
     public TaskProcessor simpleTaskProcessor(Processor processor,
-                                             JobContext jobContext,
-                                             ProcessorContext processorContext,
-                                             Vertex vertex,
-                                             int taskID) {
-        return new SimpleTaskProcessor(processor, processorContext);
+                                             TaskContext taskContext) {
+        return new SimpleTaskProcessor(processor, taskContext);
     }
 
     @Override
     public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,
-                                               JobContext jobContext,
-                                               ProcessorContext processorContext,
-                                               Vertex vertex,
-                                               int taskID) {
-        return new ConsumerTaskProcessor(consumers, processor, jobContext, processorContext);
+                                               TaskContext taskContext) {
+        return new ConsumerTaskProcessor(consumers, processor, taskContext);
     }
 
     @Override
     public TaskProcessor producerTaskProcessor(Producer[] producers,
                                                Processor processor,
-                                               JobContext jobContext,
-                                               ProcessorContext processorContext,
-                                               Vertex vertex,
-                                               int taskID) {
-        return new ProducerTaskProcessor(producers, processor, jobContext, processorContext, taskID);
+                                               TaskContext taskContext) {
+        return new ProducerTaskProcessor(producers, processor, taskContext);
     }
 
     @Override
     public TaskProcessor actorTaskProcessor(Producer[] producers,
                                             Consumer[] consumers,
                                             Processor processor,
-                                            JobContext jobContext,
-                                            ProcessorContext processorContext,
-                                            Vertex vertex,
-                                            int taskID) {
+                                            TaskContext taskContext) {
         return new ActorTaskProcessor(
                 producers,
                 processor,
-                jobContext,
-                processorContext,
-                consumerTaskProcessor(consumers, processor, jobContext, processorContext, vertex, taskID),
-                taskID
+                taskContext,
+                consumerTaskProcessor(consumers, processor, taskContext)
         );
     }
 
     public TaskProcessor getTaskProcessor(Producer[] producers,
                                           Consumer[] consumers,
-                                          JobContext jobContext,
-                                          ProcessorContext processorContext,
-                                          Processor processor,
-                                          Vertex vertex,
-                                          int taskID) {
-        checkNotNull(vertex);
+                                          TaskContext taskContext,
+                                          Processor processor) {
         checkNotNull(producers);
         checkNotNull(consumers);
         checkNotNull(processor);
-        checkNotNull(jobContext);
+        checkNotNull(taskContext);
 
         if (producers.length == 0) {
             if (consumers.length == 0) {
-                return simpleTaskProcessor(processor, jobContext, processorContext, vertex, taskID);
+                return simpleTaskProcessor(processor, taskContext);
             } else {
-                return consumerTaskProcessor(consumers, processor, jobContext, processorContext, vertex, taskID);
+                return consumerTaskProcessor(consumers, processor, taskContext);
             }
         } else {
             if (consumers.length == 0) {
-                return producerTaskProcessor(producers, processor, jobContext, processorContext, vertex, taskID);
+                return producerTaskProcessor(producers, processor, taskContext);
             } else {
-                return actorTaskProcessor(producers, consumers, processor, jobContext, processorContext, vertex, taskID);
+                return actorTaskProcessor(producers, consumers, processor, taskContext);
             }
         }
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.runtime.task;
 
 
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.InputChunk;
 
 /**
  * Processor to execute inside task

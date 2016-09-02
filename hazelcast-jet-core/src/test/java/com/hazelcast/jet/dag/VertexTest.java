@@ -16,23 +16,24 @@
 
 package com.hazelcast.jet.dag;
 
+import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.TestProcessors;
-import com.hazelcast.jet.dag.sink.Sink;
-import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Producer;
+import com.hazelcast.jet.Sink;
+import com.hazelcast.jet.Source;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 import static com.hazelcast.jet.JetTestSupport.createVertex;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -78,23 +79,6 @@ public class VertexTest {
         assertEquals(output, outputVertices.iterator().next());
         assertEquals(edge, outputEdges.iterator().next());
 
-    }
-
-    @Test
-    public void testVertexOutputShuffler() throws Exception {
-        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
-        Vertex output = createVertex("output", TestProcessors.Noop.class);
-
-        Edge edge = new Edge("edge", v1, output, false);
-        v1.addOutputVertex(output, edge);
-
-        assertTrue(v1.hasOutputShuffler());
-    }
-
-    @Test
-    public void testEmptyVertexHasNotOutputShuffler() throws Exception {
-        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
-        assertFalse(v1.hasOutputShuffler());
     }
 
     @Test

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.dag.source.ListSource;
-import com.hazelcast.jet.dag.source.Source;
+import com.hazelcast.jet.source.ListSource;
+import com.hazelcast.jet.Source;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;

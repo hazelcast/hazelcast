@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.data.io.OutputCollector;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.ProcessorContext;
+
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -37,8 +38,8 @@ public class AnyMatchProcessor<T> extends AbstractStreamProcessor<T, Boolean> {
     }
 
     @Override
-    public void before(ProcessorContext processorContext) {
-        super.before(processorContext);
+    public void before(TaskContext context) {
+        super.before(context);
         match = false;
     }
 

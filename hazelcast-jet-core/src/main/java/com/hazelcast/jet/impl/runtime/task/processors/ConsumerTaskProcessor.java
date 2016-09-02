@@ -18,13 +18,12 @@ package com.hazelcast.jet.impl.runtime.task.processors;
 
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.impl.actor.Consumer;
-import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
+import com.hazelcast.jet.Processor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -36,31 +35,27 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected final IOBuffer inputBuffer;
     protected final IOBuffer outputBuffer;
     protected boolean producersWriteFinished;
-    protected final ProcessorContext processorContext;
+    protected final TaskContext taskContext;
     protected final ConsumersProcessor consumersProcessor;
     protected boolean consumed;
     protected boolean finalized;
     protected boolean finalizationFinished;
     protected boolean finalizationStarted;
-    protected JobContext jobContext;
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public ConsumerTaskProcessor(Consumer[] consumers,
                                  Processor processor,
-                                 JobContext jobContext,
-                                 ProcessorContext processorContext) {
+                                 TaskContext taskContext) {
         checkNotNull(consumers);
         checkNotNull(processor);
-        checkNotNull(jobContext);
-        checkNotNull(processorContext);
+        checkNotNull(taskContext);
 
         this.consumers = consumers;
         this.processor = processor;
-        this.jobContext = jobContext;
-        this.processorContext = processorContext;
+        this.taskContext = taskContext;
         this.consumersProcessor = new ConsumersProcessor(consumers);
         this.inputBuffer = new IOBuffer<Object>(DUMMY_CHUNK);
-        JobConfig jobConfig = jobContext.getJobConfig();
+        JobConfig jobConfig = taskContext.getJobContext().getJobConfig();
         int chunkSize = jobConfig.getChunkSize();
         this.outputBuffer = new IOBuffer<Object>(new Object[chunkSize]);
         reset();
@@ -82,12 +77,12 @@ public class ConsumerTaskProcessor implements TaskProcessor {
             return consumeChunkAndResetOutputIfSuccess();
         } else {
             if (finalizationStarted) {
-                finalizationFinished = processor.complete(outputBuffer, processorContext);
+                finalizationFinished = processor.complete(outputBuffer);
             } else {
                 if (producersWriteFinished) {
                     return true;
                 }
-                processor.process(inputBuffer, outputBuffer, null, processorContext);
+                processor.process(inputBuffer, outputBuffer, null);
             }
 
             if (outputBuffer.size() > 0) {

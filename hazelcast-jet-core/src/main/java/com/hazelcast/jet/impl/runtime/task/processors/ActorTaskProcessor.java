@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors;
 
-import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.TaskContext;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.Processor;
 
 public class ActorTaskProcessor extends ProducerTaskProcessor {
     protected boolean consumed;
@@ -30,11 +29,9 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
 
     public ActorTaskProcessor(Producer[] producers,
                               Processor processor,
-                              JobContext jobContext,
-                              ProcessorContext processorContext,
-                              TaskProcessor consumerProcessor,
-                              int taskID) {
-        super(producers, processor, jobContext, processorContext, taskID);
+                              TaskContext taskContext,
+                              TaskProcessor consumerProcessor) {
+        super(producers, processor, taskContext);
         this.consumerProcessor = consumerProcessor;
     }
 

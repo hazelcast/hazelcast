@@ -16,17 +16,16 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.OutputCollector;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.Processor;
 
 public class EmptyProcessor implements Processor<Pair, Pair> {
 
     @Override
     public boolean process(InputChunk<Pair> input, OutputCollector<Pair> output,
-                           String sourceName, ProcessorContext context) throws Exception {
+                           String sourceName) throws Exception {
         output.collect(input);
         return true;
     }

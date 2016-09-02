@@ -18,20 +18,19 @@ package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.dag.Edge;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingbufferWithReferenceStrategy;
-import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,7 +38,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class RingbufferActor implements Actor {
     private final Edge edge;
-    private final Vertex vertex;
     private final VertexTask sourceTask;
     private final Object[] producerChunk;
     private final Ringbuffer<Object> ringbuffer;
@@ -50,30 +48,21 @@ public class RingbufferActor implements Actor {
     private int currentFlushedCount;
     private volatile boolean isClosed;
 
-    public RingbufferActor(NodeEngine nodeEngine,
-                           JobContext jobContext,
-                           VertexTask sourceTask,
-                           Vertex vertex) {
-        this(nodeEngine, jobContext, sourceTask, vertex, null, false);
+    public RingbufferActor(VertexTask sourceTask) {
+        this(sourceTask, null, false);
     }
 
-    public RingbufferActor(NodeEngine nodeEngine,
-                           JobContext jobContext,
-                           VertexTask sourceTask,
-                           Vertex vertex,
+    public RingbufferActor(VertexTask sourceTask,
                            Edge edge) {
-        this(nodeEngine, jobContext, sourceTask, vertex, edge, true);
+        this(sourceTask, edge, true);
     }
 
-    public RingbufferActor(NodeEngine nodeEngine,
-                           JobContext jobContext,
-                           VertexTask sourceTask,
-                           Vertex vertex,
+    public RingbufferActor(VertexTask sourceTask,
                            Edge edge,
                            boolean registerListener) {
         this.edge = edge;
         this.sourceTask = sourceTask;
-        this.vertex = vertex;
+        JobContext jobContext = sourceTask.getTaskContext().getJobContext();
         JobConfig jobConfig = jobContext.getJobConfig();
         int objectChunkSize = jobConfig.getChunkSize();
         this.producerChunk = new Object[objectChunkSize];
@@ -81,7 +70,7 @@ public class RingbufferActor implements Actor {
         this.flushBuffer = new IOBuffer<>(new Object[objectChunkSize]);
         this.completionHandlers = new CopyOnWriteArrayList<>();
         this.ringbuffer = new RingbufferWithReferenceStrategy<>(ringbufferSize,
-                nodeEngine.getLogger(RingbufferActor.class)
+                jobContext.getNodeEngine().getLogger(RingbufferActor.class)
         );
 
         if (registerListener) {
@@ -201,7 +190,7 @@ public class RingbufferActor implements Actor {
 
     @Override
     public String getName() {
-        return this.vertex.getName();
+        return sourceTask.getVertex().getName();
     }
 
     @Override

@@ -16,17 +16,55 @@
 
 package com.hazelcast.jet.impl.runtime.events;
 
+import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.TaskEvent;
 
-/**
- * Factory to create task-event processors
- */
-public interface EventProcessorFactory {
-    /**
-     * Constructs and return processor for task-event processing
-     *
-     * @param taskEvent - task's event
-     * @return - task-event processors
-     */
-    EventProcessor getEventProcessor(TaskEvent taskEvent);
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.jet.impl.runtime.task.TaskEvent.TASK_EXECUTION_COMPLETED;
+import static com.hazelcast.jet.impl.runtime.task.TaskEvent.TASK_EXECUTION_ERROR;
+import static com.hazelcast.jet.impl.runtime.task.TaskEvent.TASK_READY_FOR_FINALIZATION;
+
+
+public class EventProcessorFactory {
+    private final Map<TaskEvent, EventProcessor> processorMap =
+            new IdentityHashMap<>();
+
+    public EventProcessorFactory(VertexRunner vertexRunner) {
+        AtomicInteger readyForFinalizationTasksCounter = new AtomicInteger(0);
+        readyForFinalizationTasksCounter.set(vertexRunner.getVertexTasks().length);
+        AtomicInteger completedTasks = new AtomicInteger(0);
+        AtomicInteger interruptedTasks = new AtomicInteger(0);
+
+        this.processorMap.put(TASK_EXECUTION_COMPLETED, new TaskEventCompletedProcessor(
+                completedTasks,
+                interruptedTasks,
+                readyForFinalizationTasksCounter,
+                vertexRunner
+        ));
+        this.processorMap.put(TASK_EXECUTION_ERROR, new TaskEventExecutionErrorProcessor(
+                completedTasks,
+                interruptedTasks,
+                readyForFinalizationTasksCounter,
+                vertexRunner
+        ));
+        this.processorMap.put(TASK_READY_FOR_FINALIZATION, new TaskEventFinalizationProcessor(
+                completedTasks,
+                interruptedTasks,
+                readyForFinalizationTasksCounter,
+                vertexRunner
+        ));
+    }
+
+    public EventProcessor getEventProcessor(TaskEvent event) {
+        EventProcessor processor = processorMap.get(event);
+
+        if (processor == null) {
+            throw new UnsupportedOperationException("Unsupported event: " + event);
+        }
+
+        return processor;
+    }
 }

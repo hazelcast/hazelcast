@@ -22,7 +22,7 @@ import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.job.deployment.ChunkIterator;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;

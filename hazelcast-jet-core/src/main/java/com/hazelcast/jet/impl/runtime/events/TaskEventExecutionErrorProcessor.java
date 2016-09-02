@@ -26,13 +26,11 @@ public class TaskEventExecutionErrorProcessor extends AbstractEventProcessor {
     protected TaskEventExecutionErrorProcessor(AtomicInteger completedTasks,
                                                AtomicInteger interruptedTasks,
                                                AtomicInteger readyForFinalizationTasksCounter,
-                                               VertexTask[] vertexTasks,
                                                VertexRunner vertexRunner) {
         super(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
-                vertexTasks,
                 vertexRunner
         );
     }

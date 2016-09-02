@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.dag.sink;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.JetPair;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -28,6 +28,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+
 import java.util.Collection;
 
 public class MultiMapPartitionWriter extends AbstractHazelcastWriter {

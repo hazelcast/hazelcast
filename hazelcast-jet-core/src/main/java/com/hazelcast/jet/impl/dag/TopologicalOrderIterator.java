@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.dag;
 
 
-import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.Vertex;
 import java.util.Iterator;
 import java.util.Stack;
 

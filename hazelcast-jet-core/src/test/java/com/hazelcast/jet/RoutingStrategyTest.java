@@ -2,12 +2,8 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.dag.Edge;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.sink.ListSink;
-import com.hazelcast.jet.dag.source.ListSource;
-import com.hazelcast.jet.job.Job;
+import com.hazelcast.jet.sink.ListSink;
+import com.hazelcast.jet.source.ListSource;
 import com.hazelcast.jet.strategy.AllMembersDistributionStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

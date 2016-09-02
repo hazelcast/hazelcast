@@ -16,12 +16,13 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.data.JetPair;
-import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.runtime.JetPair;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.Processor;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,15 +33,21 @@ public class MergeProcessor<K, V> implements Processor<Pair<K, V>, Pair<K, V>> {
     private final BinaryOperator<V> merger;
     private final Map<K, V> cache = new HashMap<>();
     private Iterator<Map.Entry<K, V>> finalizationIterator;
+    private int chunkSize;
 
     public MergeProcessor(BinaryOperator<V> merger) {
         this.merger = merger;
     }
 
     @Override
+    public void before(TaskContext context) {
+        chunkSize = context.getJobContext().getJobConfig().getChunkSize();
+    }
+
+    @Override
     public boolean process(InputChunk<Pair<K, V>> inputChunk,
                            OutputCollector<Pair<K, V>> output,
-                           String sourceName, ProcessorContext context) throws Exception {
+                           String sourceName) throws Exception {
         for (Pair<K, V> input : inputChunk) {
             V value = cache.get(input.getKey());
             if (value == null) {
@@ -53,8 +60,7 @@ public class MergeProcessor<K, V> implements Processor<Pair<K, V>, Pair<K, V>> {
     }
 
     @Override
-    public boolean complete(OutputCollector<Pair<K, V>> output,
-                            ProcessorContext processorContext) throws Exception {
+    public boolean complete(OutputCollector<Pair<K, V>> output) throws Exception {
         boolean finalized = false;
         try {
             if (finalizationIterator == null) {
@@ -65,7 +71,7 @@ public class MergeProcessor<K, V> implements Processor<Pair<K, V>, Pair<K, V>> {
             while (this.finalizationIterator.hasNext()) {
                 Map.Entry<K, V> next = finalizationIterator.next();
                 output.collect(new JetPair<>(next.getKey(), next.getValue()));
-                if (idx == processorContext.getConfig().getChunkSize() - 1) {
+                if (idx == chunkSize - 1) {
                     break;
                 }
                 idx++;

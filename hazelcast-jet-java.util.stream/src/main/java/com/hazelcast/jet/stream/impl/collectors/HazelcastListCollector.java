@@ -18,9 +18,9 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.dag.sink.ListSink;
-import com.hazelcast.jet.dag.sink.Sink;
-import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.sink.ListSink;
+import com.hazelcast.jet.Sink;
+import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 

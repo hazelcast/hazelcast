@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.runtime;
 
-import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.impl.actor.Actor;
 import com.hazelcast.jet.impl.actor.ComposedActor;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;

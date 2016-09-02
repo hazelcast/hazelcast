@@ -33,13 +33,11 @@ public class TaskEventCompletedProcessor extends AbstractEventProcessor {
     protected TaskEventCompletedProcessor(AtomicInteger completedTasks,
                                           AtomicInteger interruptedTasks,
                                           AtomicInteger readyForFinalizationTasksCounter,
-                                          VertexTask[] vertexTasks,
                                           VertexRunner vertexRunner) {
         super(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
-                vertexTasks,
                 vertexRunner
         );
     }
@@ -51,7 +49,7 @@ public class TaskEventCompletedProcessor extends AbstractEventProcessor {
             caughtError = error;
         }
 
-        if (this.completedTasks.incrementAndGet() >= this.vertexTasks.length) {
+        if (this.completedTasks.incrementAndGet() >= vertexRunner.getVertexTasks().length) {
             this.completedTasks.set(0);
 
             if (caughtError == null) {

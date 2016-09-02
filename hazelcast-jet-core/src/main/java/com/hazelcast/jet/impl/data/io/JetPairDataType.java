@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.data.io;
 
-import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.io.DataType;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.nio.ObjectDataInput;

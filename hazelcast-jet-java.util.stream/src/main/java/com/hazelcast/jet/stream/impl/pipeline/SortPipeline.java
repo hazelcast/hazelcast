@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.stream.Distributed;
