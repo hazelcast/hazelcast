@@ -15,13 +15,9 @@ import org.junit.runner.RunWith;
 public class NearCacheTest extends NearCacheTestSupport {
 
     @Override
-    protected NearCache<Integer, String> createNearCache(String name,
-                                                         NearCacheConfig nearCacheConfig,
+    protected NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
-        return new DefaultNearCache<Integer, String>(name,
-                nearCacheConfig,
-                createNearCacheContext(),
-                nearCacheRecordStore);
+        return new DefaultNearCache<Integer, String>(name, nearCacheConfig, createNearCacheContext(), nearCacheRecordStore);
     }
 
     @Test
@@ -93,5 +89,4 @@ public class NearCacheTest extends NearCacheTestSupport {
     public void putToNearCacheStatsAndSeeEvictionCheckIsDone() {
         doPutToNearCacheStatsAndSeeEvictionCheckIsDone();
     }
-
 }

@@ -26,17 +26,17 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
     protected List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
 
     protected NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat) {
-        return
-                new NearCacheConfig()
-                        .setName(name)
-                        .setInMemoryFormat(inMemoryFormat);
+        return new NearCacheConfig()
+                .setName(name)
+                .setInMemoryFormat(inMemoryFormat);
     }
 
     protected NearCacheContext createNearCacheContext() {
         final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorServices.add(scheduledExecutorService);
+        // no need for a NearCacheManager, so we can pass null
         return new NearCacheContext(
-                null, // No need to near-cache manager
+                null,
                 new DefaultSerializationServiceBuilder().build(),
                 createNearCacheExecutor(),
                 null);
@@ -55,7 +55,8 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
-                                                                           NearCacheContext nearCacheContext, InMemoryFormat inMemoryFormat) {
+                                                                           NearCacheContext nearCacheContext,
+                                                                           InMemoryFormat inMemoryFormat) {
         switch (inMemoryFormat) {
             case BINARY:
                 return new NearCacheDataRecordStore<K, V>(nearCacheConfig, nearCacheContext);
@@ -73,5 +74,4 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         }
         scheduledExecutorServices.clear();
     }
-
 }
