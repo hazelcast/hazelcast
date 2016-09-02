@@ -205,7 +205,7 @@ public class NearCacheConfig
      * @return This near cache config instance.
      */
     public NearCacheConfig setMaxSize(int maxSize) {
-        this.maxSize = checkNotNegative(maxSize, "Max-Size cannot be negative !");
+        this.maxSize = (maxSize == 0) ? Integer.MAX_VALUE : checkNotNegative(maxSize, "Max-Size cannot be negative !");
         return this;
     }
 
