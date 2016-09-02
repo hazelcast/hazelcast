@@ -58,9 +58,7 @@ final class DnsEndpointResolver
 
             List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
 
-            if (records.length > 0) {
-                // Get only the first record, because all of them have the same name
-                // Example:
+            for (Record record : records) {
                 // nslookup u219692-hazelcast.u219692-hazelcast.svc.cluster.local 172.30.0.1
                 //      Server:         172.30.0.1
                 //      Address:        172.30.0.1#53
@@ -71,7 +69,7 @@ final class DnsEndpointResolver
                 //      Address: 10.1.5.28
                 //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
                 //      Address: 10.1.9.33
-                SRVRecord srv = (SRVRecord) records[0];
+                SRVRecord srv = (SRVRecord) record;
                 InetAddress[] inetAddress = getAllAddresses(srv);
                 int port = getHazelcastPort(srv.getPort());
 
@@ -84,9 +82,9 @@ final class DnsEndpointResolver
                     discoveredNodes.add(new SimpleDiscoveryNode(address));
                 }
 
-            } else {
+            }
+            if (discoveredNodes.isEmpty()){
                 LOGGER.warning("Could not find any service for serviceDns '" + serviceDns + "' failed");
-                return Collections.emptyList();
             }
 
             return discoveredNodes;
