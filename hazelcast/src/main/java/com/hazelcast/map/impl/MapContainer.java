@@ -178,8 +178,7 @@ public class MapContainer {
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
-        return PartitioningStrategyFactory.getPartitioningStrategy(mapServiceContext.getNodeEngine(),
-                mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
+        return mapServiceContext.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
     }
 
     public Indexes getIndexes() {
