@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.sink;
+package com.hazelcast.jet.sink;
 
-import com.hazelcast.jet.data.DataWriter;
+import com.hazelcast.jet.Sink;
 import com.hazelcast.jet.impl.dag.sink.DataFileWriter;
 import com.hazelcast.jet.impl.dag.sink.FileOutputStream;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.runtime.DataWriter;
 
 /**
  * A sink which uses a file as output.

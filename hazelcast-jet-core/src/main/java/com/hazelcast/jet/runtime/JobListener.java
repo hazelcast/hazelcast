@@ -14,7 +14,19 @@
  * limitations under the License.
  */
 
+package com.hazelcast.jet.runtime;
+
+import com.hazelcast.jet.impl.job.JobContext;
+
 /**
- * Represents API to work with data and serialization
+ * Interface for registration of the job listener
  */
-package com.hazelcast.jet.data;
+public interface JobListener {
+    /**
+     * Will be invoked after finish of job execution
+     *
+     * @param jobContext - job context
+     */
+    void onJobExecuted(JobContext jobContext);
+}
+

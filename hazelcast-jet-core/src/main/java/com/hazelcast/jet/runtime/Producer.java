@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor;
+package com.hazelcast.jet.runtime;
+
+import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 
 /**
  * This is an abstract interface for each producer in the system
@@ -54,7 +56,13 @@ public interface Producer {
      */
     Object[] produce() throws Exception;
 
+    /**
+     * Register a handler which will be run when the producer is completed
+     */
     void registerCompletionHandler(ProducerCompletionHandler runnable);
 
+    /**
+     * Notify the registered producer listeners that the producer is complete.
+     */
     void handleProducerCompleted();
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.config;
 
 
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.job.deployment.DeploymentType;
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +33,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
- * Config for a {@link com.hazelcast.jet.job.Job}
+ * Config for a {@link Job}
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class JobConfig implements Serializable {

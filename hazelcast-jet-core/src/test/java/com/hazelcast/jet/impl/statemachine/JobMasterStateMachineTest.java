@@ -1,7 +1,7 @@
 package com.hazelcast.jet.impl.statemachine;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;

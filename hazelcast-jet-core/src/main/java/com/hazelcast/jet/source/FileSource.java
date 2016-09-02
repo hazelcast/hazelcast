@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.source;
+package com.hazelcast.jet.source;
 
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.Source;
+import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.dag.source.DataFileReader;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;

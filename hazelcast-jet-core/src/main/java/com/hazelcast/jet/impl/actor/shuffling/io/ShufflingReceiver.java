@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;

@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.runtime.task.nio;
 
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;

@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.runtime.task;
 
 
-import com.hazelcast.jet.dag.Edge;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.DataWriter;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.actor.Actor;
 import com.hazelcast.jet.impl.actor.ComposedActor;
 import com.hazelcast.jet.impl.actor.Consumer;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
@@ -34,8 +34,8 @@ import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.processors.factory.DefaultTaskProcessorFactory;
 import com.hazelcast.jet.impl.runtime.task.processors.factory.ShuffledTaskProcessorFactory;
 import com.hazelcast.jet.impl.util.BooleanHolder;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.TaskContext;
+import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 

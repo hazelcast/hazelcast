@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag;
+package com.hazelcast.jet;
 
-import com.hazelcast.jet.dag.sink.Sink;
-import com.hazelcast.jet.dag.source.Source;
-import com.hazelcast.jet.processor.Processor;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;

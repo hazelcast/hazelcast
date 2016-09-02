@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors;
 
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.actor.Consumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

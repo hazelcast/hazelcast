@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides JET-processors
+ * Provides API to work with sinks
  */
-package com.hazelcast.jet.processor;
+package com.hazelcast.jet.sink;

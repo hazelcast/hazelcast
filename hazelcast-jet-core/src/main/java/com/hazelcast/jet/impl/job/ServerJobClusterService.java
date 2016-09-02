@@ -20,7 +20,7 @@ package com.hazelcast.jet.impl.job;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.operation.DeployChunkOperation;
 import com.hazelcast.jet.impl.operation.FinishDeploymentOperation;

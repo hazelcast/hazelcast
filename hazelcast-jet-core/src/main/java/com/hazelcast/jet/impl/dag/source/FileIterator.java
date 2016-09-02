@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.Pair;
 import java.io.BufferedReader;

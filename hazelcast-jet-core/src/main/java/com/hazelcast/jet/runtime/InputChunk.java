@@ -14,7 +14,28 @@
  * limitations under the License.
  */
 
+package com.hazelcast.jet.runtime;
+
+import java.util.Iterator;
+
 /**
- * Represents API to work with data and serialization
+ * Represents a finite part of an input for a processor
+ *
+ * @param <T> type of the input objects
  */
-package com.hazelcast.jet.data.io;
+public interface InputChunk<T> extends Iterable<T> {
+    /**
+     * Returns the object at the specified index
+     */
+    T get(int idx);
+
+    /**
+     * Returns the size of the given chunk
+     */
+    int size();
+
+    /**
+     * Returns a flyweight iterator over the input chunk
+     */
+    Iterator<T> iterator();
+}

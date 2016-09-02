@@ -17,9 +17,9 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.sink.Sink;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.Sink;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;

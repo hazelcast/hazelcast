@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.data;
+package com.hazelcast.jet.runtime;
 
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.strategy.CalculationStrategy;

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
+import com.hazelcast.jet.runtime.Producer;
 
 /**
  * This is an abstract interface for each actor in the system which

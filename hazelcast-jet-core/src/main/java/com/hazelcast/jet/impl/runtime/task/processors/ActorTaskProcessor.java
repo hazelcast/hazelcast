@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors;
 
-import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.processor.TaskContext;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.TaskContext;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
-import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.Processor;
 
 public class ActorTaskProcessor extends ProducerTaskProcessor {
     protected boolean consumed;

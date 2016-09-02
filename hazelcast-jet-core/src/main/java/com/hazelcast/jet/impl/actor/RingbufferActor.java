@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.dag.Edge;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingbufferWithReferenceStrategy;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;

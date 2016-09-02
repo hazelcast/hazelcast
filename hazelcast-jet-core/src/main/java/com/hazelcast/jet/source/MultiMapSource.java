@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.source;
+package com.hazelcast.jet.source;
 
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.dag.source.MultiMapPartitionReader;
 import com.hazelcast.jet.impl.job.JobContext;
 

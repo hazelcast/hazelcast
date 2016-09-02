@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.job;
-
-import com.hazelcast.jet.impl.job.JobContext;
-
 /**
- * Interface for registration of the job listener
+ * Provides API to work with sources
  */
-public interface JobListener {
-    /**
-     * Will be invoked after finish of job execution
-     *
-     * @param jobContext - job context
-     */
-    void onJobExecuted(JobContext jobContext);
-}
-
+package com.hazelcast.jet.source;

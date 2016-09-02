@@ -18,13 +18,13 @@ package com.hazelcast.jet.impl.runtime.task;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.data.io.JetPairDataType;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.SerializationOptimizer;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.TaskContext;
+import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.TaskContext;
 
 import java.io.Serializable;
 import java.util.HashMap;

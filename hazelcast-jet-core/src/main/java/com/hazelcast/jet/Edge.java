@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag;
+package com.hazelcast.jet;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;

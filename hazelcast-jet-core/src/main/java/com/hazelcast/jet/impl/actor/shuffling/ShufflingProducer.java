@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.actor.shuffling;
 
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 
 public class ShufflingProducer implements Producer {

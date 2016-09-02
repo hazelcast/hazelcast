@@ -1,8 +1,8 @@
 package com.hazelcast.jet.impl.job.deployment.processors;
 
-import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.data.io.OutputCollector;
-import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet.Processor;
 
 import static org.junit.Assert.fail;
 

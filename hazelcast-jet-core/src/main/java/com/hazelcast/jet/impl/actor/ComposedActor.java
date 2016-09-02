@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.dag.Edge;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors.shuffling;
 
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
@@ -26,8 +26,8 @@ import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.runtime.task.processors.ActorTaskProcessor;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.TaskContext;
+import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.nio.Address;
 
 import java.util.ArrayList;

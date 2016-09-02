@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.data.io.OutputCollector;
-import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.io.Pair;
 
 import java.util.ArrayList;

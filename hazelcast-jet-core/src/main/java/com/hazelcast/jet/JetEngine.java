@@ -19,12 +19,10 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.job.JobProxy;
 import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.job.client.ClientJobProxy;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
-import com.hazelcast.jet.job.Job;
 
 import java.util.Set;
 

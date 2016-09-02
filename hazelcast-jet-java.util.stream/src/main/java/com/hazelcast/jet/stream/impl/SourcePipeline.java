@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.dag.source.Source;
+import com.hazelcast.jet.Source;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 

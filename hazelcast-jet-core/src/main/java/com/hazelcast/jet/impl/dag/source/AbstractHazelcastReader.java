@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.actor.Producer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;

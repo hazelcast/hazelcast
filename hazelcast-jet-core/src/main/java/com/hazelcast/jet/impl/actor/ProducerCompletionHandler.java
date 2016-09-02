@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.actor;
 
+import com.hazelcast.jet.runtime.Producer;
+
 /**
  * Completion handler for producers
  */

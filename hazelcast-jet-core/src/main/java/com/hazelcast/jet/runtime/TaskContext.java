@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.processor;
+package com.hazelcast.jet.runtime;
 
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.SerializationOptimizer;
 

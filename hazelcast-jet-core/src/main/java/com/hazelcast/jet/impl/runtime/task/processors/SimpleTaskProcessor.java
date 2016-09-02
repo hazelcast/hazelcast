@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors;
 
-import com.hazelcast.jet.data.io.InputChunk;
-import com.hazelcast.jet.processor.TaskContext;
+import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
-import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.Processor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 

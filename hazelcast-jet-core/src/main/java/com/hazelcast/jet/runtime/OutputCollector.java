@@ -14,7 +14,27 @@
  * limitations under the License.
  */
 
+package com.hazelcast.jet.runtime;
+
 /**
- * Provides API to work with sinks
+ * Collects output data from a processor
+ *
+ * @param <T> type of output objects
  */
-package com.hazelcast.jet.dag.sink;
+public interface OutputCollector<T> {
+
+    /**
+     * Collect a given input chunk
+     */
+    void collect(InputChunk<T> chunk);
+
+    /**
+     * Collect array of objects with given size
+     */
+    void collect(T[] buffer, int size);
+
+    /**
+     * Collect a single object
+     */
+    void collect(T object);
+}

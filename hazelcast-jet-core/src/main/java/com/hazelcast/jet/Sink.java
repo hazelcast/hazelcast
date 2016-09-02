@@ -14,30 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag.source;
+package com.hazelcast.jet;
 
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.runtime.DataWriter;
+
 import java.io.Serializable;
 
 /**
- * Represents abstract source
+ * Abstract class which represents any sink
  */
-public interface Source extends Serializable {
+public interface Sink extends Serializable {
+    /**
+     * Return writers for the corresponding
+     *
+     * @return list of the data writers
+     */
+    DataWriter[] getWriters(JobContext jobContext);
 
     /**
-     * @return name of the source
+     * Returns <tt>true</tt>if sink is partitioned.
+     *
+     * @return <tt>true</tt>if sink is partitioned
+     */
+    boolean isPartitioned();
+
+    /**
+     * @return name of the sink
      */
     String getName();
-
-    /**
-     * Array of the input producers
-     *
-     * @param jobContext job context
-     * @param vertex     corresponding vertex
-     * @return list of the input readers
-     */
-    Producer[] getProducers(JobContext jobContext, Vertex vertex);
-
 }
