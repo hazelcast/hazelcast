@@ -216,7 +216,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (target == null) {
             return null;
         }
-        return connections.get(target);
+        ClientConnection connection = connections.get(target);
+        if (connection != null && !connection.isAlive()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Get a connection " + connection + " which is not alive. Destroying it.");
+            }
+            destroyConnection(connection, "Not Alive", null);
+            return null;
+        }
+        return connection;
     }
 
     @Override
@@ -227,6 +235,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 if (connection != null) {
                     return connection;
                 }
+
                 AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
                 connection = firstCallback.get(connectionTimeout);
                 if (!asOwner) {
@@ -281,13 +290,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private Connection getConnection(Address target, boolean asOwner) {
-        target = addressTranslator.translate(target);
-
-        if (target == null) {
-            throw new IllegalStateException("Address can not be null");
-        }
-
-        ClientConnection connection = connections.get(target);
+        ClientConnection connection = getConnection(target);
 
         if (connection != null) {
             if (!asOwner) {
@@ -366,16 +369,30 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public void destroyConnection(final Connection connection, final String reason, final Throwable cause) {
-        Address endPoint = connection.getEndPoint();
-        ClientConnection conn = (ClientConnection) connection;
-        if (endPoint != null && connections.remove(endPoint, conn)) {
-            logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
+        Address endpoint = connection.getEndPoint();
+        if (endpoint == null) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Destroying " + connection + " , but it has end-point set to null "
+                        + "-> not removing it from a connection map");
+            }
+            connection.close(reason, cause);
+            return;
+        }
 
-            conn.close(reason, cause);
+        if (connections.remove(endpoint, connection)) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Destroying a connection and managed to remove mapping "
+                        + endpoint + " -> " + connection + ".");
+            }
+            connection.close(reason, cause);
             for (ConnectionListener connectionListener : connectionListeners) {
-                connectionListener.connectionRemoved(conn);
+                connectionListener.connectionRemoved(connection);
             }
         } else {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Destroying a connection, but there is no mapping " + endpoint + " -> " + connection
+                        + " in the connection map. Closing the connection.");
+            }
             connection.close(reason, cause);
         }
     }
@@ -402,6 +419,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             final long now = Clock.currentTimeMillis();
             for (final ClientConnection connection : connections.values()) {
+                if (!connection.isAlive()) {
+                    destroyConnection(connection, "Connection is not alive", null);
+                    continue;
+                }
                 if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
                     if (connection.isHeartBeating()) {
                         logger.warning("Heartbeat failed to connection : " + connection);
@@ -504,21 +525,21 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         break;
                     case CREDENTIALS_FAILED:
                         AuthenticationException e = new AuthenticationException("Invalid credentials!");
-                        failed(target, connection, e);
+                        authenticationFailed(target, connection, e);
                         callback.onFailure(e);
                         break;
                     default:
                         AuthenticationException exception =
                                 new AuthenticationException("Authentication status code not supported. status:"
                                         + authenticationStatus);
-                        failed(target, connection, exception);
+                        authenticationFailed(target, connection, exception);
                         callback.onFailure(exception);
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                failed(target, connection, t);
+                authenticationFailed(target, connection, t);
                 callback.onFailure(t);
             }
         }, executionService.getInternalExecutor());
@@ -538,7 +559,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         @Override
         public void run() {
-            ClientConnection connection = connections.get(target);
+            ClientConnection connection = getConnection(target);
             if (connection == null) {
                 try {
                     connection = createSocketConnection(target);
@@ -563,14 +584,24 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private void authenticated(Address target, ClientConnection connection) {
         ClientConnection oldConnection = connections.put(connection.getRemoteEndpoint(), connection);
         if (oldConnection == null) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Authentication succeeded for " + connection
+                        + " and there was no old connection to this end-point");
+            }
             fireConnectionAddedEvent(connection);
+        } else {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Authentication succeeded for " + connection + " and replaced " + oldConnection);
+            }
         }
         assert oldConnection == null || connection.equals(oldConnection);
         connectionsInProgress.remove(target);
     }
 
-    private void failed(Address target, ClientConnection connection, Throwable cause) {
-        logger.finest(cause);
+    private void authenticationFailed(Address target, ClientConnection connection, Throwable cause) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Authentication of " + connection + " failed.", cause);
+        }
         destroyConnection(connection, null, cause);
         connectionsInProgress.remove(target);
     }
