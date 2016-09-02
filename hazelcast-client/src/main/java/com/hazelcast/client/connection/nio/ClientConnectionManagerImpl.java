@@ -591,7 +591,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             fireConnectionAddedEvent(connection);
         } else {
             if (logger.isFinestEnabled()) {
-                logger.finest("Authentication succeeded for " + connection + " and replaced " + oldConnection);
+                logger.finest("Authentication succeeded for " + connection + " and replaced " + oldConnection
+                    + " Closing the old connection.");
+                destroyConnection(oldConnection, "Replaced by newer connection", null);
             }
         }
         assert oldConnection == null || connection.equals(oldConnection);
