@@ -29,14 +29,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class PartitioningStrategyFactory {
 
-    private static final ConcurrentHashMap<String, PartitioningStrategy> CACHE =
+    // not private for tests
+    static final ConcurrentHashMap<String, PartitioningStrategy> CACHE =
             new ConcurrentHashMap<String, PartitioningStrategy>();
 
     private PartitioningStrategyFactory() {
     }
 
     /**
-     * Obtain a {@link PartitioningStrategy} for the given {@code NodeEngine} and {@code PartitioningStrategyConfig}. This method
+     * Obtain a {@link PartitioningStrategy} for the given {@code NodeEngine} and {@code mapName}. This method
      * first attempts locating a {@link PartitioningStrategy} in {code config.getPartitioningStrategy()}. If this is {@code null},
      * then looks up its internal cache of partitioning strategies; if one has already been created for the given
      * {@code mapName}, it is returned, otherwise it is instantiated, cached and returned.
@@ -47,31 +48,37 @@ public final class PartitioningStrategyFactory {
      */
     public static PartitioningStrategy getPartitioningStrategy(NodeEngine nodeEngine, String mapName,
                                                                PartitioningStrategyConfig config) {
-            PartitioningStrategy strategy = null;
-            if (config != null) {
-                strategy = config.getPartitioningStrategy();
-                if (strategy == null) {
-                    if (CACHE.containsKey(mapName)) {
-                        strategy = CACHE.get(mapName);
-                    } else if (config.getPartitioningStrategyClass() != null) {
-                        try {
-                            strategy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
-                                    config.getPartitioningStrategyClass());
-                            CACHE.put(mapName, strategy);
-                        } catch (Exception e) {
-                            throw ExceptionUtil.rethrow(e);
-                        }
+        String key = key(nodeEngine, mapName);
+        PartitioningStrategy strategy = null;
+        if (config != null) {
+            strategy = config.getPartitioningStrategy();
+            if (strategy == null) {
+                if (CACHE.containsKey(key)) {
+                    strategy = CACHE.get(key);
+                } else if (config.getPartitioningStrategyClass() != null) {
+                    try {
+                        strategy = ClassLoaderUtil
+                                .newInstance(nodeEngine.getConfigClassLoader(), config.getPartitioningStrategyClass());
+                        CACHE.put(key, strategy);
+                    } catch (Exception e) {
+                        throw ExceptionUtil.rethrow(e);
                     }
                 }
             }
-            return strategy;
+        }
+        return strategy;
     }
 
     /**
      * Remove the cached {@code PartitioningStrategy} from the internal cache, if it exists.
+     * @param nodeEngine the NodeEngine in which {@code mapName} is defined
      * @param mapName name of the map whose partitioning strategy will be removed from internal cache
      */
-    public static void removePartitioningStrategyFromCache(String mapName) {
-        CACHE.remove(mapName);
+    public static void removePartitioningStrategyFromCache(NodeEngine nodeEngine, String mapName) {
+        CACHE.remove(key(nodeEngine, mapName));
+    }
+
+    static String key(NodeEngine nodeEngine, String mapName) {
+        return nodeEngine.getLocalMember().getUuid() + ":" + mapName;
     }
 }
