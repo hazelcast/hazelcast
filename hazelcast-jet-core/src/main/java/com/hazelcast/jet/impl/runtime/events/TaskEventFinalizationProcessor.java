@@ -25,12 +25,10 @@ public class TaskEventFinalizationProcessor extends AbstractEventProcessor {
     protected TaskEventFinalizationProcessor(AtomicInteger completedTasks,
                                              AtomicInteger interruptedTasks,
                                              AtomicInteger readyForFinalizationTasksCounter,
-                                             VertexTask[] vertexTasks,
                                              VertexRunner vertexRunner) {
         super(completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
-                vertexTasks,
                 vertexRunner
         );
     }

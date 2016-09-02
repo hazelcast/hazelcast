@@ -67,20 +67,18 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     public ShuffledConsumerTaskProcessor(Consumer[] consumers,
                                          Processor processor,
-                                         TaskContext taskContext,
-                                         int taskID) {
-        this(consumers, processor, taskContext, taskID, false);
+                                         TaskContext taskContext) {
+        this(consumers, processor, taskContext, false);
     }
 
     public ShuffledConsumerTaskProcessor(Consumer[] consumers,
                                          Processor processor,
                                          TaskContext taskContext,
-                                         int taskID,
                                          boolean receiver) {
         super(filterConsumers(consumers, false), processor, taskContext);
         this.nodeEngine = taskContext.getJobContext().getNodeEngine();
 
-        initSenders(taskID, receiver);
+        initSenders(receiver);
 
         this.sendersArray = this.senders.values().toArray(new DataWriter[this.senders.size()]);
         this.hasLocalConsumers = this.consumers.length > 0;
@@ -136,17 +134,18 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private void initSenders(int taskID, boolean receiver) {
+    private void initSenders(boolean receiver) {
         JobManager jobManager = taskContext.getJobContext().getJobManager();
 
         VertexRunner vertexRunner = jobManager.getRunnerByVertex(taskContext.getVertex());
-        VertexTask vertexTask = vertexRunner.getVertexMap().get(taskID);
+        int taskNumber = taskContext.getTaskNumber();
+        VertexTask vertexTask = vertexRunner.getVertexMap().get(taskNumber);
 
         if (!receiver) {
             for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
                 ShufflingSender sender = new ShufflingSender(vertexTask, vertexRunner.getId(), address);
                 this.senders.put(address, sender);
-                jobManager.registerShufflingSender(taskID, vertexRunner.getId(), address, sender);
+                jobManager.registerShufflingSender(taskNumber, vertexRunner.getId(), address, sender);
             }
         }
     }

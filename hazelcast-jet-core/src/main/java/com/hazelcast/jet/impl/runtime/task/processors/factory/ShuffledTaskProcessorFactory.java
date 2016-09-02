@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.runtime.task.processors.factory;
 
 
-import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
@@ -25,19 +24,18 @@ import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledActorTas
 import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledConsumerTaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledReceiverConsumerTaskProcessor;
 import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.processor.TaskContext;
 
 public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
     @Override
     public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,
-                                               TaskContext taskContext,
-                                               int taskID) {
+                                               TaskContext taskContext) {
         return actorTaskProcessor(
                 new Producer[0],
                 consumers,
                 processor,
-                taskContext,
-                taskID
+                taskContext
         );
     }
 
@@ -45,16 +43,13 @@ public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
     public TaskProcessor actorTaskProcessor(Producer[] producers,
                                             Consumer[] consumers,
                                             Processor processor,
-                                            TaskContext taskContext,
-                                            int taskID) {
+                                            TaskContext taskContext) {
         return new ShuffledActorTaskProcessor(
                 producers,
-                consumers,
                 processor,
                 taskContext,
-                new ShuffledConsumerTaskProcessor(consumers, processor, taskContext, taskID),
-                new ShuffledReceiverConsumerTaskProcessor(consumers, processor, taskContext, taskID),
-                taskID
+                new ShuffledConsumerTaskProcessor(consumers, processor, taskContext),
+                new ShuffledReceiverConsumerTaskProcessor(consumers, processor, taskContext)
         );
     }
 }

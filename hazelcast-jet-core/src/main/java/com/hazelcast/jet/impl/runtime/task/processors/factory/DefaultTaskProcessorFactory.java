@@ -39,8 +39,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     @Override
     public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,
-                                               TaskContext taskContext,
-                                               int taskID) {
+                                               TaskContext taskContext) {
         return new ConsumerTaskProcessor(consumers, processor, taskContext);
     }
 
@@ -55,21 +54,19 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     public TaskProcessor actorTaskProcessor(Producer[] producers,
                                             Consumer[] consumers,
                                             Processor processor,
-                                            TaskContext taskContext,
-                                            int taskID) {
+                                            TaskContext taskContext) {
         return new ActorTaskProcessor(
                 producers,
                 processor,
                 taskContext,
-                consumerTaskProcessor(consumers, processor, taskContext, taskID)
+                consumerTaskProcessor(consumers, processor, taskContext)
         );
     }
 
     public TaskProcessor getTaskProcessor(Producer[] producers,
                                           Consumer[] consumers,
                                           TaskContext taskContext,
-                                          Processor processor,
-                                          int taskID) {
+                                          Processor processor) {
         checkNotNull(producers);
         checkNotNull(consumers);
         checkNotNull(processor);
@@ -79,13 +76,13 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
             if (consumers.length == 0) {
                 return simpleTaskProcessor(processor, taskContext);
             } else {
-                return consumerTaskProcessor(consumers, processor, taskContext, taskID);
+                return consumerTaskProcessor(consumers, processor, taskContext);
             }
         } else {
             if (consumers.length == 0) {
                 return producerTaskProcessor(producers, processor, taskContext);
             } else {
-                return actorTaskProcessor(producers, consumers, processor, taskContext, taskID);
+                return actorTaskProcessor(producers, consumers, processor, taskContext);
             }
         }
     }

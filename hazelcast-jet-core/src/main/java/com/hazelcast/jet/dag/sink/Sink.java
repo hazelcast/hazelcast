@@ -30,7 +30,7 @@ public interface Sink extends Serializable {
      *
      * @return list of the data writers
      */
-    DataWriter[] getWriters(JobContext taskContext);
+    DataWriter[] getWriters(JobContext jobContext);
 
     /**
      * Returns <tt>true</tt>if sink is partitioned.

@@ -81,23 +81,6 @@ public class VertexTest {
     }
 
     @Test
-    public void testVertexOutputShuffler() throws Exception {
-        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
-        Vertex output = createVertex("output", TestProcessors.Noop.class);
-
-        Edge edge = new Edge("edge", v1, output, false);
-        v1.addOutputVertex(output, edge);
-
-        assertTrue(v1.hasOutputShuffler());
-    }
-
-    @Test
-    public void testEmptyVertexHasNotOutputShuffler() throws Exception {
-        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
-        assertFalse(v1.hasOutputShuffler());
-    }
-
-    @Test
     public void testVertexSources() throws Exception {
         Vertex vertex = createVertex("vertex", TestProcessors.Noop.class);
 

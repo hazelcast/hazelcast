@@ -200,20 +200,6 @@ public class Vertex implements Serializable {
         return Collections.unmodifiableList(this.sinks);
     }
 
-    /**
-     * @return true if vertex has at least one output edge which will represent distributed
-     * channel for shuffling data between cluster nodes
-     */
-    public boolean hasOutputShuffler() {
-        for (Edge edge : this.outputEdges) {
-            if (!edge.isLocal()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {

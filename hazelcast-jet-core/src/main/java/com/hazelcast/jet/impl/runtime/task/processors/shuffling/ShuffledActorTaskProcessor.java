@@ -16,20 +16,20 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors.shuffling;
 
-import com.hazelcast.jet.processor.TaskContext;
-import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.Producer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
-import com.hazelcast.jet.impl.runtime.JobManager;
-import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
-import com.hazelcast.jet.impl.runtime.task.processors.ActorTaskProcessor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.VertexRunner;
+import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
+import com.hazelcast.jet.impl.runtime.task.processors.ActorTaskProcessor;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.nio.Address;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,24 +42,23 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     private boolean receiversProduced;
 
     public ShuffledActorTaskProcessor(Producer[] producers,
-                                      Consumer[] consumers,
                                       Processor processor,
                                       TaskContext taskContext,
                                       TaskProcessor senderConsumerProcessor,
-                                      TaskProcessor receiverConsumerProcessor,
-                                      int taskID) {
+                                      TaskProcessor receiverConsumerProcessor) {
         super(producers, processor, taskContext, senderConsumerProcessor);
         this.receiverConsumerProcessor = receiverConsumerProcessor;
         List<Producer> receivers = new ArrayList<Producer>();
         JobContext jobContext = taskContext.getJobContext();
         JobManager jobManager = jobContext.getJobManager();
         VertexRunner vertexRunner = jobManager.getRunnerByVertex(taskContext.getVertex());
-        VertexTask vertexTask = vertexRunner.getVertexMap().get(taskID);
+        VertexTask vertexTask = vertexRunner.getVertexMap().get(taskContext.getTaskNumber());
 
         for (Address address : jobManager.getJobContext().getSocketReaders().keySet()) {
             //Registration to the AppMaster
             ShufflingReceiver receiver = new ShufflingReceiver(vertexTask);
-            jobManager.registerShufflingReceiver(taskID, vertexRunner.getId(), address, receiver);
+            jobManager.registerShufflingReceiver(taskContext.getTaskNumber(),
+                    vertexRunner.getId(), address, receiver);
             receivers.add(receiver);
         }
 

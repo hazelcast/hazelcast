@@ -32,7 +32,7 @@ public class ChunkedOutputStream extends OutputStream {
     private static final int BUFFER_OFFSET = HeapData.DATA_OFFSET;
 
     private int bufferSize;
-    private final int taskID;
+    private final int taskId;
     private final byte[] buffer;
     private final int vertexManagerId;
     private final int shufflingBytesSize;
@@ -41,7 +41,7 @@ public class ChunkedOutputStream extends OutputStream {
 
     public ChunkedOutputStream(RingbufferActor ringbufferActor,
                                TaskContext taskContext, int vertexManagerId, int taskId) {
-        this.taskID = taskId;
+        this.taskId = taskId;
         this.ringbufferActor = ringbufferActor;
         this.shufflingBytesSize = taskContext.getJobContext().getJobConfig().getShufflingBatchSizeBytes();
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
@@ -71,7 +71,7 @@ public class ChunkedOutputStream extends OutputStream {
                 System.arraycopy(this.buffer, 0, buffer, 0, BUFFER_OFFSET + this.bufferSize);
 
                 JetPacket packet = new JetPacket(
-                        taskID,
+                        taskId,
                         vertexManagerId,
                         jobNameBytyes,
                         buffer

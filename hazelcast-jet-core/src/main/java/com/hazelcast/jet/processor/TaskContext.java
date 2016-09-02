@@ -24,11 +24,13 @@ import com.hazelcast.jet.io.SerializationOptimizer;
 import java.io.Serializable;
 
 /**
- * Represents task context. Holds task's information.
+ * The context for the currently executing task
  */
 public interface TaskContext {
+
     /**
-     * @return number of the current task inside the vertex runner
+     * Returns the task number for the current task. The returned value will be a number from 0 to the
+     * <i>parallelism</i> value of the vertex.
      */
     int getTaskNumber();
 
@@ -63,7 +65,12 @@ public interface TaskContext {
     <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator);
 
     /**
-     * @return the IO context
+     * Return the serialization optimizer
      */
     SerializationOptimizer getSerializationOptimizer();
+
+    /**
+     * Return the processor associated with this task
+     */
+    Processor getProcessor();
 }

@@ -20,31 +20,31 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.data.io.JetPairDataType;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.processor.TaskContext;
 
 import java.io.Serializable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- * Contains accessors to the resources
- */
 public class TaskContextImpl implements TaskContext {
     private final SerializationOptimizer optimizer;
-    private final ConcurrentMap<String, Accumulator> accumulatorMap;
+    private final Map<String, Accumulator> accumulatorMap;
     private Vertex vertex;
     private final JobContext jobContext;
+    private final Processor processor;
     private final int taskNumber;
 
-    public TaskContextImpl(Vertex vertex, JobContext jobContext, int taskNumber) {
+    public TaskContextImpl(Vertex vertex, JobContext jobContext, Processor processor, int taskNumber) {
         this.vertex = vertex;
         this.jobContext = jobContext;
+        this.processor = processor;
         this.taskNumber = taskNumber;
         this.optimizer = new SerializationOptimizer(JetPairDataType.INSTANCE);
-        this.accumulatorMap = new ConcurrentHashMap<>();
+        this.accumulatorMap = new HashMap<>();
         jobContext.registerAccumulators(this.accumulatorMap);
     }
 
@@ -93,5 +93,10 @@ public class TaskContextImpl implements TaskContext {
     @Override
     public SerializationOptimizer getSerializationOptimizer() {
         return optimizer;
+    }
+
+    @Override
+    public Processor getProcessor() {
+        return processor;
     }
 }

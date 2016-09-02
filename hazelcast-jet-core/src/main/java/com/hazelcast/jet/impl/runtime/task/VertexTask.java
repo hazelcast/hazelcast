@@ -20,7 +20,6 @@ package com.hazelcast.jet.impl.runtime.task;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.actor.Actor;
 import com.hazelcast.jet.impl.actor.ComposedActor;
 import com.hazelcast.jet.impl.actor.Consumer;
@@ -30,14 +29,15 @@ import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.executor.Task;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.DataChannel;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
+import com.hazelcast.jet.impl.runtime.task.processors.factory.DefaultTaskProcessorFactory;
+import com.hazelcast.jet.impl.runtime.task.processors.factory.ShuffledTaskProcessorFactory;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,7 +47,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 /**
  * Represents actual vertex execution
@@ -61,16 +60,9 @@ public class VertexTask extends Task {
 
     private final ILogger logger;
 
-    private final int taskId;
-
     private final Vertex vertex;
 
-    private final NodeEngine nodeEngine;
-
     private final VertexRunner runner;
-    private final Processor processor;
-    private final JobContext jobContext;
-    private final TaskProcessorFactory taskProcessorFactory;
     private final AtomicBoolean interrupted = new AtomicBoolean(false);
     private final AtomicInteger activeProducersCounter = new AtomicInteger(0);
     private final AtomicInteger activeReceiversCounter = new AtomicInteger(0);
@@ -80,6 +72,7 @@ public class VertexTask extends Task {
     private final Map<Address, ShufflingReceiver> shufflingReceivers = new ConcurrentHashMap<>();
     private final Map<Address, ShufflingSender> shufflingSenders = new ConcurrentHashMap<>();
     private final TaskContext taskContext;
+    private final Processor processor;
     private volatile TaskProcessor taskProcessor;
     private volatile boolean sendersClosed;
     private volatile ShufflingSender[] sendersArray;
@@ -92,19 +85,12 @@ public class VertexTask extends Task {
 
     public VertexTask(VertexRunner vertexRunner,
                       Vertex vertex,
-                      TaskProcessorFactory taskProcessorFactory,
-                      int taskId,
                       TaskContext taskContext) {
-        this.taskId = taskId;
         this.vertex = vertex;
         this.runner = vertexRunner;
         this.taskContext = taskContext;
-        this.taskProcessorFactory = taskProcessorFactory;
-        jobContext = vertexRunner.getJobContext();
-        nodeEngine = jobContext.getNodeEngine();
-        Supplier<Processor> processorFactory = vertexRunner.getProcessorSupplier();
-        processor = processorFactory == null ? null : processorFactory.get();
-        logger = nodeEngine.getLogger(getClass());
+        this.processor = taskContext.getProcessor();
+        logger = taskContext.getJobContext().getNodeEngine().getLogger(getClass());
     }
 
     /**
@@ -157,7 +143,7 @@ public class VertexTask extends Task {
 
             if (channel.isShuffled()) {
                 //output
-                actor = new ShufflingActor(actor, nodeEngine);
+                actor = new ShufflingActor(actor, taskContext.getJobContext().getNodeEngine());
             }
             actors.add(actor);
         }
@@ -308,10 +294,6 @@ public class VertexTask extends Task {
         }
     }
 
-    public int getId() {
-        return taskId;
-    }
-
     private Throwable getError() {
         return error != null ? error : INTERRUPTED_EXCEPTION;
     }
@@ -346,14 +328,8 @@ public class VertexTask extends Task {
         Producer[] producers = this.producers.toArray(new Producer[this.producers.size()]);
         Consumer[] consumers = this.consumers.toArray(new Consumer[this.consumers.size()]);
 
-        taskProcessor = taskProcessorFactory.getTaskProcessor(
-                producers,
-                consumers,
-                taskContext,
-                processor,
-                taskId
-        );
-
+        TaskProcessorFactory taskProcessorFactory = getTaskProcessorFactory();
+        taskProcessor = taskProcessorFactory.getTaskProcessor(producers, consumers, taskContext, processor);
         finalizationStarted = false;
         isFinalizationNotified = false;
         int size = shufflingSenders.values().size();
@@ -495,5 +471,22 @@ public class VertexTask extends Task {
         } finally {
             runner.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_COMPLETED, e);
         }
+    }
+
+    private TaskProcessorFactory getTaskProcessorFactory() {
+        int clusterSize = taskContext.getJobContext().getNodeEngine().getClusterService().getMembers().size();
+        if ((hasDistributedOutputEdge(vertex) && clusterSize > 1) || (vertex.getSinks().size() > 0)) {
+            return new ShuffledTaskProcessorFactory();
+        }
+        return new DefaultTaskProcessorFactory();
+    }
+
+    private boolean hasDistributedOutputEdge(Vertex vertex) {
+        for (Edge edge : vertex.getOutputEdges()) {
+            if (!edge.isLocal()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

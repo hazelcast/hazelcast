@@ -29,7 +29,7 @@ public interface TaskProcessorFactory {
 
     TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                         Processor processor,
-                                        TaskContext taskContext, int taskId);
+                                        TaskContext taskContext);
 
 
     TaskProcessor producerTaskProcessor(Producer[] producers,
@@ -40,12 +40,10 @@ public interface TaskProcessorFactory {
     TaskProcessor actorTaskProcessor(Producer[] producers,
                                      Consumer[] consumers,
                                      Processor processor,
-                                     TaskContext taskContext,
-                                     int taskID);
+                                     TaskContext taskContext);
 
     TaskProcessor getTaskProcessor(Producer[] producers,
                                    Consumer[] consumers,
                                    TaskContext context,
-                                   Processor processor,
-                                   int taskID);
+                                   Processor processor);
 }

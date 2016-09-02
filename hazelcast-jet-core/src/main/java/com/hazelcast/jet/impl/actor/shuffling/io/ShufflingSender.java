@@ -48,7 +48,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     public ShufflingSender(VertexTask task, int vertexRunnerId, Address address) {
         super(task.getTaskContext().getJobContext(), -1);
         this.vertexRunnerId = vertexRunnerId;
-        this.taskID = task.getId();
+        this.taskID = task.getTaskContext().getTaskNumber();
         this.address = address;
         JobContext jobContext = task.getTaskContext().getJobContext();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
@@ -56,7 +56,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         this.jobNameBytes = ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(jobName);
         this.ringbufferActor = new RingbufferActor(task);
         this.serializer = new ChunkedOutputStream(this.ringbufferActor, task.getTaskContext(),
-                vertexRunnerId, task.getId());
+                vertexRunnerId, task.getTaskContext().getTaskNumber());
         this.optimizer = task.getTaskContext().getSerializationOptimizer();
         this.dataOutputStream = new ObjectDataOutputStream(
                 this.serializer, (InternalSerializationService) nodeEngine.getSerializationService());

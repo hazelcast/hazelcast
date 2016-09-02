@@ -23,8 +23,7 @@ import com.hazelcast.jet.processor.Processor;
 public class ShuffledReceiverConsumerTaskProcessor extends ShuffledConsumerTaskProcessor {
     public ShuffledReceiverConsumerTaskProcessor(Consumer[] consumers,
                                                  Processor processor,
-                                                 TaskContext taskContext,
-                                                 int taskID) {
-        super(consumers, processor, taskContext, taskID, true);
+                                                 TaskContext taskContext) {
+        super(consumers, processor, taskContext, true);
     }
 }
