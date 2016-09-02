@@ -602,6 +602,18 @@ public abstract class HazelcastTestSupport {
         return true;
     }
 
+    public static void assertAllInSafeState(Collection<HazelcastInstance> nodes) {
+        Map<Address, PartitionServiceState> nonSafeStates = new HashMap<Address, PartitionServiceState>();
+        for (HazelcastInstance node : nodes) {
+            final PartitionServiceState state = getPartitionServiceState(node);
+            if (state != PartitionServiceState.SAFE) {
+                nonSafeStates.put(getAddress(node), state);
+            }
+        }
+
+        assertTrue("Instances not in safe state! " + nonSafeStates, nonSafeStates.isEmpty());
+    }
+
     public static void waitAllForSafeState() {
         waitAllForSafeState(HazelcastInstanceFactory.getAllHazelcastInstances());
     }
@@ -613,15 +625,7 @@ public abstract class HazelcastTestSupport {
     public static void waitAllForSafeState(final Collection<HazelcastInstance> instances, int timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             public void run() {
-                Map<Address, PartitionServiceState> states = new HashMap<Address, PartitionServiceState>();
-                for (HazelcastInstance instance : instances) {
-                    PartitionServiceState state = getPartitionServiceState(instance);
-                    if (state != PartitionServiceState.SAFE) {
-                        states.put(getNode(instance).getThisAddress(), state);
-                    }
-                }
-
-                assertTrue("Instances not in safe state! " + states, states.isEmpty());
+               assertAllInSafeState(instances);
             }
         }, timeoutInSeconds);
     }
