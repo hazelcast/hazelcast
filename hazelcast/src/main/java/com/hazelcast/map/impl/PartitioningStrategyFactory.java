@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,49 +28,54 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class PartitioningStrategyFactory {
 
-    private static final ConcurrentHashMap<String, PartitioningStrategy> CACHE =
-            new ConcurrentHashMap<String, PartitioningStrategy>();
+    // not private for tests
+    final ConcurrentHashMap<String, PartitioningStrategy> cache = new ConcurrentHashMap<String, PartitioningStrategy>();
 
-    private PartitioningStrategyFactory() {
+    // this is set to the current NodeEngine.getConfigClassLoader
+    private final ClassLoader configClassLoader;
+
+    /**
+     * Construct a new PartitioningStrategyFactory
+     * @param configClassLoader the current {@code NodeEngine}'s {@code configClassLoader}.
+     */
+    public PartitioningStrategyFactory(ClassLoader configClassLoader) {
+        this.configClassLoader = configClassLoader;
     }
 
     /**
-     * Obtain a {@link PartitioningStrategy} for the given {@code NodeEngine} and {@code PartitioningStrategyConfig}. This method
+     * Obtain a {@link PartitioningStrategy} for the given {@code NodeEngine} and {@code mapName}. This method
      * first attempts locating a {@link PartitioningStrategy} in {code config.getPartitioningStrategy()}. If this is {@code null},
      * then looks up its internal cache of partitioning strategies; if one has already been created for the given
      * {@code mapName}, it is returned, otherwise it is instantiated, cached and returned.
-     * @param nodeEngine    Hazelcast NodeEngine
      * @param mapName       Map for which this partitioning strategy is being created
      * @param config        the partitioning strategy configuration
      * @return
      */
-    public static PartitioningStrategy getPartitioningStrategy(NodeEngine nodeEngine, String mapName,
-                                                               PartitioningStrategyConfig config) {
-            PartitioningStrategy strategy = null;
-            if (config != null) {
-                strategy = config.getPartitioningStrategy();
-                if (strategy == null) {
-                    if (CACHE.containsKey(mapName)) {
-                        strategy = CACHE.get(mapName);
-                    } else if (config.getPartitioningStrategyClass() != null) {
-                        try {
-                            strategy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
-                                    config.getPartitioningStrategyClass());
-                            CACHE.put(mapName, strategy);
-                        } catch (Exception e) {
-                            throw ExceptionUtil.rethrow(e);
-                        }
+    public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config) {
+        PartitioningStrategy strategy = null;
+        if (config != null) {
+            strategy = config.getPartitioningStrategy();
+            if (strategy == null) {
+                if (cache.containsKey(mapName)) {
+                    strategy = cache.get(mapName);
+                } else if (config.getPartitioningStrategyClass() != null) {
+                    try {
+                        strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());
+                        cache.put(mapName, strategy);
+                    } catch (Exception e) {
+                        throw ExceptionUtil.rethrow(e);
                     }
                 }
             }
-            return strategy;
+        }
+        return strategy;
     }
 
     /**
      * Remove the cached {@code PartitioningStrategy} from the internal cache, if it exists.
      * @param mapName name of the map whose partitioning strategy will be removed from internal cache
      */
-    public static void removePartitioningStrategyFromCache(String mapName) {
-        CACHE.remove(mapName);
+    public void removePartitioningStrategyFromCache(String mapName) {
+        cache.remove(mapName);
     }
 }
