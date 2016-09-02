@@ -23,9 +23,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheConfigTest {
+
+    private NearCacheConfig config = new NearCacheConfig();
 
     /**
      * Test method for {@link com.hazelcast.config.NearCacheConfigReadOnly#setCacheLocalEntries(boolean)} .
@@ -33,5 +37,24 @@ public class NearCacheConfigTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyNearCacheConfigSetCacheLocalEntries() {
         new NearCacheConfigReadOnly(new NearCacheConfig()).setCacheLocalEntries(true);
+    }
+
+    @Test
+    public void testMaxSize_whenValueIsZero_thenSetIntegerMax() {
+        config.setMaxSize(0);
+
+        assertEquals(Integer.MAX_VALUE, config.getMaxSize());
+    }
+
+    @Test
+    public void testMaxSize_whenValueIsPositive_thenSetValue() {
+        config.setMaxSize(4531);
+
+        assertEquals(4531, config.getMaxSize());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMaxSize_whenValueIsNegative_thenThrowException() {
+        config.setMaxSize(-1);
     }
 }
