@@ -44,6 +44,7 @@ final class DateHelper {
 
     static Timestamp parseTimeStamp(final String value) {
         try {
+            // JDK format in Timestamp.valueOf is compatible with TIMESTAMP_FORMAT
             return Timestamp.valueOf(value);
         } catch (IllegalArgumentException e) {
             return throwRuntimeParseException(value, new ParseException(e.getMessage(), 0), TIMESTAMP_FORMAT);
@@ -52,6 +53,7 @@ final class DateHelper {
 
     static java.sql.Date parseSqlDate(final String value) {
         try {
+            // JDK format in Date.valueOf is compatible with DATE_FORMAT
             return java.sql.Date.valueOf(value);
         } catch (IllegalArgumentException e) {
             return throwRuntimeParseException(value, new ParseException(value, 0), SQL_DATE_FORMAT);
@@ -60,6 +62,7 @@ final class DateHelper {
 
     static java.sql.Time parseSqlTime(final String value) {
         try {
+            // JDK format in Time.valueOf is compatible with DATE_FORMAT
             return Time.valueOf(value);
         } catch (IllegalArgumentException e) {
             return throwRuntimeParseException(value, new ParseException(value, 0), SQL_TIME_FORMAT);
