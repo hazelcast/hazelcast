@@ -21,22 +21,22 @@ import com.hazelcast.core.Member;
 import com.hazelcast.jet.PartitionIdAware;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.runtime.task.processors.ConsumerTaskProcessor;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategyAware;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.HashUtil;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -67,22 +67,20 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     public ShuffledConsumerTaskProcessor(Consumer[] consumers,
                                          Processor processor,
-                                         JobContext jobContext,
-                                         ProcessorContext processorContext,
+                                         TaskContext taskContext,
                                          int taskID) {
-        this(consumers, processor, jobContext, processorContext, taskID, false);
+        this(consumers, processor, taskContext, taskID, false);
     }
 
     public ShuffledConsumerTaskProcessor(Consumer[] consumers,
                                          Processor processor,
-                                         JobContext jobContext,
-                                         ProcessorContext processorContext,
+                                         TaskContext taskContext,
                                          int taskID,
                                          boolean receiver) {
-        super(filterConsumers(consumers, false), processor, jobContext, processorContext);
-        this.nodeEngine = jobContext.getNodeEngine();
+        super(filterConsumers(consumers, false), processor, taskContext);
+        this.nodeEngine = taskContext.getJobContext().getNodeEngine();
 
-        initSenders(jobContext, taskID, receiver);
+        initSenders(taskID, receiver);
 
         this.sendersArray = this.senders.values().toArray(new DataWriter[this.senders.size()]);
         this.hasLocalConsumers = this.consumers.length > 0;
@@ -109,7 +107,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         this.calculationStrategies = strategies.toArray(new CalculationStrategy[strategies.size()]);
         this.nonPartitionedWriters = nonPartitionedConsumers.toArray(new Consumer[nonPartitionedConsumers.size()]);
         this.nonPartitionedAddresses = nonPartitionedAddresses.toArray(new Address[nonPartitionedAddresses.size()]);
-        this.chunkSize = jobContext.getJobConfig().getChunkSize();
+        this.chunkSize = taskContext.getJobContext().getJobConfig().getChunkSize();
 
         resetState();
     }
@@ -138,16 +136,15 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private void initSenders(JobContext jobContext, int taskID, boolean receiver) {
-        JobManager jobManager = jobContext.getJobManager();
+    private void initSenders(int taskID, boolean receiver) {
+        JobManager jobManager = taskContext.getJobContext().getJobManager();
 
-        VertexRunner vertexRunner = jobManager.getRunnerByVertex(processorContext.getVertex());
+        VertexRunner vertexRunner = jobManager.getRunnerByVertex(taskContext.getVertex());
         VertexTask vertexTask = vertexRunner.getVertexMap().get(taskID);
 
         if (!receiver) {
             for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
-                ShufflingSender sender = new ShufflingSender(jobContext, processorContext, vertexRunner.getId(),
-                        taskID, vertexTask, address);
+                ShufflingSender sender = new ShufflingSender(vertexTask, vertexRunner.getId(), address);
                 this.senders.put(address, sender);
                 jobManager.registerShufflingSender(taskID, vertexRunner.getId(), address, sender);
             }
@@ -158,7 +155,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                                            List<Consumer> nonPartitionedConsumers,
                                            Set<Address> nonPartitionedAddresses) {
 
-        JobManager jobManager = jobContext.getJobManager();
+        JobManager jobManager = taskContext.getJobContext().getJobManager();
         Map<Address, Address> hzToJetAddressMapping = jobManager.getJobContext().getHzToJetAddressMapping();
         List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
         for (Consumer consumer : this.shuffledConsumers) {
@@ -183,7 +180,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                                                  Consumer consumer,
                                                  MemberDistributionStrategy memberDistributionStrategy) {
         if (memberDistributionStrategy != null) {
-            Set<Member> members = new HashSet<>(memberDistributionStrategy.getTargetMembers(jobContext));
+            Set<Member> members = new HashSet<>(memberDistributionStrategy.getTargetMembers(taskContext.getJobContext()));
 
             if (members != null) {
                 for (Member member : members) {
@@ -223,7 +220,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         CalculationStrategy calculationStrategy = new CalculationStrategy(
                 consumer.getHashingStrategy(),
                 consumer.getPartitionStrategy(),
-                jobContext
+                taskContext.getJobContext()
         );
 
         int partitionId;
@@ -470,7 +467,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
 
         Address address = this.nodeEngine.getPartitionService().getPartitionOwner(objectPartitionId);
-        Address remoteJetAddress = jobContext.getHzToJetAddressMapping().get(address);
+        Address remoteJetAddress = taskContext.getJobContext().getHzToJetAddressMapping().get(address);
         DataWriter sender = this.senders.get(remoteJetAddress);
 
         if (sender != null) {

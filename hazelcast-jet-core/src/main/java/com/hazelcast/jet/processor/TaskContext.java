@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.executor;
+package com.hazelcast.jet.processor;
 
 import com.hazelcast.jet.counters.Accumulator;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.SerializationOptimizer;
+
 import java.io.Serializable;
 
 /**
@@ -25,14 +28,19 @@ import java.io.Serializable;
  */
 public interface TaskContext {
     /**
-     * @return general number of task in the current vertex runner
-     */
-    int getTaskCount();
-
-    /**
      * @return number of the current task inside the vertex runner
      */
     int getTaskNumber();
+
+    /**
+     * Returns the Vertex for this task
+     */
+    Vertex getVertex();
+
+    /**
+     * Returns the context for the Job
+     */
+    JobContext getJobContext();
 
     /**
      * Accumulator for the statistics gathering

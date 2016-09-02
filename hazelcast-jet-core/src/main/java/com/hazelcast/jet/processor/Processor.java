@@ -18,6 +18,7 @@ package com.hazelcast.jet.processor;
 
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.io.OutputCollector;
+
 import java.io.Serializable;
 
 /**
@@ -33,7 +34,7 @@ public interface Processor<I, O> extends Serializable {
      * Invoked before the first call to process. Typically used to set up internal state
      * for the processor
      */
-    default void before(ProcessorContext processorContext) {
+    default void before(TaskContext taskContext) {
     }
 
     /**
@@ -43,7 +44,7 @@ public interface Processor<I, O> extends Serializable {
      * input chunk if false is returned.
      * @throws Exception when exception during processing
      */
-    default boolean process(InputChunk<I> input, OutputCollector<O> output, String source, ProcessorContext context)
+    default boolean process(InputChunk<I> input, OutputCollector<O> output, String source)
             throws Exception {
         return true;
     }
@@ -54,14 +55,13 @@ public interface Processor<I, O> extends Serializable {
      * @return true if data processing is complete. If false, the method will be called again later.
      * @throws Exception when exception during processing
      */
-    default boolean complete(OutputCollector<O> output,
-                             ProcessorContext processorContext) throws Exception {
+    default boolean complete(OutputCollector<O> output) throws Exception {
         return true;
     }
 
     /**
      * Invoked after the processor is completed. Typically used to cleanup state.
      */
-    default void after(ProcessorContext processorContext) {
+    default void after() {
     }
 }

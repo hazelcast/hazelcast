@@ -18,11 +18,12 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.spi.NodeEngine;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -38,13 +39,14 @@ public class ChunkedOutputStream extends OutputStream {
     private final byte[] jobNameBytyes;
     private final RingbufferActor ringbufferActor;
 
-    public ChunkedOutputStream(RingbufferActor ringbufferActor, JobContext jobContext, int vertexManagerId, int taskId) {
+    public ChunkedOutputStream(RingbufferActor ringbufferActor,
+                               TaskContext taskContext, int vertexManagerId, int taskId) {
         this.taskID = taskId;
         this.ringbufferActor = ringbufferActor;
-        this.shufflingBytesSize = jobContext.getJobConfig().getShufflingBatchSizeBytes();
+        this.shufflingBytesSize = taskContext.getJobContext().getJobConfig().getShufflingBatchSizeBytes();
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
-        String jobName = jobContext.getName();
-        NodeEngine nodeEngine = jobContext.getNodeEngine();
+        String jobName = taskContext.getJobContext().getName();
+        NodeEngine nodeEngine = taskContext.getJobContext().getNodeEngine();
         this.jobNameBytyes = ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(jobName);
         this.vertexManagerId = vertexManagerId;
     }

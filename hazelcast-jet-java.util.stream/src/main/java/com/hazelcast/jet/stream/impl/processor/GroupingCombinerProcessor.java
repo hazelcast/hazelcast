@@ -19,9 +19,10 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.JetPair;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,16 +33,21 @@ public class GroupingCombinerProcessor<K, V, A, R> implements Processor<Pair<K, 
     private final Map<K, A> cache = new HashMap<>();
     private final Collector<V, A, R> collector;
     private Iterator<Map.Entry<K, A>> finalizationIterator;
+    private int chunkSize;
 
     public GroupingCombinerProcessor(Collector<V, A, R> collector) {
         this.collector = collector;
     }
 
     @Override
+    public void before(TaskContext context) {
+        chunkSize = context.getJobContext().getJobConfig().getChunkSize();
+    }
+
+    @Override
     public boolean process(InputChunk<Pair<K, A>> inputChunk,
                            OutputCollector<Pair<K, R>> output,
-                           String sourceName,
-                           ProcessorContext context) throws Exception {
+                           String sourceName) throws Exception {
         for (Pair<K, A> input : inputChunk) {
             A value = cache.get(input.getKey());
             if (value == null) {
@@ -54,8 +60,7 @@ public class GroupingCombinerProcessor<K, V, A, R> implements Processor<Pair<K, 
     }
 
     @Override
-    public boolean complete(OutputCollector<Pair<K, R>> output,
-                            ProcessorContext processorContext) throws Exception {
+    public boolean complete(OutputCollector<Pair<K, R>> output) throws Exception {
         boolean finalized = false;
         try {
             if (finalizationIterator == null) {
@@ -68,7 +73,7 @@ public class GroupingCombinerProcessor<K, V, A, R> implements Processor<Pair<K, 
                 K key = next.getKey();
                 R value = collector.finisher().apply(next.getValue());
                 output.collect(new JetPair<>(key, value));
-                if (idx == processorContext.getConfig().getChunkSize() - 1) {
+                if (idx == chunkSize - 1) {
                     break;
                 }
                 idx++;

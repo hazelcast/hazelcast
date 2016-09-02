@@ -28,6 +28,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+
 import java.util.Collection;
 
 public class MultiMapPartitionWriter extends AbstractHazelcastWriter {

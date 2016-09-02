@@ -24,10 +24,10 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.source.MapSource;
 import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.counters.LongCounter;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.IOException;
@@ -76,18 +76,18 @@ public class AccumulatorTest extends JetTestSupport {
     public static class AccumulatorProcessor implements Processor {
 
         public static final String ACCUMULATOR_KEY = "counter";
+        private LongCounter accumulator;
 
         @Override
-        public void before(ProcessorContext processorContext) {
-            processorContext.setAccumulator(ACCUMULATOR_KEY, new LongCounter());
+        public void before(TaskContext processorContext) {
+            this.accumulator = new LongCounter();
+            processorContext.setAccumulator(ACCUMULATOR_KEY, accumulator);
         }
 
         @Override
         public boolean process(InputChunk input,
                                OutputCollector output,
-                               String sourceName,
-                               ProcessorContext context) throws Exception {
-            Accumulator<Long, Long> accumulator = context.<Long, Long>getAccumulator(ACCUMULATOR_KEY);
+                               String sourceName) throws Exception {
             accumulator.add((long) input.size());
             return true;
         }

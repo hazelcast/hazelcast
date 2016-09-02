@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.ProcessorContext;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -61,7 +61,7 @@ public class DistinctProcessor<T> extends AbstractStreamProcessor<T, T> {
     }
 
     @Override
-    public void after(ProcessorContext processorContext) {
+    public void after() {
         this.iterator = null;
         this.map.clear();
     }

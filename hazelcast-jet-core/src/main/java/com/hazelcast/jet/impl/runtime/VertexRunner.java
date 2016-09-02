@@ -28,7 +28,6 @@ import com.hazelcast.jet.impl.runtime.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerResponse;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerState;
-import com.hazelcast.jet.impl.runtime.task.DefaultTaskContext;
 import com.hazelcast.jet.impl.runtime.task.TaskEvent;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessorFactory;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
@@ -41,7 +40,9 @@ import com.hazelcast.jet.impl.statemachine.runner.VertexRunnerStateMachine;
 import com.hazelcast.jet.impl.statemachine.runner.processors.VertexRunnerPayloadFactory;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerFinalizedRequest;
 import com.hazelcast.jet.processor.Processor;
+import com.hazelcast.jet.impl.runtime.task.TaskContextImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -115,7 +116,7 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         for (int taskIndex = 0; taskIndex < this.parallelism; taskIndex++) {
             int taskID = taskIdGenerator.incrementAndGet();
             vertexTasks[taskIndex] = new VertexTask(this, getVertex(), taskProcessorFactory,
-                    taskID, new DefaultTaskContext(parallelism, taskIndex, getJobContext()));
+                    taskID, new TaskContextImpl(vertex, jobContext, taskIndex));
             getJobContext().getExecutorContext().getProcessingTasks().add(vertexTasks[taskIndex]);
             vertexTasks[taskIndex].setThreadContextClassLoader(classLoader);
             vertexTaskMap.put(taskID, vertexTasks[taskIndex]);

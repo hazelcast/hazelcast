@@ -20,8 +20,9 @@ import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.logging.ILogger;
+
 import java.util.Iterator;
 import java.util.function.Function;
 
@@ -31,6 +32,7 @@ abstract class AbstractStreamProcessor<IN, OUT> implements Processor<Pair, Pair>
 
     private final MappingInputChunk mappingInput;
     private final MappingOutputCollector mappingOutput;
+    private int chunkSize;
 
     public AbstractStreamProcessor(Function<Pair, IN> inputMapper,
                                    Function<OUT, Pair> outputMapper) {
@@ -40,26 +42,26 @@ abstract class AbstractStreamProcessor<IN, OUT> implements Processor<Pair, Pair>
     }
 
     @Override
-    public void before(ProcessorContext processorContext) {
+    public void before(TaskContext context) {
         if (logger == null) {
-            this.logger = processorContext.getNodeEngine().getLogger(this.getClass().getName()
-                    + "." + processorContext.getVertex().getName());
+            this.logger = context.getJobContext().getNodeEngine().getLogger(this.getClass().getName()
+                    + "." + context.getVertex().getName());
         }
+        chunkSize = context.getJobContext().getJobConfig().getChunkSize();
     }
 
     @Override
     public boolean process(InputChunk<Pair> input, OutputCollector<Pair> output,
-                           String sourceName, ProcessorContext context) throws Exception {
+                           String sourceName) throws Exception {
         mappingInput.setInput(input);
         mappingOutput.setOutput(output);
         return process(mappingInput, mappingOutput);
     }
 
     @Override
-    public boolean complete(OutputCollector<Pair> output,
-                            ProcessorContext processorContext) throws Exception {
+    public boolean complete(OutputCollector<Pair> output) throws Exception {
         mappingOutput.setOutput(output);
-        return finalize(mappingOutput, processorContext.getConfig().getChunkSize());
+        return finalize(mappingOutput, chunkSize);
     }
 
     protected abstract boolean process(InputChunk<IN> input,

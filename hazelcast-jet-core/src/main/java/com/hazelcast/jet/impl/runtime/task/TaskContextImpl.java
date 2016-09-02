@@ -16,35 +16,64 @@
 
 package com.hazelcast.jet.impl.runtime.task;
 
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.executor.TaskContext;
+import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.data.io.JetPairDataType;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.SerializationOptimizer;
+
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class DefaultTaskContext implements TaskContext {
-    private final int taskCount;
-    private final int taskNumber;
+/**
+ * Contains accessors to the resources
+ */
+public class TaskContextImpl implements TaskContext {
     private final SerializationOptimizer optimizer;
     private final ConcurrentMap<String, Accumulator> accumulatorMap;
+    private Vertex vertex;
+    private final JobContext jobContext;
+    private final int taskNumber;
 
-    public DefaultTaskContext(int taskCount,
-                              int taskNumber,
-                              JobContext jobContext) {
-        this.taskCount = taskCount;
+    public TaskContextImpl(Vertex vertex, JobContext jobContext, int taskNumber) {
+        this.vertex = vertex;
+        this.jobContext = jobContext;
         this.taskNumber = taskNumber;
         this.optimizer = new SerializationOptimizer(JetPairDataType.INSTANCE);
         this.accumulatorMap = new ConcurrentHashMap<>();
         jobContext.registerAccumulators(this.accumulatorMap);
     }
 
-    @Override
-    public int getTaskCount() {
-        return taskCount;
+    /**
+     * @return vertex in DAG
+     */
+    public Vertex getVertex() {
+        return vertex;
     }
+
+    /**
+     * @return DAG of the job
+     */
+    public DAG getDAG() {
+        return jobContext.getDAG();
+    }
+
+    /**
+     * @return job config
+     */
+    public JobConfig getConfig() {
+        return jobContext.getJobConfig();
+    }
+
+
+    public JobContext getJobContext() {
+        return jobContext;
+    }
+
 
     @Override
     public int getTaskNumber() {
@@ -52,7 +81,6 @@ public class DefaultTaskContext implements TaskContext {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key) {
         return accumulatorMap.get(key);
     }
@@ -62,6 +90,7 @@ public class DefaultTaskContext implements TaskContext {
         accumulatorMap.put(key, accumulator);
     }
 
+    @Override
     public SerializationOptimizer getSerializationOptimizer() {
         return optimizer;
     }

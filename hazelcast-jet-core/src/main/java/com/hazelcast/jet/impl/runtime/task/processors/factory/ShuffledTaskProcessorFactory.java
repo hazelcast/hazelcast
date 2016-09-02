@@ -17,32 +17,26 @@
 package com.hazelcast.jet.impl.runtime.task.processors.factory;
 
 
-import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.Producer;
-import com.hazelcast.jet.processor.ProcessorContext;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledActorTaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledConsumerTaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledReceiverConsumerTaskProcessor;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.processor.Processor;
 
 public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
     @Override
     public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,
-                                               JobContext jobContext,
-                                               ProcessorContext processorContext,
-                                               Vertex vertex,
+                                               TaskContext taskContext,
                                                int taskID) {
         return actorTaskProcessor(
                 new Producer[0],
                 consumers,
                 processor,
-                jobContext,
-                processorContext,
-                vertex,
+                taskContext,
                 taskID
         );
     }
@@ -51,18 +45,15 @@ public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
     public TaskProcessor actorTaskProcessor(Producer[] producers,
                                             Consumer[] consumers,
                                             Processor processor,
-                                            JobContext jobContext,
-                                            ProcessorContext processorContext,
-                                            Vertex vertex,
+                                            TaskContext taskContext,
                                             int taskID) {
         return new ShuffledActorTaskProcessor(
                 producers,
                 consumers,
                 processor,
-                jobContext,
-                processorContext,
-                new ShuffledConsumerTaskProcessor(consumers, processor, jobContext, processorContext, taskID),
-                new ShuffledReceiverConsumerTaskProcessor(consumers, processor, jobContext, processorContext, taskID),
+                taskContext,
+                new ShuffledConsumerTaskProcessor(consumers, processor, taskContext, taskID),
+                new ShuffledReceiverConsumerTaskProcessor(consumers, processor, taskContext, taskID),
                 taskID
         );
     }

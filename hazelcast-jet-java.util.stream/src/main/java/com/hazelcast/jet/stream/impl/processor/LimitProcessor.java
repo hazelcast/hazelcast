@@ -18,8 +18,9 @@ package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.data.io.OutputCollector;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.processor.ProcessorContext;
+
 import java.util.Iterator;
 import java.util.function.Function;
 
@@ -34,8 +35,8 @@ public class LimitProcessor<T> extends AbstractStreamProcessor<T, T> {
     }
 
     @Override
-    public void before(ProcessorContext processorContext) {
-        super.before(processorContext);
+    public void before(TaskContext context) {
+        super.before(context);
         index = 0;
     }
 

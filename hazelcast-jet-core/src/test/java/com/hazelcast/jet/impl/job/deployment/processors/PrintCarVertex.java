@@ -3,7 +3,6 @@ package com.hazelcast.jet.impl.job.deployment.processors;
 import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
 import org.junit.Assert;
 
 public class PrintCarVertex implements Processor {
@@ -14,7 +13,7 @@ public class PrintCarVertex implements Processor {
     @Override
     public boolean process(InputChunk input,
                            OutputCollector output,
-                           String sourceName, ProcessorContext context) throws Exception {
+                           String sourceName) throws Exception {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         contextClassLoader.loadClass("com.sample.pojo.car.Car");

@@ -19,23 +19,21 @@ package com.hazelcast.jet.impl.runtime.task.processors;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.data.io.InputChunk;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.actor.Producer;
-import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
-import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ProducerTaskProcessor implements TaskProcessor {
-    protected final int taskID;
     protected final Producer[] producers;
     protected final Processor processor;
-    protected final ProcessorContext processorContext;
+    protected final TaskContext taskContext;
     protected final IOBuffer inputBuffer;
     protected final IOBuffer outputBuffer;
     protected boolean produced;
@@ -51,16 +49,13 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
     public ProducerTaskProcessor(Producer[] producers,
                                  Processor processor,
-                                 JobContext jobContext,
-                                 ProcessorContext processorContext,
-                                 int taskID) {
+                                 TaskContext taskContext) {
         checkNotNull(processor);
 
-        this.taskID = taskID;
         this.producers = producers;
         this.processor = processor;
-        this.processorContext = processorContext;
-        JobConfig jobConfig = jobContext.getJobConfig();
+        this.taskContext = taskContext;
+        JobConfig jobConfig = taskContext.getJobContext().getJobConfig();
         int chunkSize = jobConfig.getChunkSize();
         this.inputBuffer = new IOBuffer<>(new Object[chunkSize]);
         this.outputBuffer = new IOBuffer<>(new Object[chunkSize]);
@@ -85,7 +80,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
         int producersCount = producers.length;
 
         if (finalizationStarted) {
-            finalizationFinished = processor.complete(outputBuffer, processorContext);
+            finalizationFinished = processor.complete(outputBuffer);
 
             return !processOutputStream();
         } else if (this.pendingProducer != null) {
@@ -145,7 +140,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     private boolean processProducer(Producer producer) throws Exception {
-        if (!processor.process(inputBuffer, outputBuffer, producer.getName(), processorContext)) {
+        if (!processor.process(inputBuffer, outputBuffer, producer.getName())) {
             pendingProducer = producer;
         } else {
             pendingProducer = null;

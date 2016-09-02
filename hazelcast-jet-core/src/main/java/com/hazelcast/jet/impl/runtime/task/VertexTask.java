@@ -20,7 +20,7 @@ package com.hazelcast.jet.impl.runtime.task;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataWriter;
-import com.hazelcast.jet.executor.TaskContext;
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.actor.Actor;
 import com.hazelcast.jet.impl.actor.ComposedActor;
 import com.hazelcast.jet.impl.actor.Consumer;
@@ -29,16 +29,16 @@ import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.runtime.DataChannel;
-import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.runtime.DataChannel;
+import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -61,7 +61,7 @@ public class VertexTask extends Task {
 
     private final ILogger logger;
 
-    private final int taskID;
+    private final int taskId;
 
     private final Vertex vertex;
 
@@ -80,7 +80,6 @@ public class VertexTask extends Task {
     private final Map<Address, ShufflingReceiver> shufflingReceivers = new ConcurrentHashMap<>();
     private final Map<Address, ShufflingSender> shufflingSenders = new ConcurrentHashMap<>();
     private final TaskContext taskContext;
-    private final ProcessorContext processorContext;
     private volatile TaskProcessor taskProcessor;
     private volatile boolean sendersClosed;
     private volatile ShufflingSender[] sendersArray;
@@ -94,9 +93,9 @@ public class VertexTask extends Task {
     public VertexTask(VertexRunner vertexRunner,
                       Vertex vertex,
                       TaskProcessorFactory taskProcessorFactory,
-                      int taskID,
+                      int taskId,
                       TaskContext taskContext) {
-        this.taskID = taskID;
+        this.taskId = taskId;
         this.vertex = vertex;
         this.runner = vertexRunner;
         this.taskContext = taskContext;
@@ -105,7 +104,6 @@ public class VertexTask extends Task {
         nodeEngine = jobContext.getNodeEngine();
         Supplier<Processor> processorFactory = vertexRunner.getProcessorSupplier();
         processor = processorFactory == null ? null : processorFactory.get();
-        processorContext = new ProcessorContext(vertex, jobContext, taskContext);
         logger = nodeEngine.getLogger(getClass());
     }
 
@@ -132,7 +130,7 @@ public class VertexTask extends Task {
      */
     public void interrupt(Throwable error) {
         if (interrupted.compareAndSet(false, true)) {
-            error = error;
+            this.error = error;
         }
     }
 
@@ -146,8 +144,8 @@ public class VertexTask extends Task {
     }
 
     /**
-     * @param channel       - data channel for corresponding edge
-     * @param edge          - corresponding edge
+     * @param channel      - data channel for corresponding edge
+     * @param edge         - corresponding edge
      * @param vertexRunner - source vertex manager of the channel
      * @return - composed actor with actors of channel
      */
@@ -155,7 +153,7 @@ public class VertexTask extends Task {
         List<Actor> actors = new ArrayList<Actor>(vertexRunner.getVertexTasks().length);
 
         for (int i = 0; i < vertexRunner.getVertexTasks().length; i++) {
-            Actor actor = new RingbufferActor(nodeEngine, jobContext, this, vertex, edge);
+            Actor actor = new RingbufferActor(this, edge);
 
             if (channel.isShuffled()) {
                 //output
@@ -164,7 +162,7 @@ public class VertexTask extends Task {
             actors.add(actor);
         }
 
-        ComposedActor composed = new ComposedActor(this, actors, vertex, edge, jobContext);
+        ComposedActor composed = new ComposedActor(this, actors, edge);
         consumers.add(composed);
 
         return composed;
@@ -209,7 +207,7 @@ public class VertexTask extends Task {
      * @return - corresponding DAG's vertex
      */
     public Vertex getVertex() {
-        return processorContext.getVertex();
+        return vertex;
     }
 
     /**
@@ -253,7 +251,7 @@ public class VertexTask extends Task {
      */
     public void beforeProcessing() {
         try {
-            processor.before(processorContext);
+            processor.before(taskContext);
         } catch (Throwable error) {
             afterProcessing();
             handleProcessingError(error);
@@ -310,6 +308,10 @@ public class VertexTask extends Task {
         }
     }
 
+    public int getId() {
+        return taskId;
+    }
+
     private Throwable getError() {
         return error != null ? error : INTERRUPTED_EXCEPTION;
     }
@@ -347,11 +349,9 @@ public class VertexTask extends Task {
         taskProcessor = taskProcessorFactory.getTaskProcessor(
                 producers,
                 consumers,
-                jobContext,
-                processorContext,
+                taskContext,
                 processor,
-                vertex,
-                taskID
+                taskId
         );
 
         finalizationStarted = false;
@@ -362,7 +362,7 @@ public class VertexTask extends Task {
 
     private void afterProcessing() {
         try {
-            processor.after(processorContext);
+            processor.after();
         } catch (Throwable error) {
             handleProcessingError(error);
         }

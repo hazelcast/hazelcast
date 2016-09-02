@@ -34,7 +34,6 @@ import com.hazelcast.jet.data.io.InputChunk;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
 import com.hazelcast.jet.strategy.SingleMemberDistributionStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -175,7 +174,7 @@ public class SourceSinkTest extends JetTestSupport {
         @Override
         public boolean process(InputChunk<Pair<Integer, String>> input,
                                OutputCollector<Pair<Integer, Integer>> output,
-                               String sourceName, ProcessorContext context) throws Exception {
+                               String sourceName) throws Exception {
             for (Pair<Integer, String> pair : input) {
                 int val = Integer.parseInt(pair.getValue());
                 output.collect(new JetPair<>(val, val));

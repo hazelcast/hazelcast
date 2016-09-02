@@ -28,7 +28,6 @@ import com.hazelcast.jet.data.io.OutputCollector;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.job.Job;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -109,8 +108,7 @@ public class ConsumerProducerTest extends JetTestSupport {
     public static class FinalizingProcessor
             implements Processor<Pair<Integer, String>, Pair<Integer, String>> {
         @Override
-        public boolean complete(OutputCollector<Pair<Integer, String>> output,
-                                ProcessorContext processorContext) throws Exception {
+        public boolean complete(OutputCollector<Pair<Integer, String>> output) throws Exception {
             output.collect(new JetPair<>(0, "empty"));
             return true;
         }

@@ -16,17 +16,15 @@
 
 package com.hazelcast.jet.impl.runtime.task.processors.shuffling;
 
+import com.hazelcast.jet.processor.TaskContext;
 import com.hazelcast.jet.impl.actor.Consumer;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.processor.Processor;
-import com.hazelcast.jet.processor.ProcessorContext;
 
 public class ShuffledReceiverConsumerTaskProcessor extends ShuffledConsumerTaskProcessor {
     public ShuffledReceiverConsumerTaskProcessor(Consumer[] consumers,
                                                  Processor processor,
-                                                 JobContext jobContext,
-                                                 ProcessorContext processorContext,
+                                                 TaskContext taskContext,
                                                  int taskID) {
-        super(consumers, processor, jobContext, processorContext, taskID, true);
+        super(consumers, processor, taskContext, taskID, true);
     }
 }
