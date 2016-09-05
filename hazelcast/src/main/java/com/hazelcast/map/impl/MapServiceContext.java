@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
@@ -143,5 +144,9 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
 
     boolean removeMapContainer(MapContainer mapContainer);
+
+    PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config);
+
+    void removePartitioningStrategyFromCache(String mapName);
 
 }
