@@ -40,7 +40,6 @@ public class NearCacheTestContext {
     protected final ICache<Object, String> memberCache;
     protected final NearCache<Data, String> nearCache;
 
-
     NearCacheTestContext(HazelcastClientProxy client, HazelcastClientCacheManager cacheManager,
                          NearCacheManager nearCacheManager, ICache<Object, String> cache,
                          NearCache<Data, String> nearCache) {
@@ -70,5 +69,4 @@ public class NearCacheTestContext {
         this.memberCache = memberCache;
         this.nearCache = nearCache;
     }
-
 }
