@@ -42,7 +42,6 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.PartitioningStrategyFactory;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
@@ -195,8 +194,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         this.mapServiceContext = service.getMapServiceContext();
         this.mapConfig = mapConfig;
-        this.partitionStrategy = PartitioningStrategyFactory.getPartitioningStrategy(nodeEngine,
-                mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
+        this.partitionStrategy = mapServiceContext.getPartitioningStrategy(mapConfig.getName(),
+                mapConfig.getPartitioningStrategyConfig());
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(SERVICE_NAME, name),
