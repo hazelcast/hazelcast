@@ -44,26 +44,32 @@ public final class Logger {
      */
     public static ILogger getLogger(String name) {
         LoggerFactory loggerFactoryToUse = loggerFactory;
-        //noinspection DoubleCheckedLocking
-        if (loggerFactory == null) {
-            //noinspection SynchronizationOnStaticField
-            synchronized (FACTORY_LOCK) {
-                if (loggerFactory == null) {
-                    // init static logger with user-specified custom logger class
-                    String loggerClass = System.getProperty("hazelcast.logging.class");
-                    if (!StringUtil.isNullOrEmpty(loggerClass)) {
-                        loggerFactory = loadLoggerFactory(loggerClass);
-                        loggerFactoryToUse = loggerFactory;
-                    }
-                }
-                if (loggerFactory == null) {
+        // fast-track when factory is initialized
+        if (loggerFactoryToUse != null) {
+            return loggerFactoryToUse.getLogger(name);
+        }
+
+        synchronized (FACTORY_LOCK) {
+            if (loggerFactory == null) {
+                // init static logger with user-specified custom logger class
+                String loggerClass = System.getProperty("hazelcast.logging.class");
+                if (!StringUtil.isNullOrEmpty(loggerClass)) {
+                    //ok, there is a custom logging factory class -> let's use it now and store it for next time
+                    loggerFactoryToUse = loadLoggerFactory(loggerClass);
+                    loggerFactory = loggerFactoryToUse;
+                } else {
                     String loggerType = System.getProperty("hazelcast.logging.type");
                     loggerFactoryToUse = newLoggerFactory(loggerType);
+                    //store the factory only when the type was set explicitly. we do not want to store default type.
                     if (!StringUtil.isNullOrEmpty(loggerType)) {
                         loggerFactory = loggerFactoryToUse;
                     }
                 }
             }
+        }
+        //loggerFactory was initialized by other thread before we acquired the lock->loggerFactoryToUse was left to null
+        if (loggerFactoryToUse == null) {
+            loggerFactoryToUse = loggerFactory;
         }
         return loggerFactoryToUse.getLogger(name);
     }
