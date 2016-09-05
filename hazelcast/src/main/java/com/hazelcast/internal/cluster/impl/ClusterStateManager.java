@@ -104,24 +104,26 @@ public class ClusterStateManager {
                         + initialState);
                 return;
             }
-            this.state = initialState;
-            changeNodeState(initialState);
-            node.getNodeExtension().onClusterStateChange(initialState, false);
+            doSetClusterState(initialState, true);
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    void setClusterState(ClusterState newState, boolean persistentChange) {
+    void setClusterState(ClusterState newState, boolean isTransient) {
         clusterServiceLock.lock();
         try {
-            this.state = newState;
-            stateLockRef.set(ClusterStateLock.NOT_LOCKED);
-            changeNodeState(newState);
-            node.getNodeExtension().onClusterStateChange(newState, persistentChange);
+            doSetClusterState(newState, isTransient);
         } finally {
             clusterServiceLock.unlock();
         }
+    }
+
+    private void doSetClusterState(ClusterState newState, boolean isTransient) {
+        this.state = newState;
+        stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+        changeNodeState(newState);
+        node.getNodeExtension().onClusterStateChange(newState, isTransient);
     }
 
     void reset() {
@@ -201,6 +203,10 @@ public class ClusterStateManager {
     }
 
     public void commitClusterState(ClusterState newState, Address initiator, String txnId) {
+        commitClusterState(newState, initiator, txnId, false);
+    }
+
+    public void commitClusterState(ClusterState newState, Address initiator, String txnId, boolean isTransient) {
         Preconditions.checkNotNull(newState);
         if (newState == ClusterState.IN_TRANSITION) {
             throw new IllegalArgumentException("IN_TRANSITION is an internal state!");
@@ -215,10 +221,7 @@ public class ClusterStateManager {
                                 + initiator + ", current state: " + stateToString());
             }
 
-            this.state = newState;
-            stateLockRef.set(ClusterStateLock.NOT_LOCKED);
-            changeNodeState(newState);
-            node.getNodeExtension().onClusterStateChange(newState, true);
+            doSetClusterState(newState, isTransient);
 
             // if state is changed to ACTIVE, then remove all members which left while not active.
             if (newState == ClusterState.ACTIVE) {
@@ -237,12 +240,12 @@ public class ClusterStateManager {
         }
     }
 
-    void changeClusterState(ClusterState newState, Collection<Member> members, int partitionStateVersion) {
-        changeClusterState(newState, members, DEFAULT_TX_OPTIONS, partitionStateVersion);
+    void changeClusterState(ClusterState newState, Collection<Member> members, int partitionStateVersion, boolean isTransient) {
+        changeClusterState(newState, members, DEFAULT_TX_OPTIONS, partitionStateVersion, isTransient);
     }
 
     void changeClusterState(ClusterState newState, Collection<Member> members,
-            TransactionOptions options, int partitionStateVersion) {
+            TransactionOptions options, int partitionStateVersion, boolean isTransient) {
         checkParameters(newState, options);
         if (getState() == newState) {
             return;
@@ -257,7 +260,7 @@ public class ClusterStateManager {
         try {
             String txnId = tx.getTxnId();
 
-            addTransactionRecords(newState, tx, members, partitionStateVersion);
+            addTransactionRecords(newState, tx, members, partitionStateVersion, isTransient);
 
             lockClusterState(newState, nodeEngine, options.getTimeoutMillis(), txnId, members, partitionStateVersion);
 
@@ -303,11 +306,11 @@ public class ClusterStateManager {
     }
 
     private void addTransactionRecords(ClusterState newState, Transaction tx,
-                                       Collection<Member> members, int partitionStateVersion) {
+                                       Collection<Member> members, int partitionStateVersion, boolean isTransient) {
         long leaseTime = Math.min(tx.getTimeoutMillis(), LOCK_LEASE_EXTENSION_MILLIS);
         for (Member member : members) {
             tx.add(new ClusterStateTransactionLogRecord(newState, node.getThisAddress(),
-                    member.getAddress(), tx.getTxnId(), leaseTime, partitionStateVersion));
+                    member.getAddress(), tx.getTxnId(), leaseTime, partitionStateVersion, isTransient));
         }
     }
 

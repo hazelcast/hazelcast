@@ -108,7 +108,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
         assertNodesShutDownEventually(nodes);
     }
 
-    private static Node[] getNodes(HazelcastInstance[] instances) {
+    public static Node[] getNodes(HazelcastInstance[] instances) {
         Node[] nodes = new Node[instances.length];
         for (int i = 0; i < instances.length; i++) {
             nodes[i] = getNode(instances[i]);
@@ -116,7 +116,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
         return nodes;
     }
 
-    private static void assertNodesShutDownEventually(Node[] nodes) {
+    public static void assertNodesShutDownEventually(Node[] nodes) {
         for (final Node node : nodes) {
             assertTrueEventually(new AssertTask() {
                 @Override

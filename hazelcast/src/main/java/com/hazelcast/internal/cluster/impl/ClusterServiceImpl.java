@@ -846,25 +846,22 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void changeClusterState(ClusterState newState) {
+        changeClusterState(newState, false);
+    }
+
+    private void changeClusterState(ClusterState newState, boolean isTransient) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion);
+        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion, isTransient);
     }
 
     @Override
     public void changeClusterState(ClusterState newState, TransactionOptions options) {
-        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, getMembers(), options, partitionStateVersion);
+        changeClusterState(newState, options, false);
     }
 
-    // for testing
-    void changeClusterState(ClusterState newState, Collection<Member> members) {
+    private void changeClusterState(ClusterState newState, TransactionOptions options, boolean isTransient) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, members, partitionStateVersion);
-    }
-
-    // for testing
-    void changeClusterState(ClusterState newState, int partitionStateVersion) {
-        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion);
+        clusterStateManager.changeClusterState(newState, getMembers(), options, partitionStateVersion, isTransient);
     }
 
     void addMembersRemovedInNotActiveState(Collection<Address> addresses) {
@@ -888,13 +885,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void shutdown() {
-        changeClusterState(ClusterState.PASSIVE);
+        changeClusterState(ClusterState.PASSIVE, true);
         shutdownNodes();
     }
 
     @Override
     public void shutdown(TransactionOptions options) {
-        changeClusterState(ClusterState.PASSIVE, options);
+        changeClusterState(ClusterState.PASSIVE, options, true);
         shutdownNodes();
     }
 

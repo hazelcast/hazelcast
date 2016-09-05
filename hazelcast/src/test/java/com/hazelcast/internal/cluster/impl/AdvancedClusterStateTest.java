@@ -64,6 +64,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -95,7 +96,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         Collection<Member> initialMembers = new ArrayList<Member>(clusterService.getMembers());
         initialMembers.remove(clusterService.getLocalMember());
 
-        clusterService.changeClusterState(ClusterState.PASSIVE, initialMembers);
+        changeClusterState(hz, ClusterState.PASSIVE, initialMembers );
     }
 
     @Test(expected = IllegalStateException.class)
@@ -113,7 +114,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         MemberImpl fakeMember = new MemberImpl((MemberImpl) clusterService.getLocalMember());
         initialMembers.add(fakeMember);
 
-        clusterService.changeClusterState(ClusterState.PASSIVE, initialMembers);
+        changeClusterState(hz, ClusterState.PASSIVE, initialMembers );
     }
 
     @Test(expected = TransactionException.class)
@@ -494,19 +495,18 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
         HazelcastInstance hz1 = instances[0];
-        HazelcastInstance hz2 = instances[1];
+        final HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
 
         final InternalPartitionService partitionService = getNode(hz1).getPartitionService();
         final int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
 
-        final ClusterServiceImpl cluster = getNode(hz2).getClusterService();
         final ClusterState newState = ClusterState.PASSIVE;
 
         final Future future = spawn(new Runnable() {
             public void run() {
                 try {
-                    cluster.changeClusterState(newState, initialPartitionStateVersion);
+                    changeClusterState(hz2, newState, initialPartitionStateVersion);
                 } catch (Exception ignored) {
                 }
             }
@@ -516,7 +516,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         future.get(2, TimeUnit.MINUTES);
 
-        final ClusterState currentState = cluster.getClusterState();
+        final ClusterState currentState = hz2.getCluster().getClusterState();
         if (currentState == newState) {
             // if cluster state changed then partition state version should be equal to initial version
             assertEquals(initialPartitionStateVersion, partitionService.getPartitionStateVersion());
@@ -633,6 +633,18 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         // should not fail
         future.get();
+    }
+
+    private void changeClusterState(HazelcastInstance instance, ClusterState newState, Collection<Member> members) {
+        int partitionStateVersion = getNode(instance).getPartitionService().getPartitionStateVersion();
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(instance);
+        clusterService.getClusterStateManager().changeClusterState(newState, members, partitionStateVersion, false);
+    }
+
+    private void changeClusterState(HazelcastInstance instance, ClusterState newState, int partitionStateVersion) {
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(instance);
+        Set<Member> members = clusterService.getMembers();
+        clusterService.getClusterStateManager().changeClusterState(newState, members, partitionStateVersion, false);
     }
 
     private static TransactionManagerServiceImpl spyTransactionManagerService(HazelcastInstance hz) throws Exception {

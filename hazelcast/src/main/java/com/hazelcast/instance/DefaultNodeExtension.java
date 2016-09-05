@@ -220,7 +220,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void onClusterStateChange(ClusterState newState, boolean persistentChange) {
+    public void onClusterStateChange(ClusterState newState, boolean isTransient) {
         NodeEngineImpl nodeEngine = node.getNodeEngine();
         ServiceManager serviceManager = nodeEngine.getServiceManager();
         List<ClusterStateListener> listeners = serviceManager.getServices(ClusterStateListener.class);

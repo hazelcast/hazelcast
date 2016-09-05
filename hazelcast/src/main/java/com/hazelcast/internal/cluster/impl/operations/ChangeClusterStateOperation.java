@@ -40,14 +40,16 @@ public class ChangeClusterStateOperation extends Operation implements AllowedDur
     private Address initiator;
     private String txnId;
     private String stateName;
+    private boolean isTransient;
 
     public ChangeClusterStateOperation() {
     }
 
-    public ChangeClusterStateOperation(ClusterState newState, Address initiator, String txnId) {
+    public ChangeClusterStateOperation(ClusterState newState, Address initiator, String txnId, boolean isTransient) {
         this.newState = newState;
         this.initiator = initiator;
         this.txnId = txnId;
+        this.isTransient = isTransient;
     }
 
     @Override
@@ -61,8 +63,9 @@ public class ChangeClusterStateOperation extends Operation implements AllowedDur
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
         ClusterStateManager clusterStateManager = service.getClusterStateManager();
-        getLogger().info("Changing cluster state state to " + newState + ", Initiator: " + initiator);
-        clusterStateManager.commitClusterState(newState, initiator, txnId);
+        getLogger().info("Changing cluster state state to " + newState + ", Initiator: " + initiator
+                + " transient: " + isTransient);
+        clusterStateManager.commitClusterState(newState, initiator, txnId, isTransient);
     }
 
     @Override
@@ -98,6 +101,7 @@ public class ChangeClusterStateOperation extends Operation implements AllowedDur
         out.writeUTF(newState.toString());
         initiator.writeData(out);
         out.writeUTF(txnId);
+        out.writeBoolean(isTransient);
     }
 
     @Override
@@ -112,6 +116,7 @@ public class ChangeClusterStateOperation extends Operation implements AllowedDur
         initiator = new Address();
         initiator.readData(in);
         txnId = in.readUTF();
+        isTransient = in.readBoolean();
     }
 
     @Override
