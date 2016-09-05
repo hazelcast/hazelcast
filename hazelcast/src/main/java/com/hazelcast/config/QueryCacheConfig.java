@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkFalse;
@@ -519,4 +520,90 @@ public class QueryCacheConfig {
                 + '}';
     }
 
+    private static class QueryCacheConfigReadOnly extends QueryCacheConfig {
+
+        QueryCacheConfigReadOnly(QueryCacheConfig other) {
+            super(other);
+        }
+
+        @Override
+        public List<MapIndexConfig> getIndexConfigs() {
+            List<MapIndexConfig> mapIndexConfigs = super.getIndexConfigs();
+            List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
+            for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
+                readOnlyMapIndexConfigs.add(mapIndexConfig.getAsReadOnly());
+            }
+            return Collections.unmodifiableList(readOnlyMapIndexConfigs);
+        }
+
+        @Override
+        public List<EntryListenerConfig> getEntryListenerConfigs() {
+            List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
+            List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
+            for (EntryListenerConfig listenerConfig : listenerConfigs) {
+                readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+            }
+            return Collections.unmodifiableList(readOnlyListenerConfigs);
+        }
+
+        @Override
+        public EvictionConfig getEvictionConfig() {
+            return super.getEvictionConfig().getAsReadOnly();
+        }
+
+        @Override
+        public PredicateConfig getPredicateConfig() {
+            return super.getPredicateConfig().getAsReadOnly();
+        }
+
+        @Override
+        public QueryCacheConfig setBatchSize(int batchSize) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public QueryCacheConfig setBufferSize(int bufferSize) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public QueryCacheConfig setDelaySeconds(int delaySeconds) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public QueryCacheConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public QueryCacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public QueryCacheConfig setIncludeValue(boolean includeValue) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public QueryCacheConfig setIndexConfigs(List<MapIndexConfig> indexConfigs) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public QueryCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public QueryCacheConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+        }
+
+        @Override
+        public String toString() {
+            return "QueryCacheConfigReadOnly{} " + super.toString();
+        }
+    }
 }

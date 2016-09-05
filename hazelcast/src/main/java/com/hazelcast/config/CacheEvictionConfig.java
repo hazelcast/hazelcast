@@ -204,4 +204,42 @@ public class CacheEvictionConfig
                 + '}';
     }
 
+    private static class CacheEvictionConfigReadOnly
+            extends CacheEvictionConfig {
+
+        CacheEvictionConfigReadOnly(EvictionConfig config) {
+            super(config);
+        }
+
+        @Override
+        public CacheEvictionConfigReadOnly setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfig setMaxSizePolicy(CacheMaxSizePolicy cacheMaxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfig setComparatorClassName(String comparatorClassName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfig setComparator(EvictionPolicyComparator comparator) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+    }
 }

@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ISet}.
  */
@@ -39,5 +43,58 @@ public class SetConfig extends CollectionConfig<SetConfig> {
             readOnly = new SetConfigReadOnly(this);
         }
         return readOnly;
+    }
+
+    private static class SetConfigReadOnly extends SetConfig {
+
+        SetConfigReadOnly(SetConfig config) {
+            super(config);
+        }
+
+        @Override
+        public List<ItemListenerConfig> getItemListenerConfigs() {
+            final List<ItemListenerConfig> itemListenerConfigs = super.getItemListenerConfigs();
+            final List<ItemListenerConfig> readOnlyItemListenerConfigs
+                    = new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
+            for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
+                readOnlyItemListenerConfigs.add(itemListenerConfig.getAsReadOnly());
+            }
+            return Collections.unmodifiableList(readOnlyItemListenerConfigs);
+        }
+
+        @Override
+        public SetConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only set: " + getName());
+        }
+
+        @Override
+        public SetConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only set: " + getName());
+        }
+
+        @Override
+        public SetConfig setBackupCount(int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only set: " + getName());
+        }
+
+        @Override
+        public SetConfig setAsyncBackupCount(int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only set: " + getName());
+        }
+
+        @Override
+        public SetConfig setMaxSize(int maxSize) {
+            throw new UnsupportedOperationException("This config is read-only set: " + getName());
+        }
+
+        @Override
+        public SetConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only set: " + getName());
+        }
+
+        @Override
+        public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
+            throw new UnsupportedOperationException("This config is read-only set: " + getName());
+        }
     }
 }

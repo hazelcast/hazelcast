@@ -124,9 +124,9 @@ public class MapAttributeConfigTest {
     public void validReadOnly() {
         MapAttributeConfig config = new MapAttributeConfig("iq", "com.test.IqExtractor");
 
-        MapAttributeConfigReadOnly readOnlyConfig = config.getAsReadOnly();
+        MapAttributeConfig.MapAttributeConfigReadOnly readOnlyConfig = config.getAsReadOnly();
 
-        assertThat(readOnlyConfig, instanceOf(MapAttributeConfigReadOnly.class));
+        assertThat(readOnlyConfig, instanceOf(MapAttributeConfig.MapAttributeConfigReadOnly.class));
         assertEquals("iq", readOnlyConfig.getName());
         assertEquals("com.test.IqExtractor", readOnlyConfig.getExtractor());
     }

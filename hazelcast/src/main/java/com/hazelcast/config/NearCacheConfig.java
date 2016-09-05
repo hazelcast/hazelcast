@@ -432,4 +432,56 @@ public class NearCacheConfig
                 + ", evictionConfig=" + evictionConfig
                 + '}';
     }
+
+    static class NearCacheConfigReadOnly extends NearCacheConfig {
+
+        NearCacheConfigReadOnly(NearCacheConfig config) {
+            super(config);
+        }
+
+        @Override
+        public NearCacheConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public NearCacheConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public NearCacheConfig setMaxSize(int maxSize) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public NearCacheConfig setEvictionPolicy(String evictionPolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public NearCacheConfig setMaxIdleSeconds(int maxIdleSeconds) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public NearCacheConfig setInvalidateOnChange(boolean invalidateOnChange) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public NearCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public NearCacheConfig setCacheLocalEntries(boolean cacheLocalEntries) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

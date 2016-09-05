@@ -160,4 +160,21 @@ public class ListenerConfig {
     public int hashCode() {
         return className != null ? className.hashCode() : 0;
     }
+
+    private static class ListenerConfigReadOnly extends ListenerConfig {
+
+        ListenerConfigReadOnly(ListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

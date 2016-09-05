@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.config;
+package com.hazelcast.config;
 
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
@@ -96,11 +96,11 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertEquals("test-pass1", config1.getGroupConfig().getPassword());
 
         CacheSimpleConfig cacheConfig1 = config1.getCacheConfig("cache1");
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyCacheLoaderFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyCacheLoaderFactory",
                 cacheConfig1.getCacheLoaderFactory());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyCacheWriterFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyCacheWriterFactory",
                 cacheConfig1.getCacheWriterFactory());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyExpirePolicyFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyExpirePolicyFactory",
                 cacheConfig1.getExpiryPolicyFactoryConfig().getClassName());
         assertTrue(cacheConfig1.isReadThrough());
         assertTrue(cacheConfig1.isWriteThrough());
@@ -119,17 +119,17 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleEntryListenerConfig listenerConfig0 = cacheEntryListeners.get(0);
         assertFalse(listenerConfig0.isSynchronous());
         assertFalse(listenerConfig0.isOldValueRequired());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyEntryListenerFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyEntryListenerFactory",
                 listenerConfig0.getCacheEntryListenerFactory());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyEntryEventFilterFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyEntryEventFilterFactory",
                 listenerConfig0.getCacheEntryEventFilterFactory());
 
         CacheSimpleEntryListenerConfig listenerConfig1 = cacheEntryListeners.get(1);
         assertTrue(listenerConfig1.isSynchronous());
         assertTrue(listenerConfig1.isOldValueRequired());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MySyncEntryListenerFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MySyncEntryListenerFactory",
                 listenerConfig1.getCacheEntryListenerFactory());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MySyncEntryEventFilterFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MySyncEntryEventFilterFactory",
                 listenerConfig1.getCacheEntryEventFilterFactory());
 
         WanReplicationRef wanRefCacheConfig = config1.getCacheConfig("wanRefTestCache").getWanReplicationRef();

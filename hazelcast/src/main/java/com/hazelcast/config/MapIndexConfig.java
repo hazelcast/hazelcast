@@ -134,4 +134,25 @@ public class MapIndexConfig {
         return attribute;
     }
 
+    /**
+     * Contains the configuration for a index of Map.
+     *
+     * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+     */
+    private static class MapIndexConfigReadOnly extends MapIndexConfig {
+
+        MapIndexConfigReadOnly(MapIndexConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MapIndexConfig setAttribute(String attribute) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapIndexConfig setOrdered(boolean ordered) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

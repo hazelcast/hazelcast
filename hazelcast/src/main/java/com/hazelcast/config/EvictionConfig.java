@@ -276,4 +276,37 @@ public class EvictionConfig
                 + '}';
     }
 
+    private static class EvictionConfigReadOnly
+            extends EvictionConfig {
+
+        EvictionConfigReadOnly(EvictionConfig config) {
+            super(config);
+        }
+
+        @Override
+        public EvictionConfigReadOnly setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfig setComparatorClassName(String comparatorClassName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+    }
 }

@@ -195,4 +195,26 @@ public class PredicateConfig {
                 + ", implementation=" + implementation
                 + '}';
     }
+
+    private static class PredicateConfigReadOnly extends PredicateConfig {
+
+        PredicateConfigReadOnly(PredicateConfig config) {
+            super(config);
+        }
+
+        @Override
+        public PredicateConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public PredicateConfig setImplementation(Predicate implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public String toString() {
+            return "PredicateConfigReadOnly{} " + super.toString();
+        }
+    }
 }

@@ -148,4 +148,27 @@ public class MapAttributeConfig {
         sb.append('}');
         return sb.toString();
     }
+
+    /**
+     * Contains the configuration for a extractor of Map.
+     *
+     * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+     */
+    static class MapAttributeConfigReadOnly extends MapAttributeConfig {
+
+        MapAttributeConfigReadOnly(MapAttributeConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MapAttributeConfig setName(String attribute) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapAttributeConfig setExtractor(String type) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+    }
 }

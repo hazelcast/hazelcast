@@ -32,11 +32,11 @@ public class NearCacheConfigTest {
     private NearCacheConfig config = new NearCacheConfig();
 
     /**
-     * Test method for {@link com.hazelcast.config.NearCacheConfigReadOnly#setCacheLocalEntries(boolean)} .
+     * Test method for {@link NearCacheConfig.NearCacheConfigReadOnly#setCacheLocalEntries(boolean)} .
      */
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyNearCacheConfigSetCacheLocalEntries() {
-        new NearCacheConfigReadOnly(new NearCacheConfig()).setCacheLocalEntries(true);
+        new NearCacheConfig.NearCacheConfigReadOnly(new NearCacheConfig()).setCacheLocalEntries(true);
     }
 
     @Test

@@ -182,4 +182,36 @@ public class SemaphoreConfig {
                 + ", asyncBackupCount=" + asyncBackupCount
                 + '}';
     }
+
+    /**
+     * Contains configuration for Semaphore(read only)
+     *
+     * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+     */
+    private static class SemaphoreConfigReadOnly extends SemaphoreConfig {
+
+        SemaphoreConfigReadOnly(SemaphoreConfig config) {
+            super(config);
+        }
+
+        @Override
+        public SemaphoreConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        @Override
+        public SemaphoreConfig setInitialPermits(int initialPermits) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        @Override
+        public SemaphoreConfig setBackupCount(int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        @Override
+        public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+    }
 }

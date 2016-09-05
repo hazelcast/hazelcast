@@ -213,12 +213,12 @@ public class MapConfigTest {
 
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMapStoreConfigSetWriteBatchSize() {
-        new MapStoreConfigReadOnly(new MapStoreConfig()).setWriteBatchSize(1);
+        new MapStoreConfig.MapStoreConfigReadOnly(new MapStoreConfig()).setWriteBatchSize(1);
     }
 
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMapStoreConfigSetInitialLoadMode() {
-        new MapStoreConfigReadOnly(new MapStoreConfig()).setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        new MapStoreConfig.MapStoreConfigReadOnly(new MapStoreConfig()).setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
     }
 
     @Test
@@ -238,7 +238,7 @@ public class MapConfigTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withClassName() {
-        final MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
+        final MapPartitionLostListenerConfig.MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
         readOnly.setClassName("com.hz");
     }
 
@@ -246,14 +246,14 @@ public class MapConfigTest {
     public void testMapPartitionLostListenerReadOnlyConfig_withImplementation() {
         final MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
         final MapPartitionLostListenerConfig listenerConfig = new MapPartitionLostListenerConfig(listener);
-        final MapPartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
+        final MapPartitionLostListenerConfig.MapPartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
         assertEquals(listener, readOnly.getImplementation());
         readOnly.setImplementation(mock(MapPartitionLostListener.class));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withEventListenerImplementation() {
-        final MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
+        final MapPartitionLostListenerConfig.MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
         readOnly.setImplementation(mock(EventListener.class));
     }
 

@@ -47,7 +47,7 @@ public class MapStoreConfigTest {
 
     @Test
     public void getAsReadOnly() {
-        MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
+        MapStoreConfig.MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
         assertEquals("some.class", readOnlyCfg.getClassName());
         assertEquals(cfgNonNullClassName, readOnlyCfg);
         // also test returning cached read only instance
