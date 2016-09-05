@@ -23,12 +23,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Test count-tracking functionality of DelegatingMigrationAwareService
+ * Test count-tracking functionality of CountingMigrationAwareService
  */
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class DelegatingMigrationAwareServiceTest {
+public class CountingMigrationAwareServiceTest {
 
     public static final int PRIMARY_REPLICA_INDEX = 0;
 
@@ -41,7 +41,7 @@ public class DelegatingMigrationAwareServiceTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private DelegatingMigrationAwareService delegatingMigrationAwareService;
+    private CountingMigrationAwareService countingMigrationAwareService;
 
     @Parameterized.Parameters(name = "{0}, replica: {1}")
     public static Collection<Object> parameters() {
@@ -72,11 +72,11 @@ public class DelegatingMigrationAwareServiceTest {
     public void setUp() throws Exception {
         // setup the counting migration aware service and execute 1 prepareReplicationOperation (which does not
         // affect the counter)
-        delegatingMigrationAwareService = new DelegatingMigrationAwareService(wrappedMigrationAwareService);
-        delegatingMigrationAwareService.prepareReplicationOperation(null);
+        countingMigrationAwareService = new CountingMigrationAwareService(wrappedMigrationAwareService);
+        countingMigrationAwareService.prepareReplicationOperation(null);
         // also execute the first part of migration: beforeMigration
         try {
-            delegatingMigrationAwareService.beforeMigration(event);
+            countingMigrationAwareService.beforeMigration(event);
         }
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
@@ -88,9 +88,9 @@ public class DelegatingMigrationAwareServiceTest {
         // when: countingMigrationAwareService.beforeMigration was invoked (in setUp method)
         // then: if event involves primary replica, count is incremented to 1, otherwise it is 0
         if (involvesPrimaryReplica(event)) {
-            assertEquals(1, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+            assertEquals(1, countingMigrationAwareService.getOwnerMigrationsInFlight());
         } else {
-            assertEquals(0, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+            assertEquals(0, countingMigrationAwareService.getOwnerMigrationsInFlight());
         }
     }
 
@@ -98,26 +98,26 @@ public class DelegatingMigrationAwareServiceTest {
     public void commitMigration() throws Exception {
         // when: before - commit migration methods have been executed
         try {
-            delegatingMigrationAwareService.commitMigration(event);
+            countingMigrationAwareService.commitMigration(event);
         }
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
         // then: count should be 0, regardless of replica indices involved in event
-        assertEquals(0, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+        assertEquals(0, countingMigrationAwareService.getOwnerMigrationsInFlight());
     }
 
     @Test
     public void rollbackMigration() throws Exception {
         // when: before - rollback migration methods have been executed
         try {
-            delegatingMigrationAwareService.rollbackMigration(event);
+            countingMigrationAwareService.rollbackMigration(event);
         }
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
         // then: count should be 0, regardless of replica indices involved in event
-        assertEquals(0, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+        assertEquals(0, countingMigrationAwareService.getOwnerMigrationsInFlight());
     }
 
     @Test
@@ -125,7 +125,7 @@ public class DelegatingMigrationAwareServiceTest {
         // when: invalid sequence of beforeMigration, commitMigration, commitMigration is executed
         // and
         try {
-            delegatingMigrationAwareService.commitMigration(event);
+            countingMigrationAwareService.commitMigration(event);
         }
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
@@ -136,7 +136,7 @@ public class DelegatingMigrationAwareServiceTest {
             expectedException.expect(AssertionError.class);
         }
         try {
-            delegatingMigrationAwareService.commitMigration(event);
+            countingMigrationAwareService.commitMigration(event);
         }
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
@@ -147,7 +147,7 @@ public class DelegatingMigrationAwareServiceTest {
     public void rollbackMigration_invalidCount_throwsAssertionError() {
         // when: invalid sequence of beforeMigration, rollbackMigration, rollbackMigration is executed
         try {
-            delegatingMigrationAwareService.rollbackMigration(event);
+            countingMigrationAwareService.rollbackMigration(event);
         }
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
@@ -158,7 +158,7 @@ public class DelegatingMigrationAwareServiceTest {
             expectedException.expect(AssertionError.class);
         }
         try {
-            delegatingMigrationAwareService.rollbackMigration(event);
+            countingMigrationAwareService.rollbackMigration(event);
         }
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception

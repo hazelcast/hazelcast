@@ -28,7 +28,7 @@ import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.impl.DelegatingMigrationAwareService;
+import com.hazelcast.spi.impl.CountingMigrationAwareService;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -54,7 +54,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * @return Creates a new {@link MigrationAwareService} implementation.
      * @see com.hazelcast.spi.MigrationAwareService
      */
-    abstract DelegatingMigrationAwareService createMigrationAwareService();
+    abstract CountingMigrationAwareService createMigrationAwareService();
 
     /**
      * Creates a new {@link TransactionalService} for {@link MapService}.
@@ -148,7 +148,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
     public MapService createMapService() {
         MapServiceContext mapServiceContext = getMapServiceContext();
         ManagedService managedService = createManagedService();
-        DelegatingMigrationAwareService migrationAwareService = createMigrationAwareService();
+        CountingMigrationAwareService migrationAwareService = createMigrationAwareService();
         TransactionalService transactionalService = createTransactionalService();
         RemoteService remoteService = createRemoteService();
         EventPublishingService eventPublishingService = createEventPublishingService();

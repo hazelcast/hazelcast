@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A {@link MigrationAwareService} that delegates to another {@link MigrationAwareService} and keeps track of the number of
  * migrations concerning the partition owner (either as current or new replica index) currently in-flight.
  */
-public class DelegatingMigrationAwareService implements MigrationAwareService {
+public class CountingMigrationAwareService implements MigrationAwareService {
 
     private static final int PARTITION_OWNER_INDEX = 0;
 
@@ -35,7 +35,7 @@ public class DelegatingMigrationAwareService implements MigrationAwareService {
     // number of currently executing migrations on the partition owner
     private final AtomicInteger ownerMigrationsInFlight;
 
-    public DelegatingMigrationAwareService(MigrationAwareService migrationAwareService) {
+    public CountingMigrationAwareService(MigrationAwareService migrationAwareService) {
         this.migrationAwareService = migrationAwareService;
         this.ownerMigrationsInFlight = new AtomicInteger();
     }
