@@ -18,20 +18,17 @@ package com.hazelcast.jet.impl.job.client;
 
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.job.JobClusterService;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
-import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.Job;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class ClientJobProxy extends ClientProxy implements Job {
@@ -44,13 +41,7 @@ public class ClientJobProxy extends ClientProxy implements Job {
     }
 
     protected void onInitialize() {
-        String hzName = getClient().getName();
-
-        ExecutorService executorService = Executors.newCachedThreadPool(
-                new JetThreadFactory("client-invoker-job-thread-" + name, hzName)
-        );
-
-        jobClusterService = new ClientJobClusterService(getClient(), name, executorService);
+        jobClusterService = new ClientJobClusterService(getClient(), name);
     }
 
     public void init(JobConfig config) {
@@ -91,7 +82,7 @@ public class ClientJobProxy extends ClientProxy implements Job {
     @Override
     protected boolean preDestroy() {
         try {
-            jobClusterService.destroy(jobStateMachine).get();
+            jobClusterService.destroy(jobStateMachine);
             return true;
         } catch (Exception e) {
             throw JetUtil.reThrow(e);

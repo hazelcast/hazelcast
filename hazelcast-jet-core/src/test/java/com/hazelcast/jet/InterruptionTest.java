@@ -18,24 +18,22 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.source.MapSource;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet.source.MapSource;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -109,13 +107,8 @@ public class InterruptionTest extends JetTestSupport {
             execute(job);
             fail("The job should not execute successfully.");
         } catch (ExecutionException e) {
-            CombinedJetException ex = (CombinedJetException) e.getCause();
-            List<Throwable> errors = ex.getErrors();
-            assertEquals(nodeCount, errors.size());
-
-            for (Throwable error : errors) {
-                assertEquals(ExceptionProcessor.ERROR_MESSAGE, error.getMessage());
-            }
+            RuntimeException exception = (RuntimeException) e.getCause();
+            assertEquals(ExceptionProcessor.ERROR_MESSAGE, exception.getCause().getMessage());
         }
     }
 

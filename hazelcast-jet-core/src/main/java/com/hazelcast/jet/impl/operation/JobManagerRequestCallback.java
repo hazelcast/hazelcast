@@ -33,10 +33,10 @@ class JobManagerRequestCallback implements ExecutionCallback<JobManagerResponse>
 
     @Override
     public void onResponse(JobManagerResponse response) {
-        if (!response.isSuccess()) {
-            operation.sendResponse(new IllegalStateException(failureMsg));
-        } else {
+        if (response.isSuccess()) {
             onSuccess.run();
+        } else {
+            operation.sendResponse(new IllegalStateException(failureMsg));
         }
     }
 

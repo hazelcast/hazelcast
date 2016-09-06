@@ -17,27 +17,41 @@
 package com.hazelcast.jet.impl.job;
 
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.jet.impl.util.JetUtil.reThrow;
 
 public class ServerJobInvocation<T> extends AbstractJobInvocation<JetOperation, T> {
     private final NodeEngine nodeEngine;
 
-    public ServerJobInvocation(JetOperation operation, Address address,
-                               NodeEngine nodeEngine) {
+    public ServerJobInvocation(JetOperation operation, Address address, NodeEngine nodeEngine) {
         super(operation, address);
-
         this.nodeEngine = nodeEngine;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
-    protected T execute(JetOperation operation, Address address) throws Exception {
+    protected CompletableFuture<T> getFuture() {
+        final CompletableFuture<T> completableFuture = new CompletableFuture<>();
         OperationService os = nodeEngine.getOperationService();
-        InvocationBuilder ib = os
-                .createInvocationBuilder(JobService.SERVICE_NAME, operation, address);
-        return (T) ib.invoke().get();
+        InvocationBuilder ib = os.createInvocationBuilder(JobService.SERVICE_NAME, operation, address);
+        ib.invoke().andThen(new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object o) {
+                completableFuture.complete((T) o);
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                completableFuture.completeExceptionally(reThrow(throwable));
+            }
+        });
+        return completableFuture;
     }
 }

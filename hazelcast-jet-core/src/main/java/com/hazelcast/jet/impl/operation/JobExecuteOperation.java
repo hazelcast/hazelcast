@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecuteJobRequest;
 
 
@@ -41,8 +41,7 @@ public class JobExecuteOperation extends AsyncJetOperation {
 
         getLogger().fine("ExecuteJobRequestOperation.run " + jobContext.getName());
 
-        ICompletableFuture<JobManagerResponse> future = jobManager
-                .handleRequest(new ExecuteJobRequest());
+        ICompletableFuture<JobManagerResponse> future = jobManager.handleRequest(new ExecuteJobRequest());
 
         //Waiting for until all runners started
         future.andThen(new JobManagerRequestCallback(this, "Unable to start runners", () -> {

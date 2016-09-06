@@ -37,19 +37,16 @@ import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.nio.serialization.Data;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 
 public class ClientJobClusterService extends JobClusterService<ClientMessage> {
     private final HazelcastClientInstanceImpl client;
 
-    public ClientJobClusterService(
-            HazelcastClientInstanceImpl instance,
-            String name,
-            ExecutorService executorService) {
-        super(name, executorService);
+    public ClientJobClusterService(HazelcastClientInstanceImpl instance, String name) {
+        super(name);
         this.client = instance;
     }
 
@@ -105,9 +102,8 @@ public class ClientJobClusterService extends JobClusterService<ClientMessage> {
     }
 
     @Override
-    protected <T> Callable<T> createInvocation(Member member,
-                                               Supplier<ClientMessage> factory) {
-        return new ClientJobInvocation<T>(factory.get(), member.getAddress(), client);
+    protected <T> CompletableFuture<T> createInvocation(Member member, Supplier<ClientMessage> factory) {
+        return new ClientJobInvocation<T>(factory.get(), member.getAddress(), client).getFuture();
     }
 
     @Override
@@ -116,8 +112,8 @@ public class ClientJobClusterService extends JobClusterService<ClientMessage> {
     }
 
     @Override
-    public Map<String, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception {
-        ClientMessage clientMessage = (ClientMessage) callable.call();
+    public Map<String, Accumulator> readAccumulatorsResponse(Future future) throws Exception {
+        ClientMessage clientMessage = (ClientMessage) future.get();
         JetGetAccumulatorsCodec.ResponseParameters responseParameters =
                 JetGetAccumulatorsCodec.decodeResponse(clientMessage);
 

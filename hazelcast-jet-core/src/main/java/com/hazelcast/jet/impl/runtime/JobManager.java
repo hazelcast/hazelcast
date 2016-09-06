@@ -231,11 +231,6 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
     }
 
     private void addToExecutionMailBox(Object object) {
-        addToMailBox(object);
-    }
-
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    private void addToMailBox(Object object) {
         BasicCompletableFuture<Object> mailbox = executionMailBox.get();
 
         if (mailbox != null) {

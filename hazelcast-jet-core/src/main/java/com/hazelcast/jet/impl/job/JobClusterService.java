@@ -16,61 +16,54 @@
 
 package com.hazelcast.jet.impl.job;
 
-
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.CombinedJetException;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.job.deployment.ChunkIterator;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetUtil;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.JetUtil.reThrow;
 
-
 public abstract class JobClusterService<Payload> {
     protected final String name;
     protected JobConfig jobConfig;
 
-    private final ExecutorService executorService;
-
-    public JobClusterService(String name, ExecutorService executorService) {
+    public JobClusterService(String name) {
         this.name = name;
-        this.executorService = executorService;
     }
 
     /**
      * Init job
      *
      * @param config          job configuration
-     * @param jobStateMachine
+     * @param jobStateMachine state machine
      */
     public void init(JobConfig config, JobStateMachine jobStateMachine) {
         jobConfig = config;
-        new OperationExecutor(
+        CompletableFuture future = submit(
                 null,
                 JobEvent.INIT_SUCCESS,
                 JobEvent.INIT_FAILURE,
                 jobStateMachine,
-                () -> createInitJobInvoker(config)
-        ).run();
+                () -> createInitJobInvoker(config));
+        await(future);
     }
 
     /**
@@ -80,13 +73,11 @@ public abstract class JobClusterService<Payload> {
      * @param jobStateMachine manager to work with job state-machine
      */
     public void deploy(Set<DeploymentConfig> resources, JobStateMachine jobStateMachine) {
-        new OperationExecutor(
-                JobEvent.DEPLOYMENT_START,
+        run(JobEvent.DEPLOYMENT_START,
                 JobEvent.DEPLOYMENT_SUCCESS,
                 JobEvent.DEPLOYMENT_FAILURE,
                 jobStateMachine,
-                () -> executeDeployment(resources)
-        ).run();
+                () -> executeDeployment(resources));
     }
 
     /**
@@ -96,12 +87,10 @@ public abstract class JobClusterService<Payload> {
      * @return awaiting Future
      */
     public Future execute(JobStateMachine jobStateMachine) {
-        return executorService.submit(new OperationExecutor(
-                JobEvent.EXECUTION_START,
+        return submit(JobEvent.EXECUTION_START,
                 JobEvent.EXECUTION_SUCCESS,
                 JobEvent.EXECUTION_FAILURE,
-                jobStateMachine,
-                this::createExecutionInvoker));
+                jobStateMachine, this::createExecutionInvoker);
     }
 
     /**
@@ -111,13 +100,13 @@ public abstract class JobClusterService<Payload> {
      * @return awaiting Future
      */
     public Future interrupt(JobStateMachine jobStateMachine) {
-        return executorService.submit(new OperationExecutor(
+        return submit(
                 JobEvent.INTERRUPTION_START,
                 JobEvent.INTERRUPTION_SUCCESS,
                 JobEvent.INTERRUPTION_FAILURE,
                 jobStateMachine,
                 this::createInterruptInvoker
-        ));
+        );
     }
 
     /**
@@ -126,14 +115,13 @@ public abstract class JobClusterService<Payload> {
      * @param jobStateMachine manager to work with job state-machine
      * @return awaiting Future
      */
-    public Future destroy(JobStateMachine jobStateMachine) {
-        return executorService.submit(new OperationExecutor(
-                JobEvent.FINALIZATION_START,
+    public void destroy(JobStateMachine jobStateMachine) {
+        run(JobEvent.FINALIZATION_START,
                 JobEvent.FINALIZATION_SUCCESS,
                 JobEvent.FINALIZATION_FAILURE,
                 jobStateMachine,
                 () -> {
-                }));
+                });
     }
 
     /**
@@ -143,13 +131,12 @@ public abstract class JobClusterService<Payload> {
      * @param jobStateMachine manager to work with job state-machine
      */
     public void submitDag(DAG dag, JobStateMachine jobStateMachine) {
-        new OperationExecutor(
+        CompletableFuture future = submit(
                 JobEvent.SUBMIT_START,
                 JobEvent.SUBMIT_SUCCESS,
                 JobEvent.SUBMIT_FAILURE,
-                jobStateMachine,
-                () -> createSubmitInvoker(dag)
-        ).run();
+                jobStateMachine, () -> createSubmitInvoker(dag));
+        await(future);
     }
 
     /**
@@ -162,9 +149,8 @@ public abstract class JobClusterService<Payload> {
 
         try {
             for (Member member : members) {
-                Callable callable = createInvocation(member, this::createAccumulatorsInvoker);
-
-                Map<String, Accumulator> memberResponse = readAccumulatorsResponse(callable);
+                Future future = createInvocation(member, this::createAccumulatorsInvoker);
+                Map<String, Accumulator> memberResponse = readAccumulatorsResponse(future);
 
                 for (Map.Entry<String, Accumulator> entry : memberResponse.entrySet()) {
                     String key = entry.getKey();
@@ -235,18 +221,18 @@ public abstract class JobClusterService<Payload> {
     /**
      * Creates invocation to be called on the corresponding member
      *
+     * @param <T>              type of the return value
      * @param member           member where invocation should be executed
      * @param operationFactory factory for operations
-     * @param <T>              type of the return value
      * @return Callable object for the corresponding invocation
      */
-    protected abstract <T> Callable<T> createInvocation(Member member, Supplier<Payload> operationFactory);
+    protected abstract <T> CompletableFuture<T> createInvocation(Member member, Supplier<Payload> operationFactory);
 
     protected abstract Payload createSubmitInvoker(DAG dag);
 
     protected abstract <T> T toObject(com.hazelcast.nio.serialization.Data data);
 
-    protected abstract Map<String, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception;
+    protected abstract Map<String, Accumulator> readAccumulatorsResponse(Future future) throws Exception;
 
     protected abstract JobConfig getJobConfig();
 
@@ -258,18 +244,18 @@ public abstract class JobClusterService<Payload> {
         return getJobConfig().getChunkSize();
     }
 
-    private List<Future> invokeInCluster(Supplier<Payload> operationFactory) {
+    private List<CompletableFuture> invokeInCluster(Supplier<Payload> operationFactory) {
         Set<Member> members = getMembers();
-        List<Future> futureList = new ArrayList<>(members.size());
+        List<CompletableFuture> futureList = new ArrayList<>(members.size());
 
         for (Member member : members) {
-            futureList.add(executorService.submit(createInvocation(member, operationFactory)));
+            futureList.add(createInvocation(member, operationFactory));
         }
 
         return futureList;
     }
 
-    private void await(List<Future> list) {
+    private void await(List<CompletableFuture> list) {
         List<Throwable> errors = new ArrayList<>(list.size());
         for (Future future : list) {
             try {
@@ -289,14 +275,27 @@ public abstract class JobClusterService<Payload> {
         }
     }
 
+    private void await(CompletableFuture future) {
+        try {
+            future.get();
+        } catch (ExecutionException e) {
+            throw reThrow(e.getCause());
+        } catch (InterruptedException e) {
+            throw reThrow(e);
+        }
+    }
+
     private void publishEvent(final JobEvent jobEvent) {
-        List<Future> futures = invokeInCluster(() -> createEventInvoker(jobEvent));
+        if (jobEvent == JobEvent.FINALIZATION_SUCCESS) {
+            return;
+        }
+        List<CompletableFuture> futures = invokeInCluster(() -> createEventInvoker(jobEvent));
         await(futures);
     }
 
     private void executeDeployment(final Set<DeploymentConfig> resources) {
         Iterator<Chunk> iterator = new ChunkIterator(resources, getDeploymentChunkSize());
-        List<Future> futures = new ArrayList<>();
+        List<CompletableFuture> futures = new ArrayList<>();
         while (iterator.hasNext()) {
             final Chunk chunk = iterator.next();
             Supplier<Payload> operationFactory = () -> createDeploymentInvoker(chunk);
@@ -308,75 +307,45 @@ public abstract class JobClusterService<Payload> {
         await(futures);
     }
 
-    final class OperationExecutor implements Runnable {
-        private final Runnable executor;
-        private final JobEvent startEvent;
-        private final JobEvent successEvent;
-        private final JobEvent failureEvent;
-        private final Supplier<Payload> invocationFactory;
-        private final JobStateMachine jobStateMachine;
-
-        public OperationExecutor(JobEvent startEvent,
-                                 JobEvent successEvent,
-                                 JobEvent failureEvent,
-                                 JobStateMachine jobStateMachine,
-                                 Supplier<Payload> invocationFactory
-        ) {
-            this.startEvent = startEvent;
-            this.successEvent = successEvent;
-            this.failureEvent = failureEvent;
-            this.executor = null;
-            this.invocationFactory = invocationFactory;
-            this.jobStateMachine = jobStateMachine;
+    private void run(JobEvent startEvent,
+                     JobEvent successEvent,
+                     JobEvent failureEvent,
+                     JobStateMachine stateMachine,
+                     Runnable runnable) {
+        publishEventAndUpdateStateMachine(startEvent, stateMachine);
+        try {
+            runnable.run();
+            publishEventAndUpdateStateMachine(successEvent, stateMachine);
+        } catch (Exception e) {
+            publishEventAndUpdateStateMachine(failureEvent, stateMachine);
+            throw reThrow(e);
         }
+    }
 
-        public OperationExecutor(JobEvent startEvent,
-                                 JobEvent successEvent,
-                                 JobEvent failureEvent,
-                                 JobStateMachine jobStateMachine,
-                                 Runnable operationExecutor
-        ) {
-            this.startEvent = startEvent;
-            this.invocationFactory = null;
-            this.successEvent = successEvent;
-            this.failureEvent = failureEvent;
-            this.executor = operationExecutor;
-            this.jobStateMachine = jobStateMachine;
-        }
-
-        @Override
-        public void run() {
-            if (startEvent != null) {
-                publishEvent(startEvent);
-                jobStateMachine.onEvent(startEvent);
+    private CompletableFuture submit(JobEvent startEvent,
+                                     JobEvent successEvent,
+                                     JobEvent failureEvent,
+                                     JobStateMachine stateMachine,
+                                     Supplier<Payload> invocationFactory) {
+        publishEventAndUpdateStateMachine(startEvent, stateMachine);
+        List<CompletableFuture> futureList = invokeInCluster(invocationFactory);
+        CompletableFuture[] futures = new CompletableFuture[futureList.size()];
+        futures = futureList.toArray(futures);
+        CompletableFuture<Void> future = CompletableFuture.allOf(futures);
+        return future.whenComplete((response, throwable) -> {
+            if (throwable == null) {
+                publishEventAndUpdateStateMachine(successEvent, stateMachine);
+            } else {
+                publishEventAndUpdateStateMachine(failureEvent, stateMachine);
             }
+        });
+    }
 
-            try {
-                if (executor == null) {
-                    List<Future> futureList = invokeInCluster(invocationFactory);
-                    await(futureList);
-                } else {
-                    executor.run();
-                }
-
-                if (successEvent != null) {
-                    if (successEvent != JobEvent.FINALIZATION_SUCCESS) {
-                        publishEvent(successEvent);
-                    }
-                    jobStateMachine.onEvent(successEvent);
-                }
-            } catch (Throwable e) {
-                try {
-                    if (failureEvent != null) {
-                        publishEvent(failureEvent);
-                        jobStateMachine.onEvent(failureEvent);
-                    }
-                } catch (Throwable ee) {
-                    throw reThrow(new CombinedJetException(Arrays.asList(e, ee)));
-                }
-
-                throw reThrow(e);
-            }
+    private void publishEventAndUpdateStateMachine(JobEvent event, JobStateMachine stateMachine) {
+        if (event == null) {
+            return;
         }
+        publishEvent(event);
+        stateMachine.onEvent(event);
     }
 }
