@@ -41,9 +41,11 @@ public class MapPartitionWriter extends AbstractHazelcastWriter {
     public MapPartitionWriter(JobContext jobContext, int partitionId, String name) {
         super(jobContext, partitionId);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
+        // make sure proxy for the map is created
+        nodeEngine.getHazelcastInstance().getMap(name);
+
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
-
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         this.mapConfig = nodeEngine.getConfig().getMapConfig(name);
         this.recordStore = mapServiceContext.getPartitionContainer(getPartitionId()).getRecordStore(name);

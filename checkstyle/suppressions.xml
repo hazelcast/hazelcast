@@ -32,6 +32,9 @@
     <!-- Hazelcast Jet IO -->
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="/jet/io/"/>
 
+    <!-- Cascading -->
+    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="/jet/cascading/"/>
+
     <!-- RingBuffer -->
     <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingbufferWithValueStrategy"/>
     <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingbufferWithReferenceStrategy"/>
