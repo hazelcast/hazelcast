@@ -36,12 +36,19 @@ public final class JVMUtil {
      * Defines the costs for a reference in Bytes.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public static final int REFERENCE_COST_IN_BYTES = isCompressedOops() ? 4 : 8;
+    public static final int REFERENCE_COST_IN_BYTES = is32bitJVM() || isCompressedOops() ? 4 : 8;
 
     private JVMUtil() {
     }
 
-    private static boolean isCompressedOops() {
+    static boolean is32bitJVM() {
+        // sun.arch.data.model is available on Oracle, Zing and (most probably) IBM JVMs
+        String architecture = System.getProperty("sun.arch.data.model");
+        return (architecture != null && architecture.equals("32")) ? true : false;
+    }
+
+    // not private for testing
+    static boolean isCompressedOops() {
         // check HotSpot JVM implementation
         Boolean enabled = isHotSpotCompressedOopsOrNull();
         if (enabled != null) {
@@ -49,17 +56,19 @@ public final class JVMUtil {
         }
 
         // fallback check for other JVM implementations
-        enabled = isCompressedOopsOrNull();
+        enabled = isObjectLayoutCompressedOopsOrNull();
         if (enabled != null) {
             return enabled;
         }
 
         // accept compressed oops is used by default
+        getLogger(JVMUtil.class).info("Could not determine memory cost of reference; setting to default of 4 bytes.");
         return true;
     }
 
+    // not private for testing
     @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
-    private static Boolean isHotSpotCompressedOopsOrNull() {
+    static Boolean isHotSpotCompressedOopsOrNull() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             ObjectName mbean = new ObjectName("com.sun.management:type=HotSpotDiagnostic");
@@ -69,7 +78,7 @@ public final class JVMUtil {
             CompositeDataSupport compressedOopsValue = (CompositeDataSupport) server.invoke(mbean, operation, objects, strings);
             return Boolean.valueOf(compressedOopsValue.get("value").toString());
         } catch (Exception e) {
-            getLogger(JVMUtil.class).warning("Failed to read HotSpot specific configuration", e);
+            getLogger(JVMUtil.class).fine("Failed to read HotSpot specific configuration: " + e.getMessage());
         }
 
         return null;
@@ -77,11 +86,11 @@ public final class JVMUtil {
 
     /**
      * Fallback when checking CompressedOopsEnabled.
-     *
+     * (not private for testing)
      * Borrowed from http://openjdk.java.net/projects/code-tools/jol/
      */
     @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
-    private static Boolean isCompressedOopsOrNull() {
+    static Boolean isObjectLayoutCompressedOopsOrNull() {
         if (!UNSAFE_AVAILABLE) {
             return null;
         }
@@ -94,17 +103,17 @@ public final class JVMUtil {
             long off2 = UNSAFE.objectFieldOffset(CompressedOopsClass.class.getField("obj2"));
             oopSize = (int) Math.abs(off2 - off1);
         } catch (Exception e) {
-            getLogger(JVMUtil.class).warning(e);
+            getLogger(JVMUtil.class).fine("Could not determine cost of reference using field offsets: " + e.getMessage());
             return null;
         }
 
         return oopSize != UNSAFE.addressSize();
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "checkstyle:visibilitymodifier"})
     private static class CompressedOopsClass {
 
-        Object obj1;
-        Object obj2;
+        public Object obj1;
+        public Object obj2;
     }
 }
