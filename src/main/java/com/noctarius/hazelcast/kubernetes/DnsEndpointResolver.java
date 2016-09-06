@@ -30,9 +30,7 @@ import org.xbill.DNS.Type;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 final class DnsEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
@@ -56,7 +54,7 @@ final class DnsEndpointResolver
                 return Collections.emptyList();
             }
 
-            List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
+            Set<Address> discoveredAddresses = new HashSet<Address>();
 
             for (Record record : records) {
                 // nslookup u219692-hazelcast.u219692-hazelcast.svc.cluster.local 172.30.0.1
@@ -79,12 +77,19 @@ final class DnsEndpointResolver
                     if (LOGGER.isFinestEnabled()) {
                         LOGGER.finest("Found node ip-address is: " + address);
                     }
-                    discoveredNodes.add(new SimpleDiscoveryNode(address));
+                    discoveredAddresses.add(address);
                 }
 
             }
-            if (discoveredNodes.isEmpty()){
+            if (discoveredAddresses.isEmpty()) {
                 LOGGER.warning("Could not find any service for serviceDns '" + serviceDns + "' failed");
+                return Collections.EMPTY_LIST;
+            }
+
+            List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>(discoveredAddresses.size());
+
+            for (Address address : discoveredAddresses) {
+                discoveredNodes.add(new SimpleDiscoveryNode(address));
             }
 
             return discoveredNodes;
