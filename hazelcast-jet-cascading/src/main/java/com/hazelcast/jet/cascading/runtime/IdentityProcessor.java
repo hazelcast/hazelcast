@@ -16,16 +16,17 @@
 
 package com.hazelcast.jet.cascading.runtime;
 
+import cascading.tuple.Tuple;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.OutputCollector;
 
-public class IdentityProcessor implements Processor<Pair, Pair> {
+public class IdentityProcessor implements Processor<Pair<Tuple, Tuple>, Pair<Tuple, Tuple>> {
 
     @Override
-    public boolean process(InputChunk<Pair> input,
-                           OutputCollector<Pair> output,
+    public boolean process(InputChunk<Pair<Tuple, Tuple>> input,
+                           OutputCollector<Pair<Tuple, Tuple>> output,
                            String sourceName) throws Exception {
         output.collect(input);
         return true;

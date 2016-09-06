@@ -32,6 +32,7 @@ import cascading.pipe.GroupBy;
 import cascading.pipe.HashJoin;
 import cascading.pipe.Merge;
 import cascading.tap.Tap;
+import cascading.tuple.Tuple;
 import cascading.util.Util;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.io.Pair;
@@ -45,13 +46,13 @@ import java.util.Set;
 
 class JetStreamGraph extends NodeStreamGraph {
 
-    private Holder<OutputCollector<Pair>> outputHolder = new Holder<>();
+    private Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder = new Holder<>();
     private final List<Edge> inputEdges;
     private ProcessorInputSource streamedInputSource;
     private Map<String, ProcessorInputSource> accumulatedInputSources = new HashMap<>();
 
-    public JetStreamGraph(FlowProcess flowProcess, FlowNode node, Holder<OutputCollector<Pair>> outputHolder
-            , List<Edge> inputEdges) {
+    public JetStreamGraph(FlowProcess flowProcess, FlowNode node,
+                          Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder, List<Edge> inputEdges) {
         super(flowProcess, node);
         this.outputHolder = outputHolder;
         this.inputEdges = inputEdges;

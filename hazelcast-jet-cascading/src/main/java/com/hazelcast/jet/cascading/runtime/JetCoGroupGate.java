@@ -38,9 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- *
- */
 class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSource {
 
     private Map<Tuple, List<Tuple>>[] keyValues;
@@ -81,7 +78,7 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
 
     @Override
     public void start(Duct previous) {
-        // chained below in #complete()
+        // chained below in #finalizeProcessor()
     }
 
     @Override
@@ -97,6 +94,7 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
     }
 
     private Map<Tuple, List<Tuple>>[] createKeyValuesArray() {
+        @SuppressWarnings("unchecked")
         Map<Tuple, List<Tuple>>[] valueMap = new Map[getNumDeclaredIncomingBranches()];
 
         for (int i = 0; i < getNumDeclaredIncomingBranches(); i++) {
@@ -112,12 +110,12 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
     }
 
     @Override
-    public void process(Iterator<Pair> input, Integer ordinal) throws Throwable {
+    public void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable {
         Map<Tuple, List<Tuple>> map = keyValues[ordinal];
         while (input.hasNext()) {
-            Pair pair = input.next();
-            Tuple key = getDelegatedTuple((Tuple) pair.getKey());
-            Tuple value = (Tuple) pair.getValue();
+            Pair<Tuple, Tuple> pair = input.next();
+            Tuple key = getDelegatedTuple(pair.getKey());
+            Tuple value = pair.getValue();
 
             keys.add(key);
             map.computeIfAbsent(key, v -> new ArrayList<>()).add(value);
@@ -129,25 +127,21 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
         next.start(this);
 
         Collection<Tuple>[] collections = new Collection[keyValues.length];
-        Iterator<Tuple> keyIterator = keys.iterator();
-
-        Set<Tuple> seenNulls = new HashSet<Tuple>();
-
-        while (keyIterator.hasNext()) {
-            Tuple keysTuple = keyIterator.next();
-
+        Set<Tuple> seenNulls = new HashSet<>();
+        for (Iterator<Tuple> keyIterator = keys.iterator(); keyIterator.hasNext();) {
+            Tuple key = keyIterator.next();
             keyIterator.remove();
 
             // provides sql like semantics
-            if (nullsAreNotEqual && Tuples.frequency(keysTuple, null) != 0) {
-                if (seenNulls.contains(keysTuple)) {
+            if (nullsAreNotEqual && Tuples.frequency(key, null) != 0) {
+                if (seenNulls.contains(key)) {
                     continue;
                 }
 
-                seenNulls.add(keysTuple);
+                seenNulls.add(key);
 
                 for (int i = 0; i < keyValues.length; i++) {
-                    Collection<Tuple> values = keyValues[i].remove(keysTuple);
+                    Collection<Tuple> values = keyValues[i].remove(key);
 
                     if (values == null) {
                         continue;
@@ -159,19 +153,19 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
 
                     collections[i] = values;
 
-                    push(collections, keysTuple);
+                    push(collections, key);
                 }
             } else {
                 // drain the keys and keyValues collections to preserve memory
                 for (int i = 0; i < keyValues.length; i++) {
-                    collections[i] = keyValues[i].remove(keysTuple);
+                    collections[i] = keyValues[i].remove(key);
 
                     if (collections[i] == null) {
                         collections[i] = Collections.emptyList();
                     }
                 }
 
-                push(collections, keysTuple);
+                push(collections, key);
             }
         }
 

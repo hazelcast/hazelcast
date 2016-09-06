@@ -38,14 +38,14 @@ import java.util.Iterator;
 
 public class JetMergeGate extends SpliceGate<TupleEntry, TupleEntry> implements ProcessorInputSource {
 
-    private Holder<OutputCollector<Pair>> outputHolder;
+    private Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder;
     private TupleEntry valueEntry;
 
     public JetMergeGate(FlowProcess flowProcess, Splice splice) {
         super(flowProcess, splice, IORole.source);
     }
 
-    public JetMergeGate(FlowProcess flowProcess, Splice splice, Holder<OutputCollector<Pair>
+    public JetMergeGate(FlowProcess flowProcess, Splice splice, Holder<OutputCollector<Pair<Tuple, Tuple>>
             > outputHolder) {
         super(flowProcess, splice, IORole.sink);
         this.outputHolder = outputHolder;
@@ -99,10 +99,10 @@ public class JetMergeGate extends SpliceGate<TupleEntry, TupleEntry> implements 
     }
 
     @Override
-    public void process(Iterator<Pair> input, Integer ordinal) throws Throwable {
+    public void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable {
         while (input.hasNext()) {
-            Pair pair = input.next();
-            valueEntry.setTuple((Tuple) pair.getKey());
+            Pair<Tuple, Tuple> pair = input.next();
+            valueEntry.setTuple(pair.getKey());
             next.receive(this, valueEntry);
         }
     }
