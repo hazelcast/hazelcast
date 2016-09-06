@@ -20,8 +20,6 @@ import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.OutputCollector;
 import com.hazelcast.jet.runtime.TaskContext;
 
-import java.io.Serializable;
-
 /**
  * A processor is the basic unit of execution in Jet. It consumes multiple inputs supplied by
  * {@link InputChunk}s and produces output to a {@link OutputCollector}.
@@ -29,7 +27,7 @@ import java.io.Serializable;
  * @param <I> Type of the input object
  * @param <O> Type of the output object
  */
-public interface Processor<I, O> extends Serializable {
+public interface Processor<I, O> {
 
     /**
      * Invoked before the first call to process. Typically used to set up internal state

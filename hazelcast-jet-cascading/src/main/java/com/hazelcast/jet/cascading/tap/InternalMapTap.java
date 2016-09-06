@@ -54,6 +54,7 @@ import java.util.concurrent.Future;
 
 public class InternalMapTap extends InternalJetTap {
 
+    private static final Object CLIENT_LOCK = new Object();
     private static HazelcastInstance client;
 
     private final String mapName;
@@ -141,10 +142,12 @@ public class InternalMapTap extends InternalJetTap {
 
     protected HazelcastInstance getHazelcastInstance() {
         //TODO: used for speeding up tests, should be fixed after config refactor
-        if (client == null) {
-            client = HazelcastClient.newHazelcastClient();
+        synchronized (CLIENT_LOCK) {
+            if (client == null) {
+                client = HazelcastClient.newHazelcastClient();
+            }
+            return client;
         }
-        return client;
     }
 
     @Override
@@ -224,8 +227,9 @@ public class InternalMapTap extends InternalJetTap {
 
     private static class LastModifiedTime implements Callable<Long>, HazelcastInstanceAware, Serializable {
 
+        private static final long serialVersionUID = 1L;
         private final String mapName;
-        private HazelcastInstance hazelcastInstance;
+        private transient HazelcastInstance hazelcastInstance;
 
         public LastModifiedTime(String mapName) {
             this.mapName = mapName;
@@ -244,8 +248,9 @@ public class InternalMapTap extends InternalJetTap {
 
     private static class DestroyMap implements Runnable, HazelcastInstanceAware, Serializable {
 
+        private static final long serialVersionUID = 1L;
         private final String mapName;
-        private HazelcastInstance hazelcastInstance;
+        private transient HazelcastInstance hazelcastInstance;
 
         public DestroyMap(String mapName) {
             this.mapName = mapName;
