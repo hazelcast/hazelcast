@@ -72,7 +72,7 @@ public class SerializationOptimizer {
         return PredefinedType.getDataType(object);
     }
 
-    private void addCustomType(DataType dataType) {
+    public void addCustomType(DataType dataType) {
         this.customTypes.put((int) dataType.typeId(), dataType);
         this.classes2Types.put(dataType.getClazz(), dataType);
         this.classes.add(dataType.getClazz());

@@ -29,6 +29,7 @@
 
     <modules>
         <module>hazelcast-jet-all</module>
+        <module>hazelcast-jet-cascading</module>
         <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-java.util.stream</module>
         <module>hazelcast-jet-memory</module>
@@ -249,10 +250,7 @@
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
                     </argLine>
-                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                    <excludedGroups>
-                        com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.SlowTest
-                    </excludedGroups>
+
                 </configuration>
             </plugin>
             <plugin>
@@ -344,10 +342,6 @@
                                 -Dhazelcast.logging.type=log4j
                                 -Dhazelcast.test.use.network=false
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
