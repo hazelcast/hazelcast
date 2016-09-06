@@ -33,6 +33,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,6 +44,7 @@ import java.util.Arrays;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class SpillingAggregatorTest extends BaseMemoryTest {
     private Aggregator aggregator;
     private SerializationOptimizer optimizer = new SerializationOptimizer();
