@@ -1,31 +1,40 @@
 package com.hazelcast.cardinality.hyperloglog.operations;
 
 import com.hazelcast.cardinality.hyperloglog.HyperLogLogDataSerializerHook;
+import com.hazelcast.cardinality.hyperloglog.struct.IHyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class AddHashOperation
+public class AddHashAndEstimateCardinalityOperation
         extends AbstractHyperLogLogOperation {
 
     private long hash;
+    private long estimate;
 
-    public AddHashOperation() {}
+    public AddHashAndEstimateCardinalityOperation() {}
 
-    public AddHashOperation(String name, long hash) {
+    public AddHashAndEstimateCardinalityOperation(String name, long hash) {
         super(name);
         this.hash = hash;
     }
 
     @Override
     public int getId() {
-        return HyperLogLogDataSerializerHook.ADD_HASH;
+        return HyperLogLogDataSerializerHook.ADD_HASH_AND_ESTIMATE;
     }
 
     @Override
     public void run() throws Exception {
-        getHyperLogLogContainer().aggregate(hash);
+        IHyperLogLog hll = getHyperLogLogContainer();
+        hll.aggregate(hash);
+        estimate = hll.estimate();
+    }
+
+    @Override
+    public Object getResponse() {
+        return estimate;
     }
 
     @Override

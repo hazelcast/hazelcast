@@ -26,7 +26,7 @@ public class HyperLogLogService implements ManagedService, RemoteService, Migrat
             new ConstructorFunction<String, HyperLogLogContainer>() {
                 @Override
                 public HyperLogLogContainer createNew(String arg) {
-                    return new HyperLogLogContainer();
+                    return null;
                 }
             };
 

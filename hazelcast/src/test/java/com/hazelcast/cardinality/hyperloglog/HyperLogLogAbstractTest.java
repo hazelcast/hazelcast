@@ -25,7 +25,7 @@ public abstract class HyperLogLogAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAddHash() {
-        estimator.addString("0.0.0.0");
+        estimator.addHash(1L);
     }
 
 }

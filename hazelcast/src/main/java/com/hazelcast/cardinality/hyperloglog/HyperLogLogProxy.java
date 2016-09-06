@@ -1,6 +1,7 @@
 package com.hazelcast.cardinality.hyperloglog;
 
 import com.hazelcast.cardinality.hyperloglog.operations.AddHashOperation;
+import com.hazelcast.cardinality.hyperloglog.operations.EstimateCardinalityOperation;
 import com.hazelcast.core.ICardinalityEstimator;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
@@ -29,10 +30,17 @@ public class HyperLogLogProxy extends AbstractDistributedObject<HyperLogLogServi
     }
 
     @Override
-    public void addString(CharSequence value) {
-        Operation operation = new AddHashOperation(name, value.hashCode())
+    public void addHash(long hash) {
+        Operation operation = new AddHashOperation(name, hash)
                 .setPartitionId(partitionId);
         invokeOnPartition(operation);
+    }
+
+    @Override
+    public long estimate() {
+        Operation operation = new EstimateCardinalityOperation(name)
+                .setPartitionId(partitionId);
+        return (Long) invokeOnPartition(operation).join();
     }
 
     @Override
