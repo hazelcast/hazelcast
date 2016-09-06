@@ -34,6 +34,7 @@ import cascading.pipe.Pipe;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static data.InputData.inputFileIps;
@@ -105,6 +106,7 @@ public class ParallelCascadePlatformTest extends PlatformTestCase
     }
 
   @Test
+  @Ignore //https://github.com/hazelcast/hazelcast-jet/issues/142
   public void testCascadeRaceCondition() throws Throwable
     {
     getPlatform().copyFromLocal( inputFileIps );
