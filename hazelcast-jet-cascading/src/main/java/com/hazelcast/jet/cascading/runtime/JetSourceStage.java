@@ -23,6 +23,7 @@ import cascading.flow.StepCounters;
 import cascading.flow.stream.duct.DuctException;
 import cascading.flow.stream.element.SourceStage;
 import cascading.tap.Tap;
+import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 import com.hazelcast.jet.io.Pair;
@@ -40,7 +41,7 @@ public class JetSourceStage extends SourceStage implements ProcessorInputSource 
     }
 
     @Override
-    public void process(Iterator<Pair> input, Integer ordinal) throws Throwable {
+    public void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable {
         // TODO: this should not create new objects at every run()
         TupleEntryIterator iterator = getSource().openForRead(flowProcess, input);
         while (iterator.hasNext()) {

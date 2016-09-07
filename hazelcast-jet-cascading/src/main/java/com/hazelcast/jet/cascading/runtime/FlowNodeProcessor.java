@@ -17,6 +17,7 @@
 package com.hazelcast.jet.cascading.runtime;
 
 import cascading.flow.FlowNode;
+import cascading.tuple.Tuple;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processor;
@@ -30,16 +31,16 @@ import com.hazelcast.jet.runtime.TaskContext;
 import java.util.List;
 import java.util.Map;
 
-public class FlowNodeProcessor implements Processor<Pair, Pair> {
+public class FlowNodeProcessor implements Processor<Pair<Tuple, Tuple>, Pair<Tuple, Tuple>> {
 
     private JetStreamGraph graph;
     private final FlowNode node;
-    private final Map<String, Integer> processOrdinalMap;
-    private final Holder<OutputCollector<Pair>> outputHolder = new Holder<>();
+    private final Map<String, Integer> sourceNameToOrdinal;
+    private final Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder = new Holder<>();
 
-    public FlowNodeProcessor(FlowNode node, Map<String, Integer> processOrdinalMap) {
+    public FlowNodeProcessor(FlowNode node, Map<String, Integer> sourceNameToOrdinal) {
         this.node = node;
-        this.processOrdinalMap = processOrdinalMap;
+        this.sourceNameToOrdinal = sourceNameToOrdinal;
     }
 
     @Override
@@ -59,15 +60,15 @@ public class FlowNodeProcessor implements Processor<Pair, Pair> {
     }
 
     @Override
-    public boolean process(InputChunk<Pair> input,
-                           OutputCollector<Pair> output,
+    public boolean process(InputChunk<Pair<Tuple, Tuple>> input,
+                           OutputCollector<Pair<Tuple, Tuple>> output,
                            String sourceName) throws Exception {
         outputHolder.set(output);
         ProcessorInputSource accumulatedSource = graph.getAccumulatedInputSources().get(sourceName);
-        ProcessorInputSource inputSource = accumulatedSource == null ? graph.getStreamedInputSource()
-                : accumulatedSource;
+        ProcessorInputSource inputSource =
+                accumulatedSource != null ? accumulatedSource : graph.getStreamedInputSource();
         try {
-            Integer ordinal = processOrdinalMap.get(sourceName);
+            Integer ordinal = sourceNameToOrdinal.get(sourceName);
             inputSource.process(input.iterator(), ordinal);
         } catch (Throwable e) {
             throw JetUtil.reThrow(e);
@@ -76,12 +77,9 @@ public class FlowNodeProcessor implements Processor<Pair, Pair> {
     }
 
     @Override
-    public boolean complete(OutputCollector<Pair> output)
-            throws Exception {
+    public boolean complete(OutputCollector<Pair<Tuple, Tuple>> output) throws Exception {
         graph.getStreamedInputSource().finalizeProcessor();
-        for (ProcessorInputSource processorInputSource : graph.getAccumulatedInputSources().values()) {
-            processorInputSource.finalizeProcessor();
-        }
+        graph.getAccumulatedInputSources().values().forEach(ProcessorInputSource::finalizeProcessor);
         return true;
     }
 }

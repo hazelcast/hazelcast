@@ -26,6 +26,7 @@ import cascading.flow.stream.element.SinkStage;
 import cascading.tap.MultiSinkTap;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet.cascading.tap.SettableTupleEntryCollector;
@@ -37,9 +38,9 @@ import java.io.IOException;
 
 public class JetSinkStage extends SinkStage {
 
-    private static final OutputCollector<Pair> NULL_COLLECTOR = new OutputCollector<Pair>() {
+    private static final OutputCollector<Pair<Tuple, Tuple>> NULL_COLLECTOR = new OutputCollector<Pair<Tuple, Tuple>>() {
         @Override
-        public void collect(InputChunk<Pair> chunk) {
+        public void collect(InputChunk<Pair<Tuple, Tuple>> chunk) {
 
         }
 
@@ -54,10 +55,10 @@ public class JetSinkStage extends SinkStage {
         }
     };
 
-    private final Holder<OutputCollector<Pair>> outputHolder;
+    private final Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder;
     private SettableTupleEntryCollector collector;
 
-    public JetSinkStage(FlowProcess flowProcess, Tap sink, Holder<OutputCollector<Pair>> outputHolder) {
+    public JetSinkStage(FlowProcess flowProcess, Tap sink, Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder) {
         super(flowProcess, sink);
         this.outputHolder = outputHolder;
     }

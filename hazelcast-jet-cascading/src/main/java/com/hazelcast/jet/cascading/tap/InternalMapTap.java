@@ -70,6 +70,7 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public TupleEntryIterator openForRead(FlowProcess<? extends JobConfig> flowProcess,
                                           Iterator<Pair> input) throws IOException {
 
@@ -89,27 +90,28 @@ public class InternalMapTap extends InternalJetTap {
     @Override
     public TupleEntryCollector openForWrite(FlowProcess<? extends JobConfig> flowProcess,
                                             OutputCollector<Pair> collector) throws IOException {
-        if (collector == null) {
-            HazelcastInstance instance = ((JetFlowProcess) flowProcess).getHazelcastInstance();
-            final IMap map = instance.getMap(mapName);
-            return new TupleEntrySchemeCollector(flowProcess, getScheme(), new OutputCollector<Pair>() {
-                @Override
-                public void collect(InputChunk<Pair> input) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public void collect(Pair[] chunk, int size) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public void collect(Pair object) {
-                    map.put(object.getKey(), object.getValue());
-                }
-            });
+        if (collector != null) {
+            return new SettableTupleEntryCollector<>(flowProcess, getScheme(), collector);
         }
-        return new SettableTupleEntryCollector<>(flowProcess, getScheme(), collector);
+
+        HazelcastInstance instance = ((JetFlowProcess) flowProcess).getHazelcastInstance();
+        final IMap map = instance.getMap(mapName);
+        return new TupleEntrySchemeCollector<>(flowProcess, getScheme(), new OutputCollector<Pair>() {
+            @Override
+            public void collect(InputChunk<Pair> input) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void collect(Pair[] chunk, int size) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void collect(Pair object) {
+                map.put(object.getKey(), object.getValue());
+            }
+        });
     }
 
     @Override
@@ -220,7 +222,7 @@ public class InternalMapTap extends InternalJetTap {
         }
     }
 
-    private class LastModifiedTime implements Callable<Long>, HazelcastInstanceAware, Serializable {
+    private static class LastModifiedTime implements Callable<Long>, HazelcastInstanceAware, Serializable {
 
         private final String mapName;
         private HazelcastInstance hazelcastInstance;
@@ -240,7 +242,7 @@ public class InternalMapTap extends InternalJetTap {
         }
     }
 
-    private class DestroyMap implements Runnable, HazelcastInstanceAware, Serializable {
+    private static class DestroyMap implements Runnable, HazelcastInstanceAware, Serializable {
 
         private final String mapName;
         private HazelcastInstance hazelcastInstance;
@@ -249,6 +251,7 @@ public class InternalMapTap extends InternalJetTap {
             this.mapName = mapName;
         }
 
+        @Override
         public void run() {
             hazelcastInstance.getDistributedObject(MapService.SERVICE_NAME, mapName).destroy();
         }

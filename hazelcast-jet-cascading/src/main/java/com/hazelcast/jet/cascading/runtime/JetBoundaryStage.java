@@ -38,7 +38,7 @@ import java.util.Iterator;
 
 public class JetBoundaryStage extends BoundaryStage<TupleEntry, TupleEntry> implements ProcessorInputSource {
 
-    private Holder<OutputCollector<Pair>> outputHolder;
+    private Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder;
     private TupleEntry valueEntry;
 
     public JetBoundaryStage(FlowProcess flowProcess, Boundary boundary) {
@@ -46,7 +46,7 @@ public class JetBoundaryStage extends BoundaryStage<TupleEntry, TupleEntry> impl
     }
 
     public JetBoundaryStage(FlowProcess flowProcess, Boundary boundary,
-                            Holder<OutputCollector<Pair>> outputHolder) {
+                            Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder) {
         super(flowProcess, boundary, IORole.sink);
         this.outputHolder = outputHolder;
     }
@@ -96,9 +96,9 @@ public class JetBoundaryStage extends BoundaryStage<TupleEntry, TupleEntry> impl
     }
 
     @Override
-    public void process(Iterator<Pair> iterator, Integer ordinal) throws Throwable {
+    public void process(Iterator<Pair<Tuple, Tuple>> iterator, Integer ordinal) throws Throwable {
         while (iterator.hasNext()) {
-            Tuple tuple = (Tuple) iterator.next().getKey();
+            Tuple tuple = iterator.next().getKey();
             valueEntry.setTuple(tuple);
             next.receive(this, valueEntry);
         }

@@ -28,9 +28,10 @@ import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.runtime.OutputCollector;
 
 class JetGroupingGate extends GroupingSpliceGate {
-    private final Holder<OutputCollector<Pair>> outputHolder;
+    private final Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder;
 
-    public JetGroupingGate(FlowProcess flowProcess, Splice splice, Holder<OutputCollector<Pair>> outputHolder) {
+    public JetGroupingGate(
+            FlowProcess flowProcess, Splice splice, Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder) {
         super(flowProcess, splice);
         this.outputHolder = outputHolder;
     }

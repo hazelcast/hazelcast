@@ -63,7 +63,7 @@ public class JetFlowProcess extends FlowProcess<JobConfig> {
 
     @Override
     public Object getProperty(String key) {
-        return config.getProperties().get(key);
+        return config.getProperties().getProperty(key);
     }
 
     @Override

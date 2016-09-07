@@ -32,9 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- *
- */
 class JetGroupByGate extends JetGroupingSpliceGate implements ProcessorInputSource {
 
     private Map<Tuple, List<Tuple>> valueMap;
@@ -82,6 +79,18 @@ class JetGroupByGate extends JetGroupingSpliceGate implements ProcessorInputSour
     }
 
     @Override
+    public void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable {
+        while (input.hasNext()) {
+            Pair<Tuple, Tuple> pair = input.next();
+            Tuple key = pair.getKey();
+            Tuple value = pair.getValue();
+
+            List<Tuple> values = valueMap.computeIfAbsent(key, v -> new ArrayList<>());
+            values.add(value);
+        }
+    }
+
+    @Override
     public void finalizeProcessor() {
         next.start(this);
 
@@ -103,17 +112,5 @@ class JetGroupByGate extends JetGroupingSpliceGate implements ProcessorInputSour
         next.complete(this);
 
         valueMap = initValueMap();
-    }
-
-    @Override
-    public void process(Iterator<Pair> input, Integer ordinal) throws Throwable {
-        while (input.hasNext()) {
-            Pair pair = input.next();
-            Tuple key = (Tuple) pair.getKey();
-            Tuple value = (Tuple) pair.getValue();
-
-            List<Tuple> values = valueMap.computeIfAbsent(key, v -> new ArrayList<>());
-            values.add(value);
-        }
     }
 }
