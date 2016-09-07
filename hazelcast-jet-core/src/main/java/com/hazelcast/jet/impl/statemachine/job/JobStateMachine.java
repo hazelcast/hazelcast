@@ -151,11 +151,7 @@ public class JobStateMachine
 
     @Override
     protected JobResponse output(JobEvent jobEvent, JobState nextState) {
-        if (nextState == null) {
-            return JobResponse.FAILURE;
-        } else {
-            return JobResponse.SUCCESS;
-        }
+        return nextState == null ? JobResponse.FAILURE : JobResponse.SUCCESS;
     }
 
     @Override
@@ -173,7 +169,7 @@ public class JobStateMachine
      *
      * @param jobEvent - corresponding state-machine event
      */
-    public void onEvent(JobEvent jobEvent) {
+    public synchronized void onEvent(JobEvent jobEvent) {
         Map<JobEvent, JobState> transition = STATE_TRANSITION_MATRIX.get(currentState());
 
         if (transition != null) {
