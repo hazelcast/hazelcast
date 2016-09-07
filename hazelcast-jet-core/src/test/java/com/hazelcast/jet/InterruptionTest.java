@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -58,6 +59,7 @@ public class InterruptionTest extends JetTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast-jet/issues/122
     public void testInterruptSlowApplication() throws Exception {
         int nodeCount = 2;
         HazelcastInstance instance = createCluster(factory, nodeCount);
