@@ -72,7 +72,7 @@ import java.util.concurrent.ConcurrentMap;
  * </li>
  * </ol>
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 @PrivateApi
 public final class HazelcastInstanceProxy implements HazelcastInstance, SerializationServiceSupport {
     protected volatile HazelcastInstanceImpl original;
@@ -275,8 +275,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
-    public ICardinalityEstimator getHyperLogLog(String name) {
-        return getOriginal().getHyperLogLog(name);
+    public ICardinalityEstimator getCardinalityEstimator(String name) {
+        return getOriginal().getCardinalityEstimator(name);
     }
 
     @Override

@@ -18,14 +18,14 @@ public abstract class HyperLogLogAbstractTest extends HazelcastTestSupport {
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
         String name = generateKeyOwnedBy(target);
-        estimator = local.getHyperLogLog(name);
+        estimator = local.getCardinalityEstimator(name);
     }
 
     protected abstract HazelcastInstance[] newInstances();
 
     @Test
     public void testAddHash() {
-        estimator.addHash(1L);
+        estimator.aggregateHash(1L);
     }
 
 }

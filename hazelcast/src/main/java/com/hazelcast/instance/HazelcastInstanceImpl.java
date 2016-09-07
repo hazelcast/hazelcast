@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cardinality.hyperloglog.HyperLogLogService;
+import com.hazelcast.cardinality.CardinalityEstimatorService;
 import com.hazelcast.client.impl.ClientServiceProxy;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -400,8 +400,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
-    public ICardinalityEstimator getHyperLogLog(String name) {
-        return getDistributedObject(HyperLogLogService.SERVICE_NAME, name);
+    public ICardinalityEstimator getCardinalityEstimator(String name) {
+        return getDistributedObject(CardinalityEstimatorService.SERVICE_NAME, name);
     }
 
     @Override
