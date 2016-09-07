@@ -121,6 +121,8 @@ public class RegressionMiscPlatformTest extends PlatformTestCase
   @Test
   public void testTupleEntryNextTwice() throws IOException
     {
+    copyFromLocal( inputFileNums10 );
+
     Tap tap = getPlatform().getTextFile( inputFileNums10 );
 
     TupleEntryIterator iterator = tap.openForRead( getPlatform().getFlowProcess() );
