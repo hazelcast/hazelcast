@@ -17,6 +17,7 @@
 package com.hazelcast.cardinality;
 
 import com.hazelcast.cardinality.operations.AggregateAndEstimateOperation;
+import com.hazelcast.cardinality.operations.AggregateOperation;
 import com.hazelcast.cardinality.operations.BatchAggregateAndEstimateOperation;
 import com.hazelcast.cardinality.operations.BatchAggregateOperation;
 import com.hazelcast.cardinality.operations.EstimateOperation;
@@ -87,7 +88,9 @@ public class CardinalityEstimatorProxy
 
     @Override
     public InternalCompletableFuture<Boolean> aggregateHashAsync(long hash) {
-        return null;
+        Operation operation = new AggregateOperation(name, hash)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
