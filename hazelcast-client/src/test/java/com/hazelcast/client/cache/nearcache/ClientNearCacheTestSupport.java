@@ -56,6 +56,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -559,13 +560,8 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         int size = 100;
         int expectedEvictions = 1;
 
-        EvictionConfig evictionConfig = new EvictionConfig()
-                .setEvictionPolicy(EvictionPolicy.LRU)
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
-                .setSize(size);
-
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
-        nearCacheConfig.setEvictionConfig(evictionConfig);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+                .setEvictionConfig(new EvictionConfig(size, ENTRY_COUNT, EvictionPolicy.LRU));
 
         NearCacheTestContext context = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 

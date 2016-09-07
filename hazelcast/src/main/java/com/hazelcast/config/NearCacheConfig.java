@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.io.Serializable;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -49,11 +50,15 @@ public class NearCacheConfig implements DataSerializable, Serializable {
 
     /**
      * Default value of the maximum size.
+     *
+     * @deprecated since 3.8, please use {@link EvictionConfig#DEFAULT_MAX_ENTRY_COUNT}
      */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
 
     /**
      * Default value for the eviction policy.
+     *
+     * @deprecated since 3.8, please use {@link EvictionConfig#DEFAULT_EVICTION_POLICY}
      */
     public static final String DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
 
@@ -122,6 +127,10 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         // EvictionConfig is not allowed to be null
         if (evictionConfig != null) {
             this.evictionConfig = evictionConfig;
+        } else {
+            this.evictionConfig.setSize(maxSize);
+            this.evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(evictionPolicy));
+            this.evictionConfig.setMaximumSizePolicy(ENTRY_COUNT);
         }
     }
 
@@ -196,6 +205,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      * cache is evicted based on the policy defined.
      *
      * @return The maximum size of the Near Cache.
+     * @deprecated since 3.8, use {@link #getEvictionConfig()} and {@link EvictionConfig#getSize()} instead
      */
     public int getMaxSize() {
         return maxSize;
@@ -209,9 +219,12 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      *
      * @param maxSize The maximum number of seconds for each entry to stay in the Near Cache.
      * @return This Near Cache config instance.
+     * @deprecated since 3.8, use {@link #setEvictionConfig(EvictionConfig)} and {@link EvictionConfig#setSize(int)} instead
      */
     public NearCacheConfig setMaxSize(int maxSize) {
         this.maxSize = calculateMaxSize(maxSize);
+        this.evictionConfig.setSize(this.maxSize);
+        this.evictionConfig.setMaximumSizePolicy(ENTRY_COUNT);
         return this;
     }
 
@@ -227,6 +240,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      * Regardless of the eviction policy used, time-to-live-seconds will still apply.
      *
      * @return TThe eviction policy for the Near Cache.
+     * @deprecated since 3.8, use {@link #getEvictionConfig()} and {@link EvictionConfig#getEvictionPolicy()} instead
      */
     public String getEvictionPolicy() {
         return evictionPolicy;
@@ -245,9 +259,13 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      *
      * @param evictionPolicy The eviction policy for the Near Cache.
      * @return This Near Cache config instance.
+     * @deprecated since 3.8, use {@link #setEvictionConfig(EvictionConfig)}
+     * and {@link EvictionConfig#setEvictionPolicy(EvictionPolicy)} instead
      */
     public NearCacheConfig setEvictionPolicy(String evictionPolicy) {
         this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
+        this.evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(evictionPolicy));
+        this.evictionConfig.setMaximumSizePolicy(ENTRY_COUNT);
         return this;
     }
 

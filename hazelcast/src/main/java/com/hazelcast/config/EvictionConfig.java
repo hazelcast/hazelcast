@@ -52,6 +52,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
 
+    protected boolean sizeConfigured;
     protected int size = DEFAULT_MAX_ENTRY_COUNT;
     protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
     protected EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
@@ -71,6 +72,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
          * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
         this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
@@ -84,6 +86,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
          * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
         this.comparatorClassName = checkNotNull(comparatorClassName, "Comparator classname cannot be null!");
@@ -97,6 +100,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
          * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
         this.comparator = checkNotNull(comparator, "Comparator cannot be null!");
@@ -110,6 +114,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
          * cause "UnsupportedOperationException". So just set directly if value is valid.
          */
 
+        this.sizeConfigured = true;
         this.size = checkPositive(config.size, "Size must be positive number!");
         this.maxSizePolicy = checkNotNull(config.maxSizePolicy, "Max-Size policy cannot be null!");
         if (config.evictionPolicy != null) {
@@ -166,6 +171,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
     }
 
     public EvictionConfig setSize(int size) {
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
         return this;
     }

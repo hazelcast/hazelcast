@@ -30,6 +30,7 @@ import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -52,8 +53,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientCacheClearTest
-        extends CacheClearTest {
+public class ClientCacheClearTest extends CacheClearTest {
 
     private TestHazelcastFactory clientFactory;
     private HazelcastInstance client;
@@ -65,22 +65,17 @@ public class ClientCacheClearTest
     }
 
     protected ClientConfig createClientConfig() {
-        final ClientConfig clientConfig = new ClientConfig();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig("myCache")
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .setCacheLocalEntries(false)
+                .setEvictionConfig(new EvictionConfig(10000, MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU))
+                .setInvalidateOnChange(true)
+                .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE)
+                .setMaxIdleSeconds(600)
+                .setTimeToLiveSeconds(60);
 
-        NearCacheConfig nearCacheConfig = new NearCacheConfig("myCache");
-        nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        nearCacheConfig.setCacheLocalEntries(false);
-        nearCacheConfig
-                .setEvictionConfig(new EvictionConfig(10000, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU));
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
-        nearCacheConfig.setMaxIdleSeconds(600);
-        nearCacheConfig.setMaxSize(100);
-        nearCacheConfig.setTimeToLiveSeconds(60);
-
-        clientConfig.addNearCacheConfig(nearCacheConfig);
-
-        return clientConfig;
+        return new ClientConfig()
+                .addNearCacheConfig(nearCacheConfig);
     }
 
     @Override

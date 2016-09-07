@@ -18,6 +18,7 @@ package com.hazelcast.map.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -42,6 +43,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -170,8 +172,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected NearCacheConfig newNearCacheConfigWithEntryCountEviction(EvictionPolicy evictionPolicy, int size) {
         return newNearCacheConfig()
                 .setCacheLocalEntries(true)
-                .setMaxSize(size)
-                .setEvictionPolicy(evictionPolicy.name());
+                .setEvictionConfig(new EvictionConfig(size, ENTRY_COUNT, evictionPolicy));
     }
 
     protected NearCacheConfig newNearCacheConfig() {

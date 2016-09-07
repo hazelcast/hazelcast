@@ -290,8 +290,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(testNearCacheConfig);
         assertEquals(0, testNearCacheConfig.getTimeToLiveSeconds());
         assertEquals(60, testNearCacheConfig.getMaxIdleSeconds());
-        assertEquals("LRU", testNearCacheConfig.getEvictionPolicy());
-        assertEquals(5000, testNearCacheConfig.getMaxSize());
+        assertEquals(EvictionPolicy.LRU, testNearCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(5000, testNearCacheConfig.getEvictionConfig().getSize());
         assertTrue(testNearCacheConfig.isInvalidateOnChange());
 
         // Test that the testMapConfig2's mapStoreConfig implementation
