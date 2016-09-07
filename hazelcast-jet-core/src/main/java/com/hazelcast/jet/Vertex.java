@@ -42,16 +42,6 @@ public class Vertex implements Serializable {
     /**
      * Constructs a new vertex
      *
-     * @param name name of the vertex
-     */
-    public Vertex(String name) {
-        checkNotNull(name);
-        this.name = name;
-    }
-
-    /**
-     * Constructs a new vertex
-     *
      * @param name           name of the vertex
      * @param processorClass class name of the processor
      * @param processorArgs  constructor arguments of the processor
@@ -60,7 +50,7 @@ public class Vertex implements Serializable {
         checkNotNull(name);
         this.name = name;
         this.processorClass = processorClass.getName();
-        this.processorArgs = processorArgs;
+        this.processorArgs = processorArgs.clone();
     }
 
     /**
@@ -89,15 +79,7 @@ public class Vertex implements Serializable {
      * @return constructor arguments for the processor
      */
     public Object[] getProcessorArgs() {
-        return processorArgs;
-    }
-
-    /**
-     * Sets the constructor arguments for the processor
-     */
-    public Vertex processorArgs(Object[] processorArgs) {
-        this.processorArgs = processorArgs;
-        return this;
+        return processorArgs.clone();
     }
 
     /**
@@ -105,14 +87,6 @@ public class Vertex implements Serializable {
      */
     public String getProcessorClass() {
         return processorClass;
-    }
-
-    /**
-     * Sets the name of the processor class
-     */
-    public Vertex processorClass(Class processorClass) {
-        this.processorClass = processorClass.getName();
-        return this;
     }
 
     /**

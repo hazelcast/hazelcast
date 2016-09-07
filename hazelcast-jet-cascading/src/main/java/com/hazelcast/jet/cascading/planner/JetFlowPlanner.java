@@ -90,7 +90,7 @@ public class JetFlowPlanner extends FlowPlanner<JetFlow, JobConfig> {
                 new IntermediateBoundaryElementFactory());
     }
 
-    public class IntermediateBoundaryElementFactory implements ElementFactory {
+    public static class IntermediateBoundaryElementFactory implements ElementFactory {
         @Override
         public FlowElement create(ElementGraph graph, FlowElement flowElement) {
             return new Boundary();

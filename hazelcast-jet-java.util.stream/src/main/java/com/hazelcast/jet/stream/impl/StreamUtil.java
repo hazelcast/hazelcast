@@ -156,9 +156,7 @@ public final class StreamUtil {
         }
 
         public Vertex build() {
-            Vertex vertex = new Vertex(name == null ? randomName() : name)
-                    .processorClass(clazz)
-                    .processorArgs(args.toArray())
+            Vertex vertex = new Vertex(name == null ? randomName() : name, clazz, args.toArray())
                     .parallelism(taskCount == null ? Runtime.getRuntime().availableProcessors() : taskCount);
             if (dag != null) {
                 dag.addVertex(vertex);
