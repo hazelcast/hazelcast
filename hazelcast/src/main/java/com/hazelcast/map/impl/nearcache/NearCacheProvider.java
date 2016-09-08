@@ -126,15 +126,15 @@ public class NearCacheProvider {
 
     private static final class MemberNearCacheExecutor implements NearCacheExecutor {
 
-        private ExecutionService clientExecutionService;
+        private ExecutionService executionService;
 
-        private MemberNearCacheExecutor(ExecutionService clientExecutionService) {
-            this.clientExecutionService = clientExecutionService;
+        private MemberNearCacheExecutor(ExecutionService executionService) {
+            this.executionService = executionService;
         }
 
         @Override
         public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-            return clientExecutionService.scheduleWithRepetition(command, initialDelay, delay, unit);
+            return executionService.scheduleWithRepetition(command, initialDelay, delay, unit);
         }
     }
 }
