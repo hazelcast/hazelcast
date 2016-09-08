@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.config.CacheConfig;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,7 +45,7 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
         return new ClientCacheProxy(cacheConfig);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED"})
+    @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     void addCacheConfig(String cacheName, CacheConfig cacheConfig) {
         configs.putIfAbsent(cacheName, cacheConfig);
     }
@@ -53,13 +54,13 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
         configs.remove(cacheName);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED"})
+    @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private CacheConfig findCacheConfig(String cacheName) {
         CacheConfig cacheConfig = configs.get(cacheName);
         if (cacheConfig != null) {
             return cacheConfig;
         }
-        // Otherwise, request it from server.
+        // otherwise, request it from server
         String simpleCacheName = cacheName.substring(HazelcastCacheManager.CACHE_MANAGER_PREFIX.length());
         cacheConfig = ClientCacheHelper.getCacheConfig(client, cacheName, simpleCacheName);
         if (cacheConfig != null) {
@@ -67,5 +68,4 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
         }
         return cacheConfig;
     }
-
 }
