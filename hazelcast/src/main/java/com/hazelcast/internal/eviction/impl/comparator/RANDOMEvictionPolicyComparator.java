@@ -18,35 +18,19 @@ package com.hazelcast.internal.eviction.impl.comparator;
 
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.util.QuickMath;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * {@link com.hazelcast.config.EvictionPolicy#LRU} policy based {@link EvictionPolicyComparator}.
+ * {@link com.hazelcast.config.EvictionPolicy#RANDOM} policy based {@link EvictionPolicyComparator}.
  */
 @SuppressFBWarnings(
         value = "SE_COMPARATOR_SHOULD_BE_SERIALIZABLE",
         justification = "No need to serializable since its instance is not serialized")
-public class LRUEvictionPolicyComparator extends EvictionPolicyComparator {
+public class RANDOMEvictionPolicyComparator extends EvictionPolicyComparator {
 
     @Override
     public int compare(EvictableEntryView e1, EvictableEntryView e2) {
-        long accessTime1 = e1.getLastAccessTime();
-        long accessTime2 = e2.getLastAccessTime();
-        if (accessTime2 < accessTime1) {
-            return SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-        } else if (accessTime1 < accessTime2) {
-            return FIRST_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-        } else {
-            long creationTime1 = e1.getCreationTime();
-            long creationTime2 = e2.getCreationTime();
-            // if access times are same, we select the oldest entry to evict
-            if (creationTime2 < creationTime1) {
-                return SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-            } else if (creationTime2 > creationTime1) {
-                return FIRST_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-            } else {
-                return BOTH_OF_ENTRIES_HAVE_SAME_PRIORITY_TO_BE_EVICTED;
-            }
-        }
+        return QuickMath.compareIntegers(e1.getKey().hashCode(), e2.getKey().hashCode());
     }
 }

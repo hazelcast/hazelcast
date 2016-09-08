@@ -674,7 +674,7 @@ public class NearCacheTest extends NearCacheTestSupport {
             public void run() {
                 triggerNearCacheEviction(map);
                 long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
+                assertEquals("owned entry count " + ownedEntryCount, maxSize, ownedEntryCount);
             }
         });
     }
@@ -693,7 +693,7 @@ public class NearCacheTest extends NearCacheTestSupport {
             public void run() {
                 triggerNearCacheEviction(map);
                 long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
+                assertEquals("owned entry count " + ownedEntryCount, maxSize, ownedEntryCount);
             }
         });
     }
@@ -712,7 +712,7 @@ public class NearCacheTest extends NearCacheTestSupport {
             public void run() {
                 triggerNearCacheEviction(map);
                 long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
+                assertEquals("owned entry count " + ownedEntryCount, maxSize, ownedEntryCount);
             }
         });
     }

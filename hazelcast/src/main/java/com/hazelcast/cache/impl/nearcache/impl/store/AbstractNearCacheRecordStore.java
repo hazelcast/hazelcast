@@ -70,6 +70,7 @@ public abstract class AbstractNearCacheRecordStore<
     protected final EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<KS, R, NCRM> evictionStrategy;
+    protected final EvictionPolicyType evictionPolicyType;
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         this(nearCacheConfig, nearCacheContext, new NearCacheStatsImpl());
@@ -91,11 +92,13 @@ public abstract class AbstractNearCacheRecordStore<
             this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
             this.evictionChecker = createEvictionChecker(nearCacheConfig);
             this.evictionStrategy = createEvictionStrategy(evictionConfig);
+            this.evictionPolicyType = evictionConfig.getEvictionPolicyType();
         } else {
             this.maxSizeChecker = null;
             this.evictionPolicyEvaluator = null;
             this.evictionChecker = null;
             this.evictionStrategy = null;
+            this.evictionPolicyType = null;
         }
     }
 
@@ -231,7 +234,8 @@ public abstract class AbstractNearCacheRecordStore<
     }
 
     protected boolean isEvictionEnabled() {
-        return evictionStrategy != null && evictionPolicyEvaluator != null;
+        return evictionStrategy != null && evictionPolicyEvaluator != null
+                && evictionPolicyType != null && !evictionPolicyType.equals(EvictionPolicyType.NONE);
     }
 
     @Override
@@ -276,6 +280,10 @@ public abstract class AbstractNearCacheRecordStore<
     @Override
     public void put(K key, V value) {
         checkAvailable();
+
+        if (!isEvictionEnabled() && maxSizeChecker != null && maxSizeChecker.isReachedToMaxSize()) {
+            return;
+        }
 
         R record = null;
         R oldRecord = null;

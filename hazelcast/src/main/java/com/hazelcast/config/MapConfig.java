@@ -465,7 +465,6 @@ public class MapConfig {
                 return null;
             default:
                 throw new IllegalArgumentException("Not known eviction policy : " + evictionPolicy);
-
         }
     }
 
