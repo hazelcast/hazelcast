@@ -26,7 +26,6 @@ import com.hazelcast.map.impl.nearcache.NearCacheRecord;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -39,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * {@link NearCache} implementation for on-heap IMap on clients.
@@ -53,9 +53,9 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
     private static final double EVICTION_FACTOR = 0.2;
 
     /**
-     * TTL Clean up interval
+     * Expiration clean-up interval
      */
-    private static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
+    private static final int EXPIRATION_CLEANUP_INTERVAL_MILLIS = 5000;
 
     private final ConcurrentMap<K, NearCacheRecord> cache;
     private final String mapName;
@@ -68,12 +68,12 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
     private final long timeToLiveMillis;
     private final boolean invalidateOnChange;
     private final EvictionPolicy evictionPolicy;
-    private final AtomicBoolean canCleanUp;
+    private final AtomicBoolean canExpire;
     private final AtomicBoolean canEvict;
     private final NearCacheStatsImpl stats;
     private final Comparator<NearCacheRecord> selectedComparator;
 
-    private volatile long lastCleanup;
+    private volatile long lastExpiration;
 
     public ClientHeapNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.cache = new ConcurrentHashMap<K, NearCacheRecord>();
@@ -90,21 +90,21 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
         this.timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
         this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         this.evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
-        this.canCleanUp = new AtomicBoolean(true);
+        this.canExpire = new AtomicBoolean(true);
         this.canEvict = new AtomicBoolean(true);
         this.stats = new NearCacheStatsImpl();
         this.selectedComparator = NearCacheRecord.getComparator(evictionPolicy);
-        this.lastCleanup = Clock.currentTimeMillis();
+        this.lastExpiration = Clock.currentTimeMillis();
     }
 
     @Override
     public void put(K key, Object value) {
-        fireTtlCleanup();
+        fireCacheExpiration();
         if (evictionPolicy == NONE && cache.size() >= maxSize) {
             return;
         }
         if (evictionPolicy != NONE && cache.size() >= maxSize) {
-            fireEvictCache();
+            fireCacheEviction();
         }
         Object candidate;
         if (value == null) {
@@ -119,71 +119,6 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
         cache.put(key, record);
     }
 
-    private void fireEvictCache() {
-        if (canEvict.compareAndSet(true, false)) {
-            try {
-                executionService.executeInternal(new Runnable() {
-                    public void run() {
-                        try {
-                            Set<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
-                            records.addAll(cache.values());
-                            int evictSize = (int) (cache.size() * EVICTION_FACTOR);
-                            int i = 0;
-                            for (NearCacheRecord record : records) {
-                                cache.remove(record.getKey());
-                                if (++i > evictSize) {
-                                    break;
-                                }
-                            }
-                        } finally {
-                            canEvict.set(true);
-                        }
-                        if (cache.size() >= maxSize && canEvict.compareAndSet(true, false)) {
-                            try {
-                                executionService.executeInternal(this);
-                            } catch (RejectedExecutionException e) {
-                                canEvict.set(true);
-                            }
-                        }
-                    }
-                });
-            } catch (RejectedExecutionException e) {
-                canEvict.set(true);
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-        }
-    }
-
-    private void fireTtlCleanup() {
-        if (Clock.currentTimeMillis() < (lastCleanup + TTL_CLEANUP_INTERVAL_MILLS)) {
-            return;
-        }
-
-        if (canCleanUp.compareAndSet(true, false)) {
-            try {
-                executionService.executeInternal(new Runnable() {
-                    public void run() {
-                        try {
-                            lastCleanup = Clock.currentTimeMillis();
-                            for (Map.Entry<K, NearCacheRecord> entry : cache.entrySet()) {
-                                if (entry.getValue().isExpired(maxIdleMillis, timeToLiveMillis)) {
-                                    cache.remove(entry.getKey());
-                                }
-                            }
-                        } finally {
-                            canCleanUp.set(true);
-                        }
-                    }
-                });
-            } catch (RejectedExecutionException e) {
-                canCleanUp.set(true);
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-        }
-    }
-
     @Override
     public String getName() {
         return mapName;
@@ -191,12 +126,13 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
 
     @Override
     public Object get(K key) {
-        fireTtlCleanup();
+        fireCacheExpiration();
         NearCacheRecord record = cache.get(key);
         if (record != null) {
             if (record.isExpired(maxIdleMillis, timeToLiveMillis)) {
                 cache.remove(key);
                 stats.incrementMisses();
+                stats.incrementExpirations();
                 return null;
             }
             if (record.getValue().equals(NULL_OBJECT)) {
@@ -259,5 +195,72 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
         stats.setOwnedEntryCount(ownedEntryCount);
         stats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
         return stats;
+    }
+
+    private void fireCacheEviction() {
+        if (canEvict.compareAndSet(true, false)) {
+            try {
+                executionService.executeInternal(new Runnable() {
+                    public void run() {
+                        try {
+                            Set<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
+                            records.addAll(cache.values());
+                            int evictSize = (int) (cache.size() * EVICTION_FACTOR);
+                            int i = 0;
+                            for (NearCacheRecord record : records) {
+                                cache.remove(record.getKey());
+                                stats.incrementEvictions();
+                                if (++i > evictSize) {
+                                    break;
+                                }
+                            }
+                        } finally {
+                            canEvict.set(true);
+                        }
+                        if (cache.size() >= maxSize && canEvict.compareAndSet(true, false)) {
+                            try {
+                                executionService.executeInternal(this);
+                            } catch (RejectedExecutionException e) {
+                                canEvict.set(true);
+                            }
+                        }
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                canEvict.set(true);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        }
+    }
+
+    private void fireCacheExpiration() {
+        if (Clock.currentTimeMillis() < (lastExpiration + EXPIRATION_CLEANUP_INTERVAL_MILLIS)) {
+            return;
+        }
+
+        if (canExpire.compareAndSet(true, false)) {
+            try {
+                executionService.executeInternal(new Runnable() {
+                    public void run() {
+                        try {
+                            lastExpiration = Clock.currentTimeMillis();
+                            for (Map.Entry<K, NearCacheRecord> entry : cache.entrySet()) {
+                                if (entry.getValue().isExpired(maxIdleMillis, timeToLiveMillis)) {
+                                    cache.remove(entry.getKey());
+                                    stats.incrementExpirations();
+                                }
+                            }
+                        } finally {
+                            canExpire.set(true);
+                        }
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                canExpire.set(true);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        }
     }
 }

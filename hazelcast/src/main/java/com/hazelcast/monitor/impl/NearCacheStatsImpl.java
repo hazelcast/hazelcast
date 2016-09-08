@@ -37,12 +37,18 @@ public class NearCacheStatsImpl implements NearCacheStats {
             newUpdater(NearCacheStatsImpl.class, "hits");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES =
             newUpdater(NearCacheStatsImpl.class, "misses");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> EVICTIONS =
+            newUpdater(NearCacheStatsImpl.class, "evictions");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> EXPIRATIONS =
+            newUpdater(NearCacheStatsImpl.class, "expirations");
 
     private volatile long creationTime;
     private volatile long ownedEntryCount;
     private volatile long ownedEntryMemoryCost;
     private volatile long hits;
     private volatile long misses;
+    private volatile long evictions;
+    private volatile long expirations;
 
     public NearCacheStatsImpl() {
         this.creationTime = Clock.currentTimeMillis();
@@ -92,12 +98,13 @@ public class NearCacheStatsImpl implements NearCacheStats {
         return hits;
     }
 
-    public void incrementHits() {
-        HITS.incrementAndGet(this);
+    // just for testing
+    void setHits(long hits) {
+        HITS.set(this, hits);
     }
 
-    public void setHits(long hits) {
-        HITS.set(this, hits);
+    public void incrementHits() {
+        HITS.incrementAndGet(this);
     }
 
     @Override
@@ -105,7 +112,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
         return misses;
     }
 
-    public void setMisses(long misses) {
+    // just for testing
+    void setMisses(long misses) {
         MISSES.set(this, misses);
     }
 
@@ -127,6 +135,34 @@ public class NearCacheStatsImpl implements NearCacheStats {
     }
 
     @Override
+    public long getEvictions() {
+        return evictions;
+    }
+
+    // just for testing
+    void setEvictions(long evictions) {
+        EVICTIONS.set(this, evictions);
+    }
+
+    public void incrementEvictions() {
+        EVICTIONS.incrementAndGet(this);
+    }
+
+    @Override
+    public long getExpirations() {
+        return expirations;
+    }
+
+    // just for testing
+    void setExpirations(long expirations) {
+        EXPIRATIONS.set(this, expirations);
+    }
+
+    public void incrementExpirations() {
+        EXPIRATIONS.incrementAndGet(this);
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("ownedEntryCount", ownedEntryCount);
@@ -134,6 +170,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
         root.add("creationTime", creationTime);
         root.add("hits", hits);
         root.add("misses", misses);
+        root.add("evictions", evictions);
+        root.add("expirations", expirations);
         return root;
     }
 
@@ -144,6 +182,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
         creationTime = getLong(json, "creationTime", -1L);
         hits = getLong(json, "hits", -1L);
         misses = getLong(json, "misses", -1L);
+        evictions = getLong(json, "evictions", -1L);
+        expirations = getLong(json, "expirations", -1L);
     }
 
     @Override
@@ -155,6 +195,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 + ", hits=" + hits
                 + ", misses=" + misses
                 + ", ratio=" + String.format("%.1f%%", getRatio())
+                + ", evictions=" + evictions
+                + ", expirations=" + expirations
                 + '}';
     }
 }

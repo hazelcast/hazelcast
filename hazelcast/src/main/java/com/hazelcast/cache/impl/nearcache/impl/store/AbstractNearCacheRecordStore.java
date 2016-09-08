@@ -44,7 +44,7 @@ public abstract class AbstractNearCacheRecordStore<
         K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
         implements NearCacheRecordStore<K, V>, EvictionListener<KS, R> {
 
-    /*
+    /**
      * If Unsafe is available, Object array index scale (every index represents a reference)
      * can be assumed as reference size.
      *
@@ -107,20 +107,24 @@ public abstract class AbstractNearCacheRecordStore<
                                                      NearCacheContext nearCacheContext);
 
     protected abstract long getKeyStorageMemoryCost(K key);
+
     protected abstract long getRecordStorageMemoryCost(R record);
 
     protected abstract R valueToRecord(V value);
+
     protected abstract V recordToValue(R record);
 
     protected abstract R getRecord(K key);
+
     protected abstract R putRecord(K key, R record);
+
     protected abstract void putToRecord(R record, V value);
+
     protected abstract R removeRecord(K key);
 
     protected void checkAvailable() {
         if (!isAvailable()) {
-            throw new IllegalStateException(nearCacheConfig.getName()
-                    + " named near cache record store is not available");
+            throw new IllegalStateException(nearCacheConfig.getName() + " named near cache record store is not available");
         }
     }
 
@@ -205,27 +209,25 @@ public abstract class AbstractNearCacheRecordStore<
     }
 
     protected void onGet(K key, V value, R record) {
-
     }
 
     protected void onGetError(K key, V value, R record, Throwable error) {
-
     }
 
     protected void onPut(K key, V value, R record, R oldRecord) {
-
     }
 
     protected void onPutError(K key, V value, R record, R oldRecord, Throwable error) {
-
     }
 
     protected void onRemove(K key, R record, boolean removed) {
-
     }
 
     protected void onRemoveError(K key, R record, boolean removed, Throwable error) {
+    }
 
+    protected void onExpire(K key, R record) {
+        nearCacheStats.incrementExpirations();
     }
 
     protected boolean isEvictionEnabled() {
@@ -233,7 +235,12 @@ public abstract class AbstractNearCacheRecordStore<
     }
 
     @Override
-    public void onEvict(KS key, R record) {
+    public void onEvict(KS key, R record, boolean wasExpired) {
+        if (wasExpired) {
+            nearCacheStats.incrementExpirations();
+        } else {
+            nearCacheStats.incrementEvictions();
+        }
         nearCacheStats.decrementOwnedEntryCount();
     }
 
@@ -248,6 +255,7 @@ public abstract class AbstractNearCacheRecordStore<
             if (record != null) {
                 if (isRecordExpired(record)) {
                     remove(key);
+                    onExpire(key, record);
                     return null;
                 }
                 onRecordAccess(record);
@@ -380,5 +388,4 @@ public abstract class AbstractNearCacheRecordStore<
             evictionStrategy.evict(records, evictionPolicyEvaluator, null, this);
         }
     }
-
 }

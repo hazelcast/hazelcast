@@ -77,8 +77,8 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    public void onEvict(K key, R record) {
-        super.onEvict(key, record);
+    public void onEvict(K key, R record, boolean wasExpired) {
+        super.onEvict(key, record, wasExpired);
         nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
     }
 
@@ -89,6 +89,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
             R value = entry.getValue();
             if (isRecordExpired(value)) {
                 remove(key);
+                onExpire(key, value);
             }
         }
     }
