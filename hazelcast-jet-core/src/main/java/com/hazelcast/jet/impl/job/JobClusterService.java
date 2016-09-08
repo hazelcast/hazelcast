@@ -41,6 +41,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.JetUtil.reThrow;
 
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class JobClusterService<Payload> {
     protected final String name;
     protected JobConfig jobConfig;
@@ -58,7 +59,6 @@ public abstract class JobClusterService<Payload> {
     public void init(JobConfig config, JobStateMachine jobStateMachine) {
         jobConfig = config;
         CompletableFuture future = submit(
-                null,
                 JobEvent.INIT_SUCCESS,
                 JobEvent.INIT_FAILURE,
                 jobStateMachine,
@@ -285,12 +285,14 @@ public abstract class JobClusterService<Payload> {
         }
     }
 
-    private void publishEvent(final JobEvent jobEvent) {
-        if (jobEvent == JobEvent.FINALIZATION_SUCCESS) {
-            return;
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
+    private CompletableFuture<Void> publishEvent(final JobEvent jobEvent) {
+        if (jobEvent == null || jobEvent == JobEvent.FINALIZATION_SUCCESS) {
+            return CompletableFuture.completedFuture(null);
         }
-        List<CompletableFuture> futures = invokeInCluster(() -> createEventInvoker(jobEvent));
-        await(futures);
+        List<CompletableFuture> futureList = invokeInCluster(() -> createEventInvoker(jobEvent));
+        CompletableFuture[] futures = futureList.toArray(new CompletableFuture[futureList.size()]);
+        return CompletableFuture.allOf(futures);
     }
 
     private void executeDeployment(final Set<DeploymentConfig> resources) {
@@ -312,12 +314,12 @@ public abstract class JobClusterService<Payload> {
                      JobEvent failureEvent,
                      JobStateMachine stateMachine,
                      Runnable runnable) {
-        publishEventAndUpdateStateMachine(startEvent, stateMachine);
+        await(publishEventAndUpdateStateMachine(startEvent, stateMachine));
         try {
             runnable.run();
-            publishEventAndUpdateStateMachine(successEvent, stateMachine);
+            await(publishEventAndUpdateStateMachine(successEvent, stateMachine));
         } catch (Exception e) {
-            publishEventAndUpdateStateMachine(failureEvent, stateMachine);
+            await(publishEventAndUpdateStateMachine(failureEvent, stateMachine));
             throw reThrow(e);
         }
     }
@@ -327,25 +329,40 @@ public abstract class JobClusterService<Payload> {
                                      JobEvent failureEvent,
                                      JobStateMachine stateMachine,
                                      Supplier<Payload> invocationFactory) {
-        publishEventAndUpdateStateMachine(startEvent, stateMachine);
+        await(publishEventAndUpdateStateMachine(startEvent, stateMachine));
+        return submit(successEvent, failureEvent, stateMachine, invocationFactory);
+    }
+
+    private CompletableFuture submit(JobEvent successEvent,
+                                     JobEvent failureEvent,
+                                     JobStateMachine stateMachine,
+                                     Supplier<Payload> invocationFactory) {
         List<CompletableFuture> futureList = invokeInCluster(invocationFactory);
         CompletableFuture[] futures = new CompletableFuture[futureList.size()];
         futures = futureList.toArray(futures);
         CompletableFuture<Void> future = CompletableFuture.allOf(futures);
-        return future.whenComplete((response, throwable) -> {
-            if (throwable == null) {
-                publishEventAndUpdateStateMachine(successEvent, stateMachine);
-            } else {
-                publishEventAndUpdateStateMachine(failureEvent, stateMachine);
-            }
+        CompletableFuture<Void> f = new CompletableFuture<>();
+        future.whenComplete((response, throwable) -> {
+            JobEvent event = throwable == null ? successEvent : failureEvent;
+            CompletableFuture<Void> eventFuture = publishEventAndUpdateStateMachine(event, stateMachine);
+            eventFuture.whenComplete((r, t) -> {
+                if (throwable == null && t == null) {
+                    f.complete(r);
+                } else {
+                    if (throwable != null) {
+                        f.completeExceptionally(throwable);
+                    } else {
+                        f.completeExceptionally(t);
+                    }
+                }
+            });
         });
+        return f;
     }
 
-    private void publishEventAndUpdateStateMachine(JobEvent event, JobStateMachine stateMachine) {
-        if (event == null) {
-            return;
-        }
-        publishEvent(event);
-        stateMachine.onEvent(event);
+    private CompletableFuture<Void> publishEventAndUpdateStateMachine(JobEvent event, JobStateMachine stateMachine) {
+        return publishEvent(event).thenRun(() -> {
+            stateMachine.onEvent(event);
+        });
     }
 }
