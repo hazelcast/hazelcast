@@ -17,16 +17,19 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.cache.impl.nearcache.NearCacheContext;
+import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCache;
+import com.hazelcast.client.cache.impl.ClientNearCacheExecutor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
-import com.hazelcast.client.map.impl.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.config.EvictionConfigAccessor;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -83,11 +86,18 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     protected void init() {
         ClientContext context = getContext();
+
         NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
+        EvictionConfigAccessor.initDefaultMaxSize(nearCacheConfig.getEvictionConfig());
+
+        NearCacheContext nearCacheContext = new NearCacheContext(
+                context.getSerializationService(),
+                new ClientNearCacheExecutor(context.getExecutionService()));
+
+        NearCache<Data, Object> clientNearCache = new DefaultNearCache<Data, Object>(name, nearCacheConfig, nearCacheContext);
 
         int partitionCount = context.getPartitionService().getPartitionCount();
-        ClientHeapNearCache<Data> clientHeapNearCache = new ClientHeapNearCache<Data>(name, getContext(), nearCacheConfig);
-        nearCache = wrapAsStaleReadPreventerNearCache(clientHeapNearCache, partitionCount);
+        nearCache = wrapAsStaleReadPreventerNearCache(clientNearCache, partitionCount);
         keyStateMarker = getKeyStateMarker();
 
         invalidateOnChange = nearCache.isInvalidatedOnChange();
@@ -436,7 +446,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             invalidationListenerId = registerListener(createNearCacheEntryListenerCodec(), handler);
 
         } catch (Exception e) {
-            ILogger logger = getContext().getLoggingService().getLogger(ClientHeapNearCache.class);
+            ILogger logger = getContext().getLoggingService().getLogger(NearCachedClientMapProxy.class);
             logger.severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
     }

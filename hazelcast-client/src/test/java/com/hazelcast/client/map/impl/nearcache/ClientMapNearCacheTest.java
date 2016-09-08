@@ -865,13 +865,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         assertEquals(size, stats.getMisses());
     }
 
-    /**
-     * The OS client Near Caches evicts 20% + 1 of the Near Cache.
-     */
-    protected int getExpectedEvictionCount(int size) {
-        return (int) (size * 0.2) + 1;
-    }
-
     @Test
     public void testNearCacheEviction() {
         NearCacheConfig nearCacheConfig = newNearCacheConfigWithEntryCountEviction(EvictionPolicy.LRU, MAX_CACHE_SIZE);
