@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.eviction;
 
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.logging.ILogger;
@@ -23,6 +24,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartition;
@@ -225,8 +227,13 @@ public class EvictionChecker {
         }
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
-        return heapCost;
+        if (!mapContainer.getMapConfig().isNearCacheEnabled()) {
+            return heapCost;
+        }
+
+        NearCache nearCache = mapServiceContext.getNearCacheProvider().getOrCreateNearCache(mapName);
+        NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
+        return heapCost + nearCacheStats.getOwnedEntryMemoryCost();
     }
 
     protected int getRecordStoreSize(String mapName, PartitionContainer partitionContainer) {

@@ -183,7 +183,7 @@ public class MapNearCacheInvalidationFromClientTest {
             @Override
             public void run() {
                 liteMap.get(1);
-                assertEquals(keyData, nearCache.get(keyData));
+                assertEquals(1, nearCache.get(keyData));
             }
         });
 
@@ -192,7 +192,7 @@ public class MapNearCacheInvalidationFromClientTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertNull(toObject(lite, nearCache.get(keyData)));
+                assertNull(nearCache.get(keyData));
             }
         });
     }
@@ -210,7 +210,7 @@ public class MapNearCacheInvalidationFromClientTest {
             @Override
             public void run() {
                 liteMap.get(1);
-                assertEquals(keyData, nearCache.get(keyData));
+                assertEquals(1, nearCache.get(keyData));
             }
         });
 
@@ -219,7 +219,7 @@ public class MapNearCacheInvalidationFromClientTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertNull(toObject(lite, nearCache.get(keyData)));
+                assertNull(nearCache.get(keyData));
             }
         });
     }
@@ -238,16 +238,13 @@ public class MapNearCacheInvalidationFromClientTest {
         return config;
     }
 
-    private NearCache getNearCache(HazelcastInstance instance, String mapName) {
+    @SuppressWarnings("unchecked")
+    private NearCache<Object, Object> getNearCache(HazelcastInstance instance, String mapName) {
         return getMapService(instance).getMapServiceContext().getNearCacheProvider().getOrCreateNearCache(mapName);
     }
 
     private Data toData(HazelcastInstance instance, Object obj) {
         return getMapService(instance).getMapServiceContext().toData(obj);
-    }
-
-    private Object toObject(HazelcastInstance instance, Object obj) {
-        return getMapService(instance).getMapServiceContext().toObject(obj);
     }
 
     private MapService getMapService(HazelcastInstance instance) {

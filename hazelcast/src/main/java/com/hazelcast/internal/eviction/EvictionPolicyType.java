@@ -29,8 +29,17 @@ public enum EvictionPolicyType {
     /**
      * Least Frequently Used
      */
-    LFU
+    LFU,
 
-    // TODO Maybe another "CUSTOM" type for user defined eviction policies
+    /**
+     * Picks a random entry
+     */
+    RANDOM,
 
+    /**
+     * Doesn't evict entries (will not add new entries to the Near Cache when it's full)
+     */
+    NONE,
+
+    // TODO: maybe another "CUSTOM" type for user defined eviction policies
 }

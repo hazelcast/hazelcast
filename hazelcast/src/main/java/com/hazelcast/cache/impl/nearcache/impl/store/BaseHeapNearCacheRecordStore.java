@@ -77,6 +77,11 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
+    protected boolean containsRecordKey(K key) {
+        return records.containsKey(key);
+    }
+
+    @Override
     public void onEvict(K key, R record, boolean wasExpired) {
         super.onEvict(key, record, wasExpired);
         nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));

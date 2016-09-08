@@ -162,6 +162,30 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
+    protected void whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE(InMemoryFormat inMemoryFormat,
+                                                                                         LocalUpdatePolicy localUpdatePolicy) {
+        int maxSize = DEFAULT_RECORD_COUNT / 2;
+
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+                .setLocalUpdatePolicy(localUpdatePolicy)
+                .setEvictionConfig(new EvictionConfig(maxSize, ENTRY_COUNT, EvictionPolicy.NONE));
+        NearCacheTestContext nearCacheTestContext = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            nearCacheTestContext.cache.put(i, "value-" + i);
+            // populate Near Cache
+            nearCacheTestContext.cache.get(i);
+        }
+
+        assertEquals(maxSize, nearCacheTestContext.nearCache.size());
+        assertEquals("value-1", nearCacheTestContext.cache.get(1));
+
+        nearCacheTestContext.cache.put(1, "newValue");
+
+        assertEquals("newValue", nearCacheTestContext.cache.get(1));
+        assertEquals("newValue", nearCacheTestContext.cache.get(1));
+    }
+
     protected void putAndGetFromCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         NearCacheTestContext nearCacheTestContext = createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);
