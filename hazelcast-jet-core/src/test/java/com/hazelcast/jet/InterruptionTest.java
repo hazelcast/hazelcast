@@ -24,17 +24,18 @@ import com.hazelcast.jet.source.MapSource;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.LockSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -59,7 +60,6 @@ public class InterruptionTest extends JetTestSupport {
     }
 
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast-jet/issues/122
     public void testInterruptSlowApplication() throws Exception {
         int nodeCount = 2;
         HazelcastInstance instance = createCluster(factory, nodeCount);
@@ -72,12 +72,13 @@ public class InterruptionTest extends JetTestSupport {
         dag.addVertex(vertex);
         final Job job = JetEngine.getJob(instance, "testInterrupt", dag);
 
-        AtomicBoolean interrupted = new AtomicBoolean(false);
+        CountDownLatch interrupted = new CountDownLatch(1);
+
         new Thread(() -> {
             try {
                 SlowProcessor.latch.await();
                 job.interrupt().get();
-                interrupted.set(true);
+                interrupted.countDown();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -86,7 +87,29 @@ public class InterruptionTest extends JetTestSupport {
             job.execute().get();
             fail("The job was not interrupted");
         } catch (ExecutionException e) {
-            assertTrue(interrupted.get());
+            assertInstanceOf(InterruptedException.class, e.getCause());
+            assertOpenEventually(interrupted);
+        } finally {
+            job.destroy();
+        }
+    }
+
+    @Test
+    public void testInterruptAlreadyCompletedApplication() throws Exception {
+        int nodeCount = 2;
+        HazelcastInstance instance = createCluster(factory, nodeCount);
+        IMap<Integer, Integer> map = getMap(instance);
+        fillMapWithInts(map, COUNT);
+
+        DAG dag = new DAG();
+        Vertex vertex = createVertex("vertex", TestProcessors.Noop.class);
+        vertex.addSource(new MapSource(map));
+        dag.addVertex(vertex);
+        final Job job = JetEngine.getJob(instance, "testInterrupt", dag);
+
+        try {
+            job.execute().get();
+            job.interrupt().get();
         } finally {
             job.destroy();
         }
@@ -109,8 +132,8 @@ public class InterruptionTest extends JetTestSupport {
             execute(job);
             fail("The job should not execute successfully.");
         } catch (ExecutionException e) {
-            RuntimeException exception = (RuntimeException) e.getCause();
-            assertEquals(ExceptionProcessor.ERROR_MESSAGE, exception.getCause().getMessage());
+            Exception exception = (Exception) e.getCause();
+            assertEquals(ExceptionProcessor.ERROR_MESSAGE, exception.getMessage());
         }
     }
 
@@ -130,8 +153,8 @@ public class InterruptionTest extends JetTestSupport {
             execute(job);
             fail("The job should not execute successfully.");
         } catch (ExecutionException e) {
-            RuntimeException exception = (RuntimeException) e.getCause();
-            assertEquals(ExceptionProcessor.ERROR_MESSAGE, exception.getCause().getMessage());
+            Exception exception = (Exception) e.getCause();
+            assertEquals(ExceptionProcessor.ERROR_MESSAGE, exception.getMessage());
         }
     }
 

@@ -31,7 +31,6 @@ public class VertexRunnerInterruptProcessor implements VertexRunnerPayloadProces
 
     @Override
     public void process(Throwable error) throws Exception {
-        logger.fine("VertexRunnerInterruptProcessor.process");
         this.vertexRunner.interrupt(error);
     }
 }

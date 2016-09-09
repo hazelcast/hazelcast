@@ -34,7 +34,6 @@ public class VertexRunnerInterruptedProcessor implements VertexRunnerPayloadProc
 
     @Override
     public void process(Throwable error) throws Exception {
-        logger.fine("jobManager.handleRunnerInterrupted " + vertexRunner.getVertex().getName());
         jobManager.handleRunnerInterrupted(error);
     }
 }

@@ -17,10 +17,12 @@
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
+import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerInterruptRequest;
+
 import java.util.concurrent.TimeUnit;
 
 public class InterruptJobProcessor implements VertexRunnerPayloadProcessor<Dummy> {
@@ -34,6 +36,10 @@ public class InterruptJobProcessor implements VertexRunnerPayloadProcessor<Dummy
 
     @Override
     public void process(Dummy payload) throws Exception {
+        JobManagerState currentState = jobManager.getStateMachine().currentState();
+        if (currentState != JobManagerState.EXECUTING) {
+            return;
+        }
         jobManager.registerInterruption();
 
         for (VertexRunner runner : jobManager.runners()) {

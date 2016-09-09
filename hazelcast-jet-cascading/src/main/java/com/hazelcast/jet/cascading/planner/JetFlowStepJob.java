@@ -75,7 +75,7 @@ public class JetFlowStepJob extends FlowStepJob<JobConfig> {
                 }
 
                 if (!jobFuture.isDone()) {
-                    job.interrupt();
+                    job.interrupt().get();
                 }
             }
         } catch (Throwable e) {

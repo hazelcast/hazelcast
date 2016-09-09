@@ -106,7 +106,6 @@ public class ParallelCascadePlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //https://github.com/hazelcast/hazelcast-jet/issues/142
   public void testCascadeRaceCondition() throws Throwable
     {
     getPlatform().copyFromLocal( inputFileIps );

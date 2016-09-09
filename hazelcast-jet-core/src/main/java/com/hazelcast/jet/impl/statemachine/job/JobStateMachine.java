@@ -114,6 +114,8 @@ public class JobStateMachine
                     put(
                             JobState.EXECUTION_SUCCESS, LinkedMapBuilder.of(
                                     JobEvent.EXECUTION_START, JobState.EXECUTION_IN_PROGRESS,
+                                    JobEvent.INTERRUPTION_START, JobState.EXECUTION_SUCCESS,
+                                    JobEvent.INTERRUPTION_SUCCESS, JobState.EXECUTION_SUCCESS,
                                     JobEvent.FINALIZATION_START, JobState.FINALIZATION_IN_PROGRESS,
                                     JobEvent.EXECUTION_SUCCESS, JobState.EXECUTION_SUCCESS,
                                     JobEvent.FINALIZATION_SUCCESS, JobState.NEW

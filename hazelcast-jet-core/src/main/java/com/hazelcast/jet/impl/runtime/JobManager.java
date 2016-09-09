@@ -32,9 +32,7 @@ import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.JobException;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
-import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.statemachine.jobmanager.JobManagerStateMachine;
@@ -52,6 +50,7 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -84,7 +83,7 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
     private final ILogger logger;
     private final DiscoveryService discoveryService;
     private final JobContext jobContext;
-    private final StateMachine<JobManagerEvent, JobManagerState, JobManagerResponse> stateMachine;
+    private final JobManagerStateMachine stateMachine;
     private volatile boolean interrupted;
     private volatile Throwable interruptionError;
     private volatile DAG dag;
@@ -198,6 +197,7 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
         runnerCounter.set(0);
         networkTaskCounter.set(0);
         executionMailBox.set(new BasicCompletableFuture<>(jobContext.getNodeEngine(), logger));
+        interruptionFutureHolder.set(null);
     }
 
     /**
@@ -386,6 +386,10 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
      */
     public VertexRunner getRunnerByVertex(Vertex vertex) {
         return vertex2runner.get(vertex);
+    }
+
+    public JobManagerStateMachine getStateMachine() {
+        return stateMachine;
     }
 
     /**

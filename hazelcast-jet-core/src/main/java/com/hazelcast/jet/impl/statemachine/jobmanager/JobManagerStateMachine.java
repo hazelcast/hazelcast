@@ -16,14 +16,15 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager;
 
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerState;
-import com.hazelcast.jet.impl.executor.StateMachineExecutor;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
+
 import java.util.Map;
 
 public class JobManagerStateMachine extends StateMachine<JobManagerEvent, JobManagerState, JobManagerResponse> {
@@ -59,7 +60,8 @@ public class JobManagerStateMachine extends StateMachine<JobManagerEvent, JobMan
                     put(
                             JobManagerState.EXECUTION_SUCCESS, LinkedMapBuilder.of(
                                     JobManagerEvent.EXECUTE, JobManagerState.EXECUTING,
-                                    JobManagerEvent.FINALIZE, JobManagerState.FINALIZED
+                                    JobManagerEvent.FINALIZE, JobManagerState.FINALIZED,
+                                    JobManagerEvent.INTERRUPT_EXECUTION, JobManagerState.EXECUTION_SUCCESS
                             )
                     ).
                     put(

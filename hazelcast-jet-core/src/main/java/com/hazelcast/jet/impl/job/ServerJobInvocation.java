@@ -23,9 +23,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.util.JetUtil.reThrow;
+import java.util.concurrent.CompletableFuture;
 
 public class ServerJobInvocation<T> extends AbstractJobInvocation<JetOperation, T> {
     private final NodeEngine nodeEngine;
@@ -49,7 +48,7 @@ public class ServerJobInvocation<T> extends AbstractJobInvocation<JetOperation, 
 
             @Override
             public void onFailure(Throwable throwable) {
-                completableFuture.completeExceptionally(reThrow(throwable));
+                completableFuture.completeExceptionally(throwable);
             }
         });
         return completableFuture;

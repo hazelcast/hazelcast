@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.job;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -27,6 +26,7 @@ import com.hazelcast.jet.impl.job.deployment.ChunkIterator;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetUtil;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -267,10 +267,7 @@ public abstract class JobClusterService<Payload> {
             }
         }
 
-        if (errors.size() > 1) {
-            throw new CombinedJetException(errors);
-        }
-        if (errors.size() == 1) {
+        if (errors.size() >= 1) {
             throw reThrow(errors.get(0));
         }
     }
