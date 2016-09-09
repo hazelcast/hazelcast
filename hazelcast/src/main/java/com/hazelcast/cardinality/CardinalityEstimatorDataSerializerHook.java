@@ -37,10 +37,9 @@ public class CardinalityEstimatorDataSerializerHook
 
     public static final int AGGREGATE = 0;
     public static final int BATCH_AGGREGATE = 1;
-    public static final int EST_CARDINALITY = 2;
+    public static final int ESTIMATE = 2;
     public static final int AGGREGATE_AND_ESTIMATE = 3;
     public static final int BATCH_AGGREGATE_AND_ESTIMATE = 4;
-
 
     @Override
     public int getFactoryId() {
@@ -57,7 +56,7 @@ public class CardinalityEstimatorDataSerializerHook
                         return new AggregateOperation();
                     case BATCH_AGGREGATE:
                         return new BatchAggregateOperation();
-                    case EST_CARDINALITY:
+                    case ESTIMATE:
                         return new EstimateOperation();
                     case AGGREGATE_AND_ESTIMATE:
                         return new AggregateAndEstimateOperation();

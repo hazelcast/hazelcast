@@ -31,7 +31,7 @@ public class EstimateOperation
 
     @Override
     public int getId() {
-        return CardinalityEstimatorDataSerializerHook.EST_CARDINALITY;
+        return CardinalityEstimatorDataSerializerHook.ESTIMATE;
     }
 
     @Override

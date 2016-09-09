@@ -43,7 +43,7 @@ public class CardinalityEstimatorService
             new ConstructorFunction<String, CardinalityEstimatorContainer>() {
                 @Override
                 public CardinalityEstimatorContainer createNew(String arg) {
-                    return null;
+                    return new CardinalityEstimatorContainer();
                 }
             };
 

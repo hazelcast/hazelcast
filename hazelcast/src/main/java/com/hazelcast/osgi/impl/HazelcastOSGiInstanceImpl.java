@@ -266,8 +266,8 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public ICardinalityEstimator getHyperLogLog(String name) {
-        return delegatedInstance.getHyperLogLog(name);
+    public ICardinalityEstimator getCardinalityEstimator(String name) {
+        return delegatedInstance.getCardinalityEstimator(name);
     }
 
     @Override

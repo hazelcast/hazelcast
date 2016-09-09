@@ -26,6 +26,7 @@ public class AggregateOperation
         extends AbstractCardinalityEstimatorOperation {
 
     private long hash;
+    private boolean changed;
 
     public AggregateOperation() { }
 
@@ -41,7 +42,12 @@ public class AggregateOperation
 
     @Override
     public void run() throws Exception {
-        getCardinalityEstimatorContainer().aggregate(hash);
+        changed = getCardinalityEstimatorContainer().aggregate(hash);
+    }
+
+    @Override
+    public Object getResponse() {
+        return changed;
     }
 
     @Override

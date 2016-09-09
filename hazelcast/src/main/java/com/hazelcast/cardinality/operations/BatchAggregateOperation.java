@@ -26,6 +26,7 @@ public class BatchAggregateOperation
         extends AbstractCardinalityEstimatorOperation {
 
     private long[] values;
+    private boolean changed;
 
     public BatchAggregateOperation() { }
 
@@ -41,7 +42,12 @@ public class BatchAggregateOperation
 
     @Override
     public void run() throws Exception {
-        getCardinalityEstimatorContainer().aggregateAll(values);
+        changed = getCardinalityEstimatorContainer().aggregateAll(values);
+    }
+
+    @Override
+    public Object getResponse() {
+        return changed;
     }
 
     @Override
