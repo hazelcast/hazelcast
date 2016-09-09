@@ -913,5 +913,4 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
             return o1 == o2 ? 0 : o1 > o2 ? -1 : 1;
         }
     }
-
 }
