@@ -26,7 +26,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,11 +33,9 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
@@ -46,6 +43,7 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 public class InterruptionTest extends JetTestSupport {
 
+    public static final int NODE_COUNT = 3;
     private static int COUNT = 10000;
     private TestHazelcastInstanceFactory factory;
 
@@ -61,8 +59,8 @@ public class InterruptionTest extends JetTestSupport {
 
     @Test
     public void testInterruptSlowApplication() throws Exception {
-        int nodeCount = 2;
-        HazelcastInstance instance = createCluster(factory, nodeCount);
+        SlowProcessor.latch = new CountDownLatch(NODE_COUNT * PARALLELISM);
+        HazelcastInstance instance = createCluster(factory, NODE_COUNT);
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -96,8 +94,7 @@ public class InterruptionTest extends JetTestSupport {
 
     @Test
     public void testInterruptAlreadyCompletedApplication() throws Exception {
-        int nodeCount = 2;
-        HazelcastInstance instance = createCluster(factory, nodeCount);
+        HazelcastInstance instance = createCluster(factory, NODE_COUNT);
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -117,8 +114,7 @@ public class InterruptionTest extends JetTestSupport {
 
     @Test
     public void testExceptionInProcessor_whenMultipleNodes() throws Exception {
-        int nodeCount = 3;
-        HazelcastInstance instance = createCluster(factory, nodeCount);
+        HazelcastInstance instance = createCluster(factory, NODE_COUNT);
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -170,7 +166,7 @@ public class InterruptionTest extends JetTestSupport {
 
     public static class SlowProcessor implements Processor {
 
-        private static final CountDownLatch latch = new CountDownLatch(PARALLELISM);
+        private static CountDownLatch latch;
         private boolean started;
 
         @Override
