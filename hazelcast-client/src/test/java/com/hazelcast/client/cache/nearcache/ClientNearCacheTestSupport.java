@@ -657,9 +657,11 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         assertOpenEventually(countDownLatch);
 
         // the Near Cache is filled, we should see some memory costs now
-        if (inMemoryFormat != InMemoryFormat.OBJECT) {
-            assertTrue("The Near Cache is filled, there should be some heap costs",
-                    context.cache.getLocalCacheStatistics().getNearCacheStatistics().getOwnedEntryMemoryCost() > 0);
+        long memoryCosts = context.cache.getLocalCacheStatistics().getNearCacheStatistics().getOwnedEntryMemoryCost();
+        if (inMemoryFormat == InMemoryFormat.OBJECT) {
+            assertEquals("There should be no Near Cache heap costs calculated for InMemoryFormat.OBJECT", 0, memoryCosts);
+        } else {
+            assertTrue("The Near Cache is filled, there should be some heap costs", memoryCosts > 0);
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
