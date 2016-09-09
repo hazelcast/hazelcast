@@ -20,6 +20,7 @@ import com.hazelcast.jet.impl.job.deployment.DeploymentDescriptor;
 import com.hazelcast.jet.impl.job.deployment.DeploymentStorage;
 import com.hazelcast.jet.impl.job.deployment.JetClassLoaderException;
 import com.hazelcast.jet.impl.util.JetUtil;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +37,8 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+
 public class JobClassLoader extends ClassLoader {
     private final List<ProxyClassLoader> loaders = new ArrayList<>();
     private final ProxyClassLoader systemLoader = new SystemLoader();
@@ -49,7 +52,7 @@ public class JobClassLoader extends ClassLoader {
             try {
                 addLoader(new JobUserClassLoader(storage.getResources()));
             } catch (IOException e) {
-                JetUtil.reThrow(e);
+                throw unchecked(e);
             }
             return null;
         });

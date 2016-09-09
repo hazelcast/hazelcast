@@ -18,15 +18,16 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class ChunkedOutputStream extends OutputStream {
     private static final int BUFFER_OFFSET = HeapData.DATA_OFFSET;
@@ -59,7 +60,7 @@ public class ChunkedOutputStream extends OutputStream {
             try {
                 flushBuffer();
             } catch (Exception e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         }
     }

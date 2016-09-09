@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.cascading.JetFlowProcess;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.OutputCollector;
@@ -30,6 +29,8 @@ import com.hazelcast.jet.runtime.TaskContext;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class FlowNodeProcessor implements Processor<Pair<Tuple, Tuple>, Pair<Tuple, Tuple>> {
 
@@ -71,7 +72,7 @@ public class FlowNodeProcessor implements Processor<Pair<Tuple, Tuple>, Pair<Tup
             Integer ordinal = sourceNameToOrdinal.get(sourceName);
             inputSource.process(input.iterator(), ordinal);
         } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
         return true;
     }

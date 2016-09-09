@@ -34,7 +34,6 @@ import com.hazelcast.jet.Sink;
 import com.hazelcast.jet.Source;
 import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.JetPair;
@@ -51,6 +50,8 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class InternalMapTap extends InternalJetTap {
 
@@ -166,7 +167,7 @@ public class InternalMapTap extends InternalJetTap {
                     lastModified = longFuture.get();
                 }
             } catch (InterruptedException | ExecutionException e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         }
         return lastModified;

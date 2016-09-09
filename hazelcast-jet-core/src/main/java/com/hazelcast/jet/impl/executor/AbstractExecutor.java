@@ -18,14 +18,15 @@ package com.hazelcast.jet.impl.executor;
 
 
 import com.hazelcast.jet.impl.util.JetThreadFactory;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
@@ -85,7 +86,7 @@ public abstract class AbstractExecutor<T extends Worker> {
             try {
                 worker.shutdown().get(awaitingTimeOut, TimeUnit.SECONDS);
             } catch (Exception e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         }
     }

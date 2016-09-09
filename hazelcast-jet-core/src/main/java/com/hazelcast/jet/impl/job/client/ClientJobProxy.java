@@ -27,9 +27,12 @@ import com.hazelcast.jet.impl.job.JobClusterService;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetUtil;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class ClientJobProxy extends ClientProxy implements Job {
     private final JobStateMachine jobStateMachine;
@@ -85,7 +88,7 @@ public class ClientJobProxy extends ClientProxy implements Job {
             jobClusterService.destroy(jobStateMachine);
             return true;
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

@@ -19,19 +19,20 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
-import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.dag.sink.AbstractHazelcastWriter;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class ShufflingSender extends AbstractHazelcastWriter {
     private final int vertexRunnerId;
@@ -70,7 +71,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
                 optimizer.write(object, dataOutputStream);
             }
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
         serializer.flushSender();
         JetPacket packet = new JetPacket(taskID, vertexRunnerId, jobNameBytes);
@@ -85,7 +86,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
             try {
                 consume(chunkBuffer);
             } catch (Exception e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
             chunkBuffer.reset();
         }
@@ -122,7 +123,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         try {
             consume(inputChunk);
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -141,7 +142,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
             ringbufferActor.consume(packet);
             ringbufferActor.flush();
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

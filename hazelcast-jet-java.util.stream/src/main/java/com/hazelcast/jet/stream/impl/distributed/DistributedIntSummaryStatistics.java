@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.stream.impl.distributed;
 
-import com.hazelcast.jet.stream.impl.StreamUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.jet.stream.impl.StreamUtil.setPrivateField;
 
 public class DistributedIntSummaryStatistics extends java.util.IntSummaryStatistics implements DataSerializable {
@@ -44,7 +44,7 @@ public class DistributedIntSummaryStatistics extends java.util.IntSummaryStatist
             setPrivateField(this, clazz, "min", in.readInt());
             setPrivateField(this, clazz, "max", in.readInt());
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw StreamUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 }

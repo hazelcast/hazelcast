@@ -22,17 +22,18 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.executor.BalancedExecutor;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.runtime.task.nio.SocketThreadAcceptor;
-import com.hazelcast.jet.impl.executor.BalancedExecutor;
-import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.FinalizeJobRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.jet.impl.util.JetUtil.uncheckedGet;
 
 public class JobService implements RemoteService {
@@ -75,7 +77,7 @@ public class JobService implements RemoteService {
         try {
             this.localJetAddress = new Address(host, this.serverSocketChannel.socket().getLocalPort());
         } catch (UnknownHostException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
 
         this.networkExecutor = new BalancedExecutor(
@@ -181,7 +183,7 @@ public class JobService implements RemoteService {
             }
             throw new RuntimeException("Jet was not able to bind to any port");
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

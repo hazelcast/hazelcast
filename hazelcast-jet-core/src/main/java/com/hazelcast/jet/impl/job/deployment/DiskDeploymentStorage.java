@@ -19,8 +19,8 @@ package com.hazelcast.jet.impl.job.deployment;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.deployment.classloader.ResourceStream;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,6 +30,8 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
 
@@ -54,7 +56,7 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
                 jobPath = Paths.get(deploymentDirectory + File.pathSeparator + "job_" + jobName + "_"
                         + directoryNameCounter++);
             } catch (IOException e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
 
         } while (!jobPath.toFile().exists());
@@ -67,14 +69,14 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
             try {
                 deploymentDirectory = Files.createTempDirectory("hazelcast-jet-").toString();
             } catch (IOException e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         } else {
             Path path = Paths.get(deploymentDirectory);
             try {
                 Files.createDirectories(path);
             } catch (IOException e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         }
         return deploymentDirectory;
@@ -87,7 +89,7 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
             return new ResourceStream(fileInputStream, resource.toURI().toURL().toString());
         } catch (Throwable e) {
             fileInputStream.close();
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -98,7 +100,7 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
             randomAccessFile.seek(offset);
             randomAccessFile.write(chunk.getBytes());
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

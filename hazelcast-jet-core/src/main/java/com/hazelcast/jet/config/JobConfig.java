@@ -19,6 +19,7 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.job.deployment.DeploymentType;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,7 +29,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.jet.impl.util.JetUtil.reThrow;
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
@@ -271,7 +272,7 @@ public class JobConfig implements Serializable {
             try {
                 deploymentConfigs.add(new DeploymentConfig(clazz));
             } catch (IOException e) {
-                throw reThrow(e);
+                throw unchecked(e);
             }
         }
     }
@@ -304,7 +305,7 @@ public class JobConfig implements Serializable {
         try {
             addJar(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -318,7 +319,7 @@ public class JobConfig implements Serializable {
         try {
             addJar(file.toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -332,7 +333,7 @@ public class JobConfig implements Serializable {
             File file = new File(path);
             addJar(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -346,7 +347,7 @@ public class JobConfig implements Serializable {
         try {
             addJar(new File(path).toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -380,7 +381,7 @@ public class JobConfig implements Serializable {
         try {
             addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
 
     }
@@ -395,7 +396,7 @@ public class JobConfig implements Serializable {
         try {
             add(file.toURI().toURL(), id, DeploymentType.DATA);
         } catch (MalformedURLException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -409,7 +410,7 @@ public class JobConfig implements Serializable {
         try {
             addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -424,7 +425,7 @@ public class JobConfig implements Serializable {
         try {
             addResource(file.toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -441,7 +442,7 @@ public class JobConfig implements Serializable {
         try {
             deploymentConfigs.add(new DeploymentConfig(url, id, type));
         } catch (IOException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 

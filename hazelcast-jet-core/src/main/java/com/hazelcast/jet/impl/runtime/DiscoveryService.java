@@ -17,20 +17,22 @@
 package com.hazelcast.jet.impl.runtime;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.impl.runtime.task.nio.SocketReader;
-import com.hazelcast.jet.impl.runtime.task.nio.SocketWriter;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.operation.DiscoveryOperation;
-import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.impl.runtime.task.nio.SocketReader;
+import com.hazelcast.jet.impl.runtime.task.nio.SocketWriter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 /**
  * Abstract discovery-service interface
@@ -89,7 +91,7 @@ public class DiscoveryService {
 
             return memberMap;
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

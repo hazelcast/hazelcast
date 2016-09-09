@@ -20,27 +20,28 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.JetEngine;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.util.UuidUtil;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.jet.impl.util.JetUtil.uncheckedGet;
 
 public final class StreamUtil {
 
@@ -49,28 +50,6 @@ public final class StreamUtil {
     public static final String LIST_PREFIX = "__hz_list_";
 
     private StreamUtil() {
-    }
-
-    public static Object result(Future future) {
-        try {
-            return future.get();
-        } catch (ExecutionException | InterruptedException e) {
-            throw reThrow(e);
-        }
-    }
-
-    public static RuntimeException reThrow(Throwable e) {
-        if (e instanceof ExecutionException) {
-            if (e.getCause() != null) {
-                throw reThrow(e.getCause());
-            } else {
-                throw new RuntimeException(e);
-            }
-        }
-        if (e instanceof RuntimeException) {
-            return (RuntimeException) e;
-        }
-        return new RuntimeException(e);
     }
 
     public static String randomName() {
@@ -87,7 +66,7 @@ public final class StreamUtil {
         config.addClass(classes.toArray(new Class[classes.size()]));
         Job job = JetEngine.getJob(context.getHazelcastInstance(), randomName(), dag, config);
         try {
-            result(job.execute());
+            uncheckedGet(job.execute());
             context.getStreamListeners().forEach(Runnable::run);
         } finally {
             job.destroy();
@@ -175,7 +154,7 @@ public final class StreamUtil {
                 ClientContext context = (ClientContext) method.invoke(object);
                 return context.getHazelcastInstance();
             } catch (Exception e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         }
         throw new IllegalArgumentException(object + " is not of a known proxy type");

@@ -17,15 +17,14 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.runtime.InputChunk;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingbufferWithReferenceStrategy;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
-import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
@@ -34,6 +33,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class RingbufferActor implements Actor {
@@ -123,7 +124,7 @@ public class RingbufferActor implements Actor {
                 this.currentFlushedCount += flushed;
                 return flushed;
             } catch (Exception e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         }
 

@@ -25,7 +25,6 @@ import com.hazelcast.jet.impl.job.deployment.Chunk;
 import com.hazelcast.jet.impl.job.deployment.ChunkIterator;
 import com.hazelcast.jet.impl.statemachine.job.JobEvent;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
-import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.impl.util.JetUtil.reThrow;
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class JobClusterService<Payload> {
@@ -165,7 +164,7 @@ public abstract class JobClusterService<Payload> {
                 }
             }
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
 
         return Collections.unmodifiableMap(cache);
@@ -268,7 +267,7 @@ public abstract class JobClusterService<Payload> {
         }
 
         if (errors.size() >= 1) {
-            throw reThrow(errors.get(0));
+            throw unchecked(errors.get(0));
         }
     }
 
@@ -276,9 +275,9 @@ public abstract class JobClusterService<Payload> {
         try {
             future.get();
         } catch (ExecutionException e) {
-            throw reThrow(e.getCause());
+            throw unchecked(e.getCause());
         } catch (InterruptedException e) {
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -317,7 +316,7 @@ public abstract class JobClusterService<Payload> {
             await(publishEventAndUpdateStateMachine(successEvent, stateMachine));
         } catch (Exception e) {
             await(publishEventAndUpdateStateMachine(failureEvent, stateMachine));
-            throw reThrow(e);
+            throw unchecked(e);
         }
     }
 

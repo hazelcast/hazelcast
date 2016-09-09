@@ -17,11 +17,10 @@
 package com.hazelcast.jet.impl.runtime;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Sink;
 import com.hazelcast.jet.Source;
-import com.hazelcast.jet.runtime.Producer;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
@@ -36,8 +35,8 @@ import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.statemachine.runner.VertexRunnerStateMachine;
 import com.hazelcast.jet.impl.statemachine.runner.processors.VertexRunnerPayloadFactory;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerFinalizedRequest;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Producer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.reflect.Constructor;
@@ -48,6 +47,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static java.util.stream.Collectors.toList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -99,7 +99,7 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
             Constructor<Processor> resultConstructor = findConstructor(classLoader, className, args);
             return resultConstructor.newInstance(args);
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

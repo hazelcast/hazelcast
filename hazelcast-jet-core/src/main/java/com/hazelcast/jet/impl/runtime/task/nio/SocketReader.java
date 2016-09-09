@@ -19,16 +19,16 @@ package com.hazelcast.jet.impl.runtime.task.nio;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.actor.RingbufferActor;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
+import com.hazelcast.jet.impl.data.io.JetPacket;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
-import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 /**
  * Represents abstract task to read from network socket;
@@ -178,7 +180,7 @@ public class SocketReader
             } catch (IOException e) {
                 closeSocket();
             } catch (Exception e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
 
             return true;
@@ -298,7 +300,7 @@ public class SocketReader
         try {
             socketChannel.configureBlocking(false);
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
 
         socketAssigned = true;

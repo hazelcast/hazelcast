@@ -23,6 +23,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.spi.NodeEngine;
+
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -79,7 +80,7 @@ public final class JetUtil {
         }
 
         if (lastError != null) {
-            throw JetUtil.reThrow(lastError);
+            throw unchecked(lastError);
         }
     }
 
@@ -91,7 +92,7 @@ public final class JetUtil {
             out.write(b, 0, in.read(b));
             return out.toByteArray();
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         } finally {
             close(out);
         }
@@ -114,7 +115,7 @@ public final class JetUtil {
 
             return out.toByteArray();
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         } finally {
             if (closeInput) {
                 close(in, out);
@@ -161,16 +162,16 @@ public final class JetUtil {
 
             return offsets;
         } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
-    public static RuntimeException reThrow(Throwable e) {
+    public static RuntimeException unchecked(Throwable e) {
         if (e instanceof ExecutionException) {
             if (e.getCause() != null) {
-                throw reThrow(e.getCause());
+                return unchecked(e.getCause());
             } else {
-                throw new RuntimeException(e);
+                return new RuntimeException(e);
             }
         }
 
@@ -247,7 +248,7 @@ public final class JetUtil {
         try {
             return future.get();
         } catch (InterruptedException | ExecutionException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 }

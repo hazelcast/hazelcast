@@ -19,11 +19,13 @@ package com.hazelcast.jet.strategy;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
+
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 /**
  * A shuffling strategy which shuffles all data to a single node, identified by the given address
@@ -48,7 +50,7 @@ public class SingleMemberDistributionStrategy implements MemberDistributionStrat
             MemberImpl member = new MemberImpl(new Address(host, port), false);
             return Collections.<Member>singletonList(member);
         } catch (UnknownHostException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 }

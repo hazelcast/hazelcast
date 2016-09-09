@@ -22,15 +22,17 @@ import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.JobService;
 import com.hazelcast.jet.impl.util.BooleanHolder;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class SocketThreadAcceptor extends SocketReader {
     private final ServerSocketChannel serverSocketChannel;
@@ -142,7 +144,7 @@ public class SocketThreadAcceptor extends SocketReader {
         try {
             this.serverSocketChannel.close();
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 }

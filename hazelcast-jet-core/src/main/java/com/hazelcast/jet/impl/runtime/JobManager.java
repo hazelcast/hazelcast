@@ -46,7 +46,6 @@ import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionComplete
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionErrorRequest;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionInterruptedRequest;
 import com.hazelcast.jet.impl.util.BasicCompletableFuture;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -60,6 +59,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:methodcount"})
 public class JobManager implements StateMachineRequestProcessor<JobManagerEvent> {
@@ -148,7 +149,7 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
                 }
             }
         } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

@@ -17,19 +17,22 @@
 package com.hazelcast.jet.impl.job;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.Job;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class JobProxy extends AbstractDistributedObject<JobService> implements Job {
     private final String name;
@@ -73,7 +76,7 @@ public class JobProxy extends AbstractDistributedObject<JobService> implements J
             jobClusterService.destroy(jobStateMachine);
             return true;
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

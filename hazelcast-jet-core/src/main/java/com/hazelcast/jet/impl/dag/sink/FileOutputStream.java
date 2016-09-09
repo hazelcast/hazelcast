@@ -17,13 +17,15 @@
 package com.hazelcast.jet.impl.dag.sink;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.util.JetUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class FileOutputStream implements Serializable {
     private static final long serialVersionUID = -396575576353368113L;
@@ -51,7 +53,7 @@ public class FileOutputStream implements Serializable {
                         Charset.forName("UTF-8")
                 );
             } catch (IOException e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
 
             this.closed = false;
@@ -72,7 +74,7 @@ public class FileOutputStream implements Serializable {
         try {
             this.fileWriter.write(data);
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -80,7 +82,7 @@ public class FileOutputStream implements Serializable {
         try {
             this.fileWriter.flush();
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -90,7 +92,7 @@ public class FileOutputStream implements Serializable {
                 this.fileWriter.flush();
                 this.fileWriter.close();
             } catch (IOException e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
 
             this.closed = true;

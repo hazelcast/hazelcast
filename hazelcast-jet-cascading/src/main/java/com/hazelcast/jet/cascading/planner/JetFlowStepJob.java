@@ -27,7 +27,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.statemachine.job.JobState;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.UuidUtil;
 
@@ -37,6 +36,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class JetFlowStepJob extends FlowStepJob<JobConfig> {
     public static final int POLLING_INTERVAL = 100;
@@ -79,7 +80,7 @@ public class JetFlowStepJob extends FlowStepJob<JobConfig> {
                 }
             }
         } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

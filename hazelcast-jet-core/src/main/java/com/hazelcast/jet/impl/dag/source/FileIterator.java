@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.runtime.JetPair;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +28,8 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class FileIterator implements Iterator<Pair<Integer, String>> {
     private String line;
@@ -47,7 +49,7 @@ public class FileIterator implements Iterator<Pair<Integer, String>> {
                 }
             }
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -88,7 +90,7 @@ public class FileIterator implements Iterator<Pair<Integer, String>> {
 
             return true;
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

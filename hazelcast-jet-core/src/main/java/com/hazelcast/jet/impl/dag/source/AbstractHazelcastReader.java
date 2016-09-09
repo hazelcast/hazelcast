@@ -17,20 +17,22 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public abstract class AbstractHazelcastReader<V> implements Producer {
     protected final SettableFuture<Boolean> future = SettableFuture.create();
@@ -148,7 +150,7 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
             try {
                 this.future.get(this.awaitSecondsTime, TimeUnit.SECONDS);
             } catch (Exception e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         } else {
             this.partitionSpecificOpenRunnable.run();
@@ -205,7 +207,7 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
         try {
             future.get();
         } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -301,7 +303,7 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
                     Object[] chunk = this.chunkBuffer;
                     return chunk;
                 } catch (Throwable e) {
-                    throw JetUtil.reThrow(e);
+                    throw unchecked(e);
                 } finally {
                     this.future.reset();
                     this.chunkBuffer = null;

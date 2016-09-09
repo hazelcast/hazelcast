@@ -34,6 +34,8 @@ import com.hazelcast.jet.io.Pair;
 import java.io.IOException;
 import java.util.Iterator;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+
 public class KeyValuePair extends Scheme<JobConfig, Iterator<Pair>,
         OutputCollector<Pair>, Void, Integer> {
 
@@ -113,7 +115,7 @@ public class KeyValuePair extends Scheme<JobConfig, Iterator<Pair>,
                 outputCollector.collect(new JetPair(tuple.getObject(0), ValueTuple.NULL));
             }
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

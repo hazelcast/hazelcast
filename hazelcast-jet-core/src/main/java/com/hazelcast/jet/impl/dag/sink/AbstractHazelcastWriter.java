@@ -18,13 +18,12 @@ package com.hazelcast.jet.impl.dag.sink;
 
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.runtime.DataWriter;
-import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.util.SettableFuture;
+import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.logging.ILogger;
@@ -34,6 +33,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class AbstractHazelcastWriter implements DataWriter {
@@ -129,7 +129,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         try {
             return chunkBuffer.size() > 0 ? consume(chunkBuffer) : 0;
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -175,7 +175,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         try {
             this.future.get(this.awaitInSecondsTime, TimeUnit.SECONDS);
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -198,7 +198,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
                 return false;
             } catch (Exception e) {
-                throw JetUtil.reThrow(e);
+                throw unchecked(e);
             }
         }
     }

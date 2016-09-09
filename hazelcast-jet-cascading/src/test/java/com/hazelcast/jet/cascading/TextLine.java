@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+
 public class TextLine extends Scheme<JobConfig, Iterator<Pair>,
         OutputCollector<Pair>, Void, Integer> {
 
@@ -105,7 +107,7 @@ public class TextLine extends Scheme<JobConfig, Iterator<Pair>,
         try {
             outputCollector.collect(new JetPair(COUNTER.getAndIncrement(), outgoing.getTuple().toString()));
         } catch (Exception e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 

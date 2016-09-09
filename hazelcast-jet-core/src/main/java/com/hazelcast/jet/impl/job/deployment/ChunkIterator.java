@@ -18,12 +18,15 @@ package com.hazelcast.jet.impl.job.deployment;
 
 import com.hazelcast.jet.config.DeploymentConfig;
 import com.hazelcast.jet.impl.util.JetUtil;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public final class ChunkIterator implements Iterator<Chunk> {
     private final int chunkSize;
@@ -51,7 +54,7 @@ public final class ChunkIterator implements Iterator<Chunk> {
         try {
             return hasMoreDeployments() || (streamIsNotNull() && streamHasAvailableBytes());
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
@@ -98,7 +101,7 @@ public final class ChunkIterator implements Iterator<Chunk> {
                 throw new NoSuchElementException();
             }
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw unchecked(e);
         }
     }
 
