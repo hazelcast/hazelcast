@@ -54,5 +54,40 @@ public class TestSerializerHook implements SerializerHook {
         }
     }
 
-    ;
+    public static class TestSerializerWithTypeConstructor implements StreamSerializer {
+
+        private Class<?> clazz;
+
+        public TestSerializerWithTypeConstructor(Class<?> clazz) {
+            this.clazz = clazz;
+        }
+
+        public TestSerializerWithTypeConstructor() {
+        }
+
+        public Class<?> getClazz() {
+            return clazz;
+        }
+
+        @Override
+        public int getTypeId() {
+            return 1001;
+        }
+
+        @Override
+        public void destroy() {
+
+        }
+
+        @Override
+        public void write(ObjectDataOutput out, Object object) throws IOException {
+
+        }
+
+        @Override
+        public Object read(ObjectDataInput in) throws IOException {
+            return null;
+        }
+    }
+
 }
