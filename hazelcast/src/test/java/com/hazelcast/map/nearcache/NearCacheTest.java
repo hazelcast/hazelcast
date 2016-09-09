@@ -51,13 +51,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
-import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -222,8 +220,16 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testHeapCostCalculationWhenConcurrentCacheMisses() {
-        int threadCount = 10;
+    public void testNearCacheMemoryCostCalculation() {
+        testNearCacheMemoryCostCalculation(1);
+    }
+
+    @Test
+    public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses() {
+        testNearCacheMemoryCostCalculation(10);
+    }
+
+    private void testNearCacheMemoryCostCalculation(int threadCount) {
         String mapName = randomName();
 
         Config config = getConfig();
@@ -233,29 +239,8 @@ public class NearCacheTest extends NearCacheTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
 
-        final IMap<Integer, Integer> map = hazelcastInstance.getMap(mapName);
-        populateMap(map, MAX_CACHE_SIZE);
-
-        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
-        Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                populateNearCache(map, MAX_CACHE_SIZE);
-                countDownLatch.countDown();
-            }
-        };
-
-        ExecutorService executorService = newFixedThreadPool(10);
-        for (int i = 0; i < threadCount; i++) {
-            executorService.execute(task);
-        }
-        assertOpenEventually(countDownLatch);
-
-        for (int i = 0; i < MAX_CACHE_SIZE; i++) {
-            map.remove(i);
-        }
-
-        assertEquals(0, map.getLocalMapStats().getHeapCost());
+        IMap<Integer, Integer> map = hazelcastInstance.getMap(mapName);
+        testNearCacheMemoryCostCalculation(map, true, threadCount);
     }
 
     @Test

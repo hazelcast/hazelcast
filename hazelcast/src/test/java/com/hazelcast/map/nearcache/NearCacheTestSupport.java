@@ -39,9 +39,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static java.lang.String.format;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -112,6 +115,56 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
                         stats.getExpirations() >= size);
             }
         });
+    }
+
+    /**
+     * Tests the Near Cache memory cost calculation.
+     *
+     * Depending on the parameters the following memory costs are asserted:
+     * <ul>
+     * <li>{@link NearCacheStats#getOwnedEntryMemoryCost()}</li>
+     * <li>{@link com.hazelcast.monitor.LocalMapStats#getHeapCost()}</li>
+     * </ul>
+     *
+     * @param map         the {@link IMap} with a Near Cache to be tested
+     * @param isMember    determines if the heap costs will be asserted, which are just available for member nodes
+     * @param threadCount the thread count for concurrent population of the Near Cache
+     */
+    protected void testNearCacheMemoryCostCalculation(final IMap<Integer, Integer> map, boolean isMember, int threadCount) {
+        populateMap(map, MAX_CACHE_SIZE);
+
+        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                populateNearCache(map, MAX_CACHE_SIZE);
+                countDownLatch.countDown();
+            }
+        };
+
+        ExecutorService executorService = newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            executorService.execute(task);
+        }
+        assertOpenEventually(countDownLatch);
+
+        // the Near Cache is filled, we should see some memory costs now
+        assertTrue("The Near Cache is filled, there should be some owned entry memory costs",
+                getNearCacheStats(map).getOwnedEntryMemoryCost() > 0);
+        if (isMember && !getBuildInfo().isEnterprise()) {
+            // the heap costs are just calculated on member on-heap maps
+            assertTrue("The Near Cache is filled, there should be some heap costs", map.getLocalMapStats().getHeapCost() > 0);
+        }
+
+        for (int i = 0; i < MAX_CACHE_SIZE; i++) {
+            map.remove(i);
+        }
+
+        // the Near Cache is empty, we shouldn't see memory costs anymore
+        assertEquals("The Near Cache is empty, there should be no owned entry memory costs",
+                0, getNearCacheStats(map).getOwnedEntryMemoryCost());
+        // this assert will work in all scenarios, since the default value should be 0 if no costs are calculated
+        assertEquals("The Near Cache is empty, there should be no heap costs", 0, map.getLocalMapStats().getHeapCost());
     }
 
     protected NearCacheConfig newNearCacheConfigWithEntryCountEviction(EvictionPolicy evictionPolicy, int size) {

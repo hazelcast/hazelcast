@@ -875,6 +875,21 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    public void testNearCacheMemoryCostCalculation() {
+        testNearCacheMemoryCostCalculation(1);
+    }
+
+    @Test
+    public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses() {
+        testNearCacheMemoryCostCalculation(10);
+    }
+
+    private void testNearCacheMemoryCostCalculation(int threadCount) {
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(newNearCacheConfig());
+        testNearCacheMemoryCostCalculation(map, false, threadCount);
+    }
+
+    @Test
     public void testNearCacheInvalidateOnChange() {
         String mapName = randomMapName();
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
