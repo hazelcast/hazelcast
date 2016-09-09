@@ -57,6 +57,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected static final int MAX_IDLE_SECONDS = 1;
 
     protected void testNearCacheEviction(IMap<Integer, Integer> map, int size) {
+        // all Near Cache implementations use the same eviction algorithm, which evicts a single entry
         int expectedEvictions = 1;
 
         // populate map with an extra entry
