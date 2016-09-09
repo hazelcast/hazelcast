@@ -392,6 +392,47 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         testRemove(buildConfig(InMemoryFormat.BINARY));
     }
 
+    private void testRemove(Config config) throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (String key : keys) {
+                    assertEquals("map1 should return value for key " + key, "bar", map1.get(key));
+                    assertEquals("map2 should return value for key " + key, "bar", map2.get(key));
+                }
+            }
+        });
+
+        for (String key : keys) {
+            map2.remove(key);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (String key : keys) {
+                    assertFalse("map1 should not contain key " + key, map1.containsKey(key));
+                    assertFalse("map2 should not contain key " + key, map2.containsKey(key));
+                }
+            }
+        });
+    }
+
     @Test
     public void testContainsKey_returnsFalse_onRemovedKeys() throws Exception {
         HazelcastInstance node = createHazelcastInstance();
@@ -459,49 +500,6 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
                 }
             }
         }, 20);
-    }
-
-    private void testRemove(Config config) throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        final int partitionCount = getPartitionService(instance1).getPartitionCount();
-        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
-
-        for (String key : keys) {
-            map1.put(key, "bar");
-        }
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                for (String key : keys) {
-                    assertEquals("bar", map1.get(key));
-                    assertEquals("bar", map2.get(key));
-                }
-            }
-        });
-
-        for (String key : keys) {
-            map2.remove(key);
-        }
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                for (String key : keys) {
-                    assertFalse(map1.containsKey(key));
-                    assertFalse(map2.containsKey(key));
-                }
-            }
-        });
     }
 
     @Test
