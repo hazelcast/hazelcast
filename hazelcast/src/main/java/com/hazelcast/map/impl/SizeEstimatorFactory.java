@@ -17,9 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.map.impl.nearcache.NearCacheRecord;
-import com.hazelcast.map.impl.nearcache.NearCacheSizeEstimator;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 
@@ -39,19 +36,6 @@ public final class SizeEstimatorFactory {
     public static SizeEstimator createMapSizeEstimator(InMemoryFormat inMemoryFormat) {
         if (BINARY.equals(inMemoryFormat)) {
             return new BinaryMapSizeEstimator();
-        }
-        return ZERO_SIZE_ESTIMATOR;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static SizeEstimator<NearCacheRecord> createNearCacheSizeEstimator(NearCacheConfig nearCacheConfig) {
-        if (nearCacheConfig == null) {
-            return ZERO_SIZE_ESTIMATOR;
-        }
-
-        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        if (BINARY.equals(inMemoryFormat)) {
-            return new NearCacheSizeEstimator();
         }
         return ZERO_SIZE_ESTIMATOR;
     }
