@@ -27,10 +27,6 @@ public enum JobManagerEvent implements StateMachineEvent {
      */
     SUBMIT_DAG,
     /**
-     * Sent on execution plan building failure;
-     */
-    EXECUTION_PLAN_BUILD_FAILED,
-    /**
      * Sent on execution plan ready;
      */
     EXECUTION_PLAN_READY,

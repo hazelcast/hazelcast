@@ -41,8 +41,7 @@ public class JobManagerStateMachine extends StateMachine<JobManagerEvent, JobMan
                     put(
                             JobManagerState.DAG_SUBMITTED, LinkedMapBuilder.of(
                                     JobManagerEvent.FINALIZE, JobManagerState.FINALIZED,
-                                    JobManagerEvent.EXECUTION_PLAN_READY, JobManagerState.READY_FOR_EXECUTION,
-                                    JobManagerEvent.EXECUTION_PLAN_BUILD_FAILED, JobManagerState.INVALID_DAG
+                                    JobManagerEvent.EXECUTION_PLAN_READY, JobManagerState.READY_FOR_EXECUTION
                             )
                     ).
                     put(
