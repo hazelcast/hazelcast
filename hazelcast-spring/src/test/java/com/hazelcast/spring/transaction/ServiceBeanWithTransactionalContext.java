@@ -31,7 +31,21 @@ public class ServiceBeanWithTransactionalContext {
         otherService.put(object);
     }
 
+    public void putUsingOtherBean_sameTransaction_withException(DummyObject object) {
+        otherService.putWithException(object);
+    }
+
     public void putUsingOtherBean_newTransaction(DummyObject object) {
         otherService.putInNewTransaction(object);
+    }
+
+    public void putUsingSameBean_thenOtherBeanThrowingException_sameTransaction(DummyObject object, DummyObject otherObject) {
+        put(object);
+        otherService.putWithException(otherObject);
+    }
+
+    public void putUsingOtherBean_thenSameBeanThrowingException_sameTransaction(DummyObject object, DummyObject otherObject) {
+        otherService.put(otherObject);
+        putWithException(object);
     }
 }
