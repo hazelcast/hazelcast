@@ -50,7 +50,7 @@ class ServiceEndpointResolver
     private final KubernetesClient client;
 
     public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, //
-                                   String serviceLabelValue, String namespace) {
+                                   String serviceLabelValue, String namespace, String kubernetesMaster) {
 
         super(logger);
 
@@ -62,6 +62,7 @@ class ServiceEndpointResolver
         String accountToken = getAccountToken();
         logger.info("Kubernetes Discovery: Bearer Token { " + accountToken + " }");
         Config config = new ConfigBuilder().withOauthToken(accountToken).build();
+		config.setMasterUrl(kubernetesMaster);
         this.client = new DefaultKubernetesClient(config);
     }
 
