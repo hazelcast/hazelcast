@@ -49,8 +49,9 @@ class ServiceEndpointResolver
 
     private final KubernetesClient client;
 
-    public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, //
-                                   String serviceLabelValue, String namespace, String kubernetesMaster) {
+    public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel,
+                                   String serviceLabelValue, String namespace,
+								   String kubernetesMaster, String apiToken) {
 
         super(logger);
 
@@ -59,9 +60,8 @@ class ServiceEndpointResolver
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
 
-        String accountToken = getAccountToken();
-        logger.info("Kubernetes Discovery: Bearer Token { " + accountToken + " }");
-        Config config = new ConfigBuilder().withOauthToken(accountToken).build();
+        logger.info("Kubernetes Discovery: Bearer Token { " + apiToken + " }");
+        Config config = new ConfigBuilder().withOauthToken(apiToken).build();
 		config.setMasterUrl(kubernetesMaster);
         this.client = new DefaultKubernetesClient(config);
     }
@@ -120,19 +120,5 @@ class ServiceEndpointResolver
     @Override
     void destroy() {
         client.close();
-    }
-
-    private String getAccountToken() {
-        try {
-            String tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token";
-            File file = new File(tokenFile);
-            byte[] data = new byte[(int) file.length()];
-            InputStream is = new FileInputStream(file);
-            is.read(data);
-            return new String(data);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Could not get token file", e);
-        }
     }
 }

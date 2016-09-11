@@ -42,7 +42,8 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
                 KubernetesProperties.NAMESPACE, //
                 KubernetesProperties.SERVICE_LABEL_NAME, //
                 KubernetesProperties.SERVICE_LABEL_VALUE,
-				KubernetesProperties.KUBERNETES_MASTER_URL));
+				KubernetesProperties.KUBERNETES_MASTER_URL,
+				KubernetesProperties.KUBERNETES_API_TOKEN));
     }
 
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {

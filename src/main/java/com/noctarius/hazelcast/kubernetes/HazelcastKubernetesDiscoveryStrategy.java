@@ -35,6 +35,7 @@ import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DN
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
@@ -50,6 +51,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
         String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
+        String apiToken = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN, null);
         String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
 		String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, "https://kubernetes.default.svc");
 
@@ -67,7 +69,7 @@ final class HazelcastKubernetesDiscoveryStrategy
             endpointResolver = new DnsEndpointResolver(logger, serviceDns);
         } else {
             endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel,
-					serviceLabelValue, namespace, kubernetesMaster);
+					serviceLabelValue, namespace, kubernetesMaster, apiToken);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
         this.endpointResolver = endpointResolver;
