@@ -61,8 +61,7 @@ class ServiceEndpointResolver
         this.serviceLabelValue = serviceLabelValue;
 
         logger.info("Kubernetes Discovery: Bearer Token { " + apiToken + " }");
-        Config config = new ConfigBuilder().withOauthToken(apiToken).build();
-		config.setMasterUrl(kubernetesMaster);
+        Config config = new ConfigBuilder().withOauthToken(apiToken).withMasterUrl(kubernetesMaster).build();
         this.client = new DefaultKubernetesClient(config);
     }
 
