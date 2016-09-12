@@ -23,13 +23,9 @@ import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
-import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 class MockJoiner extends AbstractJoiner {
 
@@ -51,7 +47,7 @@ class MockJoiner extends AbstractJoiner {
             while (node.isRunning() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 try {
                     Address joinAddress = getJoinAddress();
-                    assertNotNull(joinAddress);
+                    assert joinAddress != null;
 
                     if (node.getThisAddress().equals(joinAddress)) {
                         logger.fine("This node is found as master, no need to join.");
@@ -78,7 +74,7 @@ class MockJoiner extends AbstractJoiner {
         if (!joined) {
             node.shutdown(true);
         }
-        assertTrue(node.getThisAddress() + " should have been joined to " + node.getMasterAddress(), joined);
+        assert joined : node.getThisAddress() + " should have been joined to " + node.getMasterAddress();
     }
 
     private Address getJoinAddress() {
@@ -111,7 +107,7 @@ class MockJoiner extends AbstractJoiner {
                 continue;
             }
 
-            Assert.assertEquals(address, foundNode.getThisAddress());
+            assert address.equals(foundNode.getThisAddress());
 
             if (foundNode.getThisAddress().equals(node.getThisAddress())) {
                 continue;
