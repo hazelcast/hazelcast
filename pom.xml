@@ -48,9 +48,9 @@
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:git://github.com/mrahbar/hazelcast-kubernetes-discovery.git</connection>
-    <developerConnection>scm:git:git@github.com:mrahbar/hazelcast-kubernetes-discovery.git</developerConnection>
-    <url>https://github.com/mrahbar/hazelcast-kubernetes-discovery/</url>
+    <connection>scm:git:git://github.com/noctarius/hazelcast-kubernetes-discovery.git</connection>
+    <developerConnection>scm:git:git@github.com:noctarius/hazelcast-kubernetes-discovery.git</developerConnection>
+    <url>https://github.com/noctarius/hazelcast-kubernetes-discovery/</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -72,7 +72,7 @@
 
   <issueManagement>
     <system>github</system>
-    <url>https://github.com/mrahbar/hazelcast-kubernetes-discovery/issues</url>
+    <url>https://github.com/noctarius/hazelcast-kubernetes-discovery/issues</url>
   </issueManagement>
 
   <ciManagement>

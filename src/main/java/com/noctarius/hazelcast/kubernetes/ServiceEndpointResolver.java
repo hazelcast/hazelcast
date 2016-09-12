@@ -16,19 +16,6 @@
  */
 package com.noctarius.hazelcast.kubernetes;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveryNode;
-import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import io.fabric8.kubernetes.api.model.EndpointAddress;
-import io.fabric8.kubernetes.api.model.EndpointSubset;
-import io.fabric8.kubernetes.api.model.Endpoints;
-import io.fabric8.kubernetes.api.model.EndpointsList;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -38,6 +25,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.util.StringUtil;
+
+import io.fabric8.kubernetes.api.model.EndpointAddress;
+import io.fabric8.kubernetes.api.model.EndpointSubset;
+import io.fabric8.kubernetes.api.model.Endpoints;
+import io.fabric8.kubernetes.api.model.EndpointsList;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 
 class ServiceEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
@@ -60,6 +62,7 @@ class ServiceEndpointResolver
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
 
+		apiToken = !StringUtil.isNullOrEmpty(apiToken) ? apiToken : getAccountToken();
         logger.info("Kubernetes Discovery: Bearer Token { " + apiToken + " }");
         Config config = new ConfigBuilder().withOauthToken(apiToken).withMasterUrl(kubernetesMaster).build();
         this.client = new DefaultKubernetesClient(config);
@@ -119,5 +122,19 @@ class ServiceEndpointResolver
     @Override
     void destroy() {
         client.close();
+    }
+
+    private String getAccountToken() {
+        try {
+            String tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+            File file = new File(tokenFile);
+            byte[] data = new byte[(int) file.length()];
+            InputStream is = new FileInputStream(file);
+            is.read(data);
+            return new String(data);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Could not get token file", e);
+        }
     }
 }
