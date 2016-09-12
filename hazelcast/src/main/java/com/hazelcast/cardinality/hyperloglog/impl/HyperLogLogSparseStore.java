@@ -39,7 +39,6 @@ public class HyperLogLogSparseStore
     private final long pMask;
     private final long pDiffMask;
     private final long pDiffEncodedMask;
-    private final long encodedPDiffFence;
     private final long encodedPDiffShiftBits;
 
     private final Map<Integer, Integer> sparseSet = new HashMap<Integer, Integer>();
@@ -62,8 +61,7 @@ public class HyperLogLogSparseStore
 
         this.pMask = ((1 << p) - 1);
         this.pDiffMask = pPrimeMask ^ pMask;
-        this.pDiffEncodedMask = ((1L << 32) - 1) ^ ((1L << 32 - (P_PRIME - p)) - 1);
-        this.encodedPDiffFence = (1 << (P_PRIME - p));
+        this.pDiffEncodedMask = (1L << (P_PRIME - p)) - 1;
         this.encodedPDiffShiftBits = (int) (32 - (P_PRIME - p));
     }
 
@@ -108,8 +106,7 @@ public class HyperLogLogSparseStore
 
     private byte extractDenseNumOfZerosOf(long hash) {
         if ((hash & 0x1) == 0) {
-            //TODO @tkountis Simplify following bit shifting first AND mask then to lose the fence
-            int pDiff = (int) (((hash & pDiffEncodedMask) >> encodedPDiffShiftBits) | encodedPDiffFence);
+            int pDiff = (int) ((hash >> encodedPDiffShiftBits) & pDiffEncodedMask);
             return (byte) (Integer.numberOfTrailingZeros(pDiff) + 1);
         }
 
