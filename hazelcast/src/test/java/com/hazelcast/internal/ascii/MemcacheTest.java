@@ -166,6 +166,7 @@ public class MemcacheTest extends HazelcastTestSupport {
                 final MemcacheEntry memcacheEntry = (MemcacheEntry) map.get(String.valueOf(i));
                 final MemcacheEntry expected = new MemcacheEntry(prefix + String.valueOf(i), String.valueOf(i * 10).getBytes(), 0);
                 assertEquals(expected, memcacheEntry);
+                assertEquals(prefix + String.valueOf(i), memcacheEntry.getKey());
             }
             final OperationFuture<Boolean> future = client.delete(prefix);
             future.get();
