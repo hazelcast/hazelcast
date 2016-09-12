@@ -59,10 +59,9 @@ public class JobStateMachineRequestProcessor implements StateMachineRequestProce
                 || (event == JobEvent.INTERRUPTION_SUCCESS)
                 ) {
             try {
-                List<Throwable> listeners = invokeListeners();
-
-                if (listeners.size() > 0) {
-                    throw new CombinedJetException(listeners);
+                List<Throwable> exceptions = invokeListeners();
+                if (!exceptions.isEmpty()) {
+                    throw new CombinedJetException(exceptions);
                 }
             } finally {
                 jobContext.getExecutorContext().getNetworkTasks().forEach(Task::destroy);

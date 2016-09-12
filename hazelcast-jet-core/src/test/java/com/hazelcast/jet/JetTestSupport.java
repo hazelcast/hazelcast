@@ -32,6 +32,8 @@ import org.apache.log4j.Level;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+
 public class JetTestSupport extends HazelcastTestSupport {
 
     protected static TestHazelcastFactory hazelcastInstanceFactory;
@@ -88,10 +90,20 @@ public class JetTestSupport extends HazelcastTestSupport {
     }
 
     public static void execute(Job job) throws ExecutionException, InterruptedException {
+        Throwable failure = null;
         try {
             job.execute().get();
+        } catch (Throwable t) {
+            failure = t;
+            throw t;
         } finally {
-            job.destroy();
+            try {
+                job.destroy();
+            } catch (Throwable t) {
+                if (failure == null) {
+                    throw t;
+                }
+            }
         }
     }
 
