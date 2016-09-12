@@ -796,30 +796,59 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testMapClear_clears_localNearCache() {
-        String mapName = randomMapName();
+    public void testMapEvictAll_clearsLocalNearCache() {
+        int size = 1000;
+        final String mapName = randomMapName();
         Config config = createNearCachedMapConfig(mapName);
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = factory.newHazelcastInstance(config);
 
-        final IMap<Integer, Integer> map = instance.getMap(mapName);
-        populateMap(map, 1000);
-        populateNearCache(map, 1000);
+        IMap<Integer, Integer> map = instance1.getMap(mapName);
+        populateMap(map, size);
+        populateNearCache(map, size);
+
+        map.evictAll();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(0, getNearCacheSize(instance1.getMap(mapName)));
+                assertEquals(0, getNearCacheSize(instance2.getMap(mapName)));
+                assertEquals(0, getNearCacheSize(instance3.getMap(mapName)));
+            }
+        });
+    }
+
+    @Test
+    public void testMapClear_clearsLocalNearCache() {
+        int size = 1000;
+        final String mapName = randomMapName();
+        Config config = createNearCachedMapConfig(mapName);
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance1.getMap(mapName);
+        populateMap(map, size);
+        populateNearCache(map, size);
 
         map.clear();
 
-        AssertTask task = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(0, getNearCacheSize(map));
+                assertEquals(0, getNearCacheSize(instance1.getMap(mapName)));
+                assertEquals(0, getNearCacheSize(instance2.getMap(mapName)));
+                assertEquals(0, getNearCacheSize(instance3.getMap(mapName)));
             }
-        };
-
-        assertTrueEventually(task);
+        });
     }
 
     @Test
