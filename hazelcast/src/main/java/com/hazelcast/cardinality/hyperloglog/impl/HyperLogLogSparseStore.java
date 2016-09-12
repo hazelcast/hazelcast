@@ -17,7 +17,7 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLogContext;
+import com.hazelcast.cardinality.hyperloglog.IHyperLogLogCompositeContext;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,7 +49,11 @@ public class HyperLogLogSparseStore
     private final int mPrime;
     private int tempIdx;
 
-    public HyperLogLogSparseStore(final IHyperLogLogContext ctx, final int p) {
+    public HyperLogLogSparseStore(final int p) {
+        this(null, p);
+    }
+
+    public HyperLogLogSparseStore(final IHyperLogLogCompositeContext ctx, final int p) {
         super(ctx, p);
         this.mPrime = 1 << P_PRIME;
         this.sparseToDenseThreshold = 40000;
@@ -147,7 +151,7 @@ public class HyperLogLogSparseStore
             register[index] = (byte) Math.max(register[index], extractDenseNumOfZerosOf(hash));
         }
 
-        return new HyperLogLogDenseStore(getContext(), p, register);
+        return new HyperLogLogDenseStore(p, register);
     }
 
 }

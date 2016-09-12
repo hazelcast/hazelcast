@@ -17,14 +17,14 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLogContext;
+import com.hazelcast.cardinality.hyperloglog.IHyperLogLogCompositeContext;
 
 abstract class AbstractHyperLogLog implements IHyperLogLog {
 
     private static final int LOWER_P_BOUND = 4;
     private static final int UPPER_P_BOUND = 16;
 
-    private final IHyperLogLogContext ctx;
+    private final IHyperLogLogCompositeContext ctx;
 
     // Precision
     final int p;
@@ -32,7 +32,7 @@ abstract class AbstractHyperLogLog implements IHyperLogLog {
 
     private Long cachedEstimate;
 
-    AbstractHyperLogLog(IHyperLogLogContext ctx, int p) {
+    AbstractHyperLogLog(IHyperLogLogCompositeContext ctx, int p) {
         if (p < LOWER_P_BOUND || p > UPPER_P_BOUND) {
             throw new IllegalArgumentException("Precision (p) outside valid range [4..16].");
         }
@@ -56,7 +56,7 @@ abstract class AbstractHyperLogLog implements IHyperLogLog {
         return (long) (m * Math.log(m / (double) numOfEmptyRegs));
     }
 
-    IHyperLogLogContext getContext() {
+    IHyperLogLogCompositeContext getContext() {
         return ctx;
     }
 

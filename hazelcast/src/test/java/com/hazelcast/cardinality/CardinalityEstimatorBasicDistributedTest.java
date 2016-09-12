@@ -16,30 +16,21 @@
 
 package com.hazelcast.cardinality;
 
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogEncType;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-public class CardinalityEstimatorContainer {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class CardinalityEstimatorBasicDistributedTest
+        extends CardinalityEstimatorAbstractTest {
 
-    private static final int DEFAULT_HLL_PRECISION = 14;
-
-    private final IHyperLogLog hll;
-
-    public CardinalityEstimatorContainer() {
-        hll = HyperLogLogEncType.COMPO.build(DEFAULT_HLL_PRECISION);
-    }
-
-
-    public boolean aggregate(long hash) {
-        return hll.aggregate(hash);
-    }
-
-    public boolean aggregateAll(long[] hashes) {
-        return hll.aggregateAll(hashes);
-    }
-
-    public long estimate() {
-        return hll.estimate();
+    @Override
+    protected HazelcastInstance[] newInstances() {
+        return createHazelcastInstanceFactory(2).newInstances();
     }
 
 }

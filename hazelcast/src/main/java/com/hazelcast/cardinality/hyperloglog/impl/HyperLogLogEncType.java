@@ -17,23 +17,58 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLogContext;
+import com.hazelcast.cardinality.hyperloglog.IHyperLogLogCompositeContext;
 
 public enum HyperLogLogEncType {
 
     SPARSE {
         @Override
-        public IHyperLogLog build(IHyperLogLogContext hll, int p) {
-            return new HyperLogLogSparseStore(hll, p);
+        public IHyperLogLog build(int p) {
+            return new HyperLogLogSparseStore(p);
         }
     },
     DENSE {
         @Override
-        public IHyperLogLog build(IHyperLogLogContext hll, int p) {
-            return new HyperLogLogDenseStore(hll, p);
+        public IHyperLogLog build(int p) {
+            return new HyperLogLogDenseStore(p);
+        }
+    },
+    COMPO {
+        @Override
+        public IHyperLogLog build(int p) {
+            return new CompositeHyperLogLogStore(p);
         }
     };
 
-    public abstract IHyperLogLog build(final IHyperLogLogContext hll, final int p);
+    public abstract IHyperLogLog build(final int p);
 
+    private class CompositeHyperLogLogStore implements IHyperLogLog, IHyperLogLogCompositeContext {
+
+        private IHyperLogLog store;
+
+        CompositeHyperLogLogStore(final int p) {
+            store = new HyperLogLogSparseStore(this, p);
+        }
+
+        @Override
+        public long estimate() {
+            return store.estimate();
+        }
+
+        @Override
+        public boolean aggregate(long hash) {
+            return store.aggregate(hash);
+        }
+
+        @Override
+        public boolean aggregateAll(long[] hashes) {
+            return store.aggregateAll(hashes);
+        }
+
+        @Override
+        public void setStore(IHyperLogLog store) {
+            this.store = store;
+        }
+
+    }
 }

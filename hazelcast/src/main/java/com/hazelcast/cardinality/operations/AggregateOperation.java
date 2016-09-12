@@ -19,11 +19,12 @@ package com.hazelcast.cardinality.operations;
 import com.hazelcast.cardinality.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 public class AggregateOperation
-        extends AbstractCardinalityEstimatorOperation {
+        extends CardinalityEstimatorBackupAwareOperation {
 
     private long hash;
     private boolean changed;
@@ -48,6 +49,11 @@ public class AggregateOperation
     @Override
     public Object getResponse() {
         return changed;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new AggregateBackupOperation(name, hash);
     }
 
     @Override

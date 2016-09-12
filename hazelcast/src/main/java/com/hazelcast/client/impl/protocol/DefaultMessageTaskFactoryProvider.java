@@ -1,6 +1,11 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
+import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAggregateAllAndEstimateMessageTask;
+import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAggregateAllMessageTask;
+import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAggregateAndEstimateMessageTask;
+import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAggregateMessageTask;
+import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorEstimateMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
@@ -1668,7 +1673,33 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         };
 //endregion
-
+//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.cardinality
+        factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CardinalityEstimatorAggregateMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateAndEstimateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CardinalityEstimatorAggregateAndEstimateMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateAllCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CardinalityEstimatorAggregateAllMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateAllAndEstimateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CardinalityEstimatorAggregateAllAndEstimateMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CardinalityEstimatorEstimateMessageTask(clientMessage, node, connection);
+            }
+        };
+//endregion
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

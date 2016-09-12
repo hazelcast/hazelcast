@@ -18,31 +18,31 @@ package com.hazelcast.core;
 
 public interface ICardinalityEstimator {
 
-    boolean aggregateHash(long hash);
+    boolean aggregate(long hash);
 
-    boolean aggregateHashes(long[] hashes);
+    boolean aggregateAll(long[] hashes);
 
-    long aggregateHashAndEstimate(long hash);
+    long aggregateAndEstimate(long hash);
 
-    long aggregateHashesAndEstimate(long[] hashes);
+    long aggregateAllAndEstimate(long[] hashes);
 
     boolean aggregateString(String value);
 
-    boolean aggregateStrings(String[] values);
+    boolean aggregateAllStrings(String[] values);
 
     long estimate();
 
-    ICompletableFuture<Boolean> aggregateHashAsync(long hash);
+    ICompletableFuture<Boolean> aggregateAsync(long hash);
 
-    ICompletableFuture<Boolean> aggregateHashesAsync(long[] hashes);
+    ICompletableFuture<Boolean> aggregateAllAsync(long[] hashes);
 
-    ICompletableFuture<Long> aggregateHashAndEstimateAsync(long hash);
+    ICompletableFuture<Long> aggregateAndEstimateAsync(long hash);
 
-    ICompletableFuture<Long> aggregateHashesAndEstimateAsync(long[] hashes);
+    ICompletableFuture<Long> aggregateAllAndEstimateAsync(long[] hashes);
 
     ICompletableFuture<Boolean> aggregateStringAsync(String value);
 
-    ICompletableFuture<Boolean> aggregateStringsAsync(String[] values);
+    ICompletableFuture<Boolean> aggregateAllStringsAsync(String[] values);
 
     ICompletableFuture<Long> estimateAsync();
 

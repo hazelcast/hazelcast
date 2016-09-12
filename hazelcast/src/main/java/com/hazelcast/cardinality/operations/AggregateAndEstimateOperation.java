@@ -20,11 +20,12 @@ import com.hazelcast.cardinality.CardinalityEstimatorContainer;
 import com.hazelcast.cardinality.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 public class AggregateAndEstimateOperation
-        extends AbstractCardinalityEstimatorOperation {
+        extends CardinalityEstimatorBackupAwareOperation {
 
     private long hash;
     private long estimate;
@@ -63,5 +64,10 @@ public class AggregateAndEstimateOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         hash = in.readLong();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new AggregateBackupOperation(name, hash);
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.ICardinalityEstimator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IAtomicLong;
@@ -205,6 +206,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public ISemaphore getSemaphore(String name) {
         return getClient().getSemaphore(name);
+    }
+
+    @Override
+    public ICardinalityEstimator getCardinalityEstimator(String name) {
+        return getClient().getCardinalityEstimator(name);
     }
 
     @Override

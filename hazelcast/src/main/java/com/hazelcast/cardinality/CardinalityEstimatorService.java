@@ -82,16 +82,19 @@ public class CardinalityEstimatorService
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        System.out.println("Replicating");
         return null;
     }
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
+        System.out.println("Commit");
         //TODO @tkountis
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
+        System.out.println("Rollback");
         //TODO @tkountis
     }
 

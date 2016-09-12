@@ -16,8 +16,6 @@
 
 package com.hazelcast.cardinality.hyperloglog.impl;
 
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLogContext;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -776,12 +774,12 @@ public class HyperLogLogDenseStore
     private final double[] invPowLookup;
     private int numOfEmptyRegs;
 
-    public HyperLogLogDenseStore(final IHyperLogLogContext ctx, final int p) {
-        this(ctx, p, null);
+    public HyperLogLogDenseStore(final int p) {
+        this(p, null);
     }
 
-    public HyperLogLogDenseStore(final IHyperLogLogContext ctx, final int p, final byte[] register) {
-        super(ctx, p);
+    public HyperLogLogDenseStore(final int p, final byte[] register) {
+        super(null, p);
         this.register = register != null ? register : new byte[m];
         this.invPowLookup = new double[64 - p + 1];
         this.numOfEmptyRegs = m;

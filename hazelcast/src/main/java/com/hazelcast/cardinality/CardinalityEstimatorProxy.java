@@ -52,23 +52,23 @@ public class CardinalityEstimatorProxy
     }
 
     @Override
-    public boolean aggregateHash(long hash) {
-        return aggregateHashAsync(hash).join();
+    public boolean aggregate(long hash) {
+        return aggregateAsync(hash).join();
     }
 
     @Override
-    public boolean aggregateHashes(long[] hashes) {
-        return aggregateHashesAsync(hashes).join();
+    public boolean aggregateAll(long[] hashes) {
+        return aggregateAllAsync(hashes).join();
     }
 
     @Override
-    public long aggregateHashAndEstimate(long hash) {
-        return aggregateHashAndEstimateAsync(hash).join();
+    public long aggregateAndEstimate(long hash) {
+        return aggregateAndEstimateAsync(hash).join();
     }
 
     @Override
-    public long aggregateHashesAndEstimate(long[] hashes) {
-        return aggregateHashesAndEstimateAsync(hashes).join();
+    public long aggregateAllAndEstimate(long[] hashes) {
+        return aggregateAllAndEstimateAsync(hashes).join();
     }
 
     @Override
@@ -77,8 +77,8 @@ public class CardinalityEstimatorProxy
     }
 
     @Override
-    public boolean aggregateStrings(String[] values) {
-        return aggregateStringsAsync(values).join();
+    public boolean aggregateAllStrings(String[] values) {
+        return aggregateAllStringsAsync(values).join();
     }
 
     @Override
@@ -87,28 +87,28 @@ public class CardinalityEstimatorProxy
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> aggregateHashAsync(long hash) {
+    public InternalCompletableFuture<Boolean> aggregateAsync(long hash) {
         Operation operation = new AggregateOperation(name, hash)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> aggregateHashesAsync(long[] hashes) {
+    public InternalCompletableFuture<Boolean> aggregateAllAsync(long[] hashes) {
         Operation operation = new BatchAggregateOperation(name, hashes)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
 
     @Override
-    public InternalCompletableFuture<Long> aggregateHashAndEstimateAsync(long hash) {
+    public InternalCompletableFuture<Long> aggregateAndEstimateAsync(long hash) {
         Operation operation = new AggregateAndEstimateOperation(name, hash)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
 
     @Override
-    public InternalCompletableFuture<Long> aggregateHashesAndEstimateAsync(long[] hashes) {
+    public InternalCompletableFuture<Long> aggregateAllAndEstimateAsync(long[] hashes) {
         Operation operation = new BatchAggregateAndEstimateOperation(name, hashes)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
@@ -119,11 +119,11 @@ public class CardinalityEstimatorProxy
         byte[] bytes = value.getBytes();
         long hash = HashUtil.MurmurHash3_x64_64(bytes, 0, bytes.length);
 
-        return aggregateHashAsync(hash);
+        return aggregateAsync(hash);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> aggregateStringsAsync(String[] values) {
+    public InternalCompletableFuture<Boolean> aggregateAllStringsAsync(String[] values) {
         long[] hashes = new long[values.length];
 
         int i = 0;
@@ -132,7 +132,7 @@ public class CardinalityEstimatorProxy
             hashes[i++] = HashUtil.MurmurHash3_x64_64(bytes, 0, bytes.length);
         }
 
-        return aggregateHashesAsync(hashes);
+        return aggregateAllAsync(hashes);
     }
 
     @Override

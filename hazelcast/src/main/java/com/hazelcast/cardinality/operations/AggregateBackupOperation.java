@@ -20,54 +20,50 @@ import com.hazelcast.cardinality.CardinalityEstimatorContainer;
 import com.hazelcast.cardinality.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-public class BatchAggregateAndEstimateOperation
-        extends CardinalityEstimatorBackupAwareOperation {
+public class AggregateBackupOperation
+        extends AbstractCardinalityEstimatorOperation
+        implements BackupOperation {
 
-    private long[] values;
-    private long estimate;
+    private long[] hashes;
 
-    public BatchAggregateAndEstimateOperation() { }
-
-    public BatchAggregateAndEstimateOperation(String name, long[] values) {
-        super(name);
-        this.values = values;
+    public AggregateBackupOperation() {
     }
 
-    @Override
-    public int getId() {
-        return CardinalityEstimatorDataSerializerHook.BATCH_AGGREGATE_AND_ESTIMATE;
+    public AggregateBackupOperation(String name, long hash) {
+        super(name);
+        this.hashes = new long[] { hash };
+    }
+
+    public AggregateBackupOperation(String name, long[] hashes) {
+        super(name);
+        this.hashes = hashes;
     }
 
     @Override
     public void run() throws Exception {
-        CardinalityEstimatorContainer est = getCardinalityEstimatorContainer();
-        est.aggregateAll(values);
-        estimate = est.estimate();
+        CardinalityEstimatorContainer container = getCardinalityEstimatorContainer();
+        container.aggregateAll(hashes);
     }
 
     @Override
-    public Object getResponse() {
-        return estimate;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new AggregateBackupOperation(name, values);
+    public int getId() {
+        return CardinalityEstimatorDataSerializerHook.AGGREGATE_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLongArray(values);
+        out.writeLongArray(hashes);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        values = in.readLongArray();
+        hashes = in.readLongArray();
     }
+
 }

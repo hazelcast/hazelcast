@@ -16,8 +16,14 @@
 
 package com.hazelcast.cardinality.hyperloglog;
 
-public interface IHyperLogLogContext {
+import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogSparseStore;
 
-    void setStore(IHyperLogLog store);
+public class HyperLogLogSparseStoreTest
+        extends HyperLogLogAbstractTest {
+
+    @Override
+    public IHyperLogLog createStore() {
+        return new HyperLogLogSparseStore(14);
+    }
 
 }
