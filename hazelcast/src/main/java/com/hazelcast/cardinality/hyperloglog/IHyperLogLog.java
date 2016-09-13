@@ -16,6 +16,9 @@
 
 package com.hazelcast.cardinality.hyperloglog;
 
+import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogEncType;
+import com.hazelcast.nio.serialization.DataSerializable;
+
 /**
  * IHyperLogLog is a redundant and highly available distributed data-structure used for cardinality estimation
  * purposes on unique items in significantly sized data cultures. IHyperLogLog uses P^2 byte registers for storage
@@ -28,7 +31,7 @@ package com.hazelcast.cardinality.hyperloglog;
  * </ul>
  *
  */
-public interface IHyperLogLog {
+public interface IHyperLogLog extends DataSerializable {
 
     /**
      * Computes a new estimate for the current status of the registers.
@@ -53,5 +56,11 @@ public interface IHyperLogLog {
      * @return boolean flag when the underlying registers got modified, meaning a new estimate can be computed.
      */
     boolean aggregateAll(long[] hashes);
+
+    /**
+     * Returns the encoding type of this instance; see: {@link HyperLogLogEncType}
+     * @return {@link HyperLogLogEncType}
+     */
+    HyperLogLogEncType getEncodingType();
 
 }

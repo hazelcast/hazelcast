@@ -784,13 +784,8 @@ public class HyperLogLogDenseStore
     public HyperLogLogDenseStore(final int p, final byte[] register) {
         super(null, p);
         this.invPowLookup = new double[64 - p + 1];
-        init(p, register);
-    }
-
-    private void init(final int p, final byte[] register) {
-        init(p);
-        this.register = register != null ? register : new byte[m];
         this.numOfEmptyRegs = m;
+        this.register = register != null ? register : new byte[m];
         this.prePopulateInvPowLookup();
     }
 
@@ -831,9 +826,13 @@ public class HyperLogLogDenseStore
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        int p = in.readInt();
-        byte[] reg = in.readByteArray();
-        init(p, reg);
+        init(in.readInt());
+        this.register = in.readByteArray();
+    }
+
+    @Override
+    public HyperLogLogEncType getEncodingType() {
+        return HyperLogLogEncType.DENSE;
     }
 
     private double alpha() {

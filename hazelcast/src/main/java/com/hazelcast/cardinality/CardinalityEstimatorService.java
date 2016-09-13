@@ -16,6 +16,7 @@
 
 package com.hazelcast.cardinality;
 
+import com.hazelcast.cardinality.operations.ReplicationOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -23,12 +24,18 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class CardinalityEstimatorService
@@ -82,20 +89,55 @@ public class CardinalityEstimatorService
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        System.out.println("Replicating");
-        return null;
+        if (event.getReplicaIndex() > 1) {
+            return null;
+        }
+
+        Map<String, CardinalityEstimatorContainer> data = new HashMap<String, CardinalityEstimatorContainer>();
+        int partitionId = event.getPartitionId();
+        for (Map.Entry<String, CardinalityEstimatorContainer> containerEntry : containers.entrySet()) {
+            String name = containerEntry.getKey();
+            if (partitionId == getPartitionId(name)) {
+                data.put(name, containerEntry.getValue());
+            }
+        }
+
+        return data.isEmpty() ? null : new ReplicationOperation(data);
     }
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
-        System.out.println("Commit");
-        //TODO @tkountis
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            int thresholdReplicaIndex = event.getNewReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(event.getPartitionId());
+            }
+        }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
-        System.out.println("Rollback");
-        //TODO @tkountis
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            int thresholdReplicaIndex = event.getCurrentReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(event.getPartitionId());
+            }
+        }
     }
 
+    private void clearPartitionReplica(int partitionId) {
+        final Iterator<String> iterator = containers.keySet().iterator();
+        while (iterator.hasNext()) {
+            String name = iterator.next();
+            if (getPartitionId(name) == partitionId) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private int getPartitionId(String name) {
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        String partitionKey = getPartitionKey(name);
+        return partitionService.getPartitionId(partitionKey);
+    }
 }

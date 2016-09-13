@@ -22,6 +22,7 @@ import com.hazelcast.cardinality.operations.AggregateOperation;
 import com.hazelcast.cardinality.operations.BatchAggregateAndEstimateOperation;
 import com.hazelcast.cardinality.operations.BatchAggregateOperation;
 import com.hazelcast.cardinality.operations.EstimateOperation;
+import com.hazelcast.cardinality.operations.ReplicationOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -42,6 +43,7 @@ public final class CardinalityEstimatorDataSerializerHook
     public static final int AGGREGATE_AND_ESTIMATE = 3;
     public static final int BATCH_AGGREGATE_AND_ESTIMATE = 4;
     public static final int AGGREGATE_BACKUP = 5;
+    public static final int REPLICATION = 6;
 
     @Override
     public int getFactoryId() {
@@ -66,6 +68,8 @@ public final class CardinalityEstimatorDataSerializerHook
                         return new BatchAggregateAndEstimateOperation();
                     case AGGREGATE_BACKUP:
                         return new AggregateBackupOperation();
+                    case REPLICATION:
+                        return new ReplicationOperation();
                     default:
                         return null;
                 }

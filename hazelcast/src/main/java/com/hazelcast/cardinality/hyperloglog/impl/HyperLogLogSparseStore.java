@@ -17,7 +17,10 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,16 +38,16 @@ public class HyperLogLogSparseStore
     private static final long P_PRIME = 25;
     private static final long P_PRIME_MASK = (1 << P_PRIME) - 1;
 
-    private final long pMask;
-    private final long pDiffMask;
-    private final long pDiffEncodedMask;
-    private final long encodedPDiffShiftBits;
+    private long pMask;
+    private long pDiffMask;
+    private long pDiffEncodedMask;
+    private long encodedPDiffShiftBits;
 
     private final Map<Integer, Integer> sparseSet = new HashMap<Integer, Integer>();
-    private final int[] temp;
-    private final int defaultTempSetCapacity;
-    private final int sparseToDenseThreshold;
-    private final int mPrime;
+    private int[] temp;
+    private int defaultTempSetCapacity;
+    private int sparseToDenseThreshold;
+    private int mPrime;
     private int tempIdx;
 
     public HyperLogLogSparseStore(final int p) {
@@ -55,10 +58,8 @@ public class HyperLogLogSparseStore
         super(ctx, p);
     }
 
-    @Override
     protected void init(int p) {
         super.init(p);
-        
         this.mPrime = 1 << P_PRIME;
         this.sparseToDenseThreshold = 40000;
         this.defaultTempSetCapacity = (int) (sparseToDenseThreshold * .25);
@@ -94,6 +95,31 @@ public class HyperLogLogSparseStore
         }
 
         return cachedEstimate;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        mergeAndResetTmp();
+        out.writeInt(p);
+        out.writeInt(sparseSet.size());
+        for (Map.Entry<Integer, Integer> entry : sparseSet.entrySet()) {
+            out.writeInt(entry.getKey());
+            out.writeInt(entry.getValue());
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        init(in.readInt());
+        int sz = in.readInt();
+        for (int i = 0; i < sz; i++) {
+            sparseSet.put(in.readInt(), in.readInt());
+        }
+    }
+
+    @Override
+    public HyperLogLogEncType getEncodingType() {
+        return HyperLogLogEncType.SPARSE;
     }
 
     private int encodeHash(long hash) {

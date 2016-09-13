@@ -17,6 +17,10 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 public enum HyperLogLogEncType {
 
@@ -69,6 +73,20 @@ public enum HyperLogLogEncType {
             this.store = store;
         }
 
+        @Override
+        public HyperLogLogEncType getEncodingType() {
+            return COMPO;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            store.writeData(out);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            store.readData(in);
+        }
     }
 }
 

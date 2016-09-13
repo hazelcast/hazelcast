@@ -18,17 +18,29 @@ package com.hazelcast.cardinality;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
 import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogEncType;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public class CardinalityEstimatorContainer {
+import java.io.IOException;
+
+public class CardinalityEstimatorContainer implements DataSerializable {
 
     private static final int DEFAULT_HLL_PRECISION = 14;
 
-    private final IHyperLogLog hll;
+    private IHyperLogLog hll;
 
-    CardinalityEstimatorContainer() {
+    public CardinalityEstimatorContainer() {
         hll = HyperLogLogEncType.COMPO.build(DEFAULT_HLL_PRECISION);
     }
 
+    public IHyperLogLog getStore() {
+        return hll;
+    }
+
+    public void setStore(IHyperLogLog hll) {
+        this.hll = hll;
+    }
 
     public boolean aggregate(long hash) {
         return hll.aggregate(hash);
@@ -42,4 +54,16 @@ public class CardinalityEstimatorContainer {
         return hll.estimate();
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(hll.getEncodingType().name());
+        hll.writeData(out);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        IHyperLogLog store = HyperLogLogEncType.valueOf(in.readUTF()).build(DEFAULT_HLL_PRECISION);
+        store.readData(in);
+        hll = store;
+    }
 }
