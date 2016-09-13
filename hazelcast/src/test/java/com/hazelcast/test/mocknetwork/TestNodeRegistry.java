@@ -23,6 +23,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -32,11 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public final class TestNodeRegistry {
-
-    private static void verifyInvariant(boolean check, String msg) {
-        if (!check) throw new AssertionError(msg);
-    }
+public final class TestNodeRegistry extends HazelcastTestSupport {
 
     private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<Address, Node>(10);
     private final Collection<Address> joinAddresses;

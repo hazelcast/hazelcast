@@ -27,11 +27,9 @@ import com.hazelcast.util.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 
-class MockJoiner extends AbstractJoiner {
+import static com.hazelcast.test.HazelcastTestSupport.verifyInvariant;
 
-    private static void verifyInvariant(boolean check, String msg) {
-        if (!check) throw new AssertionError(msg);
-    }
+class MockJoiner extends AbstractJoiner {
 
     private final TestNodeRegistry registry;
 
