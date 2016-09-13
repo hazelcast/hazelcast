@@ -36,7 +36,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
@@ -67,9 +67,8 @@ public class Reducer {
                 .args(combiner, Distributed.Function.<T>identity())
                 .taskCount(1)
                 .build();
-        edgeBuilder(accumulatorVertex, combinerVertex)
-                .addToDAG(dag)
-                .distributed(new SinglePartitionDistributionStrategy(randomName()));
+        dag.addEdge(newEdge(accumulatorVertex, combinerVertex)
+                .distributed(new SinglePartitionDistributionStrategy(randomName())));
         return combinerVertex;
     }
 
@@ -113,9 +112,7 @@ public class Reducer {
 
         Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toPairMapper());
         if (previous != accumulatorVertex) {
-            edgeBuilder(previous, accumulatorVertex)
-                    .addToDAG(dag)
-                    .build();
+            dag.addEdge(newEdge(previous, accumulatorVertex));
         }
         return accumulatorVertex;
     }
@@ -129,9 +126,7 @@ public class Reducer {
 
         Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toPairMapper());
         if (previous != accumulatorVertex) {
-            edgeBuilder(previous, accumulatorVertex)
-                    .addToDAG(dag)
-                    .build();
+            dag.addEdge(newEdge(previous, accumulatorVertex));
         }
         return accumulatorVertex;
     }

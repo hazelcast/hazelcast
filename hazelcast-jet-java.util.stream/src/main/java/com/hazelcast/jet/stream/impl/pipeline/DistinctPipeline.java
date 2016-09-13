@@ -26,7 +26,7 @@ import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.DistinctProcessor;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -48,9 +48,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
                     .build();
             Vertex previous = upstream.buildDAG(dag, distinct, keyMapper);
             if (previous != distinct) {
-                edgeBuilder(previous, distinct)
-                        .addToDAG(dag)
-                        .build();
+                dag.addEdge(newEdge(previous, distinct));
             }
             return distinct;
         }
@@ -63,9 +61,8 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag, distinct, keyMapper);
 
         if (previous != distinct) {
-            edgeBuilder(previous, distinct)
-                    .addToDAG(dag)
-                    .partitioned();
+            dag.addEdge(newEdge(previous, distinct)
+                    .partitioned());
         }
 
         Vertex combiner = vertexBuilder(DistinctProcessor.class)
@@ -73,10 +70,9 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
                 .args(defaultFromPairMapper(), toPairMapper)
                 .build();
 
-        edgeBuilder(distinct, combiner)
-                .addToDAG(dag)
+        dag.addEdge(newEdge(distinct, combiner)
                 .partitioned()
-                .distributed();
+                .distributed());
 
         return combiner;
     }

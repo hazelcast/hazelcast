@@ -29,7 +29,7 @@ import com.hazelcast.jet.stream.impl.processor.AnyMatchProcessor;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
@@ -52,9 +52,7 @@ public class Matcher {
                 .build();
         Vertex previous = upstream.buildDAG(dag, vertex, toPairMapper());
         if (previous != vertex) {
-            edgeBuilder(previous, vertex)
-                    .addToDAG(dag)
-                    .build();
+            dag.addEdge(newEdge(previous, vertex));
         }
         IList<Boolean> results = execute(dag, vertex);
         boolean result = anyMatch(results);

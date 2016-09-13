@@ -61,7 +61,6 @@ public class JobSubmitOperation extends AsyncJetOperation {
 
             readyFuture.andThen(new JobManagerRequestCallback(JobSubmitOperation.this,
                     "Unable to submit DAG", () -> {
-                jobManager.setDag(dag);
                 sendResponse(true);
             }));
         }));

@@ -49,39 +49,6 @@ public class VertexTest {
     }
 
     @Test
-    public void testVertexInput() throws Exception {
-        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
-        Vertex input = createVertex("input", TestProcessors.Noop.class);
-
-        Edge edge = new Edge("e1", input, v1);
-        v1.addInputVertex(input, edge);
-
-        List<Vertex> inputVertices = v1.getInputVertices();
-        List<Edge> inputEdges = v1.getInputEdges();
-        assertEquals(1, inputVertices.size());
-        assertEquals(1, inputEdges.size());
-        assertEquals(input, inputVertices.iterator().next());
-        assertEquals(edge, inputEdges.iterator().next());
-    }
-
-    @Test
-    public void testVertexOutput() throws Exception {
-        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
-        Vertex output = createVertex("output", TestProcessors.Noop.class);
-
-        Edge edge = new Edge("e1", v1, output);
-        v1.addOutputVertex(output, edge);
-
-        List<Vertex> outputVertices = v1.getOutputVertices();
-        List<Edge> outputEdges = v1.getOutputEdges();
-        assertEquals(1, outputVertices.size());
-        assertEquals(1, outputEdges.size());
-        assertEquals(output, outputVertices.iterator().next());
-        assertEquals(edge, outputEdges.iterator().next());
-
-    }
-
-    @Test
     public void testVertexSources() throws Exception {
         Vertex vertex = createVertex("vertex", TestProcessors.Noop.class);
 

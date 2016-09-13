@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.dag;
+package com.hazelcast.jet;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.DAG;
@@ -102,10 +102,10 @@ public class DAGTest {
         DAG dag = new DAG();
         Vertex vertex = createVertex("v1", TestProcessors.Noop.class);
         Vertex output = createVertex("output", TestProcessors.Noop.class);
-        vertex.addOutputVertex(output, new Edge("e1", vertex, output));
         vertex.addSink(new FileSink("output"));
         dag.addVertex(vertex);
         dag.addVertex(output);
+        dag.addEdge(new Edge("e1", vertex, output));
         dag.validate();
     }
 
@@ -114,10 +114,10 @@ public class DAGTest {
         DAG dag = new DAG();
         Vertex vertex = createVertex("v1", TestProcessors.Noop.class);
         Vertex input = createVertex("input", TestProcessors.Noop.class);
-        vertex.addInputVertex(input, new Edge("e1", input, vertex));
         vertex.addSource(new FileSource("input"));
         dag.addVertex(vertex);
         dag.addVertex(input);
+        dag.addEdge(new Edge("e1", input, vertex));
         dag.validate();
     }
 

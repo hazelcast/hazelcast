@@ -87,8 +87,8 @@ public final class StreamUtil {
         return mapper;
     }
 
-    public static EdgeBuilder edgeBuilder(Vertex from, Vertex to) {
-        return new EdgeBuilder(randomName(), from, to);
+    public static Edge newEdge(Vertex from, Vertex to) {
+        return new Edge(randomName(), from, to);
     }
 
     public static VertexBuilder vertexBuilder(Class<? extends Processor> clazz) {
@@ -158,21 +158,5 @@ public final class StreamUtil {
             }
         }
         throw new IllegalArgumentException(object + " is not of a known proxy type");
-    }
-
-    public static class EdgeBuilder extends Edge {
-
-        public EdgeBuilder(String name, Vertex from, Vertex to) {
-            super(name, from, to);
-        }
-
-        public EdgeBuilder addToDAG(DAG dag) {
-            dag.addEdge(this);
-            return this;
-        }
-
-        public Edge build() {
-            return this;
-        }
     }
 }

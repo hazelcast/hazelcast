@@ -16,7 +16,11 @@
 
 package com.hazelcast.jet;
 
-import java.io.Serializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,18 +30,18 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Represents vertex of the Direct Acyclic Graph
  */
-public class Vertex implements Serializable {
+public class Vertex implements IdentifiedDataSerializable {
     private String name;
     private String processorClass;
     private Object[] processorArgs;
     private int parallelism = 1;
-
-    private List<Edge> inputEdges = new ArrayList<Edge>();
-    private List<Edge> outputEdges = new ArrayList<Edge>();
     private List<Sink> sinks = new ArrayList<Sink>();
-    private List<Vertex> inputVertices = new ArrayList<Vertex>();
     private List<Source> sources = new ArrayList<Source>();
-    private List<Vertex> outputVertices = new ArrayList<Vertex>();
+
+
+    Vertex() {
+
+    }
 
     /**
      * Constructs a new vertex
@@ -110,56 +114,6 @@ public class Vertex implements Serializable {
     }
 
     /**
-     * Add outputVertex as  output vertex for the corresponding edge and this vertex
-     *
-     * @param outputVertex next output vertex
-     * @param edge         corresponding edge
-     */
-    public void addOutputVertex(Vertex outputVertex, Edge edge) {
-        this.outputVertices.add(outputVertex);
-        this.outputEdges.add(edge);
-    }
-
-    /**
-     * Add inputVertex as inout  vertex for the corresponding edge and this vertex
-     *
-     * @param inputVertex previous inout vertex
-     * @param edge        corresponding edge
-     */
-    public void addInputVertex(Vertex inputVertex, Edge edge) {
-        this.inputVertices.add(inputVertex);
-        this.inputEdges.add(edge);
-    }
-
-    /**
-     * @return list of the input edges
-     */
-    public List<Edge> getInputEdges() {
-        return Collections.unmodifiableList(this.inputEdges);
-    }
-
-    /**
-     * @return list of the output edges
-     */
-    public List<Edge> getOutputEdges() {
-        return Collections.unmodifiableList(this.outputEdges);
-    }
-
-    /**
-     * @return list of the input vertices
-     */
-    public List<Vertex> getInputVertices() {
-        return Collections.unmodifiableList(this.inputVertices);
-    }
-
-    /**
-     * @return list of the output vertices
-     */
-    public List<Vertex> getOutputVertices() {
-        return Collections.unmodifiableList(this.outputVertices);
-    }
-
-    /**
      * @return list of the input sources
      */
     public List<Source> getSources() {
@@ -197,5 +151,60 @@ public class Vertex implements Serializable {
         return "Vertex{"
                 + "name='" + name + '\''
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(processorClass);
+        out.writeInt(processorArgs.length);
+        for (Object processorArg : processorArgs) {
+            out.writeObject(processorArg);
+        }
+
+        out.writeInt(parallelism);
+
+        out.writeInt(sources.size());
+        for (Source source : sources) {
+            out.writeObject(source);
+        }
+
+        out.writeInt(sinks.size());
+        for (Sink sink : sinks) {
+            out.writeObject(sink);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        processorClass = in.readUTF();
+        processorArgs = new Object[in.readInt()];
+
+        for (int i = 0; i < processorArgs.length; i++) {
+            processorArgs[i] = in.readObject();
+        }
+
+        parallelism = in.readInt();
+
+        int count = in.readInt();
+        for (int i = 0; i < count; i++) {
+            sources.add(in.readObject());
+        }
+
+        count = in.readInt();
+        for (int i = 0; i < count; i++) {
+            sinks.add(in.readObject());
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetDataSerializerHook.VERTEX;
     }
 }

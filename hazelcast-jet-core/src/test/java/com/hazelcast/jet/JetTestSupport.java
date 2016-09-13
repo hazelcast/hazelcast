@@ -107,6 +107,16 @@ public class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
+    public static void executeSafely(Job job) {
+        try {
+            job.execute().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw unchecked(e);
+        } finally {
+            job.destroy();
+        }
+    }
+
     protected static String randomJobName() {
         return UuidUtil.newUnsecureUuidString().replaceAll("-", "");
     }

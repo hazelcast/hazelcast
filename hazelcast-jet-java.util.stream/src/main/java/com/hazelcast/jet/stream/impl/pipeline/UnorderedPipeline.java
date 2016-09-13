@@ -26,7 +26,7 @@ import com.hazelcast.jet.stream.impl.SourcePipeline;
 import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class UnorderedPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -48,9 +48,7 @@ public class UnorderedPipeline<T> extends AbstractIntermediatePipeline<T, T> {
                 .args(defaultFromPairMapper(), toPairMapper)
                 .build();
         Vertex previous = upstream.buildDAG(dag, null, toPairMapper());
-        edgeBuilder(previous, unordered)
-                .addToDAG(dag)
-                .build();
+        dag.addEdge(newEdge(previous, unordered));
         return unordered;
     }
 }

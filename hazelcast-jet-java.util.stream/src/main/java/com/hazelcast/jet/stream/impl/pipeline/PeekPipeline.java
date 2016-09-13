@@ -29,7 +29,7 @@ import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -56,9 +56,7 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
                 .args(defaultFromPairMapper(), toPairMapper)
                 .taskCount(taskCount)
                 .build();
-        edgeBuilder(previous, vertex)
-                .addToDAG(dag)
-                .build();
+        dag.addEdge(newEdge(previous, vertex));
         context.addStreamListener(() -> {
             list.forEach(consumer::accept);
             list.destroy();

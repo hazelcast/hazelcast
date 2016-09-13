@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.DataChannel;
 import com.hazelcast.jet.impl.runtime.JobManager;
@@ -61,7 +61,7 @@ public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcess
         while (iterator.hasNext()) {
             Vertex vertex = iterator.next();
             logger.fine("Processing vertex=" + vertex.getName() + " for DAG " + dag.getName());
-            List<Edge> edges = vertex.getInputEdges();
+            List<Edge> edges = dag.getInputEdges(vertex);
             VertexRunner next = createRunner(vertex);
             logger.fine("Processed vertex=" + vertex.getName() + " for DAG " + dag.getName());
             vertex2RunnerMap.put(vertex, next);
@@ -74,6 +74,7 @@ public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcess
         long secondsToAwait = jobConfig.getSecondsToAwait();
         jobManager.deployNetworkEngine();
         logger.fine("Deployed network engine for DAG " + dag.getName());
+        jobManager.setDag(dag);
         for (VertexRunner runner : jobManager.runners()) {
             runner.handleRequest(new VertexRunnerStartRequest()).get(secondsToAwait, TimeUnit.SECONDS);
         }

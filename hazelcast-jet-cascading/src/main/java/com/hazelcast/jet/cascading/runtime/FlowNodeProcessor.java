@@ -19,6 +19,7 @@ package com.hazelcast.jet.cascading.runtime;
 import cascading.flow.FlowNode;
 import cascading.tuple.Tuple;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.cascading.JetFlowProcess;
@@ -50,7 +51,9 @@ public class FlowNodeProcessor implements Processor<Pair<Tuple, Tuple>, Pair<Tup
         HazelcastInstance instance = context.getJobContext().getNodeEngine().getHazelcastInstance();
         JetFlowProcess flowProcess = new JetFlowProcess(context.getJobContext().getJobConfig(), instance);
         flowProcess.setCurrentSliceNum(context.getTaskNumber());
-        List<Edge> inputEdges = context.getVertex().getInputEdges();
+
+        DAG dag = context.getJobContext().getDAG();
+        List<Edge> inputEdges = dag.getInputEdges(context.getVertex());
 
         graph = new JetStreamGraph(flowProcess, node, outputHolder, inputEdges);
         graph.prepare();
