@@ -27,12 +27,13 @@ import com.hazelcast.core.ICardinalityEstimator;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.HashUtil;
 
+import java.nio.charset.Charset;
+
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Proxy implementation of {@link ICardinalityEstimator}.
  */
-@SuppressWarnings("checkstyle:methodcount")
 public class ClientCardinalityEstimatorProxy
         extends PartitionSpecificClientProxy implements ICardinalityEstimator {
 
@@ -143,7 +144,7 @@ public class ClientCardinalityEstimatorProxy
     public InternalCompletableFuture<Boolean> aggregateStringAsync(String value) {
         isNotNull(value, "Value");
 
-        byte[] bytes = value.getBytes();
+        byte[] bytes = value.getBytes(Charset.defaultCharset());
         long hash = HashUtil.MurmurHash3_x64_64(bytes, 0, bytes.length);
 
         return aggregateAsync(hash);
@@ -157,7 +158,7 @@ public class ClientCardinalityEstimatorProxy
 
         int i = 0;
         for (String value : values) {
-            byte[] bytes = value.getBytes();
+            byte[] bytes = value.getBytes(Charset.defaultCharset());
             hashes[i++] = HashUtil.MurmurHash3_x64_64(bytes, 0, bytes.length);
         }
 

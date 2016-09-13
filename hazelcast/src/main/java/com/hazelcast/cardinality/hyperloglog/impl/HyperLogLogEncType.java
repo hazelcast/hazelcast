@@ -17,7 +17,6 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLogCompositeContext;
 
 public enum HyperLogLogEncType {
 
@@ -42,7 +41,7 @@ public enum HyperLogLogEncType {
 
     public abstract IHyperLogLog build(final int p);
 
-    private class CompositeHyperLogLogStore implements IHyperLogLog, IHyperLogLogCompositeContext {
+    private static class CompositeHyperLogLogStore implements IHyperLogLog, IHyperLogLogCompositeContext {
 
         private IHyperLogLog store;
 
@@ -72,3 +71,4 @@ public enum HyperLogLogEncType {
 
     }
 }
+

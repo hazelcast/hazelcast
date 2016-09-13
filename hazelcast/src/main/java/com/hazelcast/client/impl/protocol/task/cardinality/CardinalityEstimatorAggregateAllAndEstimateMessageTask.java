@@ -32,7 +32,8 @@ import java.security.Permission;
 public class CardinalityEstimatorAggregateAllAndEstimateMessageTask
         extends AbstractPartitionMessageTask<CardinalityEstimatorAggregateAllAndEstimateCodec.RequestParameters> {
 
-    public CardinalityEstimatorAggregateAllAndEstimateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public CardinalityEstimatorAggregateAllAndEstimateMessageTask(ClientMessage clientMessage, Node node,
+                                                                  Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -42,7 +43,8 @@ public class CardinalityEstimatorAggregateAllAndEstimateMessageTask
     }
 
     @Override
-    protected CardinalityEstimatorAggregateAllAndEstimateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected CardinalityEstimatorAggregateAllAndEstimateCodec.RequestParameters decodeClientMessage(
+            ClientMessage clientMessage) {
         return CardinalityEstimatorAggregateAllAndEstimateCodec.decodeRequest(clientMessage);
     }
 

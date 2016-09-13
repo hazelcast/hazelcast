@@ -56,6 +56,11 @@
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/CacheStatisticsImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/cache/impl/DefaultOperationProvider"/>
 
+    <!-- Cardinality -->
+    <suppress checks="JavadocMethod" files="com/hazelcast/cardinality/"/>
+    <suppress checks="JavadocType" files="com/hazelcast/cardinality/"/>
+    <suppress checks="JavadocVariable" files="com/hazelcast/cardinality/"/>
+
     <!-- Core -->
     <suppress checks="JavadocMethod" files="com/hazelcast/core/"/>
     <suppress checks="JavadocType" files="com/hazelcast/core/"/>

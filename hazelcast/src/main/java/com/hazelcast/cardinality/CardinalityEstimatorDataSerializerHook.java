@@ -30,7 +30,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CARDINALITY_ESTIMATOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CARDINALITY_ESTIMATOR_DS_FACTORY_ID;
 
-public class CardinalityEstimatorDataSerializerHook
+public final class CardinalityEstimatorDataSerializerHook
         implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(CARDINALITY_ESTIMATOR_DS_FACTORY,

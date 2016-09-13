@@ -33,9 +33,9 @@ public abstract class AbstractCardinalityEstimatorOperation
 
     protected String name;
 
-    public AbstractCardinalityEstimatorOperation() { }
+    AbstractCardinalityEstimatorOperation() { }
 
-    public AbstractCardinalityEstimatorOperation(String name) {
+    AbstractCardinalityEstimatorOperation(String name) {
         this.name = name;
     }
 

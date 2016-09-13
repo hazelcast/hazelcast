@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class AggregateBackupOperation
         extends AbstractCardinalityEstimatorOperation
@@ -40,7 +41,7 @@ public class AggregateBackupOperation
 
     public AggregateBackupOperation(String name, long[] hashes) {
         super(name);
-        this.hashes = hashes;
+        this.hashes = Arrays.copyOf(hashes, hashes.length);
     }
 
     @Override

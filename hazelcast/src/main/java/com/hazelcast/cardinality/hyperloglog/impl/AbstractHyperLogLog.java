@@ -17,19 +17,17 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLogCompositeContext;
 
 abstract class AbstractHyperLogLog implements IHyperLogLog {
 
     private static final int LOWER_P_BOUND = 4;
     private static final int UPPER_P_BOUND = 16;
 
-    private final IHyperLogLogCompositeContext ctx;
-
     // Precision
-    final int p;
-    final int m;
+    protected final int p;
+    protected final int m;
 
+    private final IHyperLogLogCompositeContext ctx;
     private Long cachedEstimate;
 
     AbstractHyperLogLog(IHyperLogLogCompositeContext ctx, int p) {

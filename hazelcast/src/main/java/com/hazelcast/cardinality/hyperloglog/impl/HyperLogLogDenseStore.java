@@ -22,18 +22,17 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 /**
- * HyperLogLog Philippe Flajolet et al.
  * [1] http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
- * <p>
  * [2] http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
+ * [3] https://docs.google.com/document/d/1gyjfMHy43U9OWBXxfaeG-3MjGzejW1dlpyMwEYAAWEI/view?fullscreen#
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public class HyperLogLogDenseStore
         extends AbstractHyperLogLog {
 
     /**
-     * The following tables list the empirically determined thresholds & bias data, used in HLL++ implementation.
-     * Distributed at: https://docs.google.com/document/d/1gyjfMHy43U9OWBXxfaeG-3MjGzejW1dlpyMwEYAAWEI/view?fullscreen#
+     * The following tables list the empirically determined thresholds & bias data,
+     * used in HLL++ implementation. As found at [3].
      */
 
     private static final int[] THRESHOLD = {

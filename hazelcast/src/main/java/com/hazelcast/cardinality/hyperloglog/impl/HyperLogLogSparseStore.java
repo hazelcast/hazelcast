@@ -17,7 +17,6 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLogCompositeContext;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,8 +33,8 @@ public class HyperLogLogSparseStore
 
     // [1] Shows good cardinality estimation for the sparse range of sets. P_PRIME within [p .. 25]
     private static final long P_PRIME = 25;
+    private static final long P_PRIME_MASK = (1 << P_PRIME) - 1;
 
-    private final long pPrimeMask = (1 << P_PRIME) - 1;
     private final long pMask;
     private final long pDiffMask;
     private final long pDiffEncodedMask;
@@ -60,7 +59,7 @@ public class HyperLogLogSparseStore
         this.temp = new int[this.defaultTempSetCapacity];
 
         this.pMask = ((1 << p) - 1);
-        this.pDiffMask = pPrimeMask ^ pMask;
+        this.pDiffMask = P_PRIME_MASK ^ pMask;
         this.pDiffEncodedMask = (1L << (P_PRIME - p)) - 1;
         this.encodedPDiffShiftBits = (int) (32 - (P_PRIME - p));
     }
@@ -92,7 +91,7 @@ public class HyperLogLogSparseStore
     }
 
     private int encodeHash(long hash) {
-        int index = (int) (hash & pPrimeMask) << (32 - P_PRIME);
+        int index = (int) (hash & P_PRIME_MASK) << (32 - P_PRIME);
         if ((hash & pDiffMask) == 0) {
             return index | Long.numberOfTrailingZeros((hash >> P_PRIME) | P_PRIME_FENCE_MASK) | 0x1;
         }
@@ -116,7 +115,7 @@ public class HyperLogLogSparseStore
     private void mergeAndResetTmp() {
         for (int i = 0; i < tempIdx; i++) {
             int hash = temp[i];
-            int sparseIndex = (int) ((hash >> (32 - P_PRIME) & pPrimeMask) & mPrime - 1);
+            int sparseIndex = (int) ((hash >> (32 - P_PRIME) & P_PRIME_MASK) & mPrime - 1);
             Integer oldHashValue = sparseSet.get(sparseIndex);
             if (oldHashValue == null) {
                 sparseSet.put(sparseIndex, hash);
@@ -134,7 +133,9 @@ public class HyperLogLogSparseStore
     }
 
     private void convertToDenseIfNeeded() {
-        // For absolute correctness this should be based on the actual mem footprint of the sparse layout vs dense layout.
+        // For absolute correctness this should be based on the actual mem footprint
+        // of the sparse layout vs dense layout.
+        // TODO @tkountis, upcoming fix to address this, with a compressed solution.
         boolean shouldConvertToDense = sparseSet.size() > sparseToDenseThreshold;
         if (shouldConvertToDense && getContext() != null) {
             switchStore(asDense());

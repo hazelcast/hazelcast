@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.hyperloglog;
-
-public interface IHyperLogLogCompositeContext {
-
-    void setStore(IHyperLogLog store);
-
-}
+/**
+ * <p>This package contains the operations on the {@link com.hazelcast.core.ICardinalityEstimator}.<br/>
+ *
+ * @since 3.8
+ */
+package com.hazelcast.cardinality.operations;

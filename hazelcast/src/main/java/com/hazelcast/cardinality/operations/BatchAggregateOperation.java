@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class BatchAggregateOperation
         extends CardinalityEstimatorBackupAwareOperation {
@@ -33,7 +34,7 @@ public class BatchAggregateOperation
 
     public BatchAggregateOperation(String name, long[] values) {
         super(name);
-        this.values = values;
+        this.values = Arrays.copyOf(values, values.length);
     }
 
     @Override

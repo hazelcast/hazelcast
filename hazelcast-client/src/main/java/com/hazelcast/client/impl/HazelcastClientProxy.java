@@ -63,6 +63,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * A client-side proxy {@link com.hazelcast.core.HazelcastInstance} instance.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class HazelcastClientProxy implements HazelcastInstance, SerializationServiceSupport {
 
     public volatile HazelcastClientInstanceImpl client;

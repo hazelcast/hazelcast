@@ -28,14 +28,16 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.HashUtil;
 
-public class CardinalityEstimatorProxy
+import java.nio.charset.Charset;
+
+class CardinalityEstimatorProxy
         extends AbstractDistributedObject<CardinalityEstimatorService>
         implements ICardinalityEstimator {
 
     private final String name;
     private final int partitionId;
 
-    public CardinalityEstimatorProxy(String name, NodeEngine nodeEngine, CardinalityEstimatorService service) {
+    CardinalityEstimatorProxy(String name, NodeEngine nodeEngine, CardinalityEstimatorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
@@ -116,7 +118,7 @@ public class CardinalityEstimatorProxy
 
     @Override
     public InternalCompletableFuture<Boolean> aggregateStringAsync(String value) {
-        byte[] bytes = value.getBytes();
+        byte[] bytes = value.getBytes(Charset.defaultCharset());
         long hash = HashUtil.MurmurHash3_x64_64(bytes, 0, bytes.length);
 
         return aggregateAsync(hash);
@@ -128,7 +130,7 @@ public class CardinalityEstimatorProxy
 
         int i = 0;
         for (String value : values) {
-            byte[] bytes = value.getBytes();
+            byte[] bytes = value.getBytes(Charset.defaultCharset());
             hashes[i++] = HashUtil.MurmurHash3_x64_64(bytes, 0, bytes.length);
         }
 

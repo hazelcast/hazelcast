@@ -14,32 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains Cardinality Estimator functionality for Hazelcast.<br/>
+ *
+ * @since 3.8
+ */
 package com.hazelcast.cardinality;
-
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogEncType;
-
-public class CardinalityEstimatorContainer {
-
-    private static final int DEFAULT_HLL_PRECISION = 14;
-
-    private final IHyperLogLog hll;
-
-    CardinalityEstimatorContainer() {
-        hll = HyperLogLogEncType.COMPO.build(DEFAULT_HLL_PRECISION);
-    }
-
-
-    public boolean aggregate(long hash) {
-        return hll.aggregate(hash);
-    }
-
-    public boolean aggregateAll(long[] hashes) {
-        return hll.aggregateAll(hashes);
-    }
-
-    public long estimate() {
-        return hll.estimate();
-    }
-
-}
