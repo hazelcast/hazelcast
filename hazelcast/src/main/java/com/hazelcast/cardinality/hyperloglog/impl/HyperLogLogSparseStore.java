@@ -53,6 +53,12 @@ public class HyperLogLogSparseStore
 
     public HyperLogLogSparseStore(final IHyperLogLogCompositeContext ctx, final int p) {
         super(ctx, p);
+    }
+
+    @Override
+    protected void init(int p) {
+        super.init(p);
+        
         this.mPrime = 1 << P_PRIME;
         this.sparseToDenseThreshold = 40000;
         this.defaultTempSetCapacity = (int) (sparseToDenseThreshold * .25);

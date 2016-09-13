@@ -17,25 +17,34 @@
 package com.hazelcast.cardinality.hyperloglog.impl;
 
 import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-abstract class AbstractHyperLogLog implements IHyperLogLog {
+abstract class AbstractHyperLogLog implements IHyperLogLog, DataSerializable {
 
     private static final int LOWER_P_BOUND = 4;
     private static final int UPPER_P_BOUND = 16;
 
     // Precision
-    protected final int p;
-    protected final int m;
+    protected int p;
+    protected int m;
 
     private final IHyperLogLogCompositeContext ctx;
     private Long cachedEstimate;
 
+    AbstractHyperLogLog(IHyperLogLogCompositeContext ctx) {
+        this.ctx = ctx;
+    }
+
     AbstractHyperLogLog(IHyperLogLogCompositeContext ctx, int p) {
+        this(ctx);
+        init(p);
+    }
+
+    protected void init(int p) {
         if (p < LOWER_P_BOUND || p > UPPER_P_BOUND) {
             throw new IllegalArgumentException("Precision (p) outside valid range [4..16].");
         }
 
-        this.ctx = ctx;
         this.p = p;
         this.m = 1 << p;
     }

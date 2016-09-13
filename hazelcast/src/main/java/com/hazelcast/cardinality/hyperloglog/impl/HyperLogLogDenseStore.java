@@ -16,6 +16,10 @@
 
 package com.hazelcast.cardinality.hyperloglog.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -769,8 +773,8 @@ public class HyperLogLogDenseStore
 
     private static final long P_FENCE_MASK = 0x2000000000000L;
 
-    private final byte[] register;
     private final double[] invPowLookup;
+    private byte[] register;
     private int numOfEmptyRegs;
 
     public HyperLogLogDenseStore(final int p) {
@@ -779,10 +783,14 @@ public class HyperLogLogDenseStore
 
     public HyperLogLogDenseStore(final int p, final byte[] register) {
         super(null, p);
-        this.register = register != null ? register : new byte[m];
         this.invPowLookup = new double[64 - p + 1];
-        this.numOfEmptyRegs = m;
+        init(p, register);
+    }
 
+    private void init(final int p, final byte[] register) {
+        init(p);
+        this.register = register != null ? register : new byte[m];
+        this.numOfEmptyRegs = m;
         this.prePopulateInvPowLookup();
     }
 
@@ -811,6 +819,21 @@ public class HyperLogLogDenseStore
         }
 
         return cached;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+        out.writeInt(p);
+        out.writeByteArray(register);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
+        int p = in.readInt();
+        byte[] reg = in.readByteArray();
+        init(p, reg);
     }
 
     private double alpha() {
