@@ -34,6 +34,10 @@ import java.util.concurrent.ConcurrentMap;
 
 public final class TestNodeRegistry {
 
+    private static void verifyInvariant(boolean check, String msg) {
+        if (!check) throw new AssertionError(msg);
+    }
+
     private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<Address, Node>(10);
     private final Collection<Address> joinAddresses;
 
@@ -44,7 +48,7 @@ public final class TestNodeRegistry {
     public NodeContext createNodeContext(Address address) {
         Node node;
         if ((node = nodes.get(address)) != null) {
-            assert NodeState.SHUT_DOWN == node.getState() : "This address is already in registry! " + address;
+            verifyInvariant(NodeState.SHUT_DOWN == node.getState(), "This address is already in registry! " + address);
             nodes.remove(address, node);
         }
         return new MockNodeContext(this, address);
@@ -108,7 +112,7 @@ public final class TestNodeRegistry {
         Address address = node.getThisAddress();
         Node currentNode = nodes.putIfAbsent(address, node);
         if (currentNode != null) {
-            assert currentNode.equals(node) : "This address is already in registry! " + address;
+            verifyInvariant(currentNode.equals(node), "This address is already in registry! " + address);
         }
     }
 

@@ -29,6 +29,10 @@ import java.util.Collection;
 
 class MockJoiner extends AbstractJoiner {
 
+    private static void verifyInvariant(boolean check, String msg) {
+        if (!check) throw new AssertionError(msg);
+    }
+
     private final TestNodeRegistry registry;
 
     MockJoiner(Node node, TestNodeRegistry registry) {
@@ -47,7 +51,7 @@ class MockJoiner extends AbstractJoiner {
             while (node.isRunning() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 try {
                     Address joinAddress = getJoinAddress();
-                    assert joinAddress != null;
+                    verifyInvariant(joinAddress != null, "joinAddress should not be null");
 
                     if (node.getThisAddress().equals(joinAddress)) {
                         logger.fine("This node is found as master, no need to join.");
@@ -74,7 +78,7 @@ class MockJoiner extends AbstractJoiner {
         if (!joined) {
             node.shutdown(true);
         }
-        assert joined : node.getThisAddress() + " should have been joined to " + node.getMasterAddress();
+        verifyInvariant(joined, node.getThisAddress() + " should have been joined to " + node.getMasterAddress());
     }
 
     private Address getJoinAddress() {
@@ -107,7 +111,7 @@ class MockJoiner extends AbstractJoiner {
                 continue;
             }
 
-            assert address.equals(foundNode.getThisAddress());
+            verifyInvariant(address.equals(foundNode.getThisAddress()), "The address should be equal to the one in the found node");
 
             if (foundNode.getThisAddress().equals(node.getThisAddress())) {
                 continue;
