@@ -1005,8 +1005,4 @@ public abstract class HazelcastTestSupport {
         Node node = getNode(instance);
         return (WaitNotifyServiceImpl) node.getNodeEngine().getWaitNotifyService();
     }
-
-    public static void verifyInvariant(boolean check, String msg) {
-        if (!check) throw new AssertionError(msg);
-    }
 }

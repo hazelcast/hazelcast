@@ -32,12 +32,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.test.HazelcastTestSupport.verifyInvariant;
-
 public final class TestNodeRegistry {
 
     private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<Address, Node>(10);
     private final Collection<Address> joinAddresses;
+
+    private static void verifyInvariant(boolean check, String msg) {
+        if (!check) throw new AssertionError(msg);
+    }
 
     public TestNodeRegistry(Collection<Address> addresses) {
         this.joinAddresses = addresses;
