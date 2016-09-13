@@ -45,7 +45,6 @@ public final class TestNodeRegistry {
         Node node;
         if ((node = nodes.get(address)) != null) {
             assert NodeState.SHUT_DOWN == node.getState() : "This address is already in registry! " + address;
-//            assertEquals("This address is already in registry! " + address, NodeState.SHUT_DOWN, node.getState());
             nodes.remove(address, node);
         }
         return new MockNodeContext(this, address);
