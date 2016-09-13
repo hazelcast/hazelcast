@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.util.ExceptionUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.net.URI;
 import java.util.Iterator;
@@ -89,7 +90,7 @@ public final class HazelcastClientCacheManager
                                                            statOrMan, enabled);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED"})
+    @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     @Override
     protected <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig) {
         configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
