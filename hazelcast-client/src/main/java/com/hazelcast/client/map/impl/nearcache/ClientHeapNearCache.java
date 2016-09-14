@@ -155,7 +155,7 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
     }
 
     @Override
-    public boolean isInvalidateOnChange() {
+    public boolean isInvalidatedOnChange() {
         return invalidateOnChange;
     }
 

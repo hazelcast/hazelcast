@@ -407,7 +407,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(name,
                     getContext(), nearCacheConfig);
             this.nearCache = nearCache;
-            if (nearCache.isInvalidateOnChange()) {
+            if (nearCache.isInvalidatedOnChange()) {
                 addNearCacheInvalidateListener();
             }
         }

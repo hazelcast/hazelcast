@@ -164,7 +164,7 @@ public class NearCacheImpl implements NearCache<Data, Object> {
     }
 
     @Override
-    public boolean isInvalidateOnChange() {
+    public boolean isInvalidatedOnChange() {
         return invalidateOnChange;
     }
 

@@ -76,7 +76,7 @@ public interface NearCache<K, V> {
     /**
      * @return
      */
-    boolean isInvalidateOnChange();
+    boolean isInvalidatedOnChange();
 
     /**
      * Removes all stored values.

@@ -61,8 +61,8 @@ public final class StaleReadPreventerNearCacheWrapper implements NearCache {
     }
 
     @Override
-    public boolean isInvalidateOnChange() {
-        return nearCache.isInvalidateOnChange();
+    public boolean isInvalidatedOnChange() {
+        return nearCache.isInvalidatedOnChange();
     }
 
     @Override

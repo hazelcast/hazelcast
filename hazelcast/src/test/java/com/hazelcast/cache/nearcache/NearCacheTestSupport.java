@@ -126,8 +126,8 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         NearCache nearCache2 = createNearCache(config2.getName(), config2, createManagedNearCacheRecordStore());
 
         // show that NearCache gets "isInvalidateOnChange" configuration from specified NearCacheConfig
-        assertFalse(nearCache1.isInvalidateOnChange());
-        assertTrue(nearCache2.isInvalidateOnChange());
+        assertFalse(nearCache1.isInvalidatedOnChange());
+        assertTrue(nearCache2.isInvalidatedOnChange());
     }
 
     protected void doClearNearCache() {

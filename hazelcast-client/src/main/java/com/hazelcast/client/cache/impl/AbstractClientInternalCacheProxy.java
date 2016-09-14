@@ -944,7 +944,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     private void registerInvalidationListener() {
-        if (nearCache != null && nearCache.isInvalidateOnChange()) {
+        if (nearCache != null && nearCache.isInvalidatedOnChange()) {
             Client client = clientContext.getClusterService().getLocalClient();
             EventHandler handler = new NearCacheInvalidationHandler(client);
             ListenerMessageCodec listenerCodec = createInvalidationListenerCodec();
@@ -977,7 +977,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     private void removeInvalidationListener() {
-        if (nearCache != null && nearCache.isInvalidateOnChange()) {
+        if (nearCache != null && nearCache.isInvalidatedOnChange()) {
             String registrationId = nearCacheMembershipRegistrationId;
             if (registrationId != null) {
                 clientContext.getListenerService().deregisterListener(registrationId);

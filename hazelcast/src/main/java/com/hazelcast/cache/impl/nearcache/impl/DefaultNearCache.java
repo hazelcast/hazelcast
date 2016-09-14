@@ -138,7 +138,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public boolean isInvalidateOnChange() {
+    public boolean isInvalidatedOnChange() {
         return nearCacheConfig.isInvalidateOnChange();
     }
 
