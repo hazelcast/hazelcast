@@ -17,13 +17,13 @@
 package com.hazelcast.core;
 
 /**
- * ICardinalityEstimator is a redundant and highly available distributed data-structure used
+ * CardinalityEstimator is a redundant and highly available distributed data-structure used
  * for probabilistic cardinality estimation purposes, on unique items, in significantly sized data cultures.
  *
- * ICardinalityEstimator is internally based on HyperLogLog data-structure,
+ * CardinalityEstimator is internally based on HyperLogLog data-structure,
  * and uses P^2 byte registers for storage and computation. (Default P = 14)
  */
-public interface ICardinalityEstimator extends DistributedObject {
+public interface CardinalityEstimator extends DistributedObject {
 
     /**
      * Aggregates the given hash which can result in a new estimation being available or not.

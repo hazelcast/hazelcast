@@ -1,7 +1,7 @@
 package com.hazelcast.cardinality;
 
+import com.hazelcast.core.CardinalityEstimator;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICardinalityEstimator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -28,11 +28,11 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(k + 1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         String name = "testFailure";
-        ICardinalityEstimator estimator = instance.getCardinalityEstimator(name);
+        CardinalityEstimator estimator = instance.getCardinalityEstimator(name);
         estimator.aggregate(1L);
         for (int i = 0; i < k; i++) {
             HazelcastInstance newInstance = nodeFactory.newHazelcastInstance();
-            ICardinalityEstimator newEstimator = newInstance.getCardinalityEstimator(name);
+            CardinalityEstimator newEstimator = newInstance.getCardinalityEstimator(name);
             assertEquals((long) 1 + i, newEstimator.estimate());
             newEstimator.aggregateString(String.valueOf(i + 1));
             instance.shutdown();
@@ -47,7 +47,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(total + 1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final String name = "testSpawnNodeInParallel";
-        ICardinalityEstimator estimator = instance.getCardinalityEstimator(name);
+        CardinalityEstimator estimator = instance.getCardinalityEstimator(name);
         estimator.aggregate(1L);
         final ExecutorService ex = Executors.newFixedThreadPool(parallel);
         try {
@@ -80,7 +80,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
                 // and subtract the number from expectedValue.
                 final int thrownExceptionCount = exceptionCount.get();
                 final long expectedValue = (long) counter.get() - thrownExceptionCount;
-                ICardinalityEstimator newEstimator = instance.getCardinalityEstimator(name);
+                CardinalityEstimator newEstimator = instance.getCardinalityEstimator(name);
                 assertEquals(expectedValue, newEstimator.estimate());
                 instance.shutdown();
                 instance = instances[0];

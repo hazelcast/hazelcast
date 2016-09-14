@@ -416,7 +416,7 @@ public interface HazelcastInstance {
      */
     ICacheManager getCacheManager();
 
-    ICardinalityEstimator getCardinalityEstimator(String name);
+    CardinalityEstimator getCardinalityEstimator(String name);
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

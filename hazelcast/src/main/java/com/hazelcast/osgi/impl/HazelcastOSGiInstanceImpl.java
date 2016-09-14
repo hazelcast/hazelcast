@@ -22,7 +22,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.ICardinalityEstimator;
+import com.hazelcast.core.CardinalityEstimator;
 import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -266,7 +266,7 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public ICardinalityEstimator getCardinalityEstimator(String name) {
+    public CardinalityEstimator getCardinalityEstimator(String name) {
         return delegatedInstance.getCardinalityEstimator(name);
     }
 

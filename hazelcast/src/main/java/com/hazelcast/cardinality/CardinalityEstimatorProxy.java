@@ -21,7 +21,7 @@ import com.hazelcast.cardinality.operations.AggregateOperation;
 import com.hazelcast.cardinality.operations.BatchAggregateAndEstimateOperation;
 import com.hazelcast.cardinality.operations.BatchAggregateOperation;
 import com.hazelcast.cardinality.operations.EstimateOperation;
-import com.hazelcast.core.ICardinalityEstimator;
+import com.hazelcast.core.CardinalityEstimator;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
 
 class CardinalityEstimatorProxy
         extends AbstractDistributedObject<CardinalityEstimatorService>
-        implements ICardinalityEstimator {
+        implements CardinalityEstimator {
 
     private final String name;
     private final int partitionId;
@@ -146,6 +146,6 @@ class CardinalityEstimatorProxy
 
     @Override
     public String toString() {
-        return "ICardinalityEstimator{" + "name='" + name + '\'' + '}';
+        return "CardinalityEstimator{" + "name='" + name + '\'' + '}';
     }
 }

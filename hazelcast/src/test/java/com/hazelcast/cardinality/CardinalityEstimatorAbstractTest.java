@@ -17,7 +17,7 @@
 package com.hazelcast.cardinality;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICardinalityEstimator;
+import com.hazelcast.core.CardinalityEstimator;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
@@ -32,7 +32,7 @@ public abstract class CardinalityEstimatorAbstractTest
 
     protected HazelcastInstance[] instances;
 
-    private ICardinalityEstimator estimator;
+    private CardinalityEstimator estimator;
 
     @Before
     public void setup() {

@@ -17,7 +17,7 @@
 package com.hazelcast.cardinality;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICardinalityEstimator;
+import com.hazelcast.core.CardinalityEstimator;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,7 +40,7 @@ public class CardinalityEstimatorBackupTest
 
     private int partitionId;
 
-    private ICardinalityEstimator estimator;
+    private CardinalityEstimator estimator;
 
     @Before
     public void init() {

@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateAll
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateAndEstimateCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
-import com.hazelcast.core.ICardinalityEstimator;
+import com.hazelcast.core.CardinalityEstimator;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.HashUtil;
 
@@ -32,10 +32,10 @@ import java.nio.charset.Charset;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Proxy implementation of {@link ICardinalityEstimator}.
+ * Proxy implementation of {@link CardinalityEstimator}.
  */
 public class ClientCardinalityEstimatorProxy
-        extends PartitionSpecificClientProxy implements ICardinalityEstimator {
+        extends PartitionSpecificClientProxy implements CardinalityEstimator {
 
     private static final ClientMessageDecoder AGGREGATE_DECODER = new ClientMessageDecoder() {
         @Override
@@ -78,7 +78,7 @@ public class ClientCardinalityEstimatorProxy
 
     @Override
     public String toString() {
-        return "ICardinalityEstimator{" + "name='" + name + '\'' + '}';
+        return "CardinalityEstimator{" + "name='" + name + '\'' + '}';
     }
 
     @Override

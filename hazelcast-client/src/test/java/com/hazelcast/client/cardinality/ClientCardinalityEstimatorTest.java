@@ -17,8 +17,8 @@
 package com.hazelcast.client.cardinality;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.CardinalityEstimator;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICardinalityEstimator;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,7 +41,7 @@ public class ClientCardinalityEstimatorTest
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
-    private ICardinalityEstimator estimator;
+    private CardinalityEstimator estimator;
 
     @Before
     public void setup() {
@@ -96,80 +96,80 @@ public class ClientCardinalityEstimatorTest
 
     @Test
     public void estimate() {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("estimate");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("estimate");
         assertEquals(0, estimator.estimate());
     }
 
     @Test
     public void estimateAsync()
             throws ExecutionException, InterruptedException {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("estimateAsync");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("estimateAsync");
         assertEquals(0, estimator.estimateAsync().get().longValue());
     }
 
     @Test
     public void aggregate() {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregate");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregate");
         assertEquals(true, estimator.aggregate(1L));
     }
 
     @Test
     public void aggregateAsync()
             throws ExecutionException, InterruptedException {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAsync");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAsync");
         assertEquals(true, estimator.aggregateAsync(10000L).get().booleanValue());
     }
 
     @Test
     public void aggregateAll() {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAll");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAll");
         assertEquals(true, estimator.aggregateAll(new long[] { 1L, 2L, 3L }));
     }
 
     @Test
     public void aggregateAllAsync()
             throws ExecutionException, InterruptedException {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllAsync");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllAsync");
         assertEquals(true, estimator.aggregateAllAsync(new long[] { 1L, 2L, 3L }).get().booleanValue());
     }
 
     @Test
     public void aggregateAndEstimateAsync()
             throws ExecutionException, InterruptedException {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAndEstimateAsync");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAndEstimateAsync");
         assertEquals(1L, estimator.aggregateAndEstimateAsync(1000L).get().longValue());
     }
 
     @Test
     public void aggregateAllAndEstimateAsync()
             throws ExecutionException, InterruptedException {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllAndEstimateAsync");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllAndEstimateAsync");
         assertEquals(3L, estimator.aggregateAllAndEstimateAsync(new long[] { 1L, 2L, 3L }).get().longValue());
     }
 
     @Test
     public void aggregateString() {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateString");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateString");
         assertEquals(true, estimator.aggregateString("String1"));
     }
 
     @Test
     public void aggregateStringAsync()
             throws ExecutionException, InterruptedException {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateStringAsync");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateStringAsync");
         assertEquals(true, estimator.aggregateStringAsync("String1").get().booleanValue());
     }
 
     @Test
     public void aggregateAllStrings() {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllStrings");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllStrings");
         assertEquals(true, estimator.aggregateAllStrings(new String[] { "String1", "String2", "String3" }));
     }
 
     @Test
     public void aggregateAllStringsAsync()
             throws ExecutionException, InterruptedException {
-        ICardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllStringsAsync");
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllStringsAsync");
         assertEquals(true, estimator.aggregateAllStringsAsync(new String[] { "String1", "String2", "String3" }).get()
                                     .booleanValue());
     }
