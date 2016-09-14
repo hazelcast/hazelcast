@@ -131,7 +131,4 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
             operationService.send(operation, member.getAddress());
         }
     }
-
 }
-
-

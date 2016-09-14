@@ -36,10 +36,10 @@ public class NearCacheDataRecordStore<K, V>
     protected long getKeyStorageMemoryCost(K key) {
         if (key instanceof Data) {
             return
-                // Reference to this key data inside map ("store" field)
-                REFERENCE_SIZE
-                // Heap cost of this key data
-                + ((Data) key).getHeapCost();
+                    // Reference to this key data inside map ("store" field)
+                    REFERENCE_SIZE
+                            // Heap cost of this key data
+                            + ((Data) key).getHeapCost();
         } else {
             // Memory cost for non-data typed instance is not supported.
             return 0L;
@@ -54,18 +54,18 @@ public class NearCacheDataRecordStore<K, V>
         }
         Data value = record.getValue();
         return
-            // Reference to this record inside map ("store" field)
-            REFERENCE_SIZE
-            // Reference to "value" field
-            + REFERENCE_SIZE
-            // Heap cost of this value data
-            + (value != null ? value.getHeapCost() : 0)
-            // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
-            + (3 * (Long.SIZE / Byte.SIZE))
-            // Reference to "accessHit" field
-            + REFERENCE_SIZE
-            // Primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
-            + (Integer.SIZE / Byte.SIZE);
+                // Reference to this record inside map ("store" field)
+                REFERENCE_SIZE
+                        // Reference to "value" field
+                        + REFERENCE_SIZE
+                        // Heap cost of this value data
+                        + (value != null ? value.getHeapCost() : 0)
+                        // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
+                        + (3 * (Long.SIZE / Byte.SIZE))
+                        // Reference to "accessHit" field
+                        + REFERENCE_SIZE
+                        // Primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
+                        + (Integer.SIZE / Byte.SIZE);
     }
 
     @Override
@@ -120,7 +120,4 @@ public class NearCacheDataRecordStore<K, V>
         }
         return selectedCandidate;
     }
-
-
-
 }

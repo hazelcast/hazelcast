@@ -92,5 +92,4 @@ public interface NearCacheManager {
      * Destroys all defined {@link com.hazelcast.cache.impl.nearcache.NearCache} instances.
      */
     void destroyAllNearCaches();
-
 }

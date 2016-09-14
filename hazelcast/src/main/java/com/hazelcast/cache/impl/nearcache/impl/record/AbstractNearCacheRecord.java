@@ -120,5 +120,4 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
             return false;
         }
     }
-
 }

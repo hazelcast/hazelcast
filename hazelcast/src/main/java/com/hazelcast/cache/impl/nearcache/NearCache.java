@@ -116,5 +116,4 @@ public interface NearCache<K, V> {
      * @return the count of stored records
      */
     int size();
-
 }

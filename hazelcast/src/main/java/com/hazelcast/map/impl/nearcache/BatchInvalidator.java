@@ -234,7 +234,6 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
         return keyList == null ? EMPTY_LIST : keyList;
     }
 
-
     private void handleBatchesOnNodeShutdown() {
         HazelcastInstance node = nodeEngine.getHazelcastInstance();
         LifecycleService lifecycleService = node.getLifecycleService();
@@ -256,7 +255,6 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.scheduleWithRepetition(INVALIDATION_EXECUTOR_NAME,
                 new MapBatchInvalidationEventSender(), periodSeconds, periodSeconds, TimeUnit.SECONDS);
-
     }
 
     private int getBatchSize() {

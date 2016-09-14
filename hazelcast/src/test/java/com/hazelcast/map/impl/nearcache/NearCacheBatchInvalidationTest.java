@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
@@ -94,9 +93,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
                 assertEquals(0, nearCache1.size() + nearCache2.size());
             }
         });
-
     }
-
 
     @Test
     public void testHigherBatchSize_shouldNotCauseAnyInvalidation_onRemoteNode() throws Exception {
@@ -111,14 +108,12 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
         IMap<String, Integer> map1 = node1.getMap(mapName);
         IMap<String, Integer> map2 = node2.getMap(mapName);
 
-
         int size = 1000;
 
         List<String> keys = new ArrayList<String>();
         for (int i = 0; i < size; i++) {
             keys.add(generateKeyOwnedBy(node1));
         }
-
 
         // fill map-1
         for (int i = 0; i < size; i++) {
@@ -189,9 +184,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
                 assertEquals(0, nearCache1.size() + nearCache2.size());
             }
         });
-
     }
-
 
     @Test
     public void testMapEvictAll_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
@@ -234,7 +227,6 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
                 assertEquals(0, nearCache1.size() + nearCache2.size());
             }
         });
-
     }
 
     protected Config newConfig(String mapName) {

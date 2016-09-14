@@ -67,8 +67,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     protected KeyStateMarker keyStateMarker;
 
     protected volatile String invalidationListenerId;
-    private boolean invalidateOnChange;
 
+    private boolean invalidateOnChange;
 
     public NearCachedClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -105,7 +105,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         return super.containsKeyInternal(keyData);
     }
-
 
     @Override
     protected V getInternal(Data key) {
@@ -419,7 +418,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         nearCache.remove(key);
     }
 
-
     protected void invalidateNearCache(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
@@ -515,5 +513,4 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     public KeyStateMarker getKeyStateMarker() {
         return ((StaleReadPreventerNearCacheWrapper) nearCache).getKeyStateMarker();
     }
-
 }

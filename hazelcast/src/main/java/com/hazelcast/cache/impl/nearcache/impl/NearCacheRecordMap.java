@@ -32,5 +32,4 @@ import java.util.concurrent.ConcurrentMap;
  */
 public interface NearCacheRecordMap<K, V extends NearCacheRecord>
         extends ConcurrentMap<K, V>, EvictableStore<K, V> {
-
 }

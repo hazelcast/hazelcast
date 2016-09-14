@@ -49,14 +49,12 @@ public interface NearCacheInvalidator {
      */
     void invalidate(String mapName, List<Data> keys, String sourceUuid);
 
-
     /**
      * Clears local members near-cache.
      *
      * @param mapName name of the map.
      */
     void clearLocalNearCache(String mapName);
-
 
     /**
      * Send clear event to client-side near-cache invalidation listeners.

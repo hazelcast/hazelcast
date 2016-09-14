@@ -81,5 +81,4 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      * @return <code>true</code> if exceeds max idle seconds, otherwise <code>false</code>
      */
     boolean isIdleAt(long maxIdleMilliSeconds, long now);
-
 }

@@ -41,5 +41,4 @@ public class EntryCountNearCacheMaxSizeChecker implements MaxSizeChecker {
     public boolean isReachedToMaxSize() {
         return nearCacheRecordMap.size() >= maxSize;
     }
-
 }

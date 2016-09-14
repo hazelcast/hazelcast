@@ -31,5 +31,4 @@ import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictabl
  */
 public interface SampleableNearCacheRecordMap<K, V extends NearCacheRecord>
         extends NearCacheRecordMap<K, V>, SampleableEvictableStore<K, V> {
-
 }

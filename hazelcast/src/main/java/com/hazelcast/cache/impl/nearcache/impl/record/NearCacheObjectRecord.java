@@ -28,5 +28,4 @@ public class NearCacheObjectRecord<V> extends AbstractNearCacheRecord<V> {
         super(value, creationTime, expiryTime);
         this.value = value;
     }
-
 }

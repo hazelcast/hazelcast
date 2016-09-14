@@ -41,5 +41,4 @@ public interface NearCacheExecutor {
                                               long initialDelay,
                                               long delay,
                                               TimeUnit unit);
-
 }

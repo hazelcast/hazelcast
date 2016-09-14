@@ -185,7 +185,6 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return localMapStatsDelegate.getLocalStats().getHeapCost();
     }
 
-
     @ManagedAnnotation("name")
     @ManagedDescription("name of the map")
     public String getName() {

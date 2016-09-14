@@ -125,6 +125,4 @@ public class NearCacheRecord {
             return NearCacheRecord.DEFAULT_COMPARATOR;
         }
     }
-
-
 }
