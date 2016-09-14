@@ -50,4 +50,8 @@ public final class ParameterUtil {
     public static int calculateDataSize(Boolean data) {
         return Bits.BOOLEAN_SIZE_IN_BYTES;
     }
+
+    public static int calculateDataSize(Long data) {
+        return Bits.LONG_SIZE_IN_BYTES;
+    }
 }
