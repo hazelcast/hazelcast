@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.map.nearcache.NearCacheLiteMemberTest.createNearCachedMapConfigWithMapStoreConfig;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -22,16 +23,18 @@ public class ClientMapNearCacheLiteMemberTest {
 
     private TestHazelcastFactory factory;
 
-    private HazelcastInstance lite;
     private HazelcastInstance client;
+    private HazelcastInstance lite;
 
     @Before
     public void init() {
         mapName = randomMapName();
+
         factory = new TestHazelcastFactory();
         factory.newHazelcastInstance(NearCacheLiteMemberTest.createConfig(mapName, false));
-        lite = factory.newHazelcastInstance(NearCacheLiteMemberTest.createConfig(mapName, true));
+
         client = factory.newHazelcastClient();
+        lite = factory.newHazelcastInstance(NearCacheLiteMemberTest.createConfig(mapName, true));
     }
 
     @After
@@ -112,5 +115,27 @@ public class ClientMapNearCacheLiteMemberTest {
     @Test
     public void testExecuteOnKeys() {
         NearCacheLiteMemberTest.testExecuteOnKeys(client, lite, mapName);
+    }
+
+    @Test
+    public void testLoadAll() {
+        initWithMapStore();
+
+        NearCacheLiteMemberTest.testLoadAll(client, lite, mapName);
+    }
+
+    @Test
+    public void testLoadAllWithKeySet() {
+        initWithMapStore();
+
+        NearCacheLiteMemberTest.testLoadAllWithKeySet(client, lite, mapName);
+    }
+
+    private void initWithMapStore() {
+        factory.terminateAll();
+        factory.newHazelcastInstance(NearCacheLiteMemberTest.createNearCachedMapConfigWithMapStoreConfig(mapName, false));
+
+        client = factory.newHazelcastClient();
+        lite = factory.newHazelcastInstance(createNearCachedMapConfigWithMapStoreConfig(mapName, true));
     }
 }
