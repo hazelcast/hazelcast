@@ -16,7 +16,7 @@
 
 package com.hazelcast.cardinality.hyperloglog.impl;
 
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
+import com.hazelcast.cardinality.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -26,28 +26,28 @@ public enum HyperLogLogEncType {
 
     SPARSE {
         @Override
-        public IHyperLogLog build(int p) {
+        public HyperLogLog build(int p) {
             return new HyperLogLogSparseStore(p);
         }
     },
     DENSE {
         @Override
-        public IHyperLogLog build(int p) {
+        public HyperLogLog build(int p) {
             return new HyperLogLogDenseStore(p);
         }
     },
     COMPO {
         @Override
-        public IHyperLogLog build(int p) {
+        public HyperLogLog build(int p) {
             return new CompositeHyperLogLogStore(p);
         }
     };
 
-    public abstract IHyperLogLog build(final int p);
+    public abstract HyperLogLog build(final int p);
 
-    private static class CompositeHyperLogLogStore implements IHyperLogLog, IHyperLogLogCompositeContext {
+    private static class CompositeHyperLogLogStore implements HyperLogLog, IHyperLogLogCompositeContext {
 
-        private IHyperLogLog store;
+        private HyperLogLog store;
 
         CompositeHyperLogLogStore(final int p) {
             store = new HyperLogLogSparseStore(this, p);
@@ -69,7 +69,7 @@ public enum HyperLogLogEncType {
         }
 
         @Override
-        public void setStore(IHyperLogLog store) {
+        public void setStore(HyperLogLog store) {
             this.store = store;
         }
 

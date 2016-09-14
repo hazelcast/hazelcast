@@ -16,7 +16,7 @@
 
 package com.hazelcast.cardinality.hyperloglog.impl;
 
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
+import com.hazelcast.cardinality.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -174,7 +174,7 @@ public class HyperLogLogSparseStore
         }
     }
 
-    private IHyperLogLog asDense() {
+    private HyperLogLog asDense() {
         byte[] register = new byte[m];
         for (int hash : sparseSet.values()) {
             int index = extractDenseIndexOf(hash) & (register.length - 1);

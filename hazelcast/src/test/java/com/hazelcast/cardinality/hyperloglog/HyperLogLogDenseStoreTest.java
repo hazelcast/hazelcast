@@ -21,7 +21,7 @@ import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogDenseStore;
 public class HyperLogLogDenseStoreTest extends HyperLogLogAbstractTest {
 
     @Override
-    public IHyperLogLog createStore() {
+    public HyperLogLog createStore() {
         return new HyperLogLogDenseStore(14);
     }
 }

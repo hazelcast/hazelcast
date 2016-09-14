@@ -16,8 +16,8 @@
 
 package com.hazelcast.cardinality.hyperloglog.impl;
 
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
+import com.hazelcast.cardinality.hyperloglog.HyperLogLog;
 
 interface IHyperLogLogCompositeContext {
-    void setStore(IHyperLogLog store);
+    void setStore(HyperLogLog store);
 }

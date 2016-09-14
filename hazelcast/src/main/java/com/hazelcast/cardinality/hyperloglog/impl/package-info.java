@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains implementations of {@link com.hazelcast.cardinality.hyperloglog.IHyperLogLog}.<br/>
+ * <p>This package contains implementations of {@link com.hazelcast.cardinality.hyperloglog.HyperLogLog}.<br/>
  *
  * @since 3.8
  */

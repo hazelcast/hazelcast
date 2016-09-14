@@ -34,9 +34,9 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public abstract class HyperLogLogAbstractTest {
 
-    private IHyperLogLog store;
+    private HyperLogLog store;
 
-    public abstract IHyperLogLog createStore();
+    public abstract HyperLogLog createStore();
 
     @Before
     public void setup() {

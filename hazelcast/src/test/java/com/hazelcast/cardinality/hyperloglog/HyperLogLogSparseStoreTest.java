@@ -22,7 +22,7 @@ public class HyperLogLogSparseStoreTest
         extends HyperLogLogAbstractTest {
 
     @Override
-    public IHyperLogLog createStore() {
+    public HyperLogLog createStore() {
         return new HyperLogLogSparseStore(14);
     }
 

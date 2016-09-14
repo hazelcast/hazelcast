@@ -20,18 +20,18 @@ import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogEncType;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * IHyperLogLog is a redundant and highly available distributed data-structure used for cardinality estimation
- * purposes on unique items in significantly sized data cultures. IHyperLogLog uses P^2 byte registers for storage
+ * HyperLogLog is a redundant and highly available distributed data-structure used for cardinality estimation
+ * purposes on unique items in significantly sized data cultures. HyperLogLog uses P^2 byte registers for storage
  * and computation.
  *
- * IHyperLogLog is an implementation of the two famous papers
+ * HyperLogLog is an implementation of the two famous papers
  * <ul>
  *     <li>http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf</li>
  *     <li>http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf</li>
  * </ul>
  *
  */
-public interface IHyperLogLog extends DataSerializable {
+public interface HyperLogLog extends DataSerializable {
 
     /**
      * Computes a new estimate for the current status of the registers.

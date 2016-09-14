@@ -16,9 +16,9 @@
 
 package com.hazelcast.cardinality.hyperloglog.impl;
 
-import com.hazelcast.cardinality.hyperloglog.IHyperLogLog;
+import com.hazelcast.cardinality.hyperloglog.HyperLogLog;
 
-abstract class AbstractHyperLogLog implements IHyperLogLog {
+abstract class AbstractHyperLogLog implements HyperLogLog {
 
     private static final int LOWER_P_BOUND = 4;
     private static final int UPPER_P_BOUND = 16;
@@ -62,7 +62,7 @@ abstract class AbstractHyperLogLog implements IHyperLogLog {
         return ctx;
     }
 
-    void switchStore(final IHyperLogLog store) {
+    void switchStore(final HyperLogLog store) {
         ctx.setStore(store);
     }
 
