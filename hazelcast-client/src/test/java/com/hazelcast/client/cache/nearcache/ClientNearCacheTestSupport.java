@@ -149,6 +149,18 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         return nearCacheTestContext;
     }
 
+    protected void whenEmptyMapThenPopulatedNearCacheShouldReturnNullNeverNULL_OBJECT(InMemoryFormat inMemoryFormat) {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
+        NearCacheTestContext nearCacheTestContext = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            // populate Near Cache
+            assertNull(nearCacheTestContext.cache.get(i));
+            // fetch value from Near Cache
+            assertNull(nearCacheTestContext.cache.get(i));
+        }
+    }
+
     protected void putAndGetFromCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         NearCacheTestContext nearCacheTestContext = createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);

@@ -86,6 +86,19 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    public void test_whenEmptyMap_thenPopulatedNearCacheShouldReturnNull_neverNULL_OBJECT() {
+        int size = 10;
+
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
+        for (int i = 0; i < size; i++) {
+            // populate Near Cache
+            assertNull(map.get(i));
+            // fetch value from Near Cache
+            assertNull(map.get(i));
+        }
+    }
+
+    @Test
     public void testGetAllChecksNearCacheFirst() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
 
@@ -827,7 +840,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         int expectedCacheMisses = 17;
         for (int i = 0; i < expectedCacheMisses; i++) {
-            map.get("NOT_THERE");
+            assertNull(map.get("NOT_THERE"));
         }
 
         NearCacheStats stats = getNearCacheStats(map);
