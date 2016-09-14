@@ -29,7 +29,7 @@ import java.util.Map;
  * [1] http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
  */
 @SuppressWarnings("checkstyle:magicnumber")
-public class HyperLogLogSparseStore
+public class SparseHyperLogLog
         extends AbstractHyperLogLog {
 
     private static final long P_PRIME_FENCE_MASK = 0x8000000000L;
@@ -50,11 +50,11 @@ public class HyperLogLogSparseStore
     private int mPrime;
     private int tempIdx;
 
-    public HyperLogLogSparseStore(final int p) {
+    public SparseHyperLogLog(final int p) {
         this(null, p);
     }
 
-    public HyperLogLogSparseStore(final IHyperLogLogCompositeContext ctx, final int p) {
+    public SparseHyperLogLog(final IHyperLogLogCompositeContext ctx, final int p) {
         super(ctx, p);
     }
 
@@ -90,7 +90,6 @@ public class HyperLogLogSparseStore
         Long cachedEstimate = getCachedEstimate();
         if (cachedEstimate == null) {
             mergeAndResetTmp();
-            convertToDenseIfNeeded();
             return cacheAndGetLastEstimate(linearCounting(mPrime, mPrime - sparseSet.size()));
         }
 
@@ -165,13 +164,7 @@ public class HyperLogLogSparseStore
     }
 
     private void convertToDenseIfNeeded() {
-        // For absolute correctness this should be based on the actual mem footprint
-        // of the sparse layout vs dense layout.
-        // TODO @tkountis, upcoming fix to address this, with a compressed solution.
-        boolean shouldConvertToDense = sparseSet.size() > sparseToDenseThreshold;
-        if (shouldConvertToDense && getContext() != null) {
-            switchStore(asDense());
-        }
+
     }
 
     private HyperLogLog asDense() {
@@ -181,7 +174,7 @@ public class HyperLogLogSparseStore
             register[index] = (byte) Math.max(register[index], extractDenseNumOfZerosOf(hash));
         }
 
-        return new HyperLogLogDenseStore(p, register);
+        return new DenseHyperLogLog(p, register);
     }
 
 }

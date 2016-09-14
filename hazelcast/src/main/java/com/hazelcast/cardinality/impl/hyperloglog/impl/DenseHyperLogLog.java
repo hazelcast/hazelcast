@@ -31,7 +31,7 @@ import java.util.TreeMap;
  * [3] https://docs.google.com/document/d/1gyjfMHy43U9OWBXxfaeG-3MjGzejW1dlpyMwEYAAWEI/view?fullscreen#
  */
 @SuppressWarnings("checkstyle:magicnumber")
-public class HyperLogLogDenseStore
+public class DenseHyperLogLog
         extends AbstractHyperLogLog {
 
     /**
@@ -777,11 +777,11 @@ public class HyperLogLogDenseStore
     private byte[] register;
     private int numOfEmptyRegs;
 
-    public HyperLogLogDenseStore(final int p) {
+    public DenseHyperLogLog(final int p) {
         this(p, null);
     }
 
-    public HyperLogLogDenseStore(final int p, final byte[] register) {
+    public DenseHyperLogLog(final int p, final byte[] register) {
         super(null, p);
         this.invPowLookup = new double[64 - p + 1];
         this.numOfEmptyRegs = m;

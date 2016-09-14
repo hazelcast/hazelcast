@@ -27,13 +27,13 @@ public enum HyperLogLogEncType {
     SPARSE {
         @Override
         public HyperLogLog build(int p) {
-            return new HyperLogLogSparseStore(p);
+            return new SparseHyperLogLog(p);
         }
     },
     DENSE {
         @Override
         public HyperLogLog build(int p) {
-            return new HyperLogLogDenseStore(p);
+            return new DenseHyperLogLog(p);
         }
     },
     COMPO {
@@ -47,30 +47,29 @@ public enum HyperLogLogEncType {
 
     private static class CompositeHyperLogLogStore implements HyperLogLog, IHyperLogLogCompositeContext {
 
-        private HyperLogLog store;
+        private HyperLogLog hll;
 
         CompositeHyperLogLogStore(final int p) {
-            store = new HyperLogLogSparseStore(this, p);
+            hll = new SparseHyperLogLog(this, p);
         }
 
         @Override
         public long estimate() {
-            return store.estimate();
+            return hll.estimate();
         }
 
         @Override
         public boolean aggregate(long hash) {
-            return store.aggregate(hash);
+            return hll.aggregate(hash);
         }
 
         @Override
         public boolean aggregateAll(long[] hashes) {
-            return store.aggregateAll(hashes);
+            return hll.aggregateAll(hashes);
         }
 
-        @Override
-        public void setStore(HyperLogLog store) {
-            this.store = store;
+        public void setHll(HyperLogLog hll) {
+            this.hll = hll;
         }
 
         @Override
@@ -80,12 +79,12 @@ public enum HyperLogLogEncType {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            store.writeData(out);
+            hll.writeData(out);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            store.readData(in);
+            hll.readData(in);
         }
     }
 }

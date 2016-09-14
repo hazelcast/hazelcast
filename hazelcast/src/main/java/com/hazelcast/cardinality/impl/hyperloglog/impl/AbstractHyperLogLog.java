@@ -63,7 +63,7 @@ abstract class AbstractHyperLogLog implements HyperLogLog {
     }
 
     void switchStore(final HyperLogLog store) {
-        ctx.setStore(store);
+        ctx.setHll(store);
     }
 
     Long getCachedEstimate() {

@@ -19,5 +19,5 @@ package com.hazelcast.cardinality.impl.hyperloglog.impl;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 
 interface IHyperLogLogCompositeContext {
-    void setStore(HyperLogLog store);
+    void setHll(HyperLogLog hll);
 }

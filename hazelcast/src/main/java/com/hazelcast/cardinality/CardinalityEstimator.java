@@ -30,6 +30,9 @@ public interface CardinalityEstimator extends DistributedObject {
 
     /**
      * Aggregates the given hash which can result in a new estimation being available or not.
+     * The latter case would signify that the internal registers of the data-structure were not affected.
+     * The most obvious reason for this scenario would be that another hash (seen before) caused a register
+     * to hold a bigger value that this one could, therefore it got skipped.
      *
      * @param hash 64bit hash code value to aggregate
      * @return boolean flag True, when a new estimate can be computed.
@@ -39,7 +42,10 @@ public interface CardinalityEstimator extends DistributedObject {
 
     /**
      * Batch aggregation for an array of hash codes. Can result in a new estimation being available or not.
-     *
+     * The latter case would signify that the internal registers of the data-structure were not affected.
+     * The most obvious reason for this scenario would be that another hash (seen before) caused a register
+     * to hold a bigger value that this one could, therefore it got skipped.
+     * 
      * @param hashes array of 64bit hash code values to aggregate
      * @return boolean flag True, when a new estimate can be computed.
      * @since 3.8
