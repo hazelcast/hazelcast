@@ -19,9 +19,9 @@ package com.hazelcast.jet.stream.impl.collectors;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.sink.ListSink;
-import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.runtime.JetPair;
+import com.hazelcast.jet.sink.ListSink;
 import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -39,9 +39,9 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -100,9 +100,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toPairMapper());
 
         if (previous != accumulatorVertex) {
-            edgeBuilder(previous, accumulatorVertex)
-                    .addToDAG(dag)
-                    .build();
+            dag.addEdge(newEdge(previous, accumulatorVertex));
         }
 
         return accumulatorVertex;
@@ -119,9 +117,8 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
                 .taskCount(1)
                 .build();
 
-        edgeBuilder(accumulatorVertex, combinerVertex)
-                .addToDAG(dag)
-                .distributed(new SinglePartitionDistributionStrategy(randomName()));
+        dag.addEdge(newEdge(accumulatorVertex, combinerVertex)
+                .distributed(new SinglePartitionDistributionStrategy(randomName())));
 
         return combinerVertex;
     }

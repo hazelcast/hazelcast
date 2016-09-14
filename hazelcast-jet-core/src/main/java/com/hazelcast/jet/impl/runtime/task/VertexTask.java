@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.runtime.task;
 
 
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.actor.Actor;
@@ -482,7 +483,8 @@ public class VertexTask extends Task {
     }
 
     private boolean hasDistributedOutputEdge(Vertex vertex) {
-        for (Edge edge : vertex.getOutputEdges()) {
+        DAG dag = taskContext.getJobContext().getDAG();
+        for (Edge edge : dag.getOutputEdges(vertex)) {
             if (!edge.isLocal()) {
                 return true;
             }

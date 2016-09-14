@@ -30,7 +30,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -59,9 +59,7 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
 
         Vertex previous = this.upstream.buildDAG(dag, vertex, toPairMapper());
         if (previous != vertex) {
-            edgeBuilder(previous, vertex)
-                    .addToDAG(dag)
-                    .build();
+            dag.addEdge(newEdge(previous, vertex));
         }
 
         return vertex;

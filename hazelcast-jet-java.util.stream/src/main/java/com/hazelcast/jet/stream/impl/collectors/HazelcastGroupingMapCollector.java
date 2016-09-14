@@ -19,20 +19,21 @@ package com.hazelcast.jet.stream.impl.collectors;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.sink.MapSink;
-import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.runtime.JetPair;
+import com.hazelcast.jet.sink.MapSink;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.GroupingCombinerProcessor;
+
 import java.util.function.Function;
 import java.util.stream.Collector;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -65,9 +66,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
         Vertex previous = upstream.buildDAG(dag, null, toPairMapper());
         if (previous != merger) {
-            edgeBuilder(previous, merger)
-                    .addToDAG(dag)
-                    .partitioned();
+            dag.addEdge(newEdge(previous, merger).partitioned());
         }
 
         Vertex combiner = vertexBuilder(GroupingCombinerProcessor.class)
@@ -75,10 +74,9 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
                 .args(collector)
                 .build();
 
-        edgeBuilder(merger, combiner)
-                .addToDAG(dag)
+        dag.addEdge(newEdge(merger, combiner)
                 .distributed()
-                .partitioned();
+                .partitioned());
 
         combiner.addSink(new MapSink(mapName));
         executeJob(context, dag);

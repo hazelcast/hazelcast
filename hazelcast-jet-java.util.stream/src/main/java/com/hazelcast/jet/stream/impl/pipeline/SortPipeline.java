@@ -30,7 +30,7 @@ import com.hazelcast.jet.stream.impl.processor.SortProcessor;
 import java.util.Comparator;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
@@ -66,9 +66,8 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
             previous = this.upstream.buildDAG(dag, vertex, toPairMapper());
         }
 
-        edgeBuilder(previous, vertex)
-                .addToDAG(dag)
-                .distributed(new SinglePartitionDistributionStrategy(randomName()));
+        dag.addEdge(newEdge(previous, vertex)
+                .distributed(new SinglePartitionDistributionStrategy(randomName())));
 
         return vertex;
     }

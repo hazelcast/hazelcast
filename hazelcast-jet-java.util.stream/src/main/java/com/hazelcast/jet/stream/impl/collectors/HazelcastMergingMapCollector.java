@@ -27,7 +27,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.edgeBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
@@ -61,9 +61,8 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
                 .args(mergeFunction)
                 .build();
 
-        edgeBuilder(previous, merger)
-                .addToDAG(dag)
-                .partitioned();
+        dag.addEdge(newEdge(previous, merger)
+                .partitioned());
 
         Vertex combiner = vertexBuilder(MergeProcessor.class)
                 .name("merger")
@@ -71,10 +70,9 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
                 .args(mergeFunction)
                 .build();
 
-        edgeBuilder(merger, combiner)
-                .addToDAG(dag)
+        dag.addEdge(newEdge(merger, combiner)
                 .distributed()
-                .partitioned();
+                .partitioned());
 
         combiner.addSink(new MapSink(mapName));
         executeJob(context, dag);

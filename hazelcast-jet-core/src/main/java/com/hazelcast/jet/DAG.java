@@ -19,7 +19,8 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.impl.dag.TopologicalOrderIterator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +45,7 @@ import java.util.Stack;
  * <p>
  * Data will be passed from vertex to vertex
  */
-public class DAG implements DataSerializable {
+public class DAG implements IdentifiedDataSerializable {
     private String name;
     private Set<Edge> edges = new HashSet<Edge>();
     private Map<String, Vertex> vertices = new HashMap<String, Vertex>();
@@ -81,6 +82,39 @@ public class DAG implements DataSerializable {
         return this;
     }
 
+    /**
+     * Returns the input edges for a given vertex
+     */
+    public List<Edge> getInputEdges(Vertex vertex) {
+        if (!vertex.equals(getVertex(vertex.getName()))) {
+            throw new IllegalArgumentException("Given vertex " + vertex + " could not be found in this DAG");
+        }
+
+        List<Edge> inputEdges = new ArrayList<>();
+        for (Edge edge : edges) {
+            if (edge.getOutputVertex().equals(vertex)) {
+                inputEdges.add(edge);
+            }
+        }
+        return inputEdges;
+    }
+
+    /**
+     * Returns the output edges for a given vertex
+     */
+    public List<Edge> getOutputEdges(Vertex vertex) {
+        if (!vertex.equals(getVertex(vertex.getName()))) {
+            throw new IllegalArgumentException("Given vertex " + vertex + " could not be found in this DAG");
+        }
+
+        List<Edge> inputEdges = new ArrayList<>();
+        for (Edge edge : edges) {
+            if (edge.getInputVertex().equals(vertex)) {
+                inputEdges.add(edge);
+            }
+        }
+        return inputEdges;
+    }
     /**
      * Return vertex with corresponding name
      *
@@ -359,12 +393,7 @@ public class DAG implements DataSerializable {
             throw new IllegalArgumentException(
                     "Edge " + edge + " already defined!");
         }
-
-        // inform the vertices
-        edge.getInputVertex().addOutputVertex(edge.getOutputVertex(), edge);
-        edge.getOutputVertex().addInputVertex(edge.getInputVertex(), edge);
-
-        this.edges.add(edge);
+        edges.add(edge);
         return this;
     }
 
@@ -406,6 +435,16 @@ public class DAG implements DataSerializable {
         }
     }
 
+    @Override
+    public int getFactoryId() {
+        return JetDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetDataSerializerHook.DAG;
+    }
+
     private static final class AnnotatedVertex {
         Vertex v;
 
@@ -422,4 +461,5 @@ public class DAG implements DataSerializable {
             lowlink = -1;
         }
     }
+
 }

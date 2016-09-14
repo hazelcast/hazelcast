@@ -21,23 +21,32 @@ import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.jet.strategy.RoutingStrategy;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-import java.io.Serializable;
+
+import java.io.IOException;
 
 /**
  * Represents an edge between two vertices in a DAG
  */
-public class Edge implements Serializable {
+public class Edge implements IdentifiedDataSerializable {
 
-    private Vertex to;
     private String name;
-    private Vertex from;
-    private boolean isLocal = true;
 
-    private HashingStrategy hashingStrategy;
+    private Vertex from;
+    private Vertex to;
+
+    private boolean isLocal = true;
+    private HashingStrategy hashingStrategy = SerializedHashingStrategy.INSTANCE;
     private MemberDistributionStrategy memberDistributionStrategy;
-    private RoutingStrategy routingStrategy;
-    private PartitioningStrategy partitioningStrategy;
+    private RoutingStrategy routingStrategy = RoutingStrategy.ROUND_ROBIN;
+    private PartitioningStrategy partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
+
+    Edge() {
+
+    }
 
     /**
      * Creates an edge between two vertices.
@@ -49,44 +58,9 @@ public class Edge implements Serializable {
     public Edge(String name,
                 Vertex from,
                 Vertex to) {
-        this(name, from, to, true);
-    }
-
-    /**
-     * Creates an edge between two vertices.
-     *
-     * @param name    name of the edge
-     * @param from    the origin vertex
-     * @param to      the destination vertex
-     * @param isLocal sets if the edge is local
-     */
-    Edge(String name,
-         Vertex from,
-         Vertex to,
-         boolean isLocal) {
-        this(name, from, to, isLocal, null, null, null, null);
-    }
-
-    Edge(String name,
-         Vertex from,
-         Vertex to,
-         boolean isLocal,
-         MemberDistributionStrategy memberDistributionStrategy,
-         RoutingStrategy routingStrategy,
-         PartitioningStrategy partitioningStrategy,
-         HashingStrategy hashingStrategy) {
         this.to = to;
         this.name = name;
         this.from = from;
-        this.isLocal = isLocal;
-        this.memberDistributionStrategy = memberDistributionStrategy;
-        this.hashingStrategy = nvl(hashingStrategy, SerializedHashingStrategy.INSTANCE);
-        this.partitioningStrategy = nvl(partitioningStrategy, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
-        this.routingStrategy = nvl(routingStrategy, RoutingStrategy.ROUND_ROBIN);
-    }
-
-    private <T> T nvl(T value, T defaultValue) {
-        return value == null ? defaultValue : value;
     }
 
     /**
@@ -341,5 +315,41 @@ public class Edge implements Serializable {
                 + ", from=" + from
                 + ", to=" + to
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeObject(from);
+        out.writeObject(to);
+        out.writeBoolean(isLocal);
+
+        out.writeObject(hashingStrategy);
+        out.writeObject(memberDistributionStrategy);
+        out.writeObject(routingStrategy);
+        out.writeObject(partitioningStrategy);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        from = in.readObject();
+        to = in.readObject();
+        isLocal = in.readBoolean();
+
+        hashingStrategy = in.readObject();
+        memberDistributionStrategy = in.readObject();
+        routingStrategy = in.readObject();
+        partitioningStrategy = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetDataSerializerHook.EDGE;
     }
 }
