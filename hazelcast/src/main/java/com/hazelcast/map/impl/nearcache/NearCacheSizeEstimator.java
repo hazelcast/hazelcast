@@ -25,12 +25,12 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 /**
  * Size estimator for near cache.
  */
-public class NearCacheSizeEstimator
-        implements SizeEstimator<NearCacheRecord> {
+public class NearCacheSizeEstimator implements SizeEstimator<NearCacheRecord> {
 
     private static final AtomicLongFieldUpdater<NearCacheSizeEstimator> SIZE = AtomicLongFieldUpdater
             .newUpdater(NearCacheSizeEstimator.class, "size");
 
+    @SuppressWarnings("unused")
     private volatile long size;
 
     public NearCacheSizeEstimator() {

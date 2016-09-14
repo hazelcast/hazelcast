@@ -90,7 +90,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         nearCache = wrapAsStaleReadPreventerNearCache(clientHeapNearCache, partitionCount);
         keyStateMarker = getKeyStateMarker();
 
-        invalidateOnChange = this.nearCache.isInvalidatedOnChange();
+        invalidateOnChange = nearCache.isInvalidatedOnChange();
         if (invalidateOnChange) {
             addNearCacheInvalidateListener();
         }
