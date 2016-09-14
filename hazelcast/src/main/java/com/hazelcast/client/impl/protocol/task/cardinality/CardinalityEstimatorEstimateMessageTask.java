@@ -58,7 +58,7 @@ public class CardinalityEstimatorEstimateMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new CardinalityEstimatorPermission(parameters.name, ActionConstants.ACTION_MODIFY);
+        return new CardinalityEstimatorPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
