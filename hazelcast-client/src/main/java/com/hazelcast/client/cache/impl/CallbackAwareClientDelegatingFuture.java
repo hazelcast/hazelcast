@@ -31,22 +31,22 @@ import java.util.concurrent.TimeoutException;
  * A specific {@link ClientDelegatingFuture} implementation
  * which calls given {@link OneShotExecutionCallback} as sync on get.
  */
-class CallbackAwareClientDelegatingFuture extends ClientDelegatingFuture {
+class CallbackAwareClientDelegatingFuture<V> extends ClientDelegatingFuture<V> {
 
-    private final OneShotExecutionCallback callback;
+    private final OneShotExecutionCallback<V> callback;
 
     CallbackAwareClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
                                         SerializationService serializationService,
                                         ClientMessageDecoder clientMessageDecoder,
-                                        OneShotExecutionCallback callback) {
+                                        OneShotExecutionCallback<V> callback) {
         super(clientInvocationFuture, serializationService, clientMessageDecoder);
         this.callback = callback;
     }
 
     @Override
-    public Object get() throws InterruptedException, ExecutionException {
+    public V get() throws InterruptedException, ExecutionException {
         try {
-            Object result = super.get();
+            V result = super.get();
             /*
              * - If it has not been called yet, it will be called and it will be waited to finish.
              * - If it has been called but not finished yet, it will be waited to finish.
@@ -61,7 +61,7 @@ class CallbackAwareClientDelegatingFuture extends ClientDelegatingFuture {
     }
 
     @Override
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         long finishTime = (timeout == Long.MAX_VALUE)
                 ? Long.MAX_VALUE
                 : Clock.currentTimeMillis() + unit.toMillis(timeout);
@@ -69,7 +69,7 @@ class CallbackAwareClientDelegatingFuture extends ClientDelegatingFuture {
             finishTime = Long.MAX_VALUE;
         }
         try {
-            Object result = super.get(timeout, unit);
+            V result = super.get(timeout, unit);
             /*
              * - If it has not been called yet, it will be called and it will be waited to finish.
              * - If it has been called but not finished yet, it will be waited to finish.
@@ -82,5 +82,4 @@ class CallbackAwareClientDelegatingFuture extends ClientDelegatingFuture {
             return ExceptionUtil.sneakyThrow(t);
         }
     }
-
 }

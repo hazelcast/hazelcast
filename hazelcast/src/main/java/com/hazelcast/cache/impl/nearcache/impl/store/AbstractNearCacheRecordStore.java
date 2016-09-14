@@ -26,10 +26,8 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.EvictionStrategy;
-import com.hazelcast.internal.eviction.EvictionStrategyProvider;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -37,6 +35,8 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
+import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
 
@@ -133,15 +133,15 @@ public abstract class AbstractNearCacheRecordStore<
         if (evictionPolicyType == null) {
             throw new IllegalArgumentException("Eviction policy cannot be null");
         }
-        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, classLoader);
+        return getEvictionPolicyEvaluator(evictionConfig, classLoader);
+    }
+
+    protected EvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
+        return getEvictionStrategy(evictionConfig);
     }
 
     protected EvictionChecker createEvictionChecker(NearCacheConfig nearCacheConfig) {
         return new MaxSizeEvictionChecker();
-    }
-
-    protected EvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
-        return EvictionStrategyProvider.getEvictionStrategy(evictionConfig);
     }
 
     protected boolean isAvailable() {
@@ -358,19 +358,6 @@ public abstract class AbstractNearCacheRecordStore<
         return nearCacheStats;
     }
 
-    protected class MaxSizeEvictionChecker implements EvictionChecker {
-
-        @Override
-        public boolean isEvictionRequired() {
-            if (maxSizeChecker != null) {
-                return maxSizeChecker.isReachedToMaxSize();
-            } else {
-                return false;
-            }
-        }
-
-    }
-
     @Override
     public void doEvictionIfRequired() {
         checkAvailable();
@@ -386,6 +373,14 @@ public abstract class AbstractNearCacheRecordStore<
 
         if (isEvictionEnabled()) {
             evictionStrategy.evict(records, evictionPolicyEvaluator, null, this);
+        }
+    }
+
+    protected class MaxSizeEvictionChecker implements EvictionChecker {
+
+        @Override
+        public boolean isEvictionRequired() {
+            return maxSizeChecker != null && maxSizeChecker.isReachedToMaxSize();
         }
     }
 }

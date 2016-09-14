@@ -49,9 +49,9 @@ public class NearCacheObjectRecordStore<K, V>
         value = toValue(value);
         long creationTime = Clock.currentTimeMillis();
         if (timeToLiveMillis > 0) {
-            return new NearCacheObjectRecord(value, creationTime, creationTime + timeToLiveMillis);
+            return new NearCacheObjectRecord<V>(value, creationTime, creationTime + timeToLiveMillis);
         } else {
-            return new NearCacheObjectRecord(value, creationTime, NearCacheRecord.TIME_NOT_SET);
+            return new NearCacheObjectRecord<V>(value, creationTime, NearCacheRecord.TIME_NOT_SET);
         }
     }
 
@@ -91,5 +91,4 @@ public class NearCacheObjectRecordStore<K, V>
         }
         return selectedCandidate;
     }
-
 }

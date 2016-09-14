@@ -54,6 +54,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
@@ -167,7 +168,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
         if (nearCache != null) {
             statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis(),
-                                                       nearCache.getNearCacheStats());
+                    nearCache.getNearCacheStats());
         } else {
             statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis());
         }
@@ -488,11 +489,11 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     private Object putInternalAsync(final V value, final boolean isGet, final long start, final Data keyData,
                                     final Data valueData, ClientInvocationFuture future) {
-        OneShotExecutionCallback oneShotExecutionCallback = null;
+        OneShotExecutionCallback<V> oneShotExecutionCallback = null;
         if (nearCache != null || statisticsEnabled) {
-            oneShotExecutionCallback = new OneShotExecutionCallback() {
+            oneShotExecutionCallback = new OneShotExecutionCallback<V>() {
                 @Override
-                protected void onResponseInternal(Object responseData) {
+                protected void onResponseInternal(V responseData) {
                     if (nearCache != null) {
                         if (cacheOnUpdate) {
                             storeInNearCache(keyData, valueData, value);
@@ -510,24 +511,21 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 }
             };
         }
-        ClientDelegatingFuture delegatingFuture;
-        if (oneShotExecutionCallback != null) {
-            delegatingFuture =
-                    new CallbackAwareClientDelegatingFuture(future, clientContext.getSerializationService(),
-                            PUT_RESPONSE_DECODER, oneShotExecutionCallback);
-            delegatingFuture.andThen(oneShotExecutionCallback);
-        } else {
-            delegatingFuture =
-                    new ClientDelegatingFuture(future, clientContext.getSerializationService(), PUT_RESPONSE_DECODER);
+        SerializationService serializationService = clientContext.getSerializationService();
+        if (oneShotExecutionCallback == null) {
+            return new ClientDelegatingFuture<V>(future, serializationService, PUT_RESPONSE_DECODER);
         }
+        ClientDelegatingFuture<V> delegatingFuture = new CallbackAwareClientDelegatingFuture<V>(future,
+                serializationService, PUT_RESPONSE_DECODER, oneShotExecutionCallback);
+        delegatingFuture.andThen(oneShotExecutionCallback);
         return delegatingFuture;
     }
 
     private Object putInternalSync(V value, boolean isGet, long start, Data keyData, Data valueData,
                                    ClientInvocationFuture future) {
         try {
-            ClientDelegatingFuture delegatingFuture = new ClientDelegatingFuture(future, clientContext.getSerializationService(),
-                    PUT_RESPONSE_DECODER);
+            ClientDelegatingFuture delegatingFuture = new ClientDelegatingFuture(future,
+                    clientContext.getSerializationService(), PUT_RESPONSE_DECODER);
             Object response = delegatingFuture.get();
             if (nearCache != null) {
                 if (cacheOnUpdate) {
@@ -969,5 +967,4 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             }
         }
     }
-
 }
