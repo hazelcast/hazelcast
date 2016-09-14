@@ -16,23 +16,24 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
+import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -63,6 +64,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 
 /**
  * ICache implementation for client
@@ -76,14 +78,11 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @param <V> value type
  */
 public class ClientCacheProxy<K, V>
-        extends AbstractClientCacheProxy<K, V> {
+        extends AbstractClientInternalCacheProxy<K, V>
+        implements ICacheInternal<K, V> {
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig) {
         super(cacheConfig);
-    }
-
-    public NearCache getNearCache() {
-        return nearCache;
     }
 
     @Override
@@ -98,16 +97,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean containsKey(K key) {
-        ensureOpen();
-        validateNotNull(key);
-        final Data keyData = toData(key);
-        Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
-            return true;
-        }
-        ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
-        ClientMessage result = invoke(request, keyData);
-        return CacheContainsKeyCodec.decodeResponse(result).response;
+        return containsKeyInternal(key);
     }
 
     @Override
@@ -164,14 +154,8 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean remove(K key) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, true, false);
         try {
-            boolean removed = f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnRemove(false, start, removed);
-            }
-            return removed;
+            return removeAsyncInternal(key, null, false, true).get();
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -179,14 +163,8 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, true, false);
         try {
-            boolean removed = f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnRemove(false, start, removed);
-            }
-            return removed;
+            return removeAsyncInternal(key, oldValue, true, true).get();
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -194,14 +172,8 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public V getAndRemove(K key) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<V> f = getAndRemoveAsyncInternal(key, true, false);
         try {
-            V removedValue = toObject(f.get());
-            if (statisticsEnabled) {
-                handleStatisticsOnRemove(true, start, removedValue);
-            }
-            return removedValue;
+            return getAndRemoveAsyncInternal(key, true).get();
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -454,6 +426,181 @@ public class ClientCacheProxy<K, V>
     @Override
     public boolean removePartitionLostListener(String id) {
         return clientContext.getListenerService().deregisterListener(id);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAsync(K key) {
+        return getAsync(key, null);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+        return getAsyncInternal(key, expiryPolicy);
+    }
+
+    @Override
+    public ICompletableFuture<Void> putAsync(K key, V value) {
+        return putAsync(key, value, null);
+    }
+
+    @Override
+    public ICompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return (ICompletableFuture<Void>) putAsyncInternal(key, value, expiryPolicy, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return putIfAbsentAsyncInternal(key, value, null, false);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putIfAbsentAsyncInternal(key, value, expiryPolicy, false);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndPutAsync(K key, V value) {
+        return getAndPutAsync(key, value, null);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putAsyncInternal(key, value, expiryPolicy, true, false);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> removeAsync(K key) {
+        return removeAsyncInternal(key, null, false, false);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> removeAsync(K key, V oldValue) {
+        return removeAsyncInternal(key, oldValue, true, false);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndRemoveAsync(K key) {
+        return getAndRemoveAsyncInternal(key, false);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
+        return replaceAsyncInternal(key, null, value, null, false, false);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
+        return replaceAsyncInternal(key, oldValue, newValue, null, true, false);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndReplaceAsync(K key, V value) {
+        return replaceAndGetAsyncInternal(key, null, value, null, false, false);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, false);
+    }
+
+    @Override
+    public V get(K key, ExpiryPolicy expiryPolicy) {
+        try {
+            return getAsyncInternal(key, expiryPolicy).get();
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public Map<K, V> getAll(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+        return getAllInternal(keys, expiryPolicy);
+    }
+
+    @Override
+    public void put(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            putAsyncInternal(key, value, expiryPolicy, false, true).get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            return putAsyncInternal(key, value, expiryPolicy, true, true).get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
+        putAllInternal(map, expiryPolicy);
+    }
+
+    @Override
+    public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            return putIfAbsentAsyncInternal(key, value, expiryPolicy, true).get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        try {
+            return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, true).get();
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            return replaceAsyncInternal(key, null, value, expiryPolicy, false, true).get();
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            return replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true).get();
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public int size() {
+        ensureOpen();
+        try {
+            ClientMessage request = CacheSizeCodec.encodeRequest(nameWithPrefix);
+            ClientMessage resultMessage = invoke(request);
+            return CacheSizeCodec.decodeResponse(resultMessage).response;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+        }
+    }
+
+    @Override
+    public CacheStatistics getLocalCacheStatistics() {
+        return statistics;
     }
 
     private final class ClientCachePartitionLostEventHandler

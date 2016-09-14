@@ -18,6 +18,7 @@ package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
