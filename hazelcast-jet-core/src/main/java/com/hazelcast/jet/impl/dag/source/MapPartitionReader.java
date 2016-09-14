@@ -60,11 +60,7 @@ public class MapPartitionReader extends AbstractHazelcastReader<JetPair> {
     }
 
     @Override
-    public boolean readFromPartitionThread() {
+    public boolean mustRunOnPartitionThread() {
         return true;
-    }
-
-    @Override
-    protected void onClose() {
     }
 }

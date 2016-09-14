@@ -19,10 +19,13 @@ package com.hazelcast.jet.source;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.Source;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.dag.source.ListPartitionReader;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.runtime.Producer;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.NodeEngine;
 
 /**
  * A source which uses a Hazelcast {@code IList} as the input.
@@ -51,13 +54,12 @@ public class ListSource implements Source {
 
     @Override
     public Producer[] getProducers(JobContext jobContext, Vertex vertex) {
-        int partitionId = ListPartitionReader.getPartitionId(jobContext.getNodeEngine(), this.name);
-        if (JetUtil.isPartitionLocal(jobContext.getNodeEngine(), partitionId)) {
-            ListPartitionReader reader =
-                    new ListPartitionReader(jobContext, name);
-            return new Producer[]{reader};
-        }
-        return new Producer[0];
+        NodeEngine engine = jobContext.getNodeEngine();
+        Data nameAsData = engine.getSerializationService().toData(name, StringPartitioningStrategy.INSTANCE);
+        int partitionId = engine.getPartitionService().getPartitionId(nameAsData);
+        return JetUtil.isPartitionLocal(engine, partitionId)
+                ? new Producer[] { new ListPartitionReader(jobContext, name, partitionId) }
+                : new Producer[0];
     }
 
     @Override
@@ -67,8 +69,6 @@ public class ListSource implements Source {
 
     @Override
     public String toString() {
-        return "ListSource{"
-                + "name='" + name + '\''
-                + '}';
+        return "ListSource{name='" + name + "'}";
     }
 }

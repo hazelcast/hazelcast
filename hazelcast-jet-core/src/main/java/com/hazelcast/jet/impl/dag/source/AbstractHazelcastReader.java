@@ -38,60 +38,13 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
     protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
     protected final ILogger logger;
+    protected final PartitionSpecificRunnable openRunnable = new ReaderRunnable(this::onOpen);
+    protected final PartitionSpecificRunnable closeRunnable = new ReaderRunnable(this::onClose);
+    protected final PartitionSpecificRunnable readRunnable = new ReaderRunnable(this::read);
+
     protected long position;
     protected Iterator<V> iterator;
     protected volatile Object[] chunkBuffer;
-
-    protected final PartitionSpecificRunnable partitionSpecificOpenRunnable = new PartitionSpecificRunnable() {
-        @Override
-        public int getPartitionId() {
-            return partitionId;
-        }
-
-        @Override
-        public void run() {
-            try {
-                onOpen();
-                future.set(true);
-            } catch (Throwable e) {
-                future.setException(e);
-            }
-        }
-    };
-
-    protected final PartitionSpecificRunnable partitionSpecificCloseRunnable = new PartitionSpecificRunnable() {
-        @Override
-        public int getPartitionId() {
-            return partitionId;
-        }
-
-        @Override
-        public void run() {
-            try {
-                onClose();
-                future.set(true);
-            } catch (Throwable e) {
-                future.setException(e);
-            }
-        }
-    };
-
-    protected final PartitionSpecificRunnable partitionSpecificRunnable = new PartitionSpecificRunnable() {
-        @Override
-        public int getPartitionId() {
-            return partitionId;
-        }
-
-        @Override
-        public void run() {
-            try {
-                readFromCurrentThread();
-                future.set(true);
-            } catch (Throwable e) {
-                future.setException(e);
-            }
-        }
-    };
 
     private boolean closed;
     private Object[] buffer;
@@ -106,7 +59,7 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
     private final List<ProducerCompletionHandler> completionHandlers;
     private volatile boolean isReadRequested;
 
-    public AbstractHazelcastReader(
+    protected AbstractHazelcastReader(
             JobContext jobContext, String name, int partitionId,
             DataTransferringStrategy dataTransferringStrategy
     ) {
@@ -114,14 +67,13 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
         this.partitionId = partitionId;
         this.nodeEngine = jobContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
-        this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
+        this.completionHandlers = new CopyOnWriteArrayList<>();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
         JobConfig config = jobContext.getJobConfig();
         this.awaitSecondsTime = config.getSecondsToAwait();
         this.chunkSize = config.getChunkSize();
         this.buffer = new Object[this.chunkSize];
         this.dataTransferringStrategy = dataTransferringStrategy;
-
         if (!this.dataTransferringStrategy.byReference()) {
             for (int i = 0; i < this.buffer.length; i++) {
                 this.buffer[i] = this.dataTransferringStrategy.newInstance();
@@ -131,79 +83,78 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
 
     @Override
     public void close() {
-        this.partitionSpecificCloseRunnable.run();
+        closeRunnable.run();
     }
-
-    protected abstract void onClose();
-
-    protected abstract void onOpen();
 
     @Override
     public void open() {
-        this.closed = false;
-        this.markClosed = false;
-
-        if (readFromPartitionThread()) {
-            this.future.reset();
-            this.internalOperationService.execute(this.partitionSpecificOpenRunnable);
-
+        closed = false;
+        markClosed = false;
+        if (mustRunOnPartitionThread()) {
+            future.reset();
+            internalOperationService.execute(openRunnable);
             try {
-                this.future.get(this.awaitSecondsTime, TimeUnit.SECONDS);
+                future.get(awaitSecondsTime, TimeUnit.SECONDS);
             } catch (Exception e) {
                 throw unchecked(e);
             }
         } else {
-            this.partitionSpecificOpenRunnable.run();
-            checkFuture();
+            openRunnable.run();
+            awaitFuture();
         }
     }
 
     @Override
     public int lastProducedCount() {
-        return this.lastProducedCount;
+        return lastProducedCount;
     }
 
     @Override
     public void registerCompletionHandler(ProducerCompletionHandler handler) {
-        this.completionHandlers.add(handler);
+        completionHandlers.add(handler);
     }
 
     @Override
     public boolean isClosed() {
-        return this.closed;
+        return closed;
     }
 
     @Override
     public Object[] produce() {
-        return readFromPartitionThread() ? doReadFromPartitionThread() : readFromCurrentThread();
+        return mustRunOnPartitionThread() ? readOnPartitionThread() : read();
     }
 
     @Override
     public void handleProducerCompleted() {
-        for (ProducerCompletionHandler handler : this.completionHandlers) {
+        for (ProducerCompletionHandler handler : completionHandlers) {
             handler.onComplete(this);
         }
     }
 
     @Override
     public String getName() {
-        return this.name;
+        return name;
     }
 
-    /**
-     * @return - true if data read process will be in Hazelcast partition-thread; false-otherwise;
-     */
-    protected abstract boolean readFromPartitionThread();
+    /** @return true if reading must happen on a Hazelcast partition thread, false otherwise */
+    protected abstract boolean mustRunOnPartitionThread();
+
+    protected void onClose() {
+    }
+
+    protected void onOpen() {
+    }
 
     protected int getPartitionId() {
         return partitionId;
     }
 
+
     private boolean hasNext() {
-        return this.iterator != null && iterator.hasNext();
+        return iterator != null && iterator.hasNext();
     }
 
-    private void checkFuture() {
+    private void awaitFuture() {
         try {
             future.get();
         } catch (Throwable e) {
@@ -212,79 +163,63 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
     }
 
     private void pushReadRequest() {
-        this.isReadRequested = true;
-        this.future.reset();
-        this.internalOperationService.execute(this.partitionSpecificRunnable);
+        isReadRequested = true;
+        future.reset();
+        internalOperationService.execute(readRunnable);
     }
 
-    private Object[] readFromCurrentThread() {
-        if (this.markClosed) {
-            if (this.closed) {
-                return null;
-            } else {
-                return closeReader();
-            }
+    private Object[] read() {
+        if (markClosed) {
+            return closed ? null : closeReader();
         }
-
         if (!hasNext()) {
             return closeReader();
         }
-
         int idx = 0;
-
         boolean hashNext;
-
         do {
-            V value = this.iterator.next();
-
-            this.position++;
-
+            V value = iterator.next();
+            position++;
             if (value != null) {
-                if (this.dataTransferringStrategy.byReference()) {
-                    this.buffer[idx++] = value;
+                if (dataTransferringStrategy.byReference()) {
+                    buffer[idx++] = value;
                 } else {
-                    //noinspection unchecked
-                    this.dataTransferringStrategy.copy(value, this.buffer[idx++]);
+                    dataTransferringStrategy.copy(value, buffer[idx++]);
                 }
             }
             hashNext = hasNext();
-        } while ((hashNext) && (idx < this.chunkSize));
-
+        } while ((hashNext) && (idx < chunkSize));
         processBuffers(idx);
-
         if (!hashNext) {
-            this.markClosed = true;
+            markClosed = true;
         }
-
-        return this.chunkBuffer;
+        return chunkBuffer;
     }
 
     private void processBuffers(int idx) {
         if (idx == 0) {
-            this.chunkBuffer = null;
-            this.lastProducedCount = 0;
-        } else if ((idx > 0) && (idx < this.chunkSize)) {
+            chunkBuffer = null;
+            lastProducedCount = 0;
+        } else if ((idx > 0) && (idx < chunkSize)) {
             Object[] trunkedChunk = new Object[idx];
-            System.arraycopy(this.buffer, 0, trunkedChunk, 0, idx);
-            this.chunkBuffer = trunkedChunk;
-            this.lastProducedCount = idx;
+            System.arraycopy(buffer, 0, trunkedChunk, 0, idx);
+            chunkBuffer = trunkedChunk;
+            lastProducedCount = idx;
         } else {
-            this.chunkBuffer = buffer;
-            this.lastProducedCount = buffer.length;
+            chunkBuffer = buffer;
+            lastProducedCount = buffer.length;
         }
     }
 
     private Object[] closeReader() {
-        if (!this.isClosed()) {
+        if (!isClosed()) {
             try {
                 close();
             } finally {
                 handleProducerCompleted();
             }
         }
-
-        this.reset();
-
+        reset();
         return null;
     }
 
@@ -295,30 +230,49 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
         this.lastProducedCount = -1;
     }
 
-    private Object[] doReadFromPartitionThread() {
-        if (this.isReadRequested) {
-            if (this.future.isDone()) {
-                try {
-                    this.future.get();
-                    Object[] chunk = this.chunkBuffer;
-                    return chunk;
-                } catch (Throwable e) {
-                    throw unchecked(e);
-                } finally {
-                    this.future.reset();
-                    this.chunkBuffer = null;
-                    this.isReadRequested = false;
-                }
-            } else {
-                return null;
+    private Object[] readOnPartitionThread() {
+        if (!isReadRequested) {
+            if (!isClosed()) {
+                pushReadRequest();
             }
-        } else {
-            if (isClosed()) {
-                return null;
-            }
-
-            pushReadRequest();
             return null;
+        }
+        if (!future.isDone()) {
+            return null;
+        }
+        try {
+            future.get();
+            return chunkBuffer;
+        } catch (Throwable e) {
+            throw unchecked(e);
+        } finally {
+            future.reset();
+            chunkBuffer = null;
+            isReadRequested = false;
+        }
+    }
+
+
+    private class ReaderRunnable implements PartitionSpecificRunnable {
+        private final Runnable task;
+
+        ReaderRunnable(Runnable task) {
+            this.task = task;
+        }
+
+        @Override
+        public final int getPartitionId() {
+            return partitionId;
+        }
+
+        @Override
+        public void run() {
+            try {
+                task.run();
+                future.set(true);
+            } catch (Throwable e) {
+                future.setException(e);
+            }
         }
     }
 }
