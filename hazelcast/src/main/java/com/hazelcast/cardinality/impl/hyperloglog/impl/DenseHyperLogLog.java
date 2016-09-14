@@ -26,9 +26,9 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 /**
- * [1] http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
- * [2] http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
- * [3] https://docs.google.com/document/d/1gyjfMHy43U9OWBXxfaeG-3MjGzejW1dlpyMwEYAAWEI/view?fullscreen#
+ * 1. http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
+ * 2. http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
+ * 3. https://docs.google.com/document/d/1gyjfMHy43U9OWBXxfaeG-3MjGzejW1dlpyMwEYAAWEI/view?fullscreen#
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public class DenseHyperLogLog

@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * [1] http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
+ * 1. http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public class SparseHyperLogLog
