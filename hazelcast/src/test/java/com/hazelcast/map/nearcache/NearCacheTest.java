@@ -302,7 +302,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
         HazelcastInstance instance = createHazelcastInstanceFactory(clusterSize).newInstances(config)[0];
 
-        IMap<String, String> map = instance.getMap("mapName");
+        IMap<String, String> map = instance.getMap(mapName);
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
