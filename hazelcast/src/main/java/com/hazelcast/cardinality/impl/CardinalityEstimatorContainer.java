@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality;
+package com.hazelcast.cardinality.impl;
 
-import com.hazelcast.cardinality.hyperloglog.HyperLogLog;
-import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogEncType;
+import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
+import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

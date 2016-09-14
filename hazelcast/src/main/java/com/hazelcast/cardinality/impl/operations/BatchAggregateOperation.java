@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.operations;
+package com.hazelcast.cardinality.impl.operations;
 
-import com.hazelcast.cardinality.CardinalityEstimatorContainer;
-import com.hazelcast.cardinality.CardinalityEstimatorDataSerializerHook;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -25,34 +24,32 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class BatchAggregateAndEstimateOperation
+public class BatchAggregateOperation
         extends CardinalityEstimatorBackupAwareOperation {
 
     private long[] values;
-    private long estimate;
+    private boolean changed;
 
-    public BatchAggregateAndEstimateOperation() { }
+    public BatchAggregateOperation() { }
 
-    public BatchAggregateAndEstimateOperation(String name, long[] values) {
+    public BatchAggregateOperation(String name, long[] values) {
         super(name);
         this.values = Arrays.copyOf(values, values.length);
     }
 
     @Override
     public int getId() {
-        return CardinalityEstimatorDataSerializerHook.BATCH_AGGREGATE_AND_ESTIMATE;
+        return CardinalityEstimatorDataSerializerHook.BATCH_AGGREGATE;
     }
 
     @Override
     public void run() throws Exception {
-        CardinalityEstimatorContainer est = getCardinalityEstimatorContainer();
-        est.aggregateAll(values);
-        estimate = est.estimate();
+        changed = getCardinalityEstimatorContainer().aggregateAll(values);
     }
 
     @Override
     public Object getResponse() {
-        return estimate;
+        return changed;
     }
 
     @Override

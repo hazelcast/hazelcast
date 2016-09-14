@@ -14,9 +14,16 @@
  * limitations under the License.
  */
 
-/**
- * <p>This package contains implementations of {@link com.hazelcast.cardinality.hyperloglog.HyperLogLog}.<br/>
- *
- * @since 3.8
- */
-package com.hazelcast.cardinality.hyperloglog.impl;
+package com.hazelcast.cardinality.impl.hyperloglog;
+
+import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogSparseStore;
+
+public class HyperLogLogSparseStoreTest
+        extends HyperLogLogAbstractTest {
+
+    @Override
+    public HyperLogLog createStore() {
+        return new HyperLogLogSparseStore(14);
+    }
+
+}

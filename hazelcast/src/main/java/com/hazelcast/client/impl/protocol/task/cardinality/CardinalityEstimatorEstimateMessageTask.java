@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.protocol.task.cardinality;
 
-import com.hazelcast.cardinality.CardinalityEstimatorService;
-import com.hazelcast.cardinality.operations.EstimateOperation;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
+import com.hazelcast.cardinality.impl.operations.EstimateOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;

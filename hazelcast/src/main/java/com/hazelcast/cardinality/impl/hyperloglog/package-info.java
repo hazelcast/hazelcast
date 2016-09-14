@@ -19,4 +19,4 @@
  *
  * @since 3.8
  */
-package com.hazelcast.cardinality.hyperloglog;
+package com.hazelcast.cardinality.impl.hyperloglog;

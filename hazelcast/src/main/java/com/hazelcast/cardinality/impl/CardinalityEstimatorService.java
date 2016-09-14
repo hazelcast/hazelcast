@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality;
+package com.hazelcast.cardinality.impl;
 
-import com.hazelcast.cardinality.operations.ReplicationOperation;
+import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;

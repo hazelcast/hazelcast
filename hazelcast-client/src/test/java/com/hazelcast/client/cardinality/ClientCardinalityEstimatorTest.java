@@ -17,7 +17,7 @@
 package com.hazelcast.client.cardinality;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.CardinalityEstimator;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;

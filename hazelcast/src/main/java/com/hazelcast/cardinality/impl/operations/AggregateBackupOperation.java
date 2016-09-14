@@ -14,57 +14,57 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.operations;
+package com.hazelcast.cardinality.impl.operations;
 
-import com.hazelcast.cardinality.CardinalityEstimatorDataSerializerHook;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorContainer;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+import java.util.Arrays;
 
-public class AggregateOperation
-        extends CardinalityEstimatorBackupAwareOperation {
+public class AggregateBackupOperation
+        extends AbstractCardinalityEstimatorOperation
+        implements BackupOperation {
 
-    private long hash;
-    private boolean changed;
+    private long[] hashes;
 
-    public AggregateOperation() { }
-
-    public AggregateOperation(String name, long hash) {
-        super(name);
-        this.hash = hash;
+    public AggregateBackupOperation() {
     }
 
-    @Override
-    public int getId() {
-        return CardinalityEstimatorDataSerializerHook.AGGREGATE;
+    public AggregateBackupOperation(String name, long hash) {
+        super(name);
+        this.hashes = new long[] { hash };
+    }
+
+    public AggregateBackupOperation(String name, long[] hashes) {
+        super(name);
+        this.hashes = Arrays.copyOf(hashes, hashes.length);
     }
 
     @Override
     public void run() throws Exception {
-        changed = getCardinalityEstimatorContainer().aggregate(hash);
+        CardinalityEstimatorContainer container = getCardinalityEstimatorContainer();
+        container.aggregateAll(hashes);
     }
 
     @Override
-    public Object getResponse() {
-        return changed;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new AggregateBackupOperation(name, hash);
+    public int getId() {
+        return CardinalityEstimatorDataSerializerHook.AGGREGATE_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(hash);
+        out.writeLongArray(hashes);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        hash = in.readLong();
+        hashes = in.readLongArray();
     }
+
 }

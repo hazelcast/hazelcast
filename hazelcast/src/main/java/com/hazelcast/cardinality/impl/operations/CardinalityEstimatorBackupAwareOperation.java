@@ -14,34 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.operations;
+package com.hazelcast.cardinality.impl.operations;
 
-import com.hazelcast.cardinality.CardinalityEstimatorDataSerializerHook;
+import com.hazelcast.spi.BackupAwareOperation;
 
-public class EstimateOperation
-        extends AbstractCardinalityEstimatorOperation {
+public abstract class CardinalityEstimatorBackupAwareOperation
+        extends AbstractCardinalityEstimatorOperation
+        implements BackupAwareOperation {
 
-    private long estimate;
+    protected boolean shouldBackup = true;
 
-    public EstimateOperation() { }
+    public CardinalityEstimatorBackupAwareOperation() {
+    }
 
-    public EstimateOperation(String name) {
+    public CardinalityEstimatorBackupAwareOperation(String name) {
         super(name);
     }
 
     @Override
-    public int getId() {
-        return CardinalityEstimatorDataSerializerHook.ESTIMATE;
+    public boolean shouldBackup() {
+        return shouldBackup;
     }
 
     @Override
-    public void run() throws Exception {
-        estimate = getCardinalityEstimatorContainer().estimate();
+    public int getSyncBackupCount() {
+        return 1;
     }
 
     @Override
-    public Object getResponse() {
-        return estimate;
+    public int getAsyncBackupCount() {
+        return 0;
     }
 
 }

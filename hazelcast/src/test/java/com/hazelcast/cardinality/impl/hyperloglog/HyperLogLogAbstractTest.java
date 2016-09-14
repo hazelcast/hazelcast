@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.hyperloglog;
+package com.hazelcast.cardinality.impl.hyperloglog;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

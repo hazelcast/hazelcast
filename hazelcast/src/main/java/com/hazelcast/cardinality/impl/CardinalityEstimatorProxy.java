@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality;
+package com.hazelcast.cardinality.impl;
 
-import com.hazelcast.cardinality.operations.AggregateAndEstimateOperation;
-import com.hazelcast.cardinality.operations.AggregateOperation;
-import com.hazelcast.cardinality.operations.BatchAggregateAndEstimateOperation;
-import com.hazelcast.cardinality.operations.BatchAggregateOperation;
-import com.hazelcast.cardinality.operations.EstimateOperation;
-import com.hazelcast.core.CardinalityEstimator;
+import com.hazelcast.cardinality.impl.operations.AggregateAndEstimateOperation;
+import com.hazelcast.cardinality.impl.operations.AggregateOperation;
+import com.hazelcast.cardinality.impl.operations.BatchAggregateAndEstimateOperation;
+import com.hazelcast.cardinality.impl.operations.BatchAggregateOperation;
+import com.hazelcast.cardinality.impl.operations.EstimateOperation;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;

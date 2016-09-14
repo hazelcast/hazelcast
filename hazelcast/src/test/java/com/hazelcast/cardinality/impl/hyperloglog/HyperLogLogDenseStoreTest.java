@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.hyperloglog;
+package com.hazelcast.cardinality.impl.hyperloglog;
 
-import com.hazelcast.cardinality.hyperloglog.impl.HyperLogLogSparseStore;
+import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogDenseStore;
 
-public class HyperLogLogSparseStoreTest
-        extends HyperLogLogAbstractTest {
+public class HyperLogLogDenseStoreTest extends HyperLogLogAbstractTest {
 
     @Override
     public HyperLogLog createStore() {
-        return new HyperLogLogSparseStore(14);
+        return new HyperLogLogDenseStore(14);
     }
-
 }

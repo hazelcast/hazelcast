@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.cardinality;
+
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ICompletableFuture;
 
 /**
  * CardinalityEstimator is a redundant and highly available distributed data-structure used

@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateAll
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateAndEstimateCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
-import com.hazelcast.core.CardinalityEstimator;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.HashUtil;
 

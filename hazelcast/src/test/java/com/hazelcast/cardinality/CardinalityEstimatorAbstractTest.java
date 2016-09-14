@@ -17,7 +17,6 @@
 package com.hazelcast.cardinality;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.CardinalityEstimator;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;

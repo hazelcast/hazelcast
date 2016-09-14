@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.core.CardinalityEstimator;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;

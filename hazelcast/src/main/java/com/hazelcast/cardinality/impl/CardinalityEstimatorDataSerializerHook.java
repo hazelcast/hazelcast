@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality;
+package com.hazelcast.cardinality.impl;
 
-import com.hazelcast.cardinality.operations.AggregateAndEstimateOperation;
-import com.hazelcast.cardinality.operations.AggregateBackupOperation;
-import com.hazelcast.cardinality.operations.AggregateOperation;
-import com.hazelcast.cardinality.operations.BatchAggregateAndEstimateOperation;
-import com.hazelcast.cardinality.operations.BatchAggregateOperation;
-import com.hazelcast.cardinality.operations.EstimateOperation;
-import com.hazelcast.cardinality.operations.ReplicationOperation;
+import com.hazelcast.cardinality.impl.operations.AggregateAndEstimateOperation;
+import com.hazelcast.cardinality.impl.operations.AggregateBackupOperation;
+import com.hazelcast.cardinality.impl.operations.AggregateOperation;
+import com.hazelcast.cardinality.impl.operations.BatchAggregateAndEstimateOperation;
+import com.hazelcast.cardinality.impl.operations.BatchAggregateOperation;
+import com.hazelcast.cardinality.impl.operations.EstimateOperation;
+import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;

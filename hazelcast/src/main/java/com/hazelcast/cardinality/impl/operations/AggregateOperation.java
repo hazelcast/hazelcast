@@ -14,57 +14,57 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.operations;
+package com.hazelcast.cardinality.impl.operations;
 
-import com.hazelcast.cardinality.CardinalityEstimatorContainer;
-import com.hazelcast.cardinality.CardinalityEstimatorDataSerializerHook;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.Arrays;
 
-public class AggregateBackupOperation
-        extends AbstractCardinalityEstimatorOperation
-        implements BackupOperation {
+public class AggregateOperation
+        extends CardinalityEstimatorBackupAwareOperation {
 
-    private long[] hashes;
+    private long hash;
+    private boolean changed;
 
-    public AggregateBackupOperation() {
-    }
+    public AggregateOperation() { }
 
-    public AggregateBackupOperation(String name, long hash) {
+    public AggregateOperation(String name, long hash) {
         super(name);
-        this.hashes = new long[] { hash };
-    }
-
-    public AggregateBackupOperation(String name, long[] hashes) {
-        super(name);
-        this.hashes = Arrays.copyOf(hashes, hashes.length);
-    }
-
-    @Override
-    public void run() throws Exception {
-        CardinalityEstimatorContainer container = getCardinalityEstimatorContainer();
-        container.aggregateAll(hashes);
+        this.hash = hash;
     }
 
     @Override
     public int getId() {
-        return CardinalityEstimatorDataSerializerHook.AGGREGATE_BACKUP;
+        return CardinalityEstimatorDataSerializerHook.AGGREGATE;
+    }
+
+    @Override
+    public void run() throws Exception {
+        changed = getCardinalityEstimatorContainer().aggregate(hash);
+    }
+
+    @Override
+    public Object getResponse() {
+        return changed;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new AggregateBackupOperation(name, hash);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLongArray(hashes);
+        out.writeLong(hash);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        hashes = in.readLongArray();
+        hash = in.readLong();
     }
-
 }

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.hyperloglog.impl;
+package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
-import com.hazelcast.cardinality.hyperloglog.HyperLogLog;
+import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 
 abstract class AbstractHyperLogLog implements HyperLogLog {
 

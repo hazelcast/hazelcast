@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.hyperloglog.impl;
-
-import com.hazelcast.cardinality.hyperloglog.HyperLogLog;
-
-interface IHyperLogLogCompositeContext {
-    void setStore(HyperLogLog store);
-}
+/**
+ * <p>This package contains implementations of {@link com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog}.<br/>
+ *
+ * @since 3.8
+ */
+package com.hazelcast.cardinality.impl.hyperloglog.impl;
