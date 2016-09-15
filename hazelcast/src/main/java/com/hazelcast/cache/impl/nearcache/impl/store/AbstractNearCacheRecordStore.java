@@ -286,7 +286,7 @@ public abstract class AbstractNearCacheRecordStore<
             if (oldRecord == null) {
                 nearCacheStats.incrementOwnedEntryCount();
             } else {
-                long oldRecordMemoryCost = getRecordStorageMemoryCost(oldRecord);
+                long oldRecordMemoryCost = getTotalStorageMemoryCost(key, oldRecord);
                 nearCacheStats.decrementOwnedEntryMemoryCost(oldRecordMemoryCost);
             }
             onPut(key, value, record, oldRecord);

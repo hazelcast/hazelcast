@@ -52,11 +52,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.String.format;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -627,6 +629,48 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                         stats.getExpirations() >= size);
             }
         });
+    }
+
+    protected void testNearCacheMemoryCostCalculation(InMemoryFormat inMemoryFormat, int threadCount) {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat).setCacheLocalEntries(true);
+        final NearCacheTestContext context = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            context.cache.put(i, "value-" + i);
+        }
+
+        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                    context.cache.get(i);
+                }
+                countDownLatch.countDown();
+            }
+        };
+
+        ExecutorService executorService = newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            executorService.execute(task);
+        }
+        assertOpenEventually(countDownLatch);
+
+        // the Near Cache is filled, we should see some memory costs now
+        long memoryCosts = context.cache.getLocalCacheStatistics().getNearCacheStatistics().getOwnedEntryMemoryCost();
+        if (inMemoryFormat == InMemoryFormat.OBJECT) {
+            assertEquals("There should be no Near Cache heap costs calculated for InMemoryFormat.OBJECT", 0, memoryCosts);
+        } else {
+            assertTrue("The Near Cache is filled, there should be some heap costs", memoryCosts > 0);
+        }
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            context.cache.remove(i);
+        }
+
+        // the Near Cache is empty, we shouldn't see memory costs anymore
+        assertEquals("The Near Cache is empty, there should be no heap costs", 0,
+                context.cache.getLocalCacheStatistics().getNearCacheStatistics().getOwnedEntryMemoryCost());
     }
 
     protected NearCacheStats getNearCacheStats(ICache cache) {

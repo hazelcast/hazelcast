@@ -161,4 +161,24 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     public void testNearCacheIdleRecordsExpired_withBinaryInMemoryFormat() {
         testNearCacheExpiration_withMaxIdle(InMemoryFormat.BINARY);
     }
+
+    @Test
+    public void testNearCacheMemoryCostCalculation_withObjectInMemoryFormat() {
+        testNearCacheMemoryCostCalculation(InMemoryFormat.OBJECT, 1);
+    }
+
+    @Test
+    public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses_withObjectInMemoryFormat() {
+        testNearCacheMemoryCostCalculation(InMemoryFormat.OBJECT, 10);
+    }
+
+    @Test
+    public void testNearCacheMemoryCostCalculation_withBinaryInMemoryFormat() {
+        testNearCacheMemoryCostCalculation(InMemoryFormat.BINARY, 1);
+    }
+
+    @Test
+    public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses_withBinaryInMemoryFormat() {
+        testNearCacheMemoryCostCalculation(InMemoryFormat.BINARY, 10);
+    }
 }
