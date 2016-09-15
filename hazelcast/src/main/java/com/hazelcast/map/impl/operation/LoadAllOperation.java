@@ -16,10 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -34,7 +36,8 @@ import java.util.List;
 /**
  * Triggers map store load of all given keys.
  */
-public class LoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class LoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
+        IdentifiedDataSerializable {
 
     private List<Data> keys;
 
@@ -125,5 +128,15 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
             keys.add(data);
         }
         replaceExistingValues = in.readBoolean();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.LOAD_ALL;
     }
 }

@@ -24,6 +24,9 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
+import com.hazelcast.map.impl.operation.LoadAllOperation;
+import com.hazelcast.map.impl.operation.LoadMapOperation;
+import com.hazelcast.map.impl.operation.LoadStatusOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
@@ -56,8 +59,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int CONTAINS_KEY = 12;
     public static final int KEYS_WITH_CURSOR = 13;
     public static final int ENTRIES_WITH_CURSOR = 14;
+    public static final int LOAD_MAP = 15;
+    public static final int LOAD_STATUS = 16;
+    public static final int LOAD_ALL = 17;
 
-    private static final int LEN = ENTRIES_WITH_CURSOR + 1;
+    private static final int LEN = LOAD_ALL + 1;
 
     @Override
     public int getFactoryId() {
@@ -141,6 +147,21 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ENTRIES_WITH_CURSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapEntriesWithCursor();
+            }
+        };
+        constructors[LOAD_MAP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LoadMapOperation();
+            }
+        };
+        constructors[LOAD_STATUS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LoadStatusOperation();
+            }
+        };
+        constructors[LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LoadAllOperation();
             }
         };
 
