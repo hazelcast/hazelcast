@@ -31,7 +31,6 @@ public class TxnUnlockBackupOperation extends MutatingKeyBasedMapOperation imple
 
     private String ownerUuid;
 
-
     public TxnUnlockBackupOperation() {
     }
 
