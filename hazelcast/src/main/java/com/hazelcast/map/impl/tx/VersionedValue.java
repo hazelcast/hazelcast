@@ -27,6 +27,7 @@ import java.io.IOException;
  * Wrapper for {@link com.hazelcast.nio.serialization.Data} value objects with version information.
  */
 public class VersionedValue implements DataSerializable {
+
     long version;
     Data value;
 

@@ -32,5 +32,4 @@ public class TxnValueWrapper {
     enum Type {
         NEW, UPDATED, REMOVED,
     }
-
 }

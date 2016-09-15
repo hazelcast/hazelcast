@@ -32,7 +32,6 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.HashMap;
@@ -42,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.impl.tx.TransactionalMapProxy}
@@ -49,12 +49,13 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 public abstract class TransactionalMapProxySupport
         extends TransactionalDistributedObject<MapService> implements TransactionalObject {
 
-    protected final String name;
-    protected final PartitioningStrategy partitionStrategy;
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
+
+    protected final String name;
+    protected final MapServiceContext mapServiceContext;
     protected final RecordFactory recordFactory;
     protected final MapOperationProvider operationProvider;
-    protected final MapServiceContext mapServiceContext;
+    protected final PartitioningStrategy partitionStrategy;
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
@@ -85,15 +86,14 @@ public abstract class TransactionalMapProxySupport
             Future future = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return (Boolean) future.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
     public Object getInternal(Data key) {
-        MapService mapService = getService();
-        boolean nearCacheEnabled = mapService.getMapServiceContext().getMapContainer(name).hasMemberNearCache();
+        boolean nearCacheEnabled = mapServiceContext.getMapContainer(name).hasMemberNearCache();
         if (nearCacheEnabled) {
-            Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
+            Object cached = mapServiceContext.getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
                 if (cached.equals(NULL_OBJECT)) {
                     cached = null;
@@ -106,11 +106,10 @@ public abstract class TransactionalMapProxySupport
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
-            Future future = nodeEngine.getOperationService()
-                    .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+            Future future = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return future.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
@@ -133,7 +132,7 @@ public abstract class TransactionalMapProxySupport
             }
             return total;
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
@@ -219,7 +218,6 @@ public abstract class TransactionalMapProxySupport
         return true;
     }
 
-
     private void unlock(Data key, VersionedValue versionedValue) {
         try {
             NodeEngine nodeEngine = getNodeEngine();
@@ -232,7 +230,7 @@ public abstract class TransactionalMapProxySupport
             future.get();
             valueMap.remove(key);
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
@@ -274,15 +272,15 @@ public abstract class TransactionalMapProxySupport
             valueMap.put(key, versionedValue);
             return versionedValue;
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
-
     }
 
     protected long getTimeInMillis(long time, TimeUnit timeunit) {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
+    @Override
     public String getName() {
         return name;
     }
