@@ -283,6 +283,25 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
                 ownedEntryCount < expected);
     }
 
+    protected void assertNearCacheNotEmpty(String mapName, HazelcastInstance instance) {
+        int nearCacheSize = getNearCache(mapName, instance).size();
+        assertTrue("Near Cache size should be > 0 but was " + nearCacheSize, nearCacheSize > 0);
+    }
+
+    protected void assertNearCacheEmptyEventually(final String mapName, final HazelcastInstance instance) {
+        assertTrueEventually(
+                new AssertTask() {
+                    @Override
+                    public void run() {
+                        int nearCacheSize = getNearCache(mapName, instance).size();
+                        assertEquals(format("Near Cache size on instance %s should be 0 but was %d",
+                                instance.getName(), nearCacheSize),
+                                0, nearCacheSize);
+                    }
+                }
+        );
+    }
+
     public static class SimpleMapStore<K, V> extends MapStoreAdapter<K, V> {
 
         private final Map<K, V> store = new ConcurrentHashMap<K, V>();
