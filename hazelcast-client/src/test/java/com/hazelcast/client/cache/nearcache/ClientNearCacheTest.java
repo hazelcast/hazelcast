@@ -28,6 +28,16 @@ import org.junit.runner.RunWith;
 public class ClientNearCacheTest extends ClientNearCacheTestSupport {
 
     @Test
+    public void whenEmptyMapThenPopulatedNearCacheShouldReturnNullNeverNULL_OBJECTWithBinaryInMemoryFormat() {
+        whenEmptyMapThenPopulatedNearCacheShouldReturnNullNeverNULL_OBJECT(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void whenEmptyMapThenPopulatedNearCacheShouldReturnNullNeverNULL_OBJECTWithObjectInMemoryFormat() {
+        whenEmptyMapThenPopulatedNearCacheShouldReturnNullNeverNULL_OBJECT(InMemoryFormat.OBJECT);
+    }
+
+    @Test
     public void putAndGetFromCacheAndThenGetFromClientNearCacheWithBinaryInMemoryFormat() {
         putAndGetFromCacheAndThenGetFromClientNearCache(InMemoryFormat.BINARY);
     }

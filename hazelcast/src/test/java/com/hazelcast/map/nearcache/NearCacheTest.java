@@ -129,6 +129,27 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    public void test_whenEmptyMap_thenPopulatedNearCacheShouldReturnNull_neverNULL_OBJECT() {
+        int size = 10;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig());
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        // populate map
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        for (int i = 0; i < size; i++) {
+            // populate Near Cache
+            assertNull(map.get(i));
+            // fetch value from Near Cache
+            assertNull(map.get(i));
+        }
+    }
+
+    @Test
     public void testNearCacheEviction() {
         String mapName = "testNearCacheEviction";
 
