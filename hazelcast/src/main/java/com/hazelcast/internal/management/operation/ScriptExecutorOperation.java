@@ -39,6 +39,7 @@ public class ScriptExecutorOperation extends Operation {
     private Map<String, Object> bindings;
     private Object result;
 
+    @SuppressWarnings("unused")
     public ScriptExecutorOperation() {
     }
 

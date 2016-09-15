@@ -50,6 +50,7 @@ public class UpdateMapConfigOperation extends Operation {
     private String mapName;
     private MapConfig mapConfig;
 
+    @SuppressWarnings("unused")
     public UpdateMapConfigOperation() {
     }
 

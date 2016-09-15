@@ -4,7 +4,6 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -22,16 +21,14 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
 
-    private HazelcastInstance hz;
     private Cluster cluster;
     private ManagementCenterService managementCenterService;
 
     @Before
     public void setUp() {
-        hz = createHazelcastInstance();
-        Node node = getNode(hz);
-        managementCenterService = node.getManagementCenterService();
+        HazelcastInstance hz = createHazelcastInstance();
         cluster = hz.getCluster();
+        managementCenterService = getNode(hz).getManagementCenterService();
     }
 
     @Test

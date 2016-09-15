@@ -6,9 +6,9 @@ import org.eclipse.jetty.webapp.WebAppContext;
 
 public class JettyServer {
 
-    Server server;
+    private Server server;
 
-    public JettyServer(int port, String sourceDir, String serverXml) throws Exception {
+    JettyServer(int port, String sourceDir, String serverXml) throws Exception {
         buildJetty(port, sourceDir, serverXml);
     }
 
@@ -25,7 +25,15 @@ public class JettyServer {
         server.start();
     }
 
-    public void buildJetty(int port, String sourceDir, String webXmlFile) throws Exception {
+    public boolean isRunning() {
+        if (server == null) {
+            return false;
+        } else {
+            return server.isRunning();
+        }
+    }
+
+    private void buildJetty(int port, String sourceDir, String webXmlFile) throws Exception {
         server = new Server();
 
         SelectChannelConnector connector = new SelectChannelConnector();
@@ -41,13 +49,5 @@ public class JettyServer {
         server.setHandler(context);
 
         server.start();
-    }
-
-    public boolean isRunning() {
-        if (server == null) {
-            return false;
-        } else {
-            return server.isRunning();
-        }
     }
 }

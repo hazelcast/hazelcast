@@ -24,8 +24,11 @@ public class PartitionServiceBeanDTOTest extends HazelcastTestSupport {
         Hazelcast.shutdownAll();
     }
 
-    @Test //https://github.com/hazelcast/hazelcast/issues/8463
-    public void testJMXStatsWithPublicAdressHostName() {
+    /**
+     * https://github.com/hazelcast/hazelcast/issues/8463
+     */
+    @Test
+    public void testJMXStatsWithPublicAddressHostName() {
         Config config = new Config();
         config.getNetworkConfig().setPublicAddress("hazelcast.org");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
@@ -34,5 +37,4 @@ public class PartitionServiceBeanDTOTest extends HazelcastTestSupport {
         PartitionServiceBeanDTO partitionServiceDTO = memberState.getMXBeans().getPartitionServiceBean();
         assertEquals(partitionServiceDTO.getPartitionCount(), partitionServiceDTO.getActivePartitionCount());
     }
-
 }

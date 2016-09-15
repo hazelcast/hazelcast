@@ -19,7 +19,6 @@ package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.request.ForceStartNodeRequest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,20 +35,18 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class ForceStartNodeRequestTest extends HazelcastTestSupport {
 
-
-    private ForceStartNodeRequest request;
     private ManagementCenterService managementCenterService;
 
     @Before
     public void setUp() {
         HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
-        managementCenterService = node.getManagementCenterService();
-        request = new ForceStartNodeRequest();
+        managementCenterService = getNode(hz).getManagementCenterService();
     }
 
     @Test
     public void testForceStart_fails_withNoEnterprise() throws Exception {
+        ForceStartNodeRequest request = new ForceStartNodeRequest();
+
         JsonObject jsonObject = new JsonObject();
         request.writeResponse(managementCenterService, jsonObject);
 

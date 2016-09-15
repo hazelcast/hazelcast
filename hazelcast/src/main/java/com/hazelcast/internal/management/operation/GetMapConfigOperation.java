@@ -32,6 +32,7 @@ public class GetMapConfigOperation extends Operation {
     private String mapName;
     private MapConfig mapConfig;
 
+    @SuppressWarnings("unused")
     public GetMapConfigOperation() {
     }
 

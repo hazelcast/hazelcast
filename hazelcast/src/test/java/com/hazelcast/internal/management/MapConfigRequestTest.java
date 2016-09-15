@@ -1,0 +1,62 @@
+package com.hazelcast.internal.management;
+
+import com.eclipsesource.json.JsonObject;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.management.dto.MapConfigDTO;
+import com.hazelcast.internal.management.request.MapConfigRequest;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class MapConfigRequestTest extends HazelcastTestSupport {
+
+    private ManagementCenterService managementCenterService;
+    private String mapName;
+    private MapConfigDTO dto;
+
+    @Before
+    public void setUp() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances();
+
+        managementCenterService = getNode(instances[0]).getManagementCenterService();
+        mapName = randomMapName();
+        dto = new MapConfigDTO(new MapConfig("MapConfigRequestTest"));
+    }
+
+    @Test
+    public void testGetMapConfig() {
+        MapConfigRequest request = new MapConfigRequest(mapName, dto, false);
+
+        JsonObject jsonObject = new JsonObject();
+        request.writeResponse(managementCenterService, jsonObject);
+
+        JsonObject result = (JsonObject) jsonObject.get("result");
+        MapConfig mapConfig = (MapConfig) request.readResponse(result);
+        assertNotNull(mapConfig);
+        assertEquals("default", mapConfig.getName());
+    }
+
+    @Test
+    public void testUpdateMapConfig() {
+        MapConfigRequest request = new MapConfigRequest(mapName, dto, true);
+
+        JsonObject jsonObject = new JsonObject();
+        request.writeResponse(managementCenterService, jsonObject);
+
+        JsonObject result = (JsonObject) jsonObject.get("result");
+        assertEquals("success", request.readResponse(result));
+    }
+}

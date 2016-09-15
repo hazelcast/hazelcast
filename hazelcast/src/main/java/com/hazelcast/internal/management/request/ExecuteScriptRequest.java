@@ -51,8 +51,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     public ExecuteScriptRequest() {
     }
 
-    public ExecuteScriptRequest(String script, String engine,
-                                boolean targetAllMembers, Map<String, Object> bindings) {
+    public ExecuteScriptRequest(String script, String engine, boolean targetAllMembers, Map<String, Object> bindings) {
         this.script = script;
         this.engine = engine;
         this.targets = new HashSet<String>(0);
@@ -60,8 +59,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         this.bindings = bindings;
     }
 
-    public ExecuteScriptRequest(String script, String engine,
-                                Set<String> targets, Map<String, Object> bindings) {
+    public ExecuteScriptRequest(String script, String engine, Set<String> targets, Map<String, Object> bindings) {
         this.script = script;
         this.targets = targets;
         this.engine = engine;
@@ -74,41 +72,40 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_EXECUTE_SCRIPT;
     }
 
-
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
-        final JsonObject jsonResult = new JsonObject();
+        JsonObject jsonResult = new JsonObject();
         ArrayList results;
         if (targetAllMembers) {
-            final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
-            final ArrayList list = new ArrayList(members.size());
+            Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
+            ArrayList<Object> list = new ArrayList<Object>(members.size());
             for (Member member : members) {
                 list.add(mcs.callOnMember(member, new ScriptExecutorOperation(engine, script, bindings)));
             }
             results = list;
         } else {
-            final ArrayList list = new ArrayList(targets.size());
+            ArrayList<Object> list = new ArrayList<Object>(targets.size());
             for (String address : targets) {
-                final AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(address);
-                final Address targetAddress = new Address(addressHolder.getAddress(), addressHolder.getPort());
+                AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(address);
+                Address targetAddress = new Address(addressHolder.getAddress(), addressHolder.getPort());
                 list.add(mcs.callOnAddress(targetAddress, new ScriptExecutorOperation(engine, script, bindings)));
             }
             results = list;
         }
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (Object result : results) {
             if (result instanceof String) {
                 sb.append(result);
             } else if (result instanceof List) {
-                final List list = (List) result;
+                List list = (List) result;
                 for (Object o : list) {
                     sb.append(o).append("\n");
                 }
             } else if (result instanceof Map) {
-                final Map map = (Map) result;
+                Map map = (Map) result;
                 for (Object o : map.entrySet()) {
-                    final Map.Entry entry = (Map.Entry) o;
+                    Map.Entry entry = (Map.Entry) o;
                     sb.append(entry.getKey()).append("->").append(entry.getValue()).append("\n");
                 }
             } else if (result == null) {
@@ -127,7 +124,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
+        JsonObject root = new JsonObject();
         root.add("script", script);
         root.add("engine", engine);
         JsonArray jsonTargets = new JsonArray();

@@ -1,11 +1,9 @@
 package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -24,32 +22,28 @@ import static org.junit.Assert.assertFalse;
 @Category({QuickTest.class, ParallelTest.class})
 public class ShutdownClusterRequestTest extends HazelcastTestSupport {
 
-    private final String SUCCESS = "SUCCESS";
-
-    private HazelcastInstance hz;
     private LifecycleService lifecycleService;
     private Cluster cluster;
-    private ShutdownClusterRequest shutdownClusterRequest;
     private ManagementCenterService managementCenterService;
 
     @Before
     public void setUp() {
-        hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         lifecycleService = hz.getLifecycleService();
-        Node node = getNode(hz);
-        managementCenterService = node.getManagementCenterService();
         cluster = hz.getCluster();
-        shutdownClusterRequest = new ShutdownClusterRequest();
+        managementCenterService = getNode(hz).getManagementCenterService();
     }
 
     @Test
     public void testShutdownCluster() throws Exception {
-        ClusterState clusterState = cluster.getClusterState();
+        ShutdownClusterRequest request = new ShutdownClusterRequest();
+
+        cluster.getClusterState();
         JsonObject jsonObject = new JsonObject();
-        shutdownClusterRequest.writeResponse(managementCenterService, jsonObject);
+        request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals(SUCCESS, shutdownClusterRequest.readResponse(result));
+        assertEquals("SUCCESS", request.readResponse(result));
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -59,4 +53,3 @@ public class ShutdownClusterRequestTest extends HazelcastTestSupport {
         });
     }
 }
-

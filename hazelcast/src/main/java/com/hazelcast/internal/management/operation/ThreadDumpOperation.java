@@ -31,6 +31,7 @@ public class ThreadDumpOperation extends Operation {
     private boolean dumpDeadlocks;
     private String result;
 
+    @SuppressWarnings("unused")
     public ThreadDumpOperation() {
         this(false);
     }
