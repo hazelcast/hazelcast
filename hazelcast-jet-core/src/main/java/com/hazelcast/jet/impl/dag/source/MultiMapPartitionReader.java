@@ -61,11 +61,6 @@ public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
     }
 
     @Override
-    protected void onClose() {
-
-    }
-
-    @Override
     public void onOpen() {
         NodeEngineImpl nei = (NodeEngineImpl) this.nodeEngine;
         SerializationService ss = nei.getSerializationService();
@@ -77,7 +72,7 @@ public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
     }
 
     @Override
-    public boolean readFromPartitionThread() {
+    public boolean mustRunOnPartitionThread() {
         return true;
     }
 }

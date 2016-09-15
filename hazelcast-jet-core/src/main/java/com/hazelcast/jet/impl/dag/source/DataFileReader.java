@@ -32,7 +32,7 @@ public class DataFileReader extends AbstractHazelcastReader<Pair<Integer, String
     }
 
     @Override
-    public boolean readFromPartitionThread() {
+    public boolean mustRunOnPartitionThread() {
         return false;
     }
 
