@@ -79,7 +79,7 @@ public class NearCacheTest extends NearCacheTestSupport {
     public void testBasicUsage() {
         int clusterSize = 3;
         int mapSize = 5000;
-        String mapName = "test";
+        String mapName = "testBasicUsage";
 
         Config config = getConfig();
         config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
@@ -109,9 +109,8 @@ public class NearCacheTest extends NearCacheTestSupport {
         }
 
         for (HazelcastInstance instance : instances) {
-            NearCache nearCache = getNearCache(mapName, instance);
-            int size = nearCache.size();
-            assertTrue("Near Cache size should be > 0 but was " + size, size > 0);
+            int nearCacheSize = getNearCache(mapName, instance).size();
+            assertTrue("Near Cache size should be > 0 but was " + nearCacheSize, nearCacheSize > 0);
         }
 
         map.clear();

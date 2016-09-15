@@ -232,7 +232,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected void populateNearCache(IMap<Integer, ?> map, int mapSize) {
+    protected void populateNearCache(Map<Integer, ?> map, int mapSize) {
         for (int i = 0; i < mapSize; i++) {
             map.get(i);
         }
