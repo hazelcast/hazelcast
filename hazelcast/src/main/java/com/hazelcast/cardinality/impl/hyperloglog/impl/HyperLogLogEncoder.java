@@ -14,23 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.impl.hyperloglog;
+package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
 import com.hazelcast.nio.serialization.DataSerializable;
 
-/**
- * HyperLogLog is a redundant and highly available distributed data-structure used for cardinality estimation
- * purposes on unique items in significantly sized data cultures. HyperLogLog uses P^2 byte registers for storage
- * and computation.
- *
- * HyperLogLog is an implementation of the two famous papers
- * <ul>
- *     <li>http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf</li>
- *     <li>http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf</li>
- * </ul>
- *
- */
-public interface HyperLogLog extends DataSerializable {
+public interface HyperLogLogEncoder extends DataSerializable {
 
     /**
      * Computes a new estimate for the current status of the registers.
@@ -49,11 +37,17 @@ public interface HyperLogLog extends DataSerializable {
     boolean aggregate(long hash);
 
     /**
-     * Aggregates the hashcodes in the HyperLogLog registers.
+     * Returns the size in memory occupied (in bits) for this implementation of HyperLogLog.
      *
-     * @param hashes the hashcode array to aggregate
-     * @return boolean flag when the underlying registers got modified, meaning a new estimate can be computed.
+     * @return the size in memory.
      */
-    boolean aggregateAll(long[] hashes);
+    int getMemoryFootprint();
+
+
+    /**
+     * Returns the encoding type of this instance; see: {@link HyperLogLogEncoding}
+     * @return {@link HyperLogLogEncoding}
+     */
+    HyperLogLogEncoding getEncodingType();
 
 }

@@ -45,9 +45,9 @@ public class BatchAggregateAndEstimateOperation
 
     @Override
     public void run() throws Exception {
-        CardinalityEstimatorContainer est = getCardinalityEstimatorContainer();
-        est.aggregateAll(values);
-        estimate = est.estimate();
+        CardinalityEstimatorContainer container = getCardinalityEstimatorContainer();
+        container.aggregateAll(values);
+        estimate = container.estimate();
     }
 
     @Override

@@ -31,8 +31,7 @@ import java.util.TreeMap;
  * 3. https://docs.google.com/document/d/1gyjfMHy43U9OWBXxfaeG-3MjGzejW1dlpyMwEYAAWEI/view?fullscreen#
  */
 @SuppressWarnings("checkstyle:magicnumber")
-public class DenseHyperLogLog
-        extends AbstractHyperLogLog {
+public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
 
     /**
      * The following tables list the empirically determined thresholds & bias data,
@@ -773,19 +772,29 @@ public class DenseHyperLogLog
 
     private static final long P_FENCE_MASK = 0x2000000000000L;
 
-    private final double[] invPowLookup;
+    private double[] invPowLookup;
     private byte[] register;
     private int numOfEmptyRegs;
+    private int p;
+    private int m;
 
-    public DenseHyperLogLog(final int p) {
+    DenseHyperLogLogEncoder() {
+    }
+
+    public DenseHyperLogLogEncoder(final int p) {
         this(p, null);
     }
 
-    public DenseHyperLogLog(final int p, final byte[] register) {
-        super(null, p);
-        this.invPowLookup = new double[64 - p + 1];
+    public DenseHyperLogLogEncoder(final int p, final byte[] register) {
+        this.init(p, register);
+    }
+
+    private void init(final int p, final byte[] register) {
+        this.p = p;
+        this.m = 1 << p;
         this.numOfEmptyRegs = m;
         this.register = register != null ? register : new byte[m];
+        this.invPowLookup = new double[64 - p + 1];
         this.prePopulateInvPowLookup();
     }
 
@@ -799,7 +808,6 @@ public class DenseHyperLogLog
 
         if (value > register[index]) {
             register[index] = (byte) value;
-            invalidateCachedEstimate();
             return true;
         }
 
@@ -807,13 +815,8 @@ public class DenseHyperLogLog
     }
 
     public long estimate() {
-        Long cached = getCachedEstimate();
-        if (cached == null) {
-            final double raw = (1 / computeE()) * alpha() * m * m;
-            return cacheAndGetLastEstimate(applyRangeCorrection(raw));
-        }
-
-        return cached;
+        final double raw = (1 / computeE()) * alpha() * m * m;
+        return applyRangeCorrection(raw);
     }
 
     @Override
@@ -826,13 +829,18 @@ public class DenseHyperLogLog
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        init(in.readInt());
+        init(in.readInt(), null);
         this.register = in.readByteArray();
     }
 
     @Override
-    public HyperLogLogEncType getEncodingType() {
-        return HyperLogLogEncType.DENSE;
+    public int getMemoryFootprint() {
+        return m * 8;
+    }
+
+    @Override
+    public HyperLogLogEncoding getEncodingType() {
+        return HyperLogLogEncoding.DENSE;
     }
 
     private double alpha() {
@@ -923,6 +931,10 @@ public class DenseHyperLogLog
     private double invPow(int index) {
         assert index <= 64 - p;
         return invPowLookup[index];
+    }
+
+    private long linearCounting(final int total, final int empty) {
+        return (long) (total * Math.log(total / (double) empty));
     }
 
     private void prePopulateInvPowLookup() {

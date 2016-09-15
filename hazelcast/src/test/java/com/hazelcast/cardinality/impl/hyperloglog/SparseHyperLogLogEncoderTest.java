@@ -16,14 +16,15 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog;
 
-import com.hazelcast.cardinality.impl.hyperloglog.impl.SparseHyperLogLog;
+import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncoder;
+import com.hazelcast.cardinality.impl.hyperloglog.impl.SparseHyperLogLogEncoder;
 
-public class SparseHyperLogLogTest
-        extends HyperLogLogAbstractTest {
+public class SparseHyperLogLogEncoderTest
+        extends HyperLogLogEncoderAbstractTest {
 
     @Override
-    public HyperLogLog createStore() {
-        return new SparseHyperLogLog(14);
+    public HyperLogLogEncoder createStore() {
+        return new SparseHyperLogLogEncoder(14, 25);
     }
 
 }

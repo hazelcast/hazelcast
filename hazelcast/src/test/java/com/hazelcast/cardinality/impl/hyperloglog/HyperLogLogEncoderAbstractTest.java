@@ -16,6 +16,7 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog;
 
+import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncoder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,27 +33,31 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public abstract class HyperLogLogAbstractTest {
+public abstract class HyperLogLogEncoderAbstractTest {
 
-    private HyperLogLog store;
+    private HyperLogLogEncoder encoder;
 
-    public abstract HyperLogLog createStore();
+    public abstract HyperLogLogEncoder createStore();
 
     @Before
     public void setup() {
-        store = createStore();
+        encoder = createStore();
     }
 
     @Test
     public void aggregate() {
-        assertEquals(true, store.aggregate(1000L));
-        assertEquals(1L, store.estimate());
+        assertEquals(true, encoder.aggregate(1000L));
+        assertEquals(1L, encoder.estimate());
     }
 
     @Test
     public void aggregateAll() {
-        assertEquals(true, store.aggregateAll(new long[] { 1L, 2000L, 3000, 40000L }));
-        assertEquals(4L, store.estimate());
+        boolean changed = false;
+        for (long hash : new long[] { 1L, 2000L, 3000, 40000L }) {
+            changed |= encoder.aggregate(hash);
+        }
+        assertEquals(true, changed);
+        assertEquals(4L, encoder.estimate());
     }
 
     @Test
@@ -60,13 +65,13 @@ public abstract class HyperLogLogAbstractTest {
         int sampleStep = 1000;
         ByteBuffer bb = ByteBuffer.allocate(4);
 
-        for (int i=1; i<=10000000; i++) {
+        for (int i = 1; i <= 10000000; i++) {
             bb.clear();
             bb.putInt(i);
-            store.aggregate(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
+            encoder.aggregate(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
 
             if (i % sampleStep == 0) {
-                long est = store.estimate();
+                long est = encoder.estimate();
                 double errorPct = ((est * 100.0) / i) - 100;
                 // 3.0 % is the max error identified during the multi-set tests.
                 if (errorPct > 3.0) {

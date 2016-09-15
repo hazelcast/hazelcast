@@ -45,7 +45,7 @@ public interface CardinalityEstimator extends DistributedObject {
      * The latter case would signify that the internal registers of the data-structure were not affected.
      * The most obvious reason for this scenario would be that another hash (seen before) caused a register
      * to hold a bigger value that this one could, therefore it got skipped.
-     * 
+     *
      * @param hashes array of 64bit hash code values to aggregate
      * @return boolean flag True, when a new estimate can be computed.
      * @since 3.8

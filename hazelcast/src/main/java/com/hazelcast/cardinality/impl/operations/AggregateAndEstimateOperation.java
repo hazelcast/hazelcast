@@ -44,9 +44,9 @@ public class AggregateAndEstimateOperation
 
     @Override
     public void run() throws Exception {
-        CardinalityEstimatorContainer est = getCardinalityEstimatorContainer();
-        est.aggregate(hash);
-        estimate = est.estimate();
+        CardinalityEstimatorContainer container = getCardinalityEstimatorContainer();
+        container.aggregate(hash);
+        estimate = container.estimate();
     }
 
     @Override

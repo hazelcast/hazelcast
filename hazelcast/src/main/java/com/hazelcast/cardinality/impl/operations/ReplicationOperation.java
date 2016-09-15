@@ -46,7 +46,7 @@ public class ReplicationOperation extends Operation
         for (Map.Entry<String, CardinalityEstimatorContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
             CardinalityEstimatorContainer newContainer = service.getCardinalityEstimatorContainer(name);
-            newContainer.setStore(entry.getValue().getStore());
+            newContainer.setHyperLogLog(entry.getValue().getHyperLogLog());
         }
     }
 
