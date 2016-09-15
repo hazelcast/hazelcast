@@ -17,29 +17,70 @@
 package com.hazelcast.jet.impl.actor.shuffling;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.actor.Actor;
 import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.spi.NodeEngine;
 
-public class ShufflingActor extends ShufflingProducer implements Actor {
+public class ShufflingActor implements Actor {
+    private final Producer producer;
     private final Actor baseActor;
     private final Consumer consumer;
 
-    public ShufflingActor(Actor baseActor,
-                          NodeEngine nodeEngine) {
-        super(baseActor);
+    public ShufflingActor(Actor baseActor, NodeEngine nodeEngine) {
+        this.producer = baseActor;
         this.baseActor = baseActor;
         this.consumer = new ShufflingConsumer(baseActor, nodeEngine);
     }
 
+
+    // Simultaneous Producer and Consumer implementation
+
     @Override
-    public VertexTask getSourceTask() {
-        return baseActor.getSourceTask();
+    public String getName() {
+        return producer.getName();
     }
+
+    @Override
+    public void open() {
+        producer.open();
+    }
+
+    @Override
+    public void close() {
+        producer.close();
+    }
+
+
+    // Producer implementation
+
+    @Override
+    public Object[] produce() throws Exception {
+        return this.producer.produce();
+    }
+
+    @Override
+    public int lastProducedCount() {
+        return this.producer.lastProducedCount();
+    }
+
+    @Override
+    public void registerCompletionHandler(ProducerCompletionHandler runnable) {
+        producer.registerCompletionHandler(runnable);
+    }
+
+    @Override
+    public void handleProducerCompleted() {
+        producer.handleProducerCompleted();
+    }
+
+
+    // Consumer implementation
 
     @Override
     public int consume(InputChunk<Object> chunk) {
@@ -57,11 +98,6 @@ public class ShufflingActor extends ShufflingProducer implements Actor {
     }
 
     @Override
-    public String getName() {
-        return baseActor.getName();
-    }
-
-    @Override
     public int flush() {
         return this.consumer.flush();
     }
@@ -76,6 +112,7 @@ public class ShufflingActor extends ShufflingProducer implements Actor {
         return consumer.lastConsumedCount();
     }
 
+    @Override
     public MemberDistributionStrategy getMemberDistributionStrategy() {
         return this.consumer.getMemberDistributionStrategy();
     }
@@ -89,5 +126,15 @@ public class ShufflingActor extends ShufflingProducer implements Actor {
     public HashingStrategy getHashingStrategy() {
         return consumer.getHashingStrategy();
     }
+
+
+    // Actor implementation
+
+    @Override
+    public VertexTask getSourceTask() {
+        return baseActor.getSourceTask();
+    }
+
+
 
 }

@@ -30,34 +30,25 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public abstract class AbstractHazelcastProducer<V> implements Producer {
-    protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
     protected final ILogger logger;
-    protected final PartitionSpecificRunnable openRunnable = new ReaderRunnable(this::onOpen);
-    protected final PartitionSpecificRunnable closeRunnable = new ReaderRunnable(this::onClose);
-    protected final PartitionSpecificRunnable readRunnable = new ReaderRunnable(this::read);
 
-    protected long position;
-    protected Iterator<V> iterator;
-    protected volatile Object[] chunkBuffer;
-
-    private boolean closed;
-    private Object[] buffer;
     private final String name;
-    private boolean markClosed;
     private final int chunkSize;
     private final int partitionId;
-    private final int awaitSecondsTime;
-    private volatile int lastProducedCount;
+    private final Object[] buffer;
+    private final SettableFuture<Object[]> future = SettableFuture.create();
+    private final PartitionSpecificRunnable readRunnable = new ReadRunnable();
     private final List<ProducerCompletionHandler> completionHandlers = new CopyOnWriteArrayList<>();
     private final InternalOperationService internalOperationService;
     private final DataTransferringStrategy dataTransferringStrategy;
-    private volatile boolean isReadRequested;
+    private volatile Iterator<V> iterator;
+    private volatile int lastProducedCount;
+    private volatile boolean isReadInProgress;
 
     protected AbstractHazelcastProducer(JobContext jobContext, String name, int partitionId,
                                         DataTransferringStrategy dataTransferringStrategy
@@ -69,7 +60,6 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
         this.dataTransferringStrategy = dataTransferringStrategy;
         JobConfig config = jobContext.getJobConfig();
-        this.awaitSecondsTime = config.getSecondsToAwait();
         this.chunkSize = config.getChunkSize();
         this.buffer = new Object[this.chunkSize];
         if (!this.dataTransferringStrategy.byReference()) {
@@ -80,26 +70,8 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
     }
 
     @Override
-    public void close() {
-        closeRunnable.run();
-    }
-
-    @Override
     public void open() {
-        closed = false;
-        markClosed = false;
-        if (mustRunOnPartitionThread()) {
-            future.reset();
-            internalOperationService.execute(openRunnable);
-            try {
-                future.get(awaitSecondsTime, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                throw unchecked(e);
-            }
-        } else {
-            openRunnable.run();
-            awaitFuture();
-        }
+        iterator = newIterator();
     }
 
     @Override
@@ -110,11 +82,6 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
     @Override
     public void registerCompletionHandler(ProducerCompletionHandler handler) {
         completionHandlers.add(handler);
-    }
-
-    @Override
-    public boolean isClosed() {
-        return closed;
     }
 
     @Override
@@ -137,101 +104,44 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
     /** @return true if reading must happen on a Hazelcast partition thread, false otherwise */
     protected abstract boolean mustRunOnPartitionThread();
 
-    protected void onClose() {
-    }
-
-    protected void onOpen() {
-    }
+    protected abstract Iterator<V> newIterator();
 
     protected int getPartitionId() {
         return partitionId;
     }
 
 
-    private boolean hasNext() {
-        return iterator != null && iterator.hasNext();
-    }
-
-    private void awaitFuture() {
-        try {
-            future.get();
-        } catch (Throwable e) {
-            throw unchecked(e);
-        }
-    }
-
-    private void pushReadRequest() {
-        isReadRequested = true;
-        future.reset();
-        internalOperationService.execute(readRunnable);
-    }
-
     private Object[] read() {
-        if (markClosed) {
-            return closed ? null : closeReader();
+        if (iterator == null) {
+            return null;
         }
-        if (!hasNext()) {
-            return closeReader();
+        if (!iterator.hasNext()) {
+            iterator = null;
+            lastProducedCount = -1;
+            handleProducerCompleted();
+            return null;
         }
         int idx = 0;
-        boolean hashNext;
         do {
             V value = iterator.next();
-            position++;
             if (value != null) {
                 if (dataTransferringStrategy.byReference()) {
-                    buffer[idx++] = value;
+                    buffer[idx] = value;
                 } else {
-                    dataTransferringStrategy.copy(value, buffer[idx++]);
+                    dataTransferringStrategy.copy(value, buffer[idx]);
                 }
+                idx++;
             }
-            hashNext = hasNext();
-        } while ((hashNext) && (idx < chunkSize));
-        processBuffers(idx);
-        if (!hashNext) {
-            markClosed = true;
-        }
-        return chunkBuffer;
-    }
-
-    private void processBuffers(int idx) {
-        if (idx == 0) {
-            chunkBuffer = null;
-            lastProducedCount = 0;
-        } else if ((idx > 0) && (idx < chunkSize)) {
-            Object[] trunkedChunk = new Object[idx];
-            System.arraycopy(buffer, 0, trunkedChunk, 0, idx);
-            chunkBuffer = trunkedChunk;
-            lastProducedCount = idx;
-        } else {
-            chunkBuffer = buffer;
-            lastProducedCount = buffer.length;
-        }
-    }
-
-    private Object[] closeReader() {
-        if (!isClosed()) {
-            try {
-                close();
-            } finally {
-                handleProducerCompleted();
-            }
-        }
-        reset();
-        return null;
-    }
-
-    private void reset() {
-        this.closed = true;
-        this.markClosed = true;
-        this.chunkBuffer = null;
-        this.lastProducedCount = -1;
+        } while (iterator.hasNext() && idx < chunkSize);
+        lastProducedCount = idx;
+        return idx == 0 ? null : buffer;
     }
 
     private Object[] readOnPartitionThread() {
-        if (!isReadRequested) {
-            if (!isClosed()) {
-                pushReadRequest();
+        if (!isReadInProgress) {
+            if (iterator != null) {
+                isReadInProgress = true;
+                internalOperationService.execute(readRunnable);
             }
             return null;
         }
@@ -239,25 +149,17 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
             return null;
         }
         try {
-            future.get();
-            return chunkBuffer;
+            return future.get();
         } catch (Throwable e) {
             throw unchecked(e);
         } finally {
             future.reset();
-            chunkBuffer = null;
-            isReadRequested = false;
+            isReadInProgress = false;
         }
     }
 
 
-    private class ReaderRunnable implements PartitionSpecificRunnable {
-        private final Runnable task;
-
-        ReaderRunnable(Runnable task) {
-            this.task = task;
-        }
-
+    private class ReadRunnable implements PartitionSpecificRunnable {
         @Override
         public final int getPartitionId() {
             return partitionId;
@@ -266,8 +168,7 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
         @Override
         public void run() {
             try {
-                task.run();
-                future.set(true);
+                future.set(read());
             } catch (Throwable e) {
                 future.setException(e);
             }

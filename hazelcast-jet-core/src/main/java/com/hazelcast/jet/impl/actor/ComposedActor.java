@@ -184,17 +184,6 @@ public class ComposedActor implements Actor {
     }
 
     @Override
-    public boolean isClosed() {
-        boolean isClosed = true;
-
-        for (Actor actor : this.consumers) {
-            isClosed &= actor.isClosed();
-        }
-
-        return isClosed;
-    }
-
-    @Override
     public void open() {
         for (Actor actor : this.consumers) {
             actor.open();

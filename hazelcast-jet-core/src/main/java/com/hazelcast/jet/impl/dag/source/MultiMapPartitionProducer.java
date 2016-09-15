@@ -61,18 +61,22 @@ public class MultiMapPartitionProducer extends AbstractHazelcastProducer<JetPair
     }
 
     @Override
-    public void onOpen() {
+    public Iterator<JetPair> newIterator() {
         NodeEngineImpl nei = (NodeEngineImpl) this.nodeEngine;
         SerializationService ss = nei.getSerializationService();
         MultiMapService multiMapService = nei.getService(MultiMapService.SERVICE_NAME);
         MultiMapContainer multiMapContainer = multiMapService.getPartitionContainer(getPartitionId())
                 .getCollectionContainer(getName());
         Iterator<Map.Entry<Data, MultiMapValue>> it = multiMapContainer.getMultiMapValues().entrySet().iterator();
-        this.iterator = new JetPairIterator<>(it, pairConverter, ss);
+        return new JetPairIterator<>(it, pairConverter, ss);
     }
 
     @Override
     public boolean mustRunOnPartitionThread() {
         return true;
+    }
+
+    @Override
+    public void close() {
     }
 }

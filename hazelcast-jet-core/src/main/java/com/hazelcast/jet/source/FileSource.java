@@ -19,7 +19,7 @@ package com.hazelcast.jet.source;
 import com.hazelcast.jet.Source;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.impl.dag.source.DataFileReader;
+import com.hazelcast.jet.impl.dag.source.DataFileProducer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import java.io.File;
@@ -56,7 +56,7 @@ public class FileSource implements Source {
             long end = i < chunkCount - 1 ? chunks[i + 1] : file.length();
 
             int partitionId = i % jobContext.getNodeEngine().getPartitionService().getPartitionCount();
-            readers[i] = new DataFileReader(jobContext, partitionId, name, start, end);
+            readers[i] = new DataFileProducer(jobContext, partitionId, name, start, end);
         }
         return readers;
     }

@@ -24,6 +24,7 @@ import com.hazelcast.jet.impl.data.pair.JetPairIterator;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.runtime.JetPair;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class ListPartitionProducer extends AbstractHazelcastProducer<JetPair> {
@@ -40,9 +41,13 @@ public class ListPartitionProducer extends AbstractHazelcastProducer<JetPair> {
     }
 
     @Override
-    protected void onOpen() {
+    protected Iterator<JetPair> newIterator() {
         ListService listService = nodeEngine.getService(ListService.SERVICE_NAME);
         List<CollectionItem> items = listService.getOrCreateContainer(getName(), false).getCollection();
-        iterator = new JetPairIterator<>(items.iterator(), pairConverter, nodeEngine.getSerializationService());
+        return new JetPairIterator<>(items.iterator(), pairConverter, nodeEngine.getSerializationService());
+    }
+
+    @Override
+    public void close() {
     }
 }

@@ -31,6 +31,8 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import java.util.Iterator;
+
 public class MapPartitionProducer extends AbstractHazelcastProducer<JetPair> {
     private final MapConfig mapConfig;
 
@@ -50,17 +52,21 @@ public class MapPartitionProducer extends AbstractHazelcastProducer<JetPair> {
     }
 
     @Override
-    public void onOpen() {
+    public Iterator<JetPair> newIterator() {
         final NodeEngineImpl nei = (NodeEngineImpl) this.nodeEngine;
         final SerializationService ss = nei.getSerializationService();
         final MapService mapService = nei.getService(MapService.SERVICE_NAME);
         final PartitionContainer pc = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
         final RecordStore<Record> recordStore = pc.getRecordStore(getName());
-        this.iterator = new JetPairIterator<>(recordStore.iterator(), pairConverter, ss);
+        return new JetPairIterator<>(recordStore.iterator(), pairConverter, ss);
     }
 
     @Override
     public boolean mustRunOnPartitionThread() {
         return true;
+    }
+
+    @Override
+    public void close() {
     }
 }

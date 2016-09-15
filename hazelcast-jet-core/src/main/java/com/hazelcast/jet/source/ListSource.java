@@ -19,7 +19,7 @@ package com.hazelcast.jet.source;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.Source;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.dag.source.ListPartitionReader;
+import com.hazelcast.jet.impl.dag.source.ListPartitionProducer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.runtime.Producer;
@@ -58,7 +58,7 @@ public class ListSource implements Source {
         Data nameAsData = engine.getSerializationService().toData(name, StringPartitioningStrategy.INSTANCE);
         int partitionId = engine.getPartitionService().getPartitionId(nameAsData);
         return JetUtil.isPartitionLocal(engine, partitionId)
-                ? new Producer[] { new ListPartitionReader(jobContext, name, partitionId) }
+                ? new Producer[] { new ListPartitionProducer(jobContext, name, partitionId) }
                 : new Producer[0];
     }
 

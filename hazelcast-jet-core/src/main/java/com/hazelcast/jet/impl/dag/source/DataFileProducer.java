@@ -20,6 +20,7 @@ import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.Pair;
 import java.io.File;
+import java.util.Iterator;
 
 public class DataFileProducer extends AbstractHazelcastProducer<Pair<Integer, String>> {
     private final long end;
@@ -37,14 +38,11 @@ public class DataFileProducer extends AbstractHazelcastProducer<Pair<Integer, St
     }
 
     @Override
-    protected void onOpen() {
-        File file = new File(getName());
-        this.iterator = new FileIterator(file, this.start, this.end);
-        this.position = ((FileIterator) this.iterator).getLineNumber();
+    protected Iterator<Pair<Integer, String>> newIterator() {
+        return new FileIterator(new File(getName()), this.start, this.end);
     }
 
     @Override
-    protected void onClose() {
-        this.iterator = null;
+    public void close() {
     }
 }

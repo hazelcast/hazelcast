@@ -195,11 +195,6 @@ public class RingbufferActor implements Actor {
     }
 
     @Override
-    public boolean isClosed() {
-        return this.isClosed;
-    }
-
-    @Override
     public void open() {
         this.ringbuffer.reset();
         this.isClosed = false;
