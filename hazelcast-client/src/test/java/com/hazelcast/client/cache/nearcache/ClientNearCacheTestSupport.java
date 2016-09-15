@@ -468,8 +468,11 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected void doTestGetAllReturnsFromNearCache() {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT);
+    protected void doTestGetAllReturnsFromNearCache(InMemoryFormat inMemoryFormat) {
+        if (inMemoryFormat != InMemoryFormat.OBJECT) {
+            return;
+        }
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         NearCacheTestContext nearCacheTestContext = createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
