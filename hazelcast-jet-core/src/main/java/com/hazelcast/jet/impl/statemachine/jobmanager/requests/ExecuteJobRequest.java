@@ -16,18 +16,17 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.requests;
 
-import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
-public class ExecuteJobRequest implements StateMachineRequest<JobManagerEvent, Dummy> {
+public class ExecuteJobRequest implements StateMachineRequest<JobManagerEvent, Void> {
     @Override
     public JobManagerEvent getEvent() {
         return JobManagerEvent.EXECUTE;
     }
 
     @Override
-    public Dummy getPayload() {
-        return Dummy.INSTANCE;
+    public Void getPayload() {
+        return null;
     }
 }

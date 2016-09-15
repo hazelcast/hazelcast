@@ -16,21 +16,20 @@
 
 package com.hazelcast.jet.impl.statemachine.runner.requests;
 
-import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
 /**
  * State-machine request which start vertex runners;
  */
-public class VertexRunnerStartRequest implements StateMachineRequest<VertexRunnerEvent, Dummy> {
+public class VertexRunnerStartRequest implements StateMachineRequest<VertexRunnerEvent, Void> {
     @Override
     public VertexRunnerEvent getEvent() {
         return VertexRunnerEvent.START;
     }
 
     @Override
-    public Dummy getPayload() {
-        return Dummy.INSTANCE;
+    public Void getPayload() {
+        return null;
     }
 }

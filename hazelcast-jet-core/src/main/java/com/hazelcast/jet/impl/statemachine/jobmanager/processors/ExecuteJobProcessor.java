@@ -17,20 +17,20 @@
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
-import com.hazelcast.jet.impl.runtime.JobManager;
-import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.ExecutorContext;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.runtime.JobManager;
+import com.hazelcast.jet.impl.runtime.VertexRunner;
+import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerExecuteRequest;
 import com.hazelcast.logging.ILogger;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class ExecuteJobProcessor implements VertexRunnerPayloadProcessor<Dummy> {
+public class ExecuteJobProcessor implements VertexRunnerPayloadProcessor<Void> {
     private final long secondsToAwait;
     private final ExecutorContext executorContext;
     private final JobManager jobManager;
@@ -46,7 +46,7 @@ public class ExecuteJobProcessor implements VertexRunnerPayloadProcessor<Dummy> 
     }
 
     @Override
-    public void process(Dummy payload) throws Exception {
+    public void process(Void payload) throws Exception {
         jobManager.registerExecution();
 
         startRunners();

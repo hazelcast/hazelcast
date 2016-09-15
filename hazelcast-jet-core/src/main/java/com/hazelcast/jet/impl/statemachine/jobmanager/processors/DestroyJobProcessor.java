@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
-import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
@@ -26,7 +25,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
-public class DestroyJobProcessor implements VertexRunnerPayloadProcessor<Dummy> {
+public class DestroyJobProcessor implements VertexRunnerPayloadProcessor<Void> {
     private final JobManager jobManager;
     private final List<Task> networkTasks;
 
@@ -36,7 +35,7 @@ public class DestroyJobProcessor implements VertexRunnerPayloadProcessor<Dummy> 
     }
 
     @Override
-    public void process(Dummy payload) throws Exception {
+    public void process(Void payload) throws Exception {
         Throwable error = null;
 
         try {

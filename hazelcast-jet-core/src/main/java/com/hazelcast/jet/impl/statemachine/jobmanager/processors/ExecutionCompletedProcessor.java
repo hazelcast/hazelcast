@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
 
-import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 
-public class ExecutionCompletedProcessor implements VertexRunnerPayloadProcessor<Dummy> {
+public class ExecutionCompletedProcessor implements VertexRunnerPayloadProcessor<Void> {
     @Override
-    public void process(Dummy payload) throws Exception {
+    public void process(Void payload) throws Exception {
 
     }
 }

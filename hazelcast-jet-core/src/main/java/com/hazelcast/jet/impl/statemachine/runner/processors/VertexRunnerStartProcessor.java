@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.impl.statemachine.runner.processors;
 
-import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 
-public class VertexRunnerStartProcessor implements VertexRunnerPayloadProcessor<Dummy> {
+public class VertexRunnerStartProcessor implements VertexRunnerPayloadProcessor<Void> {
     private final VertexRunner runner;
 
     public VertexRunnerStartProcessor(VertexRunner runner) {
@@ -28,7 +27,7 @@ public class VertexRunnerStartProcessor implements VertexRunnerPayloadProcessor<
     }
 
     @Override
-    public void process(Dummy payload) throws Exception {
+    public void process(Void payload) throws Exception {
         runner.start();
     }
 }

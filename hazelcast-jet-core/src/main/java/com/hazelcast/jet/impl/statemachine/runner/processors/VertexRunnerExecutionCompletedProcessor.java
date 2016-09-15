@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.statemachine.runner.processors;
 
-import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.DataChannel;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+
 import java.util.List;
 
-public class VertexRunnerExecutionCompletedProcessor implements VertexRunnerPayloadProcessor<Dummy> {
+public class VertexRunnerExecutionCompletedProcessor implements VertexRunnerPayloadProcessor<Void> {
     private final VertexRunner runner;
     private final JobContext jobContext;
 
@@ -34,7 +34,7 @@ public class VertexRunnerExecutionCompletedProcessor implements VertexRunnerPayl
 
     //payload - completed vertex runner
     @Override
-    public void process(Dummy payload) throws Exception {
+    public void process(Void payload) throws Exception {
         List<DataChannel> channels = this.runner.getOutputChannels();
 
         if (channels.size() > 0) {

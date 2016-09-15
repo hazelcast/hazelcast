@@ -16,10 +16,9 @@
 
 package com.hazelcast.jet.impl.statemachine.job;
 
-import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
-public class JobStateMachineRequest implements StateMachineRequest<JobEvent, Dummy> {
+public class JobStateMachineRequest implements StateMachineRequest<JobEvent, Void> {
     private final JobEvent event;
 
     public JobStateMachineRequest(JobEvent event) {
@@ -32,7 +31,7 @@ public class JobStateMachineRequest implements StateMachineRequest<JobEvent, Dum
     }
 
     @Override
-    public Dummy getPayload() {
-        return Dummy.INSTANCE;
+    public Void getPayload() {
+        return null;
     }
 }
