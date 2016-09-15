@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 
-public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
+public class MultiMapPartitionProducer extends AbstractHazelcastProducer<JetPair> {
     private final JetPairConverter<Entry<Data, MultiMapValue>> pairConverter =
             new JetPairConverter<Entry<Data, MultiMapValue>>() {
                 @Override
@@ -56,7 +56,7 @@ public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
                 }
             };
 
-    public MultiMapPartitionReader(JobContext jobContext, String name, int partitionId) {
+    public MultiMapPartitionProducer(JobContext jobContext, String name, int partitionId) {
         super(jobContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
     }
 

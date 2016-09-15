@@ -21,11 +21,11 @@ import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.Pair;
 import java.io.File;
 
-public class DataFileReader extends AbstractHazelcastReader<Pair<Integer, String>> {
+public class DataFileProducer extends AbstractHazelcastProducer<Pair<Integer, String>> {
     private final long end;
     private final long start;
 
-    public DataFileReader(JobContext jobContext, int partitionId, String name, long start, long end) {
+    public DataFileProducer(JobContext jobContext, int partitionId, String name, long start, long end) {
         super(jobContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         this.end = end;
         this.start = start;

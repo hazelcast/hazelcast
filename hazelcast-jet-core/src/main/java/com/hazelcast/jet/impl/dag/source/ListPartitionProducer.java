@@ -26,11 +26,11 @@ import com.hazelcast.jet.runtime.JetPair;
 
 import java.util.List;
 
-public class ListPartitionReader extends AbstractHazelcastReader<JetPair> {
+public class ListPartitionProducer extends AbstractHazelcastProducer<JetPair> {
     private final JetPairConverter<CollectionItem> pairConverter =
             (item, ss) -> new JetPair<>(item.getItemId(), ss.toObject(item.getValue()), getPartitionId());
 
-    public ListPartitionReader(JobContext jobContext, String name, int partitionId) {
+    public ListPartitionProducer(JobContext jobContext, String name, int partitionId) {
         super(jobContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
     }
 

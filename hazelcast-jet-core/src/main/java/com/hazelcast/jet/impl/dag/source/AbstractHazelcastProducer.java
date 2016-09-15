@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
-public abstract class AbstractHazelcastReader<V> implements Producer {
+public abstract class AbstractHazelcastProducer<V> implements Producer {
     protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
     protected final ILogger logger;
@@ -54,26 +54,24 @@ public abstract class AbstractHazelcastReader<V> implements Producer {
     private final int partitionId;
     private final int awaitSecondsTime;
     private volatile int lastProducedCount;
+    private final List<ProducerCompletionHandler> completionHandlers = new CopyOnWriteArrayList<>();
     private final InternalOperationService internalOperationService;
     private final DataTransferringStrategy dataTransferringStrategy;
-    private final List<ProducerCompletionHandler> completionHandlers;
     private volatile boolean isReadRequested;
 
-    protected AbstractHazelcastReader(
-            JobContext jobContext, String name, int partitionId,
-            DataTransferringStrategy dataTransferringStrategy
+    protected AbstractHazelcastProducer(JobContext jobContext, String name, int partitionId,
+                                        DataTransferringStrategy dataTransferringStrategy
     ) {
         this.name = name;
         this.partitionId = partitionId;
         this.nodeEngine = jobContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
-        this.completionHandlers = new CopyOnWriteArrayList<>();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
+        this.dataTransferringStrategy = dataTransferringStrategy;
         JobConfig config = jobContext.getJobConfig();
         this.awaitSecondsTime = config.getSecondsToAwait();
         this.chunkSize = config.getChunkSize();
         this.buffer = new Object[this.chunkSize];
-        this.dataTransferringStrategy = dataTransferringStrategy;
         if (!this.dataTransferringStrategy.byReference()) {
             for (int i = 0; i < this.buffer.length; i++) {
                 this.buffer[i] = this.dataTransferringStrategy.newInstance();
