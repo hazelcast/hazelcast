@@ -20,12 +20,13 @@ import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.Pair;
 import java.io.File;
+import java.util.Iterator;
 
-public class DataFileReader extends AbstractHazelcastReader<Pair<Integer, String>> {
+public class DataFileProducer extends AbstractHazelcastProducer<Pair<Integer, String>> {
     private final long end;
     private final long start;
 
-    public DataFileReader(JobContext jobContext, int partitionId, String name, long start, long end) {
+    public DataFileProducer(JobContext jobContext, int partitionId, String name, long start, long end) {
         super(jobContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
         this.end = end;
         this.start = start;
@@ -37,14 +38,11 @@ public class DataFileReader extends AbstractHazelcastReader<Pair<Integer, String
     }
 
     @Override
-    protected void onOpen() {
-        File file = new File(getName());
-        this.iterator = new FileIterator(file, this.start, this.end);
-        this.position = ((FileIterator) this.iterator).getLineNumber();
+    protected Iterator<Pair<Integer, String>> newIterator() {
+        return new FileIterator(new File(getName()), this.start, this.end);
     }
 
     @Override
-    protected void onClose() {
-        this.iterator = null;
+    public void close() {
     }
 }

@@ -20,7 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Source;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.impl.dag.source.MapPartitionReader;
+import com.hazelcast.jet.impl.dag.source.MapPartitionProducer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
 import java.util.List;
@@ -62,7 +62,7 @@ public class MapSource implements Source {
     }
 
     protected Producer getReader(JobContext jobContext, int partitionId) {
-        return new MapPartitionReader(jobContext, name, partitionId);
+        return new MapPartitionProducer(jobContext, name, partitionId);
     }
 
     @Override

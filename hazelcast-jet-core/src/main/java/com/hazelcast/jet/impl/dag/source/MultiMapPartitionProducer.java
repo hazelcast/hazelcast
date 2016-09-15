@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 
-public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
+public class MultiMapPartitionProducer extends AbstractHazelcastProducer<JetPair> {
     private final JetPairConverter<Entry<Data, MultiMapValue>> pairConverter =
             new JetPairConverter<Entry<Data, MultiMapValue>>() {
                 @Override
@@ -56,23 +56,27 @@ public class MultiMapPartitionReader extends AbstractHazelcastReader<JetPair> {
                 }
             };
 
-    public MultiMapPartitionReader(JobContext jobContext, String name, int partitionId) {
+    public MultiMapPartitionProducer(JobContext jobContext, String name, int partitionId) {
         super(jobContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
     }
 
     @Override
-    public void onOpen() {
+    public Iterator<JetPair> newIterator() {
         NodeEngineImpl nei = (NodeEngineImpl) this.nodeEngine;
         SerializationService ss = nei.getSerializationService();
         MultiMapService multiMapService = nei.getService(MultiMapService.SERVICE_NAME);
         MultiMapContainer multiMapContainer = multiMapService.getPartitionContainer(getPartitionId())
                 .getCollectionContainer(getName());
         Iterator<Map.Entry<Data, MultiMapValue>> it = multiMapContainer.getMultiMapValues().entrySet().iterator();
-        this.iterator = new JetPairIterator<>(it, pairConverter, ss);
+        return new JetPairIterator<>(it, pairConverter, ss);
     }
 
     @Override
     public boolean mustRunOnPartitionThread() {
         return true;
+    }
+
+    @Override
+    public void close() {
     }
 }

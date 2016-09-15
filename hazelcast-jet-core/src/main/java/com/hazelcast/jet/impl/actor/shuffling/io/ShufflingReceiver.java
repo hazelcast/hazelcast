@@ -85,11 +85,6 @@ public class ShufflingReceiver implements Producer {
         ringbufferActor.close();
     }
 
-    public boolean consume(JetPacket packet) {
-        ringbufferActor.consume(packet);
-        return true;
-    }
-
     @Override
     public Object[] produce() throws Exception {
         if (closed) {
@@ -108,6 +103,37 @@ public class ShufflingReceiver implements Producer {
             return null;
         }
         return processPackets();
+    }
+
+    @Override
+    public int lastProducedCount() {
+        return lastProducedCount;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void registerCompletionHandler(ProducerCompletionHandler runnable) {
+        handlers.add(runnable);
+    }
+
+    @Override
+    public void handleProducerCompleted() {
+        for (ProducerCompletionHandler handler : handlers) {
+            handler.onComplete(this);
+        }
+    }
+
+    public boolean consume(JetPacket packet) {
+        ringbufferActor.consume(packet);
+        return true;
+    }
+
+    public RingbufferActor getRingbufferActor() {
+        return ringbufferActor;
     }
 
     private Object[] processPackets() throws Exception {
@@ -151,36 +177,5 @@ public class ShufflingReceiver implements Producer {
             dataChunkLength = -1;
         }
         packetBuffers.reset();
-    }
-
-    @Override
-    public int lastProducedCount() {
-        return lastProducedCount;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public boolean isClosed() {
-        return closed;
-    }
-
-    @Override
-    public void registerCompletionHandler(ProducerCompletionHandler runnable) {
-        handlers.add(runnable);
-    }
-
-    @Override
-    public void handleProducerCompleted() {
-        for (ProducerCompletionHandler handler : handlers) {
-            handler.onComplete(this);
-        }
-    }
-
-    public RingbufferActor getRingbufferActor() {
-        return ringbufferActor;
     }
 }

@@ -24,13 +24,14 @@ import com.hazelcast.jet.impl.data.pair.JetPairIterator;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.runtime.JetPair;
 
+import java.util.Iterator;
 import java.util.List;
 
-public class ListPartitionReader extends AbstractHazelcastReader<JetPair> {
+public class ListPartitionProducer extends AbstractHazelcastProducer<JetPair> {
     private final JetPairConverter<CollectionItem> pairConverter =
             (item, ss) -> new JetPair<>(item.getItemId(), ss.toObject(item.getValue()), getPartitionId());
 
-    public ListPartitionReader(JobContext jobContext, String name, int partitionId) {
+    public ListPartitionProducer(JobContext jobContext, String name, int partitionId) {
         super(jobContext, name, partitionId, ByReferenceDataTransferringStrategy.INSTANCE);
     }
 
@@ -40,9 +41,13 @@ public class ListPartitionReader extends AbstractHazelcastReader<JetPair> {
     }
 
     @Override
-    protected void onOpen() {
+    protected Iterator<JetPair> newIterator() {
         ListService listService = nodeEngine.getService(ListService.SERVICE_NAME);
         List<CollectionItem> items = listService.getOrCreateContainer(getName(), false).getCollection();
-        iterator = new JetPairIterator<>(items.iterator(), pairConverter, nodeEngine.getSerializationService());
+        return new JetPairIterator<>(items.iterator(), pairConverter, nodeEngine.getSerializationService());
+    }
+
+    @Override
+    public void close() {
     }
 }

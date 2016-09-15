@@ -21,8 +21,6 @@ import com.hazelcast.jet.impl.runtime.DataChannel;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 
-import java.util.List;
-
 public class VertexRunnerExecutionCompletedProcessor implements VertexRunnerPayloadProcessor<Void> {
     private final VertexRunner runner;
     private final JobContext jobContext;
@@ -32,18 +30,11 @@ public class VertexRunnerExecutionCompletedProcessor implements VertexRunnerPayl
         this.jobContext = runner.getJobContext();
     }
 
-    //payload - completed vertex runner
     @Override
     public void process(Void payload) throws Exception {
-        List<DataChannel> channels = this.runner.getOutputChannels();
-
-        if (channels.size() > 0) {
-            // We don't use foreach to prevent iterator creation
-            for (int idx = 0; idx < channels.size(); idx++) {
-                channels.get(idx).close();
-            }
+        for (DataChannel channel : this.runner.getOutputChannels()) {
+            channel.close();
         }
-
         this.jobContext.getJobManager().handleRunnerCompleted();
     }
 }

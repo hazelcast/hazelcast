@@ -33,19 +33,10 @@ public interface Producer {
      */
     String getName();
 
-    /**
-     * @return true if producer is closed , false otherwise
-     */
-    boolean isClosed();
-
-    /**
-     * Open current producer
-     */
+    /** Opens this producer */
     void open();
 
-    /**
-     * Close current producer
-     */
+    /** Closes this producer */
     void close();
 
     /**
