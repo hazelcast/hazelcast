@@ -69,7 +69,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
@@ -198,20 +197,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                             null);
             nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();
-        }
-    }
-
-    private static final class ClientNearCacheExecutor implements NearCacheExecutor {
-
-        private ClientExecutionService clientExecutionService;
-
-        private ClientNearCacheExecutor(ClientExecutionService clientExecutionService) {
-            this.clientExecutionService = clientExecutionService;
-        }
-
-        @Override
-        public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-            return clientExecutionService.scheduleWithRepetition(command, initialDelay, delay, unit);
         }
     }
 
