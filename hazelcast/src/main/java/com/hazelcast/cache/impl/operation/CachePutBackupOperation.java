@@ -39,7 +39,7 @@ import java.io.IOException;
  * @see CacheGetAndReplaceOperation
  */
 public class CachePutBackupOperation
-        extends AbstractCacheOperation
+        extends AbstractBackupCacheOperation
         implements BackupOperation, MutatingOperation {
 
     private CacheRecord cacheRecord;
@@ -65,7 +65,7 @@ public class CachePutBackupOperation
     }
 
     @Override
-    public void run()
+    public void runInternal()
             throws Exception {
         ICacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
@@ -74,7 +74,7 @@ public class CachePutBackupOperation
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRunInternal() throws Exception {
         if (!wanOriginated && cache.isWanReplicationEnabled()) {
             CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
                     getNodeEngine().getSerializationService().toData(cacheRecord.getValue()), cacheRecord);

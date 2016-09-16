@@ -39,7 +39,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
  * functionality to apply the backup using the given {@link javax.cache.processor.EntryProcessor}.</p>
  */
 public class CacheBackupEntryProcessorOperation
-        extends AbstractCacheOperation
+        extends AbstractBackupCacheOperation
         implements BackupOperation, IdentifiedDataSerializable {
 
     private EntryProcessor entryProcessor;
@@ -61,13 +61,13 @@ public class CacheBackupEntryProcessorOperation
     }
 
     @Override
-    public void run()
+    public void runInternal()
             throws Exception {
         cache.invoke(key, entryProcessor, arguments, IGNORE_COMPLETION);
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRunInternal() throws Exception {
         if (cache.isWanReplicationEnabled()) {
             CacheRecord record = cache.getRecord(key);
             if (record != null) {
