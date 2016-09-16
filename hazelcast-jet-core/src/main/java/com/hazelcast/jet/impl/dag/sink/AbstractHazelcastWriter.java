@@ -146,11 +146,11 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
     @Override
     public void close() {
-        if (!isClosed()) {
+        if (!isClosed) {
             try {
                 flush();
             } finally {
-                this.isClosed = true;
+                isClosed = true;
                 onClose();
             }
         }
@@ -206,11 +206,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     @Override
     public int lastConsumedCount() {
         return this.lastConsumedCount;
-    }
-
-    @Override
-    public boolean isClosed() {
-        return this.isClosed;
     }
 
     @Override

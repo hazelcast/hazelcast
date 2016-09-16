@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.runtime.task.processors;
 
 import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.Processor;
@@ -25,7 +24,7 @@ import com.hazelcast.jet.Processor;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class SimpleTaskProcessor implements TaskProcessor {
-    private static final Object[] DUMMY_CHUNK = new Object[0];
+    private static final Object[] EMPTY_CHUNK = new Object[0];
 
     protected boolean finalizationStarted;
     protected boolean producersWriteFinished;
@@ -33,14 +32,12 @@ public class SimpleTaskProcessor implements TaskProcessor {
     private final IOBuffer inputBuffer;
     private final IOBuffer outputBuffer;
     private boolean finalized;
-    private final TaskContext taskContext;
 
-    public SimpleTaskProcessor(Processor processor, TaskContext taskContext) {
+    public SimpleTaskProcessor(Processor processor) {
         checkNotNull(processor);
         this.processor = processor;
-        this.taskContext = taskContext;
-        this.inputBuffer = new IOBuffer<>(DUMMY_CHUNK);
-        this.outputBuffer = new IOBuffer<>(DUMMY_CHUNK);
+        this.inputBuffer = new IOBuffer<>(EMPTY_CHUNK);
+        this.outputBuffer = new IOBuffer<>(EMPTY_CHUNK);
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sink;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Sink;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.dag.sink.MapPartitionWriter;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -50,7 +51,7 @@ public class MapSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getConsumers(JobContext jobContext) {
+    public DataWriter[] getConsumers(JobContext jobContext, Vertex vertex) {
         List<Integer> localPartitions = JetUtil.getLocalPartitions(jobContext.getNodeEngine());
         DataWriter[] writers = new DataWriter[localPartitions.size()];
         for (int i = 0; i < localPartitions.size(); i++) {

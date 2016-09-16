@@ -37,25 +37,25 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
 
     public boolean onChunk(InputChunk inputChunk) throws Exception {
         boolean success = this.consumerProcessor.onChunk(inputChunk);
-        this.consumed = this.consumerProcessor.consumed();
+        consumed = consumerProcessor.consumed();
         return success;
     }
 
     public boolean process() throws Exception {
-        if (this.outputBuffer.size() == 0) {
+        if (outputBuffer.size() == 0) {
             boolean result = super.process();
 
-            if (!this.produced) {
-                this.consumed = false;
+            if (!produced) {
+                consumed = false;
             }
 
             return result;
         } else {
-            boolean success = onChunk(this.outputBuffer);
+            boolean success = onChunk(outputBuffer);
 
             if (success) {
                 checkFinalization();
-                this.outputBuffer.reset();
+                outputBuffer.reset();
             }
 
             return success;
@@ -64,30 +64,30 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
 
     @Override
     public boolean consumed() {
-        return this.consumed;
+        return consumed;
     }
 
     @Override
     public void reset() {
         super.reset();
-        this.consumerProcessor.reset();
+        consumerProcessor.reset();
     }
 
     @Override
     public void onOpen() {
         super.onOpen();
-        this.consumerProcessor.onOpen();
+        consumerProcessor.onOpen();
         reset();
     }
 
     @Override
     public void onClose() {
         super.onClose();
-        this.consumerProcessor.onClose();
+        consumerProcessor.onClose();
     }
 
     public void startFinalization() {
         super.startFinalization();
-        this.consumerProcessor.startFinalization();
+        consumerProcessor.startFinalization();
     }
 }

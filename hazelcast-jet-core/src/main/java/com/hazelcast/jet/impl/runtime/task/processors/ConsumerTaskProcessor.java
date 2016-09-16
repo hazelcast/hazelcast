@@ -29,7 +29,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ConsumerTaskProcessor implements TaskProcessor {
-    protected static final Object[] DUMMY_CHUNK = new Object[0];
+    protected static final Object[] EMPTY_CHUNK = new Object[0];
+
     protected final Consumer[] consumers;
     protected final Processor processor;
     protected final IOBuffer inputBuffer;
@@ -54,10 +55,10 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         this.processor = processor;
         this.taskContext = taskContext;
         this.consumersProcessor = new ConsumersProcessor(consumers);
-        this.inputBuffer = new IOBuffer<Object>(DUMMY_CHUNK);
+        this.inputBuffer = new IOBuffer<>(EMPTY_CHUNK);
         JobConfig jobConfig = taskContext.getJobContext().getJobConfig();
         int chunkSize = jobConfig.getChunkSize();
-        this.outputBuffer = new IOBuffer<Object>(new Object[chunkSize]);
+        this.outputBuffer = new IOBuffer<>(new Object[chunkSize]);
         reset();
     }
 

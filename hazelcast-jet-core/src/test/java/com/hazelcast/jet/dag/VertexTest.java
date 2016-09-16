@@ -16,21 +16,18 @@
 
 package com.hazelcast.jet.dag;
 
-import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Sink;
+import com.hazelcast.jet.Source;
 import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.runtime.DataWriter;
 import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.Sink;
-import com.hazelcast.jet.Source;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.List;
 
 import static com.hazelcast.jet.JetTestSupport.createVertex;
 import static org.junit.Assert.assertEquals;
@@ -77,7 +74,7 @@ public class VertexTest {
         final String sinkTapName = "sinkTapWithWriterStrategyName";
         Sink sink = new Sink() {
             @Override
-            public DataWriter[] getConsumers(JobContext jobContext) {
+            public DataWriter[] getConsumers(JobContext jobContext, Vertex vertex) {
                 return new DataWriter[0];
             }
 

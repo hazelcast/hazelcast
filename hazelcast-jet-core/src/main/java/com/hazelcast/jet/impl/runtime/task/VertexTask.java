@@ -35,7 +35,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -88,22 +87,6 @@ public class VertexTask extends Task {
     }
 
     /**
-     * Start tasks' execution
-     * Initialize initial state of the task
-     *
-     * @param producers - list of the input producers
-     */
-    public void start(List<? extends Producer> producers) {
-        if (producers != null && !producers.isEmpty()) {
-            for (Producer producer : producers) {
-                this.producers.add(producer);
-                producer.registerCompletionHandler(p -> activeProducersCounter.decrementAndGet());
-            }
-        }
-        onStart();
-    }
-
-    /**
      * Interrupts tasks execution
      *
      * @param error - the reason of the interruption
@@ -113,7 +96,6 @@ public class VertexTask extends Task {
             this.error = error;
         }
     }
-
 
     /**
      * Register shuffling receiver for the corresponding node with address member
@@ -126,12 +108,17 @@ public class VertexTask extends Task {
         receiver.registerCompletionHandler(producer -> activeReceiversCounter.decrementAndGet());
     }
 
-    public void addConsumers(List<Consumer> consumers) {
+    public void addConsumers(Collection<? extends Consumer> consumers) {
         this.consumers.addAll(consumers);
     }
 
     public void addConsumer(Consumer consumer) {
         consumers.add(consumer);
+    }
+
+    public void addProducer(Producer producer) {
+        this.producers.add(producer);
+        producer.registerCompletionHandler(p -> activeProducersCounter.decrementAndGet());
     }
 
     /**
@@ -178,6 +165,7 @@ public class VertexTask extends Task {
      * The strict rule is that this method will be executed synchronously on
      * all nodes in cluster before any real task's  execution
      */
+    @Override
     public void init() {
         error = null;
         taskProcessor.onOpen();
@@ -189,6 +177,17 @@ public class VertexTask extends Task {
         activeProducersCounter.set(producers.size());
         activeReceiversCounter.set(shufflingReceivers.values().size());
         finalizedReceiversCounter.set(shufflingReceivers.values().size());
+    }
+
+    public void start() {
+        Producer[] producers = this.producers.toArray(new Producer[this.producers.size()]);
+        Consumer[] consumers = this.consumers.toArray(new Consumer[this.consumers.size()]);
+
+        taskProcessor = getTaskProcessorFactory().getTaskProcessor(producers, consumers, taskContext, processor);
+        finalizationStarted = false;
+        isFinalizationNotified = false;
+        int size = shufflingSenders.values().size();
+        sendersArray = shufflingSenders.values().toArray(new ShufflingSender[size]);
     }
 
     /***
@@ -288,18 +287,6 @@ public class VertexTask extends Task {
                 handleProcessingError(e);
             }
         }
-    }
-
-    private void onStart() {
-        Producer[] producers = this.producers.toArray(new Producer[this.producers.size()]);
-        Consumer[] consumers = this.consumers.toArray(new Consumer[this.consumers.size()]);
-
-        TaskProcessorFactory taskProcessorFactory = getTaskProcessorFactory();
-        taskProcessor = taskProcessorFactory.getTaskProcessor(producers, consumers, taskContext, processor);
-        finalizationStarted = false;
-        isFinalizationNotified = false;
-        int size = shufflingSenders.values().size();
-        sendersArray = shufflingSenders.values().toArray(new ShufflingSender[size]);
     }
 
     private void afterProcessing() {
@@ -440,8 +427,8 @@ public class VertexTask extends Task {
     }
 
     private TaskProcessorFactory getTaskProcessorFactory() {
-        int clusterSize = taskContext.getJobContext().getNodeEngine().getClusterService().getMembers().size();
-        if ((hasDistributedOutputEdge(vertex) && clusterSize > 1) || (vertex.getSinks().size() > 0)) {
+        int clusterSize = taskContext.getJobContext().getNodeEngine().getClusterService().getSize();
+        if ((clusterSize > 1 && hasDistributedOutputEdge(vertex)) || (vertex.getSinks().size() > 0)) {
             return new ShuffledTaskProcessorFactory();
         }
         return new DefaultTaskProcessorFactory();

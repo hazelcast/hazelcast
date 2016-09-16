@@ -75,6 +75,9 @@ public class Vertex implements IdentifiedDataSerializable {
      * Sets the number of parallel instances of this vertex
      */
     public Vertex parallelism(int parallelism) {
+        if (parallelism <= 0) {
+            throw new IllegalArgumentException("Parallelism must be greater than 0");
+        }
         this.parallelism = parallelism;
         return this;
     }
