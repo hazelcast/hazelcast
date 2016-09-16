@@ -30,7 +30,8 @@ import java.io.IOException;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 
-public class EvictOperation extends LockAwareOperation implements MutatingOperation, BackupAwareOperation, IdentifiedDataSerializable {
+public class EvictOperation extends LockAwareOperation implements MutatingOperation, BackupAwareOperation,
+        IdentifiedDataSerializable {
 
     private boolean evicted;
     private boolean asyncBackup;

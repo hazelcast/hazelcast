@@ -23,7 +23,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
-public class MapSizeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, IdentifiedDataSerializable {
+public class MapSizeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation,
+        IdentifiedDataSerializable {
 
     private int size;
 

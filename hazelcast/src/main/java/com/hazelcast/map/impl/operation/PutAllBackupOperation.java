@@ -37,7 +37,7 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
 public class PutAllBackupOperation extends MapOperation implements PartitionAwareOperation, BackupOperation,
-        MutatingOperation, IdentifiedDataSerializable{
+        MutatingOperation, IdentifiedDataSerializable {
 
     private MapEntries entries;
     private List<RecordInfo> recordInfos;

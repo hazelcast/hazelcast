@@ -32,7 +32,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation, IdentifiedDataSerializable{
+public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation,
+        IdentifiedDataSerializable {
 
     private List<Data> keys = new ArrayList<Data>();
     private MapEntries entries;

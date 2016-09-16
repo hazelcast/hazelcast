@@ -276,4 +276,5 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     public int getId() {
         return MapDataSerializerHook.ENTRY_OPERATION;
-    }}
+    }
+}
