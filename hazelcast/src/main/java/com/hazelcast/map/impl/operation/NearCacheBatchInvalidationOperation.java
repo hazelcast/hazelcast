@@ -16,12 +16,14 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.nearcache.AbstractNearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
@@ -30,7 +32,7 @@ import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class NearCacheBatchInvalidationOperation extends MapOperation implements MutatingOperation {
+public class NearCacheBatchInvalidationOperation extends MapOperation implements MutatingOperation, IdentifiedDataSerializable {
 
     private List<Data> keys;
 
@@ -78,5 +80,15 @@ public class NearCacheBatchInvalidationOperation extends MapOperation implements
             keys.add(key);
         }
         this.keys = keys;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.NEAR_CACHE_BATCH_INVALIDATION;
     }
 }
