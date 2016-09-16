@@ -75,10 +75,8 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         this.awaitSecondsTimeOut = getJobContext().getJobConfig().getSecondsToAwait();
         this.eventProcessorFactory = new EventProcessorFactory(this);
 
-        for (Source source : getVertex().getSources()) {
-            sourceProducers.addAll(asList(source.getProducers(this.jobContext, getVertex())));
-        }
         buildTasks();
+        buildSources();
         buildSinks();
     }
 
