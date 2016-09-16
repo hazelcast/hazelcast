@@ -23,14 +23,14 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
 /**
- * Size estimator for near cache.
+ * Size estimator for Near Cache.
  */
-public class NearCacheSizeEstimator
-        implements SizeEstimator<NearCacheRecord> {
+public class NearCacheSizeEstimator implements SizeEstimator<NearCacheRecord> {
 
     private static final AtomicLongFieldUpdater<NearCacheSizeEstimator> SIZE = AtomicLongFieldUpdater
             .newUpdater(NearCacheSizeEstimator.class, "size");
 
+    @SuppressWarnings("unused")
     private volatile long size;
 
     public NearCacheSizeEstimator() {
@@ -43,8 +43,7 @@ public class NearCacheSizeEstimator
             return 0;
         }
         final long cost = record.getCost();
-        // if  cost is zero, type of cached object is not Data.
-        // then omit.
+        // if cost is zero, type of cached object is not Data (then omit)
         if (cost == 0) {
             return 0;
         }

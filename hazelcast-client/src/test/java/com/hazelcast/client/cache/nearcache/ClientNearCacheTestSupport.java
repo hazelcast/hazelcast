@@ -249,7 +249,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         // get updated records from client-2
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             final int key = i;
-            // records are stored in the near-cache will be invalidated eventually, since cache records are updated
+            // records are stored in the Near Cache will be invalidated eventually, since cache records are updated
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
@@ -299,7 +299,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
             keyAndValues.put(key, value);
         }
 
-        // verify that records are exist at near-cache of client-1 because `local-update-policy` is `CACHE`
+        // verify that records are exist at Near Cache of client-1 because `local-update-policy` is `CACHE`
         for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
             String key = entry.getKey();
             String exceptedValue = entry.getValue();
@@ -308,7 +308,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
 
         // remove records through client-2 so there will be invalidation events
-        // to send to client to invalidate its near-cache
+        // to send to client to invalidate its Near Cache
         for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
             nearCacheTestContext2.cache.remove(entry.getKey());
         }
@@ -322,7 +322,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         ((LifecycleServiceImpl) instanceToShutdown.getLifecycleService())
                 .fireLifecycleEvent(LifecycleEvent.LifecycleState.SHUTTING_DOWN);
 
-        // verify that records in the near-cache of client-1 are invalidated eventually when instance shutdown
+        // verify that records in the Near Cache of client-1 are invalidated eventually when instance shutdown
         for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
             final String key = entry.getKey();
             assertTrueEventually(new AssertTask() {
@@ -368,7 +368,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         // can't get deleted records from client-2
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             final int key = i;
-            // records are stored in the near-cache will be invalidated eventually, since cache records are updated.
+            // records are stored in the Near Cache will be invalidated eventually, since cache records are updated.
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
@@ -416,7 +416,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         // can't get replaced keys from client-2
         for (int i : loadKeys) {
             final int key = i;
-            // records are stored in the near-cache will be invalidated eventually, since cache records are updated
+            // records are stored in the Near Cache will be invalidated eventually, since cache records are updated
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
@@ -457,7 +457,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         // can't get expired records from client-2
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             final int key = i;
-            // records are stored in the near-cache will be invalidated eventually, since cache records are cleared
+            // records are stored in the Near Cache will be invalidated eventually, since cache records are cleared
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
@@ -480,13 +480,13 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            // get records so they will be stored in near-cache
+            // get records so they will be stored in Near Cache
             nearCacheTestContext.cache.get(i);
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             Data keyData = nearCacheTestContext.serializationService.toData(i);
-            // check if same reference to verify data coming from near cache
+            // check if same reference to verify data coming from Near Cache
             assertSame(nearCacheTestContext.cache.get(i), nearCacheTestContext.nearCache.get(keyData));
         }
     }
@@ -543,7 +543,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         // can't get expired records from client-2
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             final int key = i;
-            // records are stored in the near-cache will be invalidated eventually, since cache records are cleared
+            // records are stored in the Near Cache will be invalidated eventually, since cache records are cleared
             // because we just disable per entry invalidation events, not full-flush events
             assertTrueEventually(new AssertTask() {
                 @Override

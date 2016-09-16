@@ -20,7 +20,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Contract point for executing near-cache specific tasks.
+ * Contract point for executing Near Cache specific tasks.
  *
  * @see java.lang.Runnable
  * @see java.util.concurrent.ScheduledFuture
@@ -30,16 +30,14 @@ public interface NearCacheExecutor {
     /**
      * Creates and executes a periodic action that becomes enabled first after the given initial delay.
      *
-     * @param command       the task to execute.
-     * @param initialDelay  the time to delay the first execution of the task.
-     * @param delay         the delay between the termination of one task and the commencement of the next task.
-     * @param unit          the time unit of the <code>initialDelay</code> and <code>delay</code> parameters.
-     *
+     * @param command      the task to execute.
+     * @param initialDelay the time to delay the first execution of the task.
+     * @param delay        the delay between the termination of one task and the commencement of the next task.
+     * @param unit         the time unit of the {@code initialDelay} and {@code delay} parameters.
      * @return the {@link ScheduledFuture} instance representing the pending completion of the task.
      */
     ScheduledFuture<?> scheduleWithRepetition(Runnable command,
                                               long initialDelay,
                                               long delay,
                                               TimeUnit unit);
-
 }

@@ -471,7 +471,7 @@ public class NearCacheLiteMemberTest {
     private static void assertLiteMemberNearCacheNonEmpty(HazelcastInstance instance, String mapName) {
         NearCache nearCache = getNearCache(instance, mapName);
         int sizeAfterPut = nearCache.size();
-        assertTrue("NearCache size should be > 0 but was " + sizeAfterPut, sizeAfterPut > 0);
+        assertTrue("Near Cache size should be > 0 but was " + sizeAfterPut, sizeAfterPut > 0);
     }
 
     private static void assertNearCacheIsEmptyEventually(HazelcastInstance instance, String mapName) {

@@ -20,9 +20,9 @@ import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.nearcache.impl.NearCacheRecordMap;
 
 /**
- * Near-Cache max-size policy implementation for
- * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy#ENTRY_COUNT}.
- * Check if near-cache size is reached to max-size or not.
+ * Near Cache max-size policy implementation for {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy#ENTRY_COUNT}.
+ *
+ * Checks if the Near Cache size is reached to max-size or not.
  *
  * @see com.hazelcast.cache.impl.maxsize.MaxSizeChecker
  */
@@ -41,5 +41,4 @@ public class EntryCountNearCacheMaxSizeChecker implements MaxSizeChecker {
     public boolean isReachedToMaxSize() {
         return nearCacheRecordMap.size() >= maxSize;
     }
-
 }

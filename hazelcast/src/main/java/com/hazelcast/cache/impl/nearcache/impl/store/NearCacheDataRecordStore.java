@@ -36,17 +36,17 @@ public class NearCacheDataRecordStore<K, V>
     protected long getKeyStorageMemoryCost(K key) {
         if (key instanceof Data) {
             return
-                // Reference to this key data inside map ("store" field)
-                REFERENCE_SIZE
-                // Heap cost of this key data
-                + ((Data) key).getHeapCost();
+                    // reference to this key data inside map ("store" field)
+                    REFERENCE_SIZE
+                            // heap cost of this key data
+                            + ((Data) key).getHeapCost();
         } else {
-            // Memory cost for non-data typed instance is not supported.
+            // memory cost for non-data typed instance is not supported
             return 0L;
         }
     }
 
-    // TODO We don't handle object header (mark, class definition) for heap memory cost
+    // TODO: we don't handle object header (mark, class definition) for heap memory cost
     @Override
     protected long getRecordStorageMemoryCost(NearCacheDataRecord record) {
         if (record == null) {
@@ -54,18 +54,18 @@ public class NearCacheDataRecordStore<K, V>
         }
         Data value = record.getValue();
         return
-            // Reference to this record inside map ("store" field)
-            REFERENCE_SIZE
-            // Reference to "value" field
-            + REFERENCE_SIZE
-            // Heap cost of this value data
-            + (value != null ? value.getHeapCost() : 0)
-            // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
-            + (3 * (Long.SIZE / Byte.SIZE))
-            // Reference to "accessHit" field
-            + REFERENCE_SIZE
-            // Primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
-            + (Integer.SIZE / Byte.SIZE);
+                // reference to this record inside map ("store" field)
+                REFERENCE_SIZE
+                        // reference to "value" field
+                        + REFERENCE_SIZE
+                        // heap cost of this value data
+                        + (value != null ? value.getHeapCost() : 0)
+                        // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
+                        + (3 * (Long.SIZE / Byte.SIZE))
+                        // reference to "accessHit" field
+                        + REFERENCE_SIZE
+                        // primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
+                        + (Integer.SIZE / Byte.SIZE);
     }
 
     @Override
@@ -99,8 +99,7 @@ public class NearCacheDataRecordStore<K, V>
         Object selectedCandidate = null;
         if (candidates != null && candidates.length > 0) {
             for (Object candidate : candidates) {
-                // Give priority to Data typed candidate.
-                // So there will be no extra convertion from Object to Data.
+                // give priority to Data typed candidate, so there will be no extra conversion from Object to Data
                 if (candidate instanceof Data) {
                     selectedCandidate = candidate;
                     break;
@@ -109,7 +108,7 @@ public class NearCacheDataRecordStore<K, V>
             if (selectedCandidate != null) {
                 return selectedCandidate;
             } else {
-                // Select a non-null candidate
+                // select a non-null candidate
                 for (Object candidate : candidates) {
                     if (candidate != null) {
                         selectedCandidate = candidate;
@@ -120,7 +119,4 @@ public class NearCacheDataRecordStore<K, V>
         }
         return selectedCandidate;
     }
-
-
-
 }

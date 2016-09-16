@@ -28,13 +28,13 @@ public interface NearCacheManager {
 
     /**
      * Gets the {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
-     * associated with given <code>name</code>.
+     * associated with given {@code name}.
      *
      * @param name the name of the {@link com.hazelcast.cache.impl.nearcache.NearCache} instance will be got
-     * @param <K> the type of the key for Near Cache
-     * @param <V> the type of the value for Near Cache
+     * @param <K>  the type of the key for Near Cache
+     * @param <V>  the type of the value for Near Cache
      * @return the {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
-     *         associated with given <code>name</code>
+     * associated with given {@code name}
      */
     <K, V> NearCache<K, V> getNearCache(String name);
 
@@ -42,16 +42,16 @@ public interface NearCacheManager {
      * Creates a new {@link com.hazelcast.cache.impl.nearcache.NearCache} with given configurations
      * or returns existing one.
      *
-     * @param name              the name of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
-     *                          to be created or existing one
-     * @param nearCacheConfig   the {@link com.hazelcast.config.NearCacheConfig} of the
-     *                          {@link com.hazelcast.cache.impl.nearcache.NearCache} to be created
-     * @param nearCacheContext  the {@link com.hazelcast.cache.impl.nearcache.NearCacheContext} of the
-     *                          {@link com.hazelcast.cache.impl.nearcache.NearCache} to be created
-     * @param <K> the key type of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
-     * @param <V> the value type of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
+     * @param name             the name of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
+     *                         to be created or existing one
+     * @param nearCacheConfig  the {@link com.hazelcast.config.NearCacheConfig} of the
+     *                         {@link com.hazelcast.cache.impl.nearcache.NearCache} to be created
+     * @param nearCacheContext the {@link com.hazelcast.cache.impl.nearcache.NearCacheContext} of the
+     *                         {@link com.hazelcast.cache.impl.nearcache.NearCache} to be created
+     * @param <K>              the key type of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
+     * @param <V>              the value type of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
      * @return the created or existing {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
-     *         associated with given <code>name</code>
+     * associated with given {@code name}
      */
     <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig,
                                                 NearCacheContext nearCacheContext);
@@ -64,12 +64,12 @@ public interface NearCacheManager {
     Collection<NearCache> listAllNearCaches();
 
     /**
-     * Clears {@link com.hazelcast.cache.impl.nearcache.NearCache} instance associated with given <code>name</code>
+     * Clears {@link com.hazelcast.cache.impl.nearcache.NearCache} instance associated with given {@code name}
      * but not removes it.
      *
      * @param name name of the {@link com.hazelcast.cache.impl.nearcache.NearCache} to be cleared
-     * @return <code>true</code> if {@link com.hazelcast.cache.impl.nearcache.NearCache}
-     *         was found and cleared, otherwise <code>false</code>
+     * @return {@code true} if {@link com.hazelcast.cache.impl.nearcache.NearCache}
+     * was found and cleared, otherwise {@code false}
      */
     boolean clearNearCache(String name);
 
@@ -79,12 +79,12 @@ public interface NearCacheManager {
     void clearAllNearCaches();
 
     /**
-     * Destroys {@link com.hazelcast.cache.impl.nearcache.NearCache} instance associated with given <code>name</code>
+     * Destroys {@link com.hazelcast.cache.impl.nearcache.NearCache} instance associated with given {@code name}
      * and also removes it.
      *
      * @param name name of the {@link com.hazelcast.cache.impl.nearcache.NearCache} to be destroyed
-     * @return <code>true</code> if {@link com.hazelcast.cache.impl.nearcache.NearCache}
-     *         was found and destroyed, otherwise <code>false</code>
+     * @return {@code true} if {@link com.hazelcast.cache.impl.nearcache.NearCache}
+     * was found and destroyed, otherwise {@code false}
      */
     boolean destroyNearCache(String name);
 
@@ -92,5 +92,4 @@ public interface NearCacheManager {
      * Destroys all defined {@link com.hazelcast.cache.impl.nearcache.NearCache} instances.
      */
     void destroyAllNearCaches();
-
 }

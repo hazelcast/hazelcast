@@ -2266,7 +2266,7 @@
             <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Maximum size of the near cache. When max size is reached,
+                        Maximum size of the Near Cache. When max size is reached,
                         cache is evicted based on the policy defined.
                         Any integer between 0 and Integer.MAX_VALUE. 0 means
                         Integer.MAX_VALUE. Default is 0.
@@ -2276,8 +2276,8 @@
             <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Maximum number of seconds for each entry to stay in the near cache. Entries that are
-                        older than time-to-live-seconds will get automatically evicted from the near cache.
+                        Maximum number of seconds for each entry to stay in the Near Cache. Entries that are
+                        older than time-to-live-seconds will get automatically evicted from the Near Cache.
                         Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
                     </xs:documentation>
                 </xs:annotation>
@@ -2285,9 +2285,9 @@
             <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Maximum number of seconds each entry can stay in the near cache as untouched (not-read).
+                        Maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
                         Entries that are not read (touched) more than max-idle-seconds value will get removed
-                        from the near cache.
+                        from the Near Cache.
                         Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
                     </xs:documentation>
                 </xs:annotation>
@@ -2327,7 +2327,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         True to cache local entries also.
-                        This is useful when in-memory-format for near cache is different than the map's one.
+                        This is useful when in-memory-format for Near Cache is different than the map's one.
                         Default value is false.
                     </xs:documentation>
                 </xs:annotation>

@@ -44,22 +44,22 @@ public interface NearCache<K, V> {
     Object NULL_OBJECT = new Object();
 
     /**
-     * Gets the name of the <code>this</code> {@link com.hazelcast.cache.impl.nearcache.NearCache} instance.
+     * Gets the name of this {@link com.hazelcast.cache.impl.nearcache.NearCache} instance.
      *
-     * @return the name of the <code>this</code> {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
+     * @return the name of this {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
      */
     String getName();
 
     /**
-     * Gets the value associated with the given <code>key</code>.
+     * Gets the value associated with the given {@code key}.
      *
      * @param key the key of the requested value
-     * @return the value associated with the given <code>key</code>
+     * @return the value associated with the given {@code key}
      */
     V get(K key);
 
     /**
-     * Puts (associates) a value with the given <code>key</code>.
+     * Puts (associates) a value with the given {@code key}.
      *
      * @param key   the key of the value will be stored
      * @param value the value will be stored
@@ -67,14 +67,16 @@ public interface NearCache<K, V> {
     void put(K key, V value);
 
     /**
-     * Removes the value associated with the given <code>key</code>.
+     * Removes the value associated with the given {@code key}.
      *
      * @param key the key of the value will be removed
      */
     boolean remove(K key);
 
     /**
-     * @return
+     * Checks if values are invalidated on changes.
+     *
+     * @return {@code true} if values are invalidated on changes, {@code false} otherwise
      */
     boolean isInvalidatedOnChange();
 
@@ -103,10 +105,10 @@ public interface NearCache<K, V> {
     NearCacheStats getNearCacheStats();
 
     /**
-     * Selects the best candidate object to store from the given <code>candidates</code>.
+     * Selects the best candidate object to store from the given {@code candidates}.
      *
      * @param candidates the candidates from which the best candidate object will be selected.
-     * @return the best candidate object to store, selected from the given <code>candidates</code>.
+     * @return the best candidate object to store, selected from the given {@code candidates}.
      */
     Object selectToSave(Object... candidates);
 
@@ -116,5 +118,4 @@ public interface NearCache<K, V> {
      * @return the count of stored records
      */
     int size();
-
 }

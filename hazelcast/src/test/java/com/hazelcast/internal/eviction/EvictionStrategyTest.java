@@ -19,6 +19,9 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
+import static com.hazelcast.internal.eviction.EvictionListener.NO_LISTENER;
+import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -26,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class EvictionStrategyTest extends HazelcastTestSupport {
+public class EvictionStrategyTest<K, V extends Evictable, S extends EvictableStore<K, V>> extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
 
@@ -35,7 +38,7 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
         instance = createHazelcastInstance();
     }
 
-    private class SimpleEvictionCandidate<K, V extends Evictable> implements EvictionCandidate<K, V> {
+    private class SimpleEvictionCandidate implements EvictionCandidate<K, V> {
 
         private K key;
         private V value;
@@ -79,7 +82,6 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
         public long getAccessHit() {
             return getEvictable().getAccessHit();
         }
-
     }
 
     @Test
@@ -115,8 +117,7 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
                 return null;
             }
         };
-        EvictionStrategy evictionStrategy =
-                EvictionStrategyProvider.getEvictionStrategy(evictionConfig);
+        EvictionStrategy<K, V, S> evictionStrategy = getEvictionStrategy(evictionConfig);
         CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(serializationService, 1000, cacheContext);
         CacheObjectRecord expectedEvictedRecord = null;
         Data expectedData = null;
@@ -134,10 +135,9 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
         assertNotNull(expectedEvictedRecord);
         assertNotNull(expectedData);
 
-        final SimpleEvictionCandidate evictionCandidate =
-                new SimpleEvictionCandidate(expectedData, expectedEvictedRecord);
-        // Mock "EvictionPolicyEvaluator", since we are testing it in other tests.
-        // In this test, we are testing "EvictionStrategy".
+        final SimpleEvictionCandidate evictionCandidate
+                = new SimpleEvictionCandidate((K) expectedData, (V) expectedEvictedRecord);
+        // we are testing "EvictionStrategy" in this test, so we mock "EvictionPolicyEvaluator" (it's tested in another test)
         EvictionPolicyEvaluator evictionPolicyEvaluator =
                 new EvictionPolicyEvaluator() {
                     @Override
@@ -155,12 +155,10 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
         assertTrue(cacheRecordMap.containsKey(expectedData));
         assertTrue(cacheRecordMap.containsValue(expectedEvictedRecord));
 
-        int evictedCount = evictionStrategy.evict(cacheRecordMap, evictionPolicyEvaluator,
-                EvictionChecker.EVICT_ALWAYS, EvictionListener.NO_LISTENER);
+        int evictedCount = evictionStrategy.evict((S) cacheRecordMap, evictionPolicyEvaluator, EVICT_ALWAYS, NO_LISTENER);
         assertEquals(EXPECTED_EVICTED_COUNT, evictedCount);
         assertEquals(RECORD_COUNT - EXPECTED_EVICTED_COUNT, cacheRecordMap.size());
         assertFalse(cacheRecordMap.containsKey(expectedData));
         assertFalse(cacheRecordMap.containsValue(expectedEvictedRecord));
     }
-
 }

@@ -21,9 +21,8 @@ package com.hazelcast.cache.impl.nearcache;
  */
 public enum NearCacheType {
 
-    DEFAULT;
+    DEFAULT
 
     // Maybe CLIENT in the future
     // Maybe SERVER in the future
-
 }

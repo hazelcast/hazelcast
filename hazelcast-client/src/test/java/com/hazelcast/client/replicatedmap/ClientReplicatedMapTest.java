@@ -538,11 +538,11 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Integer, Integer> replicatedMap1 = client1.getReplicatedMap(mapName);
 
         replicatedMap1.put(1, 1);
-        // puts key 1 to near cache
+        // puts key 1 to Near Cache
         replicatedMap1.get(1);
 
         ReplicatedMap<Integer, Integer> replicatedMap2 = client2.getReplicatedMap(mapName);
-        // this should invalidate near cache of replicatedMap1
+        // this should invalidate Near Cache of replicatedMap1
         replicatedMap2.put(1, 2);
 
         assertTrueEventually(new AssertTask() {
@@ -564,11 +564,11 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Integer, Integer> replicatedMap1 = client1.getReplicatedMap(mapName);
 
         replicatedMap1.put(1, 1);
-        // puts key 1 to near cache
+        // puts key 1 to Near Cache
         replicatedMap1.get(1);
 
         ReplicatedMap replicatedMap2 = client2.getReplicatedMap(mapName);
-        // this should invalidate near cache of replicatedMap1
+        // this should invalidate Near Cache of replicatedMap1
         replicatedMap2.clear();
 
         assertTrueEventually(new AssertTask() {

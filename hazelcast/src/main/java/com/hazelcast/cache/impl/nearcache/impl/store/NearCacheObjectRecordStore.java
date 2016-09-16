@@ -32,15 +32,13 @@ public class NearCacheObjectRecordStore<K, V>
 
     @Override
     protected long getKeyStorageMemoryCost(K key) {
-        // Memory cost for "OBJECT" in memory format is totally not supported.
-        // So just return zero.
+        // memory cost for "OBJECT" in memory format is totally not supported, so just return zero
         return 0L;
     }
 
     @Override
     protected long getRecordStorageMemoryCost(NearCacheObjectRecord record) {
-        // Memory cost for "OBJECT" in memory format is totally not supported.
-        // So just return zero.
+        // memory cost for "OBJECT" in memory format is totally not supported, so just return zero
         return 0L;
     }
 
@@ -49,9 +47,9 @@ public class NearCacheObjectRecordStore<K, V>
         value = toValue(value);
         long creationTime = Clock.currentTimeMillis();
         if (timeToLiveMillis > 0) {
-            return new NearCacheObjectRecord(value, creationTime, creationTime + timeToLiveMillis);
+            return new NearCacheObjectRecord<V>(value, creationTime, creationTime + timeToLiveMillis);
         } else {
-            return new NearCacheObjectRecord(value, creationTime, NearCacheRecord.TIME_NOT_SET);
+            return new NearCacheObjectRecord<V>(value, creationTime, NearCacheRecord.TIME_NOT_SET);
         }
     }
 
@@ -70,8 +68,7 @@ public class NearCacheObjectRecordStore<K, V>
         Object selectedCandidate = null;
         if (candidates != null && candidates.length > 0) {
             for (Object candidate : candidates) {
-                // Give priority to non Data typed candidate.
-                // So there will be no extra convertion from Data to Object.
+                // give priority to non Data typed candidate, so there will be no extra conversion from Data to Object
                 if (!(candidate instanceof Data)) {
                     selectedCandidate = candidate;
                     break;
@@ -80,7 +77,7 @@ public class NearCacheObjectRecordStore<K, V>
             if (selectedCandidate != null) {
                 return selectedCandidate;
             } else {
-                // Select a non-null candidate
+                // select a non-null candidate
                 for (Object candidate : candidates) {
                     if (candidate != null) {
                         selectedCandidate = candidate;
@@ -91,5 +88,4 @@ public class NearCacheObjectRecordStore<K, V>
         }
         return selectedCandidate;
     }
-
 }
