@@ -24,11 +24,13 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.util.Clock;
 
@@ -37,7 +39,7 @@ import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 
-public class EntryBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
+public class EntryBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
     protected transient Object oldValue;
     private EntryBackupProcessor entryProcessor;
@@ -146,5 +148,15 @@ public class EntryBackupOperation extends MutatingKeyBasedMapOperation implement
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(entryProcessor);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.ENTRY_BACKUP;
     }
 }

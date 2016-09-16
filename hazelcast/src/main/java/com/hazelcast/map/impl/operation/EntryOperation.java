@@ -27,12 +27,14 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
@@ -53,7 +55,8 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 /**
  * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
-public class EntryOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
+public class EntryOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation,
+        IdentifiedDataSerializable {
 
     protected Object oldValue;
     private EntryProcessor entryProcessor;
@@ -264,4 +267,13 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         super.writeInternal(out);
         out.writeObject(entryProcessor);
     }
-}
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.ENTRY_OPERATION;
+    }}

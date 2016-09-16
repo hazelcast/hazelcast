@@ -17,12 +17,14 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
@@ -34,7 +36,8 @@ import java.util.List;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
-public class PutAllBackupOperation extends MapOperation implements PartitionAwareOperation, BackupOperation, MutatingOperation {
+public class PutAllBackupOperation extends MapOperation implements PartitionAwareOperation, BackupOperation,
+        MutatingOperation, IdentifiedDataSerializable{
 
     private MapEntries entries;
     private List<RecordInfo> recordInfos;
@@ -95,5 +98,15 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
             recordInfo.readData(in);
             recordInfos.add(recordInfo);
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_ALL_BACKUP;
     }
 }

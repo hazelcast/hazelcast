@@ -18,12 +18,14 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -45,7 +47,8 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
  * <p/>
  * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
  */
-public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
+public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation,
+        MutatingOperation, IdentifiedDataSerializable {
 
     private MapEntries mapEntries;
 
@@ -183,5 +186,15 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         super.readInternal(in);
         mapEntries = new MapEntries();
         mapEntries.readData(in);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_ALL;
     }
 }
