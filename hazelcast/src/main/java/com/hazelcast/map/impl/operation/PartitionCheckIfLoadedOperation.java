@@ -17,14 +17,17 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class PartitionCheckIfLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class PartitionCheckIfLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation,
+        IdentifiedDataSerializable {
 
     private boolean isFinished;
     private boolean doLoad;
@@ -92,6 +95,16 @@ public class PartitionCheckIfLoadedOperation extends MapOperation implements Par
         super.readInternal(in);
         doLoad = in.readBoolean();
         waitForKeyLoad = in.readBoolean();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CHECK_IF_LOADED;
     }
 
     private class CallbackResponseSender implements ExecutionCallback<Boolean> {

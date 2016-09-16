@@ -42,6 +42,7 @@ import com.hazelcast.map.impl.operation.MapSizeOperation;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.operation.NearCacheBatchInvalidationOperation;
 import com.hazelcast.map.impl.operation.NearCacheSingleInvalidationOperation;
+import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.map.impl.operation.PutAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutAllOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
@@ -102,8 +103,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 35;
     public static final int NEAR_CACHE_SINGLE_INVALIDATION = 36;
     public static final int NEAR_CACHE_BATCH_INVALIDATION = 37;
+    public static final int CHECK_IF_LOADED = 38;
 
-    private static final int LEN = NEAR_CACHE_BATCH_INVALIDATION + 1;
+    private static final int LEN = CHECK_IF_LOADED + 1;
 
     @Override
     public int getFactoryId() {
@@ -302,6 +304,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[NEAR_CACHE_BATCH_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new NearCacheBatchInvalidationOperation();
+            }
+        };
+        constructors[CHECK_IF_LOADED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionCheckIfLoadedOperation();
             }
         };
 
