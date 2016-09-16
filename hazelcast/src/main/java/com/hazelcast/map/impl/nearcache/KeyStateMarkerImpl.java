@@ -28,6 +28,7 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
 public class KeyStateMarkerImpl implements KeyStateMarker {
 
     private final int markCount;
+
     private volatile AtomicLongArray marks;
 
     public KeyStateMarkerImpl(int markCount) {

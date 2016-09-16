@@ -15,8 +15,6 @@
  */
 
 /**
- * <p>
- *     Max-Size policy implementations for near-cache.
- * </p>
+ * Max-Size policy implementations for Near Cache.
  */
 package com.hazelcast.cache.impl.nearcache.impl.maxsize;

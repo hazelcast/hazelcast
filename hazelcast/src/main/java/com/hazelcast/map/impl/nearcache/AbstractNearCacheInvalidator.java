@@ -32,7 +32,6 @@ import java.util.List;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
-
 /**
  * Contains common functionality of a {@code NearCacheInvalidator}
  */
@@ -53,7 +52,6 @@ public abstract class AbstractNearCacheInvalidator implements NearCacheInvalidat
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
     }
-
 
     public void invalidateLocal(String mapName, Data key, List<Data> keys) {
         if (!isMemberNearCacheInvalidationEnabled(mapName)) {
@@ -94,7 +92,6 @@ public abstract class AbstractNearCacheInvalidator implements NearCacheInvalidat
         return mapContainer.hasInvalidationListener();
     }
 
-
     protected Data toHeapData(Data key) {
         return mapServiceContext.toData(key);
     }
@@ -120,5 +117,4 @@ public abstract class AbstractNearCacheInvalidator implements NearCacheInvalidat
 
         throw new IllegalArgumentException("One of key or keys should be provided for invalidation");
     }
-
 }

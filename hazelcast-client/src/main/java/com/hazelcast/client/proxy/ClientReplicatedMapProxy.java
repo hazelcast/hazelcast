@@ -60,7 +60,6 @@ import com.hazelcast.util.IterationType;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +69,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.sort;
 
 /**
  * The replicated map client side proxy implementation proxying all requests to a member node
@@ -375,8 +375,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public Collection<V> values(Comparator<V> comparator) {
-        List values = (List) values();
-        Collections.sort(values, comparator);
+        List<V> values = (List<V>) values();
+        sort(values, comparator);
         return values;
     }
 

@@ -28,9 +28,10 @@ import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
- * Entry holder to be used in Client and Node side Near cache
+ * Entry holder to be used in client and member side Near Cache implementations.
  */
 public class NearCacheRecord {
+
     private static final Comparator<NearCacheRecord> LRU_COMPARATOR = new Comparator<NearCacheRecord>() {
         public int compare(NearCacheRecord o1, NearCacheRecord o2) {
             final int result = QuickMath.compareLongs(o1.lastAccessTime, o2.lastAccessTime);
@@ -125,6 +126,4 @@ public class NearCacheRecord {
             return NearCacheRecord.DEFAULT_COMPARATOR;
         }
     }
-
-
 }

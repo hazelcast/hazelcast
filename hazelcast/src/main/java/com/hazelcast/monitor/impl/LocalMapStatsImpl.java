@@ -83,7 +83,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long ownedEntryMemoryCost;
     private volatile long backupEntryMemoryCost;
     /**
-     * Holds total heap cost of map & near-cache & backups.
+     * Holds total heap cost of map & Near Cache & backups.
      */
     private volatile long heapCost;
     private volatile long lockedEntryCount;

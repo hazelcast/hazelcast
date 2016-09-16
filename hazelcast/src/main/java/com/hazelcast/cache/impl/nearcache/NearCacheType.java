@@ -25,5 +25,4 @@ public enum NearCacheType {
 
     // Maybe CLIENT in the future
     // Maybe SERVER in the future
-
 }

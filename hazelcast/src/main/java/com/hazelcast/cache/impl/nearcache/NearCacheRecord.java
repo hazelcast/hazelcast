@@ -20,15 +20,13 @@ import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.Expirable;
 
 /**
- * <p>
- * An expirable and evictable data object which represents a near cache entry.
- * </p>
+ * An expirable and evictable data object which represents a Near Cache entry.
+ *
  * Record of {@link com.hazelcast.cache.impl.nearcache.NearCacheRecordStore}.
  *
+ * @param <V> the type of the value stored by this {@link NearCacheRecord}
  * @see com.hazelcast.internal.eviction.Expirable
  * @see com.hazelcast.internal.eviction.Evictable
- *
- * @param <V> the type of the value stored by this {@link NearCacheRecord}
  */
 public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
 
@@ -63,23 +61,22 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     void setAccessHit(int hit);
 
     /**
-     * Increases the access hit count of this {@link Evictable} as <code>1</code>.
+     * Increases the access hit count of this {@link Evictable} by {@code 1}.
      */
     void incrementAccessHit();
 
     /**
-     * Resets the access hit count of this {@link Evictable} to <code>0</code>.
+     * Resets the access hit count of this {@link Evictable} to {@code 0}.
      */
     void resetAccessHit();
 
     /**
      * Checks whether the maximum idle time is passed with respect to the provided time
-     * without any access during this time period as <code>maxIdleSeconds</code>.
+     * without any access during this time period as {@code maxIdleSeconds}.
      *
-     * @param maxIdleMilliSeconds   maximum idle time in milliseconds
-     * @param now                   current time in milliseconds
-     * @return <code>true</code> if exceeds max idle seconds, otherwise <code>false</code>
+     * @param maxIdleMilliSeconds maximum idle time in milliseconds
+     * @param now                 current time in milliseconds
+     * @return {@code true} if exceeds max idle seconds, otherwise {@code false}
      */
     boolean isIdleAt(long maxIdleMilliSeconds, long now);
-
 }

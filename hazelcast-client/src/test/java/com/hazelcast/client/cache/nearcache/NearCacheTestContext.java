@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
- * Context for client near cache tests.
+ * Context for client Near Cache tests.
  */
 public class NearCacheTestContext {
 

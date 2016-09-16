@@ -180,11 +180,10 @@ public class MapMBean extends HazelcastMBean<IMap> {
     }
 
     @ManagedAnnotation("localHeapCost")
-    @ManagedDescription("the total heap cost of map, near cache and heap cost")
+    @ManagedDescription("the total heap cost of map, Near Cache and heap cost")
     public long localHeapCost() {
         return localMapStatsDelegate.getLocalStats().getHeapCost();
     }
-
 
     @ManagedAnnotation("name")
     @ManagedDescription("name of the map")

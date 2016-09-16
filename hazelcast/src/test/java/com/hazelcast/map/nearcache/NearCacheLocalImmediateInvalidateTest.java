@@ -101,7 +101,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String value = "merhaba-" + key;
 
             String value0 = map.put(key, value);
-            // this brings the value into the NearCache
+            // this brings the value into the Near Cache
             String value1 = map.get(key);
             map.delete(key);
             // here we _might_ still see the value
@@ -121,7 +121,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String value = "merhaba-" + key;
 
             String value0 = map.put(key, value);
-            // this brings the value into the NearCache
+            // this brings the value into the Near Cache
             String value1 = map.get(key);
             map.remove(key, value);
             // here we _might_ still see the value
@@ -141,7 +141,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String value = "merhaba-" + key;
 
             String value0 = map.put(key, value);
-            // this brings the value into the NearCache
+            // this brings the value into the Near Cache
             String value1 = map.get(key);
             map.tryRemove(key, TIMEOUT, TIME_UNIT);
             // here we _might_ still see the value
@@ -161,7 +161,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String value = "merhaba-" + key;
 
             String value0 = map.put(key, value);
-            // this brings the value into the NearCache
+            // this brings the value into the Near Cache
             String value1 = map.get(key);
             Future<String> future = map.removeAsync(key);
             String value2 = null;
@@ -189,7 +189,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String key = "put_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the NearCache
+            // this brings the NULL_OBJECT into the Near Cache
             String value0 = map.get(key);
             String value1 = map.put(key, value);
             // here we _might_ still see the NULL_OBJECT
@@ -208,7 +208,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String key = "tryput_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the NearCache
+            // this brings the NULL_OBJECT into the Near Cache
             String value0 = map.get(key);
             map.tryPut(key, value, TIMEOUT, TIME_UNIT);
             // here we _might_ still see the NULL_OBJECT
@@ -226,7 +226,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String key = "putifabsent_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the NearCache
+            // this brings the NULL_OBJECT into the Near Cache
             String value0 = map.get(key);
             String value1 = map.putIfAbsent(key, value);
             // here we _might_ still see the NULL_OBJECT
@@ -245,7 +245,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String key = "puttransient_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the NearCache
+            // this brings the NULL_OBJECT into the Near Cache
             String value0 = map.get(key);
             map.putTransient(key, value, 0, TIME_UNIT);
             // here we _might_ still see the NULL_OBJECT
@@ -289,7 +289,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String value = "merhaba-" + key;
 
             String value0 = map.put(key, value);
-            // this brings the value into the NearCache
+            // this brings the value into the Near Cache
             String value1 = map.get(key);
             map.evict(key);
             // here we _might_ still see the value
@@ -328,7 +328,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
             String valueNew = "merhaba-new" + key;
 
             map.put(key, value);
-            // this brings the NULL_OBJECT into the NearCache
+            // this brings the NULL_OBJECT into the Near Cache
             String value0 = map.get(key);
             map.replace(key, valueNew);
             // here we _might_ still see the NULL_OBJECT

@@ -199,10 +199,9 @@ public interface CacheStatistics {
     float getAverageRemoveTime();
 
     /**
-     * Gets the near-cache statistics.
+     * Gets the Near Cache statistics.
      *
-     * @return the near-cache statistics
+     * @return the Near Cache statistics
      */
     NearCacheStats getNearCacheStatistics();
-
 }

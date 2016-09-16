@@ -79,12 +79,12 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
         }
 
         Collection<NearCache> nearCaches2 = nearCacheManager.listAllNearCaches();
-        // clear doesn't remove near cache, just clears it
+        // clear doesn't remove Near Cache, just clears it
         assertEquals(DEFAULT_NEAR_CACHE_COUNT, nearCaches2.size());
 
         nearCacheManager.clearAllNearCaches();
         Collection<NearCache> nearCaches3 = nearCacheManager.listAllNearCaches();
-        // clear all doesn't remove near caches, just clears them
+        // clear all doesn't remove Near Caches, just clears them
         assertEquals(DEFAULT_NEAR_CACHE_COUNT, nearCaches3.size());
 
         assertFalse(nearCacheManager.clearNearCache(DEFAULT_NEAR_CACHE_NAME + "-" + DEFAULT_NEAR_CACHE_COUNT));
@@ -105,7 +105,7 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
         }
 
         Collection<NearCache> nearCaches2 = nearCacheManager.listAllNearCaches();
-        // destroy also removes near cache
+        // destroy also removes Near Cache
         assertEquals(0, nearCaches2.size());
 
         assertFalse(nearCacheManager.clearNearCache(DEFAULT_NEAR_CACHE_NAME + "-" + DEFAULT_NEAR_CACHE_COUNT));
@@ -119,7 +119,7 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
 
         nearCacheManager.destroyAllNearCaches();
         Collection<NearCache> nearCaches4 = nearCacheManager.listAllNearCaches();
-        // destroy all also removes near caches
+        // destroy all also removes Near Caches
         assertEquals(0, nearCaches4.size());
     }
 }

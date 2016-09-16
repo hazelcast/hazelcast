@@ -59,7 +59,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test that near cache invalidation events are delivered when a cache is:
+ * Test that Near Cache invalidation events are delivered when a cache is:
  * <ul>
  * <li><code>clear</code>ed</li>
  * <li><code>destroy</code>ed (with <code>Cache.destroy()</code></li>
