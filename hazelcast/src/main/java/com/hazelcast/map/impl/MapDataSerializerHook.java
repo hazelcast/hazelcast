@@ -37,7 +37,9 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
+import com.hazelcast.map.impl.operation.MapIsEmptyOperation;
 import com.hazelcast.map.impl.operation.MapSizeOperation;
+import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.operation.PutAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutAllOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
@@ -61,21 +63,21 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(MAP_DS_FACTORY, MAP_DS_FACTORY_ID);
 
     public static final int PUT = 0;
-    public static final int SET = 1;
-    public static final int GET = 2;
-    public static final int REMOVE = 3;
-    public static final int PUT_BACKUP = 4;
-    public static final int REMOVE_BACKUP = 5;
-    public static final int KEY_SET = 6;
-    public static final int VALUES = 7;
-    public static final int MAP_ENTRIES = 8;
-    public static final int ENTRY_VIEW = 9;
-    public static final int QUERY_RESULT_ROW = 10;
-    public static final int QUERY_RESULT = 11;
-    public static final int EVICT_BACKUP = 12;
-    public static final int CONTAINS_KEY = 13;
-    public static final int KEYS_WITH_CURSOR = 14;
-    public static final int ENTRIES_WITH_CURSOR = 15;
+    public static final int GET = 1;
+    public static final int REMOVE = 2;
+    public static final int PUT_BACKUP = 3;
+    public static final int REMOVE_BACKUP = 4;
+    public static final int KEY_SET = 5;
+    public static final int VALUES = 6;
+    public static final int MAP_ENTRIES = 7;
+    public static final int ENTRY_VIEW = 8;
+    public static final int QUERY_RESULT_ROW = 9;
+    public static final int QUERY_RESULT = 10;
+    public static final int EVICT_BACKUP = 11;
+    public static final int CONTAINS_KEY = 12;
+    public static final int KEYS_WITH_CURSOR = 13;
+    public static final int ENTRIES_WITH_CURSOR = 14;
+    public static final int SET = 15;
     public static final int LOAD_MAP = 16;
     public static final int LOAD_STATUS = 17;
     public static final int LOAD_ALL = 18;
@@ -94,8 +96,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVICT_ALL = 31;
     public static final int EVICT_ALL_BACKUP = 32;
     public static final int GET_ALL = 33;
+    public static final int IS_EMPTY = 34;
+    public static final int MERGE = 35;
 
-    private static final int LEN = GET_ALL + 1;
+    private static final int LEN = MERGE + 1;
 
     @Override
     public int getFactoryId() {
@@ -109,11 +113,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutOperation();
-            }
-        };
-        constructors[SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetOperation();
             }
         };
         constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -184,6 +183,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ENTRIES_WITH_CURSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapEntriesWithCursor();
+            }
+        };
+        constructors[SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetOperation();
             }
         };
         constructors[LOAD_MAP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -274,6 +278,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[GET_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new GetAllOperation();
+            }
+        };
+        constructors[IS_EMPTY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapIsEmptyOperation();
+            }
+        };
+        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergeOperation();
             }
         };
 

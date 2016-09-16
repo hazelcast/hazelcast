@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
@@ -25,11 +26,12 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MergeOperation extends BasePutOperation {
+public class MergeOperation extends BasePutOperation implements IdentifiedDataSerializable {
 
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
@@ -113,5 +115,15 @@ public class MergeOperation extends BasePutOperation {
         super.readInternal(in);
         mergingEntry = in.readObject();
         mergePolicy = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.MERGE;
     }
 }
