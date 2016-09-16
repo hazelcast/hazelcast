@@ -41,7 +41,7 @@ public class FileSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getWriters(JobContext jobContext) {
+    public DataWriter[] getConsumers(JobContext jobContext) {
         return new DataWriter[]{new DataFileWriter(jobContext, 0, fileOutputStream)};
     }
 

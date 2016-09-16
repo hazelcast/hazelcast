@@ -47,7 +47,7 @@ public class ListSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getWriters(JobContext jobContext) {
+    public DataWriter[] getConsumers(JobContext jobContext) {
         return new DataWriter[]{ new ListPartitionWriter(jobContext, name)};
     }
 
