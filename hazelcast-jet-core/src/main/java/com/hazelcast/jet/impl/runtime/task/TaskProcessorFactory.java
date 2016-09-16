@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.runtime.task;
 
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.impl.actor.Consumer;
-import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.Consumer;
+import com.hazelcast.jet.runtime.Producer;
+import com.hazelcast.jet.runtime.TaskContext;
 
 public interface TaskProcessorFactory {
 

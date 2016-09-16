@@ -22,6 +22,7 @@ import com.hazelcast.jet.Sink;
 import com.hazelcast.jet.Source;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.ringbuffer.CompositeRingbuffer;
 import com.hazelcast.jet.impl.runtime.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerResponse;
@@ -35,7 +36,7 @@ import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.statemachine.runner.VertexRunnerStateMachine;
 import com.hazelcast.jet.impl.statemachine.runner.processors.VertexRunnerPayloadFactory;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerFinalizedRequest;
-import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.Producer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -48,7 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
-import static java.util.stream.Collectors.toList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEvent> {
@@ -57,9 +57,8 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
     private final Map<Integer, VertexTask> vertexTaskMap = new ConcurrentHashMap<>();
     private final int awaitSecondsTimeOut;
     private final VertexTask[] vertexTasks;
-    private final List<DataChannel> inputChannels = new ArrayList<>();
-    private final List<DataChannel> outputChannels = new ArrayList<>();
-    private final List<Producer> sourcesProducers = new ArrayList<>();
+    private final List<CompositeRingbuffer> inputRingbuffers = new ArrayList<>();
+    private final List<Producer> sourceProducers = new ArrayList<>();
     private final EventProcessorFactory eventProcessorFactory;
 
     private final int id;
@@ -134,108 +133,68 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
     }
 
     /**
-     * Handles task's event;
+     * Handles task's event
      *
-     * @param vertexTask - corresponding vertex task;
-     * @param event      - task's event;
+     * @param vertexTask corresponding vertex task
+     * @param event      task's event
      */
     public void handleTaskEvent(VertexTask vertexTask, TaskEvent event) {
         handleTaskEvent(vertexTask, event, null);
     }
 
     /**
-     * Handles task's error-event;
+     * Handles task's error-event
      *
-     * @param vertexTask - corresponding vertex task;
-     * @param event      - task's event;
-     * @param error      - corresponding error;
+     * @param vertexTask corresponding vertex task
+     * @param event      task's event
+     * @param error      corresponding error
      */
     public void handleTaskEvent(VertexTask vertexTask, TaskEvent event, Throwable error) {
-        this.eventProcessorFactory.getEventProcessor(event).process(vertexTask, event, error);
+        eventProcessorFactory.getEventProcessor(event).process(vertexTask, event, error);
     }
 
-    /**
-     * @return - tasks of the vertex;
-     */
     public VertexTask[] getVertexTasks() {
         return vertexTasks;
     }
 
-    /**
-     * TaskID -&gt; VertexTask;
-     *
-     * @return - cache of vertex tasks;
-     */
     public Map<Integer, VertexTask> getVertexMap() {
         return vertexTaskMap;
     }
 
-    /**
-     * @return - vertex for the corresponding vertex runner;
-     */
     public Vertex getVertex() {
         return vertex;
     }
 
-    /**
-     * @return - list of the input channels;
-     */
-    public List<DataChannel> getInputChannels() {
-        return inputChannels;
+    public void addInputRingbuffer(CompositeRingbuffer compositeRingbuffer) {
+        inputRingbuffers.add(compositeRingbuffer);
     }
 
     /**
-     * @return - list of the output channels;
-     */
-    public List<DataChannel> getOutputChannels() {
-        return outputChannels;
-    }
-
-    /**
-     * Adds input channel for vertex runner.
-     */
-    public void addInputChannel(DataChannel channel) {
-        inputChannels.add(channel);
-    }
-
-    /**
-     * Adds output channel for vertex runner.
-     */
-    public void addOutputChannel(DataChannel channel) {
-        outputChannels.add(channel);
-    }
-
-    /**
-     * Starts execution of runners
+     * Starts execution of all tasks
      */
     public void start() {
         int taskCount = getVertexTasks().length;
         if (taskCount == 0) {
             throw new IllegalStateException("No tasks found for the vertex runner!");
         }
-        List<Producer> producers = new ArrayList<>(sourcesProducers);
         List<Producer>[] tasksProducers = new List[taskCount];
         for (int taskIdx = 0; taskIdx < getVertexTasks().length; taskIdx++) {
             tasksProducers[taskIdx] = new ArrayList<>();
         }
-        int taskId = 0;
-        for (Producer producer : producers) {
-            tasksProducers[taskId].add(producer);
-            taskId = (taskId + 1) % taskCount;
-        }
-        for (int taskIdx = 0; taskIdx < getVertexTasks().length; taskIdx++) {
-            startTask(tasksProducers[taskIdx], taskIdx);
-        }
-    }
 
-    private void startTask(List<Producer> producers, int taskIdx) {
-        for (DataChannel channel : getInputChannels()) {
-            producers.addAll(channel.getActors()
-                    .stream()
-                    .map(actor -> actor.getParties()[taskIdx])
-                    .collect(toList()));
+        for (int i = 0; i < sourceProducers.size(); i++) {
+            Producer producer = sourceProducers.get(i);
+            int taskId = i % taskCount;
+            tasksProducers[taskId].add(producer);
         }
-        getVertexTasks()[taskIdx].start(producers);
+
+        for (int taskIdx = 0; taskIdx < getVertexTasks().length; taskIdx++) {
+            List<Producer> producers = tasksProducers[taskIdx];
+            for (CompositeRingbuffer composite : inputRingbuffers) {
+                producers.add(composite.getRingbuffers()[taskIdx]);
+            }
+            vertexTasks[taskIdx].start(producers);
+        }
     }
 
     @Override
@@ -251,7 +210,7 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
      * Destroys the runners.
      */
     public void destroy() throws Exception {
-        handleRequest(new VertexRunnerFinalizedRequest(this)).get(this.awaitSecondsTimeOut, TimeUnit.SECONDS);
+        handleRequest(new VertexRunnerFinalizedRequest(this)).get(awaitSecondsTimeOut, TimeUnit.SECONDS);
     }
 
     /**
@@ -265,6 +224,12 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         }
     }
 
+    public void complete() {
+        for (VertexTask task : vertexTasks) {
+            task.complete();
+        }
+    }
+
     protected void wakeUpExecutor() {
         getJobContext().getExecutorContext().getVertexManagerStateMachineExecutor().wakeUp();
     }
@@ -275,18 +240,18 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         for (Sink sink : sinks) {
             if (sink.isPartitioned()) {
                 for (VertexTask vertexTask : getVertexTasks()) {
-                    List<DataWriter> writers = getDataWriters(sink);
-                    vertexTask.registerSinkWriters(writers);
+                    List<Consumer> writers = getConsumers(sink);
+                    vertexTask.addConsumers(writers);
                 }
             } else {
-                List<DataWriter> writers = getDataWriters(sink);
+                List<Consumer> writers = getConsumers(sink);
                 int i = 0;
 
                 for (VertexTask vertexTask : getVertexTasks()) {
-                    List<DataWriter> sinkWriters = new ArrayList<>(sinks.size());
+                    List<Consumer> sinkWriters = new ArrayList<>(sinks.size());
                     if (writers.size() >= i - 1) {
                         sinkWriters.add(writers.get(i++));
-                        vertexTask.registerSinkWriters(sinkWriters);
+                        vertexTask.addConsumers(sinkWriters);
                     } else {
                         break;
                     }
@@ -298,17 +263,17 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
     private void buildSources() {
         if (getVertex().getSources().size() > 0) {
             for (Source source : getVertex().getSources()) {
-                List<Producer> readers = getDataReaders(source);
-                sourcesProducers.addAll(readers);
+                List<Producer> readers = getProducers(source);
+                sourceProducers.addAll(readers);
             }
         }
     }
 
-    private List<Producer> getDataReaders(Source source) {
+    private List<Producer> getProducers(Source source) {
         return Arrays.asList(source.getProducers(jobContext, getVertex()));
     }
 
-    private List<DataWriter> getDataWriters(Sink sink) {
+    private List<Consumer> getConsumers(Sink sink) {
         return Arrays.asList(sink.getWriters(jobContext));
     }
 
@@ -328,17 +293,16 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         }
     }
 
-    /**
-     * @return JET-job context
-     */
     public JobContext getJobContext() {
         return jobContext;
     }
 
-    /**
-     * @return vertex runner's identifier
-     */
     public int getId() {
         return id;
+    }
+
+    @Override
+    public String toString() {
+        return "VertexRunner{name=" + vertex.getName() + "}";
     }
 }

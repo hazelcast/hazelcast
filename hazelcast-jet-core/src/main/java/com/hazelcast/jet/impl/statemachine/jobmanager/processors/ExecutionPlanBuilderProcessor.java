@@ -21,13 +21,16 @@ import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.runtime.DataChannel;
+import com.hazelcast.jet.impl.ringbuffer.CompositeRingbuffer;
+import com.hazelcast.jet.impl.ringbuffer.Ringbuffer;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerStartRequest;
 import com.hazelcast.logging.ILogger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -62,11 +65,12 @@ public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcess
             Vertex vertex = iterator.next();
             logger.fine("Processing vertex=" + vertex.getName() + " for DAG " + dag.getName());
             List<Edge> edges = dag.getInputEdges(vertex);
-            VertexRunner next = createRunner(vertex);
+            VertexRunner runner = createRunner(vertex);
             logger.fine("Processed vertex=" + vertex.getName() + " for DAG " + dag.getName());
-            vertex2RunnerMap.put(vertex, next);
+            vertex2RunnerMap.put(vertex, runner);
             for (Edge edge : edges) {
-                join(vertex2RunnerMap.get(edge.getInputVertex()), edge, next);
+                VertexRunner sourceRunner = vertex2RunnerMap.get(edge.getInputVertex());
+                connect(sourceRunner, runner, edge);
             }
         }
         logger.fine("Processed vertices for DAG " + dag.getName());
@@ -86,16 +90,25 @@ public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcess
         return vertexRunner;
     }
 
-    private VertexRunner join(VertexRunner runner, Edge edge, VertexRunner nextRunner) {
-        linkWithChannel(runner, nextRunner, edge);
-        return nextRunner;
+    private VertexRunner connect(VertexRunner source, VertexRunner target, Edge edge) {
+        for (VertexTask sourceTask : source.getVertexTasks()) {
+            CompositeRingbuffer consumer = createRingbuffers(source, target, edge);
+            sourceTask.addConsumer(consumer);
+
+            target.addInputRingbuffer(consumer);
+        }
+        return target;
     }
 
-    private void linkWithChannel(VertexRunner runner, VertexRunner nextRunner, Edge edge) {
-        if (runner != null && nextRunner != null) {
-            DataChannel channel = new DataChannel(runner, nextRunner, edge);
-            runner.addOutputChannel(channel);
-            nextRunner.addInputChannel(channel);
+    private CompositeRingbuffer createRingbuffers(VertexRunner source, VertexRunner target, Edge edge) {
+        JobContext jobContext = target.getJobContext();
+        List<Ringbuffer> consumers = new ArrayList<>(target.getVertexTasks().length);
+        for (int i = 0; i < target.getVertexTasks().length; i++) {
+            Ringbuffer ringbuffer = new Ringbuffer(source.getVertex().getName(),
+                    jobContext, edge);
+            consumers.add(ringbuffer);
         }
+        return new CompositeRingbuffer(jobContext, consumers, edge);
     }
+
 }

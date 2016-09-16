@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor;
-
-import com.hazelcast.jet.runtime.Producer;
+package com.hazelcast.jet.runtime;
 
 /**
  * Completion handler for producers

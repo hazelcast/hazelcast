@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor.shuffling.io;
+package com.hazelcast.jet.impl.ringbuffer;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.spi.NodeEngine;
@@ -29,7 +28,7 @@ import java.util.Arrays;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
-public class ChunkedOutputStream extends OutputStream {
+class ChunkedOutputStream extends OutputStream {
     private static final int BUFFER_OFFSET = HeapData.DATA_OFFSET;
 
     private int bufferSize;
@@ -38,12 +37,12 @@ public class ChunkedOutputStream extends OutputStream {
     private final int vertexManagerId;
     private final int shufflingBytesSize;
     private final byte[] jobNameBytyes;
-    private final RingbufferActor ringbufferActor;
+    private final Ringbuffer ringbuffer;
 
-    public ChunkedOutputStream(RingbufferActor ringbufferActor,
+    public ChunkedOutputStream(Ringbuffer ringbuffer,
                                TaskContext taskContext, int vertexManagerId, int taskId) {
         this.taskId = taskId;
-        this.ringbufferActor = ringbufferActor;
+        this.ringbuffer = ringbuffer;
         this.shufflingBytesSize = taskContext.getJobContext().getJobConfig().getShufflingBatchSizeBytes();
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
         String jobName = taskContext.getJobContext().getName();
@@ -80,7 +79,7 @@ public class ChunkedOutputStream extends OutputStream {
 
                 packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK);
 
-                ringbufferActor.consume(packet);
+                ringbuffer.consume(packet);
             }
         } finally {
             Arrays.fill(buffer, (byte) 0);

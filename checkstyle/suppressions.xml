@@ -36,10 +36,10 @@
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="/jet/cascading/"/>
 
     <!-- RingBuffer -->
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingbufferWithValueStrategy"/>
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingbufferWithReferenceStrategy"/>
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/PaddedLong"/>
-    <suppress checks="IllegalImport" files="com/hazelcast/jet/impl/actor/ringbuffer/UnsafeUtil"/>
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/ringbuffer/RingbufferWithValueStrategy"/>
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/ringbuffer/RingbufferWithReferenceStrategy"/>
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/ringbuffer/RingbufferIO"/>
+    <suppress checks="IllegalImport" files="com/hazelcast/jet/impl/ringbuffer/UnsafeUtil"/>
 
     <!-- Stream -->
     <suppress checks="FileLength" files="com/hazelcast/jet/stream/Distributed.java"/>

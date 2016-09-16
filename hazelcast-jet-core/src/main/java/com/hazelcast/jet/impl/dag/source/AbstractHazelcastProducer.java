@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.runtime.Producer;
+import com.hazelcast.jet.runtime.ProducerCompletionHandler;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
@@ -90,18 +90,13 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
     }
 
     @Override
-    public void handleProducerCompleted() {
-        for (ProducerCompletionHandler handler : completionHandlers) {
-            handler.onComplete(this);
-        }
-    }
-
-    @Override
     public String getName() {
         return name;
     }
 
-    /** @return true if reading must happen on a Hazelcast partition thread, false otherwise */
+    /**
+     * @return true if reading must happen on a Hazelcast partition thread, false otherwise
+     */
     protected abstract boolean mustRunOnPartitionThread();
 
     protected abstract Iterator<V> newIterator();
@@ -118,7 +113,9 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
         if (!iterator.hasNext()) {
             iterator = null;
             lastProducedCount = -1;
-            handleProducerCompleted();
+            for (ProducerCompletionHandler handler : completionHandlers) {
+                handler.onComplete(this);
+            }
             return null;
         }
         int idx = 0;

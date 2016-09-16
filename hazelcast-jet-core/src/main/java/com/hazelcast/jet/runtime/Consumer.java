@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor;
+package com.hazelcast.jet.runtime;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 

@@ -14,33 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor.ringbuffer;
+package com.hazelcast.jet.impl.ringbuffer;
 
-import com.hazelcast.jet.impl.actor.Ringbuffer;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-@SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")
-@SuppressWarnings({
-        "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
-})
-abstract class RingBufferPadByValue {
-    protected long p1, p2, p3, p4, p5, p6, p7;
-}
-
 @SuppressWarnings("checkstyle:magicnumber")
-abstract class RingBufferFieldsByValue<T> extends RingBufferPadByValue {
+abstract class RingbufferFieldsByValue<T> extends RingbufferPad {
     protected static final int BUFFER_PAD;
 
     static {
-        final int scale =
-                UnsafeUtil.UNSAFE_AVAILABLE
-                        ?
-                        UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class)
-                        :
-                        1;
-
+        final int scale = UnsafeUtil.UNSAFE_AVAILABLE ? UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class) : 1;
         BUFFER_PAD = 128 / scale;
     }
 
@@ -49,10 +34,7 @@ abstract class RingBufferFieldsByValue<T> extends RingBufferPadByValue {
     protected final int bufferSize;
     protected final DataTransferringStrategy<T> dataTransferringStrategy;
 
-    RingBufferFieldsByValue(
-            int bufferSize,
-            DataTransferringStrategy<T> dataTransferringStrategy
-    ) {
+    RingbufferFieldsByValue(int bufferSize, DataTransferringStrategy<T> dataTransferringStrategy) {
         this.bufferSize = bufferSize;
 
         if (bufferSize < 1) {
@@ -65,11 +47,11 @@ abstract class RingBufferFieldsByValue<T> extends RingBufferPadByValue {
 
         this.dataTransferringStrategy = dataTransferringStrategy;
 
-        this.indexMask = bufferSize - 1;
-        this.entries = (T[]) new Object[bufferSize + 2 * BUFFER_PAD];
+        indexMask = bufferSize - 1;
+        entries = (T[]) new Object[bufferSize + 2 * BUFFER_PAD];
 
-        for (int i = 0; i < this.entries.length; i++) {
-            this.entries[i] = dataTransferringStrategy.newInstance();
+        for (int i = 0; i < entries.length; i++) {
+            entries[i] = dataTransferringStrategy.newInstance();
         }
     }
 }
@@ -78,27 +60,24 @@ abstract class RingBufferFieldsByValue<T> extends RingBufferPadByValue {
 @SuppressWarnings({
         "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
 })
-public final class RingbufferWithValueStrategy<T> extends RingBufferFieldsByValue<T> implements Ringbuffer<T> {
+final class RingbufferWithValueStrategy<T> extends RingbufferFieldsByValue<T> implements RingbufferIO<T> {
     public static final long INITIAL_CURSOR_VALUE = 0L;
     private final PaddedLong readSequencer = new PaddedLong(RingbufferWithValueStrategy.INITIAL_CURSOR_VALUE);
     private final PaddedLong writeSequencer = new PaddedLong(RingbufferWithValueStrategy.INITIAL_CURSOR_VALUE);
     private final PaddedLong availableSequencer = new PaddedLong(RingbufferWithValueStrategy.INITIAL_CURSOR_VALUE);
     protected long p1, p2, p3, p4, p5, p6, p7;
 
-    public RingbufferWithValueStrategy(
-            int bufferSize,
-            DataTransferringStrategy<T> dataTransferringStrategy
-    ) {
+    public RingbufferWithValueStrategy(int bufferSize, DataTransferringStrategy<T> dataTransferringStrategy) {
         super(bufferSize, dataTransferringStrategy);
     }
 
     @Override
     public int acquire(int acquired) {
-        if (acquired > this.bufferSize) {
+        if (acquired > bufferSize) {
             acquired = bufferSize;
         }
 
-        int remaining = this.bufferSize - (int) (this.availableSequencer.getValue() - this.readSequencer.getValue());
+        int remaining = bufferSize - (int) (availableSequencer.getValue() - readSequencer.getValue());
 
         if (remaining <= 0) {
             return 0;
@@ -106,15 +85,15 @@ public final class RingbufferWithValueStrategy<T> extends RingBufferFieldsByValu
 
         int realAcquired = Math.min(remaining, acquired);
 
-        this.writeSequencer.setValue(this.availableSequencer.getValue() + realAcquired);
+        writeSequencer.setValue(availableSequencer.getValue() + realAcquired);
 
         return realAcquired;
     }
 
     @Override
     public void commit(IOBuffer<T> chunk, int consumed) {
-        long writerSequencerValue = this.writeSequencer.getValue();
-        long availableSequencerValue = this.availableSequencer.getValue();
+        long writerSequencerValue = writeSequencer.getValue();
+        long availableSequencerValue = availableSequencer.getValue();
 
         int entriesStart = (int) (BUFFER_PAD + ((availableSequencerValue & indexMask)));
         int count = (int) (writerSequencerValue - availableSequencerValue);
@@ -124,55 +103,55 @@ public final class RingbufferWithValueStrategy<T> extends RingBufferFieldsByValu
 
         if (count <= window) {
             for (int i = 0; i < count; i++) {
-                this.dataTransferringStrategy.copy(buffer[consumed + i], this.entries[entriesStart + i]);
+                dataTransferringStrategy.copy(buffer[consumed + i], entries[entriesStart + i]);
             }
         } else {
             for (int i = 0; i < window; i++) {
-                this.dataTransferringStrategy.copy(buffer[consumed + i], this.entries[entriesStart + i]);
+                dataTransferringStrategy.copy(buffer[consumed + i], entries[entriesStart + i]);
             }
 
             for (int i = 0; i < count - window; i++) {
-                this.dataTransferringStrategy.copy(buffer[consumed + window + i], this.entries[BUFFER_PAD + i]);
+                dataTransferringStrategy.copy(buffer[consumed + window + i], entries[BUFFER_PAD + i]);
             }
         }
 
-        this.availableSequencer.setValue(writerSequencerValue);
+        availableSequencer.setValue(writerSequencerValue);
     }
 
     @Override
     public int fetch(T[] chunk) {
-        long availableSequence = this.availableSequencer.getValue();
-        long readerSequencerValue = this.readSequencer.getValue();
+        long availableSequence = availableSequencer.getValue();
+        long readerSequencerValue = readSequencer.getValue();
 
         int count = Math.min(chunk.length, (int) (availableSequence - readerSequencerValue));
-        int entriesStart = (int) (BUFFER_PAD + ((readerSequencerValue & this.indexMask)));
-        int window = this.entries.length - BUFFER_PAD - entriesStart;
+        int entriesStart = (int) (BUFFER_PAD + ((readerSequencerValue & indexMask)));
+        int window = entries.length - BUFFER_PAD - entriesStart;
 
         if (count <= window) {
             for (int i = 0; i < count; i++) {
-                this.dataTransferringStrategy.copy(this.entries[entriesStart + i], chunk[i]);
-                this.dataTransferringStrategy.clean(this.entries[entriesStart + i]);
+                dataTransferringStrategy.copy(entries[entriesStart + i], chunk[i]);
+                dataTransferringStrategy.clean(entries[entriesStart + i]);
             }
         } else {
             for (int i = 0; i < window; i++) {
-                this.dataTransferringStrategy.copy(this.entries[entriesStart + i], chunk[i]);
-                this.dataTransferringStrategy.clean(this.entries[entriesStart + i]);
+                dataTransferringStrategy.copy(entries[entriesStart + i], chunk[i]);
+                dataTransferringStrategy.clean(entries[entriesStart + i]);
             }
 
             for (int i = 0; i < count - window; i++) {
-                this.dataTransferringStrategy.copy(this.entries[BUFFER_PAD + i], chunk[window + i]);
-                this.dataTransferringStrategy.clean(this.entries[BUFFER_PAD + i]);
+                dataTransferringStrategy.copy(entries[BUFFER_PAD + i], chunk[window + i]);
+                dataTransferringStrategy.clean(entries[BUFFER_PAD + i]);
             }
         }
 
-        this.readSequencer.setValue(this.readSequencer.getValue() + count);
+        readSequencer.setValue(readSequencer.getValue() + count);
         return count;
     }
 
     @Override
     public void reset() {
-        this.readSequencer.setValue(0);
-        this.writeSequencer.setValue(0);
-        this.availableSequencer.setValue(0);
+        readSequencer.setValue(0);
+        writeSequencer.setValue(0);
+        availableSequencer.setValue(0);
     }
 }

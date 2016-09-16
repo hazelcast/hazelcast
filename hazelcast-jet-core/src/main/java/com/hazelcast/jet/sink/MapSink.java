@@ -18,7 +18,6 @@ package com.hazelcast.jet.sink;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Sink;
-import com.hazelcast.jet.impl.actor.shuffling.ShufflingWriter;
 import com.hazelcast.jet.impl.dag.sink.MapPartitionWriter;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -56,10 +55,7 @@ public class MapSink implements Sink {
         DataWriter[] writers = new DataWriter[localPartitions.size()];
         for (int i = 0; i < localPartitions.size(); i++) {
             int partitionId = localPartitions.get(i);
-            writers[i] = new ShufflingWriter(
-                    getPartitionWriter(jobContext, partitionId),
-                    jobContext.getNodeEngine()
-            );
+            writers[i] = getPartitionWriter(jobContext, partitionId);
         }
         return writers;
     }

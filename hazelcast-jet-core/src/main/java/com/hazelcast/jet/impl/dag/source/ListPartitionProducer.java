@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.dag.source;
 
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListService;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.ringbuffer.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.pair.JetPairConverter;
 import com.hazelcast.jet.impl.data.pair.JetPairIterator;
 import com.hazelcast.jet.impl.job.JobContext;

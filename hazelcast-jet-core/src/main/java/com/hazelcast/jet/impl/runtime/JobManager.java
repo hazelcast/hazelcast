@@ -24,8 +24,8 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.impl.ringbuffer.ShufflingReceiver;
+import com.hazelcast.jet.impl.ringbuffer.ShufflingSender;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
@@ -337,7 +337,7 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
         VertexRunner vertexRunner = runnersMap.get(vertexManagerId);
         VertexTask vertexTask = vertexRunner.getVertexMap().get(taskID);
         vertexTask.registerShufflingReceiver(address, receiver);
-        discoveryService.getSocketReaders().get(address).registerConsumer(receiver.getRingbufferActor());
+        discoveryService.getSocketReaders().get(address).registerConsumer(receiver.getRingbuffer());
     }
 
     /**
@@ -355,7 +355,7 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
         VertexRunner vertexRunner = runnersMap.get(vertexManagerId);
         VertexTask vertexTask = vertexRunner.getVertexMap().get(taskID);
         vertexTask.registerShufflingSender(address, sender);
-        discoveryService.getSocketWriters().get(address).registerProducer(sender.getRingbufferActor());
+        discoveryService.getSocketWriters().get(address).registerProducer(sender.getRingbuffer());
     }
 
     /**

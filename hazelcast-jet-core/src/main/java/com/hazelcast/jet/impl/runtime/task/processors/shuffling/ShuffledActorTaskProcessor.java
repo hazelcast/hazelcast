@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.runtime.task.processors.shuffling;
 
 import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.ringbuffer.ShufflingReceiver;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.JobManager;

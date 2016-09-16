@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.dag.source;
 
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.ringbuffer.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.Pair;
 import java.io.File;

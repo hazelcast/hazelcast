@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor.shuffling.io;
+package com.hazelcast.jet.impl.ringbuffer;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
-import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.dag.sink.AbstractHazelcastWriter;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
@@ -40,7 +39,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     private final Address address;
 
     private final byte[] jobNameBytes;
-    private final RingbufferActor ringbufferActor;
+    private final Ringbuffer ringbuffer;
     private final ChunkedOutputStream serializer;
     private final ObjectDataOutputStream dataOutputStream;
     private final SerializationOptimizer optimizer;
@@ -55,8 +54,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
         String jobName = jobContext.getName();
         this.jobNameBytes = ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(jobName);
-        this.ringbufferActor = new RingbufferActor(task);
-        this.serializer = new ChunkedOutputStream(this.ringbufferActor, task.getTaskContext(),
+        this.ringbuffer = new Ringbuffer(task.getVertex().getName(), jobContext);
+        this.serializer = new ChunkedOutputStream(this.ringbuffer, task.getTaskContext(),
                 vertexRunnerId, task.getTaskContext().getTaskNumber());
         this.optimizer = task.getTaskContext().getSerializationOptimizer();
         this.dataOutputStream = new ObjectDataOutputStream(
@@ -76,7 +75,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         serializer.flushSender();
         JetPacket packet = new JetPacket(taskID, vertexRunnerId, jobNameBytes);
         packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK_SENT);
-        ringbufferActor.consume(packet);
+        ringbuffer.consume(packet);
         return chunk.size();
     }
 
@@ -90,19 +89,19 @@ public class ShufflingSender extends AbstractHazelcastWriter {
             }
             chunkBuffer.reset();
         }
-        return ringbufferActor.flush();
+        return ringbuffer.flush();
     }
 
     @Override
     public boolean isFlushed() {
-        boolean result = ringbufferActor.isFlushed();
+        boolean result = ringbuffer.isFlushed();
         checkClosed(result);
         return result;
     }
 
     private void checkClosed(boolean result) {
         if ((result) && (closed)) {
-            ringbufferActor.close();
+            ringbuffer.close();
         }
     }
 
@@ -115,7 +114,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     protected void onOpen() {
         closed = false;
         isFlushed = true;
-        ringbufferActor.open();
+        ringbuffer.open();
     }
 
     @Override
@@ -139,8 +138,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     private void writePacket(JetPacket packet) {
         try {
-            ringbufferActor.consume(packet);
-            ringbufferActor.flush();
+            ringbuffer.consume(packet);
+            ringbuffer.flush();
         } catch (Exception e) {
             throw unchecked(e);
         }
@@ -159,7 +158,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         }
     }
 
-    public RingbufferActor getRingbufferActor() {
-        return ringbufferActor;
+    public Ringbuffer getRingbuffer() {
+        return ringbuffer;
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.runtime.task.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
@@ -26,6 +25,7 @@ import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.util.BooleanHolder;
+import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
@@ -58,7 +58,7 @@ public class SocketReader
     private final Address jetAddress;
     private final JobContext jobContext;
     private final IOBuffer<JetPacket> buffer;
-    private final List<RingbufferActor> consumers = new ArrayList<RingbufferActor>();
+    private final List<Consumer> consumers = new ArrayList<Consumer>();
     private final Map<Address, SocketWriter> writers = new HashMap<Address, SocketWriter>();
 
     private JetPacket packet;
@@ -306,13 +306,8 @@ public class SocketReader
         socketAssigned = true;
     }
 
-    /**
-     * Register output ringBuffer consumer;
-     *
-     * @param ringbufferActor - corresponding output consumer;
-     */
-    public void registerConsumer(RingbufferActor ringbufferActor) {
-        consumers.add(ringbufferActor);
+    public void registerConsumer(Consumer consumer) {
+        consumers.add(consumer);
     }
 
     /**

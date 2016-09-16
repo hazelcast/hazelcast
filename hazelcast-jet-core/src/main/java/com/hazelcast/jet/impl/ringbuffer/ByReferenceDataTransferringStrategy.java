@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor;
+package com.hazelcast.jet.impl.ringbuffer;
 
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 

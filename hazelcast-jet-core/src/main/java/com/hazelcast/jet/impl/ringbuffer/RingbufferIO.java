@@ -14,9 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor.ringbuffer;
+package com.hazelcast.jet.impl.ringbuffer;
 
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+/**
+ * Abstract interface fo ringBuffers;
+ *
+ * @param <T> - type of the content in the ring buffer;
+ */
+interface RingbufferIO<T> {
+    int acquire(int acquired);
+
+    void commit(IOBuffer<T> buffer, int consumed);
+
+    int fetch(T[] chunk);
+
+    void reset();
+}
+
+@SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")
+@SuppressWarnings({
+        "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
+})
+abstract class RingbufferPad {
+    protected long p1, p2, p3, p4, p5, p6, p7;
+}
 
 @SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")
 @SuppressWarnings({
@@ -46,7 +70,7 @@ abstract class RightPaddedLong extends LeftPaddedLong {
 @SuppressWarnings({
         "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
 })
-public class PaddedLong extends RightPaddedLong {
+class PaddedLong extends RightPaddedLong {
     protected long p1, p2, p3, p4, p5, p6, p7;
 
     public PaddedLong(long value) {

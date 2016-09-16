@@ -16,14 +16,12 @@
 
 package com.hazelcast.jet.impl.runtime.task;
 
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.impl.data.io.JetPairDataType;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.io.SerializationOptimizer;
-import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.runtime.TaskContext;
 
 import java.io.Serializable;
@@ -48,32 +46,15 @@ public class TaskContextImpl implements TaskContext {
         jobContext.registerAccumulators(this.accumulatorMap);
     }
 
-    /**
-     * @return vertex in DAG
-     */
+    @Override
     public Vertex getVertex() {
         return vertex;
     }
 
-    /**
-     * @return DAG of the job
-     */
-    public DAG getDAG() {
-        return jobContext.getDAG();
-    }
-
-    /**
-     * @return job config
-     */
-    public JobConfig getConfig() {
-        return jobContext.getJobConfig();
-    }
-
-
+    @Override
     public JobContext getJobContext() {
         return jobContext;
     }
-
 
     @Override
     public int getTaskNumber() {

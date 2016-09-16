@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.runtime;
 
-import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
-
 /**
  * This is an abstract interface for each producer in the system
  * which produce data objects
@@ -33,10 +31,14 @@ public interface Producer {
      */
     String getName();
 
-    /** Opens this producer */
+    /**
+     * Opens this producer
+     */
     void open();
 
-    /** Closes this producer */
+    /**
+     * Closes this producer
+     */
     void close();
 
     /**
@@ -51,9 +53,4 @@ public interface Producer {
      * Register a handler which will be run when the producer is completed
      */
     void registerCompletionHandler(ProducerCompletionHandler runnable);
-
-    /**
-     * Notify the registered producer listeners that the producer is complete.
-     */
-    void handleProducerCompleted();
 }

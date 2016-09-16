@@ -16,17 +16,14 @@
 
 package com.hazelcast.jet.runtime;
 
-import com.hazelcast.jet.impl.actor.Consumer;
-import com.hazelcast.jet.impl.actor.Shuffler;
-
 /**
  * Represents abstract writer to some sink
  */
-public interface DataWriter extends Consumer, Shuffler {
+public interface DataWriter extends Consumer {
 
     /**
      * @return true if write is partition-aware, else otherwise
-     * <p>
+     * <p/>
      * Examples of partition-aware writers:
      * <pre>
      *          - Map

@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.runtime.task.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.BooleanHolder;
@@ -50,7 +49,7 @@ public class SocketWriter
     private final byte[] jobNameBytes;
     private final InetSocketAddress inetSocketAddress;
     private final JobContext jobContext;
-    private final List<RingbufferActor> producers = new ArrayList<RingbufferActor>();
+    private final List<Producer> producers = new ArrayList<Producer>();
     private final Queue<JetPacket> servicePackets = new ConcurrentLinkedQueue<JetPacket>();
 
     private int lastFrameId = -1;
@@ -329,11 +328,8 @@ public class SocketWriter
         //socketChannel.socket().setSendBufferSize(1);
     }
 
-    /**
-     * @param ringbufferActor - input producer;
-     */
-    public void registerProducer(RingbufferActor ringbufferActor) {
-        producers.add(ringbufferActor);
+    public void registerProducer(Producer producer) {
+        producers.add(producer);
     }
 
     /**

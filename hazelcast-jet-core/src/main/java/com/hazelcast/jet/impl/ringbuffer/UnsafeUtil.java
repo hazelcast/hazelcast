@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor.ringbuffer;
+package com.hazelcast.jet.impl.ringbuffer;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

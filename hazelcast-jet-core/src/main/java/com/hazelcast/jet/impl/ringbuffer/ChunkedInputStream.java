@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor.shuffling.io;
+package com.hazelcast.jet.impl.ringbuffer;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.data.io.JetPacket;
@@ -25,7 +25,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class ChunkedInputStream extends InputStream {
+class ChunkedInputStream extends InputStream {
     private static final int MASK = 0xff;
 
     private static final int BUFFER_OFFSET = HeapData.DATA_OFFSET;

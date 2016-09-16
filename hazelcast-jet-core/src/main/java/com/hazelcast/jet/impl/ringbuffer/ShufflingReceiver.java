@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor.shuffling.io;
+package com.hazelcast.jet.impl.ringbuffer;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
-import com.hazelcast.jet.impl.actor.RingbufferActor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.runtime.Producer;
+import com.hazelcast.jet.runtime.ProducerCompletionHandler;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -38,9 +37,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ShufflingReceiver implements Producer {
 
     private final ObjectDataInput in;
-    private final List<ProducerCompletionHandler> handlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
+    private final List<ProducerCompletionHandler> handlers = new CopyOnWriteArrayList<>();
     private final ChunkedInputStream chunkReceiver;
-    private final RingbufferActor ringbufferActor;
+    private final Ringbuffer ringbuffer;
     private final IOBuffer<JetPacket> packetBuffers;
     private final SerializationOptimizer optimizer;
     private final String name;
@@ -61,7 +60,7 @@ public class ShufflingReceiver implements Producer {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
         JobConfig jobConfig = jobContext.getJobConfig();
         int chunkSize = jobConfig.getChunkSize();
-        this.ringbufferActor = new RingbufferActor(vertexTask);
+        this.ringbuffer = new Ringbuffer(vertexTask.getVertex().getName(), jobContext);
         this.packetBuffers = new IOBuffer<>(new JetPacket[chunkSize]);
         this.chunkReceiver = new ChunkedInputStream(this.packetBuffers);
         this.in = new ObjectDataInputStream(chunkReceiver,
@@ -75,14 +74,18 @@ public class ShufflingReceiver implements Producer {
         closed = false;
         finalized = false;
         chunkReceiver.onOpen();
-        ringbufferActor.open();
+        ringbuffer.open();
     }
 
     @Override
     public void close() {
         closed = true;
         finalized = true;
-        ringbufferActor.close();
+        ringbuffer.close();
+
+        for (ProducerCompletionHandler handler : handlers) {
+            handler.onComplete(this);
+        }
     }
 
     @Override
@@ -93,12 +96,12 @@ public class ShufflingReceiver implements Producer {
         if (packets != null) {
             return processPackets();
         }
-        packets = ringbufferActor.produce();
-        lastProducedPacketsCount = ringbufferActor.lastProducedCount();
+        packets = ringbuffer.produce();
+        lastProducedPacketsCount = ringbuffer.lastProducedCount();
         if (JetUtil.isEmpty(packets)) {
             if (finalized) {
                 close();
-                handleProducerCompleted();
+
             }
             return null;
         }
@@ -120,20 +123,13 @@ public class ShufflingReceiver implements Producer {
         handlers.add(runnable);
     }
 
-    @Override
-    public void handleProducerCompleted() {
-        for (ProducerCompletionHandler handler : handlers) {
-            handler.onComplete(this);
-        }
-    }
-
     public boolean consume(JetPacket packet) {
-        ringbufferActor.consume(packet);
+        ringbuffer.consume(packet);
         return true;
     }
 
-    public RingbufferActor getRingbufferActor() {
-        return ringbufferActor;
+    public Ringbuffer getRingbuffer() {
+        return ringbuffer;
     }
 
     private Object[] processPackets() throws Exception {

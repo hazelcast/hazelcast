@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.actor;
-
-import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.runtime.Producer;
-
 /**
- * This is an abstract interface for each actor in the system which
- * consumes or produces objects
+ * Provides API to work with JET actors
  */
-public interface Actor extends Producer, Consumer {
-    /**
-     * @return vertex task it belongs to
-     */
-    VertexTask getSourceTask();
-}
+package com.hazelcast.jet.impl.ringbuffer;

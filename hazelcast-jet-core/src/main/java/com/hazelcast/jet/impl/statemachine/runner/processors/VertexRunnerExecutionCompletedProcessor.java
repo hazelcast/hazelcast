@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.statemachine.runner.processors;
 
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.runtime.DataChannel;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 
@@ -32,9 +31,7 @@ public class VertexRunnerExecutionCompletedProcessor implements VertexRunnerPayl
 
     @Override
     public void process(Void payload) throws Exception {
-        for (DataChannel channel : this.runner.getOutputChannels()) {
-            channel.close();
-        }
+        runner.complete();
         this.jobContext.getJobManager().handleRunnerCompleted();
     }
 }

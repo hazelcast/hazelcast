@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.runtime.task.processors.factory;
 
 import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.impl.actor.Consumer;
+import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessorFactory;

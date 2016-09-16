@@ -19,28 +19,21 @@ package com.hazelcast.jet.impl.runtime.task;
 
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.actor.Actor;
-import com.hazelcast.jet.impl.actor.ComposedActor;
-import com.hazelcast.jet.impl.actor.Consumer;
-import com.hazelcast.jet.runtime.DataWriter;
-import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.impl.actor.RingbufferActor;
-import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.executor.Task;
-import com.hazelcast.jet.impl.runtime.DataChannel;
+import com.hazelcast.jet.impl.ringbuffer.ShufflingReceiver;
+import com.hazelcast.jet.impl.ringbuffer.ShufflingSender;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.processors.factory.DefaultTaskProcessorFactory;
 import com.hazelcast.jet.impl.runtime.task.processors.factory.ShuffledTaskProcessorFactory;
 import com.hazelcast.jet.impl.util.BooleanHolder;
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.Consumer;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +97,7 @@ public class VertexTask extends Task {
         if (producers != null && !producers.isEmpty()) {
             for (Producer producer : producers) {
                 this.producers.add(producer);
-                producer.registerCompletionHandler(this::handleProducerCompleted);
+                producer.registerCompletionHandler(p -> activeProducersCounter.decrementAndGet());
             }
         }
         onStart();
@@ -121,48 +114,6 @@ public class VertexTask extends Task {
         }
     }
 
-    /**
-     * Performs registration of sink writers
-     *
-     * @param sinkWriters - list of the input sink writers
-     */
-    public void registerSinkWriters(List<DataWriter> sinkWriters) {
-        consumers.addAll(sinkWriters);
-    }
-
-    /**
-     * @param channel      - data channel for corresponding edge
-     * @param edge         - corresponding edge
-     * @param vertexRunner - source vertex manager of the channel
-     * @return - composed actor with actors of channel
-     */
-    public ComposedActor registerOutputChannel(DataChannel channel, Edge edge, VertexRunner vertexRunner) {
-        List<Actor> actors = new ArrayList<Actor>(vertexRunner.getVertexTasks().length);
-
-        for (int i = 0; i < vertexRunner.getVertexTasks().length; i++) {
-            Actor actor = new RingbufferActor(this, edge);
-
-            if (channel.isShuffled()) {
-                //output
-                actor = new ShufflingActor(actor, taskContext.getJobContext().getNodeEngine());
-            }
-            actors.add(actor);
-        }
-
-        ComposedActor composed = new ComposedActor(this, actors, edge);
-        consumers.add(composed);
-
-        return composed;
-    }
-
-    /**
-     * Handled on input producer's completion
-     *
-     * @param producer - finished input producer
-     */
-    public void handleProducerCompleted(Producer producer) {
-        activeProducersCounter.decrementAndGet();
-    }
 
     /**
      * Register shuffling receiver for the corresponding node with address member
@@ -173,6 +124,14 @@ public class VertexTask extends Task {
     public void registerShufflingReceiver(Address address, ShufflingReceiver receiver) {
         shufflingReceivers.put(address, receiver);
         receiver.registerCompletionHandler(producer -> activeReceiversCounter.decrementAndGet());
+    }
+
+    public void addConsumers(List<Consumer> consumers) {
+        this.consumers.addAll(consumers);
+    }
+
+    public void addConsumer(Consumer consumer) {
+        consumers.add(consumer);
     }
 
     /**
@@ -242,6 +201,12 @@ public class VertexTask extends Task {
         } catch (Throwable error) {
             afterProcessing();
             handleProcessingError(error);
+        }
+    }
+
+    public void complete() {
+        for (Consumer consumer : consumers) {
+            consumer.close();
         }
     }
 
