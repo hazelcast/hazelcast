@@ -65,8 +65,10 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static java.lang.Integer.getInteger;
 
 /**
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
@@ -79,6 +81,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     public static final int INVOCATION_TRY_COUNT = 3;
 
     private static final int SYNC_INTERVAL_SECONDS = 30;
+    private static final int MAXIMUM_NUMBER_OF_INFLIGHT_REPLICATION_OPERATION =
+            getInteger("hazelcast.internal.replicatedmap.max.inflight.updates", 100);
 
     private final Config config;
     private final NodeEngine nodeEngine;
@@ -98,6 +102,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                     return new LocalReplicatedMapStatsImpl();
                 }
             };
+    private AtomicInteger inFlightReplicateUpdateOperationCounter = new AtomicInteger();
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -377,4 +382,15 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         return mapStats;
     }
 
+    public final void replicateUpdateOperationCompleted() {
+        inFlightReplicateUpdateOperationCounter.decrementAndGet();
+    }
+
+    public final void replicateUpdateOperationStarted() {
+        inFlightReplicateUpdateOperationCounter.incrementAndGet();
+    }
+
+    public final boolean isBackpressureNeeded() {
+        return inFlightReplicateUpdateOperationCounter.get() > MAXIMUM_NUMBER_OF_INFLIGHT_REPLICATION_OPERATION;
+    }
 }
