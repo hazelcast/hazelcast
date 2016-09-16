@@ -77,7 +77,7 @@ public class VertexTest {
         final String sinkTapName = "sinkTapWithWriterStrategyName";
         Sink sink = new Sink() {
             @Override
-            public DataWriter[] getWriters(JobContext jobContext) {
+            public DataWriter[] getConsumers(JobContext jobContext) {
                 return new DataWriter[0];
             }
 

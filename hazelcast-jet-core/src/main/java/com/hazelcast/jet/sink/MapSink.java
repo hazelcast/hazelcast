@@ -50,7 +50,7 @@ public class MapSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getWriters(JobContext jobContext) {
+    public DataWriter[] getConsumers(JobContext jobContext) {
         List<Integer> localPartitions = JetUtil.getLocalPartitions(jobContext.getNodeEngine());
         DataWriter[] writers = new DataWriter[localPartitions.size()];
         for (int i = 0; i < localPartitions.size(); i++) {
