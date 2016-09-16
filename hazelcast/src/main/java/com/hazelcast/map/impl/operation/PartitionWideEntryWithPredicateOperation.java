@@ -18,14 +18,16 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntryOperation {
+public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntryOperation implements IdentifiedDataSerializable {
 
     private Predicate predicate;
 
@@ -69,5 +71,15 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(predicate);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PARTITION_WIDE_PREDICATE_ENTRY;
     }
 }

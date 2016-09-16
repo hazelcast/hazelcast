@@ -43,6 +43,10 @@ import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.operation.NearCacheBatchInvalidationOperation;
 import com.hazelcast.map.impl.operation.NearCacheSingleInvalidationOperation;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
+import com.hazelcast.map.impl.operation.PartitionWideEntryBackupOperation;
+import com.hazelcast.map.impl.operation.PartitionWideEntryOperation;
+import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateBackupOperation;
+import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperation;
 import com.hazelcast.map.impl.operation.PutAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutAllOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
@@ -104,8 +108,12 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int NEAR_CACHE_SINGLE_INVALIDATION = 36;
     public static final int NEAR_CACHE_BATCH_INVALIDATION = 37;
     public static final int CHECK_IF_LOADED = 38;
+    public static final int PARTITION_WIDE_ENTRY = 39;
+    public static final int PARTITION_WIDE_ENTRY_BACKUP = 40;
+    public static final int PARTITION_WIDE_PREDICATE_ENTRY = 41;
+    public static final int PARTITION_WIDE_PREDICATE_ENTRY_BACKUP = 42;
 
-    private static final int LEN = CHECK_IF_LOADED + 1;
+    private static final int LEN = PARTITION_WIDE_PREDICATE_ENTRY_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -309,6 +317,26 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[CHECK_IF_LOADED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PartitionCheckIfLoadedOperation();
+            }
+        };
+        constructors[PARTITION_WIDE_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionWideEntryOperation();
+            }
+        };
+        constructors[PARTITION_WIDE_ENTRY_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionWideEntryBackupOperation();
+            }
+        };
+        constructors[PARTITION_WIDE_PREDICATE_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionWideEntryWithPredicateOperation();
+            }
+        };
+        constructors[PARTITION_WIDE_PREDICATE_ENTRY_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionWideEntryWithPredicateBackupOperation();
             }
         };
 
