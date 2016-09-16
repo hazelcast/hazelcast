@@ -16,9 +16,11 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ClearNearCacheOperation extends MapOperation implements MutatingOperation {
+public class ClearNearCacheOperation extends MapOperation implements MutatingOperation, IdentifiedDataSerializable {
 
     public ClearNearCacheOperation() {
     }
@@ -35,5 +37,15 @@ public class ClearNearCacheOperation extends MapOperation implements MutatingOpe
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CLEAR_NEAR_CACHE;
     }
 }

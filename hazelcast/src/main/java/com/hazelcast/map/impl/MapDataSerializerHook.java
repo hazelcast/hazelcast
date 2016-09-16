@@ -21,7 +21,11 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.operation.ClearBackupOperation;
+import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
+import com.hazelcast.map.impl.operation.ClearOperation;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
+import com.hazelcast.map.impl.operation.DeleteOperation;
 import com.hazelcast.map.impl.operation.EntryBackupOperation;
 import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
@@ -29,12 +33,15 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
+import com.hazelcast.map.impl.operation.MapSizeOperation;
 import com.hazelcast.map.impl.operation.PutAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutAllOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
+import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
 import com.hazelcast.map.impl.operation.RemoveOperation;
+import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
@@ -72,9 +79,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ENTRY_OPERATION = 20;
     public static final int PUT_ALL = 21;
     public static final int PUT_ALL_BACKUP = 22;
+    public static final int REMOVE_IF_SAME = 23;
+    public static final int REPLACE = 24;
+    public static final int SIZE = 25;
+    public static final int CLEAR_BACKUP = 26;
+    public static final int CLEAR_NEAR_CACHE = 27;
+    public static final int CLEAR = 28;
+    public static final int DELETE = 29;
 
 
-    private static final int LEN = PUT_ALL_BACKUP + 1;
+    private static final int LEN = DELETE + 1;
 
     @Override
     public int getFactoryId() {
@@ -198,6 +212,41 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PUT_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutAllBackupOperation();
+            }
+        };
+        constructors[REMOVE_IF_SAME] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveIfSameOperation();
+            }
+        };
+        constructors[REPLACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ReplaceOperation();
+            }
+        };
+        constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapSizeOperation();
+            }
+        };
+        constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearBackupOperation();
+            }
+        };
+        constructors[CLEAR_NEAR_CACHE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearNearCacheOperation();
+            }
+        };
+        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearOperation();
+            }
+        };
+        constructors[DELETE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new DeleteOperation();
             }
         };
 

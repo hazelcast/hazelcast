@@ -17,11 +17,13 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
-public class MapSizeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class MapSizeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, IdentifiedDataSerializable {
 
     private int size;
 
@@ -48,4 +50,13 @@ public class MapSizeOperation extends MapOperation implements PartitionAwareOper
         return size;
     }
 
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.SIZE;
+    }
 }
