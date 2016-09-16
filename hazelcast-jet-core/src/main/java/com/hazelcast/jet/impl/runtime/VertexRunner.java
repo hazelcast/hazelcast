@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static java.util.Arrays.asList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEvent> {
@@ -74,8 +75,10 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         this.awaitSecondsTimeOut = getJobContext().getJobConfig().getSecondsToAwait();
         this.eventProcessorFactory = new EventProcessorFactory(this);
 
+        for (Source source : getVertex().getSources()) {
+            sourceProducers.addAll(asList(source.getProducers(this.jobContext, getVertex())));
+        }
         buildTasks();
-        buildSources();
         buildSinks();
     }
 
@@ -236,45 +239,19 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
 
 
     private void buildSinks() {
-        List<Sink> sinks = getVertex().getSinks();
-        for (Sink sink : sinks) {
+        for (Sink sink : getVertex().getSinks()) {
             if (sink.isPartitioned()) {
                 for (VertexTask vertexTask : getVertexTasks()) {
-                    List<Consumer> writers = getConsumers(sink);
-                    vertexTask.addConsumers(writers);
+                    vertexTask.addConsumers(asList(sink.getConsumers(jobContext)));
                 }
             } else {
-                List<Consumer> writers = getConsumers(sink);
+                final Consumer[] consumers = sink.getConsumers(jobContext);
                 int i = 0;
-
                 for (VertexTask vertexTask : getVertexTasks()) {
-                    List<Consumer> sinkWriters = new ArrayList<>(sinks.size());
-                    if (writers.size() >= i - 1) {
-                        sinkWriters.add(writers.get(i++));
-                        vertexTask.addConsumers(sinkWriters);
-                    } else {
-                        break;
-                    }
+                    vertexTask.addConsumer(consumers[i++]);
                 }
             }
         }
-    }
-
-    private void buildSources() {
-        if (getVertex().getSources().size() > 0) {
-            for (Source source : getVertex().getSources()) {
-                List<Producer> readers = getProducers(source);
-                sourceProducers.addAll(readers);
-            }
-        }
-    }
-
-    private List<Producer> getProducers(Source source) {
-        return Arrays.asList(source.getProducers(jobContext, getVertex()));
-    }
-
-    private List<Consumer> getConsumers(Sink sink) {
-        return Arrays.asList(sink.getWriters(jobContext));
     }
 
     /**
