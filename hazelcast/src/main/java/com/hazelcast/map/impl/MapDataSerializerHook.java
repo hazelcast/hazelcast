@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.operation.EvictAllBackupOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.EvictOperation;
+import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
@@ -92,8 +93,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVICT = 30;
     public static final int EVICT_ALL = 31;
     public static final int EVICT_ALL_BACKUP = 32;
+    public static final int GET_ALL = 33;
 
-    private static final int LEN = EVICT_ALL_BACKUP + 1;
+    private static final int LEN = GET_ALL + 1;
 
     @Override
     public int getFactoryId() {
@@ -267,6 +269,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[EVICT_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new EvictAllBackupOperation();
+            }
+        };
+        constructors[GET_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new GetAllOperation();
             }
         };
 
