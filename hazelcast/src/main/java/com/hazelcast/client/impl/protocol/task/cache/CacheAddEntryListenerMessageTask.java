@@ -28,7 +28,10 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.EventRegistration;
@@ -36,6 +39,7 @@ import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
@@ -77,10 +81,13 @@ public class CacheAddEntryListenerMessageTask
             implements CacheEventListener,
             NotifiableEventListener<CacheService>,
             ListenerWrapperEventFilter,
-            Serializable {
+            DataSerializable, Serializable {
 
-        private final transient ClientEndpoint endpoint;
-        private final transient CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask;
+        private transient ClientEndpoint endpoint;
+        private transient CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask;
+
+        private CacheEntryListener() {
+        }
 
         private CacheEntryListener(ClientEndpoint endpoint,
                                    CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask) {
@@ -142,6 +149,13 @@ public class CacheAddEntryListenerMessageTask
             return true;
         }
 
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+        }
     }
 
     @Override
