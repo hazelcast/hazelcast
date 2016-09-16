@@ -28,7 +28,10 @@ import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.DeleteOperation;
 import com.hazelcast.map.impl.operation.EntryBackupOperation;
 import com.hazelcast.map.impl.operation.EntryOperation;
+import com.hazelcast.map.impl.operation.EvictAllBackupOperation;
+import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
+import com.hazelcast.map.impl.operation.EvictOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
@@ -86,9 +89,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int CLEAR_NEAR_CACHE = 27;
     public static final int CLEAR = 28;
     public static final int DELETE = 29;
+    public static final int EVICT = 30;
+    public static final int EVICT_ALL = 31;
+    public static final int EVICT_ALL_BACKUP = 32;
 
-
-    private static final int LEN = DELETE + 1;
+    private static final int LEN = EVICT_ALL_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -247,6 +252,21 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[DELETE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new DeleteOperation();
+            }
+        };
+        constructors[EVICT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EvictOperation();
+            }
+        };
+        constructors[EVICT_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EvictAllOperation();
+            }
+        };
+        constructors[EVICT_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EvictAllBackupOperation();
             }
         };
 

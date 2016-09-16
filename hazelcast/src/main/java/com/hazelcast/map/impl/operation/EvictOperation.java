@@ -17,9 +17,11 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
@@ -28,7 +30,7 @@ import java.io.IOException;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 
-public class EvictOperation extends LockAwareOperation implements MutatingOperation, BackupAwareOperation {
+public class EvictOperation extends LockAwareOperation implements MutatingOperation, BackupAwareOperation, IdentifiedDataSerializable {
 
     private boolean evicted;
     private boolean asyncBackup;
@@ -104,5 +106,15 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         asyncBackup = in.readBoolean();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.EVICT;
     }
 }

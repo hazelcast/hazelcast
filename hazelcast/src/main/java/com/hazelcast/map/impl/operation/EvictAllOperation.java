@@ -17,8 +17,10 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -30,7 +32,7 @@ import java.io.IOException;
  * Operation which evicts all keys except locked ones.
  */
 public class EvictAllOperation extends MapOperation implements BackupAwareOperation,
-        MutatingOperation, PartitionAwareOperation {
+        MutatingOperation, PartitionAwareOperation, IdentifiedDataSerializable {
 
     private boolean shouldRunOnBackup;
     private int numberOfEvictedEntries;
@@ -111,5 +113,15 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
 
         sb.append(", shouldRunOnBackup=").append(shouldRunOnBackup);
         sb.append(", numberOfEvictedEntries=").append(numberOfEvictedEntries);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.EVICT_ALL;
     }
 }
