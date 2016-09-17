@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -332,16 +334,36 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
             }
 
             for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
-                for (WaitingOperation waitingOp : q) {
+                Iterator<WaitingOperation> it = q.iterator();
+                while (it.hasNext()) {
                     if (Thread.interrupted()) {
                         return true;
                     }
+                    WaitingOperation waitingOp = it.next();
                     if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
-                        invalidate(waitingOp);
+                        Address targetAddress = getTargetAddress(waitingOp);
+                        if (!waitingOp.validatesTarget() || nodeEngine.getThisAddress().equals(targetAddress)) {
+                            invalidate(waitingOp);    
+                        } else {
+                            logger.warning("Removing operation " + waitingOp +
+                                " from queue because the local node is not the target and returning exception to invoker");
+                            WrongTargetException wte = new WrongTargetException(nodeEngine.getThisAddress(), targetAddress,
+                                waitingOp.getPartitionId(), waitingOp.getReplicaIndex(),
+                                waitingOp.getClass().getName(), waitingOp.getServiceName());
+                            OperationResponseHandler responseHandler = waitingOp.getOperation().getOperationResponseHandler();
+                            responseHandler.sendResponse(waitingOp.getOperation(), wte);
+                            it.remove();
+                        }
                     }
                 }
             }
             return false;
         }
+    }
+
+    private Address getTargetAddress(WaitingOperation waitingOp) {
+        int partitionId = waitingOp.getPartitionId();
+        InternalPartition internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
+        return internalPartition.getReplicaAddress(waitingOp.getReplicaIndex());
     }
 }
