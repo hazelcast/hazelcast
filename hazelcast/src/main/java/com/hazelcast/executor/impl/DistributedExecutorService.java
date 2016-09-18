@@ -176,10 +176,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public void populate(LiveOperations result) {
+    public void populate(LiveOperations liveOperations) {
         for (CallableProcessor processor : submittedTasks.values()) {
             Operation op = processor.op;
-            result.add(op.getCallerAddress(), op.getCallId());
+            liveOperations.add(op.getCallerAddress(), op.getCallId());
         }
     }
 

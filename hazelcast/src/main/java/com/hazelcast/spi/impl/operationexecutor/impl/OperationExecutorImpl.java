@@ -225,7 +225,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return genericOperationRunners;
     }
 
-
     @Override
     public void scan(LiveOperations result) {
         scan(partitionOperationRunners, result);
