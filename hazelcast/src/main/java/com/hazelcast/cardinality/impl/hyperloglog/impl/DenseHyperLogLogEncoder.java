@@ -835,7 +835,7 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
 
     @Override
     public int getMemoryFootprint() {
-        return m * 8;
+        return m;
     }
 
     @Override

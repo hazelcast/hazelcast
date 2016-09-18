@@ -37,7 +37,7 @@ public interface HyperLogLogEncoder extends DataSerializable {
     boolean aggregate(long hash);
 
     /**
-     * Returns the size in memory occupied (in bits) for this implementation of HyperLogLog.
+     * Returns the size in memory occupied (in bytes) for this implementation of HyperLogLog.
      *
      * @return the size in memory.
      */

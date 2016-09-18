@@ -25,4 +25,9 @@ public class DenseHyperLogLogEncoderTest extends HyperLogLogEncoderAbstractTest 
     public HyperLogLogEncoder createStore() {
         return new DenseHyperLogLogEncoder(14);
     }
+
+    @Override
+    public int runLength() {
+        return 10000000;
+    }
 }

@@ -28,12 +28,13 @@ public class HyperLogLogImpl implements HyperLogLog {
 
     private static final int LOWER_P_BOUND = 4;
     private static final int UPPER_P_BOUND = 16;
+    private static final int UPPER_P_PRIME_BOUND = 25;
 
     // [1] Shows good cardinality estimation
     private static final int DEFAULT_P = 14;
     private static final int DEFAULT_P_PRIME = 25;
-    private static final int SPARSE_TO_DENSE_THRESHOLD = 40000;
 
+    private int m;
     private Long cachedEstimate;
     private HyperLogLogEncoder encoder;
 
@@ -46,6 +47,12 @@ public class HyperLogLogImpl implements HyperLogLog {
             throw new IllegalArgumentException("Precision (p) outside valid range [4..16].");
         }
 
+        if (pPrime < p || pPrime > UPPER_P_PRIME_BOUND) {
+            throw new IllegalArgumentException("Prime precision (p') outside "
+                    + "valid range [" + p + ".." + UPPER_P_PRIME_BOUND + "].");
+        }
+
+        this.m = 1 << p;
         this.encoder = new SparseHyperLogLogEncoder(p, pPrime);
     }
 
@@ -93,7 +100,7 @@ public class HyperLogLogImpl implements HyperLogLog {
 
     private void convertToDenseIfNeeded() {
         boolean shouldConvertToDense = encoder.getEncodingType() == SPARSE
-                && encoder.getMemoryFootprint() > SPARSE_TO_DENSE_THRESHOLD;
+                && encoder.getMemoryFootprint() >= m;
         if (shouldConvertToDense) {
             encoder = ((SparseHyperLogLogEncoder) encoder).asDense();
         }

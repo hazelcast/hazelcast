@@ -37,6 +37,7 @@ public abstract class HyperLogLogEncoderAbstractTest {
 
     private HyperLogLogEncoder encoder;
 
+    public abstract int runLength();
     public abstract HyperLogLogEncoder createStore();
 
     @Before
@@ -53,7 +54,7 @@ public abstract class HyperLogLogEncoderAbstractTest {
     @Test
     public void aggregateAll() {
         boolean changed = false;
-        for (long hash : new long[] { 1L, 2000L, 3000, 40000L }) {
+        for (long hash : new long[] { 1L, 1L, 2000L, 3000, 40000L }) {
             changed |= encoder.aggregate(hash);
         }
         assertEquals(true, changed);
@@ -65,7 +66,7 @@ public abstract class HyperLogLogEncoderAbstractTest {
         int sampleStep = 1000;
         ByteBuffer bb = ByteBuffer.allocate(4);
 
-        for (int i = 1; i <= 10000000; i++) {
+        for (int i = 1; i <= runLength(); i++) {
             bb.clear();
             bb.putInt(i);
             encoder.aggregate(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));

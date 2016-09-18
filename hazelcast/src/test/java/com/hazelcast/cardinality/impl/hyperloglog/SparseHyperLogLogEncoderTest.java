@@ -27,4 +27,8 @@ public class SparseHyperLogLogEncoderTest
         return new SparseHyperLogLogEncoder(14, 25);
     }
 
+    @Override
+    public int runLength() {
+        return 40000;
+    }
 }
