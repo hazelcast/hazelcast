@@ -38,8 +38,4 @@ public interface DataWriter extends Consumer {
      */
     int getPartitionId();
 
-    /**
-     * @return true if writer has been closed, false - otherwise
-     */
-    boolean isClosed();
 }

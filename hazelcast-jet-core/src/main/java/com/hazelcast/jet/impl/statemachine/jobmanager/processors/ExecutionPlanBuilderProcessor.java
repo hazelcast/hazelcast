@@ -21,16 +21,12 @@ import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.ringbuffer.CompositeRingbuffer;
-import com.hazelcast.jet.impl.ringbuffer.Ringbuffer;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
-import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerStartRequest;
 import com.hazelcast.logging.ILogger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -70,7 +66,7 @@ public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcess
             vertex2RunnerMap.put(vertex, runner);
             for (Edge edge : edges) {
                 VertexRunner sourceRunner = vertex2RunnerMap.get(edge.getInputVertex());
-                connect(sourceRunner, runner, edge);
+                sourceRunner.connect(runner, edge);
             }
         }
         logger.fine("Processed vertices for DAG " + dag.getName());
@@ -89,26 +85,4 @@ public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcess
         jobManager.registerRunner(vertex, vertexRunner);
         return vertexRunner;
     }
-
-    private VertexRunner connect(VertexRunner source, VertexRunner target, Edge edge) {
-        for (VertexTask sourceTask : source.getVertexTasks()) {
-            CompositeRingbuffer consumer = createRingbuffers(source, target, edge);
-            sourceTask.addConsumer(consumer);
-
-            target.addInputRingbuffer(consumer);
-        }
-        return target;
-    }
-
-    private CompositeRingbuffer createRingbuffers(VertexRunner source, VertexRunner target, Edge edge) {
-        JobContext jobContext = target.getJobContext();
-        List<Ringbuffer> consumers = new ArrayList<>(target.getVertexTasks().length);
-        for (int i = 0; i < target.getVertexTasks().length; i++) {
-            Ringbuffer ringbuffer = new Ringbuffer(source.getVertex().getName(),
-                    jobContext, edge);
-            consumers.add(ringbuffer);
-        }
-        return new CompositeRingbuffer(jobContext, consumers, edge);
-    }
-
 }

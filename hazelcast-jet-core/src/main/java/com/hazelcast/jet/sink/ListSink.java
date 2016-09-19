@@ -18,6 +18,7 @@ package com.hazelcast.jet.sink;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.Sink;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.dag.sink.ListPartitionWriter;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.runtime.DataWriter;
@@ -47,8 +48,8 @@ public class ListSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getConsumers(JobContext jobContext) {
-        return new DataWriter[]{ new ListPartitionWriter(jobContext, name)};
+    public DataWriter[] getConsumers(JobContext jobContext, Vertex vertex) {
+        return new DataWriter[]{new ListPartitionWriter(jobContext, name)};
     }
 
     @Override

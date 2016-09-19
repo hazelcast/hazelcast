@@ -18,10 +18,18 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet.runtime.TaskContext;
 
 public abstract class TestProcessors {
 
     public static class Noop implements Processor {
+        private TaskContext taskContext;
+
+        @Override
+        public void before(TaskContext taskContext) {
+            this.taskContext = taskContext;
+        }
+
         @Override
         public boolean process(InputChunk input,
                                OutputCollector output,

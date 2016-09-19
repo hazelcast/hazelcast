@@ -17,12 +17,14 @@
 package com.hazelcast.jet.impl.runtime;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Sink;
 import com.hazelcast.jet.Source;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.ringbuffer.CompositeRingbuffer;
+import com.hazelcast.jet.impl.ringbuffer.Ringbuffer;
 import com.hazelcast.jet.impl.runtime.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
 import com.hazelcast.jet.impl.runtime.runner.VertexRunnerResponse;
@@ -56,12 +58,8 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
 
     private final Vertex vertex;
     private final Map<Integer, VertexTask> vertexTaskMap = new ConcurrentHashMap<>();
-    private final int awaitSecondsTimeOut;
     private final VertexTask[] vertexTasks;
-    private final List<CompositeRingbuffer> inputRingbuffers = new ArrayList<>();
-    private final List<Producer> sourceProducers = new ArrayList<>();
     private final EventProcessorFactory eventProcessorFactory;
-
     private final int id;
     private final JobContext jobContext;
     private final StateMachine<VertexRunnerEvent, VertexRunnerState, VertexRunnerResponse> stateMachine;
@@ -72,14 +70,113 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         this.id = id;
         this.vertex = vertex;
         this.vertexTasks = new VertexTask[vertex.getParallelism()];
-        this.awaitSecondsTimeOut = getJobContext().getJobConfig().getSecondsToAwait();
         this.eventProcessorFactory = new EventProcessorFactory(this);
 
-        for (Source source : getVertex().getSources()) {
-            sourceProducers.addAll(asList(source.getProducers(this.jobContext, getVertex())));
-        }
         buildTasks();
+        buildSources();
         buildSinks();
+    }
+
+    public void handleTaskEvent(VertexTask vertexTask, TaskEvent event) {
+        handleTaskEvent(vertexTask, event, null);
+    }
+
+    public void handleTaskEvent(VertexTask vertexTask, TaskEvent event, Throwable error) {
+        eventProcessorFactory.getEventProcessor(event).process(vertexTask, event, error);
+    }
+
+    public VertexTask[] getVertexTasks() {
+        return vertexTasks;
+    }
+
+    public Map<Integer, VertexTask> getVertexMap() {
+        return vertexTaskMap;
+    }
+
+    public Vertex getVertex() {
+        return vertex;
+    }
+
+    public void start() {
+        for (VertexTask vertexTask : vertexTasks) {
+            vertexTask.start();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void processRequest(VertexRunnerEvent event, Object payload) throws Exception {
+        VertexRunnerPayloadProcessor processor = VertexRunnerPayloadFactory.getProcessor(event, this);
+        if (processor != null) {
+            processor.process(payload);
+        }
+    }
+
+    /**
+     * Destroys the runners.
+     */
+    public void destroy() throws Exception {
+        int timeout = getJobContext().getJobConfig().getSecondsToAwait();
+        handleRequest(new VertexRunnerFinalizedRequest(this)).get(timeout, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Interrupts the execution of runners.
+     *
+     * @param error the error that's causing the interruption
+     */
+    public void interrupt(Throwable error) {
+        for (VertexTask task : vertexTasks) {
+            task.interrupt(error);
+        }
+    }
+
+    public void complete() {
+        for (VertexTask task : vertexTasks) {
+            task.complete();
+        }
+    }
+
+    /**
+     * Connect this vertex with another one by creating the necessary ringbuffers
+     * between the vertices
+     */
+    public VertexRunner connect(VertexRunner target, Edge edge) {
+        for (VertexTask sourceTask : getVertexTasks()) {
+            CompositeRingbuffer consumer = createRingbuffers(target, edge);
+            sourceTask.addConsumer(consumer);
+
+            VertexTask[] vertexTasks = target.getVertexTasks();
+            for (int i = 0, vertexTasksLength = vertexTasks.length; i < vertexTasksLength; i++) {
+                VertexTask targetTask = vertexTasks[i];
+                targetTask.addProducer(consumer.getRingbuffers()[i]);
+            }
+        }
+        return target;
+    }
+
+    /**
+     * Handle's vertex runner request with state-machine's input event
+     *
+     * @param request corresponding request
+     * @param <P>     type of request payload
+     * @return awaiting future
+     */
+    public <P> ICompletableFuture<VertexRunnerResponse> handleRequest(
+            StateMachineRequest<VertexRunnerEvent, P> request) {
+        try {
+            return stateMachine.handleRequest(request);
+        } finally {
+            getJobContext().getExecutorContext().getVertexManagerStateMachineExecutor().wakeUp();
+        }
+    }
+
+    public JobContext getJobContext() {
+        return jobContext;
+    }
+
+    public int getId() {
+        return id;
     }
 
     private void buildTasks() {
@@ -94,7 +191,6 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Processor createProcessor(String className, Object... args) {
         ClassLoader classLoader = jobContext.getDeploymentStorage().getClassLoader();
         try {
@@ -135,117 +231,25 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
                 "No constructor with arguments" + Arrays.toString(argsClasses) + " className=" + className);
     }
 
-    /**
-     * Handles task's event
-     *
-     * @param vertexTask corresponding vertex task
-     * @param event      task's event
-     */
-    public void handleTaskEvent(VertexTask vertexTask, TaskEvent event) {
-        handleTaskEvent(vertexTask, event, null);
-    }
-
-    /**
-     * Handles task's error-event
-     *
-     * @param vertexTask corresponding vertex task
-     * @param event      task's event
-     * @param error      corresponding error
-     */
-    public void handleTaskEvent(VertexTask vertexTask, TaskEvent event, Throwable error) {
-        eventProcessorFactory.getEventProcessor(event).process(vertexTask, event, error);
-    }
-
-    public VertexTask[] getVertexTasks() {
-        return vertexTasks;
-    }
-
-    public Map<Integer, VertexTask> getVertexMap() {
-        return vertexTaskMap;
-    }
-
-    public Vertex getVertex() {
-        return vertex;
-    }
-
-    public void addInputRingbuffer(CompositeRingbuffer compositeRingbuffer) {
-        inputRingbuffers.add(compositeRingbuffer);
-    }
-
-    /**
-     * Starts execution of all tasks
-     */
-    public void start() {
-        int taskCount = getVertexTasks().length;
-        if (taskCount == 0) {
-            throw new IllegalStateException("No tasks found for the vertex runner!");
+    private CompositeRingbuffer createRingbuffers(VertexRunner target, Edge edge) {
+        JobContext jobContext = target.getJobContext();
+        List<Ringbuffer> consumers = new ArrayList<>(target.getVertexTasks().length);
+        for (int i = 0; i < target.getVertexTasks().length; i++) {
+            Ringbuffer ringbuffer = new Ringbuffer(getVertex().getName(),
+                    jobContext, edge);
+            consumers.add(ringbuffer);
         }
-        List<Producer>[] tasksProducers = new List[taskCount];
-        for (int taskIdx = 0; taskIdx < getVertexTasks().length; taskIdx++) {
-            tasksProducers[taskIdx] = new ArrayList<>();
-        }
-
-        for (int i = 0; i < sourceProducers.size(); i++) {
-            Producer producer = sourceProducers.get(i);
-            int taskId = i % taskCount;
-            tasksProducers[taskId].add(producer);
-        }
-
-        for (int taskIdx = 0; taskIdx < getVertexTasks().length; taskIdx++) {
-            List<Producer> producers = tasksProducers[taskIdx];
-            for (CompositeRingbuffer composite : inputRingbuffers) {
-                producers.add(composite.getRingbuffers()[taskIdx]);
-            }
-            vertexTasks[taskIdx].start(producers);
-        }
+        return new CompositeRingbuffer(jobContext, consumers, edge);
     }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void processRequest(VertexRunnerEvent event, Object payload) throws Exception {
-        VertexRunnerPayloadProcessor processor = VertexRunnerPayloadFactory.getProcessor(event, this);
-        if (processor != null) {
-            processor.process(payload);
-        }
-    }
-
-    /**
-     * Destroys the runners.
-     */
-    public void destroy() throws Exception {
-        handleRequest(new VertexRunnerFinalizedRequest(this)).get(awaitSecondsTimeOut, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Interrupts the execution of runners.
-     *
-     * @param error the error that's causing the interruption
-     */
-    public void interrupt(Throwable error) {
-        for (VertexTask task : vertexTasks) {
-            task.interrupt(error);
-        }
-    }
-
-    public void complete() {
-        for (VertexTask task : vertexTasks) {
-            task.complete();
-        }
-    }
-
-    protected void wakeUpExecutor() {
-        getJobContext().getExecutorContext().getVertexManagerStateMachineExecutor().wakeUp();
-    }
-
 
     private void buildSinks() {
         for (Sink sink : getVertex().getSinks()) {
             if (sink.isPartitioned()) {
                 for (VertexTask vertexTask : getVertexTasks()) {
-                    vertexTask.addConsumers(asList(sink.getConsumers(jobContext)));
+                    vertexTask.addConsumers(asList(sink.getConsumers(jobContext, vertex)));
                 }
             } else {
-                final Consumer[] consumers = sink.getConsumers(jobContext);
+                final Consumer[] consumers = sink.getConsumers(jobContext, vertex);
                 int i = 0;
                 for (VertexTask vertexTask : getVertexTasks()) {
                     vertexTask.addConsumer(consumers[i++]);
@@ -254,28 +258,16 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         }
     }
 
-    /**
-     * Handle's vertex runner request with state-machine's input event
-     *
-     * @param request corresponding request
-     * @param <P>     type of request payload
-     * @return awaiting future
-     */
-    public <P> ICompletableFuture<VertexRunnerResponse> handleRequest(
-            StateMachineRequest<VertexRunnerEvent, P> request) {
-        try {
-            return stateMachine.handleRequest(request);
-        } finally {
-            wakeUpExecutor();
+    private void buildSources() {
+        List<Producer> producers = new ArrayList<>();
+        for (Source source : getVertex().getSources()) {
+            producers.addAll(asList(source.getProducers(jobContext, vertex)));
         }
-    }
-
-    public JobContext getJobContext() {
-        return jobContext;
-    }
-
-    public int getId() {
-        return id;
+        for (int i = 0; i < producers.size(); i++) {
+            Producer producer = producers.get(i);
+            int taskId = i % vertexTasks.length;
+            vertexTasks[taskId].addProducer(producer);
+        }
     }
 
     @Override

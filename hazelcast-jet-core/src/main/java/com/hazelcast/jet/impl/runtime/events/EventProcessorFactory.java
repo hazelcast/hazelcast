@@ -38,19 +38,19 @@ public class EventProcessorFactory {
         AtomicInteger completedTasks = new AtomicInteger(0);
         AtomicInteger interruptedTasks = new AtomicInteger(0);
 
-        this.processorMap.put(TASK_EXECUTION_COMPLETED, new TaskEventCompletedProcessor(
+        processorMap.put(TASK_EXECUTION_COMPLETED, new TaskEventCompletedProcessor(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
                 vertexRunner
         ));
-        this.processorMap.put(TASK_EXECUTION_ERROR, new TaskEventExecutionErrorProcessor(
+        processorMap.put(TASK_EXECUTION_ERROR, new TaskEventExecutionErrorProcessor(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
                 vertexRunner
         ));
-        this.processorMap.put(TASK_READY_FOR_FINALIZATION, new TaskEventFinalizationProcessor(
+        processorMap.put(TASK_READY_FOR_FINALIZATION, new TaskEventFinalizationProcessor(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,

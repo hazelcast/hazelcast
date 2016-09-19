@@ -109,7 +109,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
             produced = true;
 
-            this.inputBuffer.collect(inChunk, producer.lastProducedCount());
+            inputBuffer.collect(inChunk, producer.lastProducedCount());
             if (!processProducer(producer)) {
                 this.produced = true;
                 nextProducerIdx = (idx + 1) % producersCount;

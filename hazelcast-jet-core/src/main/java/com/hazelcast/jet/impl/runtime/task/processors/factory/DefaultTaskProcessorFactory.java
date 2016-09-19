@@ -33,7 +33,7 @@ public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
     @Override
     public TaskProcessor simpleTaskProcessor(Processor processor,
                                              TaskContext taskContext) {
-        return new SimpleTaskProcessor(processor, taskContext);
+        return new SimpleTaskProcessor(processor);
     }
 
     @Override

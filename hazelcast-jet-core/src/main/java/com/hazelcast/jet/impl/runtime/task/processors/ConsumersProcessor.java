@@ -58,11 +58,11 @@ public class ConsumersProcessor {
     }
 
     public boolean isConsumed() {
-        return this.consumed;
+        return consumed;
     }
 
     public void reset() {
-        this.consumed = false;
-        this.inputChunk = null;
+        consumed = false;
+        inputChunk = null;
     }
 }

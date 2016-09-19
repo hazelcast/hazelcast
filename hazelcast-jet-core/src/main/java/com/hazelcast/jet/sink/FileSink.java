@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sink;
 
 import com.hazelcast.jet.Sink;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.dag.sink.DataFileWriter;
 import com.hazelcast.jet.impl.dag.sink.FileOutputStream;
 import com.hazelcast.jet.impl.job.JobContext;
@@ -41,7 +42,7 @@ public class FileSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getConsumers(JobContext jobContext) {
+    public DataWriter[] getConsumers(JobContext jobContext, Vertex vertex) {
         return new DataWriter[]{new DataFileWriter(jobContext, 0, fileOutputStream)};
     }
 
