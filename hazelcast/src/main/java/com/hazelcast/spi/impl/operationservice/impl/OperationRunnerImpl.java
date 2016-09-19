@@ -49,6 +49,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -89,6 +90,8 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;
 
+    private final Counter failedBackupsCounter;
+
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
     private InternalPartition internalPartition;
@@ -100,7 +103,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     // when partitionId = -2, it is ad hoc
     // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
     // and therefor the {@link OperationRunner#currentTask()} always returns null
-    OperationRunnerImpl(OperationServiceImpl operationService, int partitionId) {
+    OperationRunnerImpl(OperationServiceImpl operationService, int partitionId, Counter failedBackupsCounter) {
         super(partitionId);
         this.operationService = operationService;
         this.logger = operationService.node.getLogger(OperationRunnerImpl.class);
@@ -110,6 +113,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
         this.executedOperationsCount = operationService.completedOperationsCount;
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
+        this.failedBackupsCounter = failedBackupsCounter;
 
         if (partitionId >= 0) {
             this.count = newSwCounter();
@@ -344,10 +348,18 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
         operation.logError(e);
 
+        if (operation instanceof Backup) {
+            failedBackupsCounter.inc();
+        }
+
         if (!operation.returnsResponse()) {
             return;
         }
 
+        sendResponseAfterOperationError(operation, e);
+    }
+
+    private void sendResponseAfterOperationError(Operation operation, Throwable e) {
         OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
         try {
             if (node.getState() != NodeState.SHUT_DOWN) {

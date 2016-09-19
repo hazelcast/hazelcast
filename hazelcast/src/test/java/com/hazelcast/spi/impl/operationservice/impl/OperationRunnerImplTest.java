@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.BlockingOperation;
@@ -21,6 +22,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +50,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         remote = cluster[1];
         operationService = (OperationServiceImpl) getOperationService(local);
         clusterService = getClusterService(local);
-        operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local));
+        operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local), newSwCounter());
         responseHandler = mock(OperationResponseHandler.class);
     }
 
