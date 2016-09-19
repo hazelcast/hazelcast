@@ -93,10 +93,8 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         populateNearCache(map, size);
 
         final NearCacheStats statsBeforeExpiration = getNearCacheStats(map);
-        long totalEntries = statsBeforeExpiration.getOwnedEntryCount() + statsBeforeExpiration.getExpirations();
-        assertEquals(format("we expected to have all map entries in the Near Cache (%s), but was %d",
-                statsBeforeExpiration, totalEntries),
-                size, totalEntries);
+        assertTrue(format("we expected to have all map entries in the Near Cache or already expired (%s)", statsBeforeExpiration),
+                statsBeforeExpiration.getOwnedEntryCount() + statsBeforeExpiration.getExpirations() >= size);
 
         sleepSeconds(expireSeconds + 1);
 
