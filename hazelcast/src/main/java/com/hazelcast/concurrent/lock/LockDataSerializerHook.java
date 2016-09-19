@@ -42,20 +42,23 @@ public final class LockDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(LOCK_DS_FACTORY, LOCK_DS_FACTORY_ID);
 
-    public static final int AWAIT_BACKUP = 0;
-    public static final int AWAIT = 1;
-    public static final int BEFORE_AWAIT_BACKUP = 2;
-    public static final int BEFORE_AWAIT = 3;
-    public static final int GET_LOCK_COUNT = 4;
-    public static final int GET_REMAINING_LEASETIME = 5;
-    public static final int IS_LOCKED = 6;
-    public static final int LOCK_BACKUP = 7;
-    public static final int LOCK = 8;
-    public static final int LOCK_REPLICATION = 9;
-    public static final int SIGNAL_BACKUP = 10;
-    public static final int SIGNAL = 11;
-    public static final int UNLOCK_BACKUP = 12;
-    public static final int UNLOCK = 13;
+    public static final int LOCK_RESOURCE = 0;
+    public static final int LOCK_STORE = 1;
+    public static final int WAITERS_INFO = 2;
+    public static final int AWAIT_BACKUP = 3;
+    public static final int AWAIT = 4;
+    public static final int BEFORE_AWAIT_BACKUP = 5;
+    public static final int BEFORE_AWAIT = 6;
+    public static final int GET_LOCK_COUNT = 7;
+    public static final int GET_REMAINING_LEASETIME = 8;
+    public static final int IS_LOCKED = 9;
+    public static final int LOCK_BACKUP = 10;
+    public static final int LOCK = 11;
+    public static final int LOCK_REPLICATION = 12;
+    public static final int SIGNAL_BACKUP = 13;
+    public static final int SIGNAL = 14;
+    public static final int UNLOCK_BACKUP = 15;
+    public static final int UNLOCK = 16;
 
 
     @Override

@@ -18,13 +18,16 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-final class WaitersInfo implements DataSerializable {
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.WAITERS_INFO;
+
+final class WaitersInfo implements IdentifiedDataSerializable {
 
     private String conditionId;
     private Set<ConditionWaiter> waiters = new HashSet<ConditionWaiter>(2);
@@ -56,6 +59,16 @@ final class WaitersInfo implements DataSerializable {
 
     public Set<ConditionWaiter> getWaiters() {
         return waiters;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return WAITERS_INFO;
     }
 
     @Override

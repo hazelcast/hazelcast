@@ -20,7 +20,7 @@ import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -36,7 +36,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public final class LockStoreImpl implements DataSerializable, LockStore {
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_STORE;
+
+public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore {
 
     private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
             new ConstructorFunction<Data, LockResourceImpl>() {
@@ -340,6 +343,16 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         } else {
             return "Owner: " + lock.getOwner() + ", thread-id: " + lock.getThreadId();
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return LOCK_STORE;
     }
 
     @Override
