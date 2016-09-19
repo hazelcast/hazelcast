@@ -25,12 +25,12 @@ import com.hazelcast.jet.impl.runtime.task.nio.SocketReader;
 import com.hazelcast.jet.impl.runtime.task.nio.SocketWriter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
@@ -65,78 +65,6 @@ public class DiscoveryService {
     }
 
 
-    private Map<Member, Address> findMembers() {
-        Map<Member, Address> memberMap = new HashMap<>();
-
-        try {
-            for (Member member : nodeEngine.getClusterService().getMembers()) {
-                if (!member.localMember()) {
-                    Future<Address> future = nodeEngine.getOperationService().invokeOnTarget(
-                            JobService.SERVICE_NAME,
-                            new DiscoveryOperation(),
-                            member.getAddress()
-                    );
-
-                    Address remoteAddress = future.get();
-
-                    memberMap.put(member, remoteAddress);
-                    hzToAddressMapping.put(member.getAddress(), remoteAddress);
-                }
-            }
-
-            hzToAddressMapping.put(
-                    nodeEngine.getLocalMember().getAddress(),
-                    jobContext.getLocalJetAddress()
-            );
-
-            return memberMap;
-        } catch (Exception e) {
-            throw unchecked(e);
-        }
-    }
-
-    private void registerIOTasks(Map<Member, Address> map) {
-        List<Task> tasks = new ArrayList<Task>();
-
-        for (Member member : nodeEngine.getClusterService().getMembers()) {
-            if (!member.localMember()) {
-                Address jetAddress = map.get(member);
-
-                SocketReader socketReader = new SocketReader(
-                        jobContext,
-                        jetAddress
-                );
-
-                tasks.add(
-                        socketReader
-                );
-
-                SocketWriter socketWriter = new SocketWriter(
-                        jobContext,
-                        jetAddress
-                );
-
-                tasks.add(
-                        socketWriter
-                );
-
-                socketWriters.put(jetAddress, socketWriter);
-                socketReaders.put(jetAddress, socketReader);
-            }
-        }
-
-        for (Task task : tasks) {
-            jobContext.getExecutorContext().getNetworkTasks().add(task);
-        }
-
-        for (Map.Entry<Address, SocketReader> readerEntry : socketReaders.entrySet()) {
-            for (Map.Entry<Address, SocketWriter> writerEntry : socketWriters.entrySet()) {
-                SocketReader reader = readerEntry.getValue();
-                reader.assignWriter(writerEntry.getKey(), writerEntry.getValue());
-            }
-        }
-    }
-
     /**
      * Executes discovery process
      */
@@ -158,4 +86,58 @@ public class DiscoveryService {
     public Map<Address, SocketReader> getSocketReaders() {
         return socketReaders;
     }
+
+
+    private Map<Member, Address> findMembers() {
+        Map<Member, Address> memberMap = new HashMap<>();
+        hzToAddressMapping.put(nodeEngine.getLocalMember().getAddress(), jobContext.getLocalJetAddress());
+        getNonLocalMembers().forEach(member -> {
+            Future<Address> future = nodeEngine.getOperationService()
+                    .invokeOnTarget(JobService.SERVICE_NAME, new DiscoveryOperation(), member.getAddress());
+
+            Address remoteAddress = null;
+            try {
+                remoteAddress = future.get();
+            } catch (Exception e) {
+                unchecked(e);
+            }
+            memberMap.put(member, remoteAddress);
+            hzToAddressMapping.put(member.getAddress(), remoteAddress);
+        });
+        return memberMap;
+    }
+
+    private void registerIOTasks(Map<Member, Address> map) {
+        List<Task> tasks = new ArrayList<>();
+        getNonLocalMembers().forEach(member -> {
+            Address jetAddress = map.get(member);
+            SocketReader reader = new SocketReader(jobContext, jetAddress);
+            SocketWriter writer = new SocketWriter(jobContext, jetAddress);
+
+            tasks.add(reader);
+            tasks.add(writer);
+
+            socketWriters.put(jetAddress, writer);
+            socketReaders.put(jetAddress, reader);
+        });
+
+        for (Task task : tasks) {
+            jobContext.getExecutorContext().getNetworkTasks().add(task);
+        }
+
+        for (Map.Entry<Address, SocketReader> readerEntry : socketReaders.entrySet()) {
+            for (Map.Entry<Address, SocketWriter> writerEntry : socketWriters.entrySet()) {
+                SocketReader reader = readerEntry.getValue();
+                reader.assignWriter(writerEntry.getKey(), writerEntry.getValue());
+            }
+        }
+    }
+
+    private Stream<Member> getNonLocalMembers() {
+        return nodeEngine.getClusterService()
+                .getMembers()
+                .stream()
+                .filter(member -> !member.localMember());
+    }
+
 }
