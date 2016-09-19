@@ -17,6 +17,7 @@
 package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -28,7 +29,7 @@ public class DisposeResultOperation extends AbstractDurableExecutorOperation imp
 
     int sequence;
 
-    DisposeResultOperation() {
+    public DisposeResultOperation() {
     }
 
     public DisposeResultOperation(String name, int sequence) {
@@ -57,5 +58,10 @@ public class DisposeResultOperation extends AbstractDurableExecutorOperation imp
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         sequence = in.readInt();
+    }
+
+    @Override
+    public int getId() {
+        return DurableExecutorDataSerializerHook.DISPOSE_RESULT;
     }
 }

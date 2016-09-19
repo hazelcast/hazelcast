@@ -17,6 +17,7 @@
 package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 
 public class ShutdownOperation extends AbstractDurableExecutorOperation {
 
@@ -32,5 +33,10 @@ public class ShutdownOperation extends AbstractDurableExecutorOperation {
     public void run() throws Exception {
         DistributedDurableExecutorService service = getService();
         service.shutdownExecutor(name);
+    }
+
+    @Override
+    public int getId() {
+        return DurableExecutorDataSerializerHook.SHUTDOWN;
     }
 }

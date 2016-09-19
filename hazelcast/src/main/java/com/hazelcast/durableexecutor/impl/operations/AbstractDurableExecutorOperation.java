@@ -18,10 +18,12 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.durableexecutor.impl.DurableExecutorPartitionContainer;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-abstract class AbstractDurableExecutorOperation extends AbstractNamedOperation {
+abstract class AbstractDurableExecutorOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
 
     private transient DurableExecutorContainer executorContainer;
 
@@ -55,5 +57,10 @@ abstract class AbstractDurableExecutorOperation extends AbstractNamedOperation {
 
     public boolean shouldBackup() {
         return true;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return DurableExecutorDataSerializerHook.F_ID;
     }
 }

@@ -18,10 +18,12 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.durableexecutor.impl.DurableExecutorPartitionContainer;
 import com.hazelcast.durableexecutor.impl.TaskRingBuffer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -29,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ReplicationOperation extends Operation {
+public class ReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
     private List<DurableHolder> list;
 
@@ -73,6 +75,15 @@ public class ReplicationOperation extends Operation {
         }
     }
 
+    @Override
+    public int getFactoryId() {
+        return DurableExecutorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return DurableExecutorDataSerializerHook.REPLICATION;
+    }
 
     private static class DurableHolder {
         private String name;

@@ -17,6 +17,7 @@
 package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -67,5 +68,10 @@ public class TaskOperation extends AbstractDurableExecutorOperation implements B
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         callableData = in.readData();
+    }
+
+    @Override
+    public int getId() {
+        return DurableExecutorDataSerializerHook.TASK;
     }
 }

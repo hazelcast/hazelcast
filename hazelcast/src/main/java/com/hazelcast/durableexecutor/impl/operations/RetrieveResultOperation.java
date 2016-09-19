@@ -18,6 +18,7 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -81,5 +82,10 @@ public class RetrieveResultOperation extends AbstractDurableExecutorOperation im
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         sequence = in.readInt();
+    }
+
+    @Override
+    public int getId() {
+        return DurableExecutorDataSerializerHook.RETRIEVE_RESULT;
     }
 }

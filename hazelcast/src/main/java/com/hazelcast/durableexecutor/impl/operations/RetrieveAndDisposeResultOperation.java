@@ -18,6 +18,7 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -59,5 +60,10 @@ public class RetrieveAndDisposeResultOperation extends DisposeResultOperation im
     @Override
     public void onWaitExpire() {
         sendResponse(new HazelcastException());
+    }
+
+    @Override
+    public int getId() {
+        return DurableExecutorDataSerializerHook.RETRIEVE_DISPOSE_RESULT;
     }
 }
