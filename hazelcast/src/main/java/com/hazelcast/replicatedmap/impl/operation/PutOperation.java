@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Puts a key to the replicated map.
  */
-public class PutOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation, IdentifiedDataSerializable {
+public class PutOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation {
 
     private transient ReplicatedMapService service;
     private transient ReplicatedRecordStore store;
@@ -89,11 +89,6 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
         key = in.readData();
         value = in.readData();
         ttl = in.readLong();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
     }
 
     @Override

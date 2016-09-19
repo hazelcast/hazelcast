@@ -30,7 +30,7 @@ import java.io.IOException;
 /**
  * Merges two replicated map entries with the given merge policy after the split-brain syndrome is recovered.
  */
-public class MergeOperation extends AbstractReplicatedMapOperation implements IdentifiedDataSerializable {
+public class MergeOperation extends AbstractReplicatedMapOperation {
 
     private String name;
     private Object key;
@@ -68,11 +68,6 @@ public class MergeOperation extends AbstractReplicatedMapOperation implements Id
         key = IOUtil.readObject(in);
         entryView = in.readObject();
         policy = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
     }
 
     @Override
