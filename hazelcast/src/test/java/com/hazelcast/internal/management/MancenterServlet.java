@@ -44,5 +44,4 @@ public class MancenterServlet extends HttpServlet {
         memberState = new TimedMemberState();
         memberState.fromJson(json.get("timedMemberState").asObject());
     }
-
 }

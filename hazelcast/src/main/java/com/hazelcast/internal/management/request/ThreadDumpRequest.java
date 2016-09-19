@@ -53,7 +53,6 @@ public class ThreadDumpRequest implements ConsoleRequest {
             result.add("hasDump", false);
         }
         root.add("result", result);
-
     }
 
     @Override

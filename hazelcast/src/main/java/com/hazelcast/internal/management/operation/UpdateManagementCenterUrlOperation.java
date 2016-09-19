@@ -33,6 +33,7 @@ public class UpdateManagementCenterUrlOperation extends Operation {
     private static final int SLEEP_MILLIS = 1000;
     private String newUrl;
 
+    @SuppressWarnings("unused")
     public UpdateManagementCenterUrlOperation() {
     }
 

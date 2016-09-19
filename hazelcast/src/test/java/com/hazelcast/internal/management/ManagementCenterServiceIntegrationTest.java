@@ -35,8 +35,8 @@ import static org.junit.Assert.assertNotEquals;
 @Category(SlowTest.class)
 public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport {
 
-    private JettyServer jettyServer;
     private int portNum;
+    private JettyServer jettyServer;
 
     @Before
     public void setUp() throws Exception {
