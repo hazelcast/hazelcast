@@ -46,10 +46,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.jet.impl.util.JetUtil.isPartitionLocal;
+import static java.util.stream.Collectors.toList;
+
 
 public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final int chunkSize;
-    private final boolean receiver;
+    private final boolean isReceiver;
     private final NodeEngine nodeEngine;
     private final DataWriter[] sendersArray;
     private final boolean hasLocalConsumers;
@@ -65,197 +68,127 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private boolean chunkInProgress;
     private boolean localSuccess;
 
-    public ShuffledConsumerTaskProcessor(Consumer[] consumers,
-                                         Processor processor,
-                                         TaskContext taskContext) {
+    public ShuffledConsumerTaskProcessor(Consumer[] consumers, Processor processor, TaskContext taskContext) {
         this(consumers, processor, taskContext, false);
     }
 
-    public ShuffledConsumerTaskProcessor(Consumer[] consumers,
-                                         Processor processor,
-                                         TaskContext taskContext,
-                                         boolean receiver) {
+    public ShuffledConsumerTaskProcessor(
+            Consumer[] consumers, Processor processor, TaskContext taskContext, boolean isReceiver) {
         super(filterConsumers(consumers, false), processor, taskContext);
         this.nodeEngine = taskContext.getJobContext().getNodeEngine();
-
-        initSenders(receiver);
-
+        if (!isReceiver) {
+            initSenders();
+        }
         this.sendersArray = this.senders.values().toArray(new DataWriter[this.senders.size()]);
         this.hasLocalConsumers = this.consumers.length > 0;
-
         this.shuffledConsumers = filterConsumers(consumers, true);
         this.markers = new Consumer[this.sendersArray.length + this.shuffledConsumers.length];
-
         initMarkers();
-
         this.partitionedWriters = new HashMap<>();
-
         Set<CalculationStrategy> strategies = new HashSet<>();
-        List<Consumer> nonPartitionedConsumers = new ArrayList<Consumer>(this.shuffledConsumers.length);
-        Set<Address> nonPartitionedAddresses = new HashSet<Address>(this.shuffledConsumers.length);
-
-        // Process distributed consumers
-        initCalculationStrategies(
-                strategies,
-                nonPartitionedConsumers,
-                nonPartitionedAddresses
-        );
-
-        this.receiver = receiver;
+        List<Consumer> nonPartitionedConsumers = new ArrayList<>(this.shuffledConsumers.length);
+        Set<Address> nonPartitionedAddresses = new HashSet<>(this.shuffledConsumers.length);
+        initCalculationStrategies(strategies, nonPartitionedConsumers, nonPartitionedAddresses);
+        this.isReceiver = isReceiver;
         this.calculationStrategies = strategies.toArray(new CalculationStrategy[strategies.size()]);
         this.nonPartitionedWriters = nonPartitionedConsumers.toArray(new Consumer[nonPartitionedConsumers.size()]);
         this.nonPartitionedAddresses = nonPartitionedAddresses.toArray(new Address[nonPartitionedAddresses.size()]);
         this.chunkSize = taskContext.getJobContext().getJobConfig().getChunkSize();
-
         resetState();
     }
 
     private static Consumer[] filterConsumers(Consumer[] consumers, boolean isShuffled) {
-        List<Consumer> filtered = new ArrayList<Consumer>(consumers.length);
-
-        for (Consumer consumer : consumers) {
-            if (consumer.isShuffled() == isShuffled) {
-                filtered.add(consumer);
-            }
-        }
-
+        final List<Consumer> filtered = Arrays.stream(consumers)
+                                              .filter(c -> c.isShuffled() == isShuffled).collect(toList());
         return filtered.toArray(new Consumer[filtered.size()]);
     }
 
 
     private void initMarkers() {
         int position = 0;
-
-        for (DataWriter sender : this.sendersArray) {
-            this.markersCache.put(sender, position++);
+        for (DataWriter sender : sendersArray) {
+            markersCache.put(sender, position++);
         }
-        for (Consumer shuffledConsumer : this.shuffledConsumers) {
-            this.markersCache.put(shuffledConsumer, position++);
+        for (Consumer shuffledConsumer : shuffledConsumers) {
+            markersCache.put(shuffledConsumer, position++);
         }
     }
 
-    private void initSenders(boolean receiver) {
+    private void initSenders() {
         JobManager jobManager = taskContext.getJobContext().getJobManager();
-
         VertexRunner vertexRunner = jobManager.getRunnerByVertex(taskContext.getVertex());
         int taskNumber = taskContext.getTaskNumber();
         VertexTask vertexTask = vertexRunner.getVertexMap().get(taskNumber);
-
-        if (!receiver) {
-            for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
-                ShufflingSender sender = new ShufflingSender(vertexTask, vertexRunner.getId(), address);
-                this.senders.put(address, sender);
-                jobManager.registerShufflingSender(taskNumber, vertexRunner.getId(), address, sender);
-            }
+        for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
+            ShufflingSender sender = new ShufflingSender(vertexTask, vertexRunner.getId(), address);
+            senders.put(address, sender);
+            jobManager.registerShufflingSender(taskNumber, vertexRunner.getId(), address, sender);
         }
     }
 
-    private void initCalculationStrategies(Set<CalculationStrategy> strategies,
-                                           List<Consumer> nonPartitionedConsumers,
-                                           Set<Address> nonPartitionedAddresses) {
-
+    private void initCalculationStrategies(
+            Set<CalculationStrategy> strategies, List<Consumer> nonPartitionedConsumers,
+            Set<Address> nonPartitionedAddresses) {
         JobManager jobManager = taskContext.getJobContext().getJobManager();
         Map<Address, Address> hzToJetAddressMapping = jobManager.getJobContext().getHzToJetAddressMapping();
         List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
-        for (Consumer consumer : this.shuffledConsumers) {
+        for (Consumer consumer : shuffledConsumers) {
             MemberDistributionStrategy memberDistributionStrategy = consumer.getMemberDistributionStrategy();
-            initConsumerCalculationStrategy(
-                    strategies,
-                    localPartitions,
-                    nonPartitionedConsumers,
-                    nonPartitionedAddresses,
-                    hzToJetAddressMapping,
-                    consumer,
-                    memberDistributionStrategy
-            );
+            initConsumerCalculationStrategy(strategies, localPartitions, nonPartitionedConsumers, nonPartitionedAddresses,
+                    hzToJetAddressMapping, consumer, memberDistributionStrategy);
         }
     }
 
-    private void initConsumerCalculationStrategy(Set<CalculationStrategy> strategies,
-                                                 List<Integer> localPartitions,
-                                                 List<Consumer> nonPartitionedConsumers,
-                                                 Set<Address> nonPartitionedAddresses,
-                                                 Map<Address, Address> hzToJetAddressMapping,
-                                                 Consumer consumer,
-                                                 MemberDistributionStrategy memberDistributionStrategy) {
-        if (memberDistributionStrategy != null) {
+    private void initConsumerCalculationStrategy(
+            Set<CalculationStrategy> strategies, List<Integer> localPartitions,
+            List<Consumer> nonPartitionedConsumers, Set<Address> nonPartitionedAddresses,
+            Map<Address, Address> hzToJetAddressMapping, Consumer consumer,
+            MemberDistributionStrategy memberDistributionStrategy) {
+        if (memberDistributionStrategy == null) {
+            initConsumerPartitions(strategies, localPartitions, nonPartitionedConsumers, nonPartitionedAddresses,
+                    hzToJetAddressMapping, consumer);
+        } else {
             Set<Member> members = new HashSet<>(memberDistributionStrategy.getTargetMembers(taskContext.getJobContext()));
-
-            if (members != null) {
-                for (Member member : members) {
-                    Address address = member.getAddress();
-                    if (address.equals(nodeEngine.getThisAddress())) {
-                        nonPartitionedConsumers.add(
-                                consumer
-                        );
-                    } else {
-                        nonPartitionedAddresses.add(
-                                hzToJetAddressMapping.get(address)
-                        );
-                    }
+            for (Member member : members) {
+                Address address = member.getAddress();
+                if (address.equals(nodeEngine.getThisAddress())) {
+                    nonPartitionedConsumers.add(consumer);
+                } else {
+                    nonPartitionedAddresses.add(hzToJetAddressMapping.get(address));
                 }
-
-                return;
             }
         }
-
-        initConsumerPartitions(
-                strategies,
-                localPartitions,
-                nonPartitionedConsumers,
-                nonPartitionedAddresses,
-                hzToJetAddressMapping,
-                consumer
-        );
     }
 
-    private void initConsumerPartitions(Set<CalculationStrategy> strategies,
-                                        List<Integer> localPartitions,
-                                        List<Consumer> nonPartitionedConsumers,
-                                        Set<Address> nonPartitionedAddresses,
-                                        Map<Address, Address> hzToJetAddressMapping,
-                                        Consumer consumer
-    ) {
+    private void initConsumerPartitions(
+            Set<CalculationStrategy> strategies, List<Integer> localPartitions,
+            List<Consumer> nonPartitionedConsumers, Set<Address> nonPartitionedAddresses,
+            Map<Address, Address> hzToJetAddressMapping, Consumer consumer) {
         CalculationStrategy calculationStrategy = new CalculationStrategy(
-                consumer.getHashingStrategy(),
-                consumer.getPartitionStrategy(),
-                taskContext.getJobContext()
-        );
-
+                consumer.getHashingStrategy(), consumer.getPartitionStrategy(), taskContext.getJobContext());
         int partitionId;
         if (consumer instanceof DataWriter) {
             DataWriter writer = (DataWriter) consumer;
-
+            partitionId = writer.getPartitionId();
             if (!writer.isPartitioned()) {
-                if (writer.getPartitionId() >= 0) {
-                    processWriterPartition(
-                            nonPartitionedConsumers,
-                            nonPartitionedAddresses,
-                            hzToJetAddressMapping,
-                            writer
-                    );
+                if (partitionId < 0 || isPartitionLocal(nodeEngine, writer.getPartitionId())) {
+                    nonPartitionedConsumers.add(writer);
                 } else {
-                    nonPartitionedConsumers.add(
-                            writer
-                    );
+                    nonPartitionedAddresses.add(
+                            hzToJetAddressMapping.get(
+                                    nodeEngine.getPartitionService().getPartitionOwner(writer.getPartitionId())));
                 }
-
                 return;
             }
-
-            partitionId = writer.getPartitionId();
         } else {
             partitionId = -1;
         }
-
         strategies.add(calculationStrategy);
-        Map<Integer, List<Consumer>> map = this.partitionedWriters.get(calculationStrategy);
-
+        Map<Integer, List<Consumer>> map = partitionedWriters.get(calculationStrategy);
         if (map == null) {
             map = new HashMap<>();
-            this.partitionedWriters.put(calculationStrategy, map);
+            partitionedWriters.put(calculationStrategy, map);
         }
-
         if (partitionId >= 0) {
             processPartition(map, partitionId).add(consumer);
         } else {
@@ -265,196 +198,140 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private void processWriterPartition(List<Consumer> nonPartitionedConsumers,
-                                        Set<Address> nonPartitionedAddresses,
-                                        Map<Address, Address> hzToJetAddressMapping,
-                                        DataWriter writer) {
-        if (JetUtil.isPartitionLocal(nodeEngine, writer.getPartitionId())) {
-            nonPartitionedConsumers.add(writer);
-        } else {
-            nonPartitionedAddresses.add(
-                    hzToJetAddressMapping.get(
-                            this.nodeEngine.getPartitionService().getPartitionOwner(writer.getPartitionId())
-                    )
-            );
-        }
-    }
-
     private List<Consumer> processPartition(Map<Integer, List<Consumer>> map, int partitionId) {
         List<Consumer> partitionOwnerWriters = map.get(partitionId);
-
         if (partitionOwnerWriters == null) {
             partitionOwnerWriters = new ArrayList<>();
             map.put(partitionId, partitionOwnerWriters);
         }
-
         return partitionOwnerWriters;
     }
 
+    @Override
     public void onOpen() {
         super.onOpen();
-
-        for (Consumer consumer : this.shuffledConsumers) {
+        for (Consumer consumer : shuffledConsumers) {
             consumer.open();
         }
-
-        for (DataWriter pairWriter : this.sendersArray) {
+        for (DataWriter pairWriter : sendersArray) {
             pairWriter.open();
         }
-
         reset();
     }
 
+    @Override
     public void onClose() {
         super.onClose();
-
-        for (Consumer consumer : this.shuffledConsumers) {
+        for (Consumer consumer : shuffledConsumers) {
             consumer.close();
         }
-
-        for (DataWriter pairWriter : this.sendersArray) {
+        for (DataWriter pairWriter : sendersArray) {
             pairWriter.close();
         }
     }
 
     private void resetState() {
-        this.lastConsumedSize = 0;
-        this.chunkInProgress = false;
-        this.localSuccess = this.receiver || !this.hasLocalConsumers;
+        lastConsumedSize = 0;
+        chunkInProgress = false;
+        localSuccess = isReceiver || !hasLocalConsumers;
     }
 
     @Override
     public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
-        if (inputChunk.size() > 0) {
-            boolean success = false;
-            boolean consumed;
-
-            /// Local consumers
-            consumed = processLocalConsumers(inputChunk);
-
-            // Shufflers
-            boolean chunkPooled = this.lastConsumedSize >= inputChunk.size();
-
-            if ((!chunkInProgress) && (!chunkPooled)) {
-                this.lastConsumedSize = processShufflers(inputChunk, this.lastConsumedSize);
-                chunkPooled = this.lastConsumedSize >= inputChunk.size();
-                this.chunkInProgress = true;
-                consumed = true;
-            }
-
-            if (this.chunkInProgress) {
-                boolean flushed = processChunkProgress();
-                consumed = true;
-
-                if (flushed) {
-                    this.chunkInProgress = false;
-                }
-            }
-
-            /// Check if we are success with chunk
-            if ((!this.chunkInProgress)
-                    &&
-                    (chunkPooled)
-                    &&
-                    (this.localSuccess)) {
-                success = true;
-                consumed = true;
-            }
-
-            if (success) {
-                resetState();
-            }
-
-            this.consumed = consumed;
-            return success;
-        } else {
-            this.consumed = false;
+        if (inputChunk.size() == 0) {
+            consumed = false;
             return true;
         }
+        boolean success = false;
+        boolean consumed = processLocalConsumers(inputChunk);
+        boolean chunkPooled = lastConsumedSize >= inputChunk.size();
+        if (!chunkInProgress && !chunkPooled) {
+            lastConsumedSize = processShufflers(inputChunk, lastConsumedSize);
+            chunkPooled = lastConsumedSize >= inputChunk.size();
+            chunkInProgress = true;
+            consumed = true;
+        }
+        if (chunkInProgress) {
+            boolean flushed = processChunkProgress();
+            consumed = true;
+            if (flushed) {
+                chunkInProgress = false;
+            }
+        }
+        if (!chunkInProgress && chunkPooled && localSuccess) {
+            success = true;
+            consumed = true;
+        }
+        if (success) {
+            resetState();
+        }
+        this.consumed = consumed;
+        return success;
     }
 
     private boolean processLocalConsumers(InputChunk<Object> chunk) throws Exception {
         boolean consumed = false;
-
-        if (!this.receiver) {
-            if ((this.hasLocalConsumers) && (!this.localSuccess)) {
-                this.localSuccess = super.onChunk(chunk);
-                consumed = super.consumed();
-            }
+        if (!isReceiver && hasLocalConsumers && !localSuccess) {
+            localSuccess = super.onChunk(chunk);
+            consumed = super.consumed();
         }
         return consumed;
     }
 
     private boolean processChunkProgress() {
         boolean flushed = true;
-
-        for (DataWriter sender : this.sendersArray) {
+        for (DataWriter sender : sendersArray) {
             flushed &= sender.isFlushed();
         }
-
-        for (Consumer consumer : this.shuffledConsumers) {
+        for (Consumer consumer : shuffledConsumers) {
             flushed &= consumer.isFlushed();
         }
-
         return flushed;
     }
 
     private int processShufflers(InputChunk<Object> chunk, int lastConsumedSize) throws Exception {
-        if (this.calculationStrategies.length > 0) {
-            int toIdx = Math.min(lastConsumedSize + this.chunkSize, chunk.size());
+        if (calculationStrategies.length > 0) {
+            int toIdx = Math.min(lastConsumedSize + chunkSize, chunk.size());
             int consumedSize = 0;
-
             for (int i = lastConsumedSize; i < toIdx; i++) {
                 Object object = chunk.get(i);
-
                 consumedSize++;
                 processCalculationStrategies(object);
             }
-
             flush();
             return lastConsumedSize + consumedSize;
         } else {
             writeToNonPartitionedLocals(chunk);
-
-            if (!this.receiver) {
+            if (!isReceiver) {
                 sendToNonPartitionedRemotes(chunk);
             }
-
             flush();
             return chunk.size();
         }
     }
 
     private void flush() {
-        for (Consumer consumer : this.shuffledConsumers) {
+        for (Consumer consumer : shuffledConsumers) {
             consumer.flush();
         }
-
-        if (!this.receiver) {
-            for (DataWriter sender : this.sendersArray) {
+        if (!isReceiver) {
+            for (DataWriter sender : sendersArray) {
                 sender.flush();
             }
         }
     }
 
     private boolean processCalculationStrategy(
-            Object object,
-            CalculationStrategy calculationStrategy,
-            int objectPartitionId,
-            CalculationStrategy objectCalculationStrategy,
-            boolean markedNonPartitionedRemotes
+            Object object, CalculationStrategy calculationStrategy, int objectPartitionId,
+            CalculationStrategy objectCalculationStrategy, boolean markedNonPartitionedRemotes
     ) throws Exception {
-        Map<Integer, List<Consumer>> cache = this.partitionedWriters.get(calculationStrategy);
+        Map<Integer, List<Consumer>> cache = partitionedWriters.get(calculationStrategy);
         List<Consumer> writers = null;
-
-        if (cache.size() > 0) {
-            if (
-                    (objectCalculationStrategy != null)
-                            &&
-                            (objectCalculationStrategy.equals(calculationStrategy))
-                            &&
-                            (objectPartitionId >= 0)
-                    ) {
+        if (!cache.isEmpty()) {
+            if (objectCalculationStrategy != null
+                    && objectCalculationStrategy.equals(calculationStrategy)
+                    && (objectPartitionId >= 0)
+            ) {
                 writers = cache.get(objectPartitionId);
             } else {
                 objectPartitionId = calculatePartitionId(object, calculationStrategy);
@@ -464,18 +341,15 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             //Send to another node
             objectPartitionId = calculatePartitionId(object, calculationStrategy);
         }
-
-        Address address = this.nodeEngine.getPartitionService().getPartitionOwner(objectPartitionId);
+        Address address = nodeEngine.getPartitionService().getPartitionOwner(objectPartitionId);
         Address remoteJetAddress = taskContext.getJobContext().getHzToJetAddressMapping().get(address);
-        DataWriter sender = this.senders.get(remoteJetAddress);
-
+        DataWriter sender = senders.get(remoteJetAddress);
         if (sender != null) {
             markConsumer(sender);
-
             if (!markedNonPartitionedRemotes) {
-                for (Address remoteAddress : this.nonPartitionedAddresses) {
+                for (Address remoteAddress : nonPartitionedAddresses) {
                     if (!remoteAddress.equals(address)) {
-                        markConsumer(this.senders.get(remoteAddress));
+                        markConsumer(senders.get(remoteAddress));
                     }
                 }
             }
@@ -484,55 +358,41 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             for (int ir = 0; ir < writers.size(); ir++) {
                 markConsumer(writers.get(ir));
             }
-
             if (!markedNonPartitionedRemotes) {
                 markNonPartitionedRemotes();
                 markedNonPartitionedRemotes = true;
             }
         }
-
         return markedNonPartitionedRemotes;
     }
 
     private int calculatePartitionId(Object object, CalculationStrategy calculationStrategy) {
         return HashUtil.hashToIndex(calculationStrategy.hash(object),
-                this.nodeEngine.getPartitionService().getPartitionCount());
+                nodeEngine.getPartitionService().getPartitionCount());
     }
 
     private void processCalculationStrategies(Object object) throws Exception {
         CalculationStrategy objectCalculationStrategy = null;
         int objectPartitionId = -1;
-
         if (object instanceof CalculationStrategyAware) {
             CalculationStrategyAware calculationStrategyAware = ((CalculationStrategyAware) object);
             objectCalculationStrategy = calculationStrategyAware.getCalculationStrategy();
         }
-
         if (object instanceof PartitionIdAware) {
             objectPartitionId = ((PartitionIdAware) object).getPartitionId();
         }
-
         writeToNonPartitionedLocals(object);
-
-        Arrays.fill(this.markers, null);
-
+        Arrays.fill(markers, null);
         boolean markedNonPartitionedRemotes = false;
-
-        for (CalculationStrategy calculationStrategy : this.calculationStrategies) {
+        for (CalculationStrategy calculationStrategy : calculationStrategies) {
             markedNonPartitionedRemotes = processCalculationStrategy(
-                    object,
-                    calculationStrategy,
-                    objectPartitionId,
-                    objectCalculationStrategy,
-                    markedNonPartitionedRemotes
-            );
+                    object, calculationStrategy, objectPartitionId, objectCalculationStrategy, markedNonPartitionedRemotes);
         }
-
         sendToMarked(object);
     }
 
     private void sendToMarked(Object object) throws Exception {
-        for (Consumer marker : this.markers) {
+        for (Consumer marker : markers) {
             if (marker != null) {
                 marker.consume(object);
             }
@@ -540,31 +400,31 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void markConsumer(Consumer consumer) {
-        int position = this.markersCache.get(consumer);
-        this.markers[position] = consumer;
+        int position = markersCache.get(consumer);
+        markers[position] = consumer;
     }
 
     private void writeToNonPartitionedLocals(InputChunk<Object> chunk) throws Exception {
-        for (Consumer nonPartitionedWriter : this.nonPartitionedWriters) {
+        for (Consumer nonPartitionedWriter : nonPartitionedWriters) {
             nonPartitionedWriter.consume(chunk);
         }
     }
 
     private void sendToNonPartitionedRemotes(InputChunk<Object> chunk) throws Exception {
-        for (Address remoteAddress : this.nonPartitionedAddresses) {
-            this.senders.get(remoteAddress).consume(chunk);
+        for (Address remoteAddress : nonPartitionedAddresses) {
+            senders.get(remoteAddress).consume(chunk);
         }
     }
 
     private void writeToNonPartitionedLocals(Object object) throws Exception {
-        for (Consumer nonPartitionedWriter : this.nonPartitionedWriters) {
+        for (Consumer nonPartitionedWriter : nonPartitionedWriters) {
             nonPartitionedWriter.consume(object);
         }
     }
 
     private void markNonPartitionedRemotes() throws Exception {
-        for (Address remoteAddress : this.nonPartitionedAddresses) {
-            markConsumer(this.senders.get(remoteAddress));
+        for (Address remoteAddress : nonPartitionedAddresses) {
+            markConsumer(senders.get(remoteAddress));
         }
     }
 }
