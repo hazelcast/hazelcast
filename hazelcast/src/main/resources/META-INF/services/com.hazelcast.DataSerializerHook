@@ -7,6 +7,7 @@ com.hazelcast.multimap.impl.MultiMapDataSerializerHook
 com.hazelcast.collection.impl.collection.CollectionDataSerializerHook
 com.hazelcast.topic.impl.TopicDataSerializerHook
 com.hazelcast.executor.impl.ExecutorDataSerializerHook
+com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook
 com.hazelcast.concurrent.lock.LockDataSerializerHook
 com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook
 com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook
