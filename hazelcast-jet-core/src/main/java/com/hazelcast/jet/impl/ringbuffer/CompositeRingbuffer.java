@@ -37,7 +37,6 @@ public class CompositeRingbuffer implements Consumer {
     private final MemberDistributionStrategy memberDistributionStrategy;
 
     private int nextConsumerId;
-    private int lastConsumedCount;
 
     public CompositeRingbuffer(
             JobContext jobContext,
@@ -54,12 +53,7 @@ public class CompositeRingbuffer implements Consumer {
     }
 
     @Override
-    public int lastConsumedCount() {
-        return lastConsumedCount;
-    }
-
-    @Override
-    public int consume(Object object) {
+    public boolean consume(Object object) {
         if (routingStrategy == RoutingStrategy.ROUND_ROBIN) {
             ringbuffers[nextConsumerId].consume(object);
             next();
@@ -70,10 +64,10 @@ public class CompositeRingbuffer implements Consumer {
         } else if (routingStrategy == RoutingStrategy.PARTITIONED) {
             int objectPartitionId = calculatePartitionIndex(object);
             int idx = Math.abs(objectPartitionId) % ringbuffers.length;
-            this.ringbuffers[idx].consume(object);
+            ringbuffers[idx].consume(object);
         }
 
-        return 1;
+        return true;
     }
 
     @Override
@@ -91,7 +85,6 @@ public class CompositeRingbuffer implements Consumer {
             }
         }
 
-        this.lastConsumedCount = chunk.size();
         return chunk.size();
     }
 

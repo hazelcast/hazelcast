@@ -47,7 +47,6 @@ public class Ringbuffer implements Consumer, Producer {
     private final IOBuffer<Object> flushBuffer;
     private final List<ProducerCompletionHandler> completionHandlers;
     private int producedCount;
-    private int lastConsumedCount;
     private int currentFlushedCount;
 
     public Ringbuffer(String name, JobContext jobContext) {
@@ -94,17 +93,15 @@ public class Ringbuffer implements Consumer, Producer {
     @Override
     public int consume(InputChunk<Object> chunk) {
         currentFlushedCount = 0;
-        lastConsumedCount = 0;
         flushBuffer.collect(chunk);
         return chunk.size();
     }
 
     @Override
-    public int consume(Object object) {
+    public boolean consume(Object object) {
         currentFlushedCount = 0;
-        lastConsumedCount = 0;
         flushBuffer.collect(object);
-        return 1;
+        return true;
     }
 
     @Override
@@ -114,7 +111,6 @@ public class Ringbuffer implements Consumer, Producer {
         }
         try {
             int flushed = flushChunk();
-            lastConsumedCount = flushed;
             currentFlushedCount += flushed;
             return flushed;
         } catch (Exception e) {
@@ -177,11 +173,6 @@ public class Ringbuffer implements Consumer, Producer {
         for (ProducerCompletionHandler handler : completionHandlers) {
             handler.onComplete(this);
         }
-    }
-
-    @Override
-    public int lastConsumedCount() {
-        return lastConsumedCount;
     }
 
     @Override

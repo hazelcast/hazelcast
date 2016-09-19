@@ -35,12 +35,14 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
         this.consumerProcessor = consumerProcessor;
     }
 
+    @Override
     public boolean onChunk(InputChunk inputChunk) throws Exception {
-        boolean success = this.consumerProcessor.onChunk(inputChunk);
-        consumed = consumerProcessor.consumed();
+        boolean success = consumerProcessor.onChunk(inputChunk);
+        consumed = consumerProcessor.hasConsumed();
         return success;
     }
 
+    @Override
     public boolean process() throws Exception {
         if (outputBuffer.size() == 0) {
             boolean result = super.process();
@@ -63,7 +65,7 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
     }
 
     @Override
-    public boolean consumed() {
+    public boolean hasConsumed() {
         return consumed;
     }
 
@@ -86,6 +88,7 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
         consumerProcessor.onClose();
     }
 
+    @Override
     public void startFinalization() {
         super.startFinalization();
         consumerProcessor.startFinalization();

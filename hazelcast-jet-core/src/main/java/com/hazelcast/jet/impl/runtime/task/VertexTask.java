@@ -310,7 +310,7 @@ public class VertexTask extends Task {
         }
 
         boolean success = processor.process();
-        boolean activity = processor.consumed() || processor.produced();
+        boolean activity = processor.hasConsumed() || processor.produced();
         didWorkHolder.set(activity);
 
         if (((!activity) && (success))) {
