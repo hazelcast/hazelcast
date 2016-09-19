@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.nio.Address;
@@ -40,11 +39,9 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     private boolean receiversClosed;
     private boolean receiversProduced;
 
-    public ShuffledActorTaskProcessor(Producer[] producers,
-                                      Processor processor,
-                                      TaskContext taskContext,
-                                      TaskProcessor senderConsumerProcessor,
-                                      TaskProcessor receiverConsumerProcessor) {
+    public ShuffledActorTaskProcessor(
+            Producer[] producers, Processor processor, TaskContext taskContext,
+            TaskProcessor senderConsumerProcessor, TaskProcessor receiverConsumerProcessor) {
         super(producers, processor, taskContext, senderConsumerProcessor);
         this.receiverConsumerProcessor = receiverConsumerProcessor;
         List<Producer> receivers = new ArrayList<Producer>();
@@ -52,25 +49,21 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         JobManager jobManager = jobContext.getJobManager();
         VertexRunner vertexRunner = jobManager.getRunnerByVertex(taskContext.getVertex());
         VertexTask vertexTask = vertexRunner.getVertexMap().get(taskContext.getTaskNumber());
-
         for (Address address : jobManager.getJobContext().getSocketReaders().keySet()) {
-            //Registration to the AppMaster
             ShufflingReceiver receiver = new ShufflingReceiver(vertexTask);
             jobManager.registerShufflingReceiver(taskContext.getTaskNumber(),
                     vertexRunner.getId(), address, receiver);
             receivers.add(receiver);
         }
-
         int chunkSize = jobContext.getJobConfig().getChunkSize();
-        this.receiveBuffer = new IOBuffer<Object>(new Object[chunkSize]);
+        this.receiveBuffer = new IOBuffer<>(new Object[chunkSize]);
         this.receivers = receivers.toArray(new Producer[receivers.size()]);
     }
 
     @Override
     public void onOpen() {
         super.onOpen();
-
-        for (Producer receiver : this.receivers) {
+        for (Producer receiver : receivers) {
             receiver.open();
         }
     }
@@ -78,76 +71,64 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     @Override
     public void reset() {
         super.reset();
-        this.receiversClosed = false;
+        receiversClosed = false;
     }
 
     @Override
     public boolean process() throws Exception {
-        if (this.receiveBuffer.size() > 0) {
+        if (receiveBuffer.size() > 0) {
             produced = false;
             receiversProduced = false;
-
-            boolean success = this.receiverConsumerProcessor.onChunk(this.receiveBuffer);
-
-            if (success) {
-                this.receiveBuffer.reset();
+            if (receiverConsumerProcessor.onChunk(receiveBuffer)) {
+                receiveBuffer.reset();
+                return true;
             }
-
-            return success;
-        } else if (this.outputBuffer.size() > 0) {
-            return super.process();
-        } else {
-            boolean success;
-
-            if (this.receivers.length > 0) {
-                success = processReceivers();
-
-                if (success) {
-                    this.receiveBuffer.reset();
-                }
-            } else {
-                receiversProduced = false;
-                success = true;
-            }
-
-            success = success && super.process();
-
-            produced = receiversProduced || produced;
-
-            return success;
+            return false;
         }
+        if (outputBuffer.size() > 0) {
+            return super.process();
+        }
+        boolean success;
+        if (receivers.length > 0) {
+            success = processReceivers();
+            if (success) {
+                receiveBuffer.reset();
+            }
+        } else {
+            receiversProduced = false;
+            success = true;
+        }
+        success = success && super.process();
+        produced = receiversProduced || produced;
+        return success;
     }
 
     @Override
     public void onReceiversClosed() {
-        this.receiversClosed = true;
+        receiversClosed = true;
     }
 
     private boolean processReceivers() throws Exception {
         int lastIdx = 0;
-        int startFrom = this.receiversClosed ? 0 : this.nextReceiverIdx;
+        int startFrom = receiversClosed ? 0 : nextReceiverIdx;
         boolean produced = false;
-
-        for (int i = startFrom; i < this.receivers.length; i++) {
+        for (int i = startFrom; i < receivers.length; i++) {
             lastIdx = i;
-
-            Producer receiver = this.receivers[i];
+            Producer receiver = receivers[i];
             Object[] outChunk = receiver.produce();
-
-            if (!JetUtil.isEmpty(outChunk)) {
+            if (outChunk.length != 0) {
                 produced = true;
-                this.receiveBuffer.collect(outChunk, receiver.lastProducedCount());
-
-                if (!this.receiverConsumerProcessor.onChunk(this.receiveBuffer)) {
-                    this.nextReceiverIdx = (lastIdx + 1) % this.receivers.length;
-                    this.receiversProduced = true;
+                receiveBuffer.collect(outChunk, receiver.lastProducedCount());
+                if (!receiverConsumerProcessor.onChunk(receiveBuffer)) {
+                    nextReceiverIdx = (lastIdx + 1) % receivers.length;
+                    receiversProduced = true;
                     return false;
                 }
             }
         }
 
-        this.receiversProduced = produced;
-        this.nextReceiverIdx = (lastIdx + 1) % this.receivers.length;
+        receiversProduced = produced;
+        nextReceiverIdx = (lastIdx + 1) % receivers.length;
         return true;
     }
 }

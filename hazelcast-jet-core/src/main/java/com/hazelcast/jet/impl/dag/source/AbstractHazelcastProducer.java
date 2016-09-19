@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.jet.impl.util.JetUtil.EMPTY_OBJECTS;
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public abstract class AbstractHazelcastProducer<V> implements Producer {
@@ -108,7 +109,7 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
 
     private Object[] read() {
         if (iterator == null) {
-            return null;
+            return EMPTY_OBJECTS;
         }
         if (!iterator.hasNext()) {
             iterator = null;
@@ -116,7 +117,7 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
             for (ProducerCompletionHandler handler : completionHandlers) {
                 handler.onComplete(this);
             }
-            return null;
+            return EMPTY_OBJECTS;
         }
         int idx = 0;
         do {
@@ -131,7 +132,7 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
             }
         } while (iterator.hasNext() && idx < chunkSize);
         lastProducedCount = idx;
-        return idx == 0 ? null : buffer;
+        return idx == 0 ? EMPTY_OBJECTS : buffer;
     }
 
     private Object[] readOnPartitionThread() {
@@ -140,10 +141,10 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
                 isReadInProgress = true;
                 internalOperationService.execute(readRunnable);
             }
-            return null;
+            return EMPTY_OBJECTS;
         }
         if (!future.isDone()) {
-            return null;
+            return EMPTY_OBJECTS;
         }
         try {
             return future.get();
@@ -154,7 +155,6 @@ public abstract class AbstractHazelcastProducer<V> implements Producer {
             isReadInProgress = false;
         }
     }
-
 
     private class ReadRunnable implements PartitionSpecificRunnable {
         @Override

@@ -57,10 +57,9 @@ abstract class RingufferFields<T> extends RingbufferPad {
         "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
 })
 final class RingbufferWithReferenceStrategy<T> extends RingufferFields<T> implements RingbufferIO<T> {
-    public static final long INITIAL_CURSOR_VALUE = 0L;
-    private final PaddedLong readSequencer = new PaddedLong(RingbufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
-    private final PaddedLong writeSequencer = new PaddedLong(RingbufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
-    private final PaddedLong availableSequencer = new PaddedLong(RingbufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
+    private final PaddedLong readSequencer = new PaddedLong(0L);
+    private final PaddedLong writeSequencer = new PaddedLong(0L);
+    private final PaddedLong availableSequencer = new PaddedLong(0L);
     private final ILogger logger;
     protected long p1, p2, p3, p4, p5, p6, p7;
 
@@ -70,42 +69,30 @@ final class RingbufferWithReferenceStrategy<T> extends RingufferFields<T> implem
     }
 
     @Override
-    public int acquire(int acquired) {
-        if (acquired > bufferSize) {
-            acquired = bufferSize;
-        }
-
+    public int acquire(int requested) {
         int remaining = bufferSize - (int) (availableSequencer.getValue() - readSequencer.getValue());
-
         if (remaining <= 0) {
             return 0;
         }
-
-        int realAcquired = Math.min(remaining, acquired);
-
-        writeSequencer.setValue(availableSequencer.getValue() + realAcquired);
-
-        return realAcquired;
+        int acquired = Math.min(remaining, Math.min(requested, bufferSize));
+        writeSequencer.setValue(availableSequencer.getValue() + acquired);
+        return acquired;
     }
 
     @Override
     public void commit(IOBuffer<T> chunk, int consumed) {
         long writerSequencerValue = writeSequencer.getValue();
         long availableSequencerValue = availableSequencer.getValue();
-
-        int entriesStart = (int) (BUFFER_PAD + ((availableSequencerValue & indexMask)));
+        int entriesStart = (int) (BUFFER_PAD + (availableSequencerValue & indexMask));
         int count = (int) (writerSequencerValue - availableSequencerValue);
         int window = entries.length - BUFFER_PAD - entriesStart;
-
         T[] buffer = chunk.toArray();
-
         if (count <= window) {
             System.arraycopy(buffer, consumed, entries, entriesStart, count);
         } else {
             System.arraycopy(buffer, consumed, entries, entriesStart, window);
             System.arraycopy(buffer, consumed + window, entries, BUFFER_PAD, count - window);
         }
-
         availableSequencer.setValue(writerSequencerValue);
     }
 
@@ -113,11 +100,9 @@ final class RingbufferWithReferenceStrategy<T> extends RingufferFields<T> implem
     public int fetch(T[] chunk) {
         long availableSequence = availableSequencer.getValue();
         long readerSequencerValue = readSequencer.getValue();
-
         int count = Math.min(chunk.length, (int) (availableSequence - readerSequencerValue));
         int entriesStart = (int) (BUFFER_PAD + ((readerSequencerValue & indexMask)));
         int window = entries.length - BUFFER_PAD - entriesStart;
-
         if (count <= window) {
             System.arraycopy(entries, entriesStart, chunk, 0, count);
             Arrays.fill(entries, entriesStart, entriesStart + count, null);
@@ -127,7 +112,6 @@ final class RingbufferWithReferenceStrategy<T> extends RingufferFields<T> implem
             System.arraycopy(entries, BUFFER_PAD, chunk, window, count - window);
             Arrays.fill(entries, BUFFER_PAD, BUFFER_PAD + count - window, null);
         }
-
         readSequencer.setValue(readSequencer.getValue() + count);
         return count;
     }

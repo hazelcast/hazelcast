@@ -28,25 +28,15 @@ public class ShuffledTaskProcessorFactory extends TaskProcessorFactory {
     public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,
                                                TaskContext taskContext) {
-        return actorTaskProcessor(
-                new Producer[0],
-                consumers,
-                processor,
-                taskContext
-        );
+        return actorTaskProcessor(new Producer[0], consumers, processor, taskContext);
     }
 
     @Override
-    public TaskProcessor actorTaskProcessor(Producer[] producers,
-                                            Consumer[] consumers,
-                                            Processor processor,
-                                            TaskContext taskContext) {
-        return new ShuffledActorTaskProcessor(
-                producers,
-                processor,
-                taskContext,
-                new ShuffledConsumerTaskProcessor(consumers, processor, taskContext),
-                new ShuffledReceiverConsumerTaskProcessor(consumers, processor, taskContext)
+    public TaskProcessor actorTaskProcessor(
+            Producer[] producers, Consumer[] consumers, Processor processor, TaskContext taskContext) {
+        return new ShuffledActorTaskProcessor(producers, processor, taskContext,
+                new ShuffledConsumerTaskProcessor(consumers, processor, taskContext, false),
+                new ShuffledConsumerTaskProcessor(consumers, processor, taskContext, true)
         );
     }
 }

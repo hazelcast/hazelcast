@@ -47,19 +47,10 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * Utility class for base JET-functionality
  */
 public final class JetUtil {
-    /**
-     * Represents maximal value for the length of JET-job
-     */
     public static final int MAX_JOB_NAME_SIZE = 32;
-
-    /**
-     * Number of bytes in kilobyte
-     */
     public static final int KILOBYTE = 1024;
-
     public static final int MEGABYTE = KILOBYTE * KILOBYTE;
-
-    public static final int GIGABYTE = MEGABYTE * KILOBYTE;
+    public static final Object[] EMPTY_OBJECTS = new Object[0];
 
     private JetUtil() {
     }
@@ -186,10 +177,6 @@ public final class JetUtil {
 
     public static boolean isEmpty(Collection collection) {
         return (collection == null || collection.isEmpty());
-    }
-
-    public static boolean isEmpty(Object[] object) {
-        return (object == null || object.length == 0);
     }
 
     public static void checkJobName(String jobName) {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.runtime;
 
+import javax.annotation.Nonnull;
+
 /**
  * This is an abstract interface for each producer in the system
  * which produce data objects
@@ -47,6 +49,7 @@ public interface Producer {
      * @return produced entry
      * @throws Exception if any exception
      */
+    @Nonnull
     Object[] produce() throws Exception;
 
     /**
