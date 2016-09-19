@@ -572,11 +572,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      * <p/>
-     * <p><b>Warning-2:</b></p>
-     * <p>
-     * This method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
-     * </p>
      *
      * @param key      key of the entry.
      * @param timeout  maximum time to wait for acquiring the lock
