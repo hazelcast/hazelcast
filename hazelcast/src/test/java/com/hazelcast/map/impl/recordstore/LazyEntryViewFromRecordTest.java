@@ -80,7 +80,7 @@ public class LazyEntryViewFromRecordTest {
 
     @Test
     public void test_getCost() throws Exception {
-        assertEquals(109, view.getCost());
+        assertEquals(105, view.getCost());
     }
 
     @Test
