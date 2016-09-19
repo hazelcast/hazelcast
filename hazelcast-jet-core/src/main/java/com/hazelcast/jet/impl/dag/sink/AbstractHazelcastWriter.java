@@ -20,12 +20,12 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.runtime.DataWriter;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -86,7 +86,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
             }
         }
     };
-    private int lastConsumedCount;
     private boolean isClosed;
 
     protected AbstractHazelcastWriter(JobContext jobContext, int partitionId) {
@@ -96,7 +95,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         this.logger = nodeEngine.getLogger(getClass());
         JobConfig jobConfig = jobContext.getJobConfig();
         this.awaitInSecondsTime = jobConfig.getSecondsToAwait();
-        this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
+        this.internalOperationService = (InternalOperationService) nodeEngine.getOperationService();
         int pairChunkSize = jobConfig.getChunkSize();
         this.chunkBuffer = new IOBuffer<>(new Object[pairChunkSize]);
         this.outputBuffer = new IOBuffer<>(new Object[pairChunkSize]);
@@ -104,24 +103,22 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     private void pushWriteRequest() {
-        this.future.reset();
-        this.internalOperationService.execute(this.partitionSpecificRunnable);
-        this.isFlushed = false;
+        future.reset();
+        internalOperationService.execute(this.partitionSpecificRunnable);
+        isFlushed = false;
     }
 
     @Override
     public int consume(InputChunk<Object> chunk) {
-        this.outputBuffer.collect(chunk);
+        outputBuffer.collect(chunk);
         pushWriteRequest();
-        this.lastConsumedCount = chunk.size();
         return chunk.size();
     }
 
     @Override
-    public int consume(Object object) {
-        this.chunkBuffer.collect(object);
-        this.lastConsumedCount = 1;
-        return 1;
+    public boolean consume(Object object) {
+        chunkBuffer.collect(object);
+        return true;
     }
 
     @Override
@@ -137,11 +134,11 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
     @Override
     public int getPartitionId() {
-        return this.partitionId;
+        return partitionId;
     }
 
     public NodeEngine getNodeEngine() {
-        return this.nodeEngine;
+        return nodeEngine;
     }
 
     @Override
@@ -157,23 +154,21 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     protected void onOpen() {
-
     }
 
     protected void onClose() {
-
     }
 
     @Override
     public void open() {
-        this.future.reset();
-        this.isFlushed = true;
-        this.isClosed = false;
+        future.reset();
+        isFlushed = true;
+        isClosed = false;
 
-        this.internalOperationService.execute(this.partitionSpecificOpenRunnable);
+        internalOperationService.execute(partitionSpecificOpenRunnable);
 
         try {
-            this.future.get(this.awaitInSecondsTime, TimeUnit.SECONDS);
+            future.get(this.awaitInSecondsTime, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw unchecked(e);
         }
@@ -181,18 +176,18 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
     @Override
     public boolean isFlushed() {
-        if (this.isFlushed) {
+        if (isFlushed) {
             return true;
         } else {
             try {
-                if (this.future.isDone()) {
+                if (future.isDone()) {
                     try {
                         future.get();
                         return true;
                     } finally {
-                        this.chunkBuffer.reset();
-                        this.isFlushed = true;
-                        this.outputBuffer.reset();
+                        chunkBuffer.reset();
+                        isFlushed = true;
+                        outputBuffer.reset();
                     }
                 }
 
@@ -204,17 +199,12 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     @Override
-    public int lastConsumedCount() {
-        return this.lastConsumedCount;
-    }
-
-    @Override
     public boolean isShuffled() {
         return true;
     }
 
     public MemberDistributionStrategy getMemberDistributionStrategy() {
-        return this.memberDistributionStrategy;
+        return memberDistributionStrategy;
     }
 
     @Override

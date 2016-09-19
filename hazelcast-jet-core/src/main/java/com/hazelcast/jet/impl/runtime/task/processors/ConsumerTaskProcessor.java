@@ -37,7 +37,6 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected final IOBuffer outputBuffer;
     protected boolean producersWriteFinished;
     protected final TaskContext taskContext;
-    protected final ConsumersProcessor consumersProcessor;
     protected boolean consumed;
     protected boolean finalized;
     protected boolean finalizationFinished;
@@ -54,7 +53,6 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         this.consumers = consumers;
         this.processor = processor;
         this.taskContext = taskContext;
-        this.consumersProcessor = new ConsumersProcessor(consumers);
         this.inputBuffer = new IOBuffer<>(EMPTY_CHUNK);
         JobConfig jobConfig = taskContext.getJobContext().getJobConfig();
         int chunkSize = jobConfig.getChunkSize();
@@ -111,16 +109,17 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     @Override
     public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
         this.consumed = false;
-
+        boolean success = true;
         if (inputChunk.size() > 0) {
-            boolean success = consumersProcessor.process(inputChunk);
-            boolean consumed = consumersProcessor.isConsumed();
+            for (Consumer consumer : consumers) {
+                int consumedCount = consumer.consume(inputChunk);
+                success = success && consumer.isFlushed();
+                consumed |= consumedCount > 0;
+            }
 
             if (success) {
                 resetConsumers();
             }
-
-            this.consumed = consumed;
             return success;
         } else {
             return true;
@@ -149,7 +148,6 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     private void resetConsumers() {
         consumed = false;
         outputBuffer.reset();
-        consumersProcessor.reset();
     }
 
     public void onOpen() {

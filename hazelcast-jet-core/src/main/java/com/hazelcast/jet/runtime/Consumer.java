@@ -27,16 +27,18 @@ import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 public interface Consumer {
 
     /**
-     * @param chunk chunk of objects to consume
-     * @return really consumed amount of pairs
+     * Consumes a chunk of objects
+     *
+     * @return actual consumed number of objects
      */
     int consume(InputChunk<Object> chunk);
 
     /**
-     * @param object object to consume
-     * @return 1 if pair was consumed , 0 otherwise
+     * Consume given object
+     *
+     * @return true if object was consumed, false otherwise
      */
-    int consume(Object object);
+    boolean consume(Object object);
 
     /**
      * @return true if consumer supports shuffling, false otherwise
@@ -64,11 +66,6 @@ public interface Consumer {
      * Closes current consumer
      */
     void close();
-
-    /**
-     * @return last consumed pair count
-     */
-    int lastConsumedCount();
 
     /**
      * @return pair consumer's shuffling strategy
