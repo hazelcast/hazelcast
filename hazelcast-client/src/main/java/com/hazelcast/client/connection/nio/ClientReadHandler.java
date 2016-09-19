@@ -81,10 +81,6 @@ public class ClientReadHandler
 
         lastHandle = Clock.currentTimeMillis();
 
-        if(!connection.heartBeating){
-            logger.info(connection+" handled readevent when not heartbeating");
-        }
-
         int readBytes = socketChannel.read(buffer);
         if (readBytes <= 0) {
             if (readBytes == -1) {
