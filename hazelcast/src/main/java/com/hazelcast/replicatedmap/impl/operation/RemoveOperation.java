@@ -36,7 +36,6 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
     private transient ReplicatedRecordStore store;
     private transient Data oldValue;
 
-
     public RemoveOperation() {
     }
 
@@ -44,7 +43,6 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
         this.name = name;
         this.key = key;
     }
-
 
     @Override
     public void run() throws Exception {

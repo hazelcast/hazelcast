@@ -21,12 +21,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 
@@ -38,7 +36,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 /**
  * Puts a set of records to the replicated map.
  */
-public class PutAllOperation extends Operation implements IdentifiedDataSerializable {
+public class PutAllOperation extends AbstractSerializableOperation {
 
     private String name;
     private ReplicatedMapEntries entries;
@@ -99,11 +97,6 @@ public class PutAllOperation extends Operation implements IdentifiedDataSerializ
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         entries = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
     }
 
     @Override

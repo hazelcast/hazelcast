@@ -28,6 +28,7 @@ import java.io.IOException;
  * Contains response and partition version for update operations on replicated map.
  */
 public class VersionResponsePair implements DataSerializable, IdentifiedDataSerializable {
+
     Object response;
     long version;
 
