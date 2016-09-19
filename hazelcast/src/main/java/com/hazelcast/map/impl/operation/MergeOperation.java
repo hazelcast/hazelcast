@@ -106,6 +106,7 @@ public class MergeOperation extends BasePutOperation {
         super.writeInternal(out);
         out.writeObject(mergingEntry);
         out.writeObject(mergePolicy);
+        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
@@ -113,5 +114,6 @@ public class MergeOperation extends BasePutOperation {
         super.readInternal(in);
         mergingEntry = in.readObject();
         mergePolicy = in.readObject();
+        disableWanReplicationEvent = in.readBoolean();
     }
 }
