@@ -23,13 +23,9 @@ import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
-import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 class MockJoiner extends AbstractJoiner {
 
@@ -38,6 +34,10 @@ class MockJoiner extends AbstractJoiner {
     MockJoiner(Node node, TestNodeRegistry registry) {
         super(node);
         this.registry = registry;
+    }
+
+    private static void verifyInvariant(boolean check, String msg) {
+        if (!check) throw new AssertionError(msg);
     }
 
     public void doJoin() {
@@ -51,7 +51,7 @@ class MockJoiner extends AbstractJoiner {
             while (node.isRunning() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 try {
                     Address joinAddress = getJoinAddress();
-                    assertNotNull(joinAddress);
+                    verifyInvariant(joinAddress != null, "joinAddress should not be null");
 
                     if (node.getThisAddress().equals(joinAddress)) {
                         logger.fine("This node is found as master, no need to join.");
@@ -78,7 +78,7 @@ class MockJoiner extends AbstractJoiner {
         if (!joined) {
             node.shutdown(true);
         }
-        assertTrue(node.getThisAddress() + " should have been joined to " + node.getMasterAddress(), joined);
+        verifyInvariant(joined, node.getThisAddress() + " should have been joined to " + node.getMasterAddress());
     }
 
     private Address getJoinAddress() {
@@ -111,7 +111,7 @@ class MockJoiner extends AbstractJoiner {
                 continue;
             }
 
-            Assert.assertEquals(address, foundNode.getThisAddress());
+            verifyInvariant(address.equals(foundNode.getThisAddress()), "The address should be equal to the one in the found node");
 
             if (foundNode.getThisAddress().equals(node.getThisAddress())) {
                 continue;
