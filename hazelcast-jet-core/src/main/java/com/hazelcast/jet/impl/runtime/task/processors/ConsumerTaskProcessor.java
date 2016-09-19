@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.runtime.task.processors;
 
 
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.runtime.Consumer;
@@ -37,15 +36,14 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected final IOBuffer outputBuffer;
     protected boolean producersWriteFinished;
     protected final TaskContext taskContext;
-    protected boolean consumed;
+    protected boolean consumedSome;
     protected boolean finalized;
     protected boolean finalizationFinished;
     protected boolean finalizationStarted;
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public ConsumerTaskProcessor(Consumer[] consumers,
-                                 Processor processor,
-                                 TaskContext taskContext) {
+    public ConsumerTaskProcessor(
+            Consumer[] consumers, Processor processor, TaskContext taskContext) {
         checkNotNull(consumers);
         checkNotNull(processor);
         checkNotNull(taskContext);
@@ -54,8 +52,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         this.processor = processor;
         this.taskContext = taskContext;
         this.inputBuffer = new IOBuffer<>(EMPTY_CHUNK);
-        JobConfig jobConfig = taskContext.getJobContext().getJobConfig();
-        int chunkSize = jobConfig.getChunkSize();
+        int chunkSize = taskContext.getJobContext().getJobConfig().getChunkSize();
         this.outputBuffer = new IOBuffer<>(new Object[chunkSize]);
         reset();
     }
@@ -74,61 +71,53 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     public boolean process() throws Exception {
         if (outputBuffer.size() > 0) {
             return consumeChunkAndResetOutputIfSuccess();
-        } else {
-            if (finalizationStarted) {
-                finalizationFinished = processor.complete(outputBuffer);
-            } else {
-                if (producersWriteFinished) {
-                    return true;
-                }
-                processor.process(inputBuffer, outputBuffer, null);
-            }
-
-            if (outputBuffer.size() > 0) {
-                return consumeChunkAndResetOutputIfSuccess();
-            } else {
-                checkFinalization();
-            }
-
-            return true;
         }
+        if (finalizationStarted) {
+            finalizationFinished = processor.complete(outputBuffer);
+        } else {
+            if (producersWriteFinished) {
+                return true;
+            }
+            processor.process(inputBuffer, outputBuffer, null);
+        }
+        if (outputBuffer.size() > 0) {
+            return consumeChunkAndResetOutputIfSuccess();
+        }
+        checkFinalization();
+        return true;
     }
 
     @SuppressWarnings("unchecked")
     private boolean consumeChunkAndResetOutputIfSuccess() throws Exception {
-        boolean success = onChunk(outputBuffer);
-
-        if (success) {
+        if (onChunk(outputBuffer)) {
             outputBuffer.reset();
             checkFinalization();
+            return true;
         }
-
-        return success;
+        return false;
     }
 
     @Override
     public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
-        this.consumed = false;
-        boolean success = true;
-        if (inputChunk.size() > 0) {
-            for (Consumer consumer : consumers) {
-                int consumedCount = consumer.consume(inputChunk);
-                success = success && consumer.isFlushed();
-                consumed |= consumedCount > 0;
-            }
-
-            if (success) {
-                resetConsumers();
-            }
-            return success;
-        } else {
+        if (inputChunk.size() == 0) {
             return true;
         }
+        this.consumedSome = false;
+        boolean success = true;
+        for (Consumer consumer : consumers) {
+            int consumedCount = consumer.consume(inputChunk);
+            success &= consumer.isFlushed();
+            consumedSome |= consumedCount > 0;
+        }
+        if (success) {
+            resetConsumers();
+        }
+        return success;
     }
 
     @Override
     public boolean hasConsumed() {
-        return consumed;
+        return consumedSome;
     }
 
     @Override
@@ -146,10 +135,11 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     }
 
     private void resetConsumers() {
-        consumed = false;
+        consumedSome = false;
         outputBuffer.reset();
     }
 
+    @Override
     public void onOpen() {
         for (Consumer consumer : consumers) {
             consumer.open();
@@ -179,7 +169,6 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     @Override
     public void onReceiversClosed() {
-
     }
 
     @Override
