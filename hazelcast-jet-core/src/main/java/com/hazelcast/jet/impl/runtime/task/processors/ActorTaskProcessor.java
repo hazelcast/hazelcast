@@ -37,8 +37,8 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
 
     @Override
     public boolean onChunk(InputChunk inputChunk) throws Exception {
-        boolean success = this.consumerProcessor.onChunk(inputChunk);
-        consumed = consumerProcessor.consumed();
+        boolean success = consumerProcessor.onChunk(inputChunk);
+        consumed = consumerProcessor.hasConsumed();
         return success;
     }
 
@@ -65,7 +65,7 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
     }
 
     @Override
-    public boolean consumed() {
+    public boolean hasConsumed() {
         return consumed;
     }
 

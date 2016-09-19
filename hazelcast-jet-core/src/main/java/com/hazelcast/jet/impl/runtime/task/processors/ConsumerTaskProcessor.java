@@ -127,7 +127,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean consumed() {
+    public boolean hasConsumed() {
         return consumed;
     }
 

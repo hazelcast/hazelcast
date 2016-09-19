@@ -100,7 +100,7 @@ public class SimpleTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean consumed() {
+    public boolean hasConsumed() {
         return false;
     }
 

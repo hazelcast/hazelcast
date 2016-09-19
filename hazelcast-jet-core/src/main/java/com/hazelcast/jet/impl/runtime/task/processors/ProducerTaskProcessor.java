@@ -221,7 +221,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean consumed() {
+    public boolean hasConsumed() {
         return false;
     }
 

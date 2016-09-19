@@ -59,7 +59,7 @@ public interface TaskProcessor {
      *
      * @return true - of data were consumed, false - otherwise;
      */
-    boolean consumed();
+    boolean hasConsumed();
 
     /**
      * Indicates if task has been finalized

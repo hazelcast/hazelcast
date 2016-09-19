@@ -268,7 +268,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         boolean consumed = false;
         if (!isReceiver && hasLocalConsumers && !localSuccess) {
             localSuccess = super.onChunk(chunk);
-            consumed = super.consumed();
+            consumed = super.hasConsumed();
         }
         return consumed;
     }
