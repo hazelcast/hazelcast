@@ -21,11 +21,11 @@ import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.runtime.task.TaskEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TaskEventFinalizationProcessor extends AbstractEventProcessor {
-    protected TaskEventFinalizationProcessor(AtomicInteger completedTasks,
-                                             AtomicInteger interruptedTasks,
-                                             AtomicInteger readyForFinalizationTasksCounter,
-                                             VertexRunner vertexRunner) {
+public class FinalizeEventHandler extends AbstractTaskEventHandler {
+    protected FinalizeEventHandler(AtomicInteger completedTasks,
+                                   AtomicInteger interruptedTasks,
+                                   AtomicInteger readyForFinalizationTasksCounter,
+                                   VertexRunner vertexRunner) {
         super(completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
@@ -33,9 +33,9 @@ public class TaskEventFinalizationProcessor extends AbstractEventProcessor {
         );
     }
 
-    public void process(VertexTask vertexTask,
-                        TaskEvent event,
-                        Throwable error) {
+    public void handle(VertexTask vertexTask,
+                       TaskEvent event,
+                       Throwable error) {
         if (this.readyForFinalizationTasksCounter.decrementAndGet() <= 0) {
             for (VertexTask task : this.vertexRunner.getVertexTasks()) {
                 task.startFinalization();

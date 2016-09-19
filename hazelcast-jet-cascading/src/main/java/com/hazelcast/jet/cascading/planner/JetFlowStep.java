@@ -51,7 +51,7 @@ import com.hazelcast.jet.cascading.runtime.IdentityProcessor;
 import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.strategy.AllMembersDistributionStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;

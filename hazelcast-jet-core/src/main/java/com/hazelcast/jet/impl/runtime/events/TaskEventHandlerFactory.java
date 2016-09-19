@@ -28,29 +28,29 @@ import static com.hazelcast.jet.impl.runtime.task.TaskEvent.TASK_EXECUTION_ERROR
 import static com.hazelcast.jet.impl.runtime.task.TaskEvent.TASK_READY_FOR_FINALIZATION;
 
 
-public class EventProcessorFactory {
-    private final Map<TaskEvent, EventProcessor> processorMap =
+public class TaskEventHandlerFactory {
+    private final Map<TaskEvent, TaskEventHandler> handlerMap =
             new IdentityHashMap<>();
 
-    public EventProcessorFactory(VertexRunner vertexRunner) {
+    public TaskEventHandlerFactory(VertexRunner vertexRunner) {
         AtomicInteger readyForFinalizationTasksCounter = new AtomicInteger(0);
         readyForFinalizationTasksCounter.set(vertexRunner.getVertexTasks().length);
         AtomicInteger completedTasks = new AtomicInteger(0);
         AtomicInteger interruptedTasks = new AtomicInteger(0);
 
-        processorMap.put(TASK_EXECUTION_COMPLETED, new TaskEventCompletedProcessor(
+        handlerMap.put(TASK_EXECUTION_COMPLETED, new CompletedEventHandler(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
                 vertexRunner
         ));
-        processorMap.put(TASK_EXECUTION_ERROR, new TaskEventExecutionErrorProcessor(
+        handlerMap.put(TASK_EXECUTION_ERROR, new ExecutionErrorEventHandler(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
                 vertexRunner
         ));
-        processorMap.put(TASK_READY_FOR_FINALIZATION, new TaskEventFinalizationProcessor(
+        handlerMap.put(TASK_READY_FOR_FINALIZATION, new FinalizeEventHandler(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,
@@ -58,13 +58,13 @@ public class EventProcessorFactory {
         ));
     }
 
-    public EventProcessor getEventProcessor(TaskEvent event) {
-        EventProcessor processor = processorMap.get(event);
+    public TaskEventHandler getEventProcessor(TaskEvent event) {
+        TaskEventHandler handler = handlerMap.get(event);
 
-        if (processor == null) {
+        if (handler == null) {
             throw new UnsupportedOperationException("Unsupported event: " + event);
         }
 
-        return processor;
+        return handler;
     }
 }

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.strategy;
+package com.hazelcast.jet.strategy;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.HashUtil;
 

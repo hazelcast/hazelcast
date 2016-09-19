@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.runtime.events;
 import com.hazelcast.jet.runtime.VertexRunnerListener;
 import com.hazelcast.jet.impl.runtime.ListenerCallable;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
+import com.hazelcast.jet.impl.runtime.VertexRunnerEvent;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.runtime.task.TaskEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
@@ -27,13 +27,13 @@ import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerExecution
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerInterruptedRequest;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TaskEventCompletedProcessor extends AbstractEventProcessor {
+public class CompletedEventHandler extends AbstractTaskEventHandler {
     private volatile Throwable caughtError;
 
-    protected TaskEventCompletedProcessor(AtomicInteger completedTasks,
-                                          AtomicInteger interruptedTasks,
-                                          AtomicInteger readyForFinalizationTasksCounter,
-                                          VertexRunner vertexRunner) {
+    protected CompletedEventHandler(AtomicInteger completedTasks,
+                                    AtomicInteger interruptedTasks,
+                                    AtomicInteger readyForFinalizationTasksCounter,
+                                    VertexRunner vertexRunner) {
         super(
                 completedTasks,
                 interruptedTasks,
@@ -42,9 +42,9 @@ public class TaskEventCompletedProcessor extends AbstractEventProcessor {
         );
     }
 
-    public void process(VertexTask vertexTask,
-                        TaskEvent event,
-                        Throwable error) {
+    public void handle(VertexTask vertexTask,
+                       TaskEvent event,
+                       Throwable error) {
         if (error != null) {
             caughtError = error;
         }

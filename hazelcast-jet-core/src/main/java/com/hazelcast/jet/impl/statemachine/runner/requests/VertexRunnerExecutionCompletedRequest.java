@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.statemachine.runner.requests;
 
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
+import com.hazelcast.jet.impl.runtime.VertexRunnerEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 
 public class VertexRunnerExecutionCompletedRequest implements StateMachineRequest<VertexRunnerEvent, Void> {

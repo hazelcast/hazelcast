@@ -34,14 +34,13 @@ import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.StateMachineEventHandler;
 import com.hazelcast.jet.impl.statemachine.jobmanager.JobManagerStateMachine;
-import com.hazelcast.jet.impl.statemachine.jobmanager.processors.DestroyJobProcessor;
-import com.hazelcast.jet.impl.statemachine.jobmanager.processors.ExecuteJobProcessor;
-import com.hazelcast.jet.impl.statemachine.jobmanager.processors.ExecutionCompletedProcessor;
-import com.hazelcast.jet.impl.statemachine.jobmanager.processors.ExecutionErrorProcessor;
-import com.hazelcast.jet.impl.statemachine.jobmanager.processors.ExecutionPlanBuilderProcessor;
-import com.hazelcast.jet.impl.statemachine.jobmanager.processors.InterruptJobProcessor;
+import com.hazelcast.jet.impl.statemachine.jobmanager.events.DestroyEventHandler;
+import com.hazelcast.jet.impl.statemachine.jobmanager.events.ExecuteJobEventHandler;
+import com.hazelcast.jet.impl.statemachine.jobmanager.events.ExecutionErrorEventHandler;
+import com.hazelcast.jet.impl.statemachine.jobmanager.events.SubmitEventHandler;
+import com.hazelcast.jet.impl.statemachine.jobmanager.events.InterruptEventHandler;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionErrorRequest;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionInterruptedRequest;
@@ -59,11 +58,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:methodcount"})
-public class JobManager implements StateMachineRequestProcessor<JobManagerEvent> {
+public class JobManager implements StateMachineEventHandler<JobManagerEvent> {
 
     @SuppressWarnings("ThrowableInstanceNeverThrown")
     private static final InterruptedException JOB_INTERRUPTED_EXCEPTION =
@@ -100,11 +100,11 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
 
     @Override
     @SuppressWarnings("unchecked")
-    public void processRequest(JobManagerEvent event, Object payload) throws Exception {
-        VertexRunnerPayloadProcessor processor = getProcessor(event, this);
+    public void handleEvent(JobManagerEvent event, Object payload) {
+        Consumer processor = getEventHandler(event, this);
 
         if (processor != null) {
-            processor.process(payload);
+            processor.accept(payload);
         }
     }
 
@@ -409,20 +409,18 @@ public class JobManager implements StateMachineRequestProcessor<JobManagerEvent>
         getJobContext().getExecutorContext().getJobManagerStateMachineExecutor().wakeUp();
     }
 
-    private static VertexRunnerPayloadProcessor getProcessor(JobManagerEvent event, JobManager jobManager) {
+    private static Consumer getEventHandler(JobManagerEvent event, JobManager jobManager) {
         switch (event) {
             case SUBMIT_DAG:
-                return new ExecutionPlanBuilderProcessor(jobManager);
+                return new SubmitEventHandler(jobManager);
             case EXECUTE:
-                return new ExecuteJobProcessor(jobManager);
+                return new ExecuteJobEventHandler(jobManager);
             case INTERRUPT_EXECUTION:
-                return new InterruptJobProcessor(jobManager);
+                return new InterruptEventHandler(jobManager);
             case EXECUTION_ERROR:
-                return new ExecutionErrorProcessor(jobManager);
-            case EXECUTION_COMPLETED:
-                return new ExecutionCompletedProcessor();
+                return new ExecutionErrorEventHandler(jobManager);
             case FINALIZE:
-                return new DestroyJobProcessor(jobManager);
+                return new DestroyEventHandler(jobManager);
             default:
                 return null;
         }

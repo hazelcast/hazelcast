@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.statemachine.runner;
 
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerResponse;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerState;
+import com.hazelcast.jet.impl.runtime.VertexRunnerEvent;
+import com.hazelcast.jet.impl.runtime.VertexRunnerResponse;
+import com.hazelcast.jet.impl.runtime.VertexRunnerState;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.StateMachineEventHandler;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import java.util.Map;
 
@@ -62,7 +62,7 @@ public class VertexRunnerStateMachine extends
                     build();
 
     public VertexRunnerStateMachine(String name,
-                                    StateMachineRequestProcessor<VertexRunnerEvent> processor,
+                                    StateMachineEventHandler<VertexRunnerEvent> processor,
                                     JobContext jobContext) {
         super(name, STATE_TRANSITION_MATRIX, processor, jobContext);
     }

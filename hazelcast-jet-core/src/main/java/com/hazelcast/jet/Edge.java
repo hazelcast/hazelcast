@@ -17,7 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.jet.strategy.RoutingStrategy;

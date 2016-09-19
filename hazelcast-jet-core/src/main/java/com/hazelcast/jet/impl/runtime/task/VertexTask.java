@@ -25,8 +25,8 @@ import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.ringbuffer.ShufflingReceiver;
 import com.hazelcast.jet.impl.ringbuffer.ShufflingSender;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.task.processors.factory.DefaultTaskProcessorFactory;
-import com.hazelcast.jet.impl.runtime.task.processors.factory.ShuffledTaskProcessorFactory;
+import com.hazelcast.jet.impl.runtime.task.processors.TaskProcessorFactory;
+import com.hazelcast.jet.impl.runtime.task.processors.ShuffledTaskProcessorFactory;
 import com.hazelcast.jet.impl.util.BooleanHolder;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.Producer;
@@ -431,7 +431,7 @@ public class VertexTask extends Task {
         if ((clusterSize > 1 && hasDistributedOutputEdge(vertex)) || (vertex.getSinks().size() > 0)) {
             return new ShuffledTaskProcessorFactory();
         }
-        return new DefaultTaskProcessorFactory();
+        return new TaskProcessorFactory();
     }
 
     private boolean hasDistributedOutputEdge(Vertex vertex) {

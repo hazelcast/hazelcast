@@ -16,17 +16,12 @@
 
 package com.hazelcast.jet.impl.runtime;
 
-/***
- * Interface which represents processor to be invoked on vertex runners' state-machine work;
- *
- * @param <Payload> - type of the processor's argument;
- */
-public interface VertexRunnerPayloadProcessor<Payload> {
-    /**
-     * Invoked on change of state of vertex runner's state-machine;
-     *
-     * @param payload - argument;
-     * @throws Exception if any exception
-     */
-    void process(Payload payload) throws Exception;
+import com.hazelcast.jet.impl.statemachine.StateMachineState;
+
+public enum VertexRunnerState implements StateMachineState {
+    NEW,
+    INTERRUPTING,
+    AWAITING,
+    EXECUTION,
+    FINALIZED
 }

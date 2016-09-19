@@ -66,13 +66,13 @@ public abstract class StateMachine
     private final ILogger logger;
     private final Map<State, Map<Input, State>> stateTransitionMatrix;
     private final JobContext jobContext;
-    private final StateMachineRequestProcessor<Input> processor;
+    private final StateMachineEventHandler<Input> processor;
     private final BlockingQueue<RequestPayload<Input, Output>> eventsQueue =
             new LinkedBlockingDeque<>();
 
     protected StateMachine(String name,
                            Map<State, Map<Input, State>> stateTransitionMatrix,
-                           StateMachineRequestProcessor<Input> processor,
+                           StateMachineEventHandler<Input> processor,
                            JobContext jobContext) {
         this.name = name;
         this.processor = processor;
@@ -160,7 +160,7 @@ public abstract class StateMachine
 
                     if (nextState != null) {
                         if (processor != null) {
-                            processor.processRequest(requestHolder.getEvent(), requestHolder.getPayload());
+                            processor.handleEvent(requestHolder.getEvent(), requestHolder.getPayload());
                         }
 
                         if (logger.isFineEnabled()) {

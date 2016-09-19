@@ -14,23 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.runner.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.events;
 
-import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.logging.ILogger;
 
-public class VertexRunnerInterruptProcessor implements VertexRunnerPayloadProcessor<Throwable> {
-    private final VertexRunner vertexRunner;
+import java.util.function.Consumer;
+
+public class ExecutionErrorEventHandler implements Consumer<Throwable> {
+
+    private final JobManager jobManager;
     private final ILogger logger;
 
-    public VertexRunnerInterruptProcessor(VertexRunner vertexRunner) {
-        this.vertexRunner = vertexRunner;
-        this.logger = vertexRunner.getJobContext().getNodeEngine().getLogger(getClass());
+    public ExecutionErrorEventHandler(JobManager jobManager) {
+        logger = jobManager.getJobContext().getNodeEngine().getLogger(getClass());
+        this.jobManager = jobManager;
     }
 
-    @Override
-    public void process(Throwable error) throws Exception {
-        this.vertexRunner.interrupt(error);
+    public void accept(Throwable error) {
+        if (error != null) {
+            logger.severe(error.getMessage(), error);
+        }
+
+        for (VertexRunner runner : jobManager.runners()) {
+            runner.interrupt(error);
+        }
     }
 }

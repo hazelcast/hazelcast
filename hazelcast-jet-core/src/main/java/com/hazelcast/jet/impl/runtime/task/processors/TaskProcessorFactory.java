@@ -14,43 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.runtime.task.processors.factory;
+package com.hazelcast.jet.impl.runtime.task.processors;
 
-import com.hazelcast.jet.runtime.TaskContext;
+import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
-import com.hazelcast.jet.impl.runtime.task.TaskProcessorFactory;
-import com.hazelcast.jet.impl.runtime.task.processors.ActorTaskProcessor;
-import com.hazelcast.jet.impl.runtime.task.processors.ConsumerTaskProcessor;
-import com.hazelcast.jet.impl.runtime.task.processors.ProducerTaskProcessor;
-import com.hazelcast.jet.impl.runtime.task.processors.SimpleTaskProcessor;
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.TaskContext;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class DefaultTaskProcessorFactory implements TaskProcessorFactory {
-    @Override
+public class TaskProcessorFactory {
     public TaskProcessor simpleTaskProcessor(Processor processor,
                                              TaskContext taskContext) {
         return new SimpleTaskProcessor(processor);
     }
 
-    @Override
     public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,
                                                TaskContext taskContext) {
         return new ConsumerTaskProcessor(consumers, processor, taskContext);
     }
 
-    @Override
     public TaskProcessor producerTaskProcessor(Producer[] producers,
                                                Processor processor,
                                                TaskContext taskContext) {
         return new ProducerTaskProcessor(producers, processor, taskContext);
     }
 
-    @Override
     public TaskProcessor actorTaskProcessor(Producer[] producers,
                                             Consumer[] consumers,
                                             Processor processor,

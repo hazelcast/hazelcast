@@ -21,8 +21,8 @@ import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.job.ExecutorContext;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerResponse;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerState;
+import com.hazelcast.jet.impl.runtime.VertexRunnerResponse;
+import com.hazelcast.jet.impl.runtime.VertexRunnerState;
 import com.hazelcast.jet.impl.statemachine.runner.VertexRunnerStateMachine;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerExecuteRequest;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerExecutionCompletedRequest;
@@ -202,7 +202,7 @@ public class VertexRunnerStateMachineTest extends HazelcastTestSupport {
         }
 
         public StateMachineContext invoke() {
-            StateMachineRequestProcessor requestProcessor = mock(StateMachineRequestProcessor.class);
+            StateMachineEventHandler requestProcessor = mock(StateMachineEventHandler.class);
             HazelcastInstance instance = mock(HazelcastInstance.class);
             when(instance.getName()).thenReturn(randomName());
 

@@ -23,7 +23,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;

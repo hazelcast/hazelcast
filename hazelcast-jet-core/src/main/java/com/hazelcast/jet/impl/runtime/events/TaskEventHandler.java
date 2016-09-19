@@ -14,7 +14,23 @@
  * limitations under the License.
  */
 
+package com.hazelcast.jet.impl.runtime.events;
+
+import com.hazelcast.jet.impl.runtime.task.VertexTask;
+import com.hazelcast.jet.impl.runtime.task.TaskEvent;
+
 /**
- * API for the JET runtime
+ * Interface for the task's event processing
  */
-package com.hazelcast.jet.impl.runtime.runner;
+public interface TaskEventHandler {
+    /**
+     * Invoked on task event
+     *
+     * @param vertexTask - corresponding task
+     * @param event         - event of the task
+     * @param error         - error of task execution (null if absent)
+     */
+    void handle(VertexTask vertexTask,
+                TaskEvent event,
+                Throwable error);
+}

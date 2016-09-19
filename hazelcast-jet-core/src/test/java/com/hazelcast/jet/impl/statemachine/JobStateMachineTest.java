@@ -630,7 +630,7 @@ public class JobStateMachineTest extends HazelcastTestSupport {
         }
 
         public StateMachineContext invoke() {
-            StateMachineRequestProcessor requestProcessor = mock(StateMachineRequestProcessor.class);
+            StateMachineEventHandler requestProcessor = mock(StateMachineEventHandler.class);
             HazelcastInstance instance = mock(HazelcastInstance.class);
             when(instance.getName()).thenReturn(randomName());
 

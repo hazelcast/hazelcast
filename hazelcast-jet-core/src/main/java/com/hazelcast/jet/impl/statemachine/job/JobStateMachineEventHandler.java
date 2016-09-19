@@ -19,15 +19,15 @@ package com.hazelcast.jet.impl.statemachine.job;
 import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.StateMachineEventHandler;
 import com.hazelcast.jet.runtime.JobListener;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JobStateMachineRequestProcessor implements StateMachineRequestProcessor<JobEvent> {
+public class JobStateMachineEventHandler implements StateMachineEventHandler<JobEvent> {
     private final JobContext jobContext;
 
-    public JobStateMachineRequestProcessor(JobContext jobContext) {
+    public JobStateMachineEventHandler(JobContext jobContext) {
         this.jobContext = jobContext;
     }
 
@@ -47,7 +47,7 @@ public class JobStateMachineRequestProcessor implements StateMachineRequestProce
     }
 
     @Override
-    public void processRequest(JobEvent event, Object payload) throws Exception {
+    public void handleEvent(JobEvent event, Object payload) {
         if (event == JobEvent.EXECUTION_START) {
             jobContext.getExecutorContext().getNetworkTasks().forEach(Task::init);
             jobContext.getExecutorContext().getProcessingTasks().forEach(Task::init);

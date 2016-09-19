@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.runtime.runner;
+package com.hazelcast.jet.impl.runtime.task.processors;
 
-import com.hazelcast.jet.impl.statemachine.StateMachineEvent;
+import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.Consumer;
+import com.hazelcast.jet.runtime.TaskContext;
 
-public enum VertexRunnerEvent implements StateMachineEvent {
-    START,
-    EXECUTE,
-    EXECUTION_COMPLETED,
-    INTERRUPT,
-    INTERRUPTED,
-    INVALIDATE,
-    FINALIZE
+public class ShuffledReceiverConsumerTaskProcessor extends ShuffledConsumerTaskProcessor {
+    public ShuffledReceiverConsumerTaskProcessor(Consumer[] consumers,
+                                                 Processor processor,
+                                                 TaskContext taskContext) {
+        super(consumers, processor, taskContext, true);
+    }
 }

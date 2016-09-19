@@ -25,18 +25,14 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.ringbuffer.CompositeRingbuffer;
 import com.hazelcast.jet.impl.ringbuffer.Ringbuffer;
-import com.hazelcast.jet.impl.runtime.events.EventProcessorFactory;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerResponse;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerState;
+import com.hazelcast.jet.impl.runtime.events.TaskEventHandlerFactory;
 import com.hazelcast.jet.impl.runtime.task.TaskContextImpl;
 import com.hazelcast.jet.impl.runtime.task.TaskEvent;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineEventHandler;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.statemachine.runner.VertexRunnerStateMachine;
-import com.hazelcast.jet.impl.statemachine.runner.processors.VertexRunnerPayloadFactory;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerFinalizedRequest;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.Producer;
@@ -54,12 +50,12 @@ import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static java.util.Arrays.asList;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEvent> {
+public class VertexRunner implements StateMachineEventHandler<VertexRunnerEvent> {
 
     private final Vertex vertex;
     private final Map<Integer, VertexTask> vertexTaskMap = new ConcurrentHashMap<>();
     private final VertexTask[] vertexTasks;
-    private final EventProcessorFactory eventProcessorFactory;
+    private final TaskEventHandlerFactory taskEventHandlerFactory;
     private final int id;
     private final JobContext jobContext;
     private final StateMachine<VertexRunnerEvent, VertexRunnerState, VertexRunnerResponse> stateMachine;
@@ -70,11 +66,41 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         this.id = id;
         this.vertex = vertex;
         this.vertexTasks = new VertexTask[vertex.getParallelism()];
-        this.eventProcessorFactory = new EventProcessorFactory(this);
+        this.taskEventHandlerFactory = new TaskEventHandlerFactory(this);
 
         buildTasks();
         buildSources();
         buildSinks();
+    }
+
+    private static Constructor<Processor> findConstructor(ClassLoader classLoader, String className, Object[] args)
+            throws ClassNotFoundException {
+        Class<Processor> clazz = (Class<Processor>) Class.forName(className, true, classLoader);
+        int i = 0;
+        Class[] argsClasses = new Class[args.length];
+        for (Object obj : args) {
+            if (obj != null) {
+                argsClasses[i++] = obj.getClass();
+            }
+        }
+        for (Constructor constructor : clazz.getConstructors()) {
+            if (constructor.getParameterTypes().length == argsClasses.length) {
+                boolean valid = true;
+                Class[] parameterTypes = constructor.getParameterTypes();
+                for (int idx = 0; idx < argsClasses.length; idx++) {
+                    Class argsClass = argsClasses[idx];
+                    if ((argsClass != null) && !parameterTypes[idx].isAssignableFrom(argsClass)) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) {
+                    return (Constructor<Processor>) constructor;
+                }
+            }
+        }
+        throw new IllegalStateException(
+                "No constructor with arguments" + Arrays.toString(argsClasses) + " className=" + className);
     }
 
     public void handleTaskEvent(VertexTask vertexTask, TaskEvent event) {
@@ -82,7 +108,7 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
     }
 
     public void handleTaskEvent(VertexTask vertexTask, TaskEvent event, Throwable error) {
-        eventProcessorFactory.getEventProcessor(event).process(vertexTask, event, error);
+        taskEventHandlerFactory.getEventProcessor(event).handle(vertexTask, event, error);
     }
 
     public VertexTask[] getVertexTasks() {
@@ -104,11 +130,22 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void processRequest(VertexRunnerEvent event, Object payload) throws Exception {
-        VertexRunnerPayloadProcessor processor = VertexRunnerPayloadFactory.getProcessor(event, this);
-        if (processor != null) {
-            processor.process(payload);
+    public void handleEvent(VertexRunnerEvent event, Object payload) {
+        switch (event) {
+            case START:
+                start();
+                return;
+            case EXECUTION_COMPLETED:
+                complete();
+                jobContext.getJobManager().handleRunnerCompleted();
+                return;
+            case INTERRUPT:
+                interrupt((Throwable) payload);
+                return;
+            case INTERRUPTED:
+                jobContext.getJobManager().handleRunnerInterrupted((Throwable) payload);
+                return;
+            default:
         }
     }
 
@@ -199,36 +236,6 @@ public class VertexRunner implements StateMachineRequestProcessor<VertexRunnerEv
         } catch (Exception e) {
             throw unchecked(e);
         }
-    }
-
-    private static Constructor<Processor> findConstructor(ClassLoader classLoader, String className, Object[] args)
-            throws ClassNotFoundException {
-        Class<Processor> clazz = (Class<Processor>) Class.forName(className, true, classLoader);
-        int i = 0;
-        Class[] argsClasses = new Class[args.length];
-        for (Object obj : args) {
-            if (obj != null) {
-                argsClasses[i++] = obj.getClass();
-            }
-        }
-        for (Constructor constructor : clazz.getConstructors()) {
-            if (constructor.getParameterTypes().length == argsClasses.length) {
-                boolean valid = true;
-                Class[] parameterTypes = constructor.getParameterTypes();
-                for (int idx = 0; idx < argsClasses.length; idx++) {
-                    Class argsClass = argsClasses[idx];
-                    if ((argsClass != null) && !parameterTypes[idx].isAssignableFrom(argsClass)) {
-                        valid = false;
-                        break;
-                    }
-                }
-                if (valid) {
-                    return (Constructor<Processor>) constructor;
-                }
-            }
-        }
-        throw new IllegalStateException(
-                "No constructor with arguments" + Arrays.toString(argsClasses) + " className=" + className);
     }
 
     private CompositeRingbuffer createRingbuffers(VertexRunner target, Edge edge) {

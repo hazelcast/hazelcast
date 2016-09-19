@@ -17,13 +17,9 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.TestProcessors;
-import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.sink.FileSink;
 import com.hazelcast.jet.source.FileSource;
-import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;

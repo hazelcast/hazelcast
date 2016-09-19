@@ -14,28 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.events;
 
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
-public class DestroyJobProcessor implements VertexRunnerPayloadProcessor<Void> {
+public class DestroyEventHandler implements Consumer<Void> {
     private final JobManager jobManager;
     private final List<Task> networkTasks;
 
-    public DestroyJobProcessor(JobManager jobManager) {
+    public DestroyEventHandler(JobManager jobManager) {
         this.jobManager = jobManager;
         networkTasks = jobManager.getJobContext().getExecutorContext().getNetworkTasks();
     }
 
-    @Override
-    public void process(Void payload) throws Exception {
+    public void accept(Void payload) {
         Throwable error = null;
 
         try {

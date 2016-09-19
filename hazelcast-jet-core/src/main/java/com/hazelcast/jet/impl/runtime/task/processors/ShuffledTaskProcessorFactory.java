@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.runtime.task.processors.factory;
+package com.hazelcast.jet.impl.runtime.task.processors;
 
 
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
-import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledActorTaskProcessor;
-import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledConsumerTaskProcessor;
-import com.hazelcast.jet.impl.runtime.task.processors.shuffling.ShuffledReceiverConsumerTaskProcessor;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.runtime.TaskContext;
 
-public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
+public class ShuffledTaskProcessorFactory extends TaskProcessorFactory {
     @Override
     public TaskProcessor consumerTaskProcessor(Consumer[] consumers,
                                                Processor processor,

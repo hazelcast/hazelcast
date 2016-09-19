@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.events;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.VertexRunnerResponse;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerInterruptRequest;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
-public class InterruptJobProcessor implements VertexRunnerPayloadProcessor<Void> {
+import static com.hazelcast.jet.impl.util.JetUtil.uncheckedGet;
+
+public class InterruptEventHandler implements Consumer<Void> {
     private final int secondToAwait;
     private final JobManager jobManager;
 
-    public InterruptJobProcessor(JobManager jobManager) {
+    public InterruptEventHandler(JobManager jobManager) {
         this.jobManager = jobManager;
         secondToAwait = jobManager.getJobContext().getJobConfig().getSecondsToAwait();
     }
 
     @Override
-    public void process(Void payload) throws Exception {
+    public void accept(Void payload) {
         JobManagerState currentState = jobManager.getStateMachine().currentState();
         if (currentState != JobManagerState.EXECUTING) {
             return;
@@ -42,7 +46,8 @@ public class InterruptJobProcessor implements VertexRunnerPayloadProcessor<Void>
         jobManager.registerInterruption();
 
         for (VertexRunner runner : jobManager.runners()) {
-            runner.handleRequest(new VertexRunnerInterruptRequest()).get(secondToAwait, TimeUnit.SECONDS);
+            ICompletableFuture<VertexRunnerResponse> future = runner.handleRequest(new VertexRunnerInterruptRequest());
+            uncheckedGet(future, secondToAwait, TimeUnit.SECONDS);
         }
     }
 }

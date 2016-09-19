@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.statemachine.job;
 import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.StateMachineEventHandler;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import java.util.Map;
 
@@ -142,7 +142,7 @@ public class JobStateMachine
                     ).build();
 
     public JobStateMachine(String name,
-                           StateMachineRequestProcessor<JobEvent> processor,
+                           StateMachineEventHandler<JobEvent> processor,
                            JobContext jobContext) {
         super(name, STATE_TRANSITION_MATRIX, processor, jobContext);
     }

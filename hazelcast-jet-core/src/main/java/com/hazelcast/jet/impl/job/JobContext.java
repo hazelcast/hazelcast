@@ -28,7 +28,7 @@ import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.task.nio.SocketReader;
 import com.hazelcast.jet.impl.runtime.task.nio.SocketWriter;
 import com.hazelcast.jet.impl.statemachine.job.JobStateMachine;
-import com.hazelcast.jet.impl.statemachine.job.JobStateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.job.JobStateMachineEventHandler;
 import com.hazelcast.jet.runtime.JobListener;
 import com.hazelcast.jet.runtime.VertexRunnerListener;
 import com.hazelcast.nio.Address;
@@ -80,7 +80,7 @@ public class JobContext {
         this.executorContext = new ExecutorContext(this.name, this.jobConfig, nodeEngine,
                 jobService.getNetworkExecutor(), jobService.getProcessingExecutor());
         this.deploymentStorage = new DiskDeploymentStorage(this, name);
-        this.jobStateMachine = new JobStateMachine(name, new JobStateMachineRequestProcessor(this), this);
+        this.jobStateMachine = new JobStateMachine(name, new JobStateMachineEventHandler(this), this);
         this.hzToAddressMapping = new HashMap<>();
         this.accumulators = new CopyOnWriteArrayList<>();
         this.jobManager = createApplicationMaster(nodeEngine);

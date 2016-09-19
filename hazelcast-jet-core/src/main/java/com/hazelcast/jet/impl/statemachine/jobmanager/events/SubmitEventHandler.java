@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.events;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
@@ -23,7 +24,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.VertexRunnerResponse;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerStartRequest;
 import com.hazelcast.logging.ILogger;
 
@@ -33,10 +34,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
+import static com.hazelcast.jet.impl.util.JetUtil.uncheckedGet;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcessor<DAG> {
+public class SubmitEventHandler implements Consumer<DAG> {
 
     private final JobManager jobManager;
     private final JobContext jobContext;
@@ -44,14 +47,14 @@ public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcess
     private final AtomicInteger idGenerator = new AtomicInteger();
 
 
-    public ExecutionPlanBuilderProcessor(JobManager jobManager) {
+    public SubmitEventHandler(JobManager jobManager) {
         this.jobManager = jobManager;
         this.jobContext = jobManager.getJobContext();
         this.logger = jobContext.getNodeEngine().getLogger(getClass());
     }
 
     @Override
-    public void process(DAG dag) throws Exception {
+    public void accept(DAG dag) {
         checkNotNull(dag);
         logger.fine("Processing DAG " + dag.getName());
         //Process dag and vertex runners's chain building
@@ -76,7 +79,8 @@ public class ExecutionPlanBuilderProcessor implements VertexRunnerPayloadProcess
         logger.fine("Deployed network engine for DAG " + dag.getName());
         jobManager.setDag(dag);
         for (VertexRunner runner : jobManager.runners()) {
-            runner.handleRequest(new VertexRunnerStartRequest()).get(secondsToAwait, TimeUnit.SECONDS);
+            ICompletableFuture<VertexRunnerResponse> future = runner.handleRequest(new VertexRunnerStartRequest());
+            uncheckedGet(future, secondsToAwait, TimeUnit.SECONDS);
         }
     }
 

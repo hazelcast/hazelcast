@@ -22,11 +22,11 @@ import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.runtime.task.TaskEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TaskEventExecutionErrorProcessor extends AbstractEventProcessor {
-    protected TaskEventExecutionErrorProcessor(AtomicInteger completedTasks,
-                                               AtomicInteger interruptedTasks,
-                                               AtomicInteger readyForFinalizationTasksCounter,
-                                               VertexRunner vertexRunner) {
+public class ExecutionErrorEventHandler extends AbstractTaskEventHandler {
+    protected ExecutionErrorEventHandler(AtomicInteger completedTasks,
+                                         AtomicInteger interruptedTasks,
+                                         AtomicInteger readyForFinalizationTasksCounter,
+                                         VertexRunner vertexRunner) {
         super(
                 completedTasks,
                 interruptedTasks,
@@ -35,9 +35,10 @@ public class TaskEventExecutionErrorProcessor extends AbstractEventProcessor {
         );
     }
 
-    public void process(VertexTask vertexTask,
-                        TaskEvent event,
-                        Throwable error) {
+    @Override
+    public void handle(VertexTask vertexTask,
+                       TaskEvent event,
+                       Throwable error) {
         try {
             this.jobManager.notifyExecutionError(error);
         } finally {

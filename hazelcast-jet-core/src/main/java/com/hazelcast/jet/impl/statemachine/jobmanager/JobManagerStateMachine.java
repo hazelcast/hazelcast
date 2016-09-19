@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerState;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.StateMachineEventHandler;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 
 import java.util.Map;
@@ -91,7 +91,7 @@ public class JobManagerStateMachine extends StateMachine<JobManagerEvent, JobMan
                     ).build();
 
     public JobManagerStateMachine(String name,
-                                  StateMachineRequestProcessor<JobManagerEvent> processor,
+                                  StateMachineEventHandler<JobManagerEvent> processor,
                                   JobContext jobContext) {
         super(name, STATE_TRANSITION_MATRIX, processor, jobContext);
     }

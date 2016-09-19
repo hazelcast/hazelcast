@@ -37,6 +37,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -248,6 +250,14 @@ public final class JetUtil {
         try {
             return future.get();
         } catch (InterruptedException | ExecutionException e) {
+            throw unchecked(e);
+        }
+    }
+
+    public static <T> T uncheckedGet(Future<T> future, long timeout, TimeUnit unit) {
+        try {
+            return future.get(timeout, unit);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw unchecked(e);
         }
     }

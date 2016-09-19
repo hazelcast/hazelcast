@@ -21,7 +21,7 @@ import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.ListenerCallable;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.runner.VertexRunnerEvent;
+import com.hazelcast.jet.impl.runtime.VertexRunnerEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.jet.runtime.VertexRunnerListener;
 import com.hazelcast.logging.ILogger;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public abstract class AbstractEventProcessor implements EventProcessor {
+public abstract class AbstractTaskEventHandler implements TaskEventHandler {
     protected final ILogger logger;
     protected final VertexRunner vertexRunner;
     protected final AtomicInteger completedTasks;
@@ -40,7 +40,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected final JobManager jobManager;
 
 
-    protected AbstractEventProcessor(
+    protected AbstractTaskEventHandler(
             AtomicInteger completedTasks,
             AtomicInteger interruptedTasks,
             AtomicInteger readyForFinalizationTasksCounter,

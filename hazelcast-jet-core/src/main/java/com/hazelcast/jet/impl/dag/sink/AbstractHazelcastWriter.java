@@ -20,7 +20,7 @@ package com.hazelcast.jet.impl.dag.sink;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.runtime.DataWriter;
 import com.hazelcast.jet.runtime.InputChunk;

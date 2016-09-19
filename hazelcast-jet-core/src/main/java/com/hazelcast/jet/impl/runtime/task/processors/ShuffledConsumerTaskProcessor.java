@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.runtime.task.processors.shuffling;
+package com.hazelcast.jet.impl.runtime.task.processors;
 
 
 import com.hazelcast.core.Member;
@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.ringbuffer.ShufflingSender;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.runtime.task.processors.ConsumerTaskProcessor;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.DataWriter;
@@ -99,7 +98,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     private static Consumer[] filterConsumers(Consumer[] consumers, boolean isShuffled) {
         final List<Consumer> filtered = Arrays.stream(consumers)
-                                              .filter(c -> c.isShuffled() == isShuffled).collect(toList());
+                .filter(c -> c.isShuffled() == isShuffled).collect(toList());
         return filtered.toArray(new Consumer[filtered.size()]);
     }
 
@@ -331,7 +330,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             if (objectCalculationStrategy != null
                     && objectCalculationStrategy.equals(calculationStrategy)
                     && (objectPartitionId >= 0)
-            ) {
+                    ) {
                 writers = cache.get(objectPartitionId);
             } else {
                 objectPartitionId = calculatePartitionId(object, calculationStrategy);

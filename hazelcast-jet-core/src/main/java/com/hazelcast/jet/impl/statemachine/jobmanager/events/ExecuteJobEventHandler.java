@@ -14,39 +14,43 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.jobmanager.processors;
+package com.hazelcast.jet.impl.statemachine.jobmanager.events;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.ExecutorContext;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
-import com.hazelcast.jet.impl.runtime.VertexRunnerPayloadProcessor;
+import com.hazelcast.jet.impl.runtime.VertexRunnerResponse;
 import com.hazelcast.jet.impl.statemachine.runner.requests.VertexRunnerExecuteRequest;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
-public class ExecuteJobProcessor implements VertexRunnerPayloadProcessor<Void> {
+import static com.hazelcast.jet.impl.util.JetUtil.uncheckedGet;
+
+public class ExecuteJobEventHandler implements Consumer<Void> {
     private final long secondsToAwait;
     private final ExecutorContext executorContext;
     private final JobManager jobManager;
     private final JobContext jobContext;
     private final ILogger logger;
 
-    public ExecuteJobProcessor(JobManager jobManager) {
+    public ExecuteJobEventHandler(JobManager jobManager) {
         this.jobManager = jobManager;
         jobContext = jobManager.getJobContext();
         secondsToAwait = jobContext.getJobConfig().getSecondsToAwait();
         executorContext = jobContext.getExecutorContext();
-        logger = jobContext.getNodeEngine().getLogger(ExecuteJobProcessor.class);
+        logger = jobContext.getNodeEngine().getLogger(ExecuteJobEventHandler.class);
     }
 
     @Override
-    public void process(Void payload) throws Exception {
+    public void accept(Void payload) {
         jobManager.registerExecution();
 
         startRunners();
@@ -67,22 +71,18 @@ public class ExecuteJobProcessor implements VertexRunnerPayloadProcessor<Void> {
                     processingTask.interrupt(e);
                 }
             }
-
-            if (e instanceof Exception) {
-                throw (Exception) e;
-            } else {
-                throw (Error) e;
-            }
         }
     }
 
-    private void startRunners() throws Exception {
+    private void startRunners() {
         Iterator<Vertex> iterator = jobManager.getDag().getRevertedTopologicalVertexIterator();
 
         while (iterator.hasNext()) {
             Vertex vertex = iterator.next();
             VertexRunner vertexRunner = jobManager.getRunnerByVertex(vertex);
-            vertexRunner.handleRequest(new VertexRunnerExecuteRequest()).get(secondsToAwait, TimeUnit.SECONDS);
+            ICompletableFuture<VertexRunnerResponse> future = vertexRunner
+                    .handleRequest(new VertexRunnerExecuteRequest());
+            uncheckedGet(future, secondsToAwait, TimeUnit.SECONDS);
         }
     }
 }

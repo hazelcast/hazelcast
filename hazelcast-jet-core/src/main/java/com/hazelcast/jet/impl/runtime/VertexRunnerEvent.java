@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.runtime.runner;
+package com.hazelcast.jet.impl.runtime;
 
-import com.hazelcast.jet.impl.statemachine.StateMachineResponse;
+import com.hazelcast.jet.impl.statemachine.StateMachineEvent;
 
-public interface VertexRunnerResponse extends StateMachineResponse {
-    VertexRunnerResponse SUCCESS = (VertexRunnerResponse) () -> true;
-    VertexRunnerResponse FAILURE = (VertexRunnerResponse) () -> false;
-
-    boolean isSuccess();
+public enum VertexRunnerEvent implements StateMachineEvent {
+    START,
+    EXECUTE,
+    EXECUTION_COMPLETED,
+    INTERRUPT,
+    INTERRUPTED,
+    INVALIDATE,
+    FINALIZE
 }

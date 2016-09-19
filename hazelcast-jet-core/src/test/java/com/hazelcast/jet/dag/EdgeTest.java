@@ -19,7 +19,7 @@ package com.hazelcast.jet.dag;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.strategy.RoutingStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;

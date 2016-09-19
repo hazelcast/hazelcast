@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.runtime.events;
-
-import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.runtime.task.TaskEvent;
+package com.hazelcast.jet.impl.statemachine;
 
 /**
- * Interface for the task's event processing
+ * Represents abstract stateMachine processor to execute transitions;
+ *
+ * @param <SI> - type of the input stateMachine event;
  */
-public interface EventProcessor {
+public interface StateMachineEventHandler<SI extends StateMachineEvent> {
     /**
-     * Invoked on task event
+     * Will be executed on next transition request;
      *
-     * @param vertexTask - corresponding task
-     * @param event         - event of the task
-     * @param error         - error of task execution (null if absent)
+     * @param event   - corresponding input event;
+     * @param payload - arguments payload;
+     * @throws Exception if any exception
      */
-    void process(VertexTask vertexTask,
-                 TaskEvent event,
-                 Throwable error);
+    void handleEvent(SI event, Object payload);
 }

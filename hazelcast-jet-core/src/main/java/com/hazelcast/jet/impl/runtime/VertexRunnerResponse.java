@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.runtime.task.processors.shuffling;
+package com.hazelcast.jet.impl.runtime;
 
-import com.hazelcast.jet.runtime.Consumer;
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.impl.statemachine.StateMachineResponse;
 
-public class ShuffledReceiverConsumerTaskProcessor extends ShuffledConsumerTaskProcessor {
-    public ShuffledReceiverConsumerTaskProcessor(Consumer[] consumers,
-                                                 Processor processor,
-                                                 TaskContext taskContext) {
-        super(consumers, processor, taskContext, true);
-    }
+public interface VertexRunnerResponse extends StateMachineResponse {
+    VertexRunnerResponse SUCCESS = (VertexRunnerResponse) () -> true;
+    VertexRunnerResponse FAILURE = (VertexRunnerResponse) () -> false;
+
+    boolean isSuccess();
 }

@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.runtime.task.processors.shuffling;
+package com.hazelcast.jet.impl.runtime.task.processors;
 
-import com.hazelcast.jet.runtime.Producer;
-import com.hazelcast.jet.impl.ringbuffer.ShufflingReceiver;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.ringbuffer.ShufflingReceiver;
 import com.hazelcast.jet.impl.runtime.JobManager;
 import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.runtime.task.processors.ActorTaskProcessor;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.nio.Address;
 
