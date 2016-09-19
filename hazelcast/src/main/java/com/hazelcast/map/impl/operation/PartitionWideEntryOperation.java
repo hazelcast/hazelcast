@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
@@ -41,8 +40,7 @@ import java.util.Map;
 /**
  * GOTCHA : This operation does NOT load missing keys from map-store for now.
  */
-public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation implements BackupAwareOperation,
-        IdentifiedDataSerializable {
+public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation implements BackupAwareOperation {
 
     public PartitionWideEntryOperation(String name, EntryProcessor entryProcessor) {
         super(name, entryProcessor);
@@ -154,11 +152,6 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(entryProcessor);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

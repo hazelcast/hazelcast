@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -76,5 +77,10 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
         super.readInternal(in);
         predicate = in.readObject();
         iterationType = IterationType.getById(in.readByte());
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.QUERY;
     }
 }

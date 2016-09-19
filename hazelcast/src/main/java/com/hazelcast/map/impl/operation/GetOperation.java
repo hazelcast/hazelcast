@@ -21,13 +21,11 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public final class GetOperation extends ReadonlyKeyBasedMapOperation
-        implements IdentifiedDataSerializable, BlockingOperation {
+public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
     private Data result;
 
@@ -71,11 +69,6 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation
     @Override
     public Data getResponse() {
         return result;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

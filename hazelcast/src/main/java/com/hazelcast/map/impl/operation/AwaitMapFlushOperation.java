@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
@@ -108,5 +109,10 @@ public class AwaitMapFlushOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         sequence = in.readLong();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.AWAIT_MAP_FLUSH;
     }
 }

@@ -17,12 +17,10 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ClearBackupOperation extends MapOperation implements BackupOperation, MutatingOperation, IdentifiedDataSerializable
-{
+public class ClearBackupOperation extends MapOperation implements BackupOperation, MutatingOperation {
 
     public ClearBackupOperation() {
         this(null);
@@ -42,11 +40,6 @@ public class ClearBackupOperation extends MapOperation implements BackupOperatio
         if (recordStore != null) {
             recordStore.clear();
         }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

@@ -26,12 +26,11 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MergeOperation extends BasePutOperation implements IdentifiedDataSerializable {
+public class MergeOperation extends BasePutOperation {
 
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
@@ -115,11 +114,6 @@ public class MergeOperation extends BasePutOperation implements IdentifiedDataSe
         super.readInternal(in);
         mergingEntry = in.readObject();
         mergePolicy = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

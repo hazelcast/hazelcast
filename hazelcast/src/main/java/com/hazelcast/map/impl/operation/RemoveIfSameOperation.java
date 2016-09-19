@@ -20,11 +20,10 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class RemoveIfSameOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
+public class RemoveIfSameOperation extends BaseRemoveOperation {
 
     private Data testValue;
     private boolean successful;
@@ -75,11 +74,6 @@ public class RemoveIfSameOperation extends BaseRemoveOperation implements Identi
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         testValue = in.readData();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

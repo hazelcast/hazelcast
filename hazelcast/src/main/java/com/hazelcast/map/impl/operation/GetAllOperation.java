@@ -21,7 +21,6 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -32,8 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation,
-        IdentifiedDataSerializable {
+public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
     private List<Data> keys = new ArrayList<Data>();
     private MapEntries entries;
@@ -87,11 +85,6 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
                 keys.add(data);
             }
         }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

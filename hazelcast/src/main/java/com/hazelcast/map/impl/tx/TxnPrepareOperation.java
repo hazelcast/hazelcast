@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -112,5 +113,10 @@ public class TxnPrepareOperation extends MutatingKeyBasedMapOperation implements
         super.toString(sb);
 
         sb.append(", ownerUuid=").append(ownerUuid);
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_PREPARE;
     }
 }

@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
@@ -28,8 +27,7 @@ import java.io.IOException;
 /**
  * Notifies RecordStores about completion of loading
  **/
-public class LoadStatusOperation extends MapOperation implements PartitionAwareOperation,
-        MutatingOperation, IdentifiedDataSerializable {
+public class LoadStatusOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
     private Throwable exception;
 
@@ -56,11 +54,6 @@ public class LoadStatusOperation extends MapOperation implements PartitionAwareO
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         exception = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

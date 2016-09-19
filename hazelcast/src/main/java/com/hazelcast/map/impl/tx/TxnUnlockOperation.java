@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -131,5 +132,10 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
         super.readInternal(in);
         version = in.readLong();
         ownerUuid = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_UNLOCK;
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -26,8 +25,7 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
-public class ClearOperation extends MapOperation implements BackupAwareOperation,
-        PartitionAwareOperation, MutatingOperation, IdentifiedDataSerializable {
+public class ClearOperation extends MapOperation implements BackupAwareOperation, PartitionAwareOperation, MutatingOperation {
 
     private boolean shouldBackup;
     private int numberOfClearedEntries;
@@ -90,11 +88,6 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
         ClearBackupOperation clearBackupOperation = new ClearBackupOperation(name);
         clearBackupOperation.setServiceName(SERVICE_NAME);
         return clearBackupOperation;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

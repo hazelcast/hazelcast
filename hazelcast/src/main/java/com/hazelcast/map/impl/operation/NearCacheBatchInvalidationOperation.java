@@ -23,7 +23,6 @@ import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
@@ -32,7 +31,7 @@ import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class NearCacheBatchInvalidationOperation extends MapOperation implements MutatingOperation, IdentifiedDataSerializable {
+public class NearCacheBatchInvalidationOperation extends MapOperation implements MutatingOperation {
 
     private List<Data> keys;
 
@@ -80,11 +79,6 @@ public class NearCacheBatchInvalidationOperation extends MapOperation implements
             keys.add(key);
         }
         this.keys = keys;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

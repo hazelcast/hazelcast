@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -59,5 +60,10 @@ public class TxnUnlockBackupOperation extends MutatingKeyBasedMapOperation imple
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ownerUuid = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_UNLOCK_BACKUP;
     }
 }

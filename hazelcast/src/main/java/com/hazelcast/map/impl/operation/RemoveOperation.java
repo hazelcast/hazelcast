@@ -18,9 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
+public class RemoveOperation extends BaseRemoveOperation {
 
     protected boolean successful;
 
@@ -47,11 +46,6 @@ public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDa
     @Override
     public boolean shouldBackup() {
         return successful;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

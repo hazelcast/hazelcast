@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -58,5 +59,10 @@ public class MultipleEntryWithPredicateBackupOperation extends MultipleEntryBack
         super.readInternal(in);
 
         predicate = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.MULTIPLE_ENTRY_PREDICATE_BACKUP;
     }
 }

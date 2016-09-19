@@ -21,12 +21,11 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation, IdentifiedDataSerializable {
+public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
     private transient boolean containsKey;
 
@@ -41,11 +40,6 @@ public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implement
     @Override
     public void run() {
         containsKey = recordStore.containsKey(dataKey);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

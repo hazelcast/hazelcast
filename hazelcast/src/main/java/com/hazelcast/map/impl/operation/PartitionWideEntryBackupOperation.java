@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.BackupOperation;
@@ -31,8 +30,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation,
-        IdentifiedDataSerializable {
+public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 
     public PartitionWideEntryBackupOperation() {
     }
@@ -99,11 +97,6 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(backupProcessor);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

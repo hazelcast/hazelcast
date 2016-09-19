@@ -18,9 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class DeleteOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
+public class DeleteOperation extends BaseRemoveOperation {
     private boolean success;
 
     public DeleteOperation(String name, Data dataKey) {
@@ -55,11 +54,6 @@ public class DeleteOperation extends BaseRemoveOperation implements IdentifiedDa
     @Override
     public void onWaitExpire() {
         sendResponse(false);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

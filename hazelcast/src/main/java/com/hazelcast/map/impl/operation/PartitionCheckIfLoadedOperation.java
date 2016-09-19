@@ -20,14 +20,12 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class PartitionCheckIfLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation,
-        IdentifiedDataSerializable {
+public class PartitionCheckIfLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean isFinished;
     private boolean doLoad;
@@ -95,11 +93,6 @@ public class PartitionCheckIfLoadedOperation extends MapOperation implements Par
         super.readInternal(in);
         doLoad = in.readBoolean();
         waitForKeyLoad = in.readBoolean();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

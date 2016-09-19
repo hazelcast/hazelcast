@@ -18,12 +18,10 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
-public class MapIsEmptyOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation,
-        IdentifiedDataSerializable {
+public class MapIsEmptyOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean empty;
 
@@ -46,11 +44,6 @@ public class MapIsEmptyOperation extends MapOperation implements PartitionAwareO
     @Override
     public Object getResponse() {
         return empty;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.EntryViews;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
@@ -65,5 +66,10 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
     @Override
     public Object getResponse() {
         return result;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.GET_ENTRY_VIEW;
     }
 }

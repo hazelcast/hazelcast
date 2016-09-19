@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 
 public class PutTransientOperation extends BasePutOperation {
@@ -36,5 +37,10 @@ public class PutTransientOperation extends BasePutOperation {
     @Override
     public void onWaitExpire() {
         sendResponse(null);
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_TRANSIENT;
     }
 }

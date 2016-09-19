@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -25,13 +26,14 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.List;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
-public abstract class MapOperation extends AbstractNamedOperation {
+public abstract class MapOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
 
     protected transient MapService mapService;
     protected transient MapContainer mapContainer;
@@ -138,4 +140,10 @@ public abstract class MapOperation extends AbstractNamedOperation {
             return partitionContainer.getExistingRecordStore(name);
         }
     }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
 }

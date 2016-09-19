@@ -23,12 +23,11 @@ import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class NearCacheSingleInvalidationOperation extends MapOperation implements MutatingOperation, IdentifiedDataSerializable {
+public class NearCacheSingleInvalidationOperation extends MapOperation implements MutatingOperation {
 
     private Data key;
 
@@ -67,11 +66,6 @@ public class NearCacheSingleInvalidationOperation extends MapOperation implement
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeData(key);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

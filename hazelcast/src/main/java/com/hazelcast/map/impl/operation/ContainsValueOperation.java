@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -62,5 +63,10 @@ public class ContainsValueOperation extends MapOperation implements PartitionAwa
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         testValue = in.readData();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CONTAINS_VALUE;
     }
 }

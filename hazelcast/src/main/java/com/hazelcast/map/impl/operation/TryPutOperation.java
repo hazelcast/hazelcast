@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 
 public class TryPutOperation extends BasePutOperation {
@@ -46,5 +47,10 @@ public class TryPutOperation extends BasePutOperation {
     @Override
     public Object getResponse() {
         return true;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TRY_PUT;
     }
 }

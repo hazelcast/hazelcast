@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Notifier;
@@ -70,4 +71,8 @@ public class NotifyMapFlushOperation extends MapOperation implements PartitionAw
         sequence = in.readLong();
     }
 
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.NOTIFY_MAP_FLUSH;
+    }
 }

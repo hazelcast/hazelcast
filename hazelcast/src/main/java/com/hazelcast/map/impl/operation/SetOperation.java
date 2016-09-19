@@ -18,12 +18,11 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 
-public class SetOperation extends BasePutOperation implements IdentifiedDataSerializable {
+public class SetOperation extends BasePutOperation {
 
     private boolean newRecord;
 
@@ -49,11 +48,6 @@ public class SetOperation extends BasePutOperation implements IdentifiedDataSeri
     @Override
     public Object getResponse() {
         return newRecord;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override
