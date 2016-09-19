@@ -21,7 +21,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.SettableFuture;
-import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class AbstractHazelcastWriter implements DataWriter {
+public abstract class AbstractHazelcastWriter implements Consumer {
     protected final IOBuffer<Object> outputBuffer;
 
     protected final SettableFuture<Boolean> future = SettableFuture.create();
@@ -203,6 +203,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         return true;
     }
 
+    @Override
     public MemberDistributionStrategy getMemberDistributionStrategy() {
         return memberDistributionStrategy;
     }

@@ -22,7 +22,7 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.dag.sink.MapPartitionWriter;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Consumer;
 
 import java.util.List;
 
@@ -51,9 +51,9 @@ public class MapSink implements Sink {
     }
 
     @Override
-    public DataWriter[] getConsumers(JobContext jobContext, Vertex vertex) {
+    public Consumer[] getConsumers(JobContext jobContext, Vertex vertex) {
         List<Integer> localPartitions = JetUtil.getLocalPartitions(jobContext.getNodeEngine());
-        DataWriter[] writers = new DataWriter[localPartitions.size()];
+        Consumer[] writers = new Consumer[localPartitions.size()];
         for (int i = 0; i < localPartitions.size(); i++) {
             int partitionId = localPartitions.get(i);
             writers[i] = getPartitionWriter(jobContext, partitionId);
@@ -61,7 +61,7 @@ public class MapSink implements Sink {
         return writers;
     }
 
-    protected DataWriter getPartitionWriter(JobContext jobContext, int partitionId) {
+    protected Consumer getPartitionWriter(JobContext jobContext, int partitionId) {
         return new MapPartitionWriter(jobContext, partitionId, name);
     }
 

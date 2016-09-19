@@ -25,6 +25,26 @@ import com.hazelcast.jet.strategy.MemberDistributionStrategy;
  * which consumes
  */
 public interface Consumer {
+    /**
+     * @return true if write is partition-aware, else otherwise
+     * <p/>
+     * Examples of partition-aware writers:
+     * <pre>
+     *          - Map
+     *          - Set
+     *          - List
+     *      </pre>
+     */
+    default boolean isPartitioned() {
+        return true;
+    }
+
+    /**
+     * @return writer's partition id
+     */
+    default int getPartitionId() {
+        return -1;
+    }
 
     /**
      * Consumes a chunk of objects

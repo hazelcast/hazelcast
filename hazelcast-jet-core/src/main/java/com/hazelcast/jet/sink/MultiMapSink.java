@@ -19,7 +19,7 @@ package com.hazelcast.jet.sink;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.jet.impl.dag.sink.MultiMapPartitionWriter;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Consumer;
 
 /**
  * A sink which uses a Hazelcast {@code MultiMap} as output.
@@ -45,7 +45,7 @@ public class MultiMapSink extends MapSink {
     }
 
     @Override
-    protected DataWriter getPartitionWriter(JobContext jobContext, int partitionId) {
+    protected Consumer getPartitionWriter(JobContext jobContext, int partitionId) {
         return new MultiMapPartitionWriter(jobContext, partitionId, getName());
     }
 

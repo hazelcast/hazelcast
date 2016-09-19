@@ -21,7 +21,7 @@ import com.hazelcast.jet.Source;
 import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -74,8 +74,8 @@ public class VertexTest {
         final String sinkTapName = "sinkTapWithWriterStrategyName";
         Sink sink = new Sink() {
             @Override
-            public DataWriter[] getConsumers(JobContext jobContext, Vertex vertex) {
-                return new DataWriter[0];
+            public Consumer[] getConsumers(JobContext jobContext, Vertex vertex) {
+                return new Consumer[0];
             }
 
             @Override

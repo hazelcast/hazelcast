@@ -26,7 +26,6 @@ import com.hazelcast.jet.impl.runtime.VertexRunner;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.runtime.Consumer;
-import com.hazelcast.jet.runtime.DataWriter;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -53,13 +52,13 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final int chunkSize;
     private final boolean isReceiver;
     private final boolean hasLocalConsumers;
-    private final DataWriter[] senders;
+    private final Consumer[] senders;
     private final Consumer[] shuffledConsumers;
     private final Address[] nonPartitionedAddresses;
     private final Consumer[] nonPartitionedWriters;
     private final Consumer[] markers;
     private final CalculationStrategy[] calculationStrategies;
-    private final Map<Address, DataWriter> addrToSender = new HashMap<>();
+    private final Map<Address, Consumer> addrToSender = new HashMap<>();
     private final Map<CalculationStrategy, Map<Integer, List<Consumer>>> partitionedConsumers;
     private final Map<Consumer, Integer> markersCache = new IdentityHashMap<>();
     private final NodeEngine nodeEngine;
@@ -75,7 +74,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         if (!isReceiver) {
             initSenders();
         }
-        this.senders = this.addrToSender.values().toArray(new DataWriter[this.addrToSender.size()]);
+        this.senders = this.addrToSender.values().toArray(new Consumer[this.addrToSender.size()]);
         this.hasLocalConsumers = this.consumers.length > 0;
         this.shuffledConsumers = filterConsumers(consumers, true);
         this.markers = new Consumer[this.senders.length + this.shuffledConsumers.length];
@@ -99,7 +98,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         for (Consumer consumer : shuffledConsumers) {
             consumer.open();
         }
-        for (DataWriter pairWriter : senders) {
+        for (Consumer pairWriter : senders) {
             pairWriter.open();
         }
         reset();
@@ -111,14 +110,14 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         for (Consumer consumer : shuffledConsumers) {
             consumer.close();
         }
-        for (DataWriter pairWriter : senders) {
-            pairWriter.close();
+        for (Consumer sender : senders) {
+            sender.close();
         }
     }
     @Override
     public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
         if (inputChunk.size() == 0) {
-            consumed = false;
+            consumedSome = false;
             return true;
         }
         boolean success = false;
@@ -144,7 +143,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         if (success) {
             resetState();
         }
-        this.consumed = consumed;
+        this.consumedSome = consumed;
         return success;
     }
 
@@ -166,7 +165,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     private void initMarkers() {
         int position = 0;
-        for (DataWriter sender : senders) {
+        for (Consumer sender : senders) {
             markersCache.put(sender, position++);
         }
         for (Consumer shuffledConsumer : shuffledConsumers) {
@@ -226,22 +225,15 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             Map<Address, Address> hzToJetAddressMapping, Consumer consumer) {
         CalculationStrategy calculationStrategy = new CalculationStrategy(
                 consumer.getHashingStrategy(), consumer.getPartitionStrategy(), taskContext.getJobContext());
-        int partitionId;
-        if (consumer instanceof DataWriter) {
-            DataWriter writer = (DataWriter) consumer;
-            partitionId = writer.getPartitionId();
-            if (!writer.isPartitioned()) {
-                if (partitionId < 0 || isPartitionLocal(nodeEngine, writer.getPartitionId())) {
-                    nonPartitionedConsumers.add(writer);
-                } else {
-                    nonPartitionedAddresses.add(
-                            hzToJetAddressMapping.get(
-                                    nodeEngine.getPartitionService().getPartitionOwner(writer.getPartitionId())));
-                }
-                return;
+        final int partitionId = consumer.getPartitionId();
+        if (!consumer.isPartitioned()) {
+            if (partitionId < 0 || isPartitionLocal(nodeEngine, partitionId)) {
+                nonPartitionedConsumers.add(consumer);
+            } else {
+                nonPartitionedAddresses.add(
+                        hzToJetAddressMapping.get(nodeEngine.getPartitionService().getPartitionOwner(partitionId)));
             }
-        } else {
-            partitionId = -1;
+            return;
         }
         strategies.add(calculationStrategy);
         Map<Integer, List<Consumer>> map = partitionedConsumers.get(calculationStrategy);
@@ -274,14 +266,14 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private boolean processChunkProgress() {
-        boolean flushed = true;
-        for (DataWriter sender : senders) {
-            flushed &= sender.isFlushed();
+        boolean allFlushed = true;
+        for (Consumer sender : senders) {
+            allFlushed &= sender.isFlushed();
         }
         for (Consumer consumer : shuffledConsumers) {
-            flushed &= consumer.isFlushed();
+            allFlushed &= consumer.isFlushed();
         }
-        return flushed;
+        return allFlushed;
     }
 
     private int processShufflers(InputChunk<Object> chunk, int lastConsumedSize) throws Exception {
@@ -310,7 +302,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             consumer.flush();
         }
         if (!isReceiver) {
-            for (DataWriter sender : senders) {
+            for (Consumer sender : senders) {
                 sender.flush();
             }
         }
@@ -338,7 +330,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
         Address address = nodeEngine.getPartitionService().getPartitionOwner(objectPartitionId);
         Address remoteJetAddress = taskContext.getJobContext().getHzToJetAddressMapping().get(address);
-        DataWriter sender = addrToSender.get(remoteJetAddress);
+        Consumer sender = addrToSender.get(remoteJetAddress);
         if (sender != null) {
             markConsumer(sender);
             if (!markedNonPartitionedRemotes) {

@@ -17,7 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.runtime.DataWriter;
+import com.hazelcast.jet.runtime.Consumer;
 
 import java.io.Serializable;
 
@@ -30,7 +30,7 @@ public interface Sink extends Serializable {
      *
      * @return list of the data writers
      */
-    DataWriter[] getConsumers(JobContext jobContext, Vertex vertex);
+    Consumer[] getConsumers(JobContext jobContext, Vertex vertex);
 
     /**
      * Returns <tt>true</tt>if sink is partitioned.
