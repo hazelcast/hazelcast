@@ -34,12 +34,13 @@ public final class CountDownLatchDataSerializerHook implements DataSerializerHoo
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(CDL_DS_FACTORY, CDL_DS_FACTORY_ID);
 
-    public static final int AWAIT_OPERATION = 0;
-    public static final int COUNT_DOWN_LATCH_BACKUP_OPERATION = 1;
-    public static final int COUNT_DOWN_LATCH_REPLICATION_OPERATION = 2;
-    public static final int COUNT_DOWN_OPERATION = 3;
-    public static final int GET_COUNT_OPERATION = 4;
-    public static final int SET_COUNT_OPERATION = 5;
+    public static final int CONTAINER = 0;
+    public static final int AWAIT_OPERATION = 1;
+    public static final int COUNT_DOWN_LATCH_BACKUP_OPERATION = 2;
+    public static final int COUNT_DOWN_LATCH_REPLICATION_OPERATION = 3;
+    public static final int COUNT_DOWN_OPERATION = 4;
+    public static final int GET_COUNT_OPERATION = 5;
+    public static final int SET_COUNT_OPERATION = 6;
 
     @Override
     public int getFactoryId() {
@@ -52,6 +53,8 @@ public final class CountDownLatchDataSerializerHook implements DataSerializerHoo
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
+                    case CONTAINER:
+                        return new CountDownLatchContainer();
                     case AWAIT_OPERATION:
                         return new AwaitOperation();
                     case COUNT_DOWN_LATCH_BACKUP_OPERATION:
