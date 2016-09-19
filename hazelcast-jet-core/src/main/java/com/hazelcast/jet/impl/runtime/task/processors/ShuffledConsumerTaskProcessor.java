@@ -52,24 +52,21 @@ import static java.util.stream.Collectors.toList;
 public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final int chunkSize;
     private final boolean isReceiver;
-    private final NodeEngine nodeEngine;
-    private final DataWriter[] sendersArray;
     private final boolean hasLocalConsumers;
+    private final DataWriter[] senders;
     private final Consumer[] shuffledConsumers;
     private final Address[] nonPartitionedAddresses;
     private final Consumer[] nonPartitionedWriters;
-    private final CalculationStrategy[] calculationStrategies;
-    private final Map<Address, DataWriter> senders = new HashMap<Address, DataWriter>();
-    private final Map<CalculationStrategy, Map<Integer, List<Consumer>>> partitionedWriters;
     private final Consumer[] markers;
+    private final CalculationStrategy[] calculationStrategies;
+    private final Map<Address, DataWriter> addrToSender = new HashMap<>();
+    private final Map<CalculationStrategy, Map<Integer, List<Consumer>>> partitionedConsumers;
     private final Map<Consumer, Integer> markersCache = new IdentityHashMap<>();
+    private final NodeEngine nodeEngine;
+
     private int lastConsumedSize;
     private boolean chunkInProgress;
     private boolean localSuccess;
-
-    public ShuffledConsumerTaskProcessor(Consumer[] consumers, Processor processor, TaskContext taskContext) {
-        this(consumers, processor, taskContext, false);
-    }
 
     public ShuffledConsumerTaskProcessor(
             Consumer[] consumers, Processor processor, TaskContext taskContext, boolean isReceiver) {
@@ -78,12 +75,12 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         if (!isReceiver) {
             initSenders();
         }
-        this.sendersArray = this.senders.values().toArray(new DataWriter[this.senders.size()]);
+        this.senders = this.addrToSender.values().toArray(new DataWriter[this.addrToSender.size()]);
         this.hasLocalConsumers = this.consumers.length > 0;
         this.shuffledConsumers = filterConsumers(consumers, true);
-        this.markers = new Consumer[this.sendersArray.length + this.shuffledConsumers.length];
+        this.markers = new Consumer[this.senders.length + this.shuffledConsumers.length];
         initMarkers();
-        this.partitionedWriters = new HashMap<>();
+        this.partitionedConsumers = new HashMap<>();
         Set<CalculationStrategy> strategies = new HashSet<>();
         List<Consumer> nonPartitionedConsumers = new ArrayList<>(this.shuffledConsumers.length);
         Set<Address> nonPartitionedAddresses = new HashSet<>(this.shuffledConsumers.length);
@@ -96,6 +93,61 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         resetState();
     }
 
+    @Override
+    public void onOpen() {
+        super.onOpen();
+        for (Consumer consumer : shuffledConsumers) {
+            consumer.open();
+        }
+        for (DataWriter pairWriter : senders) {
+            pairWriter.open();
+        }
+        reset();
+    }
+
+    @Override
+    public void onClose() {
+        super.onClose();
+        for (Consumer consumer : shuffledConsumers) {
+            consumer.close();
+        }
+        for (DataWriter pairWriter : senders) {
+            pairWriter.close();
+        }
+    }
+    @Override
+    public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
+        if (inputChunk.size() == 0) {
+            consumed = false;
+            return true;
+        }
+        boolean success = false;
+        boolean consumed = processLocalConsumers(inputChunk);
+        boolean chunkPooled = lastConsumedSize >= inputChunk.size();
+        if (!chunkInProgress && !chunkPooled) {
+            lastConsumedSize = processShufflers(inputChunk, lastConsumedSize);
+            chunkPooled = lastConsumedSize >= inputChunk.size();
+            chunkInProgress = true;
+            consumed = true;
+        }
+        if (chunkInProgress) {
+            boolean flushed = processChunkProgress();
+            consumed = true;
+            if (flushed) {
+                chunkInProgress = false;
+            }
+        }
+        if (!chunkInProgress && chunkPooled && localSuccess) {
+            success = true;
+            consumed = true;
+        }
+        if (success) {
+            resetState();
+        }
+        this.consumed = consumed;
+        return success;
+    }
+
     private static Consumer[] filterConsumers(Consumer[] consumers, boolean isShuffled) {
         final List<Consumer> filtered = Arrays.stream(consumers)
                 .filter(c -> c.isShuffled() == isShuffled).collect(toList());
@@ -103,9 +155,18 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
 
+    private static List<Consumer> processPartition(Map<Integer, List<Consumer>> map, int partitionId) {
+        List<Consumer> partitionOwnerWriters = map.get(partitionId);
+        if (partitionOwnerWriters == null) {
+            partitionOwnerWriters = new ArrayList<>();
+            map.put(partitionId, partitionOwnerWriters);
+        }
+        return partitionOwnerWriters;
+    }
+
     private void initMarkers() {
         int position = 0;
-        for (DataWriter sender : sendersArray) {
+        for (DataWriter sender : senders) {
             markersCache.put(sender, position++);
         }
         for (Consumer shuffledConsumer : shuffledConsumers) {
@@ -120,7 +181,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         VertexTask vertexTask = vertexRunner.getVertexMap().get(taskNumber);
         for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
             ShufflingSender sender = new ShufflingSender(vertexTask, vertexRunner.getId(), address);
-            senders.put(address, sender);
+            addrToSender.put(address, sender);
             jobManager.registerShufflingSender(taskNumber, vertexRunner.getId(), address, sender);
         }
     }
@@ -183,10 +244,10 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             partitionId = -1;
         }
         strategies.add(calculationStrategy);
-        Map<Integer, List<Consumer>> map = partitionedWriters.get(calculationStrategy);
+        Map<Integer, List<Consumer>> map = partitionedConsumers.get(calculationStrategy);
         if (map == null) {
             map = new HashMap<>();
-            partitionedWriters.put(calculationStrategy, map);
+            partitionedConsumers.put(calculationStrategy, map);
         }
         if (partitionId >= 0) {
             processPartition(map, partitionId).add(consumer);
@@ -197,75 +258,10 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private List<Consumer> processPartition(Map<Integer, List<Consumer>> map, int partitionId) {
-        List<Consumer> partitionOwnerWriters = map.get(partitionId);
-        if (partitionOwnerWriters == null) {
-            partitionOwnerWriters = new ArrayList<>();
-            map.put(partitionId, partitionOwnerWriters);
-        }
-        return partitionOwnerWriters;
-    }
-
-    @Override
-    public void onOpen() {
-        super.onOpen();
-        for (Consumer consumer : shuffledConsumers) {
-            consumer.open();
-        }
-        for (DataWriter pairWriter : sendersArray) {
-            pairWriter.open();
-        }
-        reset();
-    }
-
-    @Override
-    public void onClose() {
-        super.onClose();
-        for (Consumer consumer : shuffledConsumers) {
-            consumer.close();
-        }
-        for (DataWriter pairWriter : sendersArray) {
-            pairWriter.close();
-        }
-    }
-
     private void resetState() {
         lastConsumedSize = 0;
         chunkInProgress = false;
         localSuccess = isReceiver || !hasLocalConsumers;
-    }
-
-    @Override
-    public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
-        if (inputChunk.size() == 0) {
-            consumed = false;
-            return true;
-        }
-        boolean success = false;
-        boolean consumed = processLocalConsumers(inputChunk);
-        boolean chunkPooled = lastConsumedSize >= inputChunk.size();
-        if (!chunkInProgress && !chunkPooled) {
-            lastConsumedSize = processShufflers(inputChunk, lastConsumedSize);
-            chunkPooled = lastConsumedSize >= inputChunk.size();
-            chunkInProgress = true;
-            consumed = true;
-        }
-        if (chunkInProgress) {
-            boolean flushed = processChunkProgress();
-            consumed = true;
-            if (flushed) {
-                chunkInProgress = false;
-            }
-        }
-        if (!chunkInProgress && chunkPooled && localSuccess) {
-            success = true;
-            consumed = true;
-        }
-        if (success) {
-            resetState();
-        }
-        this.consumed = consumed;
-        return success;
     }
 
     private boolean processLocalConsumers(InputChunk<Object> chunk) throws Exception {
@@ -279,7 +275,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     private boolean processChunkProgress() {
         boolean flushed = true;
-        for (DataWriter sender : sendersArray) {
+        for (DataWriter sender : senders) {
             flushed &= sender.isFlushed();
         }
         for (Consumer consumer : shuffledConsumers) {
@@ -314,7 +310,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             consumer.flush();
         }
         if (!isReceiver) {
-            for (DataWriter sender : sendersArray) {
+            for (DataWriter sender : senders) {
                 sender.flush();
             }
         }
@@ -324,7 +320,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             Object object, CalculationStrategy calculationStrategy, int objectPartitionId,
             CalculationStrategy objectCalculationStrategy, boolean markedNonPartitionedRemotes
     ) throws Exception {
-        Map<Integer, List<Consumer>> cache = partitionedWriters.get(calculationStrategy);
+        Map<Integer, List<Consumer>> cache = partitionedConsumers.get(calculationStrategy);
         List<Consumer> writers = null;
         if (!cache.isEmpty()) {
             if (objectCalculationStrategy != null
@@ -342,13 +338,13 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
         Address address = nodeEngine.getPartitionService().getPartitionOwner(objectPartitionId);
         Address remoteJetAddress = taskContext.getJobContext().getHzToJetAddressMapping().get(address);
-        DataWriter sender = senders.get(remoteJetAddress);
+        DataWriter sender = addrToSender.get(remoteJetAddress);
         if (sender != null) {
             markConsumer(sender);
             if (!markedNonPartitionedRemotes) {
                 for (Address remoteAddress : nonPartitionedAddresses) {
                     if (!remoteAddress.equals(address)) {
-                        markConsumer(senders.get(remoteAddress));
+                        markConsumer(addrToSender.get(remoteAddress));
                     }
                 }
             }
@@ -411,7 +407,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     private void sendToNonPartitionedRemotes(InputChunk<Object> chunk) throws Exception {
         for (Address remoteAddress : nonPartitionedAddresses) {
-            senders.get(remoteAddress).consume(chunk);
+            addrToSender.get(remoteAddress).consume(chunk);
         }
     }
 
@@ -423,7 +419,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     private void markNonPartitionedRemotes() throws Exception {
         for (Address remoteAddress : nonPartitionedAddresses) {
-            markConsumer(senders.get(remoteAddress));
+            markConsumer(addrToSender.get(remoteAddress));
         }
     }
 }

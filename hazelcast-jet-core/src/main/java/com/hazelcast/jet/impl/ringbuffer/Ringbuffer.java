@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.jet.impl.util.JetUtil.EMPTY_OBJECTS;
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -69,7 +70,6 @@ public class Ringbuffer implements Consumer, Producer {
         this.ringbuffer = new RingbufferWithReferenceStrategy<>(ringbufferSize,
                 jobContext.getNodeEngine().getLogger(Ringbuffer.class)
         );
-
         if (registerListener) {
             jobContext.registerJobListener(jobContext1 -> clear());
         }
@@ -83,15 +83,11 @@ public class Ringbuffer implements Consumer, Producer {
         if (currentFlushedCount >= flushBuffer.size()) {
             return 0;
         }
-
         int acquired = ringbuffer.acquire(flushBuffer.size() - currentFlushedCount);
-
         if (acquired <= 0) {
             return 0;
         }
-
         ringbuffer.commit(flushBuffer, currentFlushedCount);
-
         return acquired;
     }
 
@@ -113,18 +109,17 @@ public class Ringbuffer implements Consumer, Producer {
 
     @Override
     public int flush() {
-        if (flushBuffer.size() > 0) {
-            try {
-                int flushed = flushChunk();
-                lastConsumedCount = flushed;
-                currentFlushedCount += flushed;
-                return flushed;
-            } catch (Exception e) {
-                throw unchecked(e);
-            }
+        if (flushBuffer.size() == 0) {
+            return 0;
         }
-
-        return 0;
+        try {
+            int flushed = flushChunk();
+            lastConsumedCount = flushed;
+            currentFlushedCount += flushed;
+            return flushed;
+        } catch (Exception e) {
+            throw unchecked(e);
+        }
     }
 
     @Override
@@ -132,29 +127,23 @@ public class Ringbuffer implements Consumer, Producer {
         if (flushBuffer.size() == 0) {
             return true;
         }
-
         if (currentFlushedCount < flushBuffer.size()) {
             flush();
         }
-
-        boolean flushed = currentFlushedCount >= flushBuffer.size();
-
-        if (flushed) {
+        if (currentFlushedCount >= flushBuffer.size()) {
             currentFlushedCount = 0;
             flushBuffer.reset();
+            return true;
         }
-
-        return flushed;
+        return false;
     }
 
     @Override
     public Object[] produce() {
         producedCount = ringbuffer.fetch(producerChunk);
-
-        if (producedCount <= 0) {
-            return null;
+        if (producedCount == 0) {
+            return EMPTY_OBJECTS;
         }
-
         return producerChunk;
     }
 
@@ -195,6 +184,7 @@ public class Ringbuffer implements Consumer, Producer {
         return lastConsumedCount;
     }
 
+    @Override
     public MemberDistributionStrategy getMemberDistributionStrategy() {
         return edge == null ? null : edge.getMemberDistributionStrategy();
     }

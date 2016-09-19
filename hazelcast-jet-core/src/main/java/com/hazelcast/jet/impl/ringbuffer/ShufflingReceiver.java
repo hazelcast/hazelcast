@@ -23,7 +23,6 @@ import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.runtime.ProducerCompletionHandler;
@@ -33,6 +32,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.hazelcast.jet.impl.util.JetUtil.EMPTY_OBJECTS;
 
 public class ShufflingReceiver implements Producer {
 
@@ -82,7 +83,6 @@ public class ShufflingReceiver implements Producer {
         closed = true;
         finalized = true;
         ringbuffer.close();
-
         for (ProducerCompletionHandler handler : handlers) {
             handler.onComplete(this);
         }
@@ -91,19 +91,19 @@ public class ShufflingReceiver implements Producer {
     @Override
     public Object[] produce() throws Exception {
         if (closed) {
-            return null;
+            return EMPTY_OBJECTS;
         }
         if (packets != null) {
             return processPackets();
         }
         packets = ringbuffer.produce();
         lastProducedPacketsCount = ringbuffer.lastProducedCount();
-        if (JetUtil.isEmpty(packets)) {
+        if (packets.length == 0) {
             if (finalized) {
                 close();
 
             }
-            return null;
+            return EMPTY_OBJECTS;
         }
         return processPackets();
     }
@@ -150,7 +150,7 @@ public class ShufflingReceiver implements Producer {
             }
         }
         reset();
-        return null;
+        return EMPTY_OBJECTS;
     }
 
     private void reset() {

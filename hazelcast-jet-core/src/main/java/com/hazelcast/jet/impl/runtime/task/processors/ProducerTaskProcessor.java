@@ -23,7 +23,6 @@ import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.Processor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -61,6 +60,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
         this.outputBuffer = new IOBuffer<>(new Object[chunkSize]);
     }
 
+    @Override
     public boolean onChunk(InputChunk inputChunk) throws Exception {
         return true;
     }
@@ -103,7 +103,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
             Object[] inChunk = producer.produce();
 
-            if ((JetUtil.isEmpty(inChunk)) || (producer.lastProducedCount() <= 0)) {
+            if ((inChunk.length == 0) || (producer.lastProducedCount() <= 0)) {
                 continue;
             }
 
@@ -136,17 +136,11 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     private boolean processProducer(Producer producer) throws Exception {
-        if (!processor.process(inputBuffer, outputBuffer, producer.getName())) {
-            pendingProducer = producer;
-        } else {
-            pendingProducer = null;
-        }
-
+        pendingProducer = processor.process(inputBuffer, outputBuffer, producer.getName()) ? null : producer;
         if (!processOutputStream()) {
             produced = true;
             return false;
         }
-
         outputBuffer.reset();
         return pendingProducer == null;
     }
@@ -182,7 +176,6 @@ public class ProducerTaskProcessor implements TaskProcessor {
     @Override
     public void reset() {
         resetProducers();
-
         finalized = false;
         finalizationStarted = false;
         producersWriteFinished = false;

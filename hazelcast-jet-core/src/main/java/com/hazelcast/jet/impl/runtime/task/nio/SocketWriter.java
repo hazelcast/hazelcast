@@ -190,40 +190,27 @@ public class SocketWriter
 
     private boolean processProducers(BooleanHolder payload) throws Exception {
         if (lastFrameId >= 0) {
+            return !processFrames(payload);
+        }
+        int startFrom = waitingForFinish ? 0 : nextProducerIdx;
+        boolean someProducerActive = false;
+        for (int i = startFrom; i < producers.size(); i++) {
+            Producer producer = producers.get(i);
+            currentFrames = producer.produce();
+            if (currentFrames.length == 0) {
+                continue;
+            }
+            someProducerActive = true;
+            payload.set(true);
+            lastFrameId = -1;
+            lastProducedCount = producer.lastProducedCount();
             if (!processFrames(payload)) {
+                nextProducerIdx = (i + 1) % producers.size();
                 return true;
             }
-        } else {
-            int startFrom = waitingForFinish ? 0 : nextProducerIdx;
-
-            boolean activeProducer = false;
-
-            for (int i = startFrom; i < producers.size(); i++) {
-                Producer producer = producers.get(i);
-
-                currentFrames = producer.produce();
-
-                if (currentFrames == null) {
-                    continue;
-                }
-
-                activeProducer = true;
-
-                payload.set(true);
-
-                lastFrameId = -1;
-                lastProducedCount = producer.lastProducedCount();
-
-                if (!processFrames(payload)) {
-                    nextProducerIdx = (i + 1) % producers.size();
-                    return true;
-                }
-            }
-
-            checkTaskFinished(activeProducer);
-            reset();
         }
-
+        checkTaskFinished(someProducerActive);
+        reset();
         return false;
     }
 
