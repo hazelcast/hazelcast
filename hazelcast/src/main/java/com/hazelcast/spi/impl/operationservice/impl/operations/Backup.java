@@ -38,17 +38,23 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
+import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
+
+    private final AtomicReferenceFieldUpdater<Backup, Operation> backupOpUpdater =
+            newUpdater(Backup.class, Operation.class, "backupOp");
 
     private Address originalCaller;
     private long[] replicaVersions;
     private boolean sync;
 
-    private Operation backupOp;
+    // is volatile so the diagnostics can see inside the Backup what is happening.
+    private volatile Operation backupOp;
     private Data backupOpData;
 
     private transient boolean valid = true;
@@ -58,7 +64,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
-        this.backupOp = backupOp;
+        backupOpUpdater.lazySet(this, backupOp);
         this.originalCaller = originalCaller;
         this.sync = sync;
         this.replicaVersions = replicaVersions;
@@ -131,7 +137,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
         if (backupOp == null && backupOpData != null) {
-            backupOp = nodeEngine.getSerializationService().toObject(backupOpData);
+            backupOpUpdater.lazySet(this, (Operation) nodeEngine.getSerializationService().toObject(backupOpData));
         }
 
         if (backupOp != null) {
@@ -249,7 +255,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         if (in.readBoolean()) {
             backupOpData = in.readData();
         } else {
-            backupOp = in.readObject();
+            backupOpUpdater.lazySet(this, (Operation) in.readObject());
         }
 
         if (in.readBoolean()) {
