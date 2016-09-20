@@ -79,7 +79,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
- * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
+ * of cache operations like put, replace, remove and invokeDecoded. These internal implementations are delegated
  * by actual cache methods.
  * <p/>
  * <p>Note: this partial implementation is used by client.</p>
@@ -236,7 +236,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         try {
             HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
             final ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
-            ClientInvocationFuture f = clientInvocation.invoke();
+            ClientInvocationFuture<ClientMessage> f = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId, f);
             }

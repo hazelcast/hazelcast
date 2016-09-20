@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 @Ignore
 /*
- * This test is failing because of order problem between actual invoke and cancel.
+ * This test is failing because of order problem between actual invokeDecoded and cancel.
  * For random and partition, the reason of broken order is also unknown to me (@sancar )
  * For submit to member, it is because we do not have order guarantee in the first place.
  * and when there is partition movement, we can not is partition id since tasks will not move with partitions

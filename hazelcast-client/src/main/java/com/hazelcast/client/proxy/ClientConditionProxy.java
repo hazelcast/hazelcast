@@ -91,7 +91,6 @@ public class ClientConditionProxy extends PartitionSpecificClientProxy implement
         return ConditionAwaitCodec.decodeResponse(response).response;
     }
 
-
     @Override
     public boolean awaitUntil(Date deadline) throws InterruptedException {
         long until = deadline.getTime();

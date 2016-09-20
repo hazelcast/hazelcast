@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -34,6 +35,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
@@ -80,6 +82,19 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
 
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
+    }
+
+    @Override
+    public InternalCompletableFuture<ClientMessage> invokeOnPartition(int partitionId, ClientMessage request) {
+        ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
+        return clientInvocation.invoke();
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnPartition(
+            int partitionId, ClientMessage request, ClientMessageDecoder decoder) {
+        ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId, decoder);
+        return clientInvocation.invokeDecoded();
     }
 
     @Override

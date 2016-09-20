@@ -96,7 +96,7 @@ abstract class AbstractClientCacheProxy<K, V>
         }
         final Data expiryPolicyData = toData(expiryPolicy);
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
-        ClientInvocationFuture future;
+        ClientInvocationFuture<ClientMessage> future;
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(key);
             final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
@@ -315,7 +315,7 @@ abstract class AbstractClientCacheProxy<K, V>
             List<Map.Entry<Data, Data>>[] entriesPerPartition =
                     groupDataToPartitions(map, partitionService, partitionCount);
 
-            // Then we invoke the operations and sync on completion of these operations
+            // Then we invokeDecoded the operations and sync on completion of these operations
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, start);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

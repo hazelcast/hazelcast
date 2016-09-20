@@ -285,7 +285,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
                                                          Object... arguments) {
-        // TODO Implement a multiple (batch) invoke operation and its factory
+        // TODO Implement a multiple (batch) invokeDecoded operation and its factory
         ensureOpen();
         validateNotNull(keys);
         if (entryProcessor == null) {

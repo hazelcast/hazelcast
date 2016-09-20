@@ -18,12 +18,10 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.ExceptionUtil;
 
 /**
@@ -31,7 +29,7 @@ import com.hazelcast.util.ExceptionUtil;
  */
 abstract class PartitionSpecificClientProxy extends ClientProxy {
 
-    private int partitionId;
+    protected int partitionId;
 
     protected PartitionSpecificClientProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -43,21 +41,28 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
         partitionId = getContext().getPartitionService().getPartitionId(partitionKey);
     }
 
-    protected ClientMessage invokeOnPartition(ClientMessage req) {
-        return invokeOnPartition(req, partitionId);
+    protected ClientMessage invokeOnPartition(ClientMessage request) {
+        return invokeOnPartition(request, partitionId);
+    }
+
+    protected <T> T invokeOnPartition(ClientMessage request, ClientMessageDecoder decoder) {
+        try {
+            ClientInvocationService invocationService = getClient().getInvocationService();
+            InternalCompletableFuture<T> f = invocationService.invokeOnPartition(partitionId, request, decoder);
+            return f.get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage) throws InterruptedException {
         return invokeOnPartitionInterruptibly(clientMessage, partitionId);
     }
 
-    protected <T> ClientDelegatingFuture<T> invokeOnPartitionAsync(ClientMessage clientMessage,
-                                                                   ClientMessageDecoder clientMessageDecoder) {
-        SerializationService serializationService = getContext().getSerializationService();
-
+    protected <T> InternalCompletableFuture<T> invokeOnPartitionAsync(ClientMessage request, ClientMessageDecoder decoder) {
         try {
-            final ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
-            return new ClientDelegatingFuture<T>(future, serializationService, clientMessageDecoder);
+            ClientInvocationService invocationService = getClient().getInvocationService();
+            return invocationService.invokeOnPartition(partitionId, request, decoder);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

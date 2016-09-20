@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
@@ -142,15 +143,24 @@ public abstract class ClientProxy implements DistributedObject {
     protected void onShutdown() {
     }
 
-    protected <T> T invoke(ClientMessage clientMessage, Object key) {
+    protected ClientMessage invoke(ClientMessage clientMessage, Object key) {
         final int partitionId = context.getPartitionService().getPartitionId(key);
         return invokeOnPartition(clientMessage, partitionId);
     }
 
-    protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId) {
+    protected ClientMessage invokeOnPartition(ClientMessage request, int partitionId) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
-            return (T) future.get();
+            ClientInvocationService invocationService = getClient().getInvocationService();
+            return invocationService.invokeOnPartition(partitionId, request).get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    protected <E> E invokeOnPartition(ClientMessage request, int partitionId, ClientMessageDecoder decoder) {
+        try {
+            ClientInvocationService invocationService = getClient().getInvocationService();
+            return (E) invocationService.invokeOnPartition(partitionId, request, decoder).get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

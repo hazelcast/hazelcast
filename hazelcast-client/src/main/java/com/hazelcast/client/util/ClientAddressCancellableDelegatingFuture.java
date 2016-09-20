@@ -84,7 +84,7 @@ public class ClientAddressCancellableDelegatingFuture<V> extends ClientCancellab
         ClientMessage request = ExecutorServiceCancelOnAddressCodec.encodeRequest(uuid, target, mayInterruptIfRunning);
         clientInvocation = new ClientInvocation(client, request, target);
         try {
-            ClientInvocationFuture f = clientInvocation.invoke();
+            ClientInvocationFuture<ClientMessage> f = clientInvocation.invoke();
             return ExecutorServiceCancelOnAddressCodec.decodeResponse(f.get()).response;
         } catch (Exception e) {
             throw rethrow(e);

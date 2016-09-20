@@ -22,9 +22,8 @@ import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchKeysCodec;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.map.impl.iterator.AbstractMapPartitionIterator;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -55,9 +54,8 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
     private List fetchWithoutPrefetchValues(HazelcastClientInstanceImpl client) {
         ClientMessage request = MapFetchKeysCodec.encodeRequest(mapProxy.getName(), partitionId,
                 lastTableIndex, fetchSize);
-        ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
         try {
-            ClientInvocationFuture f = clientInvocation.invoke();
+            InternalCompletableFuture<ClientMessage> f = client.getInvocationService().invokeOnPartition(partitionId, request);
             MapFetchKeysCodec.ResponseParameters responseParameters = MapFetchKeysCodec.decodeResponse(f.get());
             setLastTableIndex(responseParameters.keys, responseParameters.tableIndex);
             return responseParameters.keys;
@@ -69,9 +67,8 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
     private List fetchWithPrefetchValues(HazelcastClientInstanceImpl client) {
         ClientMessage request = MapFetchEntriesCodec.encodeRequest(mapProxy.getName(), partitionId, lastTableIndex,
                 fetchSize);
-        ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
         try {
-            ClientInvocationFuture f = clientInvocation.invoke();
+            InternalCompletableFuture<ClientMessage> f = client.getInvocationService().invokeOnPartition(partitionId, request);
             MapFetchEntriesCodec.ResponseParameters responseParameters = MapFetchEntriesCodec.decodeResponse(f.get());
             setLastTableIndex(responseParameters.entries, responseParameters.tableIndex);
             return responseParameters.entries;

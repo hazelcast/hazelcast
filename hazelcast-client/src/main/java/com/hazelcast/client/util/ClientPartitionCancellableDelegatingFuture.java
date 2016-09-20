@@ -21,10 +21,10 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -77,14 +77,12 @@ public class ClientPartitionCancellableDelegatingFuture<T> extends ClientCancell
     private boolean invokeCancelRequest(boolean mayInterruptIfRunning) throws InterruptedException {
         waitForRequestToBeSend();
 
-        ClientInvocation clientInvocation;
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         ClientMessage request =
                 ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, partitionId, mayInterruptIfRunning);
-        clientInvocation = new ClientInvocation(client, request, partitionId);
 
         try {
-            ClientInvocationFuture f = clientInvocation.invoke();
+            Future<ClientMessage> f = client.getInvocationService().invokeOnPartition(partitionId, request);
             return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get()).response;
         } catch (Exception e) {
             throw rethrow(e);

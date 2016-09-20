@@ -106,7 +106,7 @@ public class ClientMapReduceProxy
             ClientConnection sendConnection = trackableJob.clientInvocation.getSendConnectionOrWait();
             Address runningMember = sendConnection.getEndPoint();
             final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
-            ClientInvocationFuture future = clientInvocation.invoke();
+            ClientInvocationFuture<ClientMessage> future = clientInvocation.invoke();
             return future.get();
         }
         return null;

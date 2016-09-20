@@ -347,12 +347,10 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
         @Override
         public void beforeListenerRegister() {
-
         }
 
         @Override
         public void onListenerRegister() {
-
         }
     }
 }

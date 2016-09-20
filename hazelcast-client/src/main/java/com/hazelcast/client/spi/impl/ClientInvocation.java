@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
@@ -66,10 +67,36 @@ public class ClientInvocation implements Runnable {
     private long retryTimeoutPointInMillis;
     private EventHandler handler;
 
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
+        this(client, clientMessage, UNASSIGNED_PARTITION, null, null, null);
+    }
+
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
+                            int partitionId) {
+        this(client, clientMessage, partitionId, null, null, null);
+    }
+
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
+                            int partitionId, ClientMessageDecoder decoder) {
+        this(client, clientMessage, partitionId, null, null, decoder);
+    }
+
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
+                            Address address) {
+        this(client, clientMessage, UNASSIGNED_PARTITION, address, null, null);
+    }
+
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
+                            Connection connection) {
+        this(client, clientMessage, UNASSIGNED_PARTITION, null, connection, null);
+    }
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
-                               ClientMessage clientMessage, int partitionId, Address address,
-                               Connection connection) {
+                               ClientMessage clientMessage,
+                               int partitionId,
+                               Address address,
+                               Connection connection,
+                               ClientMessageDecoder decoder) {
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
@@ -84,28 +111,8 @@ public class ClientInvocation implements Runnable {
         retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
 
         logger = ((ClientInvocationServiceSupport) invocationService).invocationLogger;
-        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger);
+        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger, decoder);
     }
-
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
-        this(client, clientMessage, UNASSIGNED_PARTITION, null, null);
-    }
-
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
-                            int partitionId) {
-        this(client, clientMessage, partitionId, null, null);
-    }
-
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
-                            Address address) {
-        this(client, clientMessage, UNASSIGNED_PARTITION, address, null);
-    }
-
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
-                            Connection connection) {
-        this(client, clientMessage, UNASSIGNED_PARTITION, null, connection);
-    }
-
 
     public int getPartitionId() {
         return partitionId;
@@ -115,8 +122,8 @@ public class ClientInvocation implements Runnable {
         return clientMessage;
     }
 
-    public ClientInvocationFuture invoke() {
-        assert (clientMessage != null);
+    public ClientInvocationFuture<ClientMessage> invoke() {
+        assert clientMessage != null;
 
         try {
             invokeOnSelection();
@@ -127,7 +134,23 @@ public class ClientInvocation implements Runnable {
             notifyException(e);
         }
         return clientInvocationFuture;
+    }
 
+    // this is a temporary method required for the removal of the ClientInvocationFuture.
+    // there are many references to the regular invoke that should not yet be changed to
+    // limit the scope of the changes.
+    public <E> ClientInvocationFuture<E> invokeDecoded() {
+        assert clientMessage != null;
+
+        try {
+            invokeOnSelection();
+        } catch (Exception e) {
+            if (e instanceof HazelcastOverloadException) {
+                throw (HazelcastOverloadException) e;
+            }
+            notifyException(e);
+        }
+        return clientInvocationFuture;
     }
 
     public ClientInvocationFuture invokeUrgent() {
