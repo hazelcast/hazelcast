@@ -60,7 +60,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
      * The OS Near Caches evict 20% + 1 of the Near Cache.
      */
     protected int getExpectedEvictionCount(int size) {
-        return (int) (size * 0.2) + 1;
+        return 1;
     }
 
     protected void testNearCacheEviction(IMap<Integer, Integer> map, int size) {

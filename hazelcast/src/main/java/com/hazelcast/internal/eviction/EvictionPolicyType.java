@@ -29,8 +29,17 @@ public enum EvictionPolicyType {
     /**
      * Least Frequently Used
      */
-    LFU
+    LFU,
+
+    /**
+     * Random
+     */
+    RANDOM,
+
+    /**
+     * None
+     */
+    NONE,
 
     // TODO Maybe another "CUSTOM" type for user defined eviction policies
-
 }

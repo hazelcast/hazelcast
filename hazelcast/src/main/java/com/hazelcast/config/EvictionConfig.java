@@ -226,6 +226,10 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
             return EvictionPolicyType.LFU;
         } else if (evictionPolicy == EvictionPolicy.LRU) {
             return EvictionPolicyType.LRU;
+        } else if (evictionPolicy == EvictionPolicy.RANDOM) {
+            return EvictionPolicyType.RANDOM;
+        } else if (evictionPolicy == EvictionPolicy.NONE) {
+            return EvictionPolicyType.NONE;
         } else {
             return null;
         }
