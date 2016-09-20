@@ -111,7 +111,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="cache-deserialized-values" type="cache-deserialized-values" minOccurs="0" maxOccurs="1" default="INDEX-ONLY">
+            <xs:element name="cache-deserialized-values" type="cache-deserialized-values" minOccurs="0" maxOccurs="1"
+                        default="INDEX-ONLY">
                 <xs:annotation>
                     <xs:documentation>
                         Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
@@ -205,7 +206,8 @@
                                         cluster. Thus, for a small cluster, eviction of the entries will decrease
                                         performance (the number of entries is large).
                                         USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast instance.
-                                        USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast instance.
+                                        USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast
+                                        instance.
                                         If, for example, JVM is configured to have 1000 MB and this value is 10, then the map
                                         entries will be evicted when used heap size exceeds 100 MB.
                                         FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
@@ -231,7 +233,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
-                        (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                        (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for
+                        further details.)
 
                         When the map reaches maximum size, this specified percentage of the map will be evicted. Set to any
                         integer between 0 and 100.
@@ -250,7 +253,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
-                        (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                        (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for
+                        further details.)
 
                         Minimum time in milliseconds which should pass before checking
                         if a partition of this map is evictable or not.
@@ -288,7 +292,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
+            <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
@@ -499,8 +503,10 @@
                         max-size-policy:
                         max-size-policy has these valid values:
                         ENTRY_COUNT (Maximum number of cache entries in the cache),
-                        USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes per cache for each Hazelcast instance),
-                        USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage per cache for each Hazelcast instance),
+                        USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes per cache for each Hazelcast
+                        instance),
+                        USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage per cache for each Hazelcast
+                        instance),
                         FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes for each Hazelcast instance),
                         FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size percentage for each Hazelcast instance).
 
@@ -547,8 +553,9 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
-            <xs:element name="disable-per-entry-invalidation-events" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+            <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="disable-per-entry-invalidation-events" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="false">
                 <xs:annotation>
                     <xs:documentation>
                         Disables invalidation events for per entry but full-flush invalidation events are still enabled.
@@ -1976,7 +1983,7 @@
     <xs:complexType name="map-attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="extractor" type="xs:string" />
+                <xs:attribute name="extractor" type="xs:string"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -2268,8 +2275,10 @@
                     <xs:documentation>
                         Maximum size of the Near Cache. When max size is reached,
                         cache is evicted based on the policy defined.
-                        Any integer between 0 and Integer.MAX_VALUE. 0 means
-                        Integer.MAX_VALUE. Default is 0.
+                        Any integer between 0 and Integer.MAX_VALUE.
+                        0 means Integer.MAX_VALUE. Default is 0.
+
+                        Deprecated since 3.8, please use &lt;eviction/&gt;
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2297,10 +2306,12 @@
                     <xs:documentation>
                         Valid values are:
                         NONE (no extra eviction, time-to-live-seconds may still apply),
-                        LRU  (Least Recently Used),
-                        LFU  (Least Frequently Used).
+                        LRU (Least Recently Used),
+                        LFU (Least Frequently Used).
                         NONE is the default.
                         Regardless of the eviction policy used, time-to-live-seconds will still apply.
+
+                        Deprecated since 3.8, please use &lt;eviction/&gt;
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

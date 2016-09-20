@@ -216,8 +216,8 @@ public class TestClientApplicationContext {
 
         assertEquals(1, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(70, nearCacheConfig.getMaxIdleSeconds());
-        assertEquals("LRU", nearCacheConfig.getEvictionPolicy());
-        assertEquals(4000, nearCacheConfig.getMaxSize());
+        assertEquals(EvictionPolicy.LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(4000, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals(true, nearCacheConfig.isInvalidateOnChange());
     }
 

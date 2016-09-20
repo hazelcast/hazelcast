@@ -1,6 +1,7 @@
 package com.hazelcast.map.nearcache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -43,16 +44,15 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        // create config
-        Config config = new Config();
-        // configure Near Cache
-        MapConfig mapConfig = config.getMapConfig(MAP_NAME + "*");
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setEvictionPolicy("NONE");
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        nearCacheConfig.setCacheLocalEntries(true); // this enables the local caching
+        nearCacheConfig.getEvictionConfig().setEvictionPolicy(EvictionPolicy.NONE);
+        nearCacheConfig.setCacheLocalEntries(true);
+
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME + "*");
         mapConfig.setNearCacheConfig(nearCacheConfig);
-        // create Hazelcast instance
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         hzInstance1 = factory.newHazelcastInstance(config);
         hzInstance2 = factory.newHazelcastInstance(config);

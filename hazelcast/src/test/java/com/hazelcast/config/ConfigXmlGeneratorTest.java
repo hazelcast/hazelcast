@@ -121,7 +121,9 @@ public class ConfigXmlGeneratorTest {
         NearCacheConfig xmlNearCacheConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
         assertEquals(InMemoryFormat.NATIVE, xmlNearCacheConfig.getInMemoryFormat());
         assertEquals(23, xmlNearCacheConfig.getMaxSize());
+        assertEquals(23, xmlNearCacheConfig.getEvictionConfig().getSize());
         assertEquals("LRU", xmlNearCacheConfig.getEvictionPolicy());
+        assertEquals(EvictionPolicy.LRU, xmlNearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(42, xmlNearCacheConfig.getMaxIdleSeconds());
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -64,6 +65,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -266,7 +268,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         hazelcastFactory.newHazelcastInstance();
 
-        assertTrue("LifecycleState failed" , latch.await(60, TimeUnit.SECONDS));
+        assertTrue("LifecycleState failed", latch.await(60, TimeUnit.SECONDS));
     }
 
 
@@ -594,17 +596,27 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDeadlock_WhenDoingOperationFromLifecycleListener_and_NearCache() {
-        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
-        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setMaxSize(1);
-        clientConfig.addNearCacheConfig(nearCacheConfig);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+    public void testDeadlock_whenDoingOperationFromLifecycleListener_withNearCache() {
+        String mapName = randomMapName();
 
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setSize(1);
+
+        NearCacheConfig nearCacheConfig = new NearCacheConfig()
+                .setName(mapName)
+                .setEvictionConfig(evictionConfig);
+
+        ClientConfig clientConfig = new ClientConfig()
+                .addNearCacheConfig(nearCacheConfig)
+                .setExecutorPoolSize(1);
+
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         hazelcastFactory.newHazelcastInstance();
+
         final CountDownLatch latch = new CountDownLatch(1);
-        final IMap<Object, Object> map = client.getMap(randomMapName());
+        final IMap<Object, Object> map = client.getMap(mapName);
 
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -23,7 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -56,5 +59,40 @@ public class NearCacheConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void testMaxSize_whenValueIsNegative_thenThrowException() {
         config.setMaxSize(-1);
+    }
+
+    @Test
+    public void testEvictionConversion_whenMaxSizeAndEvictionPolicyIsSet_thenEvictionIsConfigured() {
+        config.setMaxSize(123);
+        config.setEvictionPolicy("LFU");
+
+        EvictionConfig evictionConfig = config.getEvictionConfig();
+        assertEquals(123, evictionConfig.getSize());
+        assertEquals(EvictionPolicyType.LFU, evictionConfig.getEvictionPolicyType());
+        assertEquals(ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
+    }
+
+    @Test
+    public void testEvictionConversion_whenEvictionIsSet_thenMaxSizeAndEvictionPolicyIsNotConfigured() {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setSize(4453)
+                .setEvictionPolicy(EvictionPolicy.LFU)
+                .setMaximumSizePolicy(ENTRY_COUNT);
+
+        config.setEvictionConfig(evictionConfig);
+
+        assertNotEquals(4453, config.getMaxSize());
+        assertNotEquals("LFU", config.getEvictionPolicy());
+    }
+
+    @Test
+    public void testEvictionConversion_whenExistingEvictionIsModified_thenMaxSizeAndEvictionPolicyIsNotConfigured() {
+        config.getEvictionConfig()
+                .setSize(15125)
+                .setEvictionPolicy(EvictionPolicy.LFU)
+                .setMaximumSizePolicy(ENTRY_COUNT);
+
+        assertNotEquals(15125, config.getMaxSize());
+        assertNotEquals("LFU", config.getEvictionPolicy());
     }
 }

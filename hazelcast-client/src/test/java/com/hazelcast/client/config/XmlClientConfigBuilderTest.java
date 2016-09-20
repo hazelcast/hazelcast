@@ -231,9 +231,11 @@ public class XmlClientConfigBuilderTest {
         final NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("asd");
 
         assertEquals(2000, nearCacheConfig.getMaxSize());
+        assertEquals(2000, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals(90, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(100, nearCacheConfig.getMaxIdleSeconds());
         assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
+        assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
     }

@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -39,6 +40,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.config.EvictionConfigAccessor.initDefaultMaxSize;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -84,12 +86,13 @@ public class NearCacheImpl implements NearCache<Data, Object> {
 
         Config config = nodeEngine.getConfig();
         NearCacheConfig nearCacheConfig = config.findMapConfig(mapName).getNearCacheConfig();
+        EvictionConfig evictionConfig = initDefaultMaxSize(nearCacheConfig.getEvictionConfig());
         this.inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        this.maxSize = nearCacheConfig.getMaxSize() <= 0 ? Integer.MAX_VALUE : nearCacheConfig.getMaxSize();
+        this.maxSize = evictionConfig.getSize();
         this.maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
         this.timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
         this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
-        this.evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
+        this.evictionPolicy = evictionConfig.getEvictionPolicy();
         this.canExpire = new AtomicBoolean(true);
         this.canEvict = new AtomicBoolean(true);
         this.stats = new NearCacheStatsImpl();

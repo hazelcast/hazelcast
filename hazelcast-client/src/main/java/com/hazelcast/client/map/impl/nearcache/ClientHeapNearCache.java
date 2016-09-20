@@ -19,6 +19,7 @@ package com.hazelcast.client.map.impl.nearcache;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -37,6 +38,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.config.EvictionConfigAccessor.initDefaultMaxSize;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -85,11 +87,12 @@ public class ClientHeapNearCache<K> implements NearCache<K, Object> {
         if (inMemoryFormat != InMemoryFormat.BINARY && inMemoryFormat != InMemoryFormat.OBJECT) {
             throw new IllegalArgumentException("Illegal in-memory-format: " + inMemoryFormat);
         }
-        this.maxSize = nearCacheConfig.getMaxSize();
+        EvictionConfig evictionConfig = initDefaultMaxSize(nearCacheConfig.getEvictionConfig());
+        this.maxSize = evictionConfig.getSize();
         this.maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
         this.timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
         this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
-        this.evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
+        this.evictionPolicy = evictionConfig.getEvictionPolicy();
         this.canExpire = new AtomicBoolean(true);
         this.canEvict = new AtomicBoolean(true);
         this.stats = new NearCacheStatsImpl();

@@ -35,8 +35,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Configuration for eviction.
  * You can set a limit for number of entries or total memory cost of entries.
  */
-public class EvictionConfig
-        implements EvictionConfiguration, DataSerializable, Serializable {
+public class EvictionConfig implements EvictionConfiguration, DataSerializable, Serializable {
 
     /**
      * Default maximum entry count.
@@ -53,6 +52,7 @@ public class EvictionConfig
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
 
+    protected boolean sizeConfigured;
     protected int size = DEFAULT_MAX_ENTRY_COUNT;
     protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
     protected EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
@@ -72,11 +72,9 @@ public class EvictionConfig
          * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
-        // Size cannot be non-positive number
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
-        // Max-Size policy cannot be null
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
-        // Eviction policy cannot be null
         this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
     }
 
@@ -88,11 +86,9 @@ public class EvictionConfig
          * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
-        // Size cannot be non-positive number
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
-        // Max-Size policy cannot be null
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
-        // Eviction policy comparator class name cannot be null
         this.comparatorClassName = checkNotNull(comparatorClassName, "Comparator classname cannot be null!");
     }
 
@@ -104,11 +100,9 @@ public class EvictionConfig
          * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
-        // Size cannot be non-positive number
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
-        // Max-Size policy cannot be null
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
-        // Eviction policy comparator cannot be null
         this.comparator = checkNotNull(comparator, "Comparator cannot be null!");
     }
 
@@ -120,19 +114,17 @@ public class EvictionConfig
          * cause "UnsupportedOperationException". So just set directly if value is valid.
          */
 
-        // Size cannot be non-positive number
+        this.sizeConfigured = true;
         this.size = checkPositive(config.size, "Size must be positive number!");
-        // Max-Size policy cannot be null
         this.maxSizePolicy = checkNotNull(config.maxSizePolicy, "Max-Size policy cannot be null!");
-        // Eviction policy cannot be null
         if (config.evictionPolicy != null) {
             this.evictionPolicy = config.evictionPolicy;
         }
-        // Eviction policy comparator class name cannot be null
+        // Eviction policy comparator class name is not allowed to be null
         if (config.comparatorClassName != null) {
             this.comparatorClassName = config.comparatorClassName;
         }
-        // Eviction policy comparator cannot be null
+        // Eviction policy comparator is not allowed to be null
         if (config.comparator != null) {
             this.comparator = config.comparator;
         }
@@ -179,7 +171,8 @@ public class EvictionConfig
     }
 
     public EvictionConfig setSize(int size) {
-        this.size = checkPositive(size, "Size must be positive number !");
+        this.sizeConfigured = true;
+        this.size = checkPositive(size, "Size must be positive number!");
         return this;
     }
 
@@ -188,7 +181,7 @@ public class EvictionConfig
     }
 
     public EvictionConfig setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
-        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null !");
+        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
         return this;
     }
 
@@ -197,9 +190,7 @@ public class EvictionConfig
     }
 
     public EvictionConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        checkNotNull(evictionPolicy, "Eviction policy cannot be null !");
-
-        this.evictionPolicy = evictionPolicy;
+        this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
         return this;
     }
 
@@ -209,9 +200,7 @@ public class EvictionConfig
     }
 
     public EvictionConfig setComparatorClassName(String comparatorClassName) {
-        checkNotNull(comparatorClassName, "Eviction policy comparator class name cannot be null !");
-
-        this.comparatorClassName = comparatorClassName;
+        this.comparatorClassName = checkNotNull(comparatorClassName, "Eviction policy comparator class name cannot be null!");
         return this;
     }
 
@@ -221,15 +210,13 @@ public class EvictionConfig
     }
 
     public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
-        checkNotNull(comparator, "Eviction policy comparator cannot be null !");
-
-        this.comparator = comparator;
+        this.comparator = checkNotNull(comparator, "Eviction policy comparator cannot be null!");
         return this;
     }
 
     @Override
     public EvictionStrategyType getEvictionStrategyType() {
-        // TODO Add support for other/custom eviction strategies
+        // TODO: add support for other/custom eviction strategies
         return EvictionStrategyType.DEFAULT_EVICTION_STRATEGY;
     }
 
@@ -245,8 +232,7 @@ public class EvictionConfig
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(size);
         out.writeUTF(maxSizePolicy.toString());
         out.writeUTF(evictionPolicy.toString());
@@ -255,8 +241,7 @@ public class EvictionConfig
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         size = in.readInt();
         maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
         evictionPolicy = EvictionPolicy.valueOf(in.readUTF());
@@ -275,5 +260,4 @@ public class EvictionConfig
                 + ", readOnly=" + readOnly
                 + '}';
     }
-
 }
