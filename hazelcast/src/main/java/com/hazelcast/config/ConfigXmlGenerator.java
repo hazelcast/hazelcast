@@ -82,7 +82,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.7.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.8.xsd\">");
         xml.append("<group>");
         xml.append("<name>").append(config.getGroupConfig().getName()).append("</name>");
         xml.append("<password>").append("****").append("</password>");
@@ -416,6 +416,8 @@ public class ConfigXmlGenerator {
 
             mapStoreConfigXmlGenerator(xml, m);
 
+            mapNearCacheConfigXmlGenerator(xml, m.getNearCacheConfig());
+
             wanReplicationConfigXmlGenerator(xml, m.getWanReplicationRef());
 
             mapIndexConfigXmlGenerator(xml, m);
@@ -427,6 +429,8 @@ public class ConfigXmlGenerator {
             mapPartitionLostListenerConfigXmlGenerator(xml, m);
 
             mapPartitionStrategyConfigXmlGenerator(xml, m);
+
+            xml.append("</map>");
         }
     }
 
@@ -533,7 +537,6 @@ public class ConfigXmlGenerator {
             }
             xml.append("</partition-strategy>");
         }
-        xml.append("</map>");
     }
 
     private void mapEntryListenerConfigXmlGenerator(StringBuilder xml, MapConfig m) {
@@ -619,7 +622,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private void nearCacheConfigXmlGenerator(StringBuilder xml, NearCacheConfig n) {
+    private void mapNearCacheConfigXmlGenerator(StringBuilder xml, NearCacheConfig n) {
         if (n != null) {
             xml.append("<near-cache>");
             xml.append("<max-size>").append(n.getMaxSize()).append("</max-size>");
@@ -627,7 +630,6 @@ public class ConfigXmlGenerator {
             xml.append("<max-idle-seconds>").append(n.getMaxIdleSeconds()).append("</max-idle-seconds>");
             xml.append("<eviction-policy>").append(n.getEvictionPolicy()).append("</eviction-policy>");
             xml.append("<invalidate-on-change>").append(n.isInvalidateOnChange()).append("</invalidate-on-change>");
-            xml.append("<local-update-policy>").append(n.getLocalUpdatePolicy()).append("</local-update-policy>");
             xml.append("<in-memory-format>").append(n.getInMemoryFormat()).append("</in-memory-format>");
             evictionConfigXmlGenerator(xml, n.getEvictionConfig());
             xml.append("</near-cache>");

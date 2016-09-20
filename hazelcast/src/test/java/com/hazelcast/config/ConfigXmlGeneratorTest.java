@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,23 +28,21 @@ import java.io.ByteArrayInputStream;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ConfigXmlGeneratorTest {
 
     @Test
     public void testReplicatedMapConfigGenerator() {
-        Config config = new Config();
-        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
-        replicatedMapConfig.setName("replicated-map-name");
-        replicatedMapConfig.setStatisticsEnabled(false);
-        replicatedMapConfig.setConcurrencyLevel(128);
-        replicatedMapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false));
-        config.addReplicatedMapConfig(replicatedMapConfig);
-        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
-        String xml = configXmlGenerator.generate(config);
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config xmlConfig = configBuilder.build();
+        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
+                .setName("replicated-map-name")
+                .setStatisticsEnabled(false)
+                .setConcurrencyLevel(128)
+                .addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false));
+
+        Config config = new Config()
+                .addReplicatedMapConfig(replicatedMapConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
         assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
@@ -54,16 +53,14 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testCacheQuorumRef() {
-        Config config = new Config();
-        CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
-        cacheConfig.setName("testCache");
-        cacheConfig.setQuorumName("testQuorum");
-        config.addCacheConfig(cacheConfig);
-        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
-        String xml = configXmlGenerator.generate(config);
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config xmlConfig = configBuilder.build();
+        CacheSimpleConfig cacheConfig = new CacheSimpleConfig()
+                .setName("testCache")
+                .setQuorumName("testQuorum");
+
+        Config config = new Config()
+                .addCacheConfig(cacheConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         CacheSimpleConfig xmlCacheConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals("testQuorum", xmlCacheConfig.getQuorumName());
@@ -71,16 +68,14 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testCacheMergePolicy() {
-        Config config = new Config();
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName("testCache");
         cacheConfig.setMergePolicy("testMergePolicy");
-        config.addCacheConfig(cacheConfig);
-        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
-        String xml = configXmlGenerator.generate(config);
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config xmlConfig = configBuilder.build();
+
+        Config config = new Config()
+                .addCacheConfig(cacheConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         CacheSimpleConfig xmlCacheConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals("testMergePolicy", xmlCacheConfig.getMergePolicy());
@@ -88,26 +83,54 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testMapAttributesConfig() {
-        Config config = new Config();
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName("carMap");
+        MapAttributeConfig attrConfig = new MapAttributeConfig()
+                .setName("power")
+                .setExtractor("com.car.PowerExtractor");
 
-        MapAttributeConfig attrConfig = new MapAttributeConfig();
-        attrConfig.setName("power");
-        attrConfig.setExtractor("com.car.PowerExtractor");
-        mapConfig.addMapAttributeConfig(attrConfig);
-        config.addMapConfig(mapConfig);
+        MapConfig mapConfig = new MapConfig()
+                .setName("carMap")
+                .addMapAttributeConfig(attrConfig);
 
-        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
-        String xml = configXmlGenerator.generate(config);
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config xmlConfig = configBuilder.build();
+        Config config = new Config()
+                .addMapConfig(mapConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         MapAttributeConfig xmlAttrConfig = xmlConfig.getMapConfig("carMap").getMapAttributeConfigs().get(0);
         assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
         assertEquals(attrConfig.getExtractor(), xmlAttrConfig.getExtractor());
     }
 
+    @Test
+    public void testMapNearCacheConfig() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig()
+                .setInMemoryFormat(InMemoryFormat.NATIVE)
+                .setMaxSize(23)
+                .setEvictionPolicy("LRU")
+                .setMaxIdleSeconds(42);
 
+        MapConfig mapConfig = new MapConfig()
+                .setName("nearCacheTest")
+                .setNearCacheConfig(nearCacheConfig);
+
+        Config config = new Config()
+                .addMapConfig(mapConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        NearCacheConfig xmlNearCacheConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
+        assertEquals(InMemoryFormat.NATIVE, xmlNearCacheConfig.getInMemoryFormat());
+        assertEquals(23, xmlNearCacheConfig.getMaxSize());
+        assertEquals("LRU", xmlNearCacheConfig.getEvictionPolicy());
+        assertEquals(42, xmlNearCacheConfig.getMaxIdleSeconds());
+    }
+
+    private static Config getNewConfigViaXMLGenerator(Config config) {
+        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
+        String xml = configXmlGenerator.generate(config);
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        return configBuilder.build();
+    }
 }
