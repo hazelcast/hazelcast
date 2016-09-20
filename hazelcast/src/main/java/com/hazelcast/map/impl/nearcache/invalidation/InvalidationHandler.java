@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache;
-
-import com.hazelcast.map.listener.MapListener;
+package com.hazelcast.map.impl.nearcache.invalidation;
 
 /**
- * Used to receive invalidation events from an {@link com.hazelcast.core.IMap IMap}
- * <p/>
- * For example, a client Near Cache implementation can listen changes in IMap data and
- * can remove stale data in its own cache.
- *
- * @since 3.6
+ * Handlers for various {@link Invalidation} implementations. An implementation of visitor pattern.
  */
-public interface InvalidationListener extends MapListener {
+public interface InvalidationHandler {
 
     /**
-     * Called upon an invalidation.
+     * Handles batch invalidations
      *
-     * @param event the received {@link Invalidation} event.
+     * @param invalidation invalidation event
      */
-    void onInvalidate(Invalidation event);
+    void handle(BatchNearCacheInvalidation invalidation);
+
+    /**
+     * Handles a single invalidation
+     *
+     * @param invalidation invalidation event
+     */
+    void handle(SingleNearCacheInvalidation invalidation);
 }

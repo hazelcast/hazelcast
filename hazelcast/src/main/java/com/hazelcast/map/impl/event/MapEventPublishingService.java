@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.Invalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.NodeEngine;
 

@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache;
+package com.hazelcast.map.impl.nearcache.invalidation;
+
+import com.hazelcast.map.listener.MapListener;
 
 /**
- * Used when invalidating client Near Caches.
- * When a client Near Cache invalidation listener receives this data, it clears its Near Cache.
+ * Used to receive invalidation events from an {@link com.hazelcast.core.IMap IMap}
+ * <p/>
+ * For example, a client Near Cache implementation can listen changes in IMap data and
+ * can remove stale data in its own cache.
+ *
+ * @since 3.6
  */
-public class CleaningNearCacheInvalidation extends Invalidation {
+public interface InvalidationListener extends MapListener {
 
-    public CleaningNearCacheInvalidation() {
-    }
-
-    public CleaningNearCacheInvalidation(String mapName, String sourceUuid) {
-        super(mapName, sourceUuid);
-    }
+    /**
+     * Called upon an invalidation.
+     *
+     * @param event the received {@link Invalidation} event.
+     */
+    void onInvalidate(Invalidation event);
 }

@@ -33,10 +33,6 @@ public class ClearBackupOperation extends MapOperation implements BackupOperatio
 
     @Override
     public void run() {
-        // clear Near Cache also on this backup operation, since  there is a possibility
-        // that no owner partition exists on this node, but a Near Cache exists
-        clearLocalNearCache();
-
         if (recordStore != null) {
             recordStore.clear();
         }

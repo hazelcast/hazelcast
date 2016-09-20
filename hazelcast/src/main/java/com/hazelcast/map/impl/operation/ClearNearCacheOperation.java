@@ -19,6 +19,10 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.impl.MutatingOperation;
 
+/**
+ * Only used by deprecated {@link com.hazelcast.client.impl.protocol.task.map.MapClearNearCacheMessageTask}
+ */
+@Deprecated
 public class ClearNearCacheOperation extends MapOperation implements MutatingOperation {
 
     public ClearNearCacheOperation() {
@@ -30,7 +34,6 @@ public class ClearNearCacheOperation extends MapOperation implements MutatingOpe
 
     @Override
     public void run() {
-        clearLocalNearCache();
     }
 
     @Override

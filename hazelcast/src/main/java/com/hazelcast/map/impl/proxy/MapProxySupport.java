@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.proxy;
 
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.EntryListenerConfig;
@@ -33,7 +32,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -43,13 +41,11 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.invalidation.NearCacheInvalidator;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
-import com.hazelcast.map.impl.operation.ClearOperation;
-import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -104,9 +100,8 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
-import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
+import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
@@ -179,6 +174,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final SerializationService serializationService;
     protected final boolean statisticsEnabled;
     protected final MapConfig mapConfig;
+    protected final String localMemberUuid;
 
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
@@ -205,6 +201,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapConfig.isStatisticsEnabled();
+        this.localMemberUuid = mapServiceContext.getNodeEngine().getLocalMember().getUuid();
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
@@ -456,10 +453,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
             if (evictedCount > 0) {
                 publishMapEvent(evictedCount, EntryEventType.EVICT_ALL);
-                sendClientNearCacheClearEvent();
+                sendNearCacheClearEvent();
             }
-
-            runOnLiteMembers(new EvictAllOperation(name));
 
         } catch (Throwable t) {
             throw rethrow(t);
@@ -479,8 +474,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             throw rethrow(t);
         } finally {
             if (replaceExistingValues) {
-                sendClientNearCacheClearEvent();
-                runOnLiteMembers(new ClearOperation(name));
+                sendNearCacheClearEvent();
             }
         }
     }
@@ -503,8 +497,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             waitUntilLoaded();
         } finally {
             if (replaceExistingValues) {
-                sendClientNearCacheClearEvent();
-                runOnLiteMembers(new ClearOperation(name));
+                sendNearCacheClearEvent();
             }
         }
     }
@@ -906,29 +899,19 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
 
             if (clearedCount > 0) {
-                publishMapEvent(clearedCount, EntryEventType.CLEAR_ALL);
-                sendClientNearCacheClearEvent();
+                publishMapEvent(clearedCount, CLEAR_ALL);
+                sendNearCacheClearEvent();
             }
-
-            runOnLiteMembers(new ClearOperation(name));
 
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    protected void runOnLiteMembers(Operation operation) {
-        MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
-        for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
-            operationService.invokeOnTarget(SERVICE_NAME, operation, member.getAddress());
-        }
-    }
-
-    protected void sendClientNearCacheClearEvent() {
+    protected void sendNearCacheClearEvent() {
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
-        nearCacheInvalidator.sendClientNearCacheClearEvent(getName(),
-                mapServiceContext.getNodeEngine().getLocalMember().getUuid());
+        nearCacheInvalidator.invalidate(null, name, localMemberUuid);
     }
 
     public String addMapInterceptorInternal(MapInterceptor interceptor) {

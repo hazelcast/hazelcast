@@ -473,10 +473,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         deregisterListener(invalidationListenerId);
     }
 
-    protected class ClientMapAddNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
+    private final class ClientMapAddNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        protected ClientMapAddNearCacheEventHandler() {
+        private ClientMapAddNearCacheEventHandler() {
         }
 
         @Override

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache;
+package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.emptyList;
+
 public class BatchNearCacheInvalidation extends Invalidation {
 
     private List<SingleNearCacheInvalidation> invalidations;
@@ -30,13 +33,19 @@ public class BatchNearCacheInvalidation extends Invalidation {
     public BatchNearCacheInvalidation() {
     }
 
-    public BatchNearCacheInvalidation(String mapName, int size) {
-        this(mapName, new ArrayList<SingleNearCacheInvalidation>(size));
+    public BatchNearCacheInvalidation(int size, String mapName) {
+        this(new ArrayList<SingleNearCacheInvalidation>(size), mapName);
     }
 
-    public BatchNearCacheInvalidation(String mapName, List<SingleNearCacheInvalidation> invalidations) {
-        super(mapName, null);
-        this.invalidations = invalidations;
+    public BatchNearCacheInvalidation(List<SingleNearCacheInvalidation> invalidations, String mapName) {
+        super(mapName);
+
+        this.invalidations = checkNotNull(invalidations, "invalidations cannot be null");
+    }
+
+    @Override
+    public void consumedBy(InvalidationHandler invalidationHandler) {
+        invalidationHandler.handle(this);
     }
 
     public void add(SingleNearCacheInvalidation invalidation) {
@@ -71,6 +80,17 @@ public class BatchNearCacheInvalidation extends Invalidation {
                 invalidations.add(invalidation);
             }
             this.invalidations = invalidations;
+        } else {
+            this.invalidations = emptyList();
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        for (SingleNearCacheInvalidation invalidation : invalidations) {
+            str.append(invalidation.toString());
+        }
+        return str.toString();
     }
 }

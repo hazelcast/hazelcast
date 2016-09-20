@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache;
+package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMapEvent;
@@ -25,20 +25,20 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Root interface for Near Cache invalidation data.
  */
 public abstract class Invalidation implements IMapEvent, DataSerializable {
 
-    private String mapName;
-    private String sourceUuid;
+    protected String mapName;
 
     public Invalidation() {
     }
 
-    public Invalidation(String mapName, String sourceUuid) {
-        this.mapName = mapName;
-        this.sourceUuid = sourceUuid;
+    public Invalidation(String mapName) {
+        this.mapName = checkNotNull(mapName, "mapName cannot be null");
     }
 
     @Override
@@ -47,7 +47,7 @@ public abstract class Invalidation implements IMapEvent, DataSerializable {
     }
 
     public String getSourceUuid() {
-        return sourceUuid;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -60,15 +60,16 @@ public abstract class Invalidation implements IMapEvent, DataSerializable {
         return EntryEventType.INVALIDATION;
     }
 
+    public abstract void consumedBy(InvalidationHandler invalidationHandler);
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        out.writeUTF(sourceUuid);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        sourceUuid = in.readUTF();
     }
+
 }

@@ -63,7 +63,7 @@ public class MapEvictAllMessageTask
             MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
             mapEventPublisher.publishMapEvent(thisAddress, parameters.name, EVICT_ALL, evictedTotal);
 
-            sendClientNearCacheClearEvent(parameters.name);
+            sendNearCacheClearEvent(parameters.name);
         }
 
         return null;

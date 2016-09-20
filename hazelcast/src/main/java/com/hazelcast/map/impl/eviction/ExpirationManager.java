@@ -89,6 +89,8 @@ public final class ExpirationManager {
         this.operationService = (InternalOperationService) nodeEngine.getOperationService();
         this.partitionCount = partitionService.getPartitionCount();
 
+        nodeEngine.getConfig().getProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS);
+
         this.taskPeriodSeconds = getInteger(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS);
         checkPositive(taskPeriodSeconds, "taskPeriodSeconds should be a positive number");
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache;
+package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -22,17 +22,25 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
+/**
+ * Represents a single invalidation event.
+ * Special case: When key is null, it means remove all entries from near cache.
+ */
 public class SingleNearCacheInvalidation extends Invalidation {
 
     private Data key;
+    private String sourceUuid;
 
     public SingleNearCacheInvalidation() {
     }
 
-    public SingleNearCacheInvalidation(String mapName, Data key, String sourceUuid) {
-        super(mapName, sourceUuid);
-        this.key = key;
+    public SingleNearCacheInvalidation(Data key, String mapName, String sourceUuid) {
+        super(mapName);
 
+        this.key = key;
+        this.sourceUuid = checkNotNull(sourceUuid, "sourceUuid cannot be null");
     }
 
     public Data getKey() {
@@ -40,9 +48,20 @@ public class SingleNearCacheInvalidation extends Invalidation {
     }
 
     @Override
+    public String getSourceUuid() {
+        return sourceUuid;
+    }
+
+    @Override
+    public void consumedBy(InvalidationHandler invalidationHandler) {
+        invalidationHandler.handle(this);
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
 
+        out.writeUTF(sourceUuid);
         out.writeData(key);
     }
 
@@ -50,6 +69,16 @@ public class SingleNearCacheInvalidation extends Invalidation {
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
 
+        sourceUuid = in.readUTF();
         key = in.readData();
+    }
+
+    @Override
+    public String toString() {
+        return "SingleNearCacheInvalidation{"
+                + "mapName='" + mapName + '\''
+                + ", sourceUuid='" + sourceUuid + '\''
+                + ", key='" + key + '\''
+                + '}';
     }
 }
