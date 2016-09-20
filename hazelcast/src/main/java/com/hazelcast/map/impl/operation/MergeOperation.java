@@ -31,6 +31,15 @@ import java.io.IOException;
 
 public class MergeOperation extends BasePutOperation {
 
+    /**
+     * This is a flag to understand if the MergeOperation is created by a WAN event and setting
+     * {@link #disableWanReplicationEvent}.
+     * It's needed to not to break backward compatibility by adding {@link #disableWanReplicationEvent}
+     * to {@link #writeInternal(ObjectDataOutput)} and {@link #readInternal(ObjectDataInput)} methods.
+     */
+    private static final int WAN_TTL = -999;
+    private static final int DEFAULT_TTL = -1;
+
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
     private boolean merged;
@@ -103,6 +112,9 @@ public class MergeOperation extends BasePutOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        if (disableWanReplicationEvent) {
+            ttl = WAN_TTL;
+        }
         super.writeInternal(out);
         out.writeObject(mergingEntry);
         out.writeObject(mergePolicy);
@@ -113,5 +125,10 @@ public class MergeOperation extends BasePutOperation {
         super.readInternal(in);
         mergingEntry = in.readObject();
         mergePolicy = in.readObject();
+        if (ttl == WAN_TTL) {
+            disableWanReplicationEvent = true;
+            //reset ttl to its default value
+            ttl = DEFAULT_TTL;
+        }
     }
 }
