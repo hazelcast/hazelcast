@@ -52,6 +52,10 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         this.partitions = toIntArray(partitions);
     }
 
+    public OperationFactory getOperationFactory() {
+        return operationFactory;
+    }
+
     @Override
     public void run() throws Exception {
         try {

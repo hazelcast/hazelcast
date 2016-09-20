@@ -86,7 +86,7 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
     public void toKey() {
         assertToKey(DummyOperation.class.getName(), new DummyOperation());
         assertToKey(Integer.class.getName(), new Integer(10));
-        assertToKey(Backup.class.getName() + "#" + DummyOperation.class.getName(),
+        assertToKey("Backup(" + DummyOperation.class.getName() + ")",
                 new Backup(new DummyOperation(), getAddress(local), new long[0], true));
     }
 

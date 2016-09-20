@@ -26,6 +26,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.ItemCounter;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
+import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -54,7 +55,7 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
             = new HazelcastProperty(PREFIX + ".pending.invocations.threshold", 1);
 
     private final InvocationRegistry invocationRegistry;
-    private final ItemCounter<Class> occurrenceMap = new ItemCounter<Class>();
+    private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();
     private final long periodMillis;
     private final int threshold;
 
@@ -90,7 +91,7 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     private void scan() {
         for (Invocation invocation : invocationRegistry) {
-            occurrenceMap.add(invocation.op.getClass(), 1);
+            occurrenceMap.add(toOperationDesc(invocation.op), 1);
         }
     }
 
@@ -103,13 +104,13 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     private void renderInvocations(DiagnosticsLogWriter writer) {
         writer.startSection("invocations");
-        for (Class op : occurrenceMap.keySet()) {
+        for (String op : occurrenceMap.keySet()) {
             long count = occurrenceMap.get(op);
             if (count < threshold) {
                 continue;
             }
 
-            writer.writeKeyValueEntry(op.getName(), count);
+            writer.writeKeyValueEntry(op, count);
         }
         writer.endSection();
     }

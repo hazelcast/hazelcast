@@ -27,6 +27,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ItemCounter;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
+import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -98,12 +99,13 @@ public class InvocationPlugin extends DiagnosticsPlugin {
         writer.startSection("Pending");
         for (Invocation invocation : invocationRegistry) {
             long durationMs = now - invocation.firstInvocationTimeMillis;
+            String operationDesc = toOperationDesc(invocation.op);
             if (durationMs >= thresholdMillis) {
                 writer.writeEntry(invocation.toString() + " duration=" + durationMs + " ms");
-                slowOccurrences.add(invocation.op.getClass().getName(), 1);
+                slowOccurrences.add(operationDesc, 1);
             }
 
-            occurrences.add(invocation.op.getClass().getName(), 1);
+            occurrences.add(operationDesc, 1);
         }
         writer.endSection();
     }

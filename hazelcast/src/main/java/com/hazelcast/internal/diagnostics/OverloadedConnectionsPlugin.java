@@ -23,8 +23,8 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.nio.tcp.spinning.SpinningSocketWriter;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -227,9 +227,8 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
                 Object result = serializationService.toObject(packet);
                 if (result == null) {
                     return "null";
-                } else if (result instanceof Backup) {
-                    Backup backup = (Backup) result;
-                    return Backup.class.getName() + "#" + backup.getBackupOp().getClass().getName();
+                } else if (result instanceof Operation) {
+                    return OperationDescriptors.toOperationDesc((Operation) result);
                 } else {
                     return result.getClass().getName();
                 }
