@@ -22,8 +22,8 @@ import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.nio.Address;
 
 import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
@@ -45,10 +45,9 @@ public class SingleMemberDistributionStrategy implements MemberDistributionStrat
     }
 
     @Override
-    public Collection<Member> getTargetMembers(JobContext jobContext) {
+    public Set<Member> getTargetMembers(JobContext jobContext) {
         try {
-            MemberImpl member = new MemberImpl(new Address(host, port), false);
-            return Collections.<Member>singletonList(member);
+            return Collections.<Member>singleton(new MemberImpl(new Address(host, port), false));
         } catch (UnknownHostException e) {
             throw unchecked(e);
         }

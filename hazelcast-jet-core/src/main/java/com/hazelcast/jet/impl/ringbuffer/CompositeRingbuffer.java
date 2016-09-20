@@ -38,33 +38,32 @@ public class CompositeRingbuffer implements Consumer {
 
     private int nextConsumerId;
 
-    public CompositeRingbuffer(
-            JobContext jobContext,
-            List<Ringbuffer> ringbuffers,
-            Edge edge) {
+    public CompositeRingbuffer(JobContext jobContext, List<Ringbuffer> ringbuffers, Edge edge) {
         this.routingStrategy = edge.getRoutingStrategy();
         this.ringbuffers = ringbuffers.toArray(new Ringbuffer[ringbuffers.size()]);
         this.memberDistributionStrategy = edge.getMemberDistributionStrategy();
         this.calculationStrategy = new CalculationStrategy(
-                edge.getHashingStrategy(),
-                edge.getPartitioningStrategy(),
-                jobContext
-        );
+                edge.getHashingStrategy(), edge.getPartitioningStrategy(), jobContext);
     }
 
     @Override
     public boolean consume(Object object) {
-        if (routingStrategy == RoutingStrategy.ROUND_ROBIN) {
-            ringbuffers[nextConsumerId].consume(object);
-            next();
-        } else if (routingStrategy == RoutingStrategy.BROADCAST) {
-            for (Consumer consumer : ringbuffers) {
-                consumer.consume(object);
-            }
-        } else if (routingStrategy == RoutingStrategy.PARTITIONED) {
-            int objectPartitionId = calculatePartitionIndex(object);
-            int idx = Math.abs(objectPartitionId) % ringbuffers.length;
-            ringbuffers[idx].consume(object);
+        switch (routingStrategy) {
+            case ROUND_ROBIN:
+                ringbuffers[nextConsumerId].consume(object);
+                next();
+                break;
+            case BROADCAST:
+                for (Consumer consumer : ringbuffers) {
+                    consumer.consume(object);
+                }
+                break;
+            case PARTITIONED:
+                int objectPartitionId = calculatePartitionIndex(object);
+                int idx = Math.abs(objectPartitionId) % ringbuffers.length;
+                ringbuffers[idx].consume(object);
+                break;
+            default:
         }
 
         return true;
@@ -72,19 +71,23 @@ public class CompositeRingbuffer implements Consumer {
 
     @Override
     public int consume(InputChunk<Object> chunk) {
-        if (routingStrategy == RoutingStrategy.ROUND_ROBIN) {
-            ringbuffers[nextConsumerId].consume(chunk);
-            next();
-        } else if (routingStrategy == RoutingStrategy.BROADCAST) {
-            for (Consumer consumer : ringbuffers) {
-                consumer.consume(chunk);
-            }
-        } else if (routingStrategy == RoutingStrategy.PARTITIONED) {
-            for (Object object : chunk) {
-                consume(object);
-            }
+        switch (routingStrategy) {
+            case ROUND_ROBIN:
+                ringbuffers[nextConsumerId].consume(chunk);
+                next();
+                break;
+            case BROADCAST:
+                for (Consumer consumer : ringbuffers) {
+                    consumer.consume(chunk);
+                }
+                break;
+            case PARTITIONED:
+                for (Object object : chunk) {
+                    consume(object);
+                }
+                break;
+            default:
         }
-
         return chunk.size();
     }
 
@@ -94,10 +97,8 @@ public class CompositeRingbuffer implements Consumer {
     }
 
     private void next() {
-        if (nextConsumerId >= ringbuffers.length - 1) {
+        if (++nextConsumerId == ringbuffers.length) {
             nextConsumerId = 0;
-        } else {
-            nextConsumerId++;
         }
     }
 
@@ -110,13 +111,11 @@ public class CompositeRingbuffer implements Consumer {
 
     @Override
     public boolean isFlushed() {
-        boolean isFlushed = true;
-
+        boolean allFlushed = true;
         for (Consumer consumer : ringbuffers) {
-            isFlushed &= consumer.isFlushed();
+            allFlushed &= consumer.isFlushed();
         }
-
-        return isFlushed;
+        return allFlushed;
     }
 
     @Override
@@ -136,13 +135,11 @@ public class CompositeRingbuffer implements Consumer {
 
     @Override
     public boolean isShuffled() {
-        boolean isShuffled = true;
-
+        boolean allShuffled = true;
         for (Consumer consumer : ringbuffers) {
-            isShuffled &= consumer.isShuffled();
+            allShuffled &= consumer.isShuffled();
         }
-
-        return isShuffled;
+        return allShuffled;
     }
 
     @Override
