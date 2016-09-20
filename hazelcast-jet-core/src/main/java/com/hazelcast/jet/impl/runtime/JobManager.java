@@ -24,23 +24,23 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.ringbuffer.ShufflingReceiver;
-import com.hazelcast.jet.impl.ringbuffer.ShufflingSender;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.job.JobException;
+import com.hazelcast.jet.impl.ringbuffer.ShufflingReceiver;
+import com.hazelcast.jet.impl.ringbuffer.ShufflingSender;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerEvent;
 import com.hazelcast.jet.impl.runtime.jobmanager.JobManagerResponse;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.jet.impl.statemachine.StateMachineEventHandler;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.jet.impl.statemachine.jobmanager.JobManagerStateMachine;
 import com.hazelcast.jet.impl.statemachine.jobmanager.events.DestroyEventHandler;
 import com.hazelcast.jet.impl.statemachine.jobmanager.events.ExecuteJobEventHandler;
 import com.hazelcast.jet.impl.statemachine.jobmanager.events.ExecutionErrorEventHandler;
-import com.hazelcast.jet.impl.statemachine.jobmanager.events.SubmitEventHandler;
 import com.hazelcast.jet.impl.statemachine.jobmanager.events.InterruptEventHandler;
+import com.hazelcast.jet.impl.statemachine.jobmanager.events.SubmitEventHandler;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionErrorRequest;
 import com.hazelcast.jet.impl.statemachine.jobmanager.requests.ExecutionInterruptedRequest;
@@ -261,7 +261,7 @@ public class JobManager implements StateMachineEventHandler<JobManagerEvent> {
         );
 
         jetPacket.setHeader(JetPacket.HEADER_JET_EXECUTION_ERROR);
-        Address jetAddress = getJobContext().getHzToJetAddressMapping().get(member.getAddress());
+        Address jetAddress = getJobContext().toJetAddress(member.getAddress());
         discoveryService.getSocketWriters().get(jetAddress).sendServicePacket(jetPacket);
     }
 

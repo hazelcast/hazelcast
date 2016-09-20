@@ -21,8 +21,10 @@ import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
-import java.util.Collection;
-import java.util.Collections;
+
+import java.util.Set;
+
+import static java.util.Collections.singleton;
 
 /**
  * Distribution strategy based on a given partition key. All data will be sent to
@@ -40,17 +42,12 @@ public class SinglePartitionDistributionStrategy implements MemberDistributionSt
     }
 
     @Override
-    public Collection<Member> getTargetMembers(JobContext jobContext) {
+    public Set<Member> getTargetMembers(JobContext jobContext) {
         NodeEngine nodeEngine = jobContext.getNodeEngine();
-
         int partitionId = nodeEngine.getPartitionService().getPartitionId(
                 nodeEngine.getSerializationService().toData(
-                        partitionKey,
-                        StringAndPartitionAwarePartitioningStrategy.INSTANCE
-                )
-        );
-
+                        partitionKey, StringAndPartitionAwarePartitioningStrategy.INSTANCE));
         Address owner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-        return Collections.singletonList(nodeEngine.getClusterService().getMember(owner));
+        return singleton(nodeEngine.getClusterService().getMember(owner));
     }
 }

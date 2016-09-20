@@ -75,24 +75,15 @@ public class CalculationStrategy {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:innerassignment")
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        CalculationStrategy that = (CalculationStrategy) o;
-
-        if (!hashingStrategy.equals(that.hashingStrategy)) {
-            return false;
-        }
-        if (!jobContext.equals(that.jobContext)) {
-            return false;
-        }
-        return partitioningStrategy.equals(that.partitioningStrategy);
-
+        final CalculationStrategy that;
+        return this == o
+                || (o != null
+                    && getClass() == o.getClass()
+                    && hashingStrategy.equals((that = (CalculationStrategy) o).hashingStrategy)
+                    && jobContext.equals(that.jobContext)
+                    && partitioningStrategy.equals(that.partitioningStrategy));
     }
 
     @Override

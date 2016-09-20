@@ -182,8 +182,8 @@ public class JobContext {
     /**
      * @return mapping between main Hazelcast and Jet addresses
      */
-    public Map<Address, Address> getHzToJetAddressMapping() {
-        return hzToAddressMapping;
+    public Address toJetAddress(Address hzAddress) {
+        return hzToAddressMapping.get(hzAddress);
     }
 
     /**
