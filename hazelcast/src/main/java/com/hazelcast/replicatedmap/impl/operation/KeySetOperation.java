@@ -74,6 +74,6 @@ public class KeySetOperation extends AbstractSerializableOperation {
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_KEY_SET;
+        return ReplicatedMapDataSerializerHook.KEY_SET;
     }
 }

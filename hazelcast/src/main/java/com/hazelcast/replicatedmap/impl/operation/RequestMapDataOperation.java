@@ -107,6 +107,6 @@ public class RequestMapDataOperation extends AbstractSerializableOperation {
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_REQUEST_MAP_DATA;
+        return ReplicatedMapDataSerializerHook.REQUEST_MAP_DATA;
     }
 }

@@ -71,6 +71,6 @@ public class MergeOperation extends AbstractReplicatedMapOperation {
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_MERGE;
+        return ReplicatedMapDataSerializerHook.MERGE;
     }
 }

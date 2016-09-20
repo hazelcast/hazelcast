@@ -71,6 +71,6 @@ public class ContainsValueOperation extends AbstractSerializableOperation {
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_CONTAINS_VALUE;
+        return ReplicatedMapDataSerializerHook.CONTAINS_VALUE;
     }
 }

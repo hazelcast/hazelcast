@@ -20,8 +20,6 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
@@ -31,7 +29,7 @@ import java.util.Collection;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 
 
-public abstract class AbstractReplicatedMapOperation extends Operation implements IdentifiedDataSerializable {
+public abstract class AbstractReplicatedMapOperation extends AbstractSerializableOperation {
 
     protected String name;
     protected Data key;
@@ -94,11 +92,6 @@ public abstract class AbstractReplicatedMapOperation extends Operation implement
         } else {
             return new NormalResponse(response, getCallId(), 1, isUrgent());
         }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
     }
 
     @Override

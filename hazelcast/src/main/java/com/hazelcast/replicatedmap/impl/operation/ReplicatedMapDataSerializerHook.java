@@ -36,30 +36,30 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_MAP_DS_FACTORY, REPLICATED_MAP_DS_FACTORY_ID);
 
-    public static final int OP_CLEAR = 1;
+    public static final int CLEAR = 1;
     public static final int ENTRY_VIEW = 2;
-    public static final int OP_REPLICATE_UPDATE = 3;
-    public static final int OP_REPLICATE_UPDATE_TO_CALLER = 4;
-    public static final int OP_PUT_ALL = 5;
-    public static final int OP_PUT = 6;
-    public static final int OP_REMOVE = 7;
-    public static final int OP_SIZE = 8;
-    public static final int OP_MERGE = 9;
+    public static final int REPLICATE_UPDATE = 3;
+    public static final int REPLICATE_UPDATE_TO_CALLER = 4;
+    public static final int PUT_ALL = 5;
+    public static final int PUT = 6;
+    public static final int REMOVE = 7;
+    public static final int SIZE = 8;
+    public static final int MERGE = 9;
     public static final int VERSION_RESPONSE_PAIR = 10;
-    public static final int OP_GET = 11;
-    public static final int OP_CHECK_REPLICA_VERSION = 12;
-    public static final int OP_CONTAINS_KEY = 13;
-    public static final int OP_CONTAINS_VALUE = 14;
-    public static final int OP_ENTRY_SET = 15;
-    public static final int OP_EVICTION = 16;
-    public static final int OP_IS_EMPTY = 17;
-    public static final int OP_KEY_SET = 18;
-    public static final int OP_REPLICATION = 19;
-    public static final int OP_REQUEST_MAP_DATA = 20;
-    public static final int OP_SYNC_REPLICATED_DATA = 21;
-    public static final int OP_VALUES = 22;
+    public static final int GET = 11;
+    public static final int CHECK_REPLICA_VERSION = 12;
+    public static final int CONTAINS_KEY = 13;
+    public static final int CONTAINS_VALUE = 14;
+    public static final int ENTRY_SET = 15;
+    public static final int EVICTION = 16;
+    public static final int IS_EMPTY = 17;
+    public static final int KEY_SET = 18;
+    public static final int REPLICATION = 19;
+    public static final int REQUEST_MAP_DATA = 20;
+    public static final int SYNC_REPLICATED_DATA = 21;
+    public static final int VALUES = 22;
 
-    private static final int LEN = OP_VALUES + 1;
+    private static final int LEN = VALUES + 1;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -75,7 +75,7 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
     private static DataSerializableFactory createFactoryInternal() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-        constructors[OP_CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearOperation();
@@ -87,43 +87,43 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
                 return new ReplicatedMapEntryView();
             }
         };
-        constructors[OP_REPLICATE_UPDATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[REPLICATE_UPDATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReplicateUpdateOperation();
             }
         };
-        constructors[OP_REPLICATE_UPDATE_TO_CALLER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[REPLICATE_UPDATE_TO_CALLER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReplicateUpdateToCallerOperation();
             }
         };
-        constructors[OP_PUT_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[PUT_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutAllOperation();
             }
         };
-        constructors[OP_PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutOperation();
             }
         };
-        constructors[OP_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new RemoveOperation();
             }
         };
-        constructors[OP_SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SizeOperation();
             }
         };
-        constructors[OP_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MergeOperation();
@@ -135,73 +135,73 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
                 return new VersionResponsePair();
             }
         };
-        constructors[OP_GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new GetOperation();
             }
         };
-        constructors[OP_CHECK_REPLICA_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[CHECK_REPLICA_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CheckReplicaVersionOperation();
             }
         };
-        constructors[OP_CONTAINS_KEY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ContainsKeyOperation();
             }
         };
-        constructors[OP_CONTAINS_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[CONTAINS_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ContainsValueOperation();
             }
         };
-        constructors[OP_ENTRY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[ENTRY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new EntrySetOperation();
             }
         };
-        constructors[OP_EVICTION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[EVICTION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new EvictionOperation();
             }
         };
-        constructors[OP_IS_EMPTY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[IS_EMPTY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new IsEmptyOperation();
             }
         };
-        constructors[OP_KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new KeySetOperation();
             }
         };
-        constructors[OP_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReplicationOperation();
             }
         };
-        constructors[OP_REQUEST_MAP_DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[REQUEST_MAP_DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new RequestMapDataOperation();
             }
         };
-        constructors[OP_SYNC_REPLICATED_DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[SYNC_REPLICATED_DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SyncReplicatedMapDataOperation();
             }
         };
-        constructors[OP_VALUES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[VALUES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ValuesOperation();

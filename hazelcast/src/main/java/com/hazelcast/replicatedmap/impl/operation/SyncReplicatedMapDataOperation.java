@@ -106,6 +106,6 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_SYNC_REPLICATED_DATA;
+        return ReplicatedMapDataSerializerHook.SYNC_REPLICATED_DATA;
     }
 }

@@ -66,6 +66,6 @@ public class IsEmptyOperation extends AbstractSerializableOperation {
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_IS_EMPTY;
+        return ReplicatedMapDataSerializerHook.IS_EMPTY;
     }
 }

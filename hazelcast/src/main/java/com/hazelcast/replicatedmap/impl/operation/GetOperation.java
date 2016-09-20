@@ -69,6 +69,6 @@ public class GetOperation extends AbstractSerializableOperation implements Reado
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_GET;
+        return ReplicatedMapDataSerializerHook.GET;
     }
 }

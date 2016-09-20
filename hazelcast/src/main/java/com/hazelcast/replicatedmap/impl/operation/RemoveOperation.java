@@ -78,6 +78,6 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_REMOVE;
+        return ReplicatedMapDataSerializerHook.REMOVE;
     }
 }

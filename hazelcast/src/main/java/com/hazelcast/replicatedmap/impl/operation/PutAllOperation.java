@@ -101,6 +101,6 @@ public class PutAllOperation extends AbstractSerializableOperation {
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_PUT_ALL;
+        return ReplicatedMapDataSerializerHook.PUT_ALL;
     }
 }

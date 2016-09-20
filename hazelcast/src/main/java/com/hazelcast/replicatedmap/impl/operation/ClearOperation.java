@@ -120,7 +120,7 @@ public class ClearOperation extends AbstractSerializableOperation {
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_CLEAR;
+        return ReplicatedMapDataSerializerHook.CLEAR;
     }
 
     @Override

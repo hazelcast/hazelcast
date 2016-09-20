@@ -107,6 +107,6 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_CHECK_REPLICA_VERSION;
+        return ReplicatedMapDataSerializerHook.CHECK_REPLICA_VERSION;
     }
 }
