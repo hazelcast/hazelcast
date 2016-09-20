@@ -16,11 +16,8 @@
 
 package com.hazelcast.cardinality.impl;
 
-import com.hazelcast.cardinality.impl.operations.AggregateAndEstimateOperation;
 import com.hazelcast.cardinality.impl.operations.AggregateBackupOperation;
 import com.hazelcast.cardinality.impl.operations.AggregateOperation;
-import com.hazelcast.cardinality.impl.operations.BatchAggregateAndEstimateOperation;
-import com.hazelcast.cardinality.impl.operations.BatchAggregateOperation;
 import com.hazelcast.cardinality.impl.operations.EstimateOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
@@ -38,12 +35,9 @@ public final class CardinalityEstimatorDataSerializerHook
             CARDINALITY_ESTIMATOR_DS_FACTORY_ID);
 
     public static final int AGGREGATE = 0;
-    public static final int BATCH_AGGREGATE = 1;
-    public static final int ESTIMATE = 2;
-    public static final int AGGREGATE_AND_ESTIMATE = 3;
-    public static final int BATCH_AGGREGATE_AND_ESTIMATE = 4;
-    public static final int AGGREGATE_BACKUP = 5;
-    public static final int REPLICATION = 6;
+    public static final int ESTIMATE = 1;
+    public static final int AGGREGATE_BACKUP = 2;
+    public static final int REPLICATION = 3;
 
     @Override
     public int getFactoryId() {
@@ -58,14 +52,8 @@ public final class CardinalityEstimatorDataSerializerHook
                 switch (typeId) {
                     case AGGREGATE:
                         return new AggregateOperation();
-                    case BATCH_AGGREGATE:
-                        return new BatchAggregateOperation();
                     case ESTIMATE:
                         return new EstimateOperation();
-                    case AGGREGATE_AND_ESTIMATE:
-                        return new AggregateAndEstimateOperation();
-                    case BATCH_AGGREGATE_AND_ESTIMATE:
-                        return new BatchAggregateAndEstimateOperation();
                     case AGGREGATE_BACKUP:
                         return new AggregateBackupOperation();
                     case REPLICATION:

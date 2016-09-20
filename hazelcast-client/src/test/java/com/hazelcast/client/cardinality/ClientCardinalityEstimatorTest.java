@@ -16,10 +16,16 @@
 
 package com.hazelcast.client.cardinality;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -30,6 +36,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -55,15 +62,30 @@ public class ClientCardinalityEstimatorTest
         hazelcastFactory.terminateAll();
     }
 
+    private HazelcastInstance createSerializationConfiguredClient() {
+        final SerializerConfig serializerConfig = new SerializerConfig();
+        serializerConfig.setImplementation(new CustomObjectSerializer());
+        serializerConfig.setTypeClass(CustomObject.class);
+
+        ClientConfig config = new ClientConfig();
+        config.getSerializationConfig().addSerializerConfig(serializerConfig);
+
+        return hazelcastFactory.newHazelcastClient(config);
+    }
+
     @Test
     public void test() throws Exception {
         assertEquals(0, estimator.estimate());
-        assertEquals(1, estimator.aggregateAndEstimate(1L));
-        assertEquals(1, estimator.aggregateAndEstimate(1L));
-        assertEquals(true, estimator.aggregateAll(new long[] { 2L, 3L }));
-        assertEquals(4, estimator.aggregateAllAndEstimate(new long[] { 4L }));
+        assertEquals(true, estimator.aggregate(1L));
+        assertEquals(true, estimator.aggregate(1L));
+        assertEquals(1, estimator.estimate());
+
+        for (long l : new long[] { 2L, 3L, 4L }) {
+            assertEquals(true, estimator.aggregate(l));
+        }
+
         assertEquals(4, estimator.estimate());
-        assertEquals(true, estimator.aggregateString("Test"));
+        assertEquals(true, estimator.aggregate("Test"));
         assertEquals(5, estimator.estimate());
     }
 
@@ -72,25 +94,25 @@ public class ClientCardinalityEstimatorTest
         ICompletableFuture<Long> f1 = estimator.estimateAsync();
         assertEquals(0L, f1.get().longValue());
 
-        f1 = estimator.aggregateAndEstimateAsync(1L);
-        assertEquals(1L, f1.get().longValue());
-
-        f1 = estimator.aggregateAndEstimateAsync(1L);
-        assertEquals(1L, f1.get().longValue());
-
-        ICompletableFuture<Boolean> f2 = estimator.aggregateAllAsync(new long[] { 2L, 3L });
+        ICompletableFuture<Boolean> f2 = estimator.aggregateAsync(1L);
         assertEquals(true, f2.get());
 
-        f1 = estimator.aggregateAllAndEstimateAsync(new long[] { 4L });
-        assertEquals(4, f1.get().longValue());
+        estimator.aggregateAsync(1L).get();
+        f1 = estimator.estimateAsync();
+        assertEquals(1L, f1.get().longValue());
+
+        estimator.aggregateAsync(2L).get();
+        estimator.aggregateAsync(3L).get();
+        estimator.aggregateAsync(4L).get();
 
         f1 = estimator.estimateAsync();
         assertEquals(4, f1.get().longValue());
 
-        f2 = estimator.aggregateStringAsync("Test");
+        f2 = estimator.aggregateAsync("Test");
         assertEquals(true, f2.get());
 
-        f1 = estimator.aggregateAndEstimateAsync(1L);
+        estimator.aggregateAsync(1L).get();
+        f1 = estimator.estimateAsync();
         assertEquals(5L, f1.get().longValue());
     }
 
@@ -111,67 +133,88 @@ public class ClientCardinalityEstimatorTest
     public void aggregate() {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregate");
         assertEquals(true, estimator.aggregate(1L));
+        assertEquals(1L, estimator.estimate());
     }
 
     @Test
     public void aggregateAsync()
             throws ExecutionException, InterruptedException {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAsync");
-        assertEquals(true, estimator.aggregateAsync(10000L).get().booleanValue());
-    }
-
-    @Test
-    public void aggregateAll() {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAll");
-        assertEquals(true, estimator.aggregateAll(new long[] { 1L, 2L, 3L }));
-    }
-
-    @Test
-    public void aggregateAllAsync()
-            throws ExecutionException, InterruptedException {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllAsync");
-        assertEquals(true, estimator.aggregateAllAsync(new long[] { 1L, 2L, 3L }).get().booleanValue());
-    }
-
-    @Test
-    public void aggregateAndEstimateAsync()
-            throws ExecutionException, InterruptedException {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAndEstimateAsync");
-        assertEquals(1L, estimator.aggregateAndEstimateAsync(1000L).get().longValue());
-    }
-
-    @Test
-    public void aggregateAllAndEstimateAsync()
-            throws ExecutionException, InterruptedException {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllAndEstimateAsync");
-        assertEquals(3L, estimator.aggregateAllAndEstimateAsync(new long[] { 1L, 2L, 3L }).get().longValue());
+        assertEquals(true, estimator.aggregateAsync(10000L).get());
+        assertEquals(1L, estimator.estimateAsync().get().longValue());
     }
 
     @Test
     public void aggregateString() {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateString");
-        assertEquals(true, estimator.aggregateString("String1"));
+        assertEquals(true, estimator.aggregate("String1"));
+        assertEquals(1L, estimator.estimate());
     }
 
     @Test
     public void aggregateStringAsync()
             throws ExecutionException, InterruptedException {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateStringAsync");
-        assertEquals(true, estimator.aggregateStringAsync("String1").get().booleanValue());
+        assertEquals(true, estimator.aggregateAsync("String1").get());
+        assertEquals(1L, estimator.estimateAsync().get().longValue());
     }
 
-    @Test
-    public void aggregateAllStrings() {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllStrings");
-        assertEquals(true, estimator.aggregateAllStrings(new String[] { "String1", "String2", "String3" }));
+    @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)
+    public void aggregateCustomObject() {
+        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateCustomObject");
+        assertEquals(true, estimator.aggregate(new CustomObject(1, 2)));
     }
 
-    @Test
-    public void aggregateAllStringsAsync()
+    @Test()
+    public void aggregateCustomObjectAsync()
             throws ExecutionException, InterruptedException {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAllStringsAsync");
-        assertEquals(true, estimator.aggregateAllStringsAsync(new String[] { "String1", "String2", "String3" }).get()
-                                    .booleanValue());
+        CardinalityEstimator estimator = createSerializationConfiguredClient().getCardinalityEstimator("aggregateCustomObjectAsync");
+        assertEquals(0L, estimator.estimate());
+        assertEquals(true, estimator.aggregate(new CustomObject(1, 2)));
+        assertEquals(1L, estimator.estimate());
+    }
+
+    @Test()
+    public void aggregateCustomObjectRegistered() {
+        CardinalityEstimator estimator = createSerializationConfiguredClient().getCardinalityEstimator("aggregateCustomObject");
+        assertEquals(0L, estimator.estimate());
+        assertEquals(true, estimator.aggregate(new CustomObject(1, 2)));
+        assertEquals(1L, estimator.estimate());
+    }
+
+    private class CustomObject {
+        private final int x;
+        private final int y;
+
+        private CustomObject(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    private class CustomObjectSerializer implements StreamSerializer<CustomObject> {
+
+        @Override
+        public int getTypeId() {
+            return 1;
+        }
+
+        @Override
+        public void destroy() {
+        }
+
+        @Override
+        public void write(ObjectDataOutput out, CustomObject object)
+                throws IOException {
+            out.writeLong((object.x << Bits.INT_SIZE_IN_BYTES) | object.y);
+        }
+
+        @Override
+        public CustomObject read(ObjectDataInput in)
+                throws IOException {
+            // Not needed
+            throw new UnsupportedOperationException();
+        }
     }
 
 }

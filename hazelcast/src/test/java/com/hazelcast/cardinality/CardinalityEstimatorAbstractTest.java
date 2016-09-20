@@ -47,12 +47,16 @@ public abstract class CardinalityEstimatorAbstractTest
     @Test
     public void test() {
         assertEquals(0, estimator.estimate());
-        assertEquals(1, estimator.aggregateAndEstimate(1L));
-        assertEquals(1, estimator.aggregateAndEstimate(1L));
-        assertEquals(true, estimator.aggregateAll(new long[] { 2L, 3L }));
-        assertEquals(4, estimator.aggregateAllAndEstimate(new long[] { 4L }));
+        assertEquals(true, estimator.aggregate(1L));
+        assertEquals(true, estimator.aggregate(1L));
+        assertEquals(1, estimator.estimate());
+
+        for (long l : new long[] { 2L, 3L, 4L }) {
+            assertEquals(true, estimator.aggregate(l));
+        }
+
         assertEquals(4, estimator.estimate());
-        assertEquals(true, estimator.aggregateString("Test"));
+        assertEquals(true, estimator.aggregate("Test"));
         assertEquals(5, estimator.estimate());
     }
 
@@ -61,25 +65,25 @@ public abstract class CardinalityEstimatorAbstractTest
         ICompletableFuture<Long> f1 = estimator.estimateAsync();
         assertEquals(0L, f1.get().longValue());
 
-        f1 = estimator.aggregateAndEstimateAsync(1L);
-        assertEquals(1L, f1.get().longValue());
-
-        f1 = estimator.aggregateAndEstimateAsync(1L);
-        assertEquals(1L, f1.get().longValue());
-
-        ICompletableFuture<Boolean> f2 = estimator.aggregateAllAsync(new long[] { 2L, 3L });
+        ICompletableFuture<Boolean> f2 = estimator.aggregateAsync(1L);
         assertEquals(true, f2.get());
 
-        f1 = estimator.aggregateAllAndEstimateAsync(new long[] { 4L });
-        assertEquals(4, f1.get().longValue());
+        estimator.aggregateAsync(1L).get();
+        f1 = estimator.estimateAsync();
+        assertEquals(1L, f1.get().longValue());
+
+        estimator.aggregateAsync(2L).get();
+        estimator.aggregateAsync(3L).get();
+        estimator.aggregateAsync(4L).get();
 
         f1 = estimator.estimateAsync();
         assertEquals(4, f1.get().longValue());
 
-        f2 = estimator.aggregateStringAsync("Test");
+        f2 = estimator.aggregateAsync("Test");
         assertEquals(true, f2.get());
 
-        f1 = estimator.aggregateAndEstimateAsync(1L);
+        estimator.aggregateAsync(1L).get();
+        f1 = estimator.estimateAsync();
         assertEquals(5L, f1.get().longValue());
     }
 
@@ -103,51 +107,5 @@ public abstract class CardinalityEstimatorAbstractTest
     public void aggregateAsync()
             throws ExecutionException, InterruptedException {
         assertEquals(true, estimator.aggregateAsync(10000L).get().booleanValue());
-    }
-
-    @Test
-    public void aggregateAll() {
-        assertEquals(true, estimator.aggregateAll(new long[] { 1L, 2L, 3L }));
-    }
-
-    @Test
-    public void aggregateAllAsync()
-            throws ExecutionException, InterruptedException {
-        assertEquals(true, estimator.aggregateAllAsync(new long[] { 1L, 2L, 3L }).get().booleanValue());
-    }
-
-    @Test
-    public void aggregateAndEstimateAsync()
-            throws ExecutionException, InterruptedException {
-        assertEquals(1L, estimator.aggregateAndEstimateAsync(1000L).get().longValue());
-    }
-
-    @Test
-    public void aggregateAllAndEstimateAsync()
-            throws ExecutionException, InterruptedException {
-        assertEquals(3L, estimator.aggregateAllAndEstimateAsync(new long[] { 1L, 2L, 3L }).get().longValue());
-    }
-
-    @Test
-    public void aggregateString() {
-        assertEquals(true, estimator.aggregateString("String1"));
-    }
-
-    @Test
-    public void aggregateStringAsync()
-            throws ExecutionException, InterruptedException {
-        assertEquals(true, estimator.aggregateStringAsync("String1").get().booleanValue());
-    }
-
-    @Test
-    public void aggregateAllStrings() {
-        assertEquals(true, estimator.aggregateAllStrings(new String[] { "String1", "String2", "String3" }));
-    }
-
-    @Test
-    public void aggregateAllStringsAsync()
-            throws ExecutionException, InterruptedException {
-        assertEquals(true, estimator.aggregateAllStringsAsync(new String[] { "String1", "String2", "String3" }).get()
-                                    .booleanValue());
     }
 }

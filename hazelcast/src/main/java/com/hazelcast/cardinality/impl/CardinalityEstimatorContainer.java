@@ -44,10 +44,6 @@ public class CardinalityEstimatorContainer implements DataSerializable {
         return hll.aggregate(hash);
     }
 
-    public boolean aggregateAll(long[] hashes) {
-        return hll.aggregateAll(hashes);
-    }
-
     public long estimate() {
         return hll.estimate();
     }

@@ -21,15 +21,22 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class CardinalityEstimatorBackupTest
         extends HazelcastTestSupport {
 
@@ -64,7 +71,9 @@ public class CardinalityEstimatorBackupTest
 
     @Test
     public void testAggregateAll() {
-        estimator.aggregateAll(new long[] { 10000L, 20000L, 30000L });
+        estimator.aggregate(10000L);
+        estimator.aggregate(20000L);
+        estimator.aggregate(30000L);
 
         assertEstimateValue(instance1, 3L);
         assertEstimateValue(instance2, 3L);

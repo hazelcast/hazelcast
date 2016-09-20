@@ -23,31 +23,25 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 public class AggregateBackupOperation
         extends AbstractCardinalityEstimatorOperation
         implements BackupOperation {
 
-    private long[] hashes;
+    private long hash;
 
     public AggregateBackupOperation() {
     }
 
     public AggregateBackupOperation(String name, long hash) {
         super(name);
-        this.hashes = new long[] { hash };
-    }
-
-    public AggregateBackupOperation(String name, long[] hashes) {
-        super(name);
-        this.hashes = Arrays.copyOf(hashes, hashes.length);
+        this.hash = hash;
     }
 
     @Override
     public void run() throws Exception {
         CardinalityEstimatorContainer container = getCardinalityEstimatorContainer();
-        container.aggregateAll(hashes);
+        container.aggregate(hash);
     }
 
     @Override
@@ -58,13 +52,13 @@ public class AggregateBackupOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLongArray(hashes);
+        out.writeLong(hash);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        hashes = in.readLongArray();
+        hash = in.readLong();
     }
 
 }

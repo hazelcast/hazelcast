@@ -33,7 +33,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
             HazelcastInstance newInstance = nodeFactory.newHazelcastInstance();
             CardinalityEstimator newEstimator = newInstance.getCardinalityEstimator(name);
             assertEquals((long) 1 + i, newEstimator.estimate());
-            newEstimator.aggregateString(String.valueOf(i + 1));
+            newEstimator.aggregate(String.valueOf(i + 1));
             instance.shutdown();
             instance = newInstance;
         }
@@ -63,7 +63,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
                                 counter.incrementAndGet();
                                 instances[id] = nodeFactory.newHazelcastInstance();
                                 instances[id].getCardinalityEstimator(name)
-                                        .aggregateString(String.valueOf(counter.get()));
+                                        .aggregate(String.valueOf(counter.get()));
                             } catch (Exception e) {
                                 exceptionCount.incrementAndGet();
                                 e.printStackTrace();
