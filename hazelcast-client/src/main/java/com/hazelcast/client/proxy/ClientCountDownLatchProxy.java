@@ -34,6 +34,7 @@ public class ClientCountDownLatchProxy extends PartitionSpecificClientProxy impl
         super(serviceName, objectId);
     }
 
+    @Override
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         ClientMessage request = CountDownLatchAwaitCodec.encodeRequest(name, getTimeInMillis(timeout, unit));
         CountDownLatchAwaitCodec.ResponseParameters resultParameters =
@@ -41,11 +42,13 @@ public class ClientCountDownLatchProxy extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public void countDown() {
         ClientMessage request = CountDownLatchCountDownCodec.encodeRequest(name);
         invokeOnPartition(request);
     }
 
+    @Override
     public int getCount() {
         ClientMessage request = CountDownLatchGetCountCodec.encodeRequest(name);
         CountDownLatchGetCountCodec.ResponseParameters resultParameters =
@@ -53,6 +56,7 @@ public class ClientCountDownLatchProxy extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public boolean trySetCount(int count) {
         if (count < 0) {
             throw new IllegalArgumentException("count can't be negative");

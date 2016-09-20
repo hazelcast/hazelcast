@@ -52,6 +52,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return name;
     }
 
+    @Override
     public boolean isLocked() {
         ClientMessage request = LockIsLockedCodec.encodeRequest(name);
         LockIsLockedCodec.ResponseParameters resultParameters =
@@ -59,6 +60,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return resultParameters.response;
     }
 
+    @Override
     public boolean isLockedByCurrentThread() {
         ClientMessage request = LockIsLockedByCurrentThreadCodec.encodeRequest(name, ThreadUtil.getThreadId());
         LockIsLockedByCurrentThreadCodec.ResponseParameters resultParameters =
@@ -67,6 +69,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return resultParameters.response;
     }
 
+    @Override
     public int getLockCount() {
         ClientMessage request = LockGetLockCountCodec.encodeRequest(name);
         LockGetLockCountCodec.ResponseParameters resultParameters
@@ -74,6 +77,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return resultParameters.response;
     }
 
+    @Override
     public long getRemainingLeaseTime() {
         ClientMessage request = LockGetRemainingLeaseTimeCodec.encodeRequest(name);
         LockGetRemainingLeaseTimeCodec.ResponseParameters resultParameters =
@@ -81,6 +85,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return resultParameters.response;
     }
 
+    @Override
     public void lock(long leaseTime, TimeUnit timeUnit) {
         checkPositive(leaseTime, "leaseTime should be positive");
         ClientMessage request = LockLockCodec.encodeRequest(name,
@@ -88,11 +93,13 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         invokeOnPartition(request);
     }
 
+    @Override
     public void forceUnlock() {
         ClientMessage request = LockForceUnlockCodec.encodeRequest(name, referenceIdGenerator.getNextReferenceId());
         invokeOnPartition(request);
     }
 
+    @Override
     public ICondition newCondition(String name) {
         checkNotNull(name, "Condition name can't be null");
         ClientConditionProxy clientConditionProxy = new ClientConditionProxy(this, name, getContext());
@@ -100,18 +107,21 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return clientConditionProxy;
     }
 
+    @Override
     public void lock() {
         ClientMessage request = LockLockCodec
                 .encodeRequest(name, -1, ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
         invokeOnPartition(request);
     }
 
+    @Override
     public void lockInterruptibly() throws InterruptedException {
         ClientMessage request = LockLockCodec
                 .encodeRequest(name, -1, ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
         invokeOnPartitionInterruptibly(request);
     }
 
+    @Override
     public boolean tryLock() {
         try {
             return tryLock(0, null);
@@ -120,6 +130,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         }
     }
 
+    @Override
     public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
         return tryLock(timeout, unit, Long.MAX_VALUE, null);
     }
@@ -135,12 +146,14 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return resultParameters.response;
     }
 
+    @Override
     public void unlock() {
         ClientMessage request = LockUnlockCodec
                 .encodeRequest(name, ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
         invokeOnPartition(request);
     }
 
+    @Override
     public Condition newCondition() {
         throw new UnsupportedOperationException();
     }

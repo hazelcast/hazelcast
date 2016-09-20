@@ -69,6 +69,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public boolean isEmpty() {
         ClientMessage request = SetIsEmptyCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -76,6 +77,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public boolean contains(Object o) {
         Preconditions.checkNotNull(o);
         Data value = toData(o);
@@ -85,18 +87,22 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public Iterator<E> iterator() {
         return getAll().iterator();
     }
 
+    @Override
     public Object[] toArray() {
         return getAll().toArray();
     }
 
+    @Override
     public <T> T[] toArray(T[] a) {
         return getAll().toArray(a);
     }
 
+    @Override
     public boolean add(E e) {
         Preconditions.checkNotNull(e);
         Data element = toData(e);
@@ -106,6 +112,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public boolean remove(Object o) {
         Preconditions.checkNotNull(o);
         Data value = toData(o);
@@ -115,6 +122,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public boolean containsAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
@@ -124,6 +132,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public boolean addAll(Collection<? extends E> c) {
         Preconditions.checkNotNull(c);
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
@@ -133,6 +142,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public boolean removeAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
@@ -142,6 +152,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public boolean retainAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
@@ -151,11 +162,13 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return resultParameters.response;
     }
 
+    @Override
     public void clear() {
         ClientMessage request = SetClearCodec.encodeRequest(name);
         invokeOnPartition(request);
     }
 
+    @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
@@ -185,6 +198,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         };
     }
 
+    @Override
     public boolean removeItemListener(String registrationId) {
         return deregisterListener(registrationId);
     }
@@ -229,13 +243,10 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
 
         @Override
         public void beforeListenerRegister() {
-
         }
 
         @Override
         public void onListenerRegister() {
-
         }
     }
-
 }

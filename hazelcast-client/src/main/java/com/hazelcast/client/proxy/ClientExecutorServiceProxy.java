@@ -268,6 +268,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     // submit random
 
+    @Override
     public Future<?> submit(Runnable command) {
         final Object partitionKey = getTaskPartitionKey(command);
         Callable<?> callable = createRunnableAdapter(command);
@@ -277,6 +278,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return submitToRandomInternal(callable, null, false);
     }
 
+    @Override
     public <T> Future<T> submit(Runnable command, T result) {
         final Object partitionKey = getTaskPartitionKey(command);
         Callable<T> callable = createRunnableAdapter(command);
@@ -286,6 +288,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return submitToRandomInternal(callable, result, false);
     }
 
+    @Override
     public <T> Future<T> submit(Callable<T> task) {
         final Object partitionKey = getTaskPartitionKey(task);
         if (partitionKey != null) {
@@ -294,6 +297,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return submitToRandomInternal(task, null, false);
     }
 
+    @Override
     public <T> void submit(Runnable command, ExecutionCallback<T> callback) {
         final Object partitionKey = getTaskPartitionKey(command);
         Callable<T> callable = createRunnableAdapter(command);
@@ -304,6 +308,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
+    @Override
     public <T> void submit(Callable<T> task, ExecutionCallback<T> callback) {
         final Object partitionKey = getTaskPartitionKey(task);
         if (partitionKey != null) {
@@ -315,35 +320,42 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     // submit to key
 
+    @Override
     public <T> Future<T> submitToKeyOwner(Callable<T> task, Object key) {
         return submitToKeyOwnerInternal(task, key, null, false);
     }
 
+    @Override
     public void submitToKeyOwner(Runnable command, Object key, ExecutionCallback callback) {
         Callable<?> callable = createRunnableAdapter(command);
         submitToKeyOwner(callable, key, callback);
     }
 
+    @Override
     public <T> void submitToKeyOwner(Callable<T> task, Object key, ExecutionCallback<T> callback) {
         submitToKeyOwnerInternal(task, key, callback);
     }
 
     // end
 
+    @Override
     public LocalExecutorStats getLocalExecutorStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
+    @Override
     public void shutdown() {
         ClientMessage request = ExecutorServiceShutdownCodec.encodeRequest(name);
         invoke(request);
     }
 
+    @Override
     public List<Runnable> shutdownNow() {
         shutdown();
         return Collections.emptyList();
     }
 
+    @Override
     public boolean isShutdown() {
         ClientMessage request = ExecutorServiceIsShutdownCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
@@ -352,14 +364,17 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return resultParameters.response;
     }
 
+    @Override
     public boolean isTerminated() {
         return isShutdown();
     }
 
+    @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         return false;
     }
 
+    @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
         final List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
         final List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
@@ -374,16 +389,19 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return result;
     }
 
+    @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
             throws InterruptedException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
             throws InterruptedException, ExecutionException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         throw new UnsupportedOperationException();
@@ -574,10 +592,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             this.member = member;
         }
 
+        @Override
         public void onResponse(T response) {
             multiExecutionCallbackWrapper.onResponse(member, response);
         }
 
+        @Override
         public void onFailure(Throwable t) {
         }
     }
@@ -594,6 +614,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             this.members = new AtomicInteger(memberSize);
         }
 
+        @Override
         public void onResponse(Member member, Object value) {
             multiExecutionCallback.onResponse(member, value);
             values.put(member, value);
@@ -604,6 +625,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             }
         }
 
+        @Override
         public void onComplete(Map<Member, Object> values) {
             multiExecutionCallback.onComplete(values);
         }

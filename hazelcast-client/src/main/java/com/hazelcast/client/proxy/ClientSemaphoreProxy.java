@@ -37,6 +37,7 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
         super(serviceName, objectId);
     }
 
+    @Override
     public boolean init(int permits) {
         checkNegative(permits);
         ClientMessage request = SemaphoreInitCodec.encodeRequest(name, permits);
@@ -46,17 +47,20 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
         return resultParameters.response;
     }
 
+    @Override
     public void acquire() throws InterruptedException {
         ClientMessage request = SemaphoreAcquireCodec.encodeRequest(name, 1);
         invokeOnPartition(request);
     }
 
+    @Override
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
         ClientMessage request = SemaphoreAcquireCodec.encodeRequest(name, permits);
         invokeOnPartition(request);
     }
 
+    @Override
     public int availablePermits() {
         ClientMessage request = SemaphoreAvailablePermitsCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -65,6 +69,7 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
         return resultParameters.response;
     }
 
+    @Override
     public int drainPermits() {
         ClientMessage request = SemaphoreDrainPermitsCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -73,23 +78,27 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
         return resultParameters.response;
     }
 
+    @Override
     public void reducePermits(int reduction) {
         checkNegative(reduction);
         ClientMessage request = SemaphoreReducePermitsCodec.encodeRequest(name, reduction);
         invokeOnPartition(request);
     }
 
+    @Override
     public void release() {
         ClientMessage request = SemaphoreReleaseCodec.encodeRequest(name, 1);
         invokeOnPartition(request);
     }
 
+    @Override
     public void release(int permits) {
         checkNegative(permits);
         ClientMessage request = SemaphoreReleaseCodec.encodeRequest(name, permits);
         invokeOnPartition(request);
     }
 
+    @Override
     public boolean tryAcquire() {
         ClientMessage request = SemaphoreTryAcquireCodec.encodeRequest(name, 1, 0);
         ClientMessage response = invokeOnPartition(request);
@@ -97,6 +106,7 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
         return resultParameters.response;
     }
 
+    @Override
     public boolean tryAcquire(int permits) {
         checkNegative(permits);
         try {
@@ -106,6 +116,7 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
         }
     }
 
+    @Override
     public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
         if (timeout == 0) {
             return tryAcquire();
@@ -116,6 +127,7 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
         return resultParameters.response;
     }
 
+    @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
         checkNegative(permits);
         ClientMessage request = SemaphoreTryAcquireCodec.encodeRequest(name, permits, unit.toMillis(timeout));

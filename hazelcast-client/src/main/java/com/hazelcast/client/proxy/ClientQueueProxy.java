@@ -140,14 +140,17 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         }
     }
 
+    @Override
     public boolean removeItemListener(String registrationId) {
         return deregisterListener(registrationId);
     }
 
+    @Override
     public LocalQueueStats getLocalQueueStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
+    @Override
     public boolean add(E e) {
         if (offer(e)) {
             return true;
@@ -165,6 +168,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
      * <tt>false</tt> if there is not enough capacity to insert the element.
      * @throws HazelcastException if client loses the connected node.
      */
+    @Override
     public boolean offer(E e) {
         try {
             return offer(e, 0, TimeUnit.SECONDS);
@@ -173,12 +177,14 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         }
     }
 
+    @Override
     public void put(E e) throws InterruptedException {
         Data data = toData(e);
         ClientMessage request = QueuePutCodec.encodeRequest(name, data);
         invokeOnPartitionInterruptibly(request);
     }
 
+    @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         checkNotNull(e, "item can't be null");
 
@@ -189,6 +195,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public E take() throws InterruptedException {
         ClientMessage request = QueueTakeCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartitionInterruptibly(request);
@@ -196,6 +203,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return toObject(resultParameters.response);
     }
 
+    @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         ClientMessage request = QueuePollCodec.encodeRequest(name, unit.toMillis(timeout));
         ClientMessage response = invokeOnPartitionInterruptibly(request);
@@ -203,6 +211,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return toObject(resultParameters.response);
     }
 
+    @Override
     public int remainingCapacity() {
         ClientMessage request = QueueRemainingCapacityCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -210,6 +219,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public boolean remove(Object o) {
         Data data = toData(o);
         ClientMessage request = QueueRemoveCodec.encodeRequest(name, data);
@@ -218,6 +228,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public boolean contains(Object o) {
         Data data = toData(o);
         ClientMessage request = QueueContainsCodec.encodeRequest(name, data);
@@ -226,6 +237,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public int drainTo(Collection<? super E> objects) {
         ClientMessage request = QueueDrainToCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -238,6 +250,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultCollection.size();
     }
 
+    @Override
     public int drainTo(Collection<? super E> c, int maxElements) {
         ClientMessage request = QueueDrainToMaxSizeCodec.encodeRequest(name, maxElements);
         ClientMessage response = invokeOnPartition(request);
@@ -250,6 +263,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultCollection.size();
     }
 
+    @Override
     public E remove() {
         final E res = poll();
         if (res == null) {
@@ -258,6 +272,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return res;
     }
 
+    @Override
     public E poll() {
         try {
             return poll(0, TimeUnit.SECONDS);
@@ -266,6 +281,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         }
     }
 
+    @Override
     public E element() {
         final E res = peek();
         if (res == null) {
@@ -274,6 +290,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return res;
     }
 
+    @Override
     public E peek() {
         ClientMessage request = QueuePeekCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -281,6 +298,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return toObject(resultParameters.response);
     }
 
+    @Override
     public int size() {
         ClientMessage request = QueueSizeCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -288,6 +306,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public boolean isEmpty() {
         ClientMessage request = QueueIsEmptyCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -295,6 +314,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public Iterator<E> iterator() {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -303,6 +323,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return new QueueIterator<E>(resultCollection.iterator(), getContext().getSerializationService(), false);
     }
 
+    @Override
     public Object[] toArray() {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -316,6 +337,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return array;
     }
 
+    @Override
     public <T> T[] toArray(T[] ts) {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
@@ -332,6 +354,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return ts;
     }
 
+    @Override
     public boolean containsAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
@@ -341,6 +364,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public boolean addAll(Collection<? extends E> c) {
         Preconditions.checkNotNull(c);
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
@@ -350,6 +374,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public boolean removeAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
@@ -360,6 +385,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public boolean retainAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
@@ -370,6 +396,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Override
     public void clear() {
         ClientMessage request = QueueClearCodec.encodeRequest(name);
         invokeOnPartition(request);

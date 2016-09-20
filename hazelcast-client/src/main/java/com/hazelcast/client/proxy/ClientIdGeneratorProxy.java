@@ -34,14 +34,17 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
         this.idGeneratorImpl = new IdGeneratorImpl(blockGenerator);
     }
 
+    @Override
     public boolean init(long id) {
         return idGeneratorImpl.init(id);
     }
 
+    @Override
     public long newId() {
         return idGeneratorImpl.newId();
     }
 
+    @Override
     protected void onDestroy() {
         idGeneratorImpl.destroy();
     }
