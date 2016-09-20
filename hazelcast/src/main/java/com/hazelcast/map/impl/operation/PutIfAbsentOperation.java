@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 
 public class PutIfAbsentOperation extends BasePutOperation {
@@ -51,5 +52,10 @@ public class PutIfAbsentOperation extends BasePutOperation {
     @Override
     public boolean shouldBackup() {
         return successful && recordStore.getRecord(dataKey) != null;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_IF_ABSENT;
     }
 }

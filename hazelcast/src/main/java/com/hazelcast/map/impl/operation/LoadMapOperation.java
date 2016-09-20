@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -51,5 +52,10 @@ public class LoadMapOperation extends MapOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         replaceExistingValues = in.readBoolean();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.LOAD_MAP;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -67,5 +68,10 @@ public class TxnRollbackBackupOperation extends MutatingKeyBasedMapOperation imp
         super.readInternal(in);
         lockOwner = in.readUTF();
         lockThreadId = in.readLong();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }
 }

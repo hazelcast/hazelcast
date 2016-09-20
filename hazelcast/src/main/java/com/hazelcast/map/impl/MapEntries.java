@@ -129,7 +129,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.MAP_ENTRIES;
+        return MapDataSerializerHook.ENTRIES;
     }
 
     @Override

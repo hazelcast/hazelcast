@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -125,5 +126,10 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
             keys.add(data);
         }
         replaceExistingValues = in.readBoolean();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.LOAD_ALL;
     }
 }

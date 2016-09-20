@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
@@ -47,5 +48,10 @@ public class SetOperation extends BasePutOperation {
     @Override
     public Object getResponse() {
         return newRecord;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.SET;
     }
 }

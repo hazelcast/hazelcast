@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
@@ -115,5 +116,10 @@ public class MergeOperation extends BasePutOperation {
         mergingEntry = in.readObject();
         mergePolicy = in.readObject();
         disableWanReplicationEvent = in.readBoolean();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.MERGE;
     }
 }

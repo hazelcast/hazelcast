@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -84,5 +85,10 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
                 keys.add(data);
             }
         }
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.GET_ALL;
     }
 }

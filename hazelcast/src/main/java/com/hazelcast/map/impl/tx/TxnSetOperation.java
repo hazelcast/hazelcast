@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
@@ -141,5 +142,10 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         super.readInternal(in);
         version = in.readLong();
         ownerUuid = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_SET;
     }
 }

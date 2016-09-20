@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
@@ -95,5 +96,10 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
             recordInfo.readData(in);
             recordInfos.add(recordInfo);
         }
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_ALL_BACKUP;
     }
 }

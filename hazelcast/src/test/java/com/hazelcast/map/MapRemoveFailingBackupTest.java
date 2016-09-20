@@ -25,6 +25,8 @@ import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -60,6 +62,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         final String key = "2";
         final String value = "value2";
         Config config = getConfig();
+        config.getSerializationConfig().addDataSerializableFactory(100, new Factory());
         config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "5");
         config.getMapConfig(mapName).setReadBackupData(true);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -97,6 +100,18 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
     }
 
 
+    private static class Factory implements DataSerializableFactory {
+        @Override
+        public IdentifiedDataSerializable create(int typeId) {
+            if (typeId == 100) {
+                return new RemoveOperation();
+            } else if (typeId == 101) {
+                return new ExceptionThrowingRemoveBackupOperation();
+            }
+            throw new IllegalArgumentException("Unsupported type " + typeId);
+        }
+    }
+
     private static class RemoveOperation extends BaseRemoveOperation {
 
         boolean successful;
@@ -127,6 +142,16 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         public boolean shouldBackup() {
             return successful;
         }
+
+        @Override
+        public int getFactoryId() {
+            return 100;
+        }
+
+        @Override
+        public int getId() {
+            return 100;
+        }
     }
 
     private static class ExceptionThrowingRemoveBackupOperation extends MutatingKeyBasedMapOperation {
@@ -145,6 +170,16 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         @Override
         public Object getResponse() {
             return Boolean.TRUE;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 100;
+        }
+
+        @Override
+        public int getId() {
+            return 101;
         }
     }
 }

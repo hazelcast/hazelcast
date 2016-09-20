@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -104,5 +105,10 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         asyncBackup = in.readBoolean();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.EVICT;
     }
 }

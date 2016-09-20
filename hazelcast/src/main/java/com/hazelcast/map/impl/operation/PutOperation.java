@@ -18,9 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
+public class PutOperation extends BasePutOperation {
 
     public PutOperation() {
     }
@@ -37,11 +36,6 @@ public class PutOperation extends BasePutOperation implements IdentifiedDataSeri
     @Override
     public Object getResponse() {
         return dataOldValue;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.nearcache.AbstractNearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
@@ -78,5 +79,10 @@ public class NearCacheBatchInvalidationOperation extends MapOperation implements
             keys.add(key);
         }
         this.keys = keys;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.NEAR_CACHE_BATCH_INVALIDATION;
     }
 }

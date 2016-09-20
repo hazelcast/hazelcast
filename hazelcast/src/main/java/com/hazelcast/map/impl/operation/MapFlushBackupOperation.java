@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -49,5 +50,10 @@ public class MapFlushBackupOperation extends MapOperation implements BackupOpera
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.FLUSH_BACKUP;
     }
 }

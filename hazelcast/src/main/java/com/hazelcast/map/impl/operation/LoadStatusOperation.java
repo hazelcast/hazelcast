@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -53,5 +54,10 @@ public class LoadStatusOperation extends MapOperation implements PartitionAwareO
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         exception = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.LOAD_STATUS;
     }
 }

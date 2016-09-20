@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -97,5 +98,10 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
 
         sb.append(", timeout=").append(getWaitTimeout());
         sb.append(", thread=").append(getThreadId());
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_LOCK_AND_GET;
     }
 }

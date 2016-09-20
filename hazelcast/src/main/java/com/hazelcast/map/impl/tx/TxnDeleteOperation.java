@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.record.Record;
@@ -127,5 +128,10 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         super.readInternal(in);
         version = in.readLong();
         ownerUuid = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_DELETE;
     }
 }

@@ -20,14 +20,12 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public class RemoveBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation,
-        IdentifiedDataSerializable {
+public class RemoveBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
 
     protected boolean unlockKey;
     protected boolean disableWanReplicationEvent;
@@ -72,11 +70,6 @@ public class RemoveBackupOperation extends MutatingKeyBasedMapOperation implemen
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

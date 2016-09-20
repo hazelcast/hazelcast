@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -90,5 +91,10 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
         super.readInternal(in);
         attributeName = in.readUTF();
         ordered = in.readBoolean();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.ADD_INDEX;
     }
 }

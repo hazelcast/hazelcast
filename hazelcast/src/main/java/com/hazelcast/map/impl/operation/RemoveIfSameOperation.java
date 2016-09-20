@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -73,5 +74,10 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         testValue = in.readData();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.REMOVE_IF_SAME;
     }
 }

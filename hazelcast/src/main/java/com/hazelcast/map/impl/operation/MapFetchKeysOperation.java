@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -60,5 +61,10 @@ public class MapFetchKeysOperation extends MapOperation implements ReadonlyOpera
         super.writeInternal(out);
         out.writeInt(fetchSize);
         out.writeInt(lastTableIndex);
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.FETCH_KEYS;
     }
 }

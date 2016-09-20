@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 
 public class DeleteOperation extends BaseRemoveOperation {
@@ -53,5 +54,10 @@ public class DeleteOperation extends BaseRemoveOperation {
     @Override
     public void onWaitExpire() {
         sendResponse(false);
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.DELETE;
     }
 }

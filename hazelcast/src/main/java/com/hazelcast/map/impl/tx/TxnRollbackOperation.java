@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -113,5 +114,10 @@ public class TxnRollbackOperation extends MutatingKeyBasedMapOperation implement
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ownerUuid = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_ROLLBACK;
     }
 }

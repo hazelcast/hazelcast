@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -92,6 +93,11 @@ public class PartitionCheckIfLoadedOperation extends MapOperation implements Par
         super.readInternal(in);
         doLoad = in.readBoolean();
         waitForKeyLoad = in.readBoolean();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CHECK_IF_LOADED;
     }
 
     private class CallbackResponseSender implements ExecutionCallback<Boolean> {

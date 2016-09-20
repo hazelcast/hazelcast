@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 
 public class ReplaceOperation extends BasePutOperation {
@@ -52,5 +53,10 @@ public class ReplaceOperation extends BasePutOperation {
     @Override
     public Object getResponse() {
         return dataOldValue;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.REPLACE;
     }
 }
