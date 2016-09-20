@@ -34,6 +34,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.valueOf;
 import static java.lang.System.clearProperty;
 import static java.lang.System.getProperty;
@@ -155,7 +156,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         ExpirationManager expirationManager = newExpirationManager(node);
 
-        assertEquals(Integer.valueOf(taskPeriodSeconds).intValue(), expirationManager.getTaskPeriodSeconds());
+        assertEquals(parseInt(taskPeriodSeconds), expirationManager.getTaskPeriodSeconds());
     }
 
     @Test
@@ -166,7 +167,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         ExpirationManager expirationManager = newExpirationManager(node);
 
-        assertEquals(Integer.valueOf(cleanupPercentage).intValue(), expirationManager.getCleanupPercentage());
+        assertEquals(parseInt(cleanupPercentage), expirationManager.getCleanupPercentage());
     }
 
     @Test
@@ -177,7 +178,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         ExpirationManager expirationManager = newExpirationManager(node);
 
-        assertEquals(Integer.valueOf(cleanupOperationCount).intValue(), expirationManager.getCleanupOperationCount());
+        assertEquals(parseInt(cleanupOperationCount), expirationManager.getCleanupOperationCount());
     }
 
     private ExpirationManager newExpirationManager(HazelcastInstance node) {
