@@ -171,7 +171,8 @@ public final class ResponseQueueFactory {
         public Object peek() {
             lock.lock();
             try {
-                return response;
+                Object value = response;
+                return (value == NULL ? null : value);
             } finally {
                 lock.unlock();
             }
