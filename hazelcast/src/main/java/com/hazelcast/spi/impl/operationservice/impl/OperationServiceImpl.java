@@ -57,7 +57,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -73,6 +74,8 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
@@ -99,7 +102,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
-    private static final long TERMINATION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
+    private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
     final InvocationRegistry invocationRegistry;
     final OperationExecutor operationExecutor;
@@ -129,6 +132,12 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     private final InternalSerializationService serializationService;
     private final ResponseHandler responseHandler;
     private final Address thisAddress;
+
+    // contains the current executing asyncOperations. This information is needed for the operation-ping.
+    // this is a temporary solution till we found a better async operation abstraction
+    @Probe
+    private final Set<Operation> asyncOperations
+            = newSetFromMap(new ConcurrentHashMap<Operation, Boolean>());
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -167,11 +176,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
                 node.getProperties(), node.getHazelcastThreadGroup());
-    }
-
-    @Override
-    public void populate(LiveOperations result) {
-        operationExecutor.scan(result);
     }
 
 
@@ -238,6 +242,15 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public int getResponseQueueSize() {
         return asyncResponseHandler.getQueueSize();
+    }
+
+    @Override
+    public void populate(LiveOperations liveOperations) {
+        operationExecutor.scan(liveOperations);
+
+        for (Operation op : asyncOperations) {
+            liveOperations.add(op.getCallerAddress(), op.getCallId());
+        }
     }
 
     @Override
@@ -324,6 +337,14 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         }
     }
 
+    public void onStartAsyncOperation(Operation op) {
+        asyncOperations.add(op);
+    }
+
+    public void onCompletionAsyncOperation(Operation op) {
+        asyncOperations.remove(op);
+    }
+
     // =============================== processing operation  ===============================
 
     @Override
@@ -362,6 +383,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
+
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
@@ -380,6 +402,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory, int[] partitions)
             throws Exception {
+        // todo: copy paste logic from the above code.
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
