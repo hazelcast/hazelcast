@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -35,8 +36,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -47,14 +50,21 @@ public class DelegatingFutureTest {
             = new DefaultSerializationServiceBuilder().build();
 
     @Test
-    public void test_get_Object() throws ExecutionException, InterruptedException {
+    public void test_get_Object() throws Exception {
         Object value = "value";
         Future future = new DelegatingFuture(new FakeCompletableFuture(value), null);
         assertEquals(value, future.get());
     }
 
     @Test
-    public void test_get_Data() throws ExecutionException, InterruptedException {
+    public void test_get_withDefault() throws Exception {
+        String defaultValue = "defaultValue";
+        Future<String> future = new DelegatingFuture<String>(new FakeCompletableFuture(null), serializationService, defaultValue);
+        assertSame(defaultValue, future.get());
+    }
+
+    @Test
+    public void test_get_Data() throws Exception{
         Object value = "value";
         Data data = serializationService.toData(value);
         Future future = new DelegatingFuture(new FakeCompletableFuture(data), serializationService);
@@ -62,14 +72,25 @@ public class DelegatingFutureTest {
     }
 
     @Test
-    public void test_get_Object_withTimeout() throws ExecutionException, InterruptedException, TimeoutException {
+    public void test_get_whenData_andMultipleTimesInvoked_thenSameInstanceReturned() throws Exception {
+        Object value = "value";
+        Data data = serializationService.toData(value);
+        Future future = new DelegatingFuture(new FakeCompletableFuture(data), serializationService);
+
+        Object result1 = future.get();
+        Object result2 = future.get();
+        assertSame(result1,result2);
+    }
+
+    @Test
+    public void test_get_Object_withTimeout() throws Exception {
         Object value = "value";
         Future future = new DelegatingFuture(new FakeCompletableFuture(value), null);
         assertEquals(value, future.get(1, TimeUnit.MILLISECONDS));
     }
 
     @Test
-    public void test_get_Data_withTimeout() throws ExecutionException, InterruptedException, TimeoutException {
+    public void test_get_Data_withTimeout() throws Exception {
         Object value = "value";
         Data data = serializationService.toData(value);
         Future future = new DelegatingFuture(new FakeCompletableFuture(data), serializationService);
@@ -77,7 +98,7 @@ public class DelegatingFutureTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void test_get_Exception() throws ExecutionException, InterruptedException {
+    public void test_get_Exception() throws Exception {
         Throwable error = new Throwable();
         Future future = new DelegatingFuture(new FakeCompletableFuture(error), null);
         future.get();
@@ -123,7 +144,7 @@ public class DelegatingFutureTest {
         future.andThen(callback, new CallerRunsExecutor());
     }
 
-    private static class FakeCompletableFuture<V> implements ICompletableFuture<V> {
+    private static class FakeCompletableFuture<V> implements InternalCompletableFuture<V> {
         private final Object value;
 
         private FakeCompletableFuture(Object value) {
@@ -179,6 +200,25 @@ public class DelegatingFutureTest {
         @Override
         public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return get();
+        }
+
+        @Override
+        public V join() {
+            try {
+                 return get();
+            } catch (Throwable throwable) {
+                throw rethrow(throwable);
+            }
+        }
+
+        @Override
+        public V getSafely() {
+            return join();
+        }
+
+        @Override
+        public boolean complete(Object value) {
+            return false;
         }
     }
 }

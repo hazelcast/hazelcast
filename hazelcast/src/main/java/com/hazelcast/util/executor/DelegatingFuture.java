@@ -20,103 +20,109 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class DelegatingFuture<V> implements ICompletableFuture<V> {
+/**
+ * A {@link InternalCompletableFuture} implementation that delegates the real logic to an underlying
+ * {@link InternalCompletableFuture} and decorates it with additional behavior:
+ * <ol>
+ * <li>change the returned value by setting the result</li>
+ * <li>always deserializing the content</li>
+ * <li>caching the deserialized content so that a deserialization only happens once. This should be used with
+ * care since this could lead to unexpected sharing of object instances if the same future is shared between
+ * threads.
+ * </li>
+ * </ol>
+ * @param <V>
+ */
+public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
 
-    private final ICompletableFuture future;
+    private static final AtomicReferenceFieldUpdater<DelegatingFuture, Object> DESERIALIZED_VALUE
+            = AtomicReferenceFieldUpdater.newUpdater(DelegatingFuture.class, Object.class, "deserializedValue");
+
+    private static final Object VOID = new Object() {
+        @Override
+        public String toString() {
+            return "void";
+        }
+    };
+
+    private final InternalCompletableFuture future;
     private final InternalSerializationService serializationService;
-    private final V defaultValue;
-    private final boolean hasDefaultValue;
-    private final Object mutex = new Object();
-    private Throwable error;
-    private volatile V value;
-    private volatile boolean done;
+    private final Object result;
+    private volatile Object deserializedValue = VOID;
 
-    public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
+    public DelegatingFuture(InternalCompletableFuture future, SerializationService serializationService) {
         this(future, serializationService, null);
     }
 
-    public DelegatingFuture(ICompletableFuture future, SerializationService serializationService, V defaultValue) {
+    /**
+     * Creates a DelegatingFuture
+     *
+     * @param future               the underlying future to delegate to.
+     * @param serializationService the {@link SerializationService}
+     * @param result               the resuling value to be used when the underlying future completes. So no matter the return
+     *                             value of that future, the result will be returned by the DelegatingFuture. A null
+     *                             value means that the value of the underlying future should be used.
+     */
+    public DelegatingFuture(InternalCompletableFuture future, SerializationService serializationService, V result) {
         this.future = future;
         this.serializationService = (InternalSerializationService) serializationService;
-        this.defaultValue = defaultValue;
-        this.hasDefaultValue = defaultValue != null;
+        this.result = result;
     }
 
     @Override
     public final V get() throws InterruptedException, ExecutionException {
-        try {
-            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            // should not happen!
-            return ExceptionUtil.sneakyThrow(e);
-        }
+        return resolve(future.get());
     }
-
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
-    @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     public final V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (!done || value == null) {
-            synchronized (mutex) {
-                if (!done || value == null) {
-                    try {
-                        value = getResult(future.get(timeout, unit));
-                    } catch (InterruptedException e) {
-                        error = e;
-                    } catch (ExecutionException e) {
-                        error = e;
-                    }
-                    done = true;
-                }
-            }
-        }
-        if (error != null) {
-            if (error instanceof CancellationException) {
-                throw (CancellationException) error;
-            }
-            if (error.getCause() instanceof CancellationException) {
-                throw (CancellationException) error.getCause();
-            }
-            if (error instanceof ExecutionException) {
-                throw (ExecutionException) error;
-            }
-            if (error instanceof InterruptedException) {
-                throw (InterruptedException) error;
-            }
-            // should not happen!
-            throw new ExecutionException(error);
-        }
-        return value;
+        return resolve(future.get(timeout, unit));
     }
 
-    private V getResult(Object object) {
-        if (hasDefaultValue) {
-            return defaultValue;
+    private V resolve(Object object) {
+        // if there is an explicit value set, we use that
+        if (result != null) {
+            return (V) result;
         }
+
+        // if there already is a deserialized value set, use it.
+        if (deserializedValue != VOID) {
+            return (V) deserializedValue;
+        }
+
         if (object instanceof Data) {
+            // we need to deserialize.
             Data data = (Data) object;
             object = serializationService.toObject(data);
+
             //todo do we need to call dispose data here
             serializationService.disposeData(data);
+
+            // now we need to try to set the value for other users.
+            for (; ; ) {
+                Object current = deserializedValue;
+                if (current != VOID) {
+                    object = current;
+                    break;
+                } else if (DESERIALIZED_VALUE.compareAndSet(this, VOID, object)) {
+                    break;
+                }
+            }
         }
         return (V) object;
     }
 
-
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        done = true;
         return false;
     }
 
@@ -127,15 +133,20 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
     @Override
     public final boolean isDone() {
-        return done ? done : future.isDone();
+        return future.isDone();
+    }
+
+    @Override
+    public boolean complete(Object value) {
+        return future.complete(value);
     }
 
     protected void setError(Throwable error) {
-        this.error = error;
+        future.complete(error);
     }
 
-    protected void setDone() {
-        this.done = true;
+    protected void completeWithDefault() {
+        future.complete(result);
     }
 
     protected ICompletableFuture getFuture() {
@@ -143,46 +154,40 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     }
 
     @Override
+    public V join() {
+        return resolve(future.join());
+    }
+
+    @Override
+    public V getSafely() {
+        return resolve(future.join());
+    }
+
+    @Override
     public void andThen(final ExecutionCallback<V> callback) {
-        future.andThen(new DelegatingExecutionCallback<V>(callback));
+        future.andThen(new DelegatingExecutionCallback(callback));
     }
 
     @Override
     public void andThen(final ExecutionCallback<V> callback, Executor executor) {
-        future.andThen(new DelegatingExecutionCallback<V>(callback), executor);
+        future.andThen(new DelegatingExecutionCallback(callback), executor);
     }
 
-    private class DelegatingExecutionCallback<T> implements ExecutionCallback {
+    private class DelegatingExecutionCallback implements ExecutionCallback<V> {
 
-        private final ExecutionCallback<T> callback;
+        private final ExecutionCallback<V> callback;
 
-        DelegatingExecutionCallback(ExecutionCallback<T> callback) {
+        DelegatingExecutionCallback(ExecutionCallback<V> callback) {
             this.callback = callback;
         }
 
         @Override
         public void onResponse(Object response) {
-            if (!done || value == null) {
-                synchronized (mutex) {
-                    if (!done || value == null) {
-                        value = getResult(response);
-                        done = true;
-                    }
-                }
-            }
-            callback.onResponse((T) value);
+            callback.onResponse(resolve(response));
         }
 
         @Override
         public void onFailure(Throwable t) {
-            if (!done) {
-                synchronized (mutex) {
-                    if (!done) {
-                        error = t;
-                        done = true;
-                    }
-                }
-            }
             callback.onFailure(t);
         }
     }

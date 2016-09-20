@@ -18,7 +18,6 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
@@ -203,7 +202,7 @@ public class ExecutorServiceProxy
 
         Operation op = new CallableTaskOperation(name, uuid, callableData)
                 .setPartitionId(partitionId);
-        ICompletableFuture future = invokeOnPartition(op);
+        InternalCompletableFuture future = invokeOnPartition(op);
         boolean sync = checkSync();
         if (sync) {
             try {
@@ -239,7 +238,7 @@ public class ExecutorServiceProxy
         boolean sync = !preventSync && checkSync();
         Operation op = new CallableTaskOperation(name, uuid, taskData)
                 .setPartitionId(partitionId);
-        ICompletableFuture future = invokeOnPartition(op);
+        InternalCompletableFuture future = invokeOnPartition(op);
         if (sync) {
             Object response;
             try {
