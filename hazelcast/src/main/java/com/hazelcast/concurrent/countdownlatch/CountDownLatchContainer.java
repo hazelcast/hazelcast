@@ -18,11 +18,14 @@ package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class CountDownLatchContainer implements DataSerializable {
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.CONTAINER;
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.F_ID;
+
+public class CountDownLatchContainer implements IdentifiedDataSerializable {
 
     private String name;
     private int count;
@@ -59,6 +62,16 @@ public class CountDownLatchContainer implements DataSerializable {
 
     public void setCountDirect(int count) {
         this.count = count;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CONTAINER;
     }
 
     @Override
