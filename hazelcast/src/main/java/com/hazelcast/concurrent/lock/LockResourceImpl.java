@@ -20,7 +20,7 @@ import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -34,7 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-final class LockResourceImpl implements DataSerializable, LockResource {
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_RESOURCE;
+
+final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {
 
     private Data key;
     private String owner;
@@ -105,6 +108,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     /**
      * This method is used to extend the already locked resource in the prepare phase of the transactions.
      * It also marks the resource true to block reads.
+     *
      * @param caller
      * @param threadId
      * @param leaseTime
@@ -193,13 +197,12 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     /**
      * Signal a waiter.
-     *
+     * <p>
      * We need to pass objectName because the name in {#objectName} is unrealible.
      *
      * @param conditionId
      * @param maxSignalCount
      * @param objectName
-     *
      * @see InternalLockNamespace
      */
     public void signal(String conditionId, int maxSignalCount, String objectName) {
@@ -360,6 +363,16 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     void setLockStore(LockStoreImpl lockStore) {
         this.lockStore = lockStore;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return LOCK_RESOURCE;
     }
 
     @Override
