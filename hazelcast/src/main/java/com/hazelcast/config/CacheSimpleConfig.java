@@ -485,7 +485,7 @@ public class CacheSimpleConfig {
      * @return the updated CacheSimpleConfig.
      */
     public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        this.evictionConfig = isNotNull(evictionConfig, "Eviction config cannot be null !");
+        this.evictionConfig = isNotNull(evictionConfig, "evictionConfig");
         return this;
     }
 

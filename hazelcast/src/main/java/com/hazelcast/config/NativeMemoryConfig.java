@@ -62,7 +62,7 @@ public class NativeMemoryConfig {
     }
 
     public NativeMemoryConfig setSize(final MemorySize size) {
-        this.size = isNotNull(size, "Memory size");
+        this.size = isNotNull(size, "size");
         return this;
     }
 

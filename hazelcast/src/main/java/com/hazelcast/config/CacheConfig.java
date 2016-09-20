@@ -379,7 +379,7 @@ public class CacheConfig<K, V>
      * @return The current cache config instance.
      */
     public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        isNotNull(evictionConfig, "Eviction config cannot be null !");
+        isNotNull(evictionConfig, "evictionConfig");
 
         // TODO Remove this check in the future since "CacheEvictionConfig" is deprecated
         if (evictionConfig instanceof CacheEvictionConfig) {

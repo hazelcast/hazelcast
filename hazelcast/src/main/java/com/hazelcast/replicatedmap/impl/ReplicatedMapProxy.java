@@ -212,8 +212,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public V put(K key, V value) {
-        isNotNull(key, "key must not be null!");
-        isNotNull(value, "value must not be null!");
+        isNotNull(key, "key");
+        isNotNull(value, "value");
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
@@ -226,8 +226,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeUnit) {
-        isNotNull(key, "key must not be null!");
-        isNotNull(value, "value must not be null!");
+        isNotNull(key, "key");
+        isNotNull(value, "value");
         isNotNull(timeUnit, "timeUnit");
         if (ttl < 0) {
             throw new IllegalArgumentException("ttl must be a positive integer");
@@ -272,8 +272,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
             // first we fill entrySetPerPartition
             for (Entry entry : entries.entrySet()) {
-                isNotNull(entry.getKey(), "key must not be null!");
-                isNotNull(entry.getValue(), "value must not be null!");
+                isNotNull(entry.getKey(), "key");
+                isNotNull(entry.getValue(), "value");
 
                 int partitionId = partitionService.getPartitionId(entry.getKey());
                 ReplicatedMapEntries mapEntries = entrySetPerPartition[partitionId];
