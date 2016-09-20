@@ -52,8 +52,8 @@ public abstract class CompositeMaxSizeChecker implements MaxSizeChecker {
 
     public static CompositeMaxSizeChecker newCompositeMaxSizeChecker(CompositionOperator compositionOperator,
                                                                      MaxSizeChecker... maxSizeCheckers) {
-        Preconditions.isNotNull(compositionOperator, "Composition operator cannot be null!");
-        Preconditions.isNotNull(maxSizeCheckers, "MaxSizeChecker's cannot be null!");
+        Preconditions.isNotNull(compositionOperator, "composition");
+        Preconditions.isNotNull(maxSizeCheckers, "maxSizeCheckers");
         if (maxSizeCheckers.length == 0) {
             throw new IllegalArgumentException("MaxSizeChecker's cannot be empty!");
         }

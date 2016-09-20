@@ -318,7 +318,7 @@ public class NearCacheConfig
      * @return This Near Cache config instance.
      */
     public NearCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
         return this;
     }
 

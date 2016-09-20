@@ -83,7 +83,7 @@ public final class GroupConfig {
      * @throws IllegalArgumentException if name is null.
      */
     public GroupConfig setName(final String name) {
-        this.name = isNotNull(name, "group name");
+        this.name = isNotNull(name, "name");
         return this;
     }
 

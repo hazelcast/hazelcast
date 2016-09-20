@@ -206,7 +206,7 @@ public class PartitionGroupConfig {
      * @see #addMemberGroupConfig(MemberGroupConfig)
      */
     public PartitionGroupConfig addMemberGroupConfig(MemberGroupConfig memberGroupConfig) {
-        memberGroupConfigs.add(isNotNull(memberGroupConfig, "MemberGroupConfig"));
+        memberGroupConfigs.add(isNotNull(memberGroupConfig, "memberGroupConfig"));
         return this;
     }
 
