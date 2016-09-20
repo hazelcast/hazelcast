@@ -267,7 +267,11 @@ public class ClientConnection implements Connection {
 
     @Override
     public String getCloseReason() {
-        return closeReason;
+        if (closeReason == null) {
+            return closeCause == null ? null : closeCause.getMessage();
+        } else {
+            return closeReason;
+        }
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "incremented in single thread")

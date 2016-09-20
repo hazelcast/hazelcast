@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
- *
+ * <p>
  * A {@link TcpIpConnection} is not responsible for reading or writing data to a socket, this is done through:
  * <ol>
  * <li>{@link SocketReader}: which care of reading from the socket and feeding it into the system/li>
@@ -190,7 +190,7 @@ public final class TcpIpConnection implements Connection {
 
     /**
      * Starts this connection.
-     *
+     * <p>
      * Starting means that the connection is going to register itself to listen to incoming traffic.
      */
     public void start() {
@@ -287,7 +287,11 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public String getCloseReason() {
-        return closeReason;
+        if (closeReason == null) {
+            return closeCause == null ? null : closeCause.getMessage();
+        } else {
+            return closeReason;
+        }
     }
 
     @Override
