@@ -98,8 +98,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         for (Consumer consumer : shuffledConsumers) {
             consumer.open();
         }
-        for (Consumer pairWriter : senders) {
-            pairWriter.open();
+        for (Consumer sender : senders) {
+            sender.open();
         }
         reset();
     }
@@ -179,7 +179,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         int taskNumber = taskContext.getTaskNumber();
         VertexTask vertexTask = vertexRunner.getVertexMap().get(taskNumber);
         for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
-            ShufflingSender sender = new ShufflingSender(vertexTask, vertexRunner.getId(), address);
+            ShufflingSender sender = new ShufflingSender(vertexTask, vertexRunner.getId());
             addrToSender.put(address, sender);
             jobManager.registerShufflingSender(taskNumber, vertexRunner.getId(), address, sender);
         }

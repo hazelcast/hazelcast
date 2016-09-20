@@ -19,13 +19,15 @@ package com.hazelcast.jet.impl.ringbuffer;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
-import com.hazelcast.jet.impl.dag.sink.AbstractHazelcastWriter;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;
 import com.hazelcast.jet.io.SerializationOptimizer;
+import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.nio.Address;
+import com.hazelcast.jet.strategy.HashingStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -33,23 +35,21 @@ import java.io.IOException;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
-public class ShufflingSender extends AbstractHazelcastWriter {
+public class ShufflingSender implements Consumer {
     private final int vertexRunnerId;
     private final int taskID;
-    private final Address address;
 
     private final byte[] jobNameBytes;
     private final Ringbuffer ringbuffer;
+    private final IOBuffer<Object> chunkBuffer;
     private final ChunkedOutputStream serializer;
     private final ObjectDataOutputStream dataOutputStream;
     private final SerializationOptimizer optimizer;
     private volatile boolean closed;
 
-    public ShufflingSender(VertexTask task, int vertexRunnerId, Address address) {
-        super(task.getTaskContext().getJobContext(), -1);
+    public ShufflingSender(VertexTask task, int vertexRunnerId) {
         this.vertexRunnerId = vertexRunnerId;
         this.taskID = task.getTaskContext().getTaskNumber();
-        this.address = address;
         JobContext jobContext = task.getTaskContext().getJobContext();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) jobContext.getNodeEngine();
         String jobName = jobContext.getName();
@@ -60,6 +60,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         this.optimizer = task.getTaskContext().getSerializationOptimizer();
         this.dataOutputStream = new ObjectDataOutputStream(
                 this.serializer, (InternalSerializationService) nodeEngine.getSerializationService());
+        this.chunkBuffer = new IOBuffer<>(new Object[jobContext.getJobConfig().getChunkSize()]);
     }
 
     @Override
@@ -80,16 +81,23 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     }
 
     @Override
-    public int flush() {
+    public boolean consume(Object object) {
+        chunkBuffer.collect(object);
+        return true;
+    }
+
+    @Override
+    public boolean isShuffled() {
+        return true;
+    }
+
+    @Override
+    public void flush() {
         if (chunkBuffer.size() > 0) {
-            try {
-                consume(chunkBuffer);
-            } catch (Exception e) {
-                throw unchecked(e);
-            }
+            consume(chunkBuffer);
             chunkBuffer.reset();
         }
-        return ringbuffer.flush();
+        ringbuffer.flush();
     }
 
     @Override
@@ -107,23 +115,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
     @Override
     public void open() {
-        onOpen();
-    }
-
-    @Override
-    protected void onOpen() {
         closed = false;
-        isFlushed = true;
         ringbuffer.open();
-    }
-
-    @Override
-    protected void processChunk(InputChunk<Object> inputChunk) {
-        try {
-            consume(inputChunk);
-        } catch (Exception e) {
-            throw unchecked(e);
-        }
     }
 
     @Override
@@ -132,8 +125,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     }
 
     @Override
-    public boolean isPartitioned() {
-        return false;
+    public HashingStrategy getHashingStrategy() {
+        return null;
     }
 
     private void writePacket(JetPacket packet) {
@@ -156,6 +149,11 @@ public class ShufflingSender extends AbstractHazelcastWriter {
                 closed = true;
             }
         }
+    }
+
+    @Override
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return null;
     }
 
     public Ringbuffer getRingbuffer() {

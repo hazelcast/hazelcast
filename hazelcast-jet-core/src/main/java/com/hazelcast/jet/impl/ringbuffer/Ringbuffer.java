@@ -21,13 +21,13 @@ import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.runtime.ProducerCompletionHandler;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.jet.impl.util.JetUtil.EMPTY_OBJECTS;
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class Ringbuffer implements Consumer, Producer {
@@ -78,18 +77,6 @@ public class Ringbuffer implements Consumer, Producer {
         Arrays.fill(producerChunk, null);
     }
 
-    private int flushChunk() {
-        if (currentFlushedCount >= flushBuffer.size()) {
-            return 0;
-        }
-        int acquired = ringbuffer.acquire(flushBuffer.size() - currentFlushedCount);
-        if (acquired <= 0) {
-            return 0;
-        }
-        ringbuffer.commit(flushBuffer, currentFlushedCount);
-        return acquired;
-    }
-
     @Override
     public int consume(InputChunk<Object> chunk) {
         currentFlushedCount = 0;
@@ -105,17 +92,16 @@ public class Ringbuffer implements Consumer, Producer {
     }
 
     @Override
-    public int flush() {
-        if (flushBuffer.size() == 0) {
-            return 0;
+    public void flush() {
+        if (currentFlushedCount >= flushBuffer.size()) {
+            return;
         }
-        try {
-            int flushed = flushChunk();
-            currentFlushedCount += flushed;
-            return flushed;
-        } catch (Exception e) {
-            throw unchecked(e);
+        int acquired = ringbuffer.acquire(flushBuffer.size() - currentFlushedCount);
+        if (acquired <= 0) {
+            return;
         }
+        ringbuffer.commit(flushBuffer, currentFlushedCount);
+        currentFlushedCount += acquired;
     }
 
     @Override

@@ -122,11 +122,9 @@ public abstract class AbstractHazelcastWriter implements Consumer {
     }
 
     @Override
-    public int flush() {
-        try {
-            return chunkBuffer.size() > 0 ? consume(chunkBuffer) : 0;
-        } catch (Exception e) {
-            throw unchecked(e);
+    public void flush() {
+        if (chunkBuffer.size() > 0) {
+            consume(chunkBuffer);
         }
     }
 

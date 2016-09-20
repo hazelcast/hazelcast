@@ -66,11 +66,9 @@ public interface Consumer {
     boolean isShuffled();
 
     /**
-     * Perfoms flush of last consumed data
-     *
-     * @return amount of flushed data
+     * Flush last consumed chunk
      */
-    int flush();
+    void flush();
 
     /**
      * @return true if last data has been flushed, false otherwise

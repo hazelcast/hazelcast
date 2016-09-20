@@ -102,14 +102,10 @@ public class CompositeRingbuffer implements Consumer {
     }
 
     @Override
-    public int flush() {
-        int flushed = 0;
-
+    public void flush() {
         for (Consumer consumer : ringbuffers) {
-            flushed += consumer.flush();
+             consumer.flush();
         }
-
-        return flushed;
     }
 
     @Override
