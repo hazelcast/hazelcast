@@ -42,20 +42,21 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(SEMAPHORE_DS_FACTORY, SEMAPHORE_DS_FACTORY_ID);
 
-    public static final int ACQUIRE_BACKUP_OPERATION = 0;
-    public static final int ACQUIRE_OPERATION = 1;
-    public static final int AVAILABLE_OPERATION = 2;
-    public static final int DEAD_MEMBER_BACKUP_OPERATION = 3;
-    public static final int DRAIN_BACKUP_OPERATION = 4;
-    public static final int DRAIN_OPERATION = 5;
-    public static final int INIT_BACKUP_OPERATION = 6;
-    public static final int INIT_OPERATION = 7;
-    public static final int REDUCE_BACKUP_OPERATION = 8;
-    public static final int REDUCE_OPERATION = 9;
-    public static final int RELEASE_BACKUP_OPERATION = 10;
-    public static final int RELEASE_OPERATION = 11;
-    public static final int DEAD_MEMBER_OPERATION = 12;
-    public static final int SEMAPHORE_REPLICATION_OPERATION = 13;
+    public static final int CONTAINER = 0;
+    public static final int ACQUIRE_BACKUP_OPERATION = 1;
+    public static final int ACQUIRE_OPERATION = 2;
+    public static final int AVAILABLE_OPERATION = 3;
+    public static final int DEAD_MEMBER_BACKUP_OPERATION = 4;
+    public static final int DRAIN_BACKUP_OPERATION = 5;
+    public static final int DRAIN_OPERATION = 6;
+    public static final int INIT_BACKUP_OPERATION = 7;
+    public static final int INIT_OPERATION = 8;
+    public static final int REDUCE_BACKUP_OPERATION = 9;
+    public static final int REDUCE_OPERATION = 10;
+    public static final int RELEASE_BACKUP_OPERATION = 11;
+    public static final int RELEASE_OPERATION = 12;
+    public static final int DEAD_MEMBER_OPERATION = 13;
+    public static final int SEMAPHORE_REPLICATION_OPERATION = 14;
 
     @Override
     public int getFactoryId() {
@@ -68,6 +69,8 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
+                    case CONTAINER:
+                        return new SemaphoreContainer();
                     case ACQUIRE_BACKUP_OPERATION:
                         return new AcquireBackupOperation();
                     case ACQUIRE_OPERATION:

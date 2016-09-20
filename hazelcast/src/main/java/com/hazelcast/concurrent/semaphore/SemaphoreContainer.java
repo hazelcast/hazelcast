@@ -19,13 +19,16 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SemaphoreContainer implements DataSerializable {
+import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.CONTAINER;
+import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.F_ID;
+
+public class SemaphoreContainer implements IdentifiedDataSerializable {
 
     public static final int INITIAL_CAPACITY = 10;
 
@@ -153,6 +156,16 @@ public class SemaphoreContainer implements DataSerializable {
     }
 
     @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CONTAINER;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(available);
         out.writeInt(partitionId);
@@ -197,5 +210,4 @@ public class SemaphoreContainer implements DataSerializable {
         }
         return sb.toString();
     }
-
 }
