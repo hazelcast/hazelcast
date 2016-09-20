@@ -116,7 +116,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.partitionContainers = createPartitionContainers();
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
-        this.expirationManager = new ExpirationManager(this);
+        this.expirationManager = new ExpirationManager(partitionContainers, nodeEngine);
         this.nearCacheProvider = createNearCacheProvider();
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
@@ -610,5 +610,10 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void removePartitioningStrategyFromCache(String mapName) {
         partitioningStrategyFactory.removePartitioningStrategyFromCache(mapName);
+    }
+
+    @Override
+    public PartitionContainer[] getPartitionContainers() {
+        return partitionContainers;
     }
 }
