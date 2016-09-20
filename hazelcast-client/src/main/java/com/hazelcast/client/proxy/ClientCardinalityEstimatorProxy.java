@@ -19,7 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateCodec;
+import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -32,10 +32,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class ClientCardinalityEstimatorProxy
         extends PartitionSpecificClientProxy implements CardinalityEstimator {
 
-    private static final ClientMessageDecoder AGGREGATE_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder ADD_DECODER = new ClientMessageDecoder() {
         @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return CardinalityEstimatorAggregateCodec.decodeResponse(clientMessage).response;
+        public Void decodeClientMessage(ClientMessage clientMessage) {
+            return null;
         }
     };
 
@@ -56,8 +56,8 @@ public class ClientCardinalityEstimatorProxy
     }
 
     @Override
-    public boolean aggregate(Object obj) {
-        return aggregateAsync(obj).join();
+    public void add(Object obj) {
+        addAsync(obj).join();
     }
 
     @Override
@@ -66,12 +66,12 @@ public class ClientCardinalityEstimatorProxy
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> aggregateAsync(Object obj) {
+    public InternalCompletableFuture<Void> addAsync(Object obj) {
         checkNotNull(obj, "Object is null");
 
         Data data = getSerializationService().toData(obj);
-        ClientMessage request = CardinalityEstimatorAggregateCodec.encodeRequest(name, data.hash64());
-        return invokeOnPartitionAsync(request, AGGREGATE_DECODER);
+        ClientMessage request = CardinalityEstimatorAddCodec.encodeRequest(name, data.hash64());
+        return invokeOnPartitionAsync(request, ADD_DECODER);
     }
 
     @Override

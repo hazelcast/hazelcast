@@ -74,49 +74,6 @@ public class ClientCardinalityEstimatorTest
     }
 
     @Test
-    public void test() throws Exception {
-        assertEquals(0, estimator.estimate());
-        assertEquals(true, estimator.aggregate(1L));
-        assertEquals(true, estimator.aggregate(1L));
-        assertEquals(1, estimator.estimate());
-
-        for (long l : new long[] { 2L, 3L, 4L }) {
-            assertEquals(true, estimator.aggregate(l));
-        }
-
-        assertEquals(4, estimator.estimate());
-        assertEquals(true, estimator.aggregate("Test"));
-        assertEquals(5, estimator.estimate());
-    }
-
-    @Test
-    public void testAsync() throws Exception {
-        ICompletableFuture<Long> f1 = estimator.estimateAsync();
-        assertEquals(0L, f1.get().longValue());
-
-        ICompletableFuture<Boolean> f2 = estimator.aggregateAsync(1L);
-        assertEquals(true, f2.get());
-
-        estimator.aggregateAsync(1L).get();
-        f1 = estimator.estimateAsync();
-        assertEquals(1L, f1.get().longValue());
-
-        estimator.aggregateAsync(2L).get();
-        estimator.aggregateAsync(3L).get();
-        estimator.aggregateAsync(4L).get();
-
-        f1 = estimator.estimateAsync();
-        assertEquals(4, f1.get().longValue());
-
-        f2 = estimator.aggregateAsync("Test");
-        assertEquals(true, f2.get());
-
-        estimator.aggregateAsync(1L).get();
-        f1 = estimator.estimateAsync();
-        assertEquals(5L, f1.get().longValue());
-    }
-
-    @Test
     public void estimate() {
         CardinalityEstimator estimator = client.getCardinalityEstimator("estimate");
         assertEquals(0, estimator.estimate());
@@ -130,55 +87,71 @@ public class ClientCardinalityEstimatorTest
     }
 
     @Test
-    public void aggregate() {
+    public void add() {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregate");
-        assertEquals(true, estimator.aggregate(1L));
+        estimator.add(1L);
         assertEquals(1L, estimator.estimate());
+        estimator.add(1L);
+        estimator.add(1L);
+        assertEquals(1L, estimator.estimate());
+        estimator.add(2L);
+        estimator.add(3L);
+        assertEquals(3L, estimator.estimate());
+        estimator.add("Test");
+        assertEquals(4L, estimator.estimate());
     }
 
     @Test
-    public void aggregateAsync()
-            throws ExecutionException, InterruptedException {
+    public void addAsync()
+            throws Exception {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAsync");
-        assertEquals(true, estimator.aggregateAsync(10000L).get());
+        estimator.addAsync(1L).get();
         assertEquals(1L, estimator.estimateAsync().get().longValue());
+        estimator.addAsync(1L).get();
+        estimator.addAsync(1L).get();
+        assertEquals(1L, estimator.estimateAsync().get().longValue());
+        estimator.addAsync(2L).get();
+        estimator.addAsync(3L);
+        assertEquals(3L, estimator.estimateAsync().get().longValue());
+        estimator.addAsync("Test").get();
+        assertEquals(4L, estimator.estimateAsync().get().longValue());
     }
 
     @Test
-    public void aggregateString() {
+    public void addString() {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateString");
-        assertEquals(true, estimator.aggregate("String1"));
+        estimator.add("String1");
         assertEquals(1L, estimator.estimate());
     }
 
     @Test
-    public void aggregateStringAsync()
-            throws ExecutionException, InterruptedException {
+    public void addStringAsync()
+            throws Exception {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateStringAsync");
-        assertEquals(true, estimator.aggregateAsync("String1").get());
+        estimator.addAsync("String1").get();
         assertEquals(1L, estimator.estimateAsync().get().longValue());
     }
 
     @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)
-    public void aggregateCustomObject() {
+    public void addCustomObject() {
         CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateCustomObject");
-        assertEquals(true, estimator.aggregate(new CustomObject(1, 2)));
+        estimator.add(new CustomObject(1, 2));
     }
 
     @Test()
-    public void aggregateCustomObjectAsync()
-            throws ExecutionException, InterruptedException {
+    public void addCustomObjectRegisteredAsync()
+            throws Exception {
         CardinalityEstimator estimator = createSerializationConfiguredClient().getCardinalityEstimator("aggregateCustomObjectAsync");
         assertEquals(0L, estimator.estimate());
-        assertEquals(true, estimator.aggregate(new CustomObject(1, 2)));
+        estimator.add(new CustomObject(1, 2));
         assertEquals(1L, estimator.estimate());
     }
 
     @Test()
-    public void aggregateCustomObjectRegistered() {
+    public void addCustomObjectRegistered() {
         CardinalityEstimator estimator = createSerializationConfiguredClient().getCardinalityEstimator("aggregateCustomObject");
         assertEquals(0L, estimator.estimate());
-        assertEquals(true, estimator.aggregate(new CustomObject(1, 2)));
+        estimator.add(new CustomObject(1, 2));
         assertEquals(1L, estimator.estimate());
     }
 

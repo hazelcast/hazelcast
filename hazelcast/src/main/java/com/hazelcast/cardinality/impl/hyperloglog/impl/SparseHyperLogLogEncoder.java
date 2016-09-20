@@ -68,7 +68,7 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     }
 
     @Override
-    public boolean aggregate(long hash) {
+    public boolean add(long hash) {
         int encoded = encodeHash(hash);
         temp[tempIdx++] = encoded;
         boolean isTempAtCapacity = tempIdx == DEFAULT_TEMP_CAPACITY;

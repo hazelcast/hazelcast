@@ -22,19 +22,20 @@ public interface HyperLogLogEncoder extends DataSerializable {
 
     /**
      * Computes a new estimate for the current status of the registers.
-     * If it was previously estimated and never invalidated, then the cached version is used.
      *
-     * @return Returns the previous cached estimation or the newly computed one.
+     * @return a cardinality estimation.
      */
     long estimate();
 
     /**
-     * Aggregates the hashcode in the HyperLogLog registers.
+     * Aggregates the hash value in the HyperLogLog registers, and returns a hint if the
+     * operation migth have affected the cardinality, it is just a hint, and it relies to
+     * the respective implementation.
      *
      * @param hash the value to aggregate
-     * @return boolean flag when the underlying registers got modified, meaning a new estimate can be computed.
+     * @return boolean hint, if the latest operation might have affected the cardinality.
      */
-    boolean aggregate(long hash);
+    boolean add(long hash);
 
     /**
      * Returns the size in memory occupied (in bytes) for this implementation of HyperLogLog.

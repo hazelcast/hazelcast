@@ -34,26 +34,24 @@ public interface HyperLogLog extends DataSerializable {
 
     /**
      * Computes a new estimate for the current status of the registers.
-     * If it was previously estimated and never invalidated, then the cached version is used.
+     * If it was previously estimated and never invalidated, then a cached version is used.
      *
-     * @return Returns the previous cached estimation or the newly computed one.
+     * @return previously cached estimation or a newly computed one.
      */
     long estimate();
 
     /**
-     * Aggregates the hashcode in the HyperLogLog registers.
+     * Aggregates the hash in the HyperLogLog registers.
      *
      * @param hash the value to aggregate
-     * @return boolean flag when the underlying registers got modified, meaning a new estimate can be computed.
      */
-    boolean aggregate(long hash);
+    void add(long hash);
 
     /**
-     * Aggregates the hashcodes in the HyperLogLog registers.
+     * Batch aggregation of hash values in the HyperLogLog registers.
      *
-     * @param hashes the hashcode array to aggregate
-     * @return boolean flag when the underlying registers got modified, meaning a new estimate can be computed.
+     * @param hashes the hash values array to aggregate
      */
-    boolean aggregateAll(long[] hashes);
+    void addAll(long[] hashes);
 
 }

@@ -51,8 +51,8 @@ class CardinalityEstimatorProxy
     }
 
     @Override
-    public boolean aggregate(Object obj) {
-        return aggregateAsync(obj).join();
+    public void add(Object obj) {
+        addAsync(obj).join();
     }
 
     @Override
@@ -61,7 +61,7 @@ class CardinalityEstimatorProxy
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> aggregateAsync(Object obj) {
+    public InternalCompletableFuture<Void> addAsync(Object obj) {
         checkNotNull(obj, "Object is null.");
         Data data = getNodeEngine().getSerializationService().toData(obj);
         Operation operation = new AggregateOperation(name, data.hash64())

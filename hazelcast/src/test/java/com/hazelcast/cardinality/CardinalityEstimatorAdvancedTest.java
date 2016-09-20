@@ -28,12 +28,12 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         String name = "testFailure";
         CardinalityEstimator estimator = instance.getCardinalityEstimator(name);
-        estimator.aggregate(1L);
+        estimator.add(1L);
         for (int i = 0; i < k; i++) {
             HazelcastInstance newInstance = nodeFactory.newHazelcastInstance();
             CardinalityEstimator newEstimator = newInstance.getCardinalityEstimator(name);
             assertEquals((long) 1 + i, newEstimator.estimate());
-            newEstimator.aggregate(String.valueOf(i + 1));
+            newEstimator.add(String.valueOf(i + 1));
             instance.shutdown();
             instance = newInstance;
         }
@@ -47,7 +47,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final String name = "testSpawnNodeInParallel";
         CardinalityEstimator estimator = instance.getCardinalityEstimator(name);
-        estimator.aggregate(1L);
+        estimator.add(1L);
         final ExecutorService ex = Executors.newFixedThreadPool(parallel);
         try {
             for (int i = 0; i < total / parallel; i++) {
@@ -63,7 +63,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
                                 counter.incrementAndGet();
                                 instances[id] = nodeFactory.newHazelcastInstance();
                                 instances[id].getCardinalityEstimator(name)
-                                        .aggregate(String.valueOf(counter.get()));
+                                        .add(String.valueOf(counter.get()));
                             } catch (Exception e) {
                                 exceptionCount.incrementAndGet();
                                 e.printStackTrace();

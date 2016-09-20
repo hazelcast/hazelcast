@@ -27,7 +27,6 @@ public class AggregateOperation
         extends CardinalityEstimatorBackupAwareOperation {
 
     private long hash;
-    private boolean changed;
 
     public AggregateOperation() { }
 
@@ -38,17 +37,12 @@ public class AggregateOperation
 
     @Override
     public int getId() {
-        return CardinalityEstimatorDataSerializerHook.AGGREGATE;
+        return CardinalityEstimatorDataSerializerHook.ADD;
     }
 
     @Override
     public void run() throws Exception {
-        changed = getCardinalityEstimatorContainer().aggregate(hash);
-    }
-
-    @Override
-    public Object getResponse() {
-        return changed;
+        getCardinalityEstimatorContainer().add(hash);
     }
 
     @Override

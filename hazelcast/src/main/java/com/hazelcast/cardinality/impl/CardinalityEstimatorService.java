@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorService
         implements ManagedService, RemoteService, MigrationAwareService {
@@ -53,6 +54,13 @@ public class CardinalityEstimatorService
                     return new CardinalityEstimatorContainer();
                 }
             };
+
+    public void addCardinalityEstimator(String name, CardinalityEstimatorContainer container) {
+        checkNotNull(name, "Name can't be null");
+        checkNotNull(container, "Container can't be null");
+
+        containers.put(name, container);
+    }
 
     public CardinalityEstimatorContainer getCardinalityEstimatorContainer(String name) {
         return getOrPutIfAbsent(containers, name, cardinalityEstimatorContainerConstructorFunction);

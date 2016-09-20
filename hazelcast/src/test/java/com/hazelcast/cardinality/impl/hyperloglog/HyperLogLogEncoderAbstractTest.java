@@ -46,30 +46,30 @@ public abstract class HyperLogLogEncoderAbstractTest {
     }
 
     @Test
-    public void aggregate() {
-        assertEquals(true, encoder.aggregate(1000L));
+    public void add() {
+        assertEquals(true, encoder.add(1000L));
         assertEquals(1L, encoder.estimate());
     }
 
     @Test
-    public void aggregateAll() {
+    public void addAll() {
         boolean changed = false;
         for (long hash : new long[] { 1L, 1L, 2000L, 3000, 40000L }) {
-            changed |= encoder.aggregate(hash);
+            changed |= encoder.add(hash);
         }
         assertEquals(true, changed);
         assertEquals(4L, encoder.estimate());
     }
 
     @Test
-    public void aggregateBigRange() {
+    public void addBigRange() {
         int sampleStep = 1000;
         ByteBuffer bb = ByteBuffer.allocate(4);
 
         for (int i = 1; i <= runLength(); i++) {
             bb.clear();
             bb.putInt(i);
-            encoder.aggregate(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
+            encoder.add(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
 
             if (i % sampleStep == 0) {
                 long est = encoder.estimate();

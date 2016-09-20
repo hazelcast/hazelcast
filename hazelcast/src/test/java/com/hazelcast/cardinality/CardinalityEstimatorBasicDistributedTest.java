@@ -16,21 +16,25 @@
 
 package com.hazelcast.cardinality;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CardinalityEstimatorBasicDistributedTest
         extends CardinalityEstimatorAbstractTest {
 
     @Override
-    protected HazelcastInstance[] newInstances() {
-        return createHazelcastInstanceFactory(2).newInstances();
+    protected HazelcastInstance[] newInstances(Config config) {
+        return createHazelcastInstanceFactory(2).newInstances(config);
     }
 
 }

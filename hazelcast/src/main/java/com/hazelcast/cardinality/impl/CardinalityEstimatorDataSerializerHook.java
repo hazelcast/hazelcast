@@ -34,7 +34,7 @@ public final class CardinalityEstimatorDataSerializerHook
     public static final int F_ID = FactoryIdHelper.getFactoryId(CARDINALITY_ESTIMATOR_DS_FACTORY,
             CARDINALITY_ESTIMATOR_DS_FACTORY_ID);
 
-    public static final int AGGREGATE = 0;
+    public static final int ADD = 0;
     public static final int ESTIMATE = 1;
     public static final int AGGREGATE_BACKUP = 2;
     public static final int REPLICATION = 3;
@@ -50,7 +50,7 @@ public final class CardinalityEstimatorDataSerializerHook
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case AGGREGATE:
+                    case ADD:
                         return new AggregateOperation();
                     case ESTIMATE:
                         return new EstimateOperation();

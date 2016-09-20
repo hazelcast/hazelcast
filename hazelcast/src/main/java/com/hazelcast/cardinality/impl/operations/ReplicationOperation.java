@@ -45,8 +45,7 @@ public class ReplicationOperation extends Operation
         CardinalityEstimatorService service = getService();
         for (Map.Entry<String, CardinalityEstimatorContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
-            CardinalityEstimatorContainer newContainer = service.getCardinalityEstimatorContainer(name);
-            newContainer.setHyperLogLog(entry.getValue().getHyperLogLog());
+            service.addCardinalityEstimator(name, entry.getValue());
         }
     }
 

@@ -41,7 +41,7 @@ public class AggregateBackupOperation
     @Override
     public void run() throws Exception {
         CardinalityEstimatorContainer container = getCardinalityEstimatorContainer();
-        container.aggregate(hash);
+        container.add(hash);
     }
 
     @Override

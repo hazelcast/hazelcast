@@ -799,7 +799,7 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
     }
 
     @Override
-    public boolean aggregate(long hash) {
+    public boolean add(long hash) {
         final int index = (int) hash & (register.length - 1);
         final int value = Long.numberOfTrailingZeros((hash >> p) | P_FENCE_MASK) + 1;
 

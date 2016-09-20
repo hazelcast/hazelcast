@@ -62,18 +62,18 @@ public class CardinalityEstimatorBackupTest
     }
 
     @Test
-    public void testAggregate() {
-        estimator.aggregate(10000L);
+    public void testAdd() {
+        estimator.add(10000L);
 
         assertEstimateValue(instance1, 1L);
         assertEstimateValue(instance2, 1L);
     }
 
     @Test
-    public void testAggregateAll() {
-        estimator.aggregate(10000L);
-        estimator.aggregate(20000L);
-        estimator.aggregate(30000L);
+    public void testAddAll() {
+        estimator.add(10000L);
+        estimator.add(20000L);
+        estimator.add(30000L);
 
         assertEstimateValue(instance1, 3L);
         assertEstimateValue(instance2, 3L);

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.cardinality;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.cardinality.impl.operations.AggregateOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateCodec;
+import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -29,10 +29,10 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class CardinalityEstimatorAggregateMessageTask
-        extends AbstractPartitionMessageTask<CardinalityEstimatorAggregateCodec.RequestParameters> {
+public class CardinalityEstimatorAddMessageTask
+        extends AbstractPartitionMessageTask<CardinalityEstimatorAddCodec.RequestParameters> {
 
-    public CardinalityEstimatorAggregateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public CardinalityEstimatorAddMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -42,13 +42,13 @@ public class CardinalityEstimatorAggregateMessageTask
     }
 
     @Override
-    protected CardinalityEstimatorAggregateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CardinalityEstimatorAggregateCodec.decodeRequest(clientMessage);
+    protected CardinalityEstimatorAddCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CardinalityEstimatorAddCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CardinalityEstimatorAggregateCodec.encodeResponse((Boolean) response);
+        return CardinalityEstimatorAddCodec.encodeResponse();
     }
 
     @Override
@@ -68,7 +68,7 @@ public class CardinalityEstimatorAggregateMessageTask
 
     @Override
     public String getMethodName() {
-        return "aggregate";
+        return "add";
     }
 
     @Override

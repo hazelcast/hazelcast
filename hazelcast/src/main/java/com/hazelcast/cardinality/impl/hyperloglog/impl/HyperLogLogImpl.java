@@ -67,23 +67,18 @@ public class HyperLogLogImpl implements HyperLogLog {
     }
 
     @Override
-    public boolean aggregate(long hash) {
-        boolean changed = encoder.aggregate(hash);
+    public void add(long hash) {
+        boolean changed = encoder.add(hash);
         if (changed) {
             cachedEstimate = null;
         }
-
-        return changed;
     }
 
     @Override
-    public boolean aggregateAll(long[] hashes) {
-        boolean changed = false;
+    public void addAll(long[] hashes) {
         for (long hash : hashes) {
-            changed |= aggregate(hash);
+            add(hash);
         }
-
-        return changed;
     }
 
     @Override

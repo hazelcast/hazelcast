@@ -32,16 +32,8 @@ public class CardinalityEstimatorContainer implements DataSerializable {
         hll = new HyperLogLogImpl();
     }
 
-    public HyperLogLog getHyperLogLog() {
-        return hll;
-    }
-
-    public void setHyperLogLog(HyperLogLog hll) {
-        this.hll = hll;
-    }
-
-    public boolean aggregate(long hash) {
-        return hll.aggregate(hash);
+    public void add(long hash) {
+        hll.add(hash);
     }
 
     public long estimate() {

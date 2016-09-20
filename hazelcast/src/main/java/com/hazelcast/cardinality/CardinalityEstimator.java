@@ -18,56 +18,71 @@ package com.hazelcast.cardinality;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * CardinalityEstimator is a redundant and highly available distributed data-structure used
  * for probabilistic cardinality estimation purposes, on unique items, in significantly sized data cultures.
  *
- * CardinalityEstimator is internally based on HyperLogLog data-structure,
+ * CardinalityEstimator is internally based on a HyperLogLog++ data-structure,
  * and uses P^2 byte registers for storage and computation. (Default P = 14)
  */
+@Beta
 public interface CardinalityEstimator extends DistributedObject {
 
     /**
-     * Aggregates the given hash which can result in a new estimation being available or not.
-     * The latter case would signify that the internal registers of the data-structure were not affected.
-     * The most obvious reason for this scenario would be that another hash (seen before) caused a register
-     * to hold a bigger value that this one could, therefore it got skipped.
+     * Consider the 64bit hash value, produced by the serialized form of the given object,
+     * in the cardinality estimation. The implementation is free to choose whether this hash
+     * will be used towards the estimation, therefore, this operation may or may not affect
+     * the current estimation.
+     *
+     * Input object, unless a boxed primitive, must have a
+     * {@link com.hazelcast.nio.serialization.StreamSerializer} implementation, registered in the Hazelcast
+     * config to allow serialization. The hashing algorithm used to calculate the 64bit hash,
+     * is {@link com.hazelcast.util.HashUtil#MurmurHash3_x64_64(byte[], int, int)}.
      *
      * @param obj the serializable object to aggregate in the estimate.
-     * @return boolean flag True, when a new estimate can be computed.
+     * @throws NullPointerException if obj is null
      * @since 3.8
      */
-    boolean aggregate(Object obj);
+    void add(Object obj);
 
 
     /**
      * Estimates the cardinality of the aggregation so far.
-     * If it was previously estimated and never invalidated, then the cached version is used.
+     * If it was previously estimated and never invalidated, then a cached version is used.
      *
-     * @return Returns the previous cached estimation or the newly computed one.
+     * @return a cached estimation or a newly computed one.
      * @since 3.8
      */
     long estimate();
 
     /**
-     * Aggregates the given hash which can result in a new estimation being available or not.
+     * Consider the 64bit hash value, produced by the serialized form of the given object,
+     * in the cardinality estimation. The implementation is free to choose whether this hash
+     * will be used towards the estimation, therefore, this operation may or may not affect
+     * the current estimation.
+     *
+     * Input object, unless a boxed primitive, must have a
+     * {@link com.hazelcast.nio.serialization.StreamSerializer} implementation, registered in the Hazelcast
+     * config to allow serialization. The hashing algorithm used to calculate the 64bit hash,
+     * is {@link com.hazelcast.util.HashUtil#MurmurHash3_x64_64(byte[], int, int)}.
      *
      * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
      * The operations result can be obtained in a blocking way, or a
      * callback can be provided for execution upon completion, as demonstrated in the following examples:
      * <p>
      * <pre>
-     *     ICompletableFuture&lt;Boolean&gt; future = estimator.aggregateAsync();
+     *     ICompletableFuture&lt;Void&gt; future = estimator.addAsync();
      *     // do something else, then read the result
      *     Boolean result = future.get(); // this method will block until the result is available
      * </pre>
      * </p>
      * <p>
      * <pre>
-     *     ICompletableFuture&lt;Boolean&gt; future = estimator.aggregateAsync();
-     *     future.andThen(new ExecutionCallback&lt;Boolean&gt;() {
-     *          void onResponse(Boolean response) {
+     *     ICompletableFuture&lt;Void&gt; future = estimator.addAsync();
+     *     future.andThen(new ExecutionCallback&lt;Void&gt;() {
+     *          void onResponse(Void response) {
      *              // do something with the result
      *          }
      *
@@ -78,14 +93,15 @@ public interface CardinalityEstimator extends DistributedObject {
      * </pre>
      * </p>
      * @param obj the serializable object to aggregate in the estimate.
-     * @return {@link ICompletableFuture} bearing the response, True, when a new estimate can be computed.
+     * @return an {@link ICompletableFuture} API consumers can use to track execution of this request.
+     * @throws NullPointerException if obj is null
      * @since 3.8
      */
-    ICompletableFuture<Boolean> aggregateAsync(Object obj);
+    ICompletableFuture<Void> addAsync(Object obj);
 
     /**
      * Estimates the cardinality of the aggregation so far.
-     * If it was previously estimated and never invalidated, then the cached version is used.
+     * If it was previously estimated and never invalidated, then a cached version is used.
      *
      * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
      * The operations result can be obtained in a blocking way, or a
@@ -111,7 +127,7 @@ public interface CardinalityEstimator extends DistributedObject {
      *     });
      * </pre>
      * </p>
-     * @return {@link ICompletableFuture} bearing the response, the new estimate.
+     * @return {@link ICompletableFuture} bearing the response, the estimate.
      * @since 3.8
      */
     ICompletableFuture<Long> estimateAsync();

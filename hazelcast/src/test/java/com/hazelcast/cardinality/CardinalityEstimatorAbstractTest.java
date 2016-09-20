@@ -16,76 +16,63 @@
 
 package com.hazelcast.cardinality;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import javax.smartcardio.Card;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 
 public abstract class CardinalityEstimatorAbstractTest
         extends HazelcastTestSupport {
+
+    @Parameterized.Parameters(name = "config:{0}")
+    public static Collection<Object[]> params() {
+        final Config config = new Config();
+        final SerializerConfig serializerConfig = new SerializerConfig();
+        serializerConfig.setImplementation(new CustomObjectSerializer());
+        serializerConfig.setTypeClass(CustomObject.class);
+        config.getSerializationConfig().addSerializerConfig(serializerConfig);
+
+        return Arrays.asList(new Object[][] {
+                { null }, { config }
+        });
+    }
 
     protected HazelcastInstance[] instances;
 
     private CardinalityEstimator estimator;
 
+    @Parameterized.Parameter(0)
+    public Config config;
+
     @Before
     public void setup() {
-        instances = newInstances();
+        instances = newInstances(config);
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
         String name = generateKeyOwnedBy(target);
         estimator = local.getCardinalityEstimator(name);
     }
 
-    protected abstract HazelcastInstance[] newInstances();
-
-    @Test
-    public void test() {
-        assertEquals(0, estimator.estimate());
-        assertEquals(true, estimator.aggregate(1L));
-        assertEquals(true, estimator.aggregate(1L));
-        assertEquals(1, estimator.estimate());
-
-        for (long l : new long[] { 2L, 3L, 4L }) {
-            assertEquals(true, estimator.aggregate(l));
-        }
-
-        assertEquals(4, estimator.estimate());
-        assertEquals(true, estimator.aggregate("Test"));
-        assertEquals(5, estimator.estimate());
-    }
-
-    @Test
-    public void testAsync() throws Exception {
-        ICompletableFuture<Long> f1 = estimator.estimateAsync();
-        assertEquals(0L, f1.get().longValue());
-
-        ICompletableFuture<Boolean> f2 = estimator.aggregateAsync(1L);
-        assertEquals(true, f2.get());
-
-        estimator.aggregateAsync(1L).get();
-        f1 = estimator.estimateAsync();
-        assertEquals(1L, f1.get().longValue());
-
-        estimator.aggregateAsync(2L).get();
-        estimator.aggregateAsync(3L).get();
-        estimator.aggregateAsync(4L).get();
-
-        f1 = estimator.estimateAsync();
-        assertEquals(4, f1.get().longValue());
-
-        f2 = estimator.aggregateAsync("Test");
-        assertEquals(true, f2.get());
-
-        estimator.aggregateAsync(1L).get();
-        f1 = estimator.estimateAsync();
-        assertEquals(5L, f1.get().longValue());
-    }
+    protected abstract HazelcastInstance[] newInstances(final Config config);
 
     @Test
     public void estimate() {
@@ -94,18 +81,98 @@ public abstract class CardinalityEstimatorAbstractTest
 
     @Test
     public void estimateAsync()
-            throws ExecutionException, InterruptedException {
+            throws Exception {
         assertEquals(0, estimator.estimateAsync().get().longValue());
     }
 
     @Test
-    public void aggregate() {
-        assertEquals(true, estimator.aggregate(1L));
+    public void add() {
+        estimator.add(1L);
+        assertEquals(1L, estimator.estimate());
+        estimator.add(1L);
+        estimator.add(1L);
+        assertEquals(1L, estimator.estimate());
+        estimator.add(2L);
+        estimator.add(3L);
+        assertEquals(3L, estimator.estimate());
+        estimator.add("Test");
+        assertEquals(4L, estimator.estimate());
     }
 
     @Test
-    public void aggregateAsync()
-            throws ExecutionException, InterruptedException {
-        assertEquals(true, estimator.aggregateAsync(10000L).get().booleanValue());
+    public void addAsync()
+            throws Exception {
+        estimator.addAsync(1L).get();
+        assertEquals(1L, estimator.estimateAsync().get().longValue());
+        estimator.addAsync(1L).get();
+        estimator.addAsync(1L).get();
+        assertEquals(1L, estimator.estimateAsync().get().longValue());
+        estimator.addAsync(2L).get();
+        estimator.addAsync(3L);
+        assertEquals(3L, estimator.estimateAsync().get().longValue());
+        estimator.addAsync("Test").get();
+        assertEquals(4L, estimator.estimateAsync().get().longValue());
     }
+
+    @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)
+    public void addCustomObject() {
+        assumeTrue(config == null);
+
+        estimator.add(new CustomObject(1, 2));
+    }
+
+    @Test()
+    public void addCustomObjectRegisteredAsync()
+            throws Exception {
+        assumeTrue(config != null);
+
+        assertEquals(0L, estimator.estimate());
+        estimator.add(new CustomObject(1, 2));
+        assertEquals(1L, estimator.estimate());
+    }
+
+    @Test()
+    public void addCustomObjectRegistered() {
+        assumeTrue(config != null);
+
+        assertEquals(0L, estimator.estimate());
+        estimator.add(new CustomObject(1, 2));
+        assertEquals(1L, estimator.estimate());
+    }
+
+    private class CustomObject {
+        private final int x;
+        private final int y;
+
+        private CustomObject(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    private static class CustomObjectSerializer implements StreamSerializer<CustomObject> {
+
+        @Override
+        public int getTypeId() {
+            return 1;
+        }
+
+        @Override
+        public void destroy() {
+        }
+
+        @Override
+        public void write(ObjectDataOutput out, CustomObject object)
+                throws IOException {
+            out.writeLong((object.x << Bits.INT_SIZE_IN_BYTES) | object.y);
+        }
+
+        @Override
+        public CustomObject read(ObjectDataInput in)
+                throws IOException {
+            // Not needed
+            throw new UnsupportedOperationException();
+        }
+    }
+
 }

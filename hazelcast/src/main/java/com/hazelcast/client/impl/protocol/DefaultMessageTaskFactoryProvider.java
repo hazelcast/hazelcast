@@ -1,7 +1,7 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
-import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAggregateMessageTask;
+import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAddMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorEstimateMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
@@ -1671,9 +1671,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         };
 //endregion
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.cardinality
-        factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAggregateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new CardinalityEstimatorAggregateMessageTask(clientMessage, node, connection);
+                return new CardinalityEstimatorAddMessageTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
