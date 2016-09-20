@@ -79,13 +79,13 @@ public class NearCacheTest extends NearCacheTestSupport {
     public void testBasicUsage() {
         int clusterSize = 3;
         int mapSize = 5000;
-        String mapName = "testBasicUsage";
+        final String mapName = "testBasicUsage";
 
         Config config = getConfig();
         config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
 
-        HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         IMap<Integer, Integer> map = instances[0].getMap(mapName);
 
         populateMap(map, mapSize);
@@ -114,11 +114,18 @@ public class NearCacheTest extends NearCacheTestSupport {
         }
 
         map.clear();
-        for (HazelcastInstance instance : instances) {
-            NearCache nearCache = getNearCache(mapName, instance);
-            int size = nearCache.size();
-            assertEquals("Near Cache size should be 0 but was " + size, 0, size);
-        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (HazelcastInstance instance : instances) {
+                    NearCache nearCache = getNearCache(mapName, instance);
+                    int size = nearCache.size();
+                    assertEquals("Near Cache size should be 0 but was " + size, 0, size);
+                }
+            }
+        });
+
     }
 
     @Override
@@ -168,7 +175,7 @@ public class NearCacheTest extends NearCacheTestSupport {
 
     @Test
     public void testNearCacheEviction_withMapClear() {
-        int size = 10;
+        final int size = 10;
         String mapName = "testNearCacheEvictionWithMapClear";
 
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
@@ -181,8 +188,8 @@ public class NearCacheTest extends NearCacheTestSupport {
         HazelcastInstance hazelcastInstance1 = factory.newHazelcastInstance(config);
         HazelcastInstance hazelcastInstance2 = factory.newHazelcastInstance(config);
 
-        IMap<Integer, Integer> map1 = hazelcastInstance1.getMap(mapName);
-        IMap<Integer, Integer> map2 = hazelcastInstance2.getMap(mapName);
+        final IMap<Integer, Integer> map1 = hazelcastInstance1.getMap(mapName);
+        final IMap<Integer, Integer> map2 = hazelcastInstance2.getMap(mapName);
 
         // populate map
         populateMap(map1, size);
@@ -193,13 +200,18 @@ public class NearCacheTest extends NearCacheTestSupport {
         // clear map should trigger Near Cache eviction
         map1.clear();
 
-        // assert that the Near Cache doesn't return any cached values
-        for (int i = 0; i < size; i++) {
-            assertNull(map1.get(i));
-            assertNull(map2.get(i));
-        }
-        assertEquals(0, getNearCacheStats(map1).getEvictions());
-        assertEquals(0, getNearCacheStats(map2).getEvictions());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                // assert that the Near Cache doesn't return any cached values
+                for (int i = 0; i < size; i++) {
+                    assertNull(map1.get(i));
+                    assertNull(map2.get(i));
+                }
+                assertEquals(0, getNearCacheStats(map1).getEvictions());
+                assertEquals(0, getNearCacheStats(map2).getEvictions());
+            }
+        });
     }
 
     @Test

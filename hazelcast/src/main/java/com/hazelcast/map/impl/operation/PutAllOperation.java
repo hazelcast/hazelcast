@@ -72,7 +72,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = hasWanReplication();
         hasBackups = hasBackups();
-        hasInvalidation = mapContainer.isInvalidationEnabled();
+        hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
             backupRecordInfos = new ArrayList<RecordInfo>(mapEntries.size());

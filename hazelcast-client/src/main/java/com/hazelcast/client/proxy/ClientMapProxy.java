@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.protocol.codec.MapAddIndexCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
-import com.hazelcast.client.impl.protocol.codec.MapClearNearCacheCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
@@ -75,7 +74,6 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
-import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -142,7 +140,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
@@ -960,18 +957,12 @@ public class ClientMapProxy<K, V>
     public void evictAll() {
         ClientMessage request = MapEvictAllCodec.encodeRequest(name);
         invoke(request);
-
-        clearNearCachesOnLiteMembers();
     }
 
     @Override
     public void loadAll(boolean replaceExistingValues) {
         ClientMessage request = MapLoadAllCodec.encodeRequest(name, replaceExistingValues);
         invoke(request);
-
-        if (replaceExistingValues) {
-            clearNearCachesOnLiteMembers();
-        }
     }
 
     @Override
@@ -983,10 +974,6 @@ public class ClientMapProxy<K, V>
 
         Collection<Data> dataKeys = CollectionUtil.objectToDataCollection(keys, getSerializationService());
         loadAllInternal(replaceExistingValues, dataKeys);
-
-        if (replaceExistingValues) {
-            clearNearCachesOnLiteMembers();
-        }
     }
 
     protected void loadAllInternal(boolean replaceExistingValues, Collection<Data> dataKeys) {
@@ -1428,20 +1415,10 @@ public class ClientMapProxy<K, V>
     public void clear() {
         ClientMessage request = MapClearCodec.encodeRequest(name);
         invoke(request);
-
-        clearNearCachesOnLiteMembers();
     }
 
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         return new ClientMapPartitionIterator<K, V>(this, getContext(), fetchSize, partitionId, prefetchValues);
-    }
-
-    private void clearNearCachesOnLiteMembers() {
-        final ClientClusterService clusterService = getClient().getClientClusterService();
-        for (Member member : clusterService.getMembers(LITE_MEMBER_SELECTOR)) {
-            final ClientMessage request = MapClearNearCacheCodec.encodeRequest(name, member.getAddress());
-            invoke(request, member.getAddress());
-        }
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

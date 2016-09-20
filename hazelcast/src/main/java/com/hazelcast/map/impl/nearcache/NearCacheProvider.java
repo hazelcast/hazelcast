@@ -20,6 +20,9 @@ import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.invalidation.BatchInvalidator;
+import com.hazelcast.map.impl.nearcache.invalidation.NearCacheInvalidator;
+import com.hazelcast.map.impl.nearcache.invalidation.NonStopInvalidator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -117,12 +120,13 @@ public class NearCacheProvider {
             nearCache.destroy();
         }
 
-        nearCacheInvalidator.destroy(mapName);
+        String uuid = mapServiceContext.getNodeEngine().getLocalMember().getUuid();
+        nearCacheInvalidator.destroy(mapName, uuid);
     }
 
     public Object getFromNearCache(String mapName, Data key) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        if (!mapContainer.hasMemberNearCache()) {
+        if (!mapContainer.hasInvalidationListener()) {
             return null;
         }
         NearCache<Data, Object> nearCache = getOrCreateNearCache(mapName);

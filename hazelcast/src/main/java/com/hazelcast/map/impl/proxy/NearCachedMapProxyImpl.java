@@ -26,9 +26,17 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper;
+import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.InvalidationHandler;
+import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
+import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -54,6 +62,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     protected NearCache<Data, Object> nearCache;
     protected KeyStateMarker keyStateMarker;
     protected boolean cacheLocalEntries;
+    protected boolean invalidateOnChange;
+    protected volatile String invalidationListenerId;
 
     public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
@@ -72,6 +82,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         nearCache = nearCacheProvider.getOrCreateNearCache(name);
         keyStateMarker = getKeyStateMarker();
         cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
+
+        invalidateOnChange = nearCache.isInvalidatedOnChange();
+        if (invalidateOnChange) {
+            addNearCacheInvalidateListener();
+        }
+
     }
 
     // this operation returns the object in data format,
@@ -394,7 +410,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected boolean isOwn(Data key) {
         int partitionId = partitionService.getPartitionId(key);
-        return partitionService.getPartitionOwner(partitionId).equals(thisAddress);
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        return thisAddress.equals(partitionOwner);
     }
 
     public NearCache getNearCache() {
@@ -403,5 +420,45 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     public KeyStateMarker getKeyStateMarker() {
         return ((StaleReadPreventerNearCacheWrapper) nearCache).getKeyStateMarker();
+    }
+
+    private void addNearCacheInvalidateListener() {
+        MapListener listener = new NearCacheInvalidationListener();
+        EventFilter eventFilter = new UuidFilter(getNodeEngine().getLocalMember().getUuid());
+
+        invalidationListenerId = mapServiceContext.addEventListener(listener, eventFilter, name);
+    }
+
+    private final class NearCacheInvalidationListener implements InvalidationListener, InvalidationHandler {
+
+        private NearCacheInvalidationListener() {
+        }
+
+        @Override
+        public void onInvalidate(Invalidation invalidation) {
+            assert invalidation != null;
+
+            invalidation.consumedBy(this);
+        }
+
+        @Override
+        public void handle(BatchNearCacheInvalidation batchNearCacheInvalidation) {
+            List<SingleNearCacheInvalidation> invalidations = batchNearCacheInvalidation.getInvalidations();
+
+            for (SingleNearCacheInvalidation invalidation : invalidations) {
+                handle(invalidation);
+            }
+        }
+
+        @Override
+        public void handle(SingleNearCacheInvalidation singleNearCacheInvalidation) {
+            Data key = singleNearCacheInvalidation.getKey();
+
+            if (key == null) {
+                nearCache.clear();
+            } else {
+                nearCache.remove(key);
+            }
+        }
     }
 }

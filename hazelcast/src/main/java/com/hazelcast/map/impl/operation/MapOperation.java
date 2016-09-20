@@ -99,27 +99,21 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     protected final void invalidateNearCache(List<Data> keys) {
-        if (!mapContainer.isInvalidationEnabled() || isEmpty(keys)) {
+        if (!mapContainer.hasInvalidationListener() || isEmpty(keys)) {
             return;
         }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        nearCacheProvider.getNearCacheInvalidator().invalidate(name, keys, getCallerUuid());
+        for (Data key : keys) {
+            nearCacheProvider.getNearCacheInvalidator().invalidate(key, name, getCallerUuid());
+        }
     }
 
     protected final void invalidateNearCache(Data key) {
-        if (!mapContainer.isInvalidationEnabled() || key == null) {
+        if (!mapContainer.hasInvalidationListener() || key == null) {
             return;
         }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        nearCacheProvider.getNearCacheInvalidator().invalidate(name, key, getCallerUuid());
-    }
-
-    protected final void clearLocalNearCache() {
-        if (!mapContainer.isInvalidationEnabled()) {
-            return;
-        }
-        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        nearCacheProvider.getNearCacheInvalidator().clearLocalNearCache(name);
+        nearCacheProvider.getNearCacheInvalidator().invalidate(key, name, getCallerUuid());
     }
 
     protected void evict(Data excludedKey) {

@@ -148,7 +148,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
-        configureBatching(config, true, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        configureBatching(config, true, 5, 5);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
@@ -191,7 +191,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
-        configureBatching(config, true, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        configureBatching(config, true, 5, 5);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance node1 = factory.newHazelcastInstance(config);

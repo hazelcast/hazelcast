@@ -81,7 +81,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
     }
 
     private void addInvalidation(Data key) {
-        if (!mapContainer.isInvalidationEnabled()) {
+        if (!mapContainer.hasInvalidationListener()) {
             return;
         }
 

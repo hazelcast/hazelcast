@@ -14,65 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache;
+package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ManagedService;
 
-import java.util.List;
-
 /**
- * Responsible for local and remote Near Cache invalidation.
- * Local Near Caches are node local, remote Near Caches can be exist on remote nodes or clients.
+ * Invalidates near-caches.
  *
  * @since 3.6
  */
 public interface NearCacheInvalidator {
 
     /**
-     * Invalidates local and remote Near Caches.
-     * Local Near Caches are node local, remote Near Caches can be exist on remote members or clients.
+     * Invalidates supplied key from this maps near-caches.
      *
-     * @param mapName    name of the map.
-     * @param key        key of the entry to be removed from Near Cache.
-     * @param sourceUuid caller uuid
-     */
-    void invalidate(String mapName, Data key, String sourceUuid);
-
-    /**
-     * Invalidates local and remote Near Caches.
-     * Local Near Caches are node local, remote Near Caches can be exist on remote members or clients.
-     *
-     * @param mapName    name of the map.
-     * @param keys       keys of the entries to be removed from Near Cache.
-     * @param sourceUuid caller uuid
-     */
-    void invalidate(String mapName, List<Data> keys, String sourceUuid);
-
-    /**
-     * Clears local members Near Cache.
-     *
-     * @param mapName name of the map.
-     */
-    void clearLocalNearCache(String mapName);
-
-    /**
-     * Send clear event to client-side Near Cache invalidation listeners.
-     *
+     * @param key        key of the entry to be removed from near-cache.
      * @param mapName    name of the map.
      * @param sourceUuid caller uuid
      */
-    void sendClientNearCacheClearEvent(String mapName, String sourceUuid);
+    void invalidate(Data key, String mapName, String sourceUuid);
 
     /**
      * Removes supplied maps invalidation queue and flushes its content.
      * This method is called when removing a Near Cache with
      * {@link com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)}
      *
-     * @param mapName name of the map.
+     * @param mapName    name of the map.
+     * @param sourceUuid caller uuid
      * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
      */
-    void destroy(String mapName);
+    void destroy(String mapName, String sourceUuid);
 
     /**
      * Resets this invalidator back to its initial state.

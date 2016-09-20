@@ -52,8 +52,6 @@ import com.hazelcast.map.impl.operation.MultipleEntryBackupOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateBackupOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
-import com.hazelcast.map.impl.operation.NearCacheBatchInvalidationOperation;
-import com.hazelcast.map.impl.operation.NearCacheSingleInvalidationOperation;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryBackupOperation;
@@ -364,16 +362,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MergeOperation();
-            }
-        };
-        constructors[NEAR_CACHE_SINGLE_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new NearCacheSingleInvalidationOperation();
-            }
-        };
-        constructors[NEAR_CACHE_BATCH_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new NearCacheBatchInvalidationOperation();
             }
         };
         constructors[CHECK_IF_LOADED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

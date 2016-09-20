@@ -62,7 +62,7 @@ public class MapClearMessageTask
             MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
             mapEventPublisher.publishMapEvent(thisAddress, parameters.name, CLEAR_ALL, clearedTotal);
 
-            sendClientNearCacheClearEvent(parameters.name);
+            sendNearCacheClearEvent(parameters.name);
         }
 
         return null;

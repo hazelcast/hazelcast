@@ -50,12 +50,12 @@ public abstract class TransactionalMapProxySupport
         extends TransactionalDistributedObject<MapService> implements TransactionalObject {
 
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
-
     protected final String name;
-    protected final MapServiceContext mapServiceContext;
     protected final RecordFactory recordFactory;
     protected final MapOperationProvider operationProvider;
     protected final PartitioningStrategy partitionStrategy;
+    protected final MapServiceContext mapServiceContext;
+    protected final boolean nearCacheEnabled;
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
@@ -65,6 +65,7 @@ public abstract class TransactionalMapProxySupport
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.partitionStrategy = mapContainer.getPartitioningStrategy();
+        this.nearCacheEnabled = mapContainer.getMapConfig().isNearCacheEnabled();
     }
 
     protected boolean isEquals(Object value1, Object value2) {
@@ -91,7 +92,6 @@ public abstract class TransactionalMapProxySupport
     }
 
     public Object getInternal(Data key) {
-        boolean nearCacheEnabled = mapServiceContext.getMapContainer(name).hasMemberNearCache();
         if (nearCacheEnabled) {
             Object cached = mapServiceContext.getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {

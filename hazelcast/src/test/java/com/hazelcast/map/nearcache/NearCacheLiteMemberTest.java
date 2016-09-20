@@ -9,6 +9,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -451,10 +452,8 @@ public class NearCacheLiteMemberTest {
     }
 
     private static NearCache<Data, Object> getNearCache(HazelcastInstance instance, String mapName) {
-        return getMapService(instance)
-                .getMapServiceContext()
-                .getNearCacheProvider()
-                .getOrCreateNearCache(mapName);
+        IMap map = instance.getMap(mapName);
+        return ((NearCachedMapProxyImpl) map).getNearCache();
     }
 
     private static void assertNullNearCacheEntryEventually(final HazelcastInstance instance, String mapName, Object key) {

@@ -20,22 +20,21 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.nearcache.BatchNearCacheInvalidation;
-import com.hazelcast.map.impl.nearcache.CleaningNearCacheInvalidation;
-import com.hazelcast.map.impl.nearcache.Invalidation;
-import com.hazelcast.map.impl.nearcache.InvalidationListener;
-import com.hazelcast.map.impl.nearcache.SingleNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.InvalidationHandler;
+import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
+import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent;
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent;
-import static com.hazelcast.map.impl.nearcache.BatchInvalidator.getKeysExcludingSource;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 public class MapAddNearCacheEntryListenerMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheEntryListenerCodec.RequestParameters> {
@@ -82,37 +81,74 @@ public class MapAddNearCacheEntryListenerMessageTask
 
     @Override
     protected EventFilter getEventFilter() {
-        return new EventListenerFilter(parameters.listenerFlags, TrueEventFilter.INSTANCE);
+        return new EventListenerFilter(parameters.listenerFlags, new UuidFilter(endpoint.getUuid()));
     }
 
-    private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener {
+    private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener, InvalidationHandler {
 
-        ClientNearCacheInvalidationListenerImpl() {
+        private ClientNearCacheInvalidationListenerImpl() {
         }
 
         @Override
-        public void onInvalidate(Invalidation event) {
+        public void onInvalidate(Invalidation invalidation) {
             if (!endpoint.isAlive()) {
                 return;
             }
 
-            sendEvent(event);
+            invalidation.consumedBy(this);
         }
 
-        private void sendEvent(Invalidation event) {
-            if (event instanceof BatchNearCacheInvalidation) {
-                List<Data> keys = getKeysExcludingSource(((BatchNearCacheInvalidation) event), endpoint.getUuid());
-                if (!isEmpty(keys)) {
-                    sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys));
-                }
-            } else if (!endpoint.getUuid().equals(event.getSourceUuid())) {
-                if (event instanceof SingleNearCacheInvalidation) {
-                    Data key = ((SingleNearCacheInvalidation) event).getKey();
-                    sendClientMessage(key, encodeIMapInvalidationEvent(key));
-                } else if (event instanceof CleaningNearCacheInvalidation) {
-                    sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
-                }
+        @Override
+        public void handle(BatchNearCacheInvalidation batchNearCacheInvalidation) {
+            List<Data> keys = getKeysOrNull(batchNearCacheInvalidation);
+
+            if (keys == null) {
+                sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
+            } else {
+                sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys));
             }
         }
+
+        /**
+         * Returns null if invalidation is caused by a clear event, otherwise returns key-list to invalidate.
+         * Returning null is a special case and represents a near-cache clear event.
+         *
+         * @see SingleNearCacheInvalidation
+         */
+        private List<Data> getKeysOrNull(BatchNearCacheInvalidation batch) {
+            List<SingleNearCacheInvalidation> invalidations = batch.getInvalidations();
+
+            List<Data> keyList = null;
+            for (SingleNearCacheInvalidation invalidation : invalidations) {
+                Data key = invalidation.getKey();
+                // if key is null, it means this is a clear event and no need to process
+                // other invalidations.
+                if (key == null) {
+                    return null;
+                }
+
+                if (keyList == null) {
+                    keyList = new ArrayList<Data>(invalidations.size());
+                }
+                keyList.add(key);
+            }
+
+            assert keyList != null;
+
+            return keyList;
+        }
+
+
+        @Override
+        public void handle(SingleNearCacheInvalidation singleNearCacheInvalidation) {
+            Data key = singleNearCacheInvalidation.getKey();
+
+            if (key == null) {
+                sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
+            } else {
+                sendClientMessage(key, encodeIMapInvalidationEvent(key));
+            }
+        }
+
     }
 }

@@ -31,6 +31,10 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
 
+/**
+ * This task is deprecated but keeping it here for client protocol backward compatibility reasons.
+ */
+@Deprecated
 public class MapClearNearCacheMessageTask extends AbstractInvocationMessageTask<MapClearNearCacheCodec.RequestParameters> {
 
     public MapClearNearCacheMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
