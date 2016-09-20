@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,7 +39,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.checkTrue;
-import static java.lang.Integer.valueOf;
+import static java.lang.Integer.parseInt;
 import static java.lang.Math.min;
 import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -78,6 +79,7 @@ public final class ExpirationManager {
     private final int cleanupOperationCount;
 
     @SuppressWarnings("checkstyle:magicnumber")
+    @SuppressFBWarnings({"EI_EXPOSE_REP2"})
     public ExpirationManager(PartitionContainer[] partitionContainers, NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.partitionContainers = partitionContainers;
@@ -101,7 +103,7 @@ public final class ExpirationManager {
     private int getInteger(String propertyName, int defaultValue) {
         Config config = nodeEngine.getConfig();
         String property = config.getProperty(propertyName);
-        return property == null ? defaultValue : valueOf(property);
+        return property == null ? defaultValue : parseInt(property);
     }
 
     private static int calculateCleanupOperationCount(int partitionCount, int partitionThreadCount) {
