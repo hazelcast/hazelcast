@@ -18,13 +18,14 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType;
 
-public final class DistributedObjectEventPacket implements DataSerializable {
+public final class DistributedObjectEventPacket implements IdentifiedDataSerializable {
 
     private EventType eventType;
     private String serviceName;
@@ -73,5 +74,15 @@ public final class DistributedObjectEventPacket implements DataSerializable {
                 + ", serviceName='" + serviceName + '\''
                 + ", name=" + name
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.DIST_OBJECT_EVENT_PACKET;
     }
 }

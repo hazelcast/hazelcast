@@ -18,14 +18,16 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
 import java.io.IOException;
 
-public class RegistrationOperation extends Operation implements AllowedDuringPassiveState {
+public class RegistrationOperation extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
 
     private Registration registration;
     private boolean response;
@@ -57,5 +59,15 @@ public class RegistrationOperation extends Operation implements AllowedDuringPas
     protected void readInternal(ObjectDataInput in) throws IOException {
         registration = new Registration();
         registration.readData(in);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.REGISTRATION;
     }
 }

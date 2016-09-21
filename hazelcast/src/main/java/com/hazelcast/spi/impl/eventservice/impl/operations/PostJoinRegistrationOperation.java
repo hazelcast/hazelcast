@@ -18,8 +18,10 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
@@ -27,7 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class PostJoinRegistrationOperation extends Operation {
+public class PostJoinRegistrationOperation extends Operation implements IdentifiedDataSerializable {
 
     private Collection<Registration> registrations;
 
@@ -80,5 +82,15 @@ public class PostJoinRegistrationOperation extends Operation {
                 reg.readData(in);
             }
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.POST_JOIN_REGISTRATION;
     }
 }

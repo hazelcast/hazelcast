@@ -18,15 +18,17 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
 import com.hazelcast.spi.impl.eventservice.impl.EventProcessor;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 
 import java.io.IOException;
 
-public class SendEventOperation extends Operation implements AllowedDuringPassiveState {
+public class SendEventOperation extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
     private EventEnvelope eventEnvelope;
     private int orderKey;
 
@@ -57,5 +59,15 @@ public class SendEventOperation extends Operation implements AllowedDuringPassiv
         eventEnvelope = new EventEnvelope();
         eventEnvelope.readData(in);
         orderKey = in.readInt();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.SEND_EVENT;
     }
 }

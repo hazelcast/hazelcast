@@ -17,12 +17,14 @@
 package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.util.Clock;
@@ -34,7 +36,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation {
+class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
     final Queue<ParkedOperation> queue;
     final Operation op;
     final BlockingOperation blockingOperation;
@@ -198,5 +200,15 @@ class ParkedOperation extends Operation implements Delayed, PartitionAwareOperat
         sb.append(", op=").append(op);
         sb.append(", expirationTime=").append(expirationTime);
         sb.append(", valid=").append(valid);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.WAITING;
     }
 }
