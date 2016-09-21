@@ -33,12 +33,7 @@ public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
      */
     E join();
 
-    /**
-     * @deprecated since 3.7. Use {@link #join()} instead.
-     */
-    E getSafely();
-
-    /**
+     /**
      * Completes this future.
      *
      * @param value the value to complete this future with.
