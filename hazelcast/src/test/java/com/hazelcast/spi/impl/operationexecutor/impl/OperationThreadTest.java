@@ -1,6 +1,7 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
@@ -17,6 +18,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -31,7 +33,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         handlerFactory = mock(OperationRunnerFactory.class);
         OperationRunner handler = mock(OperationRunner.class);
         when(handlerFactory.createGenericRunner()).thenReturn(handler);
-        when(handlerFactory.createPartitionRunner(anyInt())).thenReturn(handler);
+        when(handlerFactory.createPartitionRunner(anyInt(), (Counter)any())).thenReturn(handler);
 
         initExecutor();
 
@@ -111,7 +113,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         handlerFactory = mock(OperationRunnerFactory.class);
         OperationRunner handler = mock(OperationRunner.class);
         when(handlerFactory.createGenericRunner()).thenReturn(handler);
-        when(handlerFactory.createPartitionRunner(anyInt())).thenReturn(handler);
+        when(handlerFactory.createPartitionRunner(anyInt(), (Counter)any())).thenReturn(handler);
 
         initExecutor();
 

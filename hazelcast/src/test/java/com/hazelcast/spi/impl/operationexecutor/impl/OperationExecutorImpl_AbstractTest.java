@@ -7,6 +7,7 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -176,7 +177,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         DummyOperationRunner adhocHandler;
 
         @Override
-        public OperationRunner createPartitionRunner(int partitionId) {
+        public OperationRunner createPartitionRunner(int partitionId, Counter failedBackupsCounter) {
             DummyOperationRunner operationHandler = new DummyOperationRunner(partitionId);
             partitionOperationHandlers.add(operationHandler);
             return operationHandler;
