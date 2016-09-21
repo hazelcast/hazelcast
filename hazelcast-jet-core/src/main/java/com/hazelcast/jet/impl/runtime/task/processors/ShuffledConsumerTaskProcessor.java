@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.runtime.task.processors;
 
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.PartitionIdAware;
+import com.hazelcast.jet.WithPartitionId;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.impl.ringbuffer.ShufflingSender;
 import com.hazelcast.jet.impl.runtime.JobManager;
@@ -29,7 +29,7 @@ import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.TaskContext;
 import com.hazelcast.jet.strategy.CalculationStrategy;
-import com.hazelcast.jet.strategy.CalculationStrategyAware;
+import com.hazelcast.jet.strategy.WithCalculationStrategy;
 import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -61,8 +61,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final Map<CalculationStrategy, Map<Integer, List<Consumer>>> partitionedConsumers = new HashMap<>();
     private final NodeEngine nodeEngine;
 
-    private int nextIndexToConsume;
-    private boolean chunkInProgress;
+    private boolean consumptionDone;
+    private boolean flushingInProgress;
     private boolean localSuccess;
 
     public ShuffledConsumerTaskProcessor(
@@ -110,23 +110,25 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     @Override
     public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
         if (inputChunk.size() == 0) {
+            consumptionDone = true;
             consumedSome = false;
             return true;
         }
         boolean success = false;
         boolean consumedSome = feedLocalConsumers(inputChunk);
-        if (!chunkInProgress && nextIndexToConsume < inputChunk.size()) {
+        if (!flushingInProgress && !consumptionDone) {
             consumeSome(inputChunk);
-            chunkInProgress = true;
             consumedSome = true;
+            consumptionDone = true;
+            flushingInProgress = true;
         }
-        if (chunkInProgress) {
-            if (areAllFlushed()) {
-                chunkInProgress = false;
+        if (flushingInProgress) {
+            if (flushSomeAndSeeIfDone()) {
+                flushingInProgress = false;
             }
             consumedSome = true;
         }
-        if (!chunkInProgress && nextIndexToConsume == inputChunk.size() && localSuccess) {
+        if (!flushingInProgress && consumptionDone && localSuccess) {
             success = true;
             consumedSome = true;
         }
@@ -211,12 +213,12 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void resetState() {
-        nextIndexToConsume = 0;
-        chunkInProgress = false;
+        consumptionDone = false;
+        flushingInProgress = false;
         localSuccess = !isSender || !hasLocalConsumers;
     }
 
-    private boolean areAllFlushed() {
+    private boolean flushSomeAndSeeIfDone() {
         boolean allFlushed = true;
         for (Consumer sender : senders) {
             allFlushed &= sender.isFlushed();
@@ -239,10 +241,10 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void consume(Object object) throws Exception {
-        CalculationStrategy objectCalculationStrategy = object instanceof CalculationStrategyAware
-                ? ((CalculationStrategyAware) object).getCalculationStrategy() : null;
-        int objectPartitionId = object instanceof PartitionIdAware
-                ? ((PartitionIdAware) object).getPartitionId() : -1;
+        final CalculationStrategy objectCalculationStrategy = object instanceof WithCalculationStrategy
+                ? ((WithCalculationStrategy) object).getCalculationStrategy() : null;
+        final int objectPartitionId = object instanceof WithPartitionId
+                ? ((WithPartitionId) object).getPartitionId() : -1;
         feedNonPartitionedConsumers(object);
         Arrays.fill(markers, null);
         boolean didMarkNonPartitionedRemotes = false;
@@ -255,19 +257,15 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
 
     private void consumeSome(InputChunk<Object> chunk) throws Exception {
         if (calculationStrategies.length > 0) {
-            int consumedSize = 0;
-            for (int i = nextIndexToConsume; i < chunk.size(); i++) {
+            for (int i = 0; i < chunk.size(); i++) {
                 Object object = chunk.get(i);
-                consumedSize++;
                 consume(object);
             }
-            nextIndexToConsume += consumedSize;
         } else {
             feedNonPartitionedConsumers(chunk);
             if (isSender) {
                 sendToNonPartitionedRemotes(chunk);
             }
-            nextIndexToConsume = chunk.size();
         }
         flush();
     }

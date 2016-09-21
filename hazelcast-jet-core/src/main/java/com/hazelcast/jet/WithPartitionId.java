@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.strategy;
+package com.hazelcast.jet;
 
 /**
- * Represents something which can be configured with CalculationStrategy
- * Examples:
- * <pre>
- *     Pair
- * </pre>
+ * Something which knows about partitionId
  */
-public interface CalculationStrategyAware {
+public interface WithPartitionId {
+
     /**
-     * @return corresponding CalculationStrategy
+     * Returns the partition id for the object
+     *
+     * @return the partition id for the object
      */
-    CalculationStrategy getCalculationStrategy();
+    int getPartitionId();
 }

@@ -186,7 +186,7 @@ public class VertexRunner implements StateMachineEventHandler<VertexRunnerEvent>
             VertexTask[] vertexTasks = target.getVertexTasks();
             for (int i = 0, vertexTasksLength = vertexTasks.length; i < vertexTasksLength; i++) {
                 VertexTask targetTask = vertexTasks[i];
-                targetTask.addProducer(consumer.getRingbuffers()[i]);
+                targetTask.addProducer(consumer.getRingbufferAt(i));
             }
         }
         return target;
