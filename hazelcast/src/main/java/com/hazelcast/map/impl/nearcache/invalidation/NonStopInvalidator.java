@@ -47,7 +47,4 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
             }
         }
     }
-
 }
-
-
