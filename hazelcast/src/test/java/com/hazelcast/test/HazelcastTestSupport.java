@@ -996,7 +996,7 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(opsCount, waitNotifyService.getTotalWaitingOperationCount());
+                assertEquals(opsCount, waitNotifyService.getTotalParkedOperationCount());
             }
         });
     }

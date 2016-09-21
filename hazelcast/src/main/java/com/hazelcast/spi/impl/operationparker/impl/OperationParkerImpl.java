@@ -33,7 +33,6 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
@@ -46,14 +45,16 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class OperationParkerImpl implements OperationParker, LiveOperationsTracker {
 
     private static final long FIRST_WAIT_TIME = 1000;
     private static final long TIMEOUT_UPPER_BOUND = 1500;
 
-    private final ConcurrentMap<WaitNotifyKey, Queue<ParkedOperation>> mapWaitingOps =
+    private final ConcurrentMap<WaitNotifyKey, Queue<ParkedOperation>> parkQueueMap =
             new ConcurrentHashMap<WaitNotifyKey, Queue<ParkedOperation>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationService;
@@ -61,7 +62,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
 
-    private final ConstructorFunction<WaitNotifyKey, Queue<ParkedOperation>> waitQueueConstructor
+    private final ConstructorFunction<WaitNotifyKey, Queue<ParkedOperation>> parkQueueConstructor
             = new ConstructorFunction<WaitNotifyKey, Queue<ParkedOperation>>() {
         @Override
         public Queue<ParkedOperation> createNew(WaitNotifyKey key) {
@@ -78,22 +79,22 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         expirationService = Executors.newSingleThreadExecutor(
                 new SingleExecutorThreadFactory(threadGroup.getInternalThreadGroup(),
                         threadGroup.getClassLoader(),
-                        threadGroup.getThreadNamePrefix("wait-notify")));
+                        threadGroup.getThreadNamePrefix("operation-parker")));
 
         expirationTask = expirationService.submit(new ExpirationTask());
     }
 
     @Override
     public void populate(LiveOperations liveOperations) {
-        for (Queue<ParkedOperation> queue : mapWaitingOps.values()) {
-            for (ParkedOperation op : queue) {
+        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
+            for (ParkedOperation op : parkQueue) {
                 liveOperations.add(op.getCallerAddress(), op.getCallId());
             }
         }
     }
 
-    private void invalidate(final ParkedOperation waitingOp) throws Exception {
-        nodeEngine.getOperationService().execute(waitingOp);
+    private void invalidate(ParkedOperation parkedOperation) throws Exception {
+        nodeEngine.getOperationService().execute(parkedOperation);
     }
 
     // Runs in operation thread, we can assume that
@@ -102,13 +103,13 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     @Override
     public void park(BlockingOperation op) {
         final WaitNotifyKey key = op.getWaitKey();
-        final Queue<ParkedOperation> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
+        final Queue<ParkedOperation> parkQueue = getOrPutIfAbsent(parkQueueMap, key, parkQueueConstructor);
         long timeout = op.getWaitTimeout();
-        ParkedOperation waitingOp = new ParkedOperation(q, op);
-        waitingOp.setNodeEngine(nodeEngine);
-        q.offer(waitingOp);
+        ParkedOperation parkedOperation = new ParkedOperation(parkQueue, op);
+        parkedOperation.setNodeEngine(nodeEngine);
+        parkQueue.offer(parkedOperation);
         if (timeout > -1 && timeout < TIMEOUT_UPPER_BOUND) {
-            delayQueue.offer(waitingOp);
+            delayQueue.offer(parkedOperation);
         }
     }
 
@@ -118,53 +119,53 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     @Override
     public void unpark(Notifier notifier) {
         WaitNotifyKey key = notifier.getNotifiedKey();
-        Queue<ParkedOperation> q = mapWaitingOps.get(key);
-        if (q == null) {
+        Queue<ParkedOperation> parkQueue = parkQueueMap.get(key);
+        if (parkQueue == null) {
             return;
         }
-        ParkedOperation waitingOp = q.peek();
-        while (waitingOp != null) {
-            final Operation op = waitingOp.getOperation();
+        ParkedOperation parkedOp = parkQueue.peek();
+        while (parkedOp != null) {
+            Operation op = parkedOp.getOperation();
             if (notifier == op) {
                 throw new IllegalStateException("Found cyclic wait-notify! -> " + notifier);
             }
-            if (waitingOp.isValid()) {
-                if (waitingOp.isExpired()) {
+            if (parkedOp.isValid()) {
+                if (parkedOp.isExpired()) {
                     // expired
-                    waitingOp.onExpire();
+                    parkedOp.onExpire();
                 } else {
-                    if (waitingOp.shouldWait()) {
+                    if (parkedOp.shouldWait()) {
                         return;
                     }
                     nodeEngine.getOperationService().run(op);
                 }
-                waitingOp.setValid(false);
+                parkedOp.setValid(false);
             }
             // consume
-            q.poll();
+            parkQueue.poll();
 
-            waitingOp = q.peek();
+            parkedOp = parkQueue.peek();
 
-            // If q.peek() returns null, we should deregister this specific
-            // key to avoid memory leak. By contract we know that await() and notify()
+            // If parkQueue.peek() returns null, we should deregister this specific
+            // key to avoid memory leak. By contract we know that park() and unpark()
             // cannot be called in parallel.
             // We can safely remove this queue from registration map here.
-            if (waitingOp == null) {
-                mapWaitingOps.remove(key);
+            if (parkedOp == null) {
+                parkQueueMap.remove(key);
             }
         }
     }
 
     // for testing purposes only
-    public int getAwaitQueueCount() {
-        return mapWaitingOps.size();
+    public int getParkQueueCount() {
+        return parkQueueMap.size();
     }
 
     // for testing purposes only
-    public int getTotalWaitingOperationCount() {
+    public int getTotalParkedOperationCount() {
         int count = 0;
-        for (Queue<ParkedOperation> queue : mapWaitingOps.values()) {
-            count += queue.size();
+        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
+            count += parkQueue.size();
         }
         return count;
     }
@@ -172,8 +173,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     // for testing purposes only
     public int getTotalValidWaitingOperationCount() {
         int count = 0;
-        for (Queue<ParkedOperation> queue : mapWaitingOps.values()) {
-            for (ParkedOperation parkedOperation : queue) {
+        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
+            for (ParkedOperation parkedOperation : parkQueue) {
                 if (parkedOperation.valid) {
                     count++;
                 }
@@ -192,13 +193,14 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     }
 
     private void invalidateWaitingOps(String callerUuid) {
-        for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
-            for (ParkedOperation waitingOp : q) {
-                if (waitingOp.isValid()) {
-                    Operation op = waitingOp.getOperation();
-                    if (callerUuid.equals(op.getCallerUuid())) {
-                        waitingOp.setValid(false);
-                    }
+        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
+            for (ParkedOperation parkedOperation : parkQueue) {
+                if (!parkedOperation.isValid()) {
+                    continue;
+                }
+                Operation op = parkedOperation.getOperation();
+                if (callerUuid.equals(op.getCallerUuid())) {
+                    parkedOperation.setValid(false);
                 }
             }
         }
@@ -211,23 +213,25 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
 
         int partitionId = migrationInfo.getPartitionId();
-        for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
-            Iterator<ParkedOperation> it = q.iterator();
+        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
+            Iterator<ParkedOperation> it = parkQueue.iterator();
             while (it.hasNext()) {
                 if (Thread.interrupted()) {
                     return;
                 }
-                ParkedOperation waitingOp = it.next();
-                if (waitingOp.isValid()) {
-                    Operation op = waitingOp.getOperation();
-                    if (partitionId == op.getPartitionId()) {
-                        waitingOp.setValid(false);
-                        PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
-                                partitionId, op.getClass().getName(), op.getServiceName());
-                        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-                        responseHandler.sendResponse(op, pme);
-                        it.remove();
-                    }
+                ParkedOperation parkedOperation = it.next();
+                if (!parkedOperation.isValid()) {
+                    continue;
+                }
+
+                Operation op = parkedOperation.getOperation();
+                if (partitionId == op.getPartitionId()) {
+                    parkedOperation.setValid(false);
+                    PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
+                            partitionId, op.getClass().getName(), op.getServiceName());
+                    OperationResponseHandler responseHandler = op.getOperationResponseHandler();
+                    responseHandler.sendResponse(op, pme);
+                    it.remove();
                 }
             }
         }
@@ -235,14 +239,15 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     @Override
     public void cancelParkedOperations(String serviceName, Object objectId, Throwable cause) {
-        for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
-            for (ParkedOperation waitingOp : q) {
-                if (waitingOp.isValid()) {
-                    WaitNotifyKey wnk = waitingOp.blockingOperation.getWaitKey();
-                    if (serviceName.equals(wnk.getServiceName())
-                            && objectId.equals(wnk.getObjectName())) {
-                        waitingOp.cancel(cause);
-                    }
+        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
+            for (ParkedOperation parkedOperation : parkQueue) {
+                if (!parkedOperation.isValid()) {
+                    continue;
+                }
+                WaitNotifyKey wnk = parkedOperation.blockingOperation.getWaitKey();
+                if (serviceName.equals(wnk.getServiceName())
+                        && objectId.equals(wnk.getObjectName())) {
+                    parkedOperation.cancel(cause);
                 }
             }
         }
@@ -250,7 +255,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     public void reset() {
         delayQueue.clear();
-        mapWaitingOps.clear();
+        parkQueueMap.clear();
     }
 
     public void shutdown() {
@@ -259,24 +264,26 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         expirationService.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
         final Address thisAddress = nodeEngine.getThisAddress();
-        for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
-            for (ParkedOperation waitingOp : q) {
-                if (waitingOp.isValid()) {
-                    final Operation op = waitingOp.getOperation();
-                    // only for local invocations, remote ones will be expired via #onMemberLeft()
-                    if (thisAddress.equals(op.getCallerAddress())) {
-                        try {
-                            OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-                            responseHandler.sendResponse(op, response);
-                        } catch (Exception e) {
-                            logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
-                        }
+        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
+            for (ParkedOperation parkedOperation : parkQueue) {
+                if (!parkedOperation.isValid()) {
+                    continue;
+                }
+
+                Operation op = parkedOperation.getOperation();
+                // only for local invocations, remote ones will be expired via #onMemberLeft()
+                if (thisAddress.equals(op.getCallerAddress())) {
+                    try {
+                        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
+                        responseHandler.sendResponse(op, response);
+                    } catch (Exception e) {
+                        logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
                     }
                 }
             }
-            q.clear();
+            parkQueue.clear();
         }
-        mapWaitingOps.clear();
+        parkQueueMap.clear();
     }
 
     @Override
@@ -285,7 +292,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         sb.append("delayQueue=");
         sb.append(delayQueue.size());
         sb.append(" \n[");
-        for (Queue<ParkedOperation> scheduledOps : mapWaitingOps.values()) {
+        for (Queue<ParkedOperation> scheduledOps : parkQueueMap.values()) {
             sb.append("\t");
             sb.append(scheduledOps.size());
             sb.append(", ");
@@ -318,10 +325,10 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
             long waitTime = FIRST_WAIT_TIME;
             while (waitTime > 0) {
                 long begin = System.currentTimeMillis();
-                ParkedOperation waitingOp = (ParkedOperation) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
-                if (waitingOp != null) {
-                    if (waitingOp.isValid()) {
-                        invalidate(waitingOp);
+                ParkedOperation parkedOperation = (ParkedOperation) delayQueue.poll(waitTime, MILLISECONDS);
+                if (parkedOperation != null) {
+                    if (parkedOperation.isValid()) {
+                        invalidate(parkedOperation);
                     }
                 }
                 long end = System.currentTimeMillis();
@@ -331,13 +338,13 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
                 }
             }
 
-            for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
-                for (ParkedOperation waitingOp : q) {
+            for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
+                for (ParkedOperation parkedOperation : parkQueue) {
                     if (Thread.interrupted()) {
                         return true;
                     }
-                    if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
-                        invalidate(waitingOp);
+                    if (parkedOperation.isValid() && parkedOperation.needsInvalidation()) {
+                        invalidate(parkedOperation);
                     }
                 }
             }
