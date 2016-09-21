@@ -417,6 +417,16 @@ public interface HazelcastInstance {
      */
     ICacheManager getCacheManager();
 
+    /**
+     * Obtain a {@link CardinalityEstimator} with the given name.
+     * The estimator can be used to efficiently estimate the cardinality of <strong>unique</strong> entities
+     * in big data sets, without the need of storing them.
+     *
+     * The estimator is based on a HyperLogLog++ data-structure.
+     *
+     * @param name the name of the estimator
+     * @return a {@link CardinalityEstimator}
+     */
     CardinalityEstimator getCardinalityEstimator(String name);
 
     /**

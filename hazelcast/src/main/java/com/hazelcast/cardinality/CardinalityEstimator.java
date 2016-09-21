@@ -75,7 +75,7 @@ public interface CardinalityEstimator extends DistributedObject {
      *     ICompletableFuture&lt;Void&gt; future = estimator.addAsync();
      *     future.andThen(new ExecutionCallback&lt;Void&gt;() {
      *          void onResponse(Void response) {
-     *              // do something with the result
+     *              // do something
      *          }
      *
      *          void onFailure(Throwable t) {

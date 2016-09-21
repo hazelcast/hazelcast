@@ -19,23 +19,18 @@ package com.hazelcast.cardinality;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import javax.smartcardio.Card;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
