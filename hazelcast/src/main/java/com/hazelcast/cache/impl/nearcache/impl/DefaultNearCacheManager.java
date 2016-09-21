@@ -28,9 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DefaultNearCacheManager implements NearCacheManager {
 
-    private final ConcurrentMap<String, NearCache> nearCacheMap =
-            new ConcurrentHashMap<String, NearCache>();
-
+    private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final Object mutex = new Object();
 
     @Override

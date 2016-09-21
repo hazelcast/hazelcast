@@ -39,58 +39,26 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     protected final NearCacheConfig nearCacheConfig;
     protected final NearCacheContext nearCacheContext;
     protected final SerializationService serializationService;
-    protected NearCacheRecordStore<K, V> nearCacheRecordStore;
-    protected ScheduledFuture expirationTaskFuture;
+    protected final NearCacheRecordStore<K, V> nearCacheRecordStore;
+    protected final ScheduledFuture expirationTaskFuture;
 
-    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig,
-                            NearCacheContext nearCacheContext) {
+    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         this.name = name;
         this.nearCacheConfig = nearCacheConfig;
         this.nearCacheContext = nearCacheContext;
         this.serializationService = nearCacheContext.getSerializationService();
         this.nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, nearCacheContext);
-        init();
+        this.expirationTaskFuture = createAndScheduleExpirationTask();
     }
 
-    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig,
-                            NearCacheContext nearCacheContext,
+    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext,
                             NearCacheRecordStore<K, V> nearCacheRecordStore) {
         this.name = name;
         this.nearCacheConfig = nearCacheConfig;
         this.nearCacheContext = nearCacheContext;
         this.serializationService = nearCacheContext.getSerializationService();
         this.nearCacheRecordStore = nearCacheRecordStore;
-        init();
-    }
-
-    protected void init() {
-        startExpirationTask();
-    }
-
-    protected void startExpirationTask() {
-        if (isExpirationAvailable()) {
-            NearCacheExecutor nearCacheExecutor = nearCacheContext.getNearCacheExecutor();
-            ExpirationTask expirationTask = createExpirationTask();
-            if (expirationTask != null) {
-                expirationTaskFuture = scheduleExpirationTask(nearCacheExecutor, expirationTask);
-            }
-        }
-    }
-
-    protected boolean isExpirationAvailable() {
-        return nearCacheConfig.getMaxIdleSeconds() > 0L || nearCacheConfig.getTimeToLiveSeconds() > 0L;
-    }
-
-    protected ExpirationTask createExpirationTask() {
-        return new ExpirationTask();
-    }
-
-    protected ScheduledFuture scheduleExpirationTask(NearCacheExecutor nearCacheExecutor,
-                                                     ExpirationTask expirationTask) {
-        return nearCacheExecutor.scheduleWithRepetition(expirationTask,
-                DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS,
-                DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS,
-                TimeUnit.SECONDS);
+        this.expirationTaskFuture = createAndScheduleExpirationTask();
     }
 
     protected NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
@@ -107,6 +75,14 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
             default:
                 throw new IllegalArgumentException("Invalid in memory format: " + inMemoryFormat);
         }
+    }
+
+    private ScheduledFuture createAndScheduleExpirationTask() {
+        if (nearCacheConfig.getMaxIdleSeconds() > 0L || nearCacheConfig.getTimeToLiveSeconds() > 0L) {
+            ExpirationTask expirationTask = new ExpirationTask();
+            return expirationTask.schedule(nearCacheContext.getNearCacheExecutor());
+        }
+        return null;
     }
 
     @Override
@@ -175,9 +151,9 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         return nearCacheRecordStore.size();
     }
 
-    protected class ExpirationTask implements Runnable {
+    private class ExpirationTask implements Runnable {
 
-        protected AtomicBoolean expirationInProgress = new AtomicBoolean(false);
+        private final AtomicBoolean expirationInProgress = new AtomicBoolean(false);
 
         @Override
         public void run() {
@@ -190,6 +166,11 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
             }
         }
 
+        private ScheduledFuture schedule(NearCacheExecutor nearCacheExecutor) {
+            return nearCacheExecutor.scheduleWithRepetition(this,
+                    DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS,
+                    DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS,
+                    TimeUnit.SECONDS);
+        }
     }
-
 }
