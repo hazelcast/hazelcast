@@ -31,17 +31,13 @@ import com.hazelcast.spi.annotation.Beta;
 public interface CardinalityEstimator extends DistributedObject {
 
     /**
-     * Consider the 64bit hash value, produced by the serialized form of the given object,
-     * in the cardinality estimation. The implementation is free to choose whether this hash
-     * will be used towards the estimation, therefore, this operation may or may not affect
-     * the current estimation.
+     * Add a new object in the estimation set. This is the method you want to
+     * use to feed objects into the estimator.
      *
-     * Input object, unless a boxed primitive, must have a
-     * {@link com.hazelcast.nio.serialization.StreamSerializer} implementation, registered in the Hazelcast
-     * config to allow serialization. The hashing algorithm used to calculate the 64bit hash,
-     * is {@link com.hazelcast.util.HashUtil#MurmurHash3_x64_64(byte[], int, int)}.
+     * Objects are considered identical if they are serialized into the same binary blob.
+     * In other words: It does <strong>not</strong> use Java equality.
      *
-     * @param obj the serializable object to aggregate in the estimate.
+     * @param obj object to add in the estimation set.
      * @throws NullPointerException if obj is null
      * @since 3.8
      */
@@ -58,15 +54,11 @@ public interface CardinalityEstimator extends DistributedObject {
     long estimate();
 
     /**
-     * Consider the 64bit hash value, produced by the serialized form of the given object,
-     * in the cardinality estimation. The implementation is free to choose whether this hash
-     * will be used towards the estimation, therefore, this operation may or may not affect
-     * the current estimation.
+     * Add a new object in the estimation set. This is the method you want to
+     * use to feed objects into the estimator.
      *
-     * Input object, unless a boxed primitive, must have a
-     * {@link com.hazelcast.nio.serialization.StreamSerializer} implementation, registered in the Hazelcast
-     * config to allow serialization. The hashing algorithm used to calculate the 64bit hash,
-     * is {@link com.hazelcast.util.HashUtil#MurmurHash3_x64_64(byte[], int, int)}.
+     * Objects are considered identical if they are serialized into the same binary blob.
+     * In other words: It does <strong>not</strong> use Java equality.
      *
      * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
      * The operations result can be obtained in a blocking way, or a
@@ -92,7 +84,7 @@ public interface CardinalityEstimator extends DistributedObject {
      *     });
      * </pre>
      * </p>
-     * @param obj the serializable object to aggregate in the estimate.
+     * @param obj object to add in the estimation set.
      * @return an {@link ICompletableFuture} API consumers can use to track execution of this request.
      * @throws NullPointerException if obj is null
      * @since 3.8
