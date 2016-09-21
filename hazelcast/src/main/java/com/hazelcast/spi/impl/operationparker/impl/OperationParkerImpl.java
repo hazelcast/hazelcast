@@ -93,7 +93,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     }
 
     private void invalidate(final ParkedOperation waitingOp) throws Exception {
-        nodeEngine.getOperationService().executeOperation(waitingOp);
+        nodeEngine.getOperationService().execute(waitingOp);
     }
 
     // Runs in operation thread, we can assume that
@@ -136,7 +136,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
                     if (waitingOp.shouldWait()) {
                         return;
                     }
-                    nodeEngine.getOperationService().runOperationOnCallingThread(op);
+                    nodeEngine.getOperationService().run(op);
                 }
                 waitingOp.setValid(false);
             }

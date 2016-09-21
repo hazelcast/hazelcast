@@ -271,18 +271,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
-    public void runOperationOnCallingThread(Operation op) {
-        run(op);
-    }
-
-    @Override
     public void run(Operation op) {
         operationExecutor.run(op);
-    }
-
-    @Override
-    public void executeOperation(Operation op) {
-        execute(op);
     }
 
     @Override

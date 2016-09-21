@@ -138,7 +138,7 @@ public class PromotionCommitOperation extends Operation implements MigrationCycl
             int currentReplicaIndex = promotion.getDestinationCurrentReplicaIndex();
             FinalizePromotionOperation op = new FinalizePromotionOperation(currentReplicaIndex, success);
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
-            operationService.executeOperation(op);
+            operationService.execute(op);
         }
     }
 
@@ -165,7 +165,7 @@ public class PromotionCommitOperation extends Operation implements MigrationCycl
                         .setService(nodeEngine.getPartitionService());
 
                 InternalOperationService operationService = nodeEngine.getOperationService();
-                operationService.runOperationOnCallingThread(op);
+                operationService.run(op);
             } finally {
                 completeTask();
             }
@@ -182,7 +182,7 @@ public class PromotionCommitOperation extends Operation implements MigrationCycl
             if (remainingTasks == 0) {
                 logger.fine("All before promotion tasks are completed, re-submitting PromotionCommitOperation.");
                 promotionCommitOperation.beforeStateCompleted = true;
-                nodeEngine.getOperationService().executeOperation(promotionCommitOperation);
+                nodeEngine.getOperationService().execute(promotionCommitOperation);
             }
         }
 
