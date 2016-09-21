@@ -76,11 +76,6 @@ public final class CompletedFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
-    public V getSafely() {
-        return join();
-    }
-
-    @Override
     public boolean complete(Object value) {
         return false;
     }

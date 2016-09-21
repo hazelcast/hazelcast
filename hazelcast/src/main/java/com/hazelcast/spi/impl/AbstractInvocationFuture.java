@@ -138,11 +138,6 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     @Override
-    public final V getSafely() {
-        return join();
-    }
-
-    @Override
     public final V get() throws InterruptedException, ExecutionException {
         Object response = registerWaiter(Thread.currentThread(), null);
         if (response != VOID) {

@@ -165,11 +165,6 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         }
     }
 
-    @Override
-    public V getSafely() {
-        return join();
-    }
-
     private V getResult() {
         if (defaultValue != null) {
             return defaultValue;

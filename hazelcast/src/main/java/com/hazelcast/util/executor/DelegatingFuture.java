@@ -159,11 +159,6 @@ public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
-    public V getSafely() {
-        return resolve(future.join());
-    }
-
-    @Override
     public void andThen(final ExecutionCallback<V> callback) {
         future.andThen(new DelegatingExecutionCallback(callback));
     }

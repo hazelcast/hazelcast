@@ -212,11 +212,6 @@ public class DelegatingFutureTest {
         }
 
         @Override
-        public V getSafely() {
-            return join();
-        }
-
-        @Override
         public boolean complete(Object value) {
             return false;
         }
