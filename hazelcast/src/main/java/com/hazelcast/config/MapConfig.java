@@ -165,7 +165,6 @@ public class MapConfig {
     public MapConfig() {
     }
 
-    //CHECKSTYLE:OFF
     public MapConfig(MapConfig config) {
         this.name = config.name;
         this.backupCount = config.backupCount;
@@ -196,7 +195,6 @@ public class MapConfig {
         this.quorumName = config.quorumName;
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
     }
-    //CHECKSTYLE:ON
 
     public MapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -286,9 +284,9 @@ public class MapConfig {
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated CacheConfig
-     * @throws new IllegalArgumentException if asyncBackupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -307,7 +305,7 @@ public class MapConfig {
     }
 
     /**
-     * Returns the evictionPercentage: specified percentage of the map to be evicted
+     * Returns the evictionPercentage: specified percentage of the map to be evicted.
      *
      * @return the evictionPercentage: specified percentage of the map to be evicted
      * @deprecated As of version 3.7, eviction mechanism changed.
@@ -322,7 +320,7 @@ public class MapConfig {
      * When maximum size is reached, the specified percentage of the map will be evicted.
      * Any integer between 0 and 100 is allowed.
      * For example, if 25 is set, 25% of the entries will be evicted.
-     * <p/>
+     *
      * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
      * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
@@ -344,7 +342,7 @@ public class MapConfig {
 
     /**
      * Returns the minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
-     * <p/>
+     *
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
      *
      * @return number of milliseconds that should pass before asking for the next eviction.
@@ -358,9 +356,9 @@ public class MapConfig {
 
     /**
      * Sets the minimum time in milliseconds which should pass before asking if a partition of this map is evictable or not.
-     * <p/>
+     *
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
-     * <p/>
+     *
      * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
      * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
@@ -411,11 +409,10 @@ public class MapConfig {
 
     /**
      * Maximum number of seconds for each entry to stay idle in the map. Entries that are
-     * idle(not touched) for more than maxIdleSeconds will get
-     * automatically evicted from the map. Entry is touched if get, getAll, put or
-     * containsKey is called.
-     * Any integer between 0 and Integer.MAX_VALUE.
-     * 0 means infinite. Default is 0.
+     * idle (not touched) for more than {@code maxIdleSeconds} will get automatically evicted from the map.
+     * Entry is touched if {@code get()}, {@code getAll()}, {@code put()} or {@code containsKey()} is called.
+     * Any integer between {@code 0} and {@code Integer.MAX_VALUE}.
+     * {@code 0} means infinite. Default is {@code 0}.
      *
      * @param maxIdleSeconds the maxIdleSeconds (the maximum number of seconds for each entry to stay idle in the map) to set
      */
@@ -434,7 +431,7 @@ public class MapConfig {
     }
 
     /**
-     * Returns the evictionPolicy
+     * Returns the {@link EvictionPolicy}.
      *
      * @return the evictionPolicy
      */
@@ -443,7 +440,7 @@ public class MapConfig {
     }
 
     /**
-     * Sets the evictionPolicy
+     * Sets the {@link EvictionPolicy}.
      *
      * @param evictionPolicy the evictionPolicy to set
      */
@@ -464,8 +461,7 @@ public class MapConfig {
             case NONE:
                 return null;
             default:
-                throw new IllegalArgumentException("Not known eviction policy : " + evictionPolicy);
-
+                throw new IllegalArgumentException("Not known eviction policy: " + evictionPolicy);
         }
     }
 
@@ -571,7 +567,7 @@ public class MapConfig {
     }
 
     /**
-     * Checks if read-backup-data (reading local backup entires) is enabled for this map.
+     * Checks if read-backup-data (reading local backup entries) is enabled for this map.
      *
      * @return True if read-backup-data is enabled, false otherwise.
      */
@@ -580,7 +576,7 @@ public class MapConfig {
     }
 
     /**
-     * Sets read-backup-data (reading local backup entires) for this map.
+     * Sets read-backup-data (reading local backup entries) for this map.
      *
      * @param readBackupData True to enable read-backup-data, false to disable.
      * @return The current map config instance.
@@ -591,18 +587,18 @@ public class MapConfig {
     }
 
     /**
-     * Gets the Wan target replication reference.
+     * Gets the WAN target replication reference.
      *
-     * @return The Wan target replication reference.
+     * @return The WAN target replication reference.
      */
     public WanReplicationRef getWanReplicationRef() {
         return wanReplicationRef;
     }
 
     /**
-     * Sets the Wan target replication reference.
+     * Sets the WAN target replication reference.
      *
-     * @param wanReplicationRef the Wan target replication reference.
+     * @param wanReplicationRef the WAN target replication reference.
      * @return The current map config instance.
      */
     public MapConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
@@ -681,7 +677,7 @@ public class MapConfig {
     }
 
     /**
-     * Adds a new {@code queryCacheConfig} to this {@code MapConfig}.
+     * Adds a new {@link QueryCacheConfig} to this {@code MapConfig}.
      *
      * @param queryCacheConfig the config to be added.
      * @return this {@code MapConfig} instance.
@@ -697,13 +693,12 @@ public class MapConfig {
         }
         queryCacheConfigs.add(queryCacheConfig);
         return this;
-
     }
 
     /**
-     * Returns all {@code QueryCacheConfig} instances defined on this {@code MapConfig}
+     * Returns all {@link QueryCacheConfig} instances defined on this {@code MapConfig}.
      *
-     * @return all {@code QueryCacheConfig} instances defined on this {@code MapConfig}
+     * @return all {@link QueryCacheConfig} instances defined on this {@code MapConfig}
      */
     public List<QueryCacheConfig> getQueryCacheConfigs() {
         if (queryCacheConfigs == null) {
@@ -713,9 +708,7 @@ public class MapConfig {
     }
 
     /**
-     * Sets {@code QueryCacheConfig} instances to this {@code MapConfig}
-     *
-     * @return this {@code MapConfig} instance.
+     * Sets {@link QueryCacheConfig} instances to this {@code MapConfig}.
      */
     public void setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
         this.queryCacheConfigs = queryCacheConfigs;
@@ -731,17 +724,19 @@ public class MapConfig {
     }
 
     /**
-     * Checks if Near Cache is enabled
+     * Checks if Near Cache is enabled.
      *
-     * @return true if Near Cache is enabled, false otherwise
+     * @return {@code true} if Near Cache is enabled, {@code false} otherwise
      */
     public boolean isNearCacheEnabled() {
         return nearCacheConfig != null;
     }
 
     /**
-     * @return
-     * @deprecated user {@link #getQueryCacheConfigs()} instead.
+     * Checks if queries are optimized.
+     *
+     * @return {@code true} if queries are optimized, {@code false} otherwise
+     * @deprecated use {@link #getQueryCacheConfigs()} instead.
      */
     public boolean isOptimizeQueries() {
         return cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
@@ -751,9 +746,9 @@ public class MapConfig {
      * Enable de-serialized value caching when evaluating predicates. It has no effect when {@link InMemoryFormat}
      * is {@link InMemoryFormat#OBJECT} or when {@link com.hazelcast.nio.serialization.Portable} serialization is used.
      *
-     * @param optimizeQueries
+     * @param optimizeQueries {@code true} if queries should be optimized, {@code false} otherwise
      * @return this {@code MapConfig} instance.
-     * @see {@link CacheDeserializedValues}
+     * @see CacheDeserializedValues
      * @deprecated use {@link #setCacheDeserializedValues(CacheDeserializedValues)} instead
      */
     public MapConfig setOptimizeQueries(boolean optimizeQueries) {
@@ -786,7 +781,7 @@ public class MapConfig {
      *
      * @param cacheDeserializedValues
      * @return this {@code MapConfig} instance.
-     * @see {@link CacheDeserializedValues}
+     * @see CacheDeserializedValues
      * @since 3.6
      */
     public MapConfig setCacheDeserializedValues(CacheDeserializedValues cacheDeserializedValues) {
@@ -972,5 +967,4 @@ public class MapConfig {
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
                 + '}';
     }
-
 }
