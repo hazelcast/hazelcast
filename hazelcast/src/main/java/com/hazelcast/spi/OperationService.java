@@ -24,8 +24,8 @@ import java.util.Map;
 /**
  * The OperationService is responsible for executing operations.
  * <p/>
- * A single operation can be executed locally using {@link #runOperationOnCallingThread(Operation)}
- * and {@link #executeOperation(Operation)}. Or it can executed remotely using one of the send methods.
+ * A single operation can be executed locally using {@link #run(Operation)}
+ * and {@link #execute(Operation)}. Or it can executed remotely using one of the send methods.
  * <p/>
  * It also is possible to execute multiple operation on multiple partitions using one of the invoke methods.
  */
@@ -35,24 +35,8 @@ public interface OperationService {
      * Runs an operation in the calling thread.
      *
      * @param op the operation to execute in the calling thread
-     * @deprecated since 3.7. Use {@link #run(Operation)}
-     */
-    void runOperationOnCallingThread(Operation op);
-
-    /**
-     * Runs an operation in the calling thread.
-     *
-     * @param op the operation to execute in the calling thread
      */
     void run(Operation op);
-
-    /**
-     * Executes an operation in the operation executor pool.
-     *
-     * @param op the operation to execute in the operation executor pool.
-     * @deprecated since 3.7. Use {@link #execute(Operation)}.
-     */
-    void executeOperation(Operation op);
 
     /**
      * Executes an operation in the operation executor pool.

@@ -143,7 +143,7 @@ public class NodeStateTest extends HazelcastTestSupport {
                     }
                 };
 
-                nodeEngine.getOperationService().runOperationOnCallingThread(op);
+                nodeEngine.getOperationService().run(op);
                 assertOpenEventually(latch);
             }
         };
@@ -183,7 +183,7 @@ public class NodeStateTest extends HazelcastTestSupport {
                     }
                 };
 
-                nodeEngine.getOperationService().runOperationOnCallingThread(op);
+                nodeEngine.getOperationService().run(op);
                 assertOpenEventually(latch);
             }
         };

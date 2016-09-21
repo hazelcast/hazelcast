@@ -201,7 +201,7 @@ public class MigrationManager {
 
                 op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setValidateTarget(false)
                         .setService(partitionService);
-                nodeEngine.getOperationService().executeOperation(op);
+                nodeEngine.getOperationService().execute(op);
                 removeActiveMigration(partitionId);
             } else {
                 final Address partitionOwner = partitionStateManager.getPartitionImpl(partitionId).getOwnerOrNull();

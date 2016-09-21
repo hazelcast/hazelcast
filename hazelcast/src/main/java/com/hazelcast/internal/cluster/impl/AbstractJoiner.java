@@ -361,7 +361,7 @@ public abstract class AbstractJoiner implements Joiner {
         Operation mergeClustersOperation = new MergeClustersOperation(targetAddress);
         mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(clusterService)
                 .setOperationResponseHandler(createEmptyResponseHandler());
-        operationService.runOperationOnCallingThread(mergeClustersOperation);
+        operationService.run(mergeClustersOperation);
     }
 
     private boolean prepareClusterState(ClusterServiceImpl clusterService) {

@@ -387,7 +387,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             OperationService operationService = nodeEngine.getOperationService();
             ClientDisconnectionOperation op = createClientDisconnectionOperation(endpoint.getUuid());
-            operationService.runOperationOnCallingThread(op);
+            operationService.run(op);
 
             for (Member member : memberList) {
                 if (!member.localMember()) {
@@ -429,7 +429,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 if (deadMemberUuid.equals(memberUuid)) {
                     iterator.remove();
                     ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid);
-                    nodeEngine.getOperationService().runOperationOnCallingThread(op);
+                    nodeEngine.getOperationService().run(op);
                 }
             }
         }
