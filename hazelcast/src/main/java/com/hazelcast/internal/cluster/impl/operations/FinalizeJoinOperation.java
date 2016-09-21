@@ -136,7 +136,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
         OperationAccessor.setConnection(postJoinOp, getConnection());
         postJoinOp.setOperationResponseHandler(createEmptyResponseHandler());
-        operationService.runOperationOnCallingThread(postJoinOp);
+        operationService.run(postJoinOp);
     }
 
     private void sendPostJoinOperations() {

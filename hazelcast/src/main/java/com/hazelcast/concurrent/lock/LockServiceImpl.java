@@ -198,7 +198,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
             Data key = lock.getKey();
             if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
                 UnlockOperation op = createLockCleanupOperation(partitionId, lockStore.getNamespace(), key, uuid);
-                operationService.runOperationOnCallingThread(op);
+                operationService.run(op);
             }
             lockStore.cleanWaitersAndSignalsFor(key, uuid);
         }

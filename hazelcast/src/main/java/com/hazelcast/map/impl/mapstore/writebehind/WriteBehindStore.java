@@ -369,7 +369,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())
                 .setOperationResponseHandler(createEmptyResponseHandler());
 
-        operationService.executeOperation(operation);
+        operationService.execute(operation);
     }
 
     protected void removeFromStagingArea(DelayedEntry delayedEntry) {

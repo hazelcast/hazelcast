@@ -118,7 +118,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
                     .setService(this)
                     .setNodeEngine(nodeEngine)
                     .setServiceName(SERVICE_NAME);
-            operationService.executeOperation(op);
+            operationService.execute(op);
         }
     }
 

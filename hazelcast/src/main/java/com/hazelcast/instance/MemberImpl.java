@@ -217,7 +217,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
                 if (!member.localMember()) {
                     os.send(operation, member.getAddress());
                 } else {
-                    os.executeOperation(operation);
+                    os.execute(operation);
                 }
             }
         } catch (Throwable t) {
