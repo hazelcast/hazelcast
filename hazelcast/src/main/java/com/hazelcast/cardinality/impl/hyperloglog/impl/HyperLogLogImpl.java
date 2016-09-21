@@ -16,6 +16,7 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
+import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -82,15 +83,23 @@ public class HyperLogLogImpl implements HyperLogLog {
     }
 
     @Override
+    public int getFactoryId() {
+        return CardinalityEstimatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CardinalityEstimatorDataSerializerHook.HLL;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(encoder.getEncodingType().name());
-        encoder.writeData(out);
+        out.writeObject(encoder);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        encoder = HyperLogLogEncoding.valueOf(in.readUTF()).build();
-        encoder.readData(in);
+        encoder = in.readObject();
     }
 
     private void convertToDenseIfNeeded() {

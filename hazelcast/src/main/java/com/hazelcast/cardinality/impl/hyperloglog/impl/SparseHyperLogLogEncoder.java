@@ -16,6 +16,7 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
+import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -46,7 +47,7 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     private int mPrime;
     private int tempIdx;
 
-    SparseHyperLogLogEncoder() {
+    public SparseHyperLogLogEncoder() {
     }
 
     public SparseHyperLogLogEncoder(final int p, final int pPrime) {
@@ -83,6 +84,16 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     public long estimate() {
         mergeAndResetTmp();
         return linearCounting(mPrime, mPrime - register.total);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CardinalityEstimatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CardinalityEstimatorDataSerializerHook.HLL_SPARSE_ENC;
     }
 
     @Override

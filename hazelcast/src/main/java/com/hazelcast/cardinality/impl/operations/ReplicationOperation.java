@@ -69,7 +69,7 @@ public class ReplicationOperation extends Operation
         out.writeInt(migrationData.size());
         for (Map.Entry<String, CardinalityEstimatorContainer> entry : migrationData.entrySet()) {
             out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
+            out.writeObject(entry.getValue());
         }
     }
 
@@ -79,8 +79,7 @@ public class ReplicationOperation extends Operation
         migrationData = new HashMap<String, CardinalityEstimatorContainer>(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
-            CardinalityEstimatorContainer newCont = new CardinalityEstimatorContainer();
-            newCont.readData(in);
+            CardinalityEstimatorContainer newCont = in.readObject();
             migrationData.put(name, newCont);
         }
     }

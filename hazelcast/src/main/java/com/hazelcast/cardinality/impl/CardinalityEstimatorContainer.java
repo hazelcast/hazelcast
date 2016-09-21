@@ -21,10 +21,11 @@ import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class CardinalityEstimatorContainer implements DataSerializable {
+public class CardinalityEstimatorContainer implements IdentifiedDataSerializable {
 
     private HyperLogLog hll;
 
@@ -42,12 +43,21 @@ public class CardinalityEstimatorContainer implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        hll.writeData(out);
+        out.writeObject(hll);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        hll = new HyperLogLogImpl();
-        hll.readData(in);
+        hll = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CardinalityEstimatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CardinalityEstimatorDataSerializerHook.CARDINALITY_EST_CONTAINER;
     }
 }

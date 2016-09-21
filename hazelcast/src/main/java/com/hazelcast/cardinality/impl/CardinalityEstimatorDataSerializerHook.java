@@ -16,6 +16,9 @@
 
 package com.hazelcast.cardinality.impl;
 
+import com.hazelcast.cardinality.impl.hyperloglog.impl.DenseHyperLogLogEncoder;
+import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
+import com.hazelcast.cardinality.impl.hyperloglog.impl.SparseHyperLogLogEncoder;
 import com.hazelcast.cardinality.impl.operations.AggregateBackupOperation;
 import com.hazelcast.cardinality.impl.operations.AggregateOperation;
 import com.hazelcast.cardinality.impl.operations.EstimateOperation;
@@ -38,6 +41,10 @@ public final class CardinalityEstimatorDataSerializerHook
     public static final int ESTIMATE = 1;
     public static final int AGGREGATE_BACKUP = 2;
     public static final int REPLICATION = 3;
+    public static final int CARDINALITY_EST_CONTAINER = 4;
+    public static final int HLL = 5;
+    public static final int HLL_DENSE_ENC = 6;
+    public static final int HLL_SPARSE_ENC = 7;
 
     @Override
     public int getFactoryId() {
@@ -58,6 +65,14 @@ public final class CardinalityEstimatorDataSerializerHook
                         return new AggregateBackupOperation();
                     case REPLICATION:
                         return new ReplicationOperation();
+                    case CARDINALITY_EST_CONTAINER:
+                        return new CardinalityEstimatorContainer();
+                    case HLL:
+                        return new HyperLogLogImpl();
+                    case HLL_DENSE_ENC:
+                        return new DenseHyperLogLogEncoder();
+                    case HLL_SPARSE_ENC:
+                        return new SparseHyperLogLogEncoder();
                     default:
                         return null;
                 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
+import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -778,7 +779,7 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
     private int p;
     private int m;
 
-    DenseHyperLogLogEncoder() {
+    public DenseHyperLogLogEncoder() {
     }
 
     public DenseHyperLogLogEncoder(final int p) {
@@ -817,6 +818,16 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
     public long estimate() {
         final double raw = (1 / computeE()) * alpha() * m * m;
         return applyRangeCorrection(raw);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CardinalityEstimatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CardinalityEstimatorDataSerializerHook.HLL_DENSE_ENC;
     }
 
     @Override

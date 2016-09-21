@@ -16,9 +16,9 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public interface HyperLogLogEncoder extends DataSerializable {
+public interface HyperLogLogEncoder extends IdentifiedDataSerializable {
 
     /**
      * Computes a new estimate for the current status of the registers.
