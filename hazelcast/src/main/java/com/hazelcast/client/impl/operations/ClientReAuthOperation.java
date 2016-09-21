@@ -17,17 +17,19 @@
 package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 import java.util.Set;
 
-public class ClientReAuthOperation extends Operation implements UrgentSystemOperation {
+public class ClientReAuthOperation extends Operation implements UrgentSystemOperation, IdentifiedDataSerializable {
 
     private String clientUuid;
 
@@ -76,5 +78,15 @@ public class ClientReAuthOperation extends Operation implements UrgentSystemOper
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         clientUuid = in.readUTF();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ClientDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClientDataSerializerHook.RE_AUTH;
     }
 }

@@ -16,10 +16,12 @@
 
 package com.hazelcast.client.impl.operations;
 
+import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
 
@@ -27,7 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class GetConnectedClientsOperation extends Operation implements ReadonlyOperation {
+public class GetConnectedClientsOperation extends Operation implements ReadonlyOperation, IdentifiedDataSerializable {
 
     private Map<String, ClientType> clients;
 
@@ -48,4 +50,15 @@ public class GetConnectedClientsOperation extends Operation implements ReadonlyO
     public Object getResponse() {
         return clients;
     }
+
+    @Override
+    public int getFactoryId() {
+        return ClientDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClientDataSerializerHook.GET_CONNECTED_CLIENTS;
+    }
+
 }
