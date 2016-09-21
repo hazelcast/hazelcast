@@ -40,14 +40,14 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
     @Test
-    public void smoke() throws InterruptedException {
+    public void smoke() {
         SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Long, Long>(factory);
         testMapBuilder.withNodeCount(1).withBackupCount(0).build(getConfig());
         assertEquals(0, testMapBuilder.totalHeapCost());
     }
 
     @Test
-    public void testSinglePut() throws InterruptedException {
+    public void testSinglePut() {
         long expectedPerEntryHeapCost = 156L;
         SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
         IMap<Integer, Long> map = testMapBuilder.withNodeCount(1).withBackupCount(0).build(getConfig());
@@ -56,7 +56,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExactHeapCostAfterUpdateWithMultipleBackupNodes() throws InterruptedException {
+    public void testExactHeapCostAfterUpdateWithMultipleBackupNodes() {
         long expectedPerEntryHeapCost = 156L;
         int putCount = 1;
         int nodeCount = 1;
@@ -65,79 +65,90 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         for (int i = 0; i < putCount; i++) {
             map.put(i, System.currentTimeMillis());
         }
-        final long heapCost = testMapBuilder.totalHeapCost();
-        assertEquals("Heap cost calculation is wrong!",
-                expectedPerEntryHeapCost * putCount * nodeCount, heapCost);
+        long heapCost = testMapBuilder.totalHeapCost();
+        assertEquals("Heap cost calculation is wrong!", expectedPerEntryHeapCost * putCount * nodeCount, heapCost);
     }
 
-
     @Test
-    public void testPutRemoveWithTwoNodeOwnerAndBackup() throws InterruptedException {
-        final String name = randomString();
-        final Config config = getConfig();
+    public void testPutRemoveWithTwoNodeOwnerAndBackup() {
+        String name = randomString();
+        Config config = getConfig();
         config.getMapConfig(name).setBackupCount(1);
-        final HazelcastInstance h[] = factory.newInstances(config);
+        HazelcastInstance h[] = factory.newInstances(config);
         warmUpPartitions(h);
-        //create map
-        final IMap<String, String> map1 = h[0].getMap(name);
-        final IMap<String, String> map2 = h[1].getMap(name);
-        //calculate initial heap costs.
+
+        // create map
+        IMap<String, String> map1 = h[0].getMap(name);
+        IMap<String, String> map2 = h[1].getMap(name);
+
+        // calculate initial heap costs
         long map1Cost = map1.getLocalMapStats().getHeapCost();
         long map2Cost = map2.getLocalMapStats().getHeapCost();
-        //check initial costs if zero.
+
+        // check initial costs if zero
         assertEquals("map1 initial heap cost must be zero..." + map1Cost, 0, map1Cost);
         assertEquals("map2 initial heap cost must be zero..." + map2Cost, 0, map2Cost);
-        //populate map
+
+        // populate map
         map1.put("key", "value");
-        //get sizes
+
+        // get sizes
         long map1Size = map1.size();
         long map2Size = map2.size();
-        //check sizes
+
+        // check sizes
         assertEquals("map1 size must be one..." + map1Size, 1, map1Size);
         assertEquals("map2 size must be one..." + map2Size, 1, map2Size);
-        //calculate costs
+
+        // calculate costs
         map1Cost = map1.getLocalMapStats().getHeapCost();
         map2Cost = map2.getLocalMapStats().getHeapCost();
-        //costs should not be zero.
+
+        // costs should not be zero
         assertTrue("map1 cost should be greater than zero....: " + map1Cost, map1Cost > 0);
         assertTrue("map2 cost should be greater than zero.... : " + map2Cost, map2Cost > 0);
-        // one map is backup. so backup & owner cost must be same.
+
+        // one map is backup, so backup & owner cost must be same
         assertEquals(map1Cost, map2Cost);
-        //remove key.
+
+        // remove key
         map1.remove("key");
-        //get sizes
+
+        // get sizes
         map1Size = map1.size();
         map2Size = map2.size();
-        //check if sizes zero.
+
+        // check if sizes are zero
         assertEquals("map1 size must be zero..." + map1Size, 0, map1Size);
         assertEquals("map2 size must be zero..." + map2Size, 0, map2Size);
         map1Cost = map1.getLocalMapStats().getHeapCost();
         map2Cost = map2.getLocalMapStats().getHeapCost();
-        //costs should be zero.
+
+        // costs should be zero
         assertTrue("map1 cost should zero....: " + map1Cost, map1Cost == 0);
         assertTrue("map2 cost should zero....: " + map2Cost, map2Cost == 0);
     }
 
     @Test
-    public void testNearCache() throws InterruptedException {
-        final String NO_NEAR_CACHED_MAP = randomString();
-        final String NEAR_CACHED_MAP = randomString();
+    public void testNearCache() {
+        String noNearCacheMapName = randomString();
+        String nearCachedMapName = randomString();
 
         Config config = getConfig();
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.BINARY);
-        config.getMapConfig(NEAR_CACHED_MAP).setBackupCount(0).setNearCacheConfig(nearCacheConfig);
-        config.getMapConfig(NO_NEAR_CACHED_MAP).setBackupCount(0);
+        config.getMapConfig(nearCachedMapName).setBackupCount(0).setNearCacheConfig(nearCacheConfig);
+        config.getMapConfig(noNearCacheMapName).setBackupCount(0);
 
-        final HazelcastInstance h[] = factory.newInstances(config);
+        HazelcastInstance h[] = factory.newInstances(config);
         warmUpPartitions(h);
 
-        final IMap<String, String> noNearCached = h[0].getMap(NO_NEAR_CACHED_MAP);
+        IMap<String, String> noNearCached = h[0].getMap(noNearCacheMapName);
         for (int i = 0; i < 1000; i++) {
             noNearCached.put("key" + i, "value" + i);
         }
 
-        final IMap<String, String> nearCachedMap = h[0].getMap(NEAR_CACHED_MAP);
+        IMap<String, String> nearCachedMap = h[0].getMap(nearCachedMapName);
         for (int i = 0; i < 1000; i++) {
             nearCachedMap.put("key" + i, "value" + i);
         }
@@ -150,27 +161,25 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testInMemoryFormats() throws InterruptedException {
-        final String BINARY_MAP = "testBinaryFormat";
-        final String OBJECT_MAP = "testObjectFormat";
-        final Config config = new Config();
-        config.getMapConfig(BINARY_MAP).
-                setInMemoryFormat(InMemoryFormat.BINARY).setBackupCount(0);
-        config.getMapConfig(OBJECT_MAP).
-                setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
+    public void testInMemoryFormats() {
+        String BINARY_MAP = "testBinaryFormat";
+        String OBJECT_MAP = "testObjectFormat";
+        Config config = new Config();
+        config.getMapConfig(BINARY_MAP).setInMemoryFormat(InMemoryFormat.BINARY).setBackupCount(0);
+        config.getMapConfig(OBJECT_MAP).setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
 
-        final int n = 2;
+        int n = 2;
 
-        final HazelcastInstance[] h = factory.newInstances(config);
+        HazelcastInstance[] h = factory.newInstances(config);
         warmUpPartitions(h);
 
-        // populate map.
-        final IMap<String, String> binaryMap = h[0].getMap(BINARY_MAP);
+        // populate map
+        IMap<String, String> binaryMap = h[0].getMap(BINARY_MAP);
         for (int i = 0; i < 1000; i++) {
             binaryMap.put("key" + i, "value" + i);
         }
 
-        final IMap<String, String> objectMap = h[0].getMap(OBJECT_MAP);
+        IMap<String, String> objectMap = h[0].getMap(OBJECT_MAP);
         for (int i = 0; i < 1000; i++) {
             objectMap.put("key" + i, "value" + i);
         }
@@ -192,21 +201,17 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
     private static class SizeEstimatorTestMapBuilder<K, V> {
 
-        private HazelcastInstance[] nodes;
-
-        private int nodeCount;
-
-        private int backupCount;
-
         private String mapName = randomMapName("default");
-
+        private HazelcastInstance[] nodes;
+        private int nodeCount;
+        private int backupCount;
         private TestHazelcastInstanceFactory instanceFactory;
 
-        public SizeEstimatorTestMapBuilder(TestHazelcastInstanceFactory factory) {
+        SizeEstimatorTestMapBuilder(TestHazelcastInstanceFactory factory) {
             this.instanceFactory = factory;
         }
 
-        public SizeEstimatorTestMapBuilder<K, V> mapName(String mapName) {
+        SizeEstimatorTestMapBuilder<K, V> mapName(String mapName) {
             if (mapName == null) {
                 throw new IllegalArgumentException("mapName is null");
             }
@@ -214,7 +219,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             return this;
         }
 
-        public SizeEstimatorTestMapBuilder<K, V> withNodeCount(int nodeCount) {
+        SizeEstimatorTestMapBuilder<K, V> withNodeCount(int nodeCount) {
             if (nodeCount < 1) {
                 throw new IllegalArgumentException("nodeCount < 1");
             }
@@ -223,7 +228,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             return this;
         }
 
-        public SizeEstimatorTestMapBuilder<K, V> withBackupCount(int backupCount) {
+        SizeEstimatorTestMapBuilder<K, V> withBackupCount(int backupCount) {
             if (backupCount < 0) {
                 throw new IllegalArgumentException("backupCount < 1");
             }
@@ -231,7 +236,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             return this;
         }
 
-        public IMap<K, V> build(Config config) {
+        IMap<K, V> build(Config config) {
             if (backupCount > nodeCount - 1) {
                 throw new IllegalArgumentException("backupCount > nodeCount - 1");
             }
@@ -241,13 +246,12 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             return nodes[0].getMap(mapName);
         }
 
-        public long totalHeapCost() {
+        long totalHeapCost() {
             long heapCost = 0L;
             for (int i = 0; i < nodeCount; i++) {
                 heapCost += nodes[i].getMap(mapName).getLocalMapStats().getHeapCost();
             }
             return heapCost;
         }
-
     }
 }
