@@ -20,6 +20,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -34,7 +35,7 @@ import static java.lang.System.currentTimeMillis;
 /**
  * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
  * of a {@link Invocation}. The Invocation executes an operation.
- *
+ * <p>
  * In the past the InvocationFuture.get logic was also responsible for detecting the heartbeat for blocking operations
  * using the CONTINUE_WAIT and detecting if an operation is still running using the IsStillRunning functionality. This
  * has been removed from the future and moved into the {@link InvocationMonitor}.
@@ -75,6 +76,8 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
         if (value == null || !(value instanceof Throwable)) {
             return (E) value;
+        } else if (value instanceof CancellationException) {
+            throw (CancellationException) value;
         } else if (value instanceof ExecutionException) {
             throw (ExecutionException) value;
         } else if (value instanceof InterruptedException) {

@@ -28,7 +28,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
@@ -318,7 +317,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return recordStore.readBackupData(key);
     }
 
-    protected ICompletableFuture<Data> getAsyncInternal(Data key) {
+    protected InternalCompletableFuture<Data> getAsyncInternal(Data key) {
         int partitionId = partitionService.getPartitionId(key);
 
         MapOperation operation = operationProvider.createGetOperation(name, key);
@@ -383,7 +382,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected ICompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected InternalCompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
         MapOperation operation = operationProvider.createPutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
@@ -401,7 +400,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected ICompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected InternalCompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
         MapOperation operation = operationProvider.createSetOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
@@ -534,7 +533,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return (Boolean) invokeOperation(key, operation);
     }
 
-    protected ICompletableFuture<Data> removeAsyncInternal(Data key) {
+    protected InternalCompletableFuture<Data> removeAsyncInternal(Data key) {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
         MapOperation operation = operationProvider.createRemoveOperation(name, key, false);
         operation.setThreadId(ThreadUtil.getThreadId());
@@ -1030,7 +1029,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
-    public ICompletableFuture executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
+    public InternalCompletableFuture<Object> executeOnKeyInternal(
+            Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
         int partitionId = partitionService.getPartitionId(key);
         MapOperation operation = operationProvider.createEntryOperation(name, key, entryProcessor);
         operation.setThreadId(ThreadUtil.getThreadId());

@@ -83,6 +83,11 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
+    public boolean complete(Object value) {
+        return future.complete(value);
+    }
+
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         done = true;
         return false;

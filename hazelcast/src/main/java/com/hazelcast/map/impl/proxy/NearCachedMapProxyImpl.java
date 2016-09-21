@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
@@ -38,6 +37,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.CompletedFuture;
 
@@ -127,7 +127,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<Data> getAsyncInternal(final Data key) {
+    protected InternalCompletableFuture<Data> getAsyncInternal(final Data key) {
         Object value = nearCache.get(key);
         if (value != null) {
             if (isCachedNull(value)) {
@@ -141,7 +141,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
         final boolean marked = keyStateMarker.tryMark(key);
 
-        ICompletableFuture<Data> future = super.getAsyncInternal(key);
+        InternalCompletableFuture<Data> future = super.getAsyncInternal(key);
         future.andThen(new ExecutionCallback<Data>() {
             @Override
             public void onResponse(Data response) {
@@ -189,15 +189,15 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        ICompletableFuture<Data> future = super.putAsyncInternal(key, value, ttl, timeunit);
+    protected InternalCompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        InternalCompletableFuture<Data> future = super.putAsyncInternal(key, value, ttl, timeunit);
         invalidateCache(key);
         return future;
     }
 
     @Override
-    protected ICompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        ICompletableFuture<Data> future = super.setAsyncInternal(key, value, ttl, timeunit);
+    protected InternalCompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        InternalCompletableFuture<Data> future = super.setAsyncInternal(key, value, ttl, timeunit);
         invalidateCache(key);
         return future;
     }
@@ -283,7 +283,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<Data> removeAsyncInternal(Data key) {
+    protected InternalCompletableFuture<Data> removeAsyncInternal(Data key) {
         invalidateCache(key);
         return super.removeAsyncInternal(key);
     }
@@ -349,8 +349,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public ICompletableFuture executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
-        ICompletableFuture future = super.executeOnKeyInternal(key, entryProcessor, callback);
+    public InternalCompletableFuture executeOnKeyInternal(
+            Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
+        InternalCompletableFuture future = super.executeOnKeyInternal(key, entryProcessor, callback);
         invalidateCache(key);
         return future;
     }

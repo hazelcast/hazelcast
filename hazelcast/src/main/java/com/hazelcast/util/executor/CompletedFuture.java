@@ -17,8 +17,8 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.concurrent.ExecutionException;
@@ -27,7 +27,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class CompletedFuture<V> implements ICompletableFuture<V> {
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
+public final class CompletedFuture<V> implements InternalCompletableFuture<V> {
 
     private final SerializationService serializationService;
     private final ExecutorService asyncExecutor;
@@ -60,6 +62,27 @@ public final class CompletedFuture<V> implements ICompletableFuture<V> {
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         return get();
+    }
+
+    @Override
+    public V join() {
+        try {
+            // this method is quite inefficient when there is unchecked exception, because it will be wrapped
+            // in a ExecutionException, and then it is unwrapped again.
+            return get();
+        } catch (Throwable throwable) {
+            throw rethrow(throwable);
+        }
+    }
+
+    @Override
+    public V getSafely() {
+        return join();
+    }
+
+    @Override
+    public boolean complete(Object value) {
+        return false;
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -281,7 +280,8 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
 
         final long taskId;
 
-        public DurableExecutorServiceDelegateFuture(ICompletableFuture future, SerializationService serializationService,
+        public DurableExecutorServiceDelegateFuture(InternalCompletableFuture future,
+                                                    SerializationService serializationService,
                                                     T defaultValue, long taskId) {
             super(future, serializationService, defaultValue);
             this.taskId = taskId;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.executor.impl;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -40,7 +40,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     private final Address target;
     private volatile boolean cancelled;
 
-    CancellableDelegatingFuture(ICompletableFuture future, NodeEngine nodeEngine, String uuid, int partitionId) {
+    CancellableDelegatingFuture(InternalCompletableFuture future, NodeEngine nodeEngine, String uuid, int partitionId) {
         super(future, nodeEngine.getSerializationService());
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
@@ -48,7 +48,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         this.target = null;
     }
 
-    CancellableDelegatingFuture(ICompletableFuture future, NodeEngine nodeEngine, String uuid, Address target) {
+    CancellableDelegatingFuture(InternalCompletableFuture future, NodeEngine nodeEngine, String uuid, Address target) {
         super(future, nodeEngine.getSerializationService());
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
@@ -56,7 +56,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         this.partitionId = -1;
     }
 
-    CancellableDelegatingFuture(ICompletableFuture future, V defaultValue, NodeEngine nodeEngine,
+    CancellableDelegatingFuture(InternalCompletableFuture future, V defaultValue, NodeEngine nodeEngine,
                                 String uuid, int partitionId) {
         super(future, nodeEngine.getSerializationService(), defaultValue);
         this.nodeEngine = nodeEngine;
@@ -71,11 +71,11 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
             return false;
         }
 
-        Future f = invokeCancelOperation(mayInterruptIfRunning);
+        Future<Boolean> f = invokeCancelOperation(mayInterruptIfRunning);
         try {
-            Boolean b = (Boolean) f.get();
+            Boolean b = f.get();
             if (b != null && b) {
-                setError(new CancellationException());
+                complete(new CancellationException());
                 cancelled = true;
                 return true;
             }
@@ -83,11 +83,11 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         } catch (Exception e) {
             throw rethrow(e);
         } finally {
-            setDone();
+            completeWithDefault();
         }
     }
 
-    private Future invokeCancelOperation(boolean mayInterruptIfRunning) {
+    private Future<Boolean> invokeCancelOperation(boolean mayInterruptIfRunning) {
         CancellationOperation op = new CancellationOperation(uuid, mayInterruptIfRunning);
         OperationService opService = nodeEngine.getOperationService();
         InvocationBuilder builder;
