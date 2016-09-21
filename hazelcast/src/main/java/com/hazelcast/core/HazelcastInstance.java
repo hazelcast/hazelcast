@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
@@ -415,6 +416,18 @@ public interface HazelcastInstance {
      * @return the Hazelcast {@link ICacheManager}
      */
     ICacheManager getCacheManager();
+
+    /**
+     * Obtain a {@link CardinalityEstimator} with the given name.
+     * The estimator can be used to efficiently estimate the cardinality of <strong>unique</strong> entities
+     * in big data sets, without the need of storing them.
+     *
+     * The estimator is based on a HyperLogLog++ data-structure.
+     *
+     * @param name the name of the estimator
+     * @return a {@link CardinalityEstimator}
+     */
+    CardinalityEstimator getCardinalityEstimator(String name);
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

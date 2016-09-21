@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
@@ -71,7 +72,7 @@ import java.util.concurrent.ConcurrentMap;
  * </li>
  * </ol>
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 @PrivateApi
 public final class HazelcastInstanceProxy implements HazelcastInstance, SerializationServiceSupport {
     protected volatile HazelcastInstanceImpl original;
@@ -271,6 +272,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public HazelcastXAResource getXAResource() {
         return getOriginal().getXAResource();
+    }
+
+    @Override
+    public CardinalityEstimator getCardinalityEstimator(String name) {
+        return getOriginal().getCardinalityEstimator(name);
     }
 
     @Override

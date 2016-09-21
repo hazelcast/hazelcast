@@ -18,6 +18,7 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.JCacheDetector;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.cache.impl.ClientCacheProxyFactory;
@@ -31,6 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
+import com.hazelcast.client.proxy.ClientCardinalityEstimatorProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.proxy.ClientDurableExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
@@ -182,7 +184,7 @@ public final class ProxyManager {
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, atomicLong);
             }
         });
-
+        register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
             try {
                 ClassLoader classLoader = config.getClassLoader();

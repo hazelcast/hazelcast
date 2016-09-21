@@ -23,6 +23,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IAtomicLong;
@@ -62,6 +63,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * A client-side proxy {@link com.hazelcast.core.HazelcastInstance} instance.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class HazelcastClientProxy implements HazelcastInstance, SerializationServiceSupport {
 
     public volatile HazelcastClientInstanceImpl client;
@@ -205,6 +207,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public ISemaphore getSemaphore(String name) {
         return getClient().getSemaphore(name);
+    }
+
+    @Override
+    public CardinalityEstimator getCardinalityEstimator(String name) {
+        return getClient().getCardinalityEstimator(name);
     }
 
     @Override

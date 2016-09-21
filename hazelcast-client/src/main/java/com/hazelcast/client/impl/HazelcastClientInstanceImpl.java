@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
@@ -65,6 +66,7 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
@@ -531,6 +533,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public IAtomicLong getAtomicLong(String name) {
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public CardinalityEstimator getCardinalityEstimator(String name) {
+        return getDistributedObject(CardinalityEstimatorService.SERVICE_NAME, name);
     }
 
     @Override

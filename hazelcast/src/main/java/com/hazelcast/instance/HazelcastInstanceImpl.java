@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.impl.ClientServiceProxy;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -27,6 +28,7 @@ import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
@@ -395,6 +397,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     @Override
     public HazelcastXAResource getXAResource() {
         return getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
+    }
+
+    @Override
+    public CardinalityEstimator getCardinalityEstimator(String name) {
+        return getDistributedObject(CardinalityEstimatorService.SERVICE_NAME, name);
     }
 
     @Override

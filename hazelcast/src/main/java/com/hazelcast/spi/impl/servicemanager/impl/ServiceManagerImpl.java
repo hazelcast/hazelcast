@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.servicemanager.impl;
 
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.JCacheDetector;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -156,6 +157,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
         registerService(RingbufferService.SERVICE_NAME, new RingbufferService(nodeEngine));
         registerService(XAService.SERVICE_NAME, new XAService(nodeEngine));
+        registerService(CardinalityEstimatorService.SERVICE_NAME, new CardinalityEstimatorService());
         registerCacheServiceIfAvailable();
         readServiceDescriptors();
     }
