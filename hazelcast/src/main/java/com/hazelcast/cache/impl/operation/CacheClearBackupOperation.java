@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
@@ -44,7 +45,12 @@ public class CacheClearBackupOperation extends AbstractNamedOperation
     public void beforeRun()
             throws Exception {
         ICacheService service = getService();
-        cache = service.getOrCreateRecordStore(name, getPartitionId());
+        try {
+            cache = service.getOrCreateRecordStore(name, getPartitionId());
+        } catch (CacheNotExistsException e) {
+            getLogger().finest("Error while getting a cache", e);
+        }
+
     }
 
     @Override
@@ -54,7 +60,9 @@ public class CacheClearBackupOperation extends AbstractNamedOperation
 
     @Override
     public void run() throws Exception {
-        cache.clear();
+        if (cache != null) {
+            cache.clear();
+        }
     }
 
     @Override
