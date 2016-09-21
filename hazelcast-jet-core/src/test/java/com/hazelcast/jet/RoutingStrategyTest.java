@@ -4,7 +4,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.sink.ListSink;
 import com.hazelcast.jet.source.ListSource;
-import com.hazelcast.jet.strategy.AllMembersDistributionStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.*;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -71,7 +72,7 @@ public class RoutingStrategyTest extends JetTestSupport {
             edge = edge.broadcast();
         }
         if (shuffled && broadcast) {
-            edge = edge.distributed(AllMembersDistributionStrategy.INSTANCE);
+            edge = edge.distributed(allMembers());
         } else if (shuffled) {
             edge = edge.distributed();
         }

@@ -89,7 +89,9 @@ public interface Consumer {
      * @return pair consumer's shuffling strategy
      * null if consumer doesn't support shuffling
      */
-    MemberDistributionStrategy getMemberDistributionStrategy();
+    default MemberDistributionStrategy getMemberDistributionStrategy() {
+        return null;
+    }
 
     /**
      * @return the partitioning strategy

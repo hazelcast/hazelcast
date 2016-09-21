@@ -27,6 +27,7 @@ import java.util.Set;
  * The {@link RoutingStrategy} on the edge will determine which consumers
  * will receive the data on the target node.
  */
+@FunctionalInterface
 public interface MemberDistributionStrategy extends Serializable {
     /**
      * Returns the set of members which the data should be distributed to. The data will be distributed
@@ -36,4 +37,26 @@ public interface MemberDistributionStrategy extends Serializable {
      * @param jobContext the job context
      */
     Set<Member> getTargetMembers(JobContext jobContext);
+
+    /**
+     * A strategy that broadcasts emitted objects to all members
+     */
+    static MemberDistributionStrategy allMembers() {
+        return (context) -> context.getNodeEngine().getClusterService().getMembers();
+    }
+
+    /**
+     * A distribution strategy which shuffles all data to a single node, identified by the given address
+     */
+    static MemberDistributionStrategy singleMember(Member member) {
+        return new SingleMemberDistributionStrategy(member);
+    }
+
+    /**
+     * Distribution strategy based on a given partition key. All data will be sent to
+     * the owner of the given partition key.
+     */
+    static MemberDistributionStrategy singlePartition(String partitionKey) {
+        return new SinglePartitionDistributionStrategy(partitionKey);
+    }
 }

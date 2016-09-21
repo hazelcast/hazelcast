@@ -30,7 +30,7 @@ import static java.util.Collections.singleton;
  * Distribution strategy based on a given partition key. All data will be sent to
  * the owner of the given partition key.
  */
-public class SinglePartitionDistributionStrategy implements MemberDistributionStrategy {
+class SinglePartitionDistributionStrategy implements MemberDistributionStrategy {
     private final Object partitionKey;
 
 

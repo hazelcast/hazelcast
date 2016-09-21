@@ -29,7 +29,7 @@ import com.hazelcast.jet.source.MapSource;
 import com.hazelcast.jet.runtime.OutputCollector;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.SingleMemberDistributionStrategy;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.File;
@@ -42,6 +42,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singleMember;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -143,8 +144,7 @@ public class SourceSinkTest extends JetTestSupport {
         dag.addVertex(vertex2);
 
         Edge edge = new Edge("edge", vertex1, vertex2)
-                .distributed()
-                .distributed(new SingleMemberDistributionStrategy(instance.getCluster().getLocalMember()));
+                .distributed(singleMember(instance.getCluster().getLocalMember()));
         dag.addEdge(edge);
 
         Job job = JetEngine.getJob(instance, "fileToFile", dag);

@@ -19,8 +19,8 @@ package com.hazelcast.jet.dag;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.jet.strategy.SerializedHashingStrategy;
-import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.strategy.RoutingStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.JetTestSupport.createVertex;
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -69,16 +70,16 @@ public class EdgeTest {
     public void testEdgeBuilder() throws Exception {
         Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
         Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
-        SinglePartitionDistributionStrategy shufflingStrategy = new SinglePartitionDistributionStrategy("test");
+        MemberDistributionStrategy distributionStrategy = singlePartition("test");
         Edge edge = new Edge("edge", v1, v2)
-                .distributed(shufflingStrategy)
+                .distributed(distributionStrategy)
                 .partitioned(StringAndPartitionAwarePartitioningStrategy.INSTANCE, SerializedHashingStrategy.INSTANCE)
                 .broadcast();
         assertEquals(SerializedHashingStrategy.INSTANCE, edge.getHashingStrategy());
         assertEquals(StringAndPartitionAwarePartitioningStrategy.INSTANCE, edge.getPartitioningStrategy());
         assertEquals(RoutingStrategy.BROADCAST, edge.getRoutingStrategy());
         assertEquals(false, edge.isLocal());
-        assertEquals(shufflingStrategy, edge.getMemberDistributionStrategy());
+        assertEquals(distributionStrategy, edge.getMemberDistributionStrategy());
     }
 
 }

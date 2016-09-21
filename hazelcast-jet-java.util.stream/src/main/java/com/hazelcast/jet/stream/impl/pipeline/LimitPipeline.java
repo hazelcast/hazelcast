@@ -19,15 +19,15 @@ package com.hazelcast.jet.stream.impl.pipeline;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.LimitProcessor;
 
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -64,7 +64,7 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
                 .build();
 
         dag.addEdge(newEdge(first, second)
-                .distributed(new SinglePartitionDistributionStrategy(randomName())));
+                .distributed(singlePartition(randomName())));
 
         return second;
     }

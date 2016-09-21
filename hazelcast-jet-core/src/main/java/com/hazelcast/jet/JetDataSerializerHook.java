@@ -18,18 +18,21 @@ package com.hazelcast.jet;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet.strategy.SingleMemberDistributionStrategy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-class JetDataSerializerHook implements DataSerializerHook {
+public final class JetDataSerializerHook implements DataSerializerHook {
 
-    static final int DAG = 0;
-    static final int VERTEX = 1;
-    static final int EDGE = 2;
+    public static final String JET_DS_FACTORY = "hazelcast.serialization.ds.jet";
+    public static final int JET_DS_FACTORY_ID = -10000;
 
-    static final String JET_DS_FACTORY = "hazelcast.serialization.ds.jet";
-    static final int JET_DS_FACTORY_ID = -10000;
-    static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
+    public static final int DAG = 0;
+    public static final int VERTEX = 1;
+    public static final int EDGE = 2;
+    public static final int SINGLE_MEMBER_DISTRIBUTION_STRATEGY = 3;
+    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
+
 
     @Override
     public int getFactoryId() {
@@ -51,6 +54,8 @@ class JetDataSerializerHook implements DataSerializerHook {
                     return new Edge();
                 case VERTEX:
                     return new Vertex();
+                case SINGLE_MEMBER_DISTRIBUTION_STRATEGY:
+                    return new SingleMemberDistributionStrategy();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

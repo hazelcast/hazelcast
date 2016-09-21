@@ -51,10 +51,9 @@ import com.hazelcast.jet.cascading.runtime.IdentityProcessor;
 import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.AllMembersDistributionStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
+import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.UuidUtil;
@@ -70,6 +69,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.allMembers;
 
 public class JetFlowStep extends BaseFlowStep<JobConfig> {
 
@@ -231,7 +232,7 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
             if (accumulatedSources.contains(element)) {
                 dag.addEdge(new Edge(edge.getFlowElementID(), sourceVertex, targetVertex)
                         .broadcast()
-                        .distributed(AllMembersDistributionStrategy.INSTANCE)
+                        .distributed(allMembers())
                 );
             } else {
                 HashingStrategy hashingStrategy = getHashingStrategy(edge, targetNode, element);
@@ -277,7 +278,7 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
                 dag.addVertex(tapVertex);
                 Edge edge = new Edge(FlowElements.id(element), tapVertex, vertex)
                         .broadcast()
-                        .distributed(AllMembersDistributionStrategy.INSTANCE);
+                        .distributed(allMembers());
                 dag.addEdge(edge);
             }
         }

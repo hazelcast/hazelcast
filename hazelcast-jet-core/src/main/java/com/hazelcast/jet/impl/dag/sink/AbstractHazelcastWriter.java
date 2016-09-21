@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
@@ -53,7 +52,6 @@ public abstract class AbstractHazelcastWriter implements Consumer {
     private final NodeEngine nodeEngine;
     private final int awaitInSecondsTime;
 
-    private final MemberDistributionStrategy memberDistributionStrategy;
     private final PartitionSpecificRunnable partitionSpecificRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -99,7 +97,6 @@ public abstract class AbstractHazelcastWriter implements Consumer {
         int pairChunkSize = jobConfig.getChunkSize();
         this.chunkBuffer = new IOBuffer<>(new Object[pairChunkSize]);
         this.outputBuffer = new IOBuffer<>(new Object[pairChunkSize]);
-        this.memberDistributionStrategy = null;
     }
 
     private void pushWriteRequest() {
@@ -199,11 +196,6 @@ public abstract class AbstractHazelcastWriter implements Consumer {
     @Override
     public boolean isShuffled() {
         return true;
-    }
-
-    @Override
-    public MemberDistributionStrategy getMemberDistributionStrategy() {
-        return memberDistributionStrategy;
     }
 
     @Override

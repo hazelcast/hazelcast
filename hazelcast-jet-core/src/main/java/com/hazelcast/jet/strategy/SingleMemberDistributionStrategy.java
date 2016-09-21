@@ -17,39 +17,61 @@
 package com.hazelcast.jet.strategy;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.jet.JetDataSerializerHook;
 import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.net.UnknownHostException;
-import java.util.Collections;
+import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static java.util.Collections.singleton;
 
 /**
- * A shuffling strategy which shuffles all data to a single node, identified by the given address
+ * A distribution strategy which shuffles all data to a single node, identified by the given address
  */
-public class SingleMemberDistributionStrategy implements MemberDistributionStrategy {
+public final class SingleMemberDistributionStrategy implements MemberDistributionStrategy, IdentifiedDataSerializable {
 
-    private final String host;
-    private final int port;
+    private Member member;
+
+
+    /**
+     * Internal serialization use only
+     */
+    public SingleMemberDistributionStrategy() {
+    }
 
     /**
      * Constructs the strategy with the given address
      */
     public SingleMemberDistributionStrategy(Member member) {
-        host = member.getAddress().getHost();
-        port = member.getAddress().getPort();
-
+        this.member = member;
     }
 
     @Override
     public Set<Member> getTargetMembers(JobContext jobContext) {
-        try {
-            return Collections.<Member>singleton(new MemberImpl(new Address(host, port), false));
-        } catch (UnknownHostException e) {
-            throw unchecked(e);
-        }
+        return singleton(member);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetDataSerializerHook.SINGLE_MEMBER_DISTRIBUTION_STRATEGY;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(member);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        member = in.readObject();
     }
 }
+

@@ -27,7 +27,6 @@ import com.hazelcast.jet.io.SerializationOptimizer;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -149,11 +148,6 @@ public class ShufflingSender implements Consumer {
                 closed = true;
             }
         }
-    }
-
-    @Override
-    public MemberDistributionStrategy getMemberDistributionStrategy() {
-        return null;
     }
 
     public Ringbuffer getRingbuffer() {

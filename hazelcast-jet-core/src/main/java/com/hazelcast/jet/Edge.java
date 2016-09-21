@@ -147,7 +147,6 @@ public class Edge implements IdentifiedDataSerializable {
      * If there are several consumers in the target member(s), the consumer will be determined by
      * {@link RoutingStrategy}
      *
-     * @see com.hazelcast.jet.strategy.AllMembersDistributionStrategy
      * @see com.hazelcast.jet.strategy.SingleMemberDistributionStrategy
      */
     public Edge distributed(MemberDistributionStrategy distributionStrategy) {

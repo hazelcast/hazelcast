@@ -19,10 +19,9 @@ package com.hazelcast.jet.stream.impl.terminal;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.sink.ListSink;
-import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
+import com.hazelcast.jet.runtime.JetPair;
+import com.hazelcast.jet.sink.ListSink;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -34,11 +33,12 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
@@ -68,7 +68,7 @@ public class Reducer {
                 .taskCount(1)
                 .build();
         dag.addEdge(newEdge(accumulatorVertex, combinerVertex)
-                .distributed(new SinglePartitionDistributionStrategy(randomName())));
+                .distributed(singlePartition(randomName())));
         return combinerVertex;
     }
 

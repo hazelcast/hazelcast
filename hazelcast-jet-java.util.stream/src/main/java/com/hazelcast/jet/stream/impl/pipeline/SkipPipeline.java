@@ -20,7 +20,6 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -28,6 +27,7 @@ import com.hazelcast.jet.stream.impl.SourcePipeline;
 import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
 import com.hazelcast.jet.stream.impl.processor.SkipProcessor;
 
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
 import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
@@ -57,7 +57,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         // if upstream is not ordered, we need to shuffle data to one node
         if (!upstream.isOrdered()) {
-            edge = edge.distributed(new SinglePartitionDistributionStrategy(randomName()));
+            edge = edge.distributed(singlePartition(randomName()));
         }
         dag.addEdge(edge);
         return vertex;

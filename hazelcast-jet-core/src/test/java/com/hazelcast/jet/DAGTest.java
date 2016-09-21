@@ -19,8 +19,8 @@ package com.hazelcast.jet;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.sink.FileSink;
 import com.hazelcast.jet.source.FileSource;
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.jet.strategy.SerializedHashingStrategy;
-import com.hazelcast.jet.strategy.SinglePartitionDistributionStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -35,6 +35,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.JetTestSupport.createVertex;
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -248,11 +249,11 @@ public class DAGTest {
 
         Edge e1 = new Edge("e1", v1, v2)
                 .partitioned(StringAndPartitionAwarePartitioningStrategy.INSTANCE, SerializedHashingStrategy.INSTANCE)
-                .distributed(new SinglePartitionDistributionStrategy("e1"))
+                .distributed(singlePartition("e1"))
                 .broadcast();
         Edge e2 = new Edge("e2", v2, v3)
                 .partitioned(StringPartitioningStrategy.INSTANCE, SerializedHashingStrategy.INSTANCE)
-                .distributed(new SinglePartitionDistributionStrategy("e2"));
+                .distributed(singlePartition("e2"));
 
         dag.addVertex(v1);
         dag.addVertex(v2);
