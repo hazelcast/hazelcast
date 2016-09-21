@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -110,6 +111,9 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
             // and it alters the event type to be published
             filterAsEventListenerFilter = ((EventListenerFilter) filter);
             filter = ((EventListenerFilter) filter).getEventFilter();
+            if (filter instanceof UuidFilter) {
+                return FILTER_DOES_NOT_MATCH;
+            }
         }
 
         if (originalFilterEventTypeMatches && filter instanceof TrueEventFilter) {

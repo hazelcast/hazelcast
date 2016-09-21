@@ -48,4 +48,8 @@ public class MapPartitionLostEventFilter implements EventFilter, DataSerializabl
         return 0;
     }
 
+    @Override
+    public String toString() {
+        return "MapPartitionLostEventFilter{}";
+    }
 }

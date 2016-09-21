@@ -54,4 +54,11 @@ public class UuidFilter implements EventFilter, DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         uuid = in.readUTF();
     }
+
+    @Override
+    public String toString() {
+        return "UuidFilter{"
+                + "uuid='" + uuid + '\''
+                + '}';
+    }
 }

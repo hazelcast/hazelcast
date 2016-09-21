@@ -85,4 +85,11 @@ public class QueryEventFilter extends EntryEventFilter {
         result = 31 * result + predicate.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "QueryEventFilter{"
+                + "predicate=" + predicate
+                + '}';
+    }
 }

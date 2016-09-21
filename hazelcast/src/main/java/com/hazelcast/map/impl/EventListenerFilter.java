@@ -86,4 +86,11 @@ public class EventListenerFilter implements EventFilter, DataSerializable {
         return eventFilter;
     }
 
+    @Override
+    public String toString() {
+        return "EventListenerFilter{"
+                + "listenerFlags=" + listenerFlags
+                + ", eventFilter=" + eventFilter
+                + '}';
+    }
 }
