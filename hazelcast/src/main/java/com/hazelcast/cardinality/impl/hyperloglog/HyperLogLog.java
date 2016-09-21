@@ -16,7 +16,6 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog;
 
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
