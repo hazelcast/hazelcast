@@ -1,10 +1,15 @@
 package com.hazelcast.map.impl.event;
 
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.map.impl.EventListenerFilter;
+import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -18,6 +23,11 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
+import static com.hazelcast.map.impl.event.FilteringStrategy.FILTER_DOES_NOT_MATCH;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -58,7 +68,7 @@ public class EntryEventDataCacheTest {
         when(mapServiceContext.toData(anyObject())).thenReturn(new HeapData());
         when(mapServiceContext.getNodeEngine()).thenReturn(mockNodeEngine);
 
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {new DefaultEntryEventFilteringStrategy(null, mapServiceContext)},
                 {new QueryCacheNaturalFilteringStrategy(null, mapServiceContext)},
         });
@@ -170,5 +180,25 @@ public class EntryEventDataCacheTest {
 
         // then: the cache is empty & eventDataIncludingValues returns null or empty collection
         assertTrue(instance.eventDataExcludingValues() == null || instance.eventDataExcludingValues().isEmpty());
+    }
+
+    @Test
+    public void filteringStrategy_rejects_invalidation_events() throws Exception {
+        EventListenerFilter filter = createInvalidationEventRejectingFilter();
+        int matched = filteringStrategy.doFilter(filter, null, null, null, INVALIDATION, "mapName");
+
+        assertEquals(FILTER_DOES_NOT_MATCH, matched);
+    }
+
+    private static EventListenerFilter createInvalidationEventRejectingFilter() {
+        ListenerAdapter listenerAdapter = createListenerAdapter(new EntryAddedListener() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+
+            }
+        });
+
+        int flags = setAndGetListenerFlags(listenerAdapter);
+        return new EventListenerFilter(flags, TrueEventFilter.INSTANCE);
     }
 }
