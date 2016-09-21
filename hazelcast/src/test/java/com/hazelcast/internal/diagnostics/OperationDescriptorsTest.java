@@ -9,8 +9,13 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -24,6 +29,8 @@ import static org.junit.Assert.assertEquals;
  * Idea: in the future we could check the operation 'names', e.g. it would be helpful to figure out if a Get operation from
  * employees map would be slow. Currently you would see just 'Get operation'
  */
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class OperationDescriptorsTest extends HazelcastTestSupport {
 
     @Test
