@@ -62,6 +62,8 @@ import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
+import com.hazelcast.spi.impl.operationparker.OperationParker;
+import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
@@ -71,8 +73,6 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
-import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
-import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -102,7 +102,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final EventServiceImpl eventService;
     private final OperationServiceImpl operationService;
     private final ExecutionServiceImpl executionService;
-    private final WaitNotifyServiceImpl waitNotifyService;
+    private final OperationParkerImpl operationParker;
     private final ServiceManagerImpl serviceManager;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
@@ -125,7 +125,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.executionService = new ExecutionServiceImpl(this);
         this.operationService = new OperationServiceImpl(this);
         this.eventService = new EventServiceImpl(this);
-        this.waitNotifyService = new WaitNotifyServiceImpl(this);
+        this.operationParker = new OperationParkerImpl(this);
         this.transactionManagerService = new TransactionManagerServiceImpl(this);
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
         this.packetDispatcher = new PacketDispatcherImpl(
@@ -139,7 +139,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.diagnostics = newDiagnostics();
 
         serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
-        serviceManager.registerService(WaitNotifyService.SERVICE_NAME, waitNotifyService);
+        serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
@@ -278,8 +278,8 @@ public class NodeEngineImpl implements NodeEngine {
         return proxyService;
     }
 
-    public WaitNotifyService getWaitNotifyService() {
-        return waitNotifyService;
+    public OperationParker getOperationParker() {
+        return operationParker;
     }
 
     @Override
@@ -375,17 +375,17 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void onMemberLeft(MemberImpl member) {
-        waitNotifyService.onMemberLeft(member);
+        operationParker.onMemberLeft(member);
         operationService.onMemberLeft(member);
         eventService.onMemberLeft(member);
     }
 
     public void onClientDisconnected(String clientUuid) {
-        waitNotifyService.onClientDisconnected(clientUuid);
+        operationParker.onClientDisconnected(clientUuid);
     }
 
     public void onPartitionMigrate(MigrationInfo migrationInfo) {
-        waitNotifyService.onPartitionMigrate(getThisAddress(), migrationInfo);
+        operationParker.onPartitionMigrate(getThisAddress(), migrationInfo);
     }
 
     /**
@@ -419,13 +419,13 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void reset() {
-        waitNotifyService.reset();
+        operationParker.reset();
         operationService.reset();
     }
 
     public void shutdown(final boolean terminate) {
         logger.finest("Shutting down services...");
-        waitNotifyService.shutdown();
+        operationParker.shutdown();
         operationService.shutdownInvocations();
         proxyService.shutdown();
         serviceManager.shutdown(terminate);

@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
+import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -50,7 +50,7 @@ public class ClientTxnDisconnectionTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private WaitNotifyServiceImpl waitNotifyService;
+    private OperationParkerImpl waitNotifyService;
     private HazelcastInstance client;
 
     @After
@@ -64,7 +64,7 @@ public class ClientTxnDisconnectionTest {
         config.getQueueConfig(BOUNDED_QUEUE_PREFIX).setMaxSize(1);
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
         NodeEngineImpl nodeEngine = HazelcastTestSupport.getNode(instance).nodeEngine;
-        waitNotifyService = (WaitNotifyServiceImpl) nodeEngine.getWaitNotifyService();
+        waitNotifyService = (OperationParkerImpl) nodeEngine.getOperationParker();
         client = hazelcastFactory.newHazelcastClient();
     }
 

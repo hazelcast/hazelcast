@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 
 import java.io.IOException;
 
@@ -43,7 +44,7 @@ import java.io.IOException;
  * want to destroy all pending {@link com.hazelcast.spi.BlockingOperation}
  *
  * @see LockStoreContainer#getOrCreateLockStore(ObjectNamespace)
- * @see com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl#cancelWaitingOps(String, Object, Throwable)
+ * @see OperationParkerImpl#cancelParkedOperations(String, Object, Throwable)
  *
  */
 public final class InternalLockNamespace implements ObjectNamespace {
