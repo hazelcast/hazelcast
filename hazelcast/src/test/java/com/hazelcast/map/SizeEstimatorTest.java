@@ -241,7 +241,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
                 throw new IllegalArgumentException("backupCount > nodeCount - 1");
             }
             config.getMapConfig(mapName).setBackupCount(backupCount);
-            // nodes.
             nodes = instanceFactory.newInstances(config, nodeCount);
             return nodes[0].getMap(mapName);
         }
