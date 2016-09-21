@@ -56,6 +56,11 @@ public class SimpleTaskProcessor implements TaskProcessor {
     }
 
     @Override
+    public boolean didWork() {
+        return false;
+    }
+
+    @Override
     public boolean isFinalized() {
         return finalized;
     }
@@ -92,16 +97,6 @@ public class SimpleTaskProcessor implements TaskProcessor {
     @Override
     public boolean onChunk(InputChunk inputChunk) throws Exception {
         return true;
-    }
-
-    @Override
-    public boolean produced() {
-        return false;
-    }
-
-    @Override
-    public boolean hasConsumed() {
-        return false;
     }
 
     @Override

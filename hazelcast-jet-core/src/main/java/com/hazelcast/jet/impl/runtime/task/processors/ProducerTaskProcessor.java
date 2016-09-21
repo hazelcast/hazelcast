@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.runtime.task.processors;
 
 
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.data.io.IOBuffer;
+import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.Producer;
 import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
-import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
-import com.hazelcast.jet.Processor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -77,8 +77,6 @@ public class ProducerTaskProcessor implements TaskProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public boolean process() throws Exception {
-        int producersCount = producers.length;
-
         if (finalizationStarted) {
             finalizationFinished = processor.complete(outputBuffer);
 
@@ -87,19 +85,19 @@ public class ProducerTaskProcessor implements TaskProcessor {
             return processProducer(this.pendingProducer);
         }
 
-        return !scanProducers(producersCount);
+        return !scanProducers();
     }
 
-    private boolean scanProducers(int producersCount) throws Exception {
+    private boolean scanProducers() throws Exception {
         int lastIdx = 0;
         boolean produced = false;
 
         //We should scan all producers if they were marked as closed
-        int startFrom = startFrom();
+        int startFrom = producersWriteFinished ? 0 : nextProducerIdx;
 
-        for (int idx = startFrom; idx < producersCount; idx++) {
+        for (int idx = startFrom; idx < producers.length; idx++) {
             lastIdx = idx;
-            Producer producer = this.producers[idx];
+            Producer producer = producers[idx];
 
             Object[] inChunk = producer.produce();
 
@@ -112,7 +110,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
             inputBuffer.collect(inChunk, producer.lastProducedCount());
             if (!processProducer(producer)) {
                 this.produced = true;
-                nextProducerIdx = (idx + 1) % producersCount;
+                nextProducerIdx = (idx + 1) % producers.length;
                 return true;
             }
         }
@@ -121,18 +119,14 @@ public class ProducerTaskProcessor implements TaskProcessor {
             producingReadFinished = true;
         }
 
-        if (producersCount > 0) {
-            nextProducerIdx = (lastIdx + 1) % producersCount;
+        if (producers.length > 0) {
+            nextProducerIdx = (lastIdx + 1) % producers.length;
             this.produced = produced;
         } else {
             this.produced = false;
         }
 
         return false;
-    }
-
-    private int startFrom() {
-        return producersWriteFinished ? 0 : nextProducerIdx;
     }
 
     private boolean processProducer(Producer producer) throws Exception {
@@ -163,7 +157,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean produced() {
+    public boolean didWork() {
         return produced;
     }
 
@@ -218,11 +212,6 @@ public class ProducerTaskProcessor implements TaskProcessor {
         nextProducerIdx = 0;
         outputBuffer.reset();
         inputBuffer.reset();
-    }
-
-    @Override
-    public boolean hasConsumed() {
-        return false;
     }
 
     @Override

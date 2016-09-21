@@ -48,18 +48,9 @@ public interface TaskProcessor {
     boolean onChunk(InputChunk<Object> inputChunk) throws Exception;
 
     /**
-     * Indicates of some data were produced after last invocation
-     *
-     * @return true - of data were produced, false - otherwise;
+     * Indicates that the processor did something useful in the last call the process()
      */
-    boolean produced();
-
-    /**
-     * Indicates of some data were consumed after last invocation
-     *
-     * @return true - of data were consumed, false - otherwise;
-     */
-    boolean hasConsumed();
+    boolean didWork();
 
     /**
      * Indicates if task has been finalized

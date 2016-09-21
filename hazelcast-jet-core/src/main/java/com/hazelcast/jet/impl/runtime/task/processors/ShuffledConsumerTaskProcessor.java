@@ -334,7 +334,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private boolean feedLocalConsumers(InputChunk<Object> chunk) throws Exception {
         if (isSender && hasLocalConsumers && !localSuccess) {
             localSuccess = super.onChunk(chunk);
-            return super.hasConsumed();
+            return super.didWork();
         }
         return false;
     }

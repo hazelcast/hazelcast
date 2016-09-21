@@ -116,7 +116,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean hasConsumed() {
+    public boolean didWork() {
         return consumedSome;
     }
 
@@ -174,10 +174,5 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     @Override
     public boolean producersReadFinished() {
         return true;
-    }
-
-    @Override
-    public boolean produced() {
-        return false;
     }
 }
