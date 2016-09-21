@@ -52,4 +52,9 @@ public final class TrueEventFilter implements EventFilter, DataSerializable {
     public int hashCode() {
         return 0;
     }
+
+    @Override
+    public String toString() {
+        return "TrueEventFilter{}";
+    }
 }

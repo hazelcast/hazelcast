@@ -88,4 +88,12 @@ public class EntryEventFilter implements EventFilter, DataSerializable {
         result = 31 * result + (key != null ? key.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "EntryEventFilter{"
+                + "includeValue=" + includeValue
+                + ", key=" + key
+                + '}';
+    }
 }
