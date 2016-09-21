@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.waitnotifyservice.impl;
+package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.HazelcastThreadGroup;
@@ -32,7 +32,7 @@ import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
+import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
@@ -48,31 +48,31 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsTracker {
+public class OperationParkerImpl implements OperationParker, LiveOperationsTracker {
 
     private static final long FIRST_WAIT_TIME = 1000;
     private static final long TIMEOUT_UPPER_BOUND = 1500;
 
-    private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOperation>> mapWaitingOps =
-            new ConcurrentHashMap<WaitNotifyKey, Queue<WaitingOperation>>(100);
+    private final ConcurrentMap<WaitNotifyKey, Queue<ParkedOperation>> mapWaitingOps =
+            new ConcurrentHashMap<WaitNotifyKey, Queue<ParkedOperation>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationService;
     private final Future expirationTask;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
 
-    private final ConstructorFunction<WaitNotifyKey, Queue<WaitingOperation>> waitQueueConstructor
-            = new ConstructorFunction<WaitNotifyKey, Queue<WaitingOperation>>() {
+    private final ConstructorFunction<WaitNotifyKey, Queue<ParkedOperation>> waitQueueConstructor
+            = new ConstructorFunction<WaitNotifyKey, Queue<ParkedOperation>>() {
         @Override
-        public Queue<WaitingOperation> createNew(WaitNotifyKey key) {
-            return new ConcurrentLinkedQueue<WaitingOperation>();
+        public Queue<ParkedOperation> createNew(WaitNotifyKey key) {
+            return new ConcurrentLinkedQueue<ParkedOperation>();
         }
     };
 
-    public WaitNotifyServiceImpl(final NodeEngineImpl nodeEngine) {
+    public OperationParkerImpl(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         final Node node = nodeEngine.getNode();
-        logger = node.getLogger(WaitNotifyService.class.getName());
+        logger = node.getLogger(OperationParker.class.getName());
 
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
         expirationService = Executors.newSingleThreadExecutor(
@@ -85,14 +85,14 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
 
     @Override
     public void populate(LiveOperations liveOperations) {
-        for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
-            for (WaitingOperation op : queue) {
+        for (Queue<ParkedOperation> queue : mapWaitingOps.values()) {
+            for (ParkedOperation op : queue) {
                 liveOperations.add(op.getCallerAddress(), op.getCallId());
             }
         }
     }
 
-    private void invalidate(final WaitingOperation waitingOp) throws Exception {
+    private void invalidate(final ParkedOperation waitingOp) throws Exception {
         nodeEngine.getOperationService().executeOperation(waitingOp);
     }
 
@@ -100,11 +100,11 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
     // here we have an implicit lock for specific WaitNotifyKey.
     // see javadoc
     @Override
-    public void await(BlockingOperation blockingOperation) {
-        final WaitNotifyKey key = blockingOperation.getWaitKey();
-        final Queue<WaitingOperation> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
-        long timeout = blockingOperation.getWaitTimeout();
-        WaitingOperation waitingOp = new WaitingOperation(q, blockingOperation);
+    public void park(BlockingOperation op) {
+        final WaitNotifyKey key = op.getWaitKey();
+        final Queue<ParkedOperation> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
+        long timeout = op.getWaitTimeout();
+        ParkedOperation waitingOp = new ParkedOperation(q, op);
         waitingOp.setNodeEngine(nodeEngine);
         q.offer(waitingOp);
         if (timeout > -1 && timeout < TIMEOUT_UPPER_BOUND) {
@@ -116,13 +116,13 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
     // here we have an implicit lock for specific WaitNotifyKey.
     // see javadoc
     @Override
-    public void notify(Notifier notifier) {
+    public void unpark(Notifier notifier) {
         WaitNotifyKey key = notifier.getNotifiedKey();
-        Queue<WaitingOperation> q = mapWaitingOps.get(key);
+        Queue<ParkedOperation> q = mapWaitingOps.get(key);
         if (q == null) {
             return;
         }
-        WaitingOperation waitingOp = q.peek();
+        ParkedOperation waitingOp = q.peek();
         while (waitingOp != null) {
             final Operation op = waitingOp.getOperation();
             if (notifier == op) {
@@ -163,7 +163,7 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
     // for testing purposes only
     public int getTotalWaitingOperationCount() {
         int count = 0;
-        for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
+        for (Queue<ParkedOperation> queue : mapWaitingOps.values()) {
             count += queue.size();
         }
         return count;
@@ -172,9 +172,9 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
     // for testing purposes only
     public int getTotalValidWaitingOperationCount() {
         int count = 0;
-        for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
-            for (WaitingOperation waitingOperation : queue) {
-                if (waitingOperation.valid) {
+        for (Queue<ParkedOperation> queue : mapWaitingOps.values()) {
+            for (ParkedOperation parkedOperation : queue) {
+                if (parkedOperation.valid) {
                     count++;
                 }
             }
@@ -192,8 +192,8 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
     }
 
     private void invalidateWaitingOps(String callerUuid) {
-        for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
-            for (WaitingOperation waitingOp : q) {
+        for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
+            for (ParkedOperation waitingOp : q) {
                 if (waitingOp.isValid()) {
                     Operation op = waitingOp.getOperation();
                     if (callerUuid.equals(op.getCallerUuid())) {
@@ -211,13 +211,13 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
         }
 
         int partitionId = migrationInfo.getPartitionId();
-        for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
-            Iterator<WaitingOperation> it = q.iterator();
+        for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
+            Iterator<ParkedOperation> it = q.iterator();
             while (it.hasNext()) {
                 if (Thread.interrupted()) {
                     return;
                 }
-                WaitingOperation waitingOp = it.next();
+                ParkedOperation waitingOp = it.next();
                 if (waitingOp.isValid()) {
                     Operation op = waitingOp.getOperation();
                     if (partitionId == op.getPartitionId()) {
@@ -234,9 +234,9 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
     }
 
     @Override
-    public void cancelWaitingOps(String serviceName, Object objectId, Throwable cause) {
-        for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
-            for (WaitingOperation waitingOp : q) {
+    public void cancelParkedOperations(String serviceName, Object objectId, Throwable cause) {
+        for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
+            for (ParkedOperation waitingOp : q) {
                 if (waitingOp.isValid()) {
                     WaitNotifyKey wnk = waitingOp.blockingOperation.getWaitKey();
                     if (serviceName.equals(wnk.getServiceName())
@@ -259,8 +259,8 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
         expirationService.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
         final Address thisAddress = nodeEngine.getThisAddress();
-        for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
-            for (WaitingOperation waitingOp : q) {
+        for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
+            for (ParkedOperation waitingOp : q) {
                 if (waitingOp.isValid()) {
                     final Operation op = waitingOp.getOperation();
                     // only for local invocations, remote ones will be expired via #onMemberLeft()
@@ -281,11 +281,11 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("WaitNotifyService{");
+        StringBuilder sb = new StringBuilder("OperationParker{");
         sb.append("delayQueue=");
         sb.append(delayQueue.size());
         sb.append(" \n[");
-        for (Queue<WaitingOperation> scheduledOps : mapWaitingOps.values()) {
+        for (Queue<ParkedOperation> scheduledOps : mapWaitingOps.values()) {
             sb.append("\t");
             sb.append(scheduledOps.size());
             sb.append(", ");
@@ -318,7 +318,7 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
             long waitTime = FIRST_WAIT_TIME;
             while (waitTime > 0) {
                 long begin = System.currentTimeMillis();
-                WaitingOperation waitingOp = (WaitingOperation) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
+                ParkedOperation waitingOp = (ParkedOperation) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
                 if (waitingOp != null) {
                     if (waitingOp.isValid()) {
                         invalidate(waitingOp);
@@ -331,8 +331,8 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
                 }
             }
 
-            for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
-                for (WaitingOperation waitingOp : q) {
+            for (Queue<ParkedOperation> q : mapWaitingOps.values()) {
+                for (ParkedOperation waitingOp : q) {
                     if (Thread.interrupted()) {
                         return true;
                     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.waitnotifyservice.impl;
+package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BlockingOperation;
@@ -34,15 +34,15 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-class WaitingOperation extends Operation implements Delayed, PartitionAwareOperation {
-    final Queue<WaitingOperation> queue;
+class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation {
+    final Queue<ParkedOperation> queue;
     final Operation op;
     final BlockingOperation blockingOperation;
     final long expirationTime;
     volatile boolean valid = true;
     volatile Object cancelResponse;
 
-    WaitingOperation(Queue<WaitingOperation> queue, BlockingOperation blockingOperation) {
+    ParkedOperation(Queue<ParkedOperation> queue, BlockingOperation blockingOperation) {
         this.op = (Operation) blockingOperation;
         this.blockingOperation = blockingOperation;
         this.queue = queue;

@@ -237,7 +237,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
         BlockingOperation blockingOperation = (BlockingOperation) op;
         if (blockingOperation.shouldWait()) {
-            nodeEngine.getWaitNotifyService().await(blockingOperation);
+            nodeEngine.getOperationParker().park(blockingOperation);
             return true;
         }
         return false;
@@ -294,7 +294,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             if (op instanceof Notifier) {
                 final Notifier notifier = (Notifier) op;
                 if (notifier.shouldNotify()) {
-                    operationService.nodeEngine.getWaitNotifyService().notify(notifier);
+                    operationService.nodeEngine.getOperationParker().unpark(notifier);
                 }
             }
         } catch (Throwable e) {

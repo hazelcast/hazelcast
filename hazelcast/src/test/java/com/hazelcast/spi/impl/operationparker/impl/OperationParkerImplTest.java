@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.waitnotifyservice.impl;
+package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -34,13 +34,13 @@ import java.util.concurrent.locks.LockSupport;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class WaitNotifyServiceImplTest extends HazelcastTestSupport {
+public class OperationParkerImplTest extends HazelcastTestSupport {
 
     @Test
     public void testAwaitQueueCount_shouldNotExceedBlockedThreadCount() {
         final HazelcastInstance hz = createHazelcastInstance();
         NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
-        WaitNotifyServiceImpl waitNotifyService = (WaitNotifyServiceImpl) nodeEngine.getWaitNotifyService();
+        OperationParkerImpl waitNotifyService = (OperationParkerImpl) nodeEngine.getOperationParker();
 
         final int keyCount = 1000;
         int nThreads = 4;

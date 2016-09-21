@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the implementation code for the {@link com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService}.
+ * Contains the internal API code for the {@link com.hazelcast.spi.impl.operationparker.OperationParker}.
  */
-package com.hazelcast.spi.impl.waitnotifyservice.impl;
+package com.hazelcast.spi.impl.operationparker;

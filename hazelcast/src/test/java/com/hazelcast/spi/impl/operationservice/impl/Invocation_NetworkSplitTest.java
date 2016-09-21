@@ -29,7 +29,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
+import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -148,7 +148,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         OperationService operationService1 = nodeEngine1.getOperationService();
         operationService1.invokeOnPartition("", new AlwaysBlockingOperation(), partitionId);
 
-        final WaitNotifyServiceImpl waitNotifyService3 = (WaitNotifyServiceImpl) node3.getNodeEngine().getWaitNotifyService();
+        final OperationParkerImpl waitNotifyService3 = (OperationParkerImpl) node3.getNodeEngine().getOperationParker();
         assertEqualsEventually(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {

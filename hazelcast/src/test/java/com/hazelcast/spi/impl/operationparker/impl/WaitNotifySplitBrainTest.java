@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.waitnotifyservice.impl;
+package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
