@@ -9,6 +9,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -20,10 +21,15 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 /**
- * idea: in the future we could check the operation 'names'. E.g. it would be helpful to figure out of a Get operation from
+ * Idea: in the future we could check the operation 'names', e.g. it would be helpful to figure out if a Get operation from
  * employees map would be slow. Currently you would see just 'Get operation'
  */
-public class OperationDescriptorsTest {
+public class OperationDescriptorsTest extends HazelcastTestSupport {
+
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(OperationDescriptors.class);
+    }
 
     @Test
     public void testNormalOperation() {
@@ -52,12 +58,10 @@ public class OperationDescriptorsTest {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-
         }
     }
 
