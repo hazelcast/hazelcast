@@ -377,7 +377,7 @@ public class SocketReader
             return JetPacket.HEADER_JET_DATA_NO_VERTEX_RUNNER_FAILURE;
         }
 
-        VertexTask vertexTask = vertexRunner.getVertexMap().get(packet.getTaskId());
+        VertexTask vertexTask = vertexRunner.getTask(packet.getTaskId());
 
         if (vertexTask == null) {
             logger.warning("No such task in vertexRunner with vertexRunnerId="

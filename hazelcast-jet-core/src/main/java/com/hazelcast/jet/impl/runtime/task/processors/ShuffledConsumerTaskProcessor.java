@@ -157,10 +157,10 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void initSenders() {
-        JobManager jobManager = taskContext.getJobContext().getJobManager();
-        VertexRunner vertexRunner = jobManager.getRunnerByVertex(taskContext.getVertex());
-        int taskNumber = taskContext.getTaskNumber();
-        VertexTask vertexTask = vertexRunner.getVertexMap().get(taskNumber);
+        final JobManager jobManager = taskContext.getJobContext().getJobManager();
+        final VertexRunner vertexRunner = jobManager.getRunnerByVertex(taskContext.getVertex());
+        final int taskNumber = taskContext.getTaskNumber();
+        final VertexTask vertexTask = vertexRunner.getTask(taskNumber);
         for (Address address : jobManager.getJobContext().getSocketWriters().keySet()) {
             ShufflingSender sender = new ShufflingSender(vertexTask, vertexRunner.getId());
             addrToSender.put(address, sender);

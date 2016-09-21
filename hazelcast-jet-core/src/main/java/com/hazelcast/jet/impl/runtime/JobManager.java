@@ -335,7 +335,7 @@ public class JobManager implements StateMachineEventHandler<JobManagerEvent> {
                                           Address address,
                                           ShufflingReceiver receiver) {
         VertexRunner vertexRunner = runnersMap.get(vertexManagerId);
-        VertexTask vertexTask = vertexRunner.getVertexMap().get(taskID);
+        VertexTask vertexTask = vertexRunner.getTask(taskID);
         vertexTask.registerShufflingReceiver(address, receiver);
         discoveryService.getSocketReaders().get(address).registerConsumer(receiver.getRingbuffer());
     }
@@ -353,7 +353,7 @@ public class JobManager implements StateMachineEventHandler<JobManagerEvent> {
                                         Address address,
                                         ShufflingSender sender) {
         VertexRunner vertexRunner = runnersMap.get(vertexManagerId);
-        VertexTask vertexTask = vertexRunner.getVertexMap().get(taskID);
+        VertexTask vertexTask = vertexRunner.getTask(taskID);
         vertexTask.registerShufflingSender(address, sender);
         discoveryService.getSocketWriters().get(address).registerProducer(sender.getRingbuffer());
     }
