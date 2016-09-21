@@ -39,7 +39,7 @@ public class LRUEvictionPolicyComparator extends EvictionPolicyComparator {
         } else {
             long creationTime1 = e1.getCreationTime();
             long creationTime2 = e2.getCreationTime();
-            // If access times are same, we select the oldest entry to evict
+            // if access times are same, we select the oldest entry to evict
             if (creationTime2 < creationTime1) {
                 return SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
             } else if (creationTime2 > creationTime1) {
@@ -49,5 +49,4 @@ public class LRUEvictionPolicyComparator extends EvictionPolicyComparator {
             }
         }
     }
-
 }
