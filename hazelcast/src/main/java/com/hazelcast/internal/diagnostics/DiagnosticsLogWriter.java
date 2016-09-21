@@ -22,7 +22,7 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import static java.util.Calendar.DAY_OF_MONTH;
-import static java.util.Calendar.HOUR;
+import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
 import static java.util.Calendar.MONTH;
 import static java.util.Calendar.SECOND;
@@ -85,7 +85,7 @@ public abstract class DiagnosticsLogWriter {
 
     @SuppressWarnings("checkstyle:magicnumber")
     private void appendTime() {
-        int hour = calendar.get(HOUR);
+        int hour = calendar.get(HOUR_OF_DAY);
         if (hour < 10) {
             sb.append('0');
         }
