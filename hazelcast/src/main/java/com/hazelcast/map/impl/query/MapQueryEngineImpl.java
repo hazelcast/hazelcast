@@ -61,6 +61,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
@@ -533,7 +534,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     protected List<Future<QueryResult>> queryOnMembers(String mapName, Predicate predicate, IterationType iterationType) {
-        Collection<Member> members = clusterService.getMembers();
+        Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
         List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
         for (Member member : members) {
             Operation operation = new QueryOperation(mapName, predicate, iterationType);
