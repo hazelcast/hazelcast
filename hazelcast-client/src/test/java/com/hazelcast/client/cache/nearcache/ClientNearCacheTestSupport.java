@@ -72,9 +72,9 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     protected static final int MAX_TTL_SECONDS = 2;
     protected static final int MAX_IDLE_SECONDS = 1;
 
-    protected HazelcastInstance serverInstance;
+    protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    protected HazelcastInstance serverInstance;
 
     @Before
     public void setup() {
