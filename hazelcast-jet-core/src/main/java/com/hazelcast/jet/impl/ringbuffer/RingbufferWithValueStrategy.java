@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.ringbuffer;
 
-import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -99,7 +98,7 @@ final class RingbufferWithValueStrategy<T> extends RingbufferFieldsByValue<T> im
         int count = (int) (writerSequencerValue - availableSequencerValue);
         int window = entries.length - BUFFER_PAD - entriesStart;
 
-        T[] buffer = chunk.toArray();
+        T[] buffer = chunk.buffer;
 
         if (count <= window) {
             for (int i = 0; i < count; i++) {

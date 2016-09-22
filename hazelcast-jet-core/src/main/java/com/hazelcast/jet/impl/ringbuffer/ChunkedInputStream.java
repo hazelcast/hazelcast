@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.ringbuffer;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.data.io.JetPacket;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
 
 import java.io.IOException;
 import java.io.InputStream;

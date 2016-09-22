@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.ringbuffer;
 
-import com.hazelcast.jet.impl.data.io.IOBuffer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**

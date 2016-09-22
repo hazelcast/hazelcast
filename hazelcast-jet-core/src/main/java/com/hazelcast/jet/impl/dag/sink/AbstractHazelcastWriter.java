@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.dag.sink;
 
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
+import com.hazelcast.jet.impl.ringbuffer.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.runtime.Consumer;

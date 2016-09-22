@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.ringbuffer;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.InputChunk;

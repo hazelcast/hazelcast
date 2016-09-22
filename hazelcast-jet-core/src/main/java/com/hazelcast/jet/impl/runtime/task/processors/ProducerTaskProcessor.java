@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.runtime.task.processors;
 
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
+import com.hazelcast.jet.impl.ringbuffer.IOBuffer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.Producer;

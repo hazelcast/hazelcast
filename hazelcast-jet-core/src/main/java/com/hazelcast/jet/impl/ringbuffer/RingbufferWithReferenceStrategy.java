@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.ringbuffer;
 
-import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Arrays;
@@ -86,7 +85,7 @@ final class RingbufferWithReferenceStrategy<T> extends RingufferFields<T> implem
         int entriesStart = (int) (BUFFER_PAD + (availableSequencerValue & indexMask));
         int count = (int) (writerSequencerValue - availableSequencerValue);
         int window = entries.length - BUFFER_PAD - entriesStart;
-        T[] buffer = chunk.toArray();
+        T[] buffer = chunk.buffer;
         if (count <= window) {
             System.arraycopy(buffer, consumed, entries, entriesStart, count);
         } else {
