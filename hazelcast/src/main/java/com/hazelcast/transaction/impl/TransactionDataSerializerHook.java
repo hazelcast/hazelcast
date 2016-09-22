@@ -37,6 +37,7 @@ import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOpe
 import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionBackupOperation;
 import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.operations.XaReplicationOperation;
+import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY_ID;
@@ -57,11 +58,13 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
     public static final int CLEAR_REMOTE_TX_BACKUP = 9;
     public static final int CLEAR_REMOTE_TX = 10;
     public static final int COLLECT_REMOTE_TX = 11;
-    public static final int FINALIZE_REMOTE_TX_BACKUP = 12;
-    public static final int FINALIZE_REMOTE_TX = 13;
-    public static final int PUT_REMOTE_TX_BACKUP = 14;
-    public static final int PUT_REMOTE_TX = 15;
-    public static final int XA_REPLICATION = 16;
+    public static final int COLLECT_REMOTE_TX_FACTORY = 12;
+    public static final int FINALIZE_REMOTE_TX_BACKUP = 13;
+    public static final int FINALIZE_REMOTE_TX = 14;
+    public static final int PUT_REMOTE_TX_BACKUP = 15;
+    public static final int PUT_REMOTE_TX = 16;
+    public static final int XA_REPLICATION = 17;
+
 
     @Override
     public int getFactoryId() {
@@ -92,6 +95,8 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
                         return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation();
                     case ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
                         return new RollbackAllowedDuringPassiveStateTxBackupLogOperation();
+                    case COLLECT_REMOTE_TX_FACTORY:
+                        return new CollectRemoteTransactionsOperationFactory();
                     case CLEAR_REMOTE_TX_BACKUP:
                         return new ClearRemoteTransactionBackupOperation();
                     case CLEAR_REMOTE_TX:
@@ -108,6 +113,7 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
                         return new PutRemoteTransactionOperation();
                     case XA_REPLICATION:
                         return new XaReplicationOperation();
+
                     default:
                         return null;
                 }

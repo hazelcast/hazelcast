@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.operations;
 
+import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -61,5 +62,15 @@ public final class OperationFactoryWrapper implements OperationFactory {
 
     public String getUuid() {
         return uuid;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ClientDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClientDataSerializerHook.OP_FACTORY_WRAPPER;
     }
 }

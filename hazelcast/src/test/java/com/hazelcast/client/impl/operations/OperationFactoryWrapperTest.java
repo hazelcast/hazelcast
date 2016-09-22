@@ -83,6 +83,16 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
         public void readData(ObjectDataInput in) throws IOException {
             throw new UnsupportedOperationException("Intended to work locally");
         }
+
+        @Override
+        public int getFactoryId() {
+            return 0;
+        }
+
+        @Override
+        public int getId() {
+            return 0;
+        }
     }
 
 

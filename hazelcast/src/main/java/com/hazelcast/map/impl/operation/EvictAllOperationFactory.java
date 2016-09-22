@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -50,5 +51,15 @@ public class EvictAllOperationFactory implements OperationFactory {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.EVICT_ALL_FACTORY;
     }
 }

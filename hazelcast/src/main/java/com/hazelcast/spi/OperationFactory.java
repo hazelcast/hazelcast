@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * A Factory for creating {@link Operation} instances.
@@ -26,9 +26,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * {@link OperationService} uses this factory to create {@link Operation}s for each partition by calling
  * {@link #createOperation()}
  * </p>
- *
  */
-public interface OperationFactory extends DataSerializable {
+public interface OperationFactory extends IdentifiedDataSerializable {
 
     /**
      * Creates the operation.

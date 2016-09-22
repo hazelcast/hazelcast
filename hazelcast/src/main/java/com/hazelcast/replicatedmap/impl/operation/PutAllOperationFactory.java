@@ -60,4 +60,14 @@ public class PutAllOperationFactory implements OperationFactory {
         name = in.readUTF();
         entries = in.readObject();
     }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.PUT_ALL_OP_FACTORY;
+    }
 }

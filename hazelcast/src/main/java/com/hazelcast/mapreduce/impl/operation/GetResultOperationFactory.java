@@ -30,8 +30,7 @@ import java.io.IOException;
  * is never ever serialized and the DataSerializable methods {@link #readData(com.hazelcast.nio.ObjectDataInput)}
  * and {@link #writeData(com.hazelcast.nio.ObjectDataOutput)} throw {@link java.lang.UnsupportedOperationException}s.
  */
-public class GetResultOperationFactory
-        implements OperationFactory {
+public class GetResultOperationFactory implements OperationFactory {
 
     private final String name;
     private final String jobId;
@@ -58,4 +57,13 @@ public class GetResultOperationFactory
         throw new UnsupportedOperationException("local factory only");
     }
 
+    @Override
+    public int getFactoryId() {
+        throw new UnsupportedOperationException("local factory only");
+    }
+
+    @Override
+    public int getId() {
+        throw new UnsupportedOperationException("local factory only");
+    }
 }

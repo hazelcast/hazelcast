@@ -4,6 +4,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,6 +32,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void test() throws Exception {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "" + 100);
+        config.getSerializationConfig().addDataSerializableFactory(123, new SlowOperationSerializationFactory());
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
@@ -47,6 +50,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         Config config = new Config()
                 .setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000")
                 .setProperty(PARTITION_COUNT.getName(), "" + 100);
+        config.getSerializationConfig().addDataSerializableFactory(123, new SlowOperationSerializationFactory());
         TestHazelcastInstanceFactory hzFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = hzFactory.newHazelcastInstance(config);
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance(config);
@@ -80,6 +84,16 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
                 }
             };
         }
+
+        @Override
+        public int getFactoryId() {
+            return 0;
+        }
+
+        @Override
+        public int getId() {
+            return 0;
+        }
     }
 
     private static class SlowOperationFactoryImpl extends AbstractOperationFactor {
@@ -100,6 +114,23 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
                     return response;
                 }
             };
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 123;
+        }
+
+        @Override
+        public int getId() {
+            return 145;
+        }
+    }
+
+    private static class SlowOperationSerializationFactory implements DataSerializableFactory {
+        @Override
+        public IdentifiedDataSerializable create(int typeId) {
+            return new SlowOperationFactoryImpl();
         }
     }
 
