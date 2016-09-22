@@ -92,7 +92,6 @@ public class HeapData implements Data {
 
     @Override
     public int getHeapCost() {
-        // reference (assuming compressed oops)
         return REFERENCE_COST_IN_BYTES + (payload != null ? ARRAY_HEADER_SIZE_IN_BYTES + payload.length : 0);
     }
 

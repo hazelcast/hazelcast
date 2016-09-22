@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -38,6 +39,11 @@ import static org.junit.Assert.assertTrue;
 public class SizeEstimatorTest extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+    // the JVM-independent portion of the cost of Integer key + Long value record is 124 bytes
+    // (without taking into account 8 references to key, record and value objects)
+    private static final int JVM_INDEPENDENT_ENTRY_COST_IN_BYTES = 124;
+    // JVM-dependent total cost of entry
+    private static final int ENTRY_COST_IN_BYTES = JVM_INDEPENDENT_ENTRY_COST_IN_BYTES + 8 * REFERENCE_COST_IN_BYTES;
 
     @Test
     public void smoke() throws InterruptedException {
@@ -52,12 +58,11 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
         IMap<Integer, Long> map = testMapBuilder.withNodeCount(1).withBackupCount(0).build(getConfig());
         map.put(0, 10L);
-        assertEquals(expectedPerEntryHeapCost, testMapBuilder.totalHeapCost());
+        assertEquals(ENTRY_COST_IN_BYTES, testMapBuilder.totalHeapCost());
     }
 
     @Test
     public void testExactHeapCostAfterUpdateWithMultipleBackupNodes() throws InterruptedException {
-        long expectedPerEntryHeapCost = 156L;
         int putCount = 1;
         int nodeCount = 1;
         SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
@@ -67,7 +72,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         }
         final long heapCost = testMapBuilder.totalHeapCost();
         assertEquals("Heap cost calculation is wrong!",
-                expectedPerEntryHeapCost * putCount * nodeCount, heapCost);
+                ENTRY_COST_IN_BYTES * putCount * nodeCount, heapCost);
     }
 
 
