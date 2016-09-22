@@ -11,6 +11,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.log4j.Level;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,6 +45,8 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
 
     @Test
     public void testLongRunning() throws Exception {
+        setLoggingLog4j();
+        setLogLevel(Level.DEBUG);
         Config config = new Config()
                 .setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000")
                 .setProperty(PARTITION_COUNT.getName(), "" + 100);
