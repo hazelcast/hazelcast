@@ -56,6 +56,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
+    static final int BITMASK_FIRE_AND_FORGET = 1 << 7;
 
     // serialized
     private String serviceName;
@@ -101,6 +102,14 @@ public abstract class Operation implements DataSerializable {
 
     public Object getResponse() {
         return null;
+    }
+
+    public final boolean isFireAndForget() {
+        return !isFlagSet(BITMASK_FIRE_AND_FORGET);
+    }
+
+    public final void setFireAndForget(boolean fireAndForget) {
+        setFlag(!fireAndForget, BITMASK_FIRE_AND_FORGET);
     }
 
     // Gets the actual service name without looking at overriding methods. This method only exists for testing purposes.
@@ -340,6 +349,7 @@ public abstract class Operation implements DataSerializable {
         setFlag(timeout != -1, BITMASK_WAIT_TIMEOUT_SET);
     }
 
+
     /**
      * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown
      * during an invocation. Invocation process will continue, retry
@@ -410,7 +420,7 @@ public abstract class Operation implements DataSerializable {
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
         if (e instanceof RetryableException) {
-            final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
+            final Level level = isFireAndForget() ? Level.WARNING : Level.FINEST;
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getClass().getName() + ": " + e.getMessage());
             }

@@ -66,7 +66,7 @@ final class OperationBackupHandler {
         int asyncBackups = asyncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
 
         // TODO: This could cause a problem with back pressure
-        if (!op.returnsResponse()) {
+        if (op.isFireAndForget()) {
             asyncBackups += syncBackups;
             syncBackups = 0;
         }

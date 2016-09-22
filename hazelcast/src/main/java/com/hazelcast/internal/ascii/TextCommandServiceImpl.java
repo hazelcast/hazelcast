@@ -324,7 +324,7 @@ public class TextCommandServiceImpl implements TextCommandService {
     @Override
     public void sendResponse(TextCommand textCommand) {
         if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
-            throw new RuntimeException("Shouldn't reply " + textCommand);
+            throw new RuntimeException("Shouldn't isFireAndForget " + textCommand);
         }
         responseThreadRunnable.sendResponse(textCommand);
     }

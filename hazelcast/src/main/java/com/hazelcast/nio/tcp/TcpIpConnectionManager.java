@@ -241,7 +241,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
      */
     private synchronized boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
         if (logger.isFinestEnabled()) {
-            logger.finest("Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
+            logger.finest("Binding " + connection + " to " + remoteEndPoint + ", isFireAndForget is " + reply);
         }
         final Address thisAddress = ioService.getThisAddress();
         if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
