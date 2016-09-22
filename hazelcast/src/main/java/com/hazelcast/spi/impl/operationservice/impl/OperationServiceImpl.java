@@ -339,10 +339,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public boolean isCallTimedOut(Operation op) {
-        // Join operations should not be checked for timeout
-        // because caller is not member of this cluster
+        // Join operations should not be checked for timeout because caller is not member of this cluster
         // and can have a different clock.
-        if (!op.returnsResponse() || isJoinOperation(op)) {
+        if (isJoinOperation(op)) {
             return false;
         }
 
