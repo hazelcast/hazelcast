@@ -34,9 +34,12 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
+import org.apache.log4j.Level;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.openjdk.jmh.annotations.Setup;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +53,12 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
+
+    @Before
+    public void setup(){
+        setLoggingLog4j();
+        setLogLevel(Level.DEBUG);
+    }
 
     @Test(timeout = 120000)
     public void testOneMemberWriteThroughWithIndex() throws Exception {
