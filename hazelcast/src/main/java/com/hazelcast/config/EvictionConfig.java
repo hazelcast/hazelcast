@@ -43,6 +43,11 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
     public static final int DEFAULT_MAX_ENTRY_COUNT = 10000;
 
     /**
+     * Default maximum entry count for Map on-heap Near Caches.
+     */
+    public static final int DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP = Integer.MAX_VALUE;
+
+    /**
      * Default Max-Size Policy.
      */
     public static final MaxSizePolicy DEFAULT_MAX_SIZE_POLICY = MaxSizePolicy.ENTRY_COUNT;
