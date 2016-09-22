@@ -76,11 +76,6 @@ public abstract class QueueOperation extends Operation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public final Object getResponse() {
         return response;
     }
