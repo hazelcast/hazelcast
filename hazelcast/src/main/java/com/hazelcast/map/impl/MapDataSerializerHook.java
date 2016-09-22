@@ -21,6 +21,9 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
 import com.hazelcast.map.impl.operation.AddInterceptorOperationFactory;
@@ -206,6 +209,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_INTERCEPTOR_FACTORY = ID.value++;
     public static final int SIZE_FACTORY = ID.value++;
     public static final int MULTIPLE_ENTRY_FACTORY = ID.value++;
+    public static final int NEAR_CACHE_SINGLE_INVALIDATION = ID.value++;
+    public static final int NEAR_CACHE_BATCH_INVALIDATION = ID.value++;
+    public static final int UUID_FILTER = ID.value++;
 
     @Override
     public int getFactoryId() {
@@ -654,6 +660,21 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MULTIPLE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MultipleEntryOperationFactory();
+            }
+        };
+        constructors[NEAR_CACHE_SINGLE_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SingleNearCacheInvalidation();
+            }
+        };
+        constructors[NEAR_CACHE_BATCH_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new BatchNearCacheInvalidation();
+            }
+        };
+        constructors[UUID_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new UuidFilter();
             }
         };
 

@@ -21,7 +21,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
@@ -30,7 +30,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Root interface for Near Cache invalidation data.
  */
-public abstract class Invalidation implements IMapEvent, DataSerializable {
+public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializable {
 
     protected String mapName;
 

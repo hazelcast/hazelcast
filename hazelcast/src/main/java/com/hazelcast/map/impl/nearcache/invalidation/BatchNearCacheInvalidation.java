@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -92,5 +93,15 @@ public class BatchNearCacheInvalidation extends Invalidation {
             str.append(invalidation.toString());
         }
         return str.toString();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.NEAR_CACHE_BATCH_INVALIDATION;
     }
 }
