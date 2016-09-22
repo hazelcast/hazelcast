@@ -95,6 +95,15 @@ public class PermissionConfig {
          */
         TRANSACTION("transaction-permission"),
         /**
+         * Durable Executor Service
+         */
+        DURABLE_EXECUTOR_SERVICE("durable-executor-service-permission"),
+        /**
+         * Cardinality Estimator
+         */
+        CARDINALITY_ESTIMATOR("cardinality-estimator-permission"),
+
+        /**
          * All
          */
         ALL("all-permissions");
