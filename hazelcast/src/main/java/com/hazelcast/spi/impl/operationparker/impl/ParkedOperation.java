@@ -174,11 +174,6 @@ class ParkedOperation extends Operation implements Delayed, PartitionAwareOperat
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     public String getServiceName() {
         return op.getServiceName();
     }

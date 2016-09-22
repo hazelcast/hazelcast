@@ -34,7 +34,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -92,6 +91,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private final boolean staleReadOnMigrationEnabled;
 
     private final Counter failedBackupsCounter;
+    private final OperationBackupHandler backupHandler;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
@@ -115,7 +115,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.executedOperationsCount = operationService.completedOperationsCount;
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
         this.failedBackupsCounter = failedBackupsCounter;
-
+        this.backupHandler = operationService.operationBackupHandler;
         if (partitionId >= 0) {
             this.count = newSwCounter();
         } else {
@@ -149,9 +149,10 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private boolean publishCurrentTask() {
         boolean isClientRunnable = currentTask instanceof MessageTask;
-        return (getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable));
+        return getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable);
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public void run(Operation op) {
         if (count != null) {
@@ -179,20 +180,22 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             op.beforeRun();
 
-            if (waitingNeeded(op)) {
+            if (parked(op)) {
                 return;
             }
 
             op.run();
 
-            switch (op.getReturnStatus()){
+            switch (op.getReturnStatus()) {
                 case NIL_RESPONSE:
-                    backup(op);
+                    backupHandler.backup(op);
                     break;
                 case RESPONSE_READY:
-                    sendResponse(op, backup(op));
+                    sendResponse(op, backupHandler.backup(op));
                     break;
                 case DOING_IT_MYSELF:
+                    // todo: we need mechanism to automatically unschedule
+                    operationService.onStartAsyncOperation(op);
                     break;
                 default:
                     throw new IllegalStateException();
@@ -244,7 +247,8 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         quorumService.ensureQuorumPresent(op);
     }
 
-    private boolean waitingNeeded(Operation op) {
+    // todo: this method should be moved inside the OperationParker.
+    private boolean parked(Operation op) {
         if (!(op instanceof BlockingOperation)) {
             return false;
         }
@@ -264,30 +268,6 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
         op.sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
         return true;
-    }
-
-    private void handleResponse(Operation op) throws Exception {
-        boolean returnsResponse = op.returnsResponse();
-        int backupAcks = backup(op);
-
-        if (!returnsResponse) {
-            return;
-        }
-
-        sendResponse(op, backupAcks);
-    }
-
-    private int backup(Operation op) throws Exception {
-        if (!(op instanceof BackupAwareOperation)) {
-            return 0;
-        }
-
-        int backupAcks = 0;
-        BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
-        if (backupAwareOp.shouldBackup()) {
-            backupAcks = operationService.operationBackupHandler.backup(backupAwareOp);
-        }
-        return backupAcks;
     }
 
     private void sendResponse(Operation op, int backupAcks) {

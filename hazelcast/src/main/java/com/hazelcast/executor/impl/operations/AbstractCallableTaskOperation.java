@@ -25,11 +25,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationReturnStatus;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
+
+import static com.hazelcast.spi.OperationReturnStatus.DOING_IT_MYSELF;
 
 abstract class AbstractCallableTaskOperation extends Operation  {
 
@@ -37,14 +40,6 @@ abstract class AbstractCallableTaskOperation extends Operation  {
     protected String uuid;
     protected transient Callable callable;
     private Data callableData;
-
-    // transient.
-    // We are cheating a bit here. The idea is the following. An AbstractCallableTaskOperation is always going to be send to a
-    // partition, but the operation doesn't send a response directly and therefor when a WrongTargetException is thronw (e.g.
-    // partition has moved) the operation is not retried. To prevent this from happening, we say that we return a response until
-    // the before-run method is called. Then we know we are going to be offloaded to a different thread and we are not returning
-    // a response immediately. So then we switch to 'returnsResponse = false'.
-    private boolean returnsResponse = true;
 
     public AbstractCallableTaskOperation() {
     }
@@ -57,8 +52,6 @@ abstract class AbstractCallableTaskOperation extends Operation  {
 
     @Override
     public final void beforeRun() throws Exception {
-        returnsResponse = false;
-
         callable = getCallable();
         ManagedContext managedContext = getManagedContext();
 
@@ -97,8 +90,13 @@ abstract class AbstractCallableTaskOperation extends Operation  {
     }
 
     @Override
+    public OperationReturnStatus getReturnStatus() {
+        return DOING_IT_MYSELF;
+    }
+
+    @Override
     public final boolean returnsResponse() {
-        return returnsResponse;
+        return false;
     }
 
     @Override

@@ -169,7 +169,7 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    void setNotNilResponse(boolean notNilResponse){
+    void setNotNilResponse(boolean notNilResponse) {
         setFlag(notNilResponse, BITMASK_NOT_NIL_RESPONSE);
     }
 

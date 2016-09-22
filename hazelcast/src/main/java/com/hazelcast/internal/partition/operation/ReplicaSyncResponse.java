@@ -180,12 +180,6 @@ public class ReplicaSyncResponse extends Operation
         }
     }
 
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
     @Override
     public boolean validatesTarget() {
         return false;

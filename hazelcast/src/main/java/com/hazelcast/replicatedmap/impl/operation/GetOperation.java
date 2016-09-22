@@ -53,11 +53,6 @@ public class GetOperation extends Operation implements IdentifiedDataSerializabl
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return response;
     }

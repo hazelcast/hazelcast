@@ -32,13 +32,15 @@ import java.io.IOException;
 public final class CheckReplicaVersion extends Operation implements PartitionAwareOperation, AllowedDuringPassiveState {
 
     private long version;
+    private boolean returnResponse;
     private boolean response;
 
     public CheckReplicaVersion() {
     }
 
-    public CheckReplicaVersion(long version) {
+    public CheckReplicaVersion(long version, boolean returnResponse) {
         this.version = version;
+        this.returnResponse = returnResponse;
     }
 
     @Override
@@ -68,6 +70,11 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
     }
 
     @Override
+    public boolean returnsResponse() {
+        return returnResponse;
+    }
+
+    @Override
     public Object getResponse() {
         return response;
     }
@@ -90,11 +97,13 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(version);
+        out.writeBoolean(returnResponse);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         version = in.readLong();
+        returnResponse = in.readBoolean();
     }
 
     @Override

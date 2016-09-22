@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationReturnStatus;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
@@ -47,6 +46,19 @@ final class OperationBackupHandler {
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
         this.backpressureRegulator = operationService.backpressureRegulator;
+    }
+
+    public int backup(Operation op) throws Exception {
+        if (!(op instanceof BackupAwareOperation)) {
+            return 0;
+        }
+
+        int backupAcks = 0;
+        BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
+        if (backupAwareOp.shouldBackup()) {
+            backupAcks = backup(backupAwareOp);
+        }
+        return backupAcks;
     }
 
     public int backup(BackupAwareOperation backupAwareOp) throws Exception {
