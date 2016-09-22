@@ -33,6 +33,8 @@ import com.hazelcast.spi.partition.IPartitionService;
 import java.io.IOException;
 import java.util.Collection;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+
 /**
  * Puts a set of records to the replicated map.
  */
@@ -73,7 +75,7 @@ public class PutAllOperation extends Operation implements IdentifiedDataSerializ
 
     private void publishReplicationMessage(Data key, Data value, VersionResponsePair response) {
         OperationService operationService = getNodeEngine().getOperationService();
-        Collection<Member> members = getNodeEngine().getClusterService().getMembers();
+        Collection<Member> members = getNodeEngine().getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         for (Member member : members) {
             Address address = member.getAddress();
             if (address.equals(getNodeEngine().getThisAddress())) {
