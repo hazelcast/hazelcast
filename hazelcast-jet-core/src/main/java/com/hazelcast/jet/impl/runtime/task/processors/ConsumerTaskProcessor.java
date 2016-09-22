@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.runtime.task.processors;
 
 
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
+import com.hazelcast.jet.impl.ringbuffer.IOBuffer;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
 import com.hazelcast.jet.runtime.Consumer;
 import com.hazelcast.jet.runtime.InputChunk;
@@ -116,7 +116,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean hasConsumed() {
+    public boolean didWork() {
         return consumedSome;
     }
 
@@ -174,10 +174,5 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     @Override
     public boolean producersReadFinished() {
         return true;
-    }
-
-    @Override
-    public boolean produced() {
-        return false;
     }
 }

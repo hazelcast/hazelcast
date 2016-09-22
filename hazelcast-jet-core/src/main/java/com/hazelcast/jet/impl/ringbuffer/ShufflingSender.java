@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.ringbuffer;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
 import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.job.JobContext;
 import com.hazelcast.jet.impl.runtime.task.VertexTask;

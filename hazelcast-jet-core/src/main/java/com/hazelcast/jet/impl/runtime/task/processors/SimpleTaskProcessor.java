@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.runtime.task.processors;
 
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.impl.runtime.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.IOBuffer;
+import com.hazelcast.jet.impl.ringbuffer.IOBuffer;
 import com.hazelcast.jet.Processor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -53,6 +53,11 @@ public class SimpleTaskProcessor implements TaskProcessor {
             finalized = processor.complete(outputBuffer);
             return true;
         }
+    }
+
+    @Override
+    public boolean didWork() {
+        return false;
     }
 
     @Override
@@ -92,16 +97,6 @@ public class SimpleTaskProcessor implements TaskProcessor {
     @Override
     public boolean onChunk(InputChunk inputChunk) throws Exception {
         return true;
-    }
-
-    @Override
-    public boolean produced() {
-        return false;
-    }
-
-    @Override
-    public boolean hasConsumed() {
-        return false;
     }
 
     @Override
