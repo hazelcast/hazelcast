@@ -36,15 +36,18 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
-    final Queue<ParkedOperation> queue;
-    final Operation op;
-    final BlockingOperation blockingOperation;
-    final long expirationTime;
+public class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
+    Queue<ParkedOperation> queue;
+    Operation op;
+    BlockingOperation blockingOperation;
+    long expirationTime;
     volatile boolean valid = true;
     volatile Object cancelResponse;
 
-    ParkedOperation(Queue<ParkedOperation> queue, BlockingOperation blockingOperation) {
+    public ParkedOperation() {
+    }
+
+    public ParkedOperation(Queue<ParkedOperation> queue, BlockingOperation blockingOperation) {
         this.op = (Operation) blockingOperation;
         this.blockingOperation = blockingOperation;
         this.queue = queue;
@@ -209,6 +212,6 @@ class ParkedOperation extends Operation implements Delayed, PartitionAwareOperat
 
     @Override
     public int getId() {
-        return SpiDataSerializerHook.WAITING;
+        return SpiDataSerializerHook.PARKED;
     }
 }

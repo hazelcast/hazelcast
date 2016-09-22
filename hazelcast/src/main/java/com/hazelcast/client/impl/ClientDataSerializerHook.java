@@ -32,15 +32,15 @@ public class ClientDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(CLIENT_DS_FACTORY, CLIENT_DS_FACTORY_ID);
 
-    @Override
-    public int getFactoryId() {
-        return F_ID;
-    }
-
     public static final int CLIENT_DISCONNECT = 0;
     public static final int RE_AUTH = 1;
     public static final int GET_CONNECTED_CLIENTS = 2;
     public static final int POST_JOIN = 3;
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
 
     @Override
     public DataSerializableFactory createFactory() {

@@ -26,6 +26,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.spi.impl.operationparker.impl.ParkedOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
@@ -37,7 +38,6 @@ import com.hazelcast.spi.impl.proxyservice.impl.DistributedObjectEventPacket;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
-import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitingOperation;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
@@ -65,7 +65,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int DIST_OBJECT_DESTROY = 16;
     public static final int POST_JOIN_PROXY = 17;
     public static final int DIST_OBJECT_EVENT_PACKET = 18;
-    public static final int WAITING = 19;
+    public static final int PARKED = 19;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -111,8 +111,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new PostJoinProxyOperation();
                     case DIST_OBJECT_EVENT_PACKET:
                         return new DistributedObjectEventPacket();
-                    case WAITING:
-                        return new WaitingOperation();
+                    case PARKED:
+                        return new ParkedOperation();
                     default:
                         return null;
                 }
