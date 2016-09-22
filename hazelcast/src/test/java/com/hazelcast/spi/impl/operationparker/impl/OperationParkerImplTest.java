@@ -52,7 +52,7 @@ public class OperationParkerImplTest extends HazelcastTestSupport {
 
         while (latch.getCount() > 0) {
             LockSupport.parkNanos(1);
-            int awaitQueueCount = waitNotifyService.getAwaitQueueCount();
+            int awaitQueueCount = waitNotifyService.getParkQueueCount();
             Assert.assertTrue(
                     "Await queue count should be smaller than total number of threads: " + awaitQueueCount + " VS "
                             + nThreads, awaitQueueCount < nThreads);

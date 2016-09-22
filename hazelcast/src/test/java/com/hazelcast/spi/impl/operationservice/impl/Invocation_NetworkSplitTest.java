@@ -152,7 +152,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         assertEqualsEventually(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                return waitNotifyService3.getTotalWaitingOperationCount();
+                return waitNotifyService3.getTotalParkedOperationCount();
             }
         }, 1);
 
@@ -177,7 +177,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         assertEquals(4, node2.getClusterService().getSize());
         assertEquals(4, node3.getClusterService().getSize());
 
-        assertEquals(0, waitNotifyService3.getTotalWaitingOperationCount());
+        assertEquals(0, waitNotifyService3.getTotalParkedOperationCount());
     }
 
     private Config createConfig() {
