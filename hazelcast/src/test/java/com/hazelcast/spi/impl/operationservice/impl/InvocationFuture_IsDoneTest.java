@@ -7,6 +7,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.log4j.Level;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,6 +72,8 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
 
     @Test
     public void isDone_whenObjectResponse() {
+        setLoggingLog4j();
+        setLogLevel(Level.DEBUG);
         DummyOperation op = new DummyOperation("foobar");
 
         InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));

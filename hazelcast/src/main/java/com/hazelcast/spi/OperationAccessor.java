@@ -49,7 +49,7 @@ public final class OperationAccessor {
         op.setCallId(callId);
     }
 
-    public static void setNilResponse(Operation op, boolean nilResponse) {
+    public static void setNotNilResponse(Operation op, boolean nilResponse) {
         op.setNotNilResponse(nilResponse);
     }
 
