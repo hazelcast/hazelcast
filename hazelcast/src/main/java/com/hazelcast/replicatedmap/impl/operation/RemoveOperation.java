@@ -59,11 +59,11 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
         if (!getCallerAddress().equals(thisAddress)) {
             sendUpdateCallerOperation(true);
         }
+        sendReplicationOperation(true);
     }
 
     @Override
     public void afterRun() throws Exception {
-        sendReplicationOperation(true);
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
         eventPublishingService.fireEntryListenerEvent(key, oldValue, null, name, getCallerAddress());
     }

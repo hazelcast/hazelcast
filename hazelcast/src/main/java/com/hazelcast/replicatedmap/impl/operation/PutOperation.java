@@ -66,11 +66,11 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
         if (!isLocal) {
             sendUpdateCallerOperation(false);
         }
+        sendReplicationOperation(false);
     }
 
     @Override
     public void afterRun() throws Exception {
-        sendReplicationOperation(false);
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
         eventPublishingService.fireEntryListenerEvent(key, oldValue, value, name, getCallerAddress());
     }
