@@ -51,7 +51,7 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
      * <p/>
      * <p/>
      * After sending the command line and the data block the client awaits
-     * the isFireAndForget, which may be:
+     * the reply, which may be:
      * <p/>
      * - "STORED\r\n", to indicate success.
      * <p/>
