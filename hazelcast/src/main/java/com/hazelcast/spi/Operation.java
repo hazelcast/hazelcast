@@ -290,7 +290,7 @@ public abstract class Operation implements DataSerializable {
 
     public final void sendResponse(Object value) {
         OperationResponseHandler operationResponseHandler = getOperationResponseHandler();
-        if(operationResponseHandler == null){
+        if (operationResponseHandler == null) {
             return;
         }
 
