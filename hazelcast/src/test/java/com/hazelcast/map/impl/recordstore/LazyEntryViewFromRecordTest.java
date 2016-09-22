@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -41,6 +42,8 @@ import static org.mockito.Mockito.mock;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class LazyEntryViewFromRecordTest {
+
+    private static final int ENTRY_VIEW_COST_IN_BYTES = 97 + 3 * REFERENCE_COST_IN_BYTES;
 
     private final String key = "key";
     private final String value = "value";
@@ -80,7 +83,7 @@ public class LazyEntryViewFromRecordTest {
 
     @Test
     public void test_getCost() throws Exception {
-        assertEquals(109, view.getCost());
+        assertEquals(ENTRY_VIEW_COST_IN_BYTES, view.getCost());
     }
 
     @Test
