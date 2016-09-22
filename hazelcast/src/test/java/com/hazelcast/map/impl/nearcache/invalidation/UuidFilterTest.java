@@ -8,15 +8,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertNotNull;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class UuidFilterTest {
 
+    private UuidFilter uuidFilter = new UuidFilter();
+
     @RequireAssertEnabled
     @Test(expected = AssertionError.class)
-    public void testEval_withInvalidParameter() throws Exception {
-        UuidFilter uuidFilter = new UuidFilter();
-
+    public void testEval_withInvalidParameter() {
         uuidFilter.eval(5);
+    }
+
+    @Test
+    public void testToString() {
+        assertNotNull(uuidFilter.toString());
     }
 }
