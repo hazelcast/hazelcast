@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
-import static com.hazelcast.spi.OperationReturnStatus.NIL_RESPONSE;
+import static com.hazelcast.spi.OperationRunStatus.NIL_RESPONSE;
 import static java.lang.Math.min;
 
 /**
@@ -80,7 +80,7 @@ final class OperationBackupHandler {
         int asyncBackups = asyncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
 
         // TODO: This could cause a problem with back pressure
-        if (op.getReturnStatus() == NIL_RESPONSE) {
+        if (op.getRunStatus() == NIL_RESPONSE) {
             asyncBackups += syncBackups;
             syncBackups = 0;
         }

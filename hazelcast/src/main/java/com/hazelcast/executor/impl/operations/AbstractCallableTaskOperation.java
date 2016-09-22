@@ -25,14 +25,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationReturnStatus;
+import com.hazelcast.spi.OperationRunStatus;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.spi.OperationReturnStatus.DOING_IT_MYSELF;
+import static com.hazelcast.spi.OperationRunStatus.DOING_IT_MYSELF;
 
 abstract class AbstractCallableTaskOperation extends Operation  {
 
@@ -90,7 +90,7 @@ abstract class AbstractCallableTaskOperation extends Operation  {
     }
 
     @Override
-    public OperationReturnStatus getReturnStatus() {
+    public OperationRunStatus getRunStatus() {
         return DOING_IT_MYSELF;
     }
 

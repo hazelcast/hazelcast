@@ -17,11 +17,15 @@
 package com.hazelcast.spi;
 
 /**
+ * The status of an Operation after it completes the {@link Operation#run()}. Most operations have a respone that needs to
+ * be returned and will use {@link #RESPONSE_READY}; but there are more types of responses that easily fit into the
+ * Operation execution. Using this {@link OperationRunStatus} the {@link OperationService} knows how to deal with all the cases.
+ *
  * todo:
  * - automatic deregistration in case of DOING_IT_MYSELF
- * -
+ * - BLOCKED
  */
-public enum OperationReturnStatus {
+public enum OperationRunStatus {
 
     /**
      * A nil response indicates that the operation will never return a response. This will be the case for operations that

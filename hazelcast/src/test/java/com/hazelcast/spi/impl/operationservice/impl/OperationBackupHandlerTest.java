@@ -192,7 +192,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     private void assertBackup(final int syncBackups, final int asyncBackups, int expectedResult) throws Exception {
         final DummyBackupAwareOperation backupAwareOp = makeOperation(syncBackups, asyncBackups);
 
-        int result = backupHandler.backup(backupAwareOp);
+        int result = backupHandler.backup((BackupAwareOperation) backupAwareOp);
 
         assertEquals(expectedResult, result);
         assertTrueEventually(new AssertTask() {

@@ -35,8 +35,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.spi.OperationReturnStatus.NIL_RESPONSE;
-import static com.hazelcast.spi.OperationReturnStatus.RESPONSE_READY;
+import static com.hazelcast.spi.OperationRunStatus.NIL_RESPONSE;
+import static com.hazelcast.spi.OperationRunStatus.RESPONSE_READY;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 
@@ -102,7 +102,7 @@ public abstract class Operation implements DataSerializable {
         return true;
     }
 
-    public OperationReturnStatus getReturnStatus() {
+    public OperationRunStatus getRunStatus() {
         if (!isFlagSet(BITMASK_NOT_NIL_RESPONSE)) {
             return NIL_RESPONSE;
         }
@@ -424,7 +424,7 @@ public abstract class Operation implements DataSerializable {
     public void logError(Throwable e) {
         ILogger logger = getLogger();
         if (e instanceof RetryableException) {
-            Level level = getReturnStatus() == NIL_RESPONSE ? Level.WARNING : Level.FINEST;
+            Level level = getRunStatus() == NIL_RESPONSE ? Level.WARNING : Level.FINEST;
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getClass().getName() + ": " + e.getMessage());
             }

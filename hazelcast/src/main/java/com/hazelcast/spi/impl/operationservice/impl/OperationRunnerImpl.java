@@ -62,7 +62,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
-import static com.hazelcast.spi.OperationReturnStatus.NIL_RESPONSE;
+import static com.hazelcast.spi.OperationRunStatus.NIL_RESPONSE;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
@@ -186,7 +186,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             op.run();
 
-            switch (op.getReturnStatus()) {
+            switch (op.getRunStatus()) {
                 case NIL_RESPONSE:
                     backupHandler.backup(op);
                     break;
@@ -346,7 +346,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             failedBackupsCounter.inc();
         }
 
-        if (operation.getReturnStatus() == NIL_RESPONSE) {
+        if (operation.getRunStatus() == NIL_RESPONSE) {
             return;
         }
 
@@ -415,7 +415,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private void setOperationResponseHandler(Operation op) {
         OperationResponseHandler handler = remoteResponseHandler;
-        if (op.getReturnStatus() == NIL_RESPONSE) {
+        if (op.getRunStatus() == NIL_RESPONSE) {
             //todo:
             if (op.returnsResponse()) {
                 throw new HazelcastException(
