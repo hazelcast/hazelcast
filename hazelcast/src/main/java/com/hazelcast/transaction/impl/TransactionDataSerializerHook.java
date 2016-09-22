@@ -29,6 +29,14 @@ import com.hazelcast.transaction.impl.operations.ReplicateAllowedDuringPassiveSt
 import com.hazelcast.transaction.impl.operations.ReplicateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.RollbackAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
+import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionBackupOperation;
+import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionOperation;
+import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperation;
+import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionBackupOperation;
+import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOperation;
+import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionBackupOperation;
+import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionOperation;
+import com.hazelcast.transaction.impl.xa.operations.XaReplicationOperation;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY_ID;
@@ -46,6 +54,14 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
     public static final int PURGE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG = 6;
     public static final int REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG = 7;
     public static final int ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG = 8;
+    public static final int CLEAR_REMOTE_TX_BACKUP = 9;
+    public static final int CLEAR_REMOTE_TX = 10;
+    public static final int COLLECT_REMOTE_TX = 11;
+    public static final int FINALIZE_REMOTE_TX_BACKUP = 12;
+    public static final int FINALIZE_REMOTE_TX = 13;
+    public static final int PUT_REMOTE_TX_BACKUP = 14;
+    public static final int PUT_REMOTE_TX = 15;
+    public static final int XA_REPLICATION = 16;
 
     @Override
     public int getFactoryId() {
@@ -76,6 +92,22 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
                         return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation();
                     case ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
                         return new RollbackAllowedDuringPassiveStateTxBackupLogOperation();
+                    case CLEAR_REMOTE_TX_BACKUP:
+                        return new ClearRemoteTransactionBackupOperation();
+                    case CLEAR_REMOTE_TX:
+                        return new ClearRemoteTransactionOperation();
+                    case COLLECT_REMOTE_TX:
+                        return new CollectRemoteTransactionsOperation();
+                    case FINALIZE_REMOTE_TX_BACKUP:
+                        return new FinalizeRemoteTransactionBackupOperation();
+                    case FINALIZE_REMOTE_TX:
+                        return new FinalizeRemoteTransactionOperation();
+                    case PUT_REMOTE_TX_BACKUP:
+                        return new PutRemoteTransactionBackupOperation();
+                    case PUT_REMOTE_TX:
+                        return new PutRemoteTransactionOperation();
+                    case XA_REPLICATION:
+                        return new XaReplicationOperation();
                     default:
                         return null;
                 }

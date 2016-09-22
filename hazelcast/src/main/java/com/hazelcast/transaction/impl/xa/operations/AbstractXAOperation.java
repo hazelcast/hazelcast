@@ -16,13 +16,21 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.xa.XAService;
 
-public abstract class AbstractXAOperation extends Operation {
+public abstract class AbstractXAOperation extends Operation implements IdentifiedDataSerializable {
 
     @Override
     public String getServiceName() {
         return XAService.SERVICE_NAME;
     }
+
+    @Override
+    public int getFactoryId() {
+        return TransactionDataSerializerHook.F_ID;
+    }
+
 }

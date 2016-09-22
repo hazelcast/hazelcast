@@ -18,8 +18,10 @@ package com.hazelcast.transaction.impl.xa.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.xa.XATransaction;
 import com.hazelcast.transaction.impl.xa.XATransactionDTO;
@@ -28,7 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class XaReplicationOperation extends Operation {
+public class XaReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
     private List<XATransactionDTO> migrationData;
 
@@ -74,5 +76,15 @@ public class XaReplicationOperation extends Operation {
             XATransactionDTO transactionDTO = in.readObject();
             migrationData.add(transactionDTO);
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return TransactionDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return TransactionDataSerializerHook.XA_REPLICATION;
     }
 }
