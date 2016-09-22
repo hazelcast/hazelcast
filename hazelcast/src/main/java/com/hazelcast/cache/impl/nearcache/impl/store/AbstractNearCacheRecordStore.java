@@ -52,8 +52,7 @@ public abstract class AbstractNearCacheRecordStore<
      * we assume 32 bit JVM or compressed-references enabled 64 bit JVM
      * by ignoring compressed-references disable mode on 64 bit JVM.
      */
-    protected static final int REFERENCE_SIZE =
-            MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
+    protected static final int REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
 
     private static final int MILLI_SECONDS_IN_A_SECOND = 1000;
 
@@ -64,12 +63,13 @@ public abstract class AbstractNearCacheRecordStore<
     protected final SerializationService serializationService;
     protected final ClassLoader classLoader;
     protected final NearCacheStatsImpl nearCacheStats;
-    protected NCRM records;
 
     protected final MaxSizeChecker maxSizeChecker;
     protected final EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<KS, R, NCRM> evictionStrategy;
+
+    protected NCRM records;
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         this(nearCacheConfig, nearCacheContext, new NearCacheStatsImpl());
@@ -85,7 +85,7 @@ public abstract class AbstractNearCacheRecordStore<
         this.nearCacheStats = nearCacheStats;
         this.records = createNearCacheRecordMap(nearCacheConfig, nearCacheContext);
 
-        final EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
+        EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
         if (evictionConfig != null) {
             this.maxSizeChecker = createNearCacheMaxSizeChecker(evictionConfig, nearCacheConfig, nearCacheContext);
             this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
@@ -376,7 +376,7 @@ public abstract class AbstractNearCacheRecordStore<
         }
     }
 
-    protected class MaxSizeEvictionChecker implements EvictionChecker {
+    private class MaxSizeEvictionChecker implements EvictionChecker {
 
         @Override
         public boolean isEvictionRequired() {
