@@ -40,7 +40,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
@@ -122,7 +122,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             backupOp.setCallerUuid(getCallerUuid());
             OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
-            backupOp.setOperationResponseHandler(createEmptyResponseHandler());
+            backupOp.setOperationResponseHandler(emptyResponseHandler());
         }
     }
 

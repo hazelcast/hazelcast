@@ -67,7 +67,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
             } else {
                 op = new SlowPartitionUnawareSystemOperation(latch);
             }
-            op.setOperationResponseHandler(OperationResponseHandlerFactory.createEmptyResponseHandler());
+            op.setOperationResponseHandler(OperationResponseHandlerFactory.emptyResponseHandler());
             opService.execute(op);
         }
 

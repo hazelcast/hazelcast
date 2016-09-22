@@ -50,11 +50,6 @@ public class ClearRemoteTransactionBackupOperation extends AbstractXAOperation i
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeData(xidData);
     }

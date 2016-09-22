@@ -34,7 +34,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -63,7 +62,8 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.OperationRunStatus.NIL_RESPONSE;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
@@ -91,6 +91,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private final boolean staleReadOnMigrationEnabled;
 
     private final Counter failedBackupsCounter;
+    private final OperationBackupHandler backupHandler;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
@@ -114,7 +115,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.executedOperationsCount = operationService.completedOperationsCount;
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
         this.failedBackupsCounter = failedBackupsCounter;
-
+        this.backupHandler = operationService.operationBackupHandler;
         if (partitionId >= 0) {
             this.count = newSwCounter();
         } else {
@@ -148,9 +149,10 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private boolean publishCurrentTask() {
         boolean isClientRunnable = currentTask instanceof MessageTask;
-        return (getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable));
+        return getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable);
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public void run(Operation op) {
         if (count != null) {
@@ -178,12 +180,27 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             op.beforeRun();
 
-            if (waitingNeeded(op)) {
+            if (parked(op)) {
                 return;
             }
 
             op.run();
-            handleResponse(op);
+
+            switch (op.getRunStatus()) {
+                case NIL_RESPONSE:
+                    backupHandler.backup(op);
+                    break;
+                case RESPONSE_READY:
+                    sendResponse(op, backupHandler.backup(op));
+                    break;
+                case DOING_IT_MYSELF:
+                    // todo: we need mechanism to automatically unschedule
+                    operationService.onStartAsyncOperation(op);
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+
             afterRun(op);
         } catch (Throwable e) {
             handleOperationError(op, e);
@@ -230,7 +247,8 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         quorumService.ensureQuorumPresent(op);
     }
 
-    private boolean waitingNeeded(Operation op) {
+    // todo: this method should be moved inside the OperationParker.
+    private boolean parked(Operation op) {
         if (!(op instanceof BlockingOperation)) {
             return false;
         }
@@ -252,31 +270,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         return true;
     }
 
-    private void handleResponse(Operation op) throws Exception {
-        boolean returnsResponse = op.returnsResponse();
-        int backupAcks = sendBackup(op);
-
-        if (!returnsResponse) {
-            return;
-        }
-
-        sendResponse(op, backupAcks);
-    }
-
-    private int sendBackup(Operation op) throws Exception {
-        if (!(op instanceof BackupAwareOperation)) {
-            return 0;
-        }
-
-        int backupAcks = 0;
-        BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
-        if (backupAwareOp.shouldBackup()) {
-            backupAcks = operationService.operationBackupHandler.backup(backupAwareOp);
-        }
-        return backupAcks;
-    }
-
-   private void sendResponse(Operation op, int backupAcks) {
+    private void sendResponse(Operation op, int backupAcks) {
         try {
             Object response = op.getResponse();
             if (backupAcks > 0) {
@@ -352,7 +346,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             failedBackupsCounter.inc();
         }
 
-        if (!operation.returnsResponse()) {
+        if (operation.getRunStatus() == NIL_RESPONSE) {
             return;
         }
 
@@ -421,12 +415,13 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private void setOperationResponseHandler(Operation op) {
         OperationResponseHandler handler = remoteResponseHandler;
-        if (op.getCallId() == 0) {
+        if (op.getRunStatus() == NIL_RESPONSE) {
+            //todo:
             if (op.returnsResponse()) {
                 throw new HazelcastException(
                         "Op: " + op + " can not return response without call-id!");
             }
-            handler = createEmptyResponseHandler();
+            handler = emptyResponseHandler();
         }
         op.setOperationResponseHandler(handler);
     }

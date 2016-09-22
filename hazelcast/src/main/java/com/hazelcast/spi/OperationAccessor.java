@@ -49,6 +49,10 @@ public final class OperationAccessor {
         op.setCallId(callId);
     }
 
+    public static void setNotNilResponse(Operation op, boolean nilResponse) {
+        op.setNotNilResponse(nilResponse);
+    }
+
     /**
      * Sets the invocation time for the Operation.
      *

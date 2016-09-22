@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 
 /**
  * Write behind map data store implementation.
@@ -367,7 +367,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
                 .setNodeEngine(nodeEngine)
                 .setPartitionId(partitionId)
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())
-                .setOperationResponseHandler(createEmptyResponseHandler());
+                .setOperationResponseHandler(emptyResponseHandler());
 
         operationService.execute(operation);
     }

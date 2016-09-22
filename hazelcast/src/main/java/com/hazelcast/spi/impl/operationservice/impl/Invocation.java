@@ -36,6 +36,7 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
@@ -166,6 +167,7 @@ public abstract class Invocation implements OperationResponseHandler {
                long callTimeoutMillis, boolean deserialize) {
         this.context = context;
         this.op = op;
+        OperationAccessor.setNotNilResponse(op, true);
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);

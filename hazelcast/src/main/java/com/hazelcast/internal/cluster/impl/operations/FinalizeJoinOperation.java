@@ -36,7 +36,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import java.io.IOException;
 import java.util.Collection;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 
 public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
 
@@ -135,7 +135,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         postJoinOp.setNodeEngine(nodeEngine);
         OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
         OperationAccessor.setConnection(postJoinOp, getConnection());
-        postJoinOp.setOperationResponseHandler(createEmptyResponseHandler());
+        postJoinOp.setOperationResponseHandler(emptyResponseHandler());
         operationService.run(postJoinOp);
     }
 

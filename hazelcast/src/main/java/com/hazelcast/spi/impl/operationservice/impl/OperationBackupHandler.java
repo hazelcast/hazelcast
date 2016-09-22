@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.OperationRunStatus.NIL_RESPONSE;
 import static java.lang.Math.min;
 
 /**
@@ -45,6 +46,19 @@ final class OperationBackupHandler {
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
         this.backpressureRegulator = operationService.backpressureRegulator;
+    }
+
+    public int backup(Operation op) throws Exception {
+        if (!(op instanceof BackupAwareOperation)) {
+            return 0;
+        }
+
+        int backupAcks = 0;
+        BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
+        if (backupAwareOp.shouldBackup()) {
+            backupAcks = backup(backupAwareOp);
+        }
+        return backupAcks;
     }
 
     public int backup(BackupAwareOperation backupAwareOp) throws Exception {
@@ -66,7 +80,7 @@ final class OperationBackupHandler {
         int asyncBackups = asyncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
 
         // TODO: This could cause a problem with back pressure
-        if (!op.returnsResponse()) {
+        if (op.getRunStatus() == NIL_RESPONSE) {
             asyncBackups += syncBackups;
             syncBackups = 0;
         }
@@ -235,7 +249,7 @@ final class OperationBackupHandler {
     }
 
     private Backup newBackup(BackupAwareOperation backupAwareOp, Object backupOp, long[] replicaVersions,
-            int replicaIndex, boolean respondBack) {
+                             int replicaIndex, boolean respondBack) {
         Operation op = (Operation) backupAwareOp;
         Backup backup;
         if (backupOp instanceof Operation) {

@@ -79,11 +79,6 @@ public class ClearExpiredOperation extends Operation implements PartitionAwareOp
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         throw new UnsupportedOperationException();
     }

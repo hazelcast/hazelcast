@@ -70,6 +70,7 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.spi.OperationRunStatus.NIL_RESPONSE;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
@@ -339,10 +340,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public boolean isCallTimedOut(Operation op) {
-        // Join operations should not be checked for timeout
-        // because caller is not member of this cluster
+        // Join operations should not be checked for timeout because caller is not member of this cluster
         // and can have a different clock.
-        if (!op.returnsResponse() || isJoinOperation(op)) {
+        if (op.getRunStatus() == NIL_RESPONSE || isJoinOperation(op)) {
             return false;
         }
 

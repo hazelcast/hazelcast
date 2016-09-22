@@ -49,7 +49,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, ClientAwareService {
@@ -210,7 +210,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         op.setNodeEngine(nodeEngine);
         op.setServiceName(SERVICE_NAME);
         op.setService(LockServiceImpl.this);
-        op.setOperationResponseHandler(createEmptyResponseHandler());
+        op.setOperationResponseHandler(emptyResponseHandler());
         op.setPartitionId(partitionId);
         op.setValidateTarget(false);
         return op;
