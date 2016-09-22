@@ -221,6 +221,7 @@ public final class MapReduceUtil {
 
         ClusterService cs = nodeEngine.getClusterService();
         OperationService os = nodeEngine.getOperationService();
+        boolean returnsResponse = operation.returnsResponse();
 
         try {
             if (cs.getThisAddress().equals(address)) {
@@ -230,11 +231,11 @@ public final class MapReduceUtil {
                 operation.setService(mapReduceService);
                 operation.run();
 
-                if (!operation.isFireAndForget()) {
+                if (returnsResponse) {
                     return (V) operation.getResponse();
                 }
             } else {
-                if (!operation.isFireAndForget()) {
+                if (returnsResponse) {
                     InvocationBuilder ib = os.createInvocationBuilder(SERVICE_NAME, operation, address);
                     return (V) ib.invoke().get();
                 } else {
