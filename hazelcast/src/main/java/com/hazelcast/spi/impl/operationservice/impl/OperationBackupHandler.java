@@ -23,11 +23,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationReturnStatus;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.OperationReturnStatus.NIL_RESPONSE;
 import static java.lang.Math.min;
 
 /**
@@ -66,7 +68,7 @@ final class OperationBackupHandler {
         int asyncBackups = asyncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
 
         // TODO: This could cause a problem with back pressure
-        if (!op.returnsResponse()) {
+        if (op.getReturnStatus() == NIL_RESPONSE) {
             asyncBackups += syncBackups;
             syncBackups = 0;
         }
@@ -235,7 +237,7 @@ final class OperationBackupHandler {
     }
 
     private Backup newBackup(BackupAwareOperation backupAwareOp, Object backupOp, long[] replicaVersions,
-            int replicaIndex, boolean respondBack) {
+                             int replicaIndex, boolean respondBack) {
         Operation op = (Operation) backupAwareOp;
         Backup backup;
         if (backupOp instanceof Operation) {

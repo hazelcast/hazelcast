@@ -52,11 +52,6 @@ public class ClientReAuthOperation extends Operation implements UrgentSystemOper
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     public Object getResponse() {
         return Boolean.TRUE;
     }

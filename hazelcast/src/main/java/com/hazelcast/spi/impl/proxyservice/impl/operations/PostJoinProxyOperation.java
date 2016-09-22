@@ -74,11 +74,6 @@ public class PostJoinProxyOperation extends Operation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         int len = proxies != null ? proxies.size() : 0;

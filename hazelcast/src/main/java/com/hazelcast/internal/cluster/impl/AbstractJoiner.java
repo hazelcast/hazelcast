@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public abstract class AbstractJoiner implements Joiner {
@@ -360,7 +360,7 @@ public abstract class AbstractJoiner implements Joiner {
 
         Operation mergeClustersOperation = new MergeClustersOperation(targetAddress);
         mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(clusterService)
-                .setOperationResponseHandler(createEmptyResponseHandler());
+                .setOperationResponseHandler(emptyResponseHandler());
         operationService.run(mergeClustersOperation);
     }
 

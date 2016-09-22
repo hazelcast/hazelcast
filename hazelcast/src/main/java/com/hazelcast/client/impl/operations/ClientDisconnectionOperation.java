@@ -60,11 +60,6 @@ public class ClientDisconnectionOperation extends Operation implements UrgentSys
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(clientUuid);

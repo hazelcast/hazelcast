@@ -35,6 +35,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.OperationReturnStatus.NIL_RESPONSE;
+import static com.hazelcast.spi.OperationReturnStatus.RESPONSE_READY;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 
@@ -56,6 +58,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
+    static final int BITMASK_NOT_NIL_RESPONSE = 1 << 7;
 
     // serialized
     private String serviceName;
@@ -97,6 +100,14 @@ public abstract class Operation implements DataSerializable {
 
     public boolean returnsResponse() {
         return true;
+    }
+
+    public OperationReturnStatus getReturnStatus() {
+        if (!isFlagSet(BITMASK_NOT_NIL_RESPONSE)) {
+            return NIL_RESPONSE;
+        }
+
+        return RESPONSE_READY;
     }
 
     public Object getResponse() {
@@ -156,6 +167,10 @@ public abstract class Operation implements DataSerializable {
         this.partitionId = partitionId;
         setFlag(partitionId > Short.MAX_VALUE, BITMASK_PARTITION_ID_32_BIT);
         return this;
+    }
+
+    void setNotNilResponse(boolean notNilResponse){
+        setFlag(notNilResponse, BITMASK_NOT_NIL_RESPONSE);
     }
 
     public final int getReplicaIndex() {
@@ -385,7 +400,6 @@ public abstract class Operation implements DataSerializable {
         return flags;
     }
 
-
     /**
      * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown during operation execution.
      * <p/>
@@ -408,9 +422,9 @@ public abstract class Operation implements DataSerializable {
      * @param e Exception/Error thrown during operation execution
      */
     public void logError(Throwable e) {
-        final ILogger logger = getLogger();
+        ILogger logger = getLogger();
         if (e instanceof RetryableException) {
-            final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
+            Level level = getReturnStatus() == NIL_RESPONSE ? Level.WARNING : Level.FINEST;
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getClass().getName() + ": " + e.getMessage());
             }
@@ -423,7 +437,7 @@ public abstract class Operation implements DataSerializable {
         } else if (e instanceof QuorumException) {
             logger.log(Level.WARNING, e.getMessage());
         } else {
-            final Level level = nodeEngine != null && nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
+            Level level = nodeEngine != null && nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getMessage(), e);
             }

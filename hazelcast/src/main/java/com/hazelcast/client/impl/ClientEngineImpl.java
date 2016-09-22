@@ -85,7 +85,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 
 /**
  * Class that requests, listeners from client handled in node side.
@@ -403,7 +403,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         op.setNodeEngine(nodeEngine)
                 .setServiceName(SERVICE_NAME)
                 .setService(this)
-                .setOperationResponseHandler(createEmptyResponseHandler());
+                .setOperationResponseHandler(emptyResponseHandler());
         return op;
     }
 

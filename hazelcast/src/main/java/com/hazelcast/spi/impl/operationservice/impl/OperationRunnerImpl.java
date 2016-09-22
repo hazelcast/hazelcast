@@ -63,7 +63,8 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.OperationReturnStatus.NIL_RESPONSE;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.emptyResponseHandler;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
@@ -183,7 +184,20 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             }
 
             op.run();
-            handleResponse(op);
+
+            switch (op.getReturnStatus()){
+                case NIL_RESPONSE:
+                    backup(op);
+                    break;
+                case RESPONSE_READY:
+                    sendResponse(op, backup(op));
+                    break;
+                case DOING_IT_MYSELF:
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+
             afterRun(op);
         } catch (Throwable e) {
             handleOperationError(op, e);
@@ -254,7 +268,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private void handleResponse(Operation op) throws Exception {
         boolean returnsResponse = op.returnsResponse();
-        int backupAcks = sendBackup(op);
+        int backupAcks = backup(op);
 
         if (!returnsResponse) {
             return;
@@ -263,7 +277,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         sendResponse(op, backupAcks);
     }
 
-    private int sendBackup(Operation op) throws Exception {
+    private int backup(Operation op) throws Exception {
         if (!(op instanceof BackupAwareOperation)) {
             return 0;
         }
@@ -276,7 +290,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         return backupAcks;
     }
 
-   private void sendResponse(Operation op, int backupAcks) {
+    private void sendResponse(Operation op, int backupAcks) {
         try {
             Object response = op.getResponse();
             if (backupAcks > 0) {
@@ -352,7 +366,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             failedBackupsCounter.inc();
         }
 
-        if (!operation.returnsResponse()) {
+        if (operation.getReturnStatus() == NIL_RESPONSE) {
             return;
         }
 
@@ -421,12 +435,13 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private void setOperationResponseHandler(Operation op) {
         OperationResponseHandler handler = remoteResponseHandler;
-        if (op.getCallId() == 0) {
+        if (op.getReturnStatus() == NIL_RESPONSE) {
+            //todo:
             if (op.returnsResponse()) {
                 throw new HazelcastException(
                         "Op: " + op + " can not return response without call-id!");
             }
-            handler = createEmptyResponseHandler();
+            handler = emptyResponseHandler();
         }
         op.setOperationResponseHandler(handler);
     }

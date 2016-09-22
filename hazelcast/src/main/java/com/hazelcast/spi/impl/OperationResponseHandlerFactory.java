@@ -27,7 +27,7 @@ public final class OperationResponseHandlerFactory {
     private OperationResponseHandlerFactory() {
     }
 
-    public static OperationResponseHandler createEmptyResponseHandler() {
+    public static OperationResponseHandler emptyResponseHandler() {
         return EMPTY_RESPONSE_HANDLER;
     }
 
