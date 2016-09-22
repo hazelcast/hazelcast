@@ -24,8 +24,12 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.PortableEmployee;
 import com.hazelcast.query.SampleObjects.ValueType;
@@ -40,12 +44,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static org.junit.Assert.assertEquals;
@@ -56,6 +62,43 @@ import static org.junit.Assert.assertTrue;
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
     private static final long TIMEOUT_MINUTES = 2 * MINUTE;
+
+    @Test
+    public void testQueryOperationAreNotSentToLiteMembers() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance fullMember = nodeFactory.newHazelcastInstance();
+        HazelcastInstance liteMember = nodeFactory.newHazelcastInstance(new Config().setLiteMember(true));
+        assertClusterSizeEventually(2, fullMember);
+
+        IMap<Integer, Integer> map = fullMember.getMap(randomMapName());
+        DeserializationCountingPredicate predicate = new DeserializationCountingPredicate();
+
+        //initialize all partitions
+        for (int i = 0; i < 5000; i++) {
+            map.put(i, i);
+        }
+
+        map.values(predicate);
+        assertEquals(0, predicate.serilizationCount());
+    }
+
+    public static class DeserializationCountingPredicate implements Predicate, DataSerializable {
+        private static final AtomicInteger counter = new AtomicInteger();
+
+        public boolean apply(Map.Entry mapEntry) {
+            return false;
+        }
+
+        public int serilizationCount() {
+            return counter.get();
+        }
+
+        public void writeData(ObjectDataOutput out) throws IOException { }
+
+        public void readData(ObjectDataInput in) throws IOException {
+            counter.incrementAndGet();
+        }
+    }
 
     @Test(timeout = TIMEOUT_MINUTES)
     @SuppressWarnings("deprecation")
