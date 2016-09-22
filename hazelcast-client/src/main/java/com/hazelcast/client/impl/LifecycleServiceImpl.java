@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -26,10 +25,14 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
@@ -42,14 +45,22 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
  */
 public final class LifecycleServiceImpl implements LifecycleService {
 
+    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
+
     private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
             = new ConcurrentHashMap<String, LifecycleListener>();
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
+    private final ExecutorService executor;
 
     public LifecycleServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
+
+        executor = Executors.newSingleThreadExecutor(
+                new PoolExecutorThreadFactory(client.getThreadGroup(), client.getName() + ".lifecycle-",
+                        client.getClientConfig().getClassLoader()));
+
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
@@ -86,8 +97,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
                 + buildInfo.getBuild() + revision + ") is "
                 + lifecycleEvent.getState());
 
-        ClientExecutionServiceImpl clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        clientExecutionService.executeInternalSingleThread(new Runnable() {
+        executor.execute(new Runnable() {
             @Override
             public void run() {
                 for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
@@ -117,6 +127,19 @@ public final class LifecycleServiceImpl implements LifecycleService {
         HazelcastClient.shutdown(client.getName());
         client.doShutdown();
         fireLifecycleEvent(SHUTDOWN);
+
+        executor.shutdown();
+        try {
+            boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!success) {
+                getLogger().warning("Lifecycle service executor awaitTermination could not completed gracefully in "
+                        + TERMINATE_TIMEOUT_SECONDS + " seconds. Terminating forcefully.");
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            getLogger().warning("LifecycleService executor await termination is interrupted. Terminating forcefully.", e);
+            executor.shutdownNow();
+        }
     }
 
     @Override

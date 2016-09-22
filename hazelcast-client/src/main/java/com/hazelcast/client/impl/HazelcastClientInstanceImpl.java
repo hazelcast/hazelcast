@@ -204,13 +204,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         credentials = initCredentials(config);
         threadGroup = new ThreadGroup(instanceName);
-        properties = new HazelcastProperties(config.getProperties());
-        executionService = initExecutionService();
         lifecycleService = new LifecycleServiceImpl(this);
+        properties = new HazelcastProperties(config.getProperties());
 
         metricsRegistry = initMetricsRegistry();
         serializationService = clientExtension.createSerializationService((byte) -1);
         proxyManager = new ProxyManager(this);
+        executionService = initExecutionService();
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
