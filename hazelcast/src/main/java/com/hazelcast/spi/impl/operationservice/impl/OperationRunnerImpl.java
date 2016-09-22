@@ -253,11 +253,12 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private void handleResponse(Operation op) throws Exception {
+        boolean returnsResponse = op.returnsResponse();
         int backupAcks = sendBackup(op);
 
-//        if (!op.returnsResponse()) {
-//            return;
-//        }
+        if (!returnsResponse) {
+            return;
+        }
 
         sendResponse(op, backupAcks);
     }
@@ -275,7 +276,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         return backupAcks;
     }
 
-   private void sendResponse(Operation op, int backupAcks) {
+    private void sendResponse(Operation op, int backupAcks) {
         try {
             Object response = op.getResponse();
             if (backupAcks > 0) {
@@ -351,17 +352,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             failedBackupsCounter.inc();
         }
 
-//        if(operation.isFireAndForget()){
-//            if(operation.returnsResponse()){
-//                throw new RuntimeException("Operation:"+operation);
-//            }
-//        }
-//
-//
-//        if (!operation.returnsResponse()) {
-//
-//            return;
-//        }
+        if (!operation.returnsResponse()) {
+            return;
+        }
 
         sendResponseAfterOperationError(operation, e);
     }
@@ -429,7 +422,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private void setOperationResponseHandler(Operation op) {
         OperationResponseHandler handler = remoteResponseHandler;
         if (op.getCallId() == 0) {
-            if (!op.isFireAndForget()) {
+            if (op.returnsResponse()) {
                 throw new HazelcastException(
                         "Op: " + op + " can not return response without call-id!");
             }

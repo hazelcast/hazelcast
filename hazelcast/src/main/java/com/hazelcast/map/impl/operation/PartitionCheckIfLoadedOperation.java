@@ -73,12 +73,12 @@ public class PartitionCheckIfLoadedOperation extends MapOperation implements Par
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        //if (!returnsResponse()) {
+        if (!returnsResponse()) {
             // In case of execution failure the CallbackResponseSender will be never invoked
             // and the operation will be never retried. That is the reason why we need to propagate the
             // exception to the caller manually.
             sendResponse(e);
-        //}
+        }
     }
 
     @Override

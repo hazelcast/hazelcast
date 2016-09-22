@@ -342,7 +342,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         // Join operations should not be checked for timeout
         // because caller is not member of this cluster
         // and can have a different clock.
-        if (op.isFireAndForget() || isJoinOperation(op)) {
+        if (!op.returnsResponse() || isJoinOperation(op)) {
             return false;
         }
 
