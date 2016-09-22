@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -77,5 +78,10 @@ public class MergeClustersOperation extends AbstractClusterOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         newTargetAddress.writeData(out);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MERGE_CLUSTERS;
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -72,5 +73,10 @@ public class MasterConfirmationOperation extends AbstractClusterOperation implem
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         timestamp = in.readLong();
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MASTER_CONFIRM;
     }
 }

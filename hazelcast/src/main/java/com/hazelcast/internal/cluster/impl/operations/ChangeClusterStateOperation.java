@@ -18,11 +18,13 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -32,7 +34,7 @@ import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 
-public class ChangeClusterStateOperation extends Operation implements AllowedDuringPassiveState {
+public class ChangeClusterStateOperation extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
 
     private ClusterState newState;
     private Address initiator;
@@ -110,5 +112,15 @@ public class ChangeClusterStateOperation extends Operation implements AllowedDur
         initiator = new Address();
         initiator.readData(in);
         txnId = in.readUTF();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.CHANGE_CLUSTER_STATE;
     }
 }

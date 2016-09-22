@@ -18,18 +18,18 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class JoinCheckOperation extends Operation implements JoinOperation {
+public class JoinCheckOperation extends AbstractJoinOperation {
 
     private JoinMessage request;
     private JoinMessage response;
@@ -142,6 +142,11 @@ public class JoinCheckOperation extends Operation implements JoinOperation {
     @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
         request.writeData(out);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.JOIN_CHECK;
     }
 }
 

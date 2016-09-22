@@ -192,7 +192,6 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-
         sb.append(", postJoinOp=").append(postJoinOp);
     }
 

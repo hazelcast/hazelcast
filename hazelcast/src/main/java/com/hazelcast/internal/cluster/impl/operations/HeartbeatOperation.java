@@ -22,12 +22,10 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class HeartbeatOperation extends AbstractClusterOperation
-        implements JoinOperation, IdentifiedDataSerializable {
+public final class HeartbeatOperation extends AbstractClusterOperation {
 
     private long timestamp;
 
@@ -50,11 +48,6 @@ public final class HeartbeatOperation extends AbstractClusterOperation
             return;
         }
         service.getClusterHeartbeatManager().onHeartbeat(member, timestamp);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ClusterDataSerializerHook.F_ID;
     }
 
     @Override

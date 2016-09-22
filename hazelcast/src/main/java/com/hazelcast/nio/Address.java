@@ -35,8 +35,6 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  */
 public final class Address implements IdentifiedDataSerializable {
 
-    public static final int ID = 1;
-
     private static final byte IPV4 = 4;
     private static final byte IPV6 = 6;
 
@@ -137,7 +135,7 @@ public final class Address implements IdentifiedDataSerializable {
 
     @Override
     public int getId() {
-        return ID;
+        return ClusterDataSerializerHook.ADDRESS;
     }
 
     @Override

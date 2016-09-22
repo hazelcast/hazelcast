@@ -17,12 +17,12 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class GroupMismatchOperation extends AbstractClusterOperation
-        implements JoinOperation {
+public class GroupMismatchOperation extends AbstractClusterOperation {
 
     public GroupMismatchOperation() {
     }
@@ -42,6 +42,11 @@ public class GroupMismatchOperation extends AbstractClusterOperation
 
         Node node = nodeEngine.getNode();
         node.getJoiner().blacklist(getCallerAddress(), true);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.GROUP_MISMATCH;
     }
 }
 

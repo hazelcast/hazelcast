@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -64,5 +65,10 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
         if (operationType == PUT) {
             value = in.readObject();
         }
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MEMBER_ATTR_CHANGED;
     }
 }

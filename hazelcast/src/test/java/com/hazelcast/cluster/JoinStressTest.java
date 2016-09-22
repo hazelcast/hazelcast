@@ -25,11 +25,9 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -42,8 +40,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -92,8 +88,6 @@ public class JoinStressTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = new HazelcastInstance[count];
         final CountDownLatch latch = new CountDownLatch(count);
 
-        updateFactory(new TestClusterDataSerializerFactoryImpl());
-
         for (int i = 0; i < count; i++) {
             final int index = i;
             new Thread(new Runnable() {
@@ -104,7 +98,7 @@ public class JoinStressTest extends HazelcastTestSupport {
                 }
             }).start();
         }
-        updateFactory(new ClusterDataSerializerHook.ClusterDataSerializerFactoryImpl());
+
         assertOpenEventually(latch);
         for (int i = 0; i < count; i++) {
             assertClusterSize(count, instances[i]);
@@ -235,19 +229,6 @@ public class JoinStressTest extends HazelcastTestSupport {
         tcpIpConfig.setMembers(members);
     }
 
-    private void updateFactory(ClusterDataSerializerHook.ClusterDataSerializerFactoryImpl factory) throws NoSuchFieldException, IllegalAccessException {
-        Field field = ClusterDataSerializerHook.class.getDeclaredField("FACTORY");
-
-        // remove final modifier from field
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-        field.setAccessible(true);
-        field.set(null, factory);
-
-    }
-
     public class MemberInfoUpdateOperationSerializer implements StreamSerializer<MemberInfoUpdateOperation> {
         @Override
         public void write(ObjectDataOutput out, MemberInfoUpdateOperation object) throws IOException {
@@ -283,17 +264,6 @@ public class JoinStressTest extends HazelcastTestSupport {
                 Thread.sleep(500);
             }
             super.run();
-        }
-    }
-
-    public static class TestClusterDataSerializerFactoryImpl extends ClusterDataSerializerHook.ClusterDataSerializerFactoryImpl {
-
-        @Override
-        public IdentifiedDataSerializable create(int typeId) {
-            if (typeId == ClusterDataSerializerHook.MEMBER_INFO_UPDATE) {
-                return new DelayedMemberInfoUpdateOperation();
-            }
-            return super.create(typeId);
         }
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.nio.ObjectDataInput;
@@ -60,5 +61,10 @@ public class JoinRequestOperation extends AbstractClusterOperation implements Jo
         super.toString(sb);
 
         sb.append(", message=").append(request);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.JOIN_REQUEST;
     }
 }

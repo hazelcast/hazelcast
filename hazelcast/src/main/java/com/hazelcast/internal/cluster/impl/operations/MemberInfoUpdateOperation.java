@@ -119,10 +119,6 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         }
     }
 
-    public int getFactoryId() {
-        return ClusterDataSerializerHook.F_ID;
-    }
-
     @Override
     public int getId() {
         return ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
