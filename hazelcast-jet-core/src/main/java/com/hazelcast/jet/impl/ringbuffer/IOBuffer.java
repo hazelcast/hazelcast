@@ -39,8 +39,7 @@ public class IOBuffer<T> implements InputChunk<T>, OutputCollector<T> {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public IOBuffer(T[] buffer,
-                    DataTransferringStrategy dataTransferringStrategy) {
+    public IOBuffer(T[] buffer, DataTransferringStrategy dataTransferringStrategy) {
         this.buffer = buffer;
         this.dataTransferringStrategy = dataTransferringStrategy;
         initBuffer();

@@ -115,8 +115,8 @@ public class VertexRunner implements StateMachineEventHandler<VertexRunnerEvent>
         return vertexTasks;
     }
 
-    public Map<Integer, VertexTask> getVertexMap() {
-        return vertexTaskMap;
+    public VertexTask getTask(int index) {
+        return vertexTaskMap.get(index);
     }
 
     public Vertex getVertex() {
@@ -186,7 +186,7 @@ public class VertexRunner implements StateMachineEventHandler<VertexRunnerEvent>
             VertexTask[] vertexTasks = target.getVertexTasks();
             for (int i = 0, vertexTasksLength = vertexTasks.length; i < vertexTasksLength; i++) {
                 VertexTask targetTask = vertexTasks[i];
-                targetTask.addProducer(consumer.getRingbuffers()[i]);
+                targetTask.addProducer(consumer.getRingbufferAt(i));
             }
         }
         return target;

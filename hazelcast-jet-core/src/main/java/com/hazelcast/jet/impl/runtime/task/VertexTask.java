@@ -72,7 +72,7 @@ public class VertexTask extends Task {
     private volatile boolean sendersFlushed;
     private boolean producersClosed;
     private boolean receiversClosed;
-    private boolean isFinalizationNotified;
+    private boolean readyToFinalize;
     private volatile boolean finalizationStarted;
     private volatile Throwable error;
 
@@ -185,7 +185,7 @@ public class VertexTask extends Task {
 
         taskProcessor = getTaskProcessorFactory().getTaskProcessor(producers, consumers, taskContext, processor);
         finalizationStarted = false;
-        isFinalizationNotified = false;
+        readyToFinalize = false;
         int size = shufflingSenders.values().size();
         sendersArray = shufflingSenders.values().toArray(new ShufflingSender[size]);
     }
@@ -213,14 +213,13 @@ public class VertexTask extends Task {
      * Execute next iteration of task
      *
      * @param didWorkHolder flag to set to indicate that the task did something useful
-     * @return - true - if task should be executed again, false if task should be removed from executor
-     * @throws Exception if any exception
+     * @return true if task should be executed again, false if task should be removed from executor
      */
+    @Override
     public boolean execute(BooleanHolder didWorkHolder) {
         TaskProcessor processor = taskProcessor;
         boolean classLoaderChanged = false;
         ClassLoader classLoader = null;
-
         if (contextClassLoader != null) {
             classLoader = Thread.currentThread().getContextClassLoader();
             if (contextClassLoader != classLoader) {
@@ -228,7 +227,6 @@ public class VertexTask extends Task {
                 classLoaderChanged = true;
             }
         }
-
         try {
             if (interrupted.get()) {
                 try {
@@ -238,20 +236,17 @@ public class VertexTask extends Task {
                 }
                 return false;
             }
-
-            boolean result;
+            boolean success;
             Throwable error = null;
-
             try {
-                result = process(didWorkHolder, processor);
+                success = process(didWorkHolder, processor);
             } catch (Throwable e) {
-                result = false;
+                success = false;
                 didWorkHolder.set(false);
                 error = e;
             }
-
-            handleResult(result, error);
-            return result;
+            handleResult(success, error);
+            return success;
         } finally {
             if (classLoaderChanged) {
                 Thread.currentThread().setContextClassLoader(classLoader);
@@ -303,48 +298,41 @@ public class VertexTask extends Task {
                 return true;
             }
         }
-
-        if (((isFinalizationNotified) && (!finalizationStarted))) {
+        if (readyToFinalize && !finalizationStarted) {
             didWorkHolder.set(false);
             return true;
         }
-
         boolean success = processor.process();
         boolean activity = processor.didWork();
         didWorkHolder.set(activity);
-
-        if (((!activity) && (success))) {
+        if (!activity && success) {
             if (checkProducersClosed()) {
                 processor.onProducersWriteFinished();
                 return true;
             }
-
             if (processor.isFinalized()) {
                 return handleProcessorFinalized(processor);
             } else {
-                return handleProcessorInProgress(processor);
+                handleProcessorInProgress(processor);
+                return true;
             }
         }
-
         return true;
     }
 
-    private boolean handleProcessorInProgress(TaskProcessor processor) {
+    private void handleProcessorInProgress(TaskProcessor processor) {
         if (processor.producersReadFinished()) {
             notifyFinalizationStarted();
             if (finalizationStarted) {
                 processor.startFinalization();
             }
         }
-
-        return true;
     }
 
     private boolean handleProcessorFinalized(TaskProcessor processor) {
         if (!checkIfSendersFlushed()) {
             return true;
         }
-
         if (!sendersClosed) {
             for (ShufflingSender sender : sendersArray) {
                 sender.close();
@@ -352,16 +340,13 @@ public class VertexTask extends Task {
             sendersClosed = true;
             return true;
         }
-
         if (receiversClosed) {
             return false;
         }
-
         if (checkReceiversClosed()) {
             processor.onReceiversClosed();
             return true;
         }
-
         return true;
     }
 
@@ -384,22 +369,20 @@ public class VertexTask extends Task {
     }
 
     private void notifyFinalizationStarted() {
-        if (isFinalizationNotified) {
+        if (readyToFinalize) {
             return;
         }
         runner.handleTaskEvent(this, TaskEvent.TASK_READY_FOR_FINALIZATION);
-        isFinalizationNotified = true;
+        readyToFinalize = true;
     }
 
     private boolean checkIfSendersFlushed() {
-        boolean success = true;
-
+        boolean allFlushed = true;
         for (ShufflingSender sender : sendersArray) {
-            success &= sender.isFlushed();
+            allFlushed &= sender.isFlushed();
         }
-
-        sendersFlushed = success;
-        return success;
+        sendersFlushed = allFlushed;
+        return allFlushed;
     }
 
     private void handleProcessingError(Throwable error) {

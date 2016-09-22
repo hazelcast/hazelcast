@@ -48,7 +48,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         JobContext jobContext = taskContext.getJobContext();
         JobManager jobManager = jobContext.getJobManager();
         VertexRunner vertexRunner = jobManager.getRunnerByVertex(taskContext.getVertex());
-        VertexTask vertexTask = vertexRunner.getVertexMap().get(taskContext.getTaskNumber());
+        VertexTask vertexTask = vertexRunner.getTask(taskContext.getTaskNumber());
         for (Address address : jobManager.getJobContext().getSocketReaders().keySet()) {
             ShufflingReceiver receiver = new ShufflingReceiver(vertexTask);
             jobManager.registerShufflingReceiver(taskContext.getTaskNumber(),

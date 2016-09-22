@@ -47,11 +47,26 @@ public class CompositeRingbuffer implements Consumer {
     }
 
     @Override
+    public MemberDistributionStrategy getMemberDistributionStrategy() {
+        return memberDistributionStrategy;
+    }
+
+    @Override
+    public PartitioningStrategy getPartitionStrategy() {
+        return calculationStrategy.getPartitioningStrategy();
+    }
+
+    @Override
+    public HashingStrategy getHashingStrategy() {
+        return calculationStrategy.getHashingStrategy();
+    }
+
+    @Override
     public boolean consume(Object object) {
         switch (routingStrategy) {
             case ROUND_ROBIN:
                 ringbuffers[nextConsumerId].consume(object);
-                next();
+                gotoNextConsumer();
                 break;
             case BROADCAST:
                 for (Consumer consumer : ringbuffers) {
@@ -74,7 +89,7 @@ public class CompositeRingbuffer implements Consumer {
         switch (routingStrategy) {
             case ROUND_ROBIN:
                 ringbuffers[nextConsumerId].consume(chunk);
-                next();
+                gotoNextConsumer();
                 break;
             case BROADCAST:
                 for (Consumer consumer : ringbuffers) {
@@ -91,17 +106,6 @@ public class CompositeRingbuffer implements Consumer {
         return chunk.size();
     }
 
-    @SuppressWarnings("unchecked")
-    private int calculatePartitionIndex(Object object) {
-        return calculationStrategy.hash(object);
-    }
-
-    private void next() {
-        if (++nextConsumerId == ringbuffers.length) {
-            nextConsumerId = 0;
-        }
-    }
-
     @Override
     public void flush() {
         for (Consumer consumer : ringbuffers) {
@@ -116,21 +120,6 @@ public class CompositeRingbuffer implements Consumer {
             allFlushed &= consumer.isFlushed();
         }
         return allFlushed;
-    }
-
-    @Override
-    public MemberDistributionStrategy getMemberDistributionStrategy() {
-        return memberDistributionStrategy;
-    }
-
-    @Override
-    public PartitioningStrategy getPartitionStrategy() {
-        return calculationStrategy.getPartitioningStrategy();
-    }
-
-    @Override
-    public HashingStrategy getHashingStrategy() {
-        return calculationStrategy.getHashingStrategy();
     }
 
     @Override
@@ -157,9 +146,20 @@ public class CompositeRingbuffer implements Consumer {
     }
 
     /**
-     * @return parties of the composed actor
+     * @param i index of ringbuffer
+     * @return the ringbuffer at the supplied index
      */
-    public Ringbuffer[] getRingbuffers() {
-        return ringbuffers;
+    public Ringbuffer getRingbufferAt(int i) {
+        return ringbuffers[i];
+    }
+
+    private int calculatePartitionIndex(Object object) {
+        return calculationStrategy.hash(object);
+    }
+
+    private void gotoNextConsumer() {
+        if (++nextConsumerId == ringbuffers.length) {
+            nextConsumerId = 0;
+        }
     }
 }
