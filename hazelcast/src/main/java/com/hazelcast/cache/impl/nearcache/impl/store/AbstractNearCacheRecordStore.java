@@ -86,17 +86,10 @@ public abstract class AbstractNearCacheRecordStore<
         this.records = createNearCacheRecordMap(nearCacheConfig, nearCacheContext);
 
         EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
-        if (evictionConfig != null) {
-            this.maxSizeChecker = createNearCacheMaxSizeChecker(evictionConfig, nearCacheConfig, nearCacheContext);
-            this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
-            this.evictionChecker = createEvictionChecker(nearCacheConfig);
-            this.evictionStrategy = createEvictionStrategy(evictionConfig);
-        } else {
-            this.maxSizeChecker = null;
-            this.evictionPolicyEvaluator = null;
-            this.evictionChecker = null;
-            this.evictionStrategy = null;
-        }
+        this.maxSizeChecker = createNearCacheMaxSizeChecker(evictionConfig, nearCacheConfig, nearCacheContext);
+        this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
+        this.evictionChecker = createEvictionChecker(nearCacheConfig);
+        this.evictionStrategy = createEvictionStrategy(evictionConfig);
     }
 
     protected abstract MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
