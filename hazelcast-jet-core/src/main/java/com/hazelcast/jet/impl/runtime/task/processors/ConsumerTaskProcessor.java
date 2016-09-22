@@ -98,7 +98,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean onChunk(InputChunk<Object> inputChunk) throws Exception {
+    public boolean onChunk(InputChunk<Object> inputChunk) {
         if (inputChunk.size() == 0) {
             return true;
         }
