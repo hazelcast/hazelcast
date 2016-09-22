@@ -351,9 +351,17 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             failedBackupsCounter.inc();
         }
 
-        if (operation.isFireAndForget()) {
-            return;
-        }
+//        if(operation.isFireAndForget()){
+//            if(operation.returnsResponse()){
+//                throw new RuntimeException("Operation:"+operation);
+//            }
+//        }
+//
+//
+//        if (!operation.returnsResponse()) {
+//
+//            return;
+//        }
 
         sendResponseAfterOperationError(operation, e);
     }
