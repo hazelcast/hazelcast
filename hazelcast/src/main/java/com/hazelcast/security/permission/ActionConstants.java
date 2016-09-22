@@ -17,6 +17,7 @@
 package com.hazelcast.security.permission;
 
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -26,6 +27,7 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
@@ -163,6 +165,18 @@ public final class ActionConstants {
             @Override
             public Permission create(String name, String... actions) {
                 return new RingBufferPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(DistributedDurableExecutorService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new DurableExecutorServicePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(CardinalityEstimatorService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new CardinalityEstimatorPermission(name, actions);
             }
         });
     }
