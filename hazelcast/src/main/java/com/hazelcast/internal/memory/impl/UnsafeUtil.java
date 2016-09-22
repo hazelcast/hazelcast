@@ -55,7 +55,7 @@ public final class UnsafeUtil {
             }
         } catch (Throwable t) {
             unsafe = null;
-            LOGGER.warning("Unable to get an instance of Unsafe. Unsafe-based operations will be unavailable", t);
+            logFailureToFindUnsafeDueTo(t);
         }
         UNSAFE = unsafe;
         UNSAFE_AVAILABLE = UNSAFE != null;
@@ -107,5 +107,13 @@ public final class UnsafeUtil {
         unsafe.putLong(buffer, normalize(arrayBaseOffset, Bits.LONG_SIZE_IN_BYTES), 4L);
         unsafe.putDouble(buffer, normalize(arrayBaseOffset, Bits.DOUBLE_SIZE_IN_BYTES), 5d);
         unsafe.copyMemory(new byte[buffer.length], arrayBaseOffset, buffer, arrayBaseOffset, buffer.length);
+    }
+
+    private static void logFailureToFindUnsafeDueTo(final Throwable reason) {
+        if (LOGGER.isFinestEnabled()) {
+            LOGGER.finest("Unable to get an instance of Unsafe. Unsafe-based operations will be unavailable", reason);
+        } else {
+            LOGGER.warning("Unable to get an instance of Unsafe. Unsafe-based operations will be unavailable");
+        }
     }
 }
