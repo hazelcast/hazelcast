@@ -23,7 +23,6 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -33,7 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class EntrySetOperation extends Operation {
+public class EntrySetOperation extends AbstractSerializableOperation {
 
     private String name;
     private transient Object response;
@@ -76,5 +75,10 @@ public class EntrySetOperation extends Operation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.ENTRY_SET;
     }
 }

@@ -20,12 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class IsEmptyOperation extends Operation {
+public class IsEmptyOperation extends AbstractSerializableOperation {
 
     private String name;
     private transient boolean response;
@@ -63,5 +62,10 @@ public class IsEmptyOperation extends Operation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.IS_EMPTY;
     }
 }

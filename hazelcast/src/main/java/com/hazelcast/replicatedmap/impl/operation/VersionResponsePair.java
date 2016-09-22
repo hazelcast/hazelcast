@@ -19,7 +19,6 @@ package com.hazelcast.replicatedmap.impl.operation;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
@@ -27,7 +26,8 @@ import java.io.IOException;
 /**
  * Contains response and partition version for update operations on replicated map.
  */
-public class VersionResponsePair implements DataSerializable, IdentifiedDataSerializable {
+public class VersionResponsePair implements IdentifiedDataSerializable {
+
     Object response;
     long version;
 

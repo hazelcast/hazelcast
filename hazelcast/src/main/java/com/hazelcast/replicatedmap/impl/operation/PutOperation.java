@@ -20,7 +20,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -32,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Puts a key to the replicated map.
  */
-public class PutOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation, IdentifiedDataSerializable {
+public class PutOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation {
 
     private transient ReplicatedMapService service;
     private transient ReplicatedRecordStore store;
@@ -92,12 +91,7 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
     }
 
     @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
-    }
-
-    @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_PUT;
+        return ReplicatedMapDataSerializerHook.PUT;
     }
 }

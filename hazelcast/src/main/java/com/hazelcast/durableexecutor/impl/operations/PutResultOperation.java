@@ -16,6 +16,7 @@
 
 package com.hazelcast.durableexecutor.impl.operations;
 
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -68,5 +69,10 @@ public class PutResultOperation extends AbstractDurableExecutorOperation impleme
         super.readInternal(in);
         sequence = in.readInt();
         result = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return DurableExecutorDataSerializerHook.PUT_RESULT;
     }
 }

@@ -34,7 +34,7 @@ import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
-import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersion;
+import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersionOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -147,10 +147,10 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                 continue;
             }
             for (Address address : addresses) {
-                CheckReplicaVersion checkReplicaVersion = new CheckReplicaVersion(partitionContainer);
-                checkReplicaVersion.setPartitionId(i);
-                checkReplicaVersion.setValidateTarget(false);
-                operationService.createInvocationBuilder(SERVICE_NAME, checkReplicaVersion, address)
+                CheckReplicaVersionOperation checkReplicaVersionOperation = new CheckReplicaVersionOperation(partitionContainer);
+                checkReplicaVersionOperation.setPartitionId(i);
+                checkReplicaVersionOperation.setValidateTarget(false);
+                operationService.createInvocationBuilder(SERVICE_NAME, checkReplicaVersionOperation, address)
                         .setTryCount(INVOCATION_TRY_COUNT)
                         .invoke();
             }

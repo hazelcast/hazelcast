@@ -20,10 +20,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
@@ -37,7 +35,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_T
  * This operation will execute the remote clear on replicated map if
  * {@link com.hazelcast.core.ReplicatedMap#clear()} is called.
  */
-public class ClearOperation extends Operation implements IdentifiedDataSerializable {
+public class ClearOperation extends AbstractSerializableOperation {
 
     private String mapName;
     private boolean replicateClear;
@@ -122,7 +120,7 @@ public class ClearOperation extends Operation implements IdentifiedDataSerializa
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_CLEAR;
+        return ReplicatedMapDataSerializerHook.CLEAR;
     }
 
     @Override

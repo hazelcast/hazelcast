@@ -21,11 +21,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
@@ -35,8 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This operation will update the local record store with the update received from local/remote partition owner.
  */
-public class ReplicateUpdateToCallerOperation extends Operation implements PartitionAwareOperation,
-        IdentifiedDataSerializable {
+public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
 
     private String name;
     private long callId;
@@ -130,12 +127,7 @@ public class ReplicateUpdateToCallerOperation extends Operation implements Parti
     }
 
     @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
-    }
-
-    @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_REPLICATE_UPDATE_TO_CALLER;
+        return ReplicatedMapDataSerializerHook.REPLICATE_UPDATE_TO_CALLER;
     }
 }

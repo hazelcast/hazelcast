@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
@@ -25,10 +24,13 @@ import java.util.Collection;
 /**
  * Evicts set of entries from the record store. Runs locally.
  */
-public class EvictionOperation extends Operation {
+public class EvictionOperation extends AbstractSerializableOperation {
 
-    private final ReplicatedRecordStore store;
-    private final Collection<ScheduledEntry<Object, Object>> entries;
+    private ReplicatedRecordStore store;
+    private Collection<ScheduledEntry<Object, Object>> entries;
+
+    public EvictionOperation() {
+    }
 
     public EvictionOperation(ReplicatedRecordStore store, Collection<ScheduledEntry<Object, Object>> entries) {
         this.store = store;
@@ -46,5 +48,10 @@ public class EvictionOperation extends Operation {
     @Override
     public boolean validatesTarget() {
         return false;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.EVICTION;
     }
 }

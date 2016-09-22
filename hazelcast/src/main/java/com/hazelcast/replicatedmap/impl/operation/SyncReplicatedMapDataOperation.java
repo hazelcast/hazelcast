@@ -24,7 +24,6 @@ import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.InternalReplicatedMapStorage;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -34,8 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Carries set of replicated map records for a partition from one node to another
  */
-public class SyncReplicatedMapDataOperation<K, V> extends Operation {
-
+public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOperation {
 
     private String name;
     private Set<RecordMigrationInfo> recordSet;
@@ -104,5 +102,10 @@ public class SyncReplicatedMapDataOperation<K, V> extends Operation {
             record.readData(in);
             recordSet.add(record);
         }
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.SYNC_REPLICATED_DATA;
     }
 }

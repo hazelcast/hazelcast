@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.PartitionContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 
@@ -38,14 +37,14 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  * Checks whether replica version is in sync with the primary.
  * If not, it will request the correct state via {@link RequestMapDataOperation}
  */
-public class CheckReplicaVersion extends Operation implements PartitionAwareOperation {
+public class CheckReplicaVersionOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
 
     private Map<String, Long> versions;
 
-    public CheckReplicaVersion() {
+    public CheckReplicaVersionOperation() {
     }
 
-    public CheckReplicaVersion(PartitionContainer container) {
+    public CheckReplicaVersionOperation(PartitionContainer container) {
         versions = new ConcurrentHashMap<String, Long>();
         ConcurrentMap<String, ReplicatedRecordStore> stores = container.getStores();
         for (Map.Entry<String, ReplicatedRecordStore> storeEntry : stores.entrySet()) {
@@ -104,5 +103,10 @@ public class CheckReplicaVersion extends Operation implements PartitionAwareOper
             Long version = in.readLong();
             versions.put(name, version);
         }
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.CHECK_REPLICA_VERSION;
     }
 }

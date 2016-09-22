@@ -26,7 +26,6 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -42,7 +41,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  * Collects and sends the replicated map data from the executing node to the caller via
  * {@link SyncReplicatedMapDataOperation}.
  */
-public class RequestMapDataOperation extends Operation {
+public class RequestMapDataOperation extends AbstractSerializableOperation {
 
     private static ILogger logger = Logger.getLogger(RequestMapDataOperation.class.getName());
 
@@ -104,5 +103,10 @@ public class RequestMapDataOperation extends Operation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.REQUEST_MAP_DATA;
     }
 }

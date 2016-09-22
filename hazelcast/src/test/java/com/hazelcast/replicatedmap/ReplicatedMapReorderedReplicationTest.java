@@ -145,7 +145,7 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
 
         @Override
         public IdentifiedDataSerializable create(int typeId) {
-            if (typeId == ReplicatedMapDataSerializerHook.OP_REPLICATE_UPDATE) {
+            if (typeId == ReplicatedMapDataSerializerHook.REPLICATE_UPDATE) {
                 return new RetriedReplicateUpdateOperation();
             }
 

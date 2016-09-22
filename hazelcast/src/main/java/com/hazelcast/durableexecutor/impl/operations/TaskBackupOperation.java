@@ -17,6 +17,7 @@
 package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
+import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -58,5 +59,10 @@ public class TaskBackupOperation extends AbstractDurableExecutorOperation implem
         super.readInternal(in);
         sequence = in.readInt();
         callableData = in.readData();
+    }
+
+    @Override
+    public int getId() {
+        return DurableExecutorDataSerializerHook.TASK_BACKUP;
     }
 }

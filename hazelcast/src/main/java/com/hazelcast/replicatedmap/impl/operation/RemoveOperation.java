@@ -20,7 +20,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -31,13 +30,11 @@ import java.io.IOException;
 /**
  * Removes the key from replicated map.
  */
-public class RemoveOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation,
-        IdentifiedDataSerializable {
+public class RemoveOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation {
 
     private transient ReplicatedMapService service;
     private transient ReplicatedRecordStore store;
     private transient Data oldValue;
-
 
     public RemoveOperation() {
     }
@@ -46,7 +43,6 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
         this.name = name;
         this.key = key;
     }
-
 
     @Override
     public void run() throws Exception {
@@ -81,12 +77,7 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
     }
 
     @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
-    }
-
-    @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_REMOVE;
+        return ReplicatedMapDataSerializerHook.REMOVE;
     }
 }
