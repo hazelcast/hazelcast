@@ -104,8 +104,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
 
     private void runBackup(NodeEngine nodeEngine, int value, long[] replicaVersions, Address sender)
             throws InterruptedException {
-        Backup
-                backup = new Backup(new SampleBackupOperation(value), sender, replicaVersions, false);
+        Backup backup = new Backup( new SampleBackupOperation(value), sender, replicaVersions, false);
         backup.setPartitionId(partitionId).setReplicaIndex(1).setNodeEngine(nodeEngine);
         nodeEngine.getOperationService().execute(backup);
 
