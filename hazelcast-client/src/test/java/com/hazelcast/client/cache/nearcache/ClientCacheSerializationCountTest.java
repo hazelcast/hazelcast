@@ -55,14 +55,14 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
 
-    static final String CACHE_NAME = randomString();
+    private static final String CACHE_NAME = randomString();
 
     private static final AtomicInteger SERIALIZE_COUNT = new AtomicInteger();
     private static final AtomicInteger DESERIALIZE_COUNT = new AtomicInteger();
 
-    TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    NearCache nearCache;
-    ICache<String, SerializationCountingData> cache;
+    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private NearCache nearCache;
+    private ICache<String, SerializationCountingData> cache;
 
     @After
     public void tearDown() {
@@ -170,27 +170,27 @@ public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
         assertAndReset(0, 1);
     }
 
-    protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
-        return new CacheConfig()
+    private CacheConfig<String, SerializationCountingData> createCacheConfig(InMemoryFormat inMemoryFormat) {
+        return new CacheConfig<String, SerializationCountingData>()
                 .setName(CACHE_NAME)
                 .setInMemoryFormat(inMemoryFormat);
     }
 
-    protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat, LocalUpdatePolicy localUpdatePolicy) {
+    private NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat, LocalUpdatePolicy localUpdatePolicy) {
         return new NearCacheConfig()
                 .setName(CACHE_NAME)
                 .setLocalUpdatePolicy(localUpdatePolicy)
                 .setInMemoryFormat(inMemoryFormat);
     }
 
-    protected Config createConfig() {
+    private Config createConfig() {
         Config config = new Config();
         SerializationConfig serializationConfig = config.getSerializationConfig();
         prepareSerializationConfig(serializationConfig);
         return config;
     }
 
-    protected ClientConfig createClientConfig() {
+    private ClientConfig createClientConfig() {
         ClientConfig config = new ClientConfig();
         SerializationConfig serializationConfig = config.getSerializationConfig();
         prepareSerializationConfig(serializationConfig);
@@ -230,7 +230,6 @@ public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
         cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
         nearCache = nearCacheManager.getNearCache(cacheManager.getCacheNameWithPrefix(CACHE_NAME));
     }
-
 
     private void assertAndReset(int serializeCount, int deserializeCount) {
         assertEquals(serializeCount, SERIALIZE_COUNT.getAndSet(0));
