@@ -51,6 +51,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
 
+
     @Test(timeout = 120000)
     public void testOneMemberWriteThroughWithIndex() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);

@@ -166,6 +166,7 @@ public abstract class Invocation implements OperationResponseHandler {
                long callTimeoutMillis, boolean deserialize) {
         this.context = context;
         this.op = op;
+        op.setFireAndForget(false);
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);

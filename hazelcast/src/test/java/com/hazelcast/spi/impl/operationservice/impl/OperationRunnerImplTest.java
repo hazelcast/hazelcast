@@ -177,6 +177,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
                 counter.incrementAndGet();
             }
         };
+        op.setFireAndForget(false);
         setCallId(op, 10);
         setCallTimeout(op, clusterService.getClusterClock().getClusterTime() - 1);
         op.setPartitionId(operationRunner.getPartitionId());

@@ -253,12 +253,12 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private void handleResponse(Operation op) throws Exception {
-        boolean returnsResponse = op.returnsResponse();
+//        boolean returnsResponse = op.returnsResponse();
         int backupAcks = sendBackup(op);
 
-        if (!returnsResponse) {
-            return;
-        }
+//        if (!returnsResponse) {
+//            return;
+//        }
 
         sendResponse(op, backupAcks);
     }
@@ -276,7 +276,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         return backupAcks;
     }
 
-   private void sendResponse(Operation op, int backupAcks) {
+    private void sendResponse(Operation op, int backupAcks) {
         try {
             Object response = op.getResponse();
             if (backupAcks > 0) {
