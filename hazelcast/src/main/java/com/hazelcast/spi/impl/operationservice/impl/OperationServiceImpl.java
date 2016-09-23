@@ -128,7 +128,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     final NodeEngineImpl nodeEngine;
     final Node node;
     final ILogger logger;
-    final OperationBackupHandler operationBackupHandler;
+    final OperationBackupHandler backupHandler;
     final BackpressureRegulator backpressureRegulator;
     volatile Invocation.Context invocationContext;
 
@@ -167,7 +167,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(), invocationRegistry,
                 node.getLogger(InvocationMonitor.class), serializationService, nodeEngine.getServiceManager());
 
-        this.operationBackupHandler = new OperationBackupHandler(this);
+        this.backupHandler = new OperationBackupHandler(this);
 
         this.responseHandler = new ResponseHandler(
                 node.getLogger(ResponseHandler.class), node.getSerializationService(), invocationRegistry, nodeEngine);
@@ -379,6 +379,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
+
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {

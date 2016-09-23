@@ -47,7 +47,29 @@ final class OperationBackupHandler {
         this.backpressureRegulator = operationService.backpressureRegulator;
     }
 
-    public int backup(BackupAwareOperation backupAwareOp) throws Exception {
+    /**
+     * Sends the appropriate backups. This call will not wait till the backups have ACK'ed.
+     *
+     * If this call is made with a none BackupAwareOperation, then 0 is returned.
+     *
+     * @param op the Operation to backup.
+     * @return the number of ACKS required to complete the invocation.
+     * @throws Exception if there is any exception sending the backups.
+     */
+    int sendBackups(Operation op) throws Exception {
+        if (!(op instanceof BackupAwareOperation)) {
+            return 0;
+        }
+
+        int backupAcks = 0;
+        BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
+        if (backupAwareOp.shouldBackup()) {
+            backupAcks = sendBackups0(backupAwareOp);
+        }
+        return backupAcks;
+    }
+
+    int sendBackups0(BackupAwareOperation backupAwareOp) throws Exception {
         int requestedSyncBackups = requestedSyncBackups(backupAwareOp);
         int requestedAsyncBackups = requestedAsyncBackups(backupAwareOp);
         int requestedTotalBackups = requestedTotalBackups(backupAwareOp);
