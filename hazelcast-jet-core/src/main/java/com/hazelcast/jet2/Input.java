@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet2;
 
-import java.io.Serializable;
-import java.util.Collection;
+public interface Input<T> {
 
+    /**
+     * @return next chunk to be processed or null if input is exhausted
+     */
+    Chunk<T> nextChunk();
 
-public interface Sink extends Serializable {
-
-    Collection<Consumer> getConsumers();
-
-    String getName();
 }

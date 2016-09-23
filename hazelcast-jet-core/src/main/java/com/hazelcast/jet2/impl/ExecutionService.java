@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-import java.io.Serializable;
-import java.util.Collection;
+public class ExecutionService {
 
+    public ExecutionService() {
 
-public interface Sink extends Serializable {
-
-    Collection<Consumer> getConsumers();
-
-    String getName();
+    }
 }

@@ -35,9 +35,10 @@ public class JetService implements ManagedService, RemoteService {
 
     private NodeEngine nodeEngine;
 
-    private ConcurrentMap<String, JetEngine> engines = new ConcurrentHashMap<>();
-    private ConstructorFunction<String, JetEngine> constructor = (name) ->
+    private ConcurrentMap<String, JetEngineImpl> engines = new ConcurrentHashMap<>();
+    private ConstructorFunction<String, JetEngineImpl> constructor = (name) ->
             new JetEngineImpl(name, nodeEngine, this);
+
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -45,6 +46,7 @@ public class JetService implements ManagedService, RemoteService {
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
+
     }
 
     @Override
@@ -69,5 +71,9 @@ public class JetService implements ManagedService, RemoteService {
         if (engine != null) {
             engine.destroy();
         }
+    }
+
+    public JetEngineImpl getEngine(String engineName) {
+        return engines.get(engineName);
     }
 }

@@ -16,13 +16,10 @@
 
 package com.hazelcast.jet2;
 
-import java.io.Serializable;
-import java.util.Collection;
+public interface Chunk<T> {
 
+    Cursor<T> cursor();
 
-public interface Sink extends Serializable {
+    boolean isEmpty();
 
-    Collection<Consumer> getConsumers();
-
-    String getName();
 }

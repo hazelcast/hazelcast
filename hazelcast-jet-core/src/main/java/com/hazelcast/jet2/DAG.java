@@ -32,20 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-/**
- * Direct acyclic graph representation
- * <p/>
- * DAG describes topology of calculation flow
- * <p/>
- * <pre>
- *
- *     Vertex1 -&gt; Vertex2  -&gt; Vertex3
- *                            -&gt; Vertex4
- * </pre>
- * <p/>
- * Data will be passed from vertex to vertex
- */
-public class DAG implements IdentifiedDataSerializable {
+public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     private Set<Edge> edges = new HashSet<Edge>();
     private Map<String, Vertex> vertices = new HashMap<String, Vertex>();
 
@@ -53,10 +40,6 @@ public class DAG implements IdentifiedDataSerializable {
     private transient Stack<Vertex> topologicalVertexStack = new Stack<Vertex>();
 
 
-    /**
-     * @param vertex vertex to add to the DAG
-     * @return the DAG
-     */
     public DAG addVertex(Vertex vertex) {
         if (vertices.containsKey(vertex.getName())) {
             throw new IllegalArgumentException("Vertex " + vertex.getName() + " already defined!");
@@ -120,13 +103,13 @@ public class DAG implements IdentifiedDataSerializable {
     /**
      * @return iterator over DAG's vertices on accordance with DAG's topology
      */
-    public Iterator<Vertex> getTopologicalVertexIterator() {
+    public Iterator<Vertex> iterator() {
         if (!validated) {
             throw new IllegalStateException("Graph should be validated before");
         }
 
         Stack<Vertex> stack = new Stack<Vertex>();
-        stack.addAll(this.topologicalVertexStack);
+        stack.addAll(topologicalVertexStack);
         return new TopologicalOrderIterator(stack);
     }
 

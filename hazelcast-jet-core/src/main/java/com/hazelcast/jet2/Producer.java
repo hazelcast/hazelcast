@@ -16,13 +16,8 @@
 
 package com.hazelcast.jet2;
 
-import java.io.Serializable;
-import java.util.Collection;
+public interface Producer<T> extends Tasklet {
 
+    void initialize(Output<T> output);
 
-public interface Sink extends Serializable {
-
-    Collection<Consumer> getConsumers();
-
-    String getName();
 }

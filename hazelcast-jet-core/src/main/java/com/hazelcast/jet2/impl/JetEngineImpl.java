@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.Job;
+import com.hazelcast.jet2.Vertex;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -40,6 +41,8 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
     protected JetEngineImpl(String name, NodeEngine nodeEngine, JetService service) {
         super(nodeEngine, service);
         this.name = name;
+
+
     }
 
     @Override
@@ -59,7 +62,21 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
     }
 
     public void execute(JobImpl job) {
-        executeOperation(new ExecuteJobOperation(job.getDag()));
+        executeOperation(new ExecuteJobOperation(getName(), job.getDag()));
+    }
+
+    public void executeLocal(DAG dag) {
+        for (Vertex vertex : dag) {
+            for (int i = 0; i < vertex.getParallelism(); i++) {
+                vertex.getSources();
+                dag.getInputEdges(vertex);
+                // 1 tasklet per parallelism of vertex
+                // n*m boundedqueues (1-1) where n producers, m consumers - overall storage can be fixed as
+                // implemented in hot restart
+                // in a cluster , only one queue per node
+
+            }
+        }
     }
 
     private <T> List<T> executeOperation(Operation operation) {
@@ -83,3 +100,4 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         }
     }
 }
+

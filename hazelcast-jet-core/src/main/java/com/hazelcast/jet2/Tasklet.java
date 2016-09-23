@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet2;
 
-import java.io.Serializable;
-import java.util.Collection;
+import java.util.concurrent.Callable;
 
+public interface Tasklet extends Callable<TaskletResult> {
 
-public interface Sink extends Serializable {
-
-    Collection<Consumer> getConsumers();
-
-    String getName();
+    default boolean isBlocking() {
+        return false;
+    }
 }

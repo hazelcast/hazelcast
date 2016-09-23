@@ -16,28 +16,13 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.runtime.Producer;
-
 import java.io.Serializable;
+import java.util.Collection;
 
-/**
- * Represents abstract source
- */
 public interface Source extends Serializable {
 
-    /**
-     * @return name of the source
-     */
     String getName();
 
-    /**
-     * Array of the input producers
-     *
-     * @param jobContext job context
-     * @param vertex     corresponding vertex
-     * @return list of the input readers
-     */
-    Producer[] getProducers(JobContext jobContext, Vertex vertex);
+    Collection<Producer> getProducers();
 
 }

@@ -25,17 +25,22 @@ import java.io.IOException;
 
 public class ExecuteJobOperation extends Operation {
 
+    private String engineName;
     private DAG dag;
 
     public ExecuteJobOperation() {
     }
 
-    public ExecuteJobOperation(DAG dag) {
+    public ExecuteJobOperation(String engineName, DAG dag) {
+        this.engineName = engineName;
         this.dag = dag;
     }
 
     @Override
     public void run() throws Exception {
+        JetService service = getService();
+        JetEngineImpl engine = service.getEngine(engineName);
+        engine.executeLocal(dag);
         System.out.println("Running job with DAG " + dag);
     }
 
@@ -43,6 +48,7 @@ public class ExecuteJobOperation extends Operation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
+        out.writeUTF(engineName);
         out.writeObject(dag);
     }
 
@@ -50,6 +56,7 @@ public class ExecuteJobOperation extends Operation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
+        engineName = in.readUTF();
         dag = in.readObject();
     }
 }

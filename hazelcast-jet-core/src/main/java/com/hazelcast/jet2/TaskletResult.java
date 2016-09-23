@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet2;
 
-import java.io.Serializable;
-import java.util.Collection;
-
-
-public interface Sink extends Serializable {
-
-    Collection<Consumer> getConsumers();
-
-    String getName();
+public enum TaskletResult {
+    DONE,
+    NOT_DONE,
+    /**
+     * Not done, but yield
+     */
+    NOT_DONE_BACKOFF
 }

@@ -16,13 +16,15 @@
 
 package com.hazelcast.jet2;
 
-import java.io.Serializable;
-import java.util.Collection;
+import java.util.Map;
 
+public interface Processor extends Tasklet {
 
-public interface Sink extends Serializable {
+    /**
+     * @param inputs
+     * @param outputs
+     */
+    void initialize(Map<String, Input> inputs, Map<String, Output> outputs);
 
-    Collection<Consumer> getConsumers();
-
-    String getName();
 }
+
