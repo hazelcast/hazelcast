@@ -123,9 +123,8 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         if (heartbeatTimeout) {
             sb.append(invocation.op.getClass().getSimpleName())
                     .append(" invocation failed to complete due to operation-heartbeat-timeout. ");
-
             sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
-
+            sb.append("Start time: ").append(timeToString(invocation.firstInvocationTimeMillis)).append(". ");
             sb.append("Total elapsed time: ")
                     .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
 
@@ -141,9 +140,8 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             sb.append(invocation.op.getClass().getSimpleName())
                     .append(" got rejected before execution due to not starting within the operation-call-timeout of: ")
                     .append(invocation.callTimeoutMillis).append(" ms. ");
-
             sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
-
+            sb.append("Start time: ").append(timeToString(invocation.firstInvocationTimeMillis)).append(". ");
             sb.append("Total elapsed time: ")
                     .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
         }
