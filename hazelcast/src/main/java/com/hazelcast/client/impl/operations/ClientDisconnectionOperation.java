@@ -22,9 +22,7 @@ import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ClientAwareService;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -32,7 +30,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
-public class ClientDisconnectionOperation extends Operation implements UrgentSystemOperation, IdentifiedDataSerializable {
+public class ClientDisconnectionOperation extends AbstractClientOperation implements UrgentSystemOperation {
 
     private String clientUuid;
 
@@ -76,11 +74,6 @@ public class ClientDisconnectionOperation extends Operation implements UrgentSys
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         clientUuid = in.readUTF();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ClientDataSerializerHook.F_ID;
     }
 
     @Override
