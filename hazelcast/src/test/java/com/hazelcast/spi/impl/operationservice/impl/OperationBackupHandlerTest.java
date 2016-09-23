@@ -53,7 +53,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         local = cluster[0];
 
         operationService = (OperationServiceImpl) getOperationService(local);
-        backupHandler = operationService.operationBackupHandler;
+        backupHandler = operationService.backupHandler;
     }
 
     // ============================ syncBackups =================================
@@ -126,7 +126,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(-1, 0);
-        backupHandler.backup(op);
+        backupHandler.sendBackups0(op);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -134,7 +134,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(MAX_BACKUP_COUNT + 1, 0);
-        backupHandler.backup(op);
+        backupHandler.sendBackups0(op);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -142,7 +142,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(0, -1);
-        backupHandler.backup(op);
+        backupHandler.sendBackups0(op);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -150,7 +150,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(0, MAX_BACKUP_COUNT + 1);
-        backupHandler.backup(op);
+        backupHandler.sendBackups0(op);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -158,7 +158,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         setup(BACKPRESSURE_ENABLED);
 
         BackupAwareOperation op = makeOperation(1, MAX_BACKUP_COUNT);
-        backupHandler.backup(op);
+        backupHandler.sendBackups0(op);
     }
 
     @Test
@@ -192,7 +192,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     private void assertBackup(final int syncBackups, final int asyncBackups, int expectedResult) throws Exception {
         final DummyBackupAwareOperation backupAwareOp = makeOperation(syncBackups, asyncBackups);
 
-        int result = backupHandler.backup(backupAwareOp);
+        int result = backupHandler.sendBackups0(backupAwareOp);
 
         assertEquals(expectedResult, result);
         assertTrueEventually(new AssertTask() {
