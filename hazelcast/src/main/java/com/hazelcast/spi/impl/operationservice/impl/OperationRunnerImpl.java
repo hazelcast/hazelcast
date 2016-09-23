@@ -115,12 +115,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
         this.failedBackupsCounter = failedBackupsCounter;
         this.backupHandler = operationService.backupHandler;
-
-        if (partitionId >= 0) {
-            this.count = newSwCounter();
-        } else {
-            this.count = null;
-        }
+        this.count = partitionId >= 0 ? newSwCounter() : null;
     }
 
     @Override
