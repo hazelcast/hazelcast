@@ -26,6 +26,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -62,6 +63,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
@@ -111,13 +113,16 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     final AtomicLong completedOperationsCount = new AtomicLong();
 
     @Probe(name = "operationTimeoutCount", level = MANDATORY)
-    final MwCounter operationTimeoutCount = MwCounter.newMwCounter();
+    final MwCounter operationTimeoutCount = newMwCounter();
 
     @Probe(name = "callTimeoutCount", level = MANDATORY)
-    final MwCounter callTimeoutCount = MwCounter.newMwCounter();
+    final MwCounter callTimeoutCount = newMwCounter();
 
     @Probe(name = "retryCount", level = MANDATORY)
-    final MwCounter retryCount = MwCounter.newMwCounter();
+    final MwCounter retryCount = newMwCounter();
+
+    @Probe(name = "failedBackups", level = MANDATORY)
+    final Counter failedBackupsCount = newMwCounter();
 
     final NodeEngineImpl nodeEngine;
     final Node node;

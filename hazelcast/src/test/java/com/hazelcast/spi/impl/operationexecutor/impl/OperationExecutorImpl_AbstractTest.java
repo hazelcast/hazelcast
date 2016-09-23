@@ -177,7 +177,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         DummyOperationRunner adhocHandler;
 
         @Override
-        public OperationRunner createPartitionRunner(int partitionId, Counter failedBackupsCounter) {
+        public OperationRunner createPartitionRunner(int partitionId) {
             DummyOperationRunner operationHandler = new DummyOperationRunner(partitionId);
             partitionOperationHandlers.add(operationHandler);
             return operationHandler;

@@ -33,7 +33,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         handlerFactory = mock(OperationRunnerFactory.class);
         OperationRunner handler = mock(OperationRunner.class);
         when(handlerFactory.createGenericRunner()).thenReturn(handler);
-        when(handlerFactory.createPartitionRunner(anyInt(), (Counter)any())).thenReturn(handler);
+        when(handlerFactory.createPartitionRunner(anyInt())).thenReturn(handler);
 
         initExecutor();
 
@@ -113,7 +113,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         handlerFactory = mock(OperationRunnerFactory.class);
         OperationRunner handler = mock(OperationRunner.class);
         when(handlerFactory.createGenericRunner()).thenReturn(handler);
-        when(handlerFactory.createPartitionRunner(anyInt(), (Counter)any())).thenReturn(handler);
+        when(handlerFactory.createPartitionRunner(anyInt())).thenReturn(handler);
 
         initExecutor();
 
