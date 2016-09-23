@@ -22,7 +22,6 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.collection.MPSCQueue;
-import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -43,7 +42,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
@@ -60,7 +58,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * The {@link #execute(Object, int, boolean)} accepts an Object instead of a runnable to prevent needing to
  * create wrapper runnables around tasks. This is done to reduce the amount of object litter and therefor
  * reduce pressure on the gc.
- * <p/>
+ *
  * There are 2 category of operation threads:
  * <ol>
  * <li>partition specific operation threads: these threads are responsible for executing e.g. a map.put.
@@ -95,33 +93,30 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
 
-    @Probe(name = "failedBackups")
-    private final Counter failedBackupsCounter = newMwCounter();
-
     public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
                                  Address thisAddress,
-                                 OperationRunnerFactory operationRunnerFactory,
+                                 OperationRunnerFactory runnerFactory,
                                  HazelcastThreadGroup threadGroup,
                                  NodeExtension nodeExtension) {
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
-        this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
+        this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
-        this.partitionOperationRunners = initPartitionOperationRunners(properties, operationRunnerFactory);
+        this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
         this.partitionThreads = initPartitionThreads(properties, threadGroup, nodeExtension);
 
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
-        this.genericOperationRunners = initGenericOperationRunners(properties, operationRunnerFactory);
+        this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
         this.genericThreads = initGenericThreads(threadGroup, nodeExtension);
     }
 
     private OperationRunner[] initPartitionOperationRunners(HazelcastProperties properties,
-                                                            OperationRunnerFactory handlerFactory) {
+                                                            OperationRunnerFactory runnerFactory) {
         OperationRunner[] operationRunners = new OperationRunner[properties.getInteger(PARTITION_COUNT)];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
-            operationRunners[partitionId] = handlerFactory.createPartitionRunner(partitionId, failedBackupsCounter);
+            operationRunners[partitionId] = runnerFactory.createPartitionRunner(partitionId);
         }
         return operationRunners;
     }
@@ -177,8 +172,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return threads;
     }
 
-    private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup,
-                                                        NodeExtension nodeExtension) {
+    private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
         // we created as many generic operation handlers, as there are generic threads
         int threadCount = genericOperationRunners.length;
 
