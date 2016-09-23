@@ -17,14 +17,12 @@
 package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.util.Clock;
@@ -36,18 +34,15 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-public class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
-    Queue<ParkedOperation> queue;
-    Operation op;
-    BlockingOperation blockingOperation;
-    long expirationTime;
+class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation {
+    final Queue<ParkedOperation> queue;
+    final Operation op;
+    final BlockingOperation blockingOperation;
+    final long expirationTime;
     volatile boolean valid = true;
     volatile Object cancelResponse;
 
-    public ParkedOperation() {
-    }
-
-    public ParkedOperation(Queue<ParkedOperation> queue, BlockingOperation blockingOperation) {
+    ParkedOperation(Queue<ParkedOperation> queue, BlockingOperation blockingOperation) {
         this.op = (Operation) blockingOperation;
         this.blockingOperation = blockingOperation;
         this.queue = queue;
@@ -203,15 +198,5 @@ public class ParkedOperation extends Operation implements Delayed, PartitionAwar
         sb.append(", op=").append(op);
         sb.append(", expirationTime=").append(expirationTime);
         sb.append(", valid=").append(valid);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return SpiDataSerializerHook.PARKED;
     }
 }

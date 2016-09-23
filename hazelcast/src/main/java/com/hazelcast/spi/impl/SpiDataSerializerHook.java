@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
-import com.hazelcast.spi.impl.operationparker.impl.ParkedOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
@@ -65,7 +64,6 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int DIST_OBJECT_DESTROY = 16;
     public static final int POST_JOIN_PROXY = 17;
     public static final int DIST_OBJECT_EVENT_PACKET = 18;
-    public static final int PARKED = 19;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -111,8 +109,6 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new PostJoinProxyOperation();
                     case DIST_OBJECT_EVENT_PACKET:
                         return new DistributedObjectEventPacket();
-                    case PARKED:
-                        return new ParkedOperation();
                     default:
                         return null;
                 }
