@@ -19,6 +19,7 @@ package com.hazelcast.transaction.impl.xa.operations;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAService;
 
@@ -49,4 +50,10 @@ public class CollectRemoteTransactionsOperation extends AbstractXAOperation {
     public Object getResponse() {
         return xidSet;
     }
+
+    @Override
+    public int getId() {
+        return TransactionDataSerializerHook.COLLECT_REMOTE_TX;
+    }
+
 }

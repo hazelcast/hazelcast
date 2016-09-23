@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -96,5 +97,10 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
                 records.add(record);
             }
         }
+    }
+
+    @Override
+    public int getId() {
+        return TransactionDataSerializerHook.PUT_REMOTE_TX_BACKUP;
     }
 }

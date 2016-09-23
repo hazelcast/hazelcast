@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAService;
 
@@ -78,5 +79,10 @@ public class ClearRemoteTransactionOperation extends AbstractXAOperation impleme
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         xidData = in.readData();
+    }
+
+    @Override
+    public int getId() {
+        return TransactionDataSerializerHook.CLEAR_REMOTE_TX;
     }
 }
