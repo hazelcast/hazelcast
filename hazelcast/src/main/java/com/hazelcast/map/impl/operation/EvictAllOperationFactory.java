@@ -20,14 +20,13 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
 /**
  * Operation factory for evict all operations.
  */
-public class EvictAllOperationFactory implements OperationFactory {
+public class EvictAllOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
 
@@ -51,11 +50,6 @@ public class EvictAllOperationFactory implements OperationFactory {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

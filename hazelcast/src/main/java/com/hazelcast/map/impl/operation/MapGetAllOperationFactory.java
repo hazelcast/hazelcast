@@ -21,13 +21,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapGetAllOperationFactory implements OperationFactory {
+public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
     private List<Data> keys = new ArrayList<Data>();
@@ -62,11 +61,6 @@ public class MapGetAllOperationFactory implements OperationFactory {
             Data data = in.readData();
             keys.add(data);
         }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

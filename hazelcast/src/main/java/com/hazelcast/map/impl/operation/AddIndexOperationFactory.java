@@ -20,11 +20,10 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class AddIndexOperationFactory implements OperationFactory {
+public class AddIndexOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
     private String attributeName;
@@ -56,11 +55,6 @@ public class AddIndexOperationFactory implements OperationFactory {
         name = in.readUTF();
         attributeName = in.readUTF();
         ordered = in.readBoolean();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override

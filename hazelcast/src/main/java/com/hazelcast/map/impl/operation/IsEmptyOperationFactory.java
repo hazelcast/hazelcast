@@ -20,11 +20,10 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class IsEmptyOperationFactory implements OperationFactory {
+public class IsEmptyOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
 
@@ -48,11 +47,6 @@ public class IsEmptyOperationFactory implements OperationFactory {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
     }
 
     @Override
