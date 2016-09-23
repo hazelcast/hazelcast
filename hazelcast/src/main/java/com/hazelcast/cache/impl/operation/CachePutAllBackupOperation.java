@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
@@ -56,11 +57,18 @@ public class CachePutAllBackupOperation
     public void beforeRun()
             throws Exception {
         ICacheService service = getService();
-        cache = service.getOrCreateRecordStore(name, getPartitionId());
+        try {
+            cache = service.getOrCreateRecordStore(name, getPartitionId());
+        } catch (CacheNotExistsException e) {
+            getLogger().finest("Error while getting a cache", e);
+        }
     }
 
     @Override
     public void run() throws Exception {
+        if (cache == null) {
+            return;
+        }
         if (cacheRecords != null) {
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
                 CacheRecord record = entry.getValue();

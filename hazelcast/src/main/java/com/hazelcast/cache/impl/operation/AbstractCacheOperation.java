@@ -66,7 +66,7 @@ abstract class AbstractCacheOperation
     }
 
     @Override
-    public final void beforeRun()
+    public void beforeRun()
             throws Exception {
         cacheService = getService();
         cache = cacheService.getOrCreateRecordStore(name, getPartitionId());
