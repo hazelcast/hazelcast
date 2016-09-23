@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -615,5 +616,14 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public PartitionContainer[] getPartitionContainers() {
         return partitionContainers;
+    }
+
+    @Override
+    public void onClusterStateChange(ClusterState newState) {
+        if (newState == ClusterState.PASSIVE) {
+            expirationManager.stop();
+        } else {
+            expirationManager.start();
+        }
     }
 }

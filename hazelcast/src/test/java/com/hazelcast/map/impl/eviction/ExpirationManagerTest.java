@@ -17,9 +17,13 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.listener.EntryExpiredListener;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -30,15 +34,22 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.cluster.ClusterState.ACTIVE;
+import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS;
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.lang.System.clearProperty;
 import static java.lang.System.getProperty;
 import static java.lang.System.setProperty;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -179,6 +190,63 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
         ExpirationManager expirationManager = newExpirationManager(node);
 
         assertEquals(parseInt(cleanupOperationCount), expirationManager.getCleanupOperationCount());
+    }
+
+    @Test
+    public void stops_running_when_clusterState_turns_passive() throws Exception {
+        Config config = new Config();
+        config.setProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        final AtomicInteger expirationCounter = new AtomicInteger();
+
+        IMap map = node.getMap("test");
+        map.addEntryListener(new EntryExpiredListener() {
+            @Override
+            public void entryExpired(EntryEvent event) {
+                expirationCounter.incrementAndGet();
+            }
+        }, true);
+
+        map.put(1, 1, 3, TimeUnit.SECONDS);
+
+        node.getCluster().changeClusterState(PASSIVE);
+
+        // wait a little to see if any expiration is occurring
+        sleepSeconds(3);
+
+        int expirationCount = expirationCounter.get();
+        assertEquals(format("Expecting no expiration but found:%d", expirationCount), 0, expirationCount);
+    }
+
+    @Test
+    public void starts_running_when_clusterState_turns_active() throws Exception {
+        Config config = new Config();
+        config.setProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        final AtomicInteger expirationCounter = new AtomicInteger();
+
+        IMap map = node.getMap("test");
+        map.addEntryListener(new EntryExpiredListener() {
+            @Override
+            public void entryExpired(EntryEvent event) {
+                expirationCounter.incrementAndGet();
+            }
+        }, true);
+
+        map.put(1, 1, 3, SECONDS);
+
+        node.getCluster().changeClusterState(PASSIVE);
+        node.getCluster().changeClusterState(ACTIVE);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                int expirationCount = expirationCounter.get();
+                assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
+            }
+        });
     }
 
     private ExpirationManager newExpirationManager(HazelcastInstance node) {

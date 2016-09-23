@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.ClientAwareService;
@@ -69,7 +71,7 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
 public class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService,
-        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener {
+        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -213,5 +215,10 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public int getOwnerMigrationsInFlight() {
         return migrationAwareService.getOwnerMigrationsInFlight();
+    }
+
+    @Override
+    public void onClusterStateChange(ClusterState newState) {
+        mapServiceContext.onClusterStateChange(newState);
     }
 }

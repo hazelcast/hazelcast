@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -44,6 +45,7 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -51,6 +53,7 @@ import com.hazelcast.wan.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
@@ -218,6 +221,12 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onClusterStateChange(ClusterState newState, boolean persistentChange) {
+        NodeEngineImpl nodeEngine = node.getNodeEngine();
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        List<ClusterStateListener> listeners = serviceManager.getServices(ClusterStateListener.class);
+        for (ClusterStateListener listener : listeners) {
+            listener.onClusterStateChange(newState);
+        }
     }
 
     @Override

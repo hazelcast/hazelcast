@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
@@ -150,4 +151,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void removePartitioningStrategyFromCache(String mapName);
 
     PartitionContainer[] getPartitionContainers();
+
+    void onClusterStateChange(ClusterState newState);
 }
