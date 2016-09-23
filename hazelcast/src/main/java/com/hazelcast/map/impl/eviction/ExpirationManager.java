@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
@@ -103,6 +104,8 @@ public final class ExpirationManager {
     private final int cleanupPercentage;
     private final int cleanupOperationCount;
 
+    private ScheduledFuture<?> expirationTask;
+
     @SuppressWarnings("checkstyle:magicnumber")
     @SuppressFBWarnings({"EI_EXPOSE_REP2"})
     public ExpirationManager(PartitionContainer[] partitionContainers, NodeEngine nodeEngine) {
@@ -125,6 +128,25 @@ public final class ExpirationManager {
         checkPositive(cleanupOperationCount, "cleanupOperationCount should be a positive number");
     }
 
+    public synchronized void start() {
+        if (expirationTask != null) {
+            return;
+        }
+
+        ClearExpiredRecordsTask task = new ClearExpiredRecordsTask();
+        expirationTask = executionService.scheduleWithRepetition(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
+    }
+
+    public synchronized void stop() {
+        if (expirationTask == null) {
+            return;
+        }
+
+        expirationTask.cancel(true);
+        expirationTask = null;
+    }
+
+
     private int getInteger(String propertyName, int defaultValue) {
         Config config = nodeEngine.getConfig();
         String property = config.getProperty(propertyName);
@@ -145,11 +167,6 @@ public final class ExpirationManager {
         }
 
         return min(opCountFromPartitionCount, opCountFromThreadCount);
-    }
-
-    public void start() {
-        ClearExpiredRecordsTask task = new ClearExpiredRecordsTask();
-        executionService.scheduleWithRepetition(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
     }
 
     /**
