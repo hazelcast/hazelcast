@@ -144,7 +144,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private boolean publishCurrentTask() {
         boolean isClientRunnable = currentTask instanceof MessageTask;
-        return (getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable));
+        return getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable);
     }
 
     @Override
