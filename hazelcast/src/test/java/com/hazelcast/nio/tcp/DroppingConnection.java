@@ -28,12 +28,14 @@ import com.hazelcast.util.ExceptionUtil;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class DroppingConnection implements Connection {
 
     final Address endpoint;
     final long timestamp = Clock.currentTimeMillis();
     private final ConnectionManager connectionManager;
+    private AtomicBoolean isClosing = new AtomicBoolean(false);
 
     DroppingConnection(Address endpoint, ConnectionManager connectionManager) {
         this.endpoint = endpoint;
@@ -73,7 +75,9 @@ class DroppingConnection implements Connection {
     @Override
     public void close(String msg, Throwable cause) {
         if (connectionManager instanceof MockConnectionManager) {
-            ((MockConnectionManager)connectionManager).destroyConnection(this);
+            if (isClosing.compareAndSet(false, true)) {
+                ((MockConnectionManager)connectionManager).destroyConnection(this);
+            }
         }
     }
 
