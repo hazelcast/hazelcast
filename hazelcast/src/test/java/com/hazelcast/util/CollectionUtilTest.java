@@ -41,7 +41,9 @@ import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
+import static com.hazelcast.util.CollectionUtil.toIntegerList;
 import static com.hazelcast.util.CollectionUtil.toLongArray;
+import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -233,5 +235,22 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testToLongArray_whenNull_thenThrowNPE() {
         toLongArray(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testToIntegerList_whenNull(){
+        toIntegerList(null);
+    }
+
+    @Test
+    public void testToIntegerList_whenEmpty(){
+        List<Integer> result = toIntegerList(new int[0]);
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    public void testToIntegerList_whenNotEmpty(){
+        List<Integer> result = toIntegerList(new int[]{1,2,3,4});
+        assertEquals(asList(1,2,3,4), result);
     }
 }

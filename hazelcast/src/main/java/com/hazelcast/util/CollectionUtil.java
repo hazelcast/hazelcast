@@ -28,7 +28,7 @@ import java.util.Map;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Various collection utility methods, mainly targeted to use internally.
+ * Various collection utility methods.
  */
 public final class CollectionUtil {
 
@@ -82,7 +82,6 @@ public final class CollectionUtil {
      * @param collection the given collection
      * @param position   position of the wanted item
      * @return the item on position or {@code null} if the given collection is too small
-     *
      * @throws NullPointerException if collection is {@code null}
      */
     public static <T> T getItemAtPositionOrNull(Collection<T> collection, int position) {
@@ -106,7 +105,6 @@ public final class CollectionUtil {
      * @param collection           the given collection
      * @param serializationService will be used for converting object to {@link Data}
      * @return collection of data
-     *
      * @throws NullPointerException if collection is {@code null} or contains a {@code null} item
      */
     public static <C> Collection<Data> objectToDataCollection(Collection<C> collection,
@@ -124,7 +122,6 @@ public final class CollectionUtil {
      *
      * @param collection the given collection
      * @return a primitive int[] array
-     *
      * @throws NullPointerException if collection is {@code null}
      */
     public static int[] toIntArray(Collection<Integer> collection) {
@@ -141,7 +138,6 @@ public final class CollectionUtil {
      *
      * @param collection the given collection
      * @return a primitive long[] array
-     *
      * @throws NullPointerException if collection is {@code null}
      */
     public static long[] toLongArray(Collection<Long> collection) {
@@ -151,5 +147,22 @@ public final class CollectionUtil {
             collectionArray[index++] = item;
         }
         return collectionArray;
+    }
+
+    /**
+     * Converts an int array to an Integer {@link List}.
+     *
+     * The returned collection can be modified after it is created; it isn't protected by an immutable wrapper.
+     *
+     * @param array the array
+     * @return the list.
+     * throws {@link NullPointerException} if array is null.
+     */
+    public static List<Integer> toIntegerList(int[] array) {
+        List<Integer> result = new ArrayList<Integer>(array.length);
+        for (int partitionId : array) {
+            result.add(partitionId);
+        }
+        return result;
     }
 }

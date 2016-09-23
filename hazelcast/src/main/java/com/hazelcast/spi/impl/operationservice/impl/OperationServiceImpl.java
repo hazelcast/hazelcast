@@ -72,6 +72,7 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.util.CollectionUtil.toIntegerList;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
@@ -373,7 +374,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
-
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
@@ -392,20 +392,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory, int[] partitions)
             throws Exception {
-        // todo: copy paste logic from the above code.
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        for (int partition : partitions) {
-            Address owner = partitionService.getPartitionOwnerOrWait(partition);
-
-            if (!memberPartitions.containsKey(owner)) {
-                memberPartitions.put(owner, new ArrayList<Integer>());
-            }
-
-            memberPartitions.get(owner).add(partition);
-        }
-        InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
-        return invokeOnPartitions.invoke();
+        return invokeOnPartitions(serviceName, operationFactory, toIntegerList(partitions));
     }
 
     @Override
