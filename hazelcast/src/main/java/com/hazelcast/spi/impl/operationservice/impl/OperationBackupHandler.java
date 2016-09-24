@@ -127,12 +127,12 @@ final class OperationBackupHandler {
         int backups = op.getSyncBackupCount();
 
         if (backups < 0) {
-            throw new IllegalArgumentException("Can't create backup for Operation:" + op
+            throw new IllegalArgumentException("Can't create backup for " + op
                     + ", sync backup count can't be smaller than 0, but found: " + backups);
         }
 
         if (backups > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Can't create backup for Operation:" + op
+            throw new IllegalArgumentException("Can't create backup for " + op
                     + ", sync backup count can't be larger than " + MAX_BACKUP_COUNT
                     + ", but found: " + backups);
         }
@@ -143,12 +143,12 @@ final class OperationBackupHandler {
         int backups = op.getAsyncBackupCount();
 
         if (backups < 0) {
-            throw new IllegalArgumentException("Can't create backup for Operation:" + op
+            throw new IllegalArgumentException("Can't create backup for " + op
                     + ", async backup count can't be smaller than 0, but found: " + backups);
         }
 
         if (backups > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Can't create backup for Operation:" + op
+            throw new IllegalArgumentException("Can't create backup for " + op
                     + ", async backup count can't be larger than " + MAX_BACKUP_COUNT
                     + ", but found: " + backups);
         }
@@ -160,7 +160,7 @@ final class OperationBackupHandler {
         int backups = op.getSyncBackupCount() + op.getAsyncBackupCount();
 
         if (backups > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Can't create backup for Operation:" + op
+            throw new IllegalArgumentException("Can't create backup for " + op
                     + ", the sum of async and sync backups is larger than " + MAX_BACKUP_COUNT
                     + ", sync backup count is " + op.getSyncBackupCount()
                     + ", async backup count is " + op.getAsyncBackupCount());
