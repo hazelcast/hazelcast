@@ -232,11 +232,6 @@ public final class PartitionIteratingOperation extends Operation implements Iden
 
             PartitionIteratingOperation.this.sendResponse(new PartitionResponse(partitions, results));
         }
-
-        @Override
-        public boolean isLocal() {
-            return true;
-        }
     }
 
     @Override

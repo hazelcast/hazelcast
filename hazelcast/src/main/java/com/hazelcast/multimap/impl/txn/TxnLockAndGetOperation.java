@@ -59,9 +59,9 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
             throw new TransactionException("Transaction couldn't obtain lock!");
         }
         MultiMapValue multiMapValue = getMultiMapValueOrNull();
-        final boolean isLocal = getOperationResponseHandler().isLocal();
+        boolean isLocal = executedLocally();
         Collection<MultiMapRecord> collection = multiMapValue == null ? null : multiMapValue.getCollection(isLocal);
-        final MultiMapResponse multiMapResponse = new MultiMapResponse(collection, getValueCollectionType(container));
+        MultiMapResponse multiMapResponse = new MultiMapResponse(collection, getValueCollectionType(container));
         multiMapResponse.setNextRecordId(container.nextId());
         response = multiMapResponse;
     }
