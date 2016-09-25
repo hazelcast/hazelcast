@@ -165,8 +165,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         if (nodeEngine.getThisAddress().equals(originalCaller)) {
             operationService.getResponseHandler().notifyBackupComplete(callId);
         } else {
-            BackupAckResponse backupAckResponse = new BackupAckResponse(callId, backupOp.isUrgent());
-            operationService.send(backupAckResponse, originalCaller);
+            operationService.getRemoteResponseHandler().send(new BackupAckResponse(callId, backupOp.isUrgent()), originalCaller);
         }
     }
 
