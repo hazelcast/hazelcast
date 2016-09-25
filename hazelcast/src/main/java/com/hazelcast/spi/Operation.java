@@ -80,7 +80,7 @@ public abstract class Operation implements DataSerializable {
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
     }
 
-    public boolean executedLocally(){
+    public boolean executedLocally() {
         return nodeEngine.getThisAddress().equals(callerAddress);
     }
 
