@@ -49,11 +49,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
         public void sendResponse(Operation op, Object obj) {
             throw new HazelcastException("Migration operations can not send response!");
         }
-
-        @Override
-        public boolean isLocal() {
-            return true;
-        }
     };
 
     private long[] replicaVersions;
