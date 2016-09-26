@@ -24,11 +24,11 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.LiveOperationsTracker;
-import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -86,8 +86,10 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
     @Override
     public void populate(LiveOperations liveOperations) {
         for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
-            for (WaitingOperation op : queue) {
-                liveOperations.add(op.getCallerAddress(), op.getCallId());
+            for (WaitingOperation waitingOperation : queue) {
+                // we need to read out the data from the BlockedOperation; not from the ParkerOperation-container.
+                Operation operation = waitingOperation.getOperation();
+                liveOperations.add(operation.getCallerAddress(), operation.getCallId());
             }
         }
     }
