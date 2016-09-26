@@ -21,6 +21,12 @@ public class OtherServiceBeanWithTransactionalContext {
         transactionalContext.getMap("dummyObjectMap").put(object.getId(), object);
     }
 
+    @Transactional
+    public void putWithException(DummyObject object) {
+        put(object);
+        throw new RuntimeException("oops, let's rollback in " + this.getClass().getSimpleName() + "!");
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void putInNewTransaction(DummyObject object) {
         put(object);
