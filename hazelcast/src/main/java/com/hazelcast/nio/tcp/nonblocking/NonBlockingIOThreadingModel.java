@@ -168,12 +168,17 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
 
     @Override
     public void onConnectionAdded(TcpIpConnection connection) {
-        ioBalancer.connectionAdded(connection);
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+
+        ioBalancer.connectionAdded(socketReader, socketWriter);
     }
 
     @Override
     public void onConnectionRemoved(TcpIpConnection connection) {
-        ioBalancer.connectionRemoved(connection);
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+        ioBalancer.connectionRemoved(socketReader, socketWriter);
     }
 
     private void startIOBalancer() {

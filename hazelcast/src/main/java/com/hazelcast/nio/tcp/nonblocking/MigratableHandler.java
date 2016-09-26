@@ -17,10 +17,10 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
 /**
- * A {@link SelectionHandler} that supports migration between {@link NonBlockingIOThread} instances.
+ * A nio event handler that supports migration between {@link NonBlockingIOThread} instances.
  * This API is called by the {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer}.
  */
-public interface MigratableHandler extends SelectionHandler {
+public interface MigratableHandler {
 
     /**
      * Requests the MigratableHandler to move to the new NonBlockingIOThread. This call will not wait for the
