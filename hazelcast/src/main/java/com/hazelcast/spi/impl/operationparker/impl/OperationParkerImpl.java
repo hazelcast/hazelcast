@@ -89,8 +89,10 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     @Override
     public void populate(LiveOperations liveOperations) {
         for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-            for (ParkedOperation op : parkQueue) {
-                liveOperations.add(op.getCallerAddress(), op.getCallId());
+            for (ParkedOperation parkedOperation : parkQueue) {
+                // we need to read out the data from the BlockedOperation; not from the ParkerOperation-container.
+                Operation operation = parkedOperation.getOperation();
+                liveOperations.add(operation.getCallerAddress(), operation.getCallId());
             }
         }
     }
