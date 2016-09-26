@@ -87,7 +87,7 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
     public void populate(LiveOperations liveOperations) {
         for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
             for (WaitingOperation waitingOperation : queue) {
-                // we need to read out the data from the BlockedOperation; not from the ParkerOperation-container.
+                // we need to read out the data from the BlockedOperation; not from the WaitingOperation-container.
                 Operation operation = waitingOperation.getOperation();
                 liveOperations.add(operation.getCallerAddress(), operation.getCallId());
             }
