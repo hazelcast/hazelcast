@@ -30,7 +30,7 @@ import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 
-public abstract class AbstractHandler implements MigratableHandler {
+public abstract class AbstractHandler implements SelectionHandler, MigratableHandler {
 
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;

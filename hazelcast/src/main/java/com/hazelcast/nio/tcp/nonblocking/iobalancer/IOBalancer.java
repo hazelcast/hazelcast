@@ -22,7 +22,6 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
@@ -103,18 +102,14 @@ public class IOBalancer {
         return outLoadTracker;
     }
 
-    public void connectionAdded(TcpIpConnection connection) {
-        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
-        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
-        inLoadTracker.notifyHandlerAdded(socketReader);
-        outLoadTracker.notifyHandlerAdded(socketWriter);
+    public void connectionAdded(MigratableHandler readHandler, MigratableHandler writeHandler) {
+        inLoadTracker.notifyHandlerAdded(readHandler);
+        outLoadTracker.notifyHandlerAdded(writeHandler);
     }
 
-    public void connectionRemoved(TcpIpConnection connection) {
-        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
-        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
-        inLoadTracker.notifyHandlerRemoved(socketReader);
-        outLoadTracker.notifyHandlerRemoved(socketWriter);
+    public void connectionRemoved(MigratableHandler readHandler, MigratableHandler writeHandler) {
+        inLoadTracker.notifyHandlerRemoved(readHandler);
+        outLoadTracker.notifyHandlerRemoved(writeHandler);
     }
 
     public void start() {
