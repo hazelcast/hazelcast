@@ -16,8 +16,14 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog;
 
-import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncoder;
+import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.cardinality.CardinalityEstimatorAbstractTest;
+import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.HashUtil;
@@ -27,44 +33,63 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public abstract class HyperLogLogEncoderAbstractTest {
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+public class HyperLogLogImplTest {
 
-    private HyperLogLogEncoder encoder;
+    private static final int PRIME_PRECISION = 25;
 
-    public abstract int runLength();
-    public abstract int precision();
-    public abstract HyperLogLogEncoder createStore();
+    @Parameterized.Parameters()
+    public static Collection<Integer[]> params() {
+        return Arrays.asList(new Integer[][] {
+                {11, 10000000}, {12, 10000000}, {13, 10000000},
+                {14, 10000000}, {15, 10000000}, {16, 10000000}
+        });
+    }
+    @Parameterized.Parameter()
+    public int precision;
+
+    @Parameterized.Parameter(1)
+    public int runLength;
+
+
+    private HyperLogLog hyperLogLog;
 
     @Before
     public void setup() {
-        encoder = createStore();
+        hyperLogLog = new HyperLogLogImpl(precision, PRIME_PRECISION);
     }
 
     @Test
     public void add() {
-        assertEquals(true, encoder.add(1000L));
-        assertEquals(1L, encoder.estimate());
+        hyperLogLog.add(1000L);
+        assertEquals(1L, hyperLogLog.estimate());
+    }
+
+    @Test
+    public void addAll() {
+        hyperLogLog.addAll(new long[] { 1L, 1L, 2000L, 3000, 40000L });
+        assertEquals(4L, hyperLogLog.estimate());
     }
 
     @Test
     public void addBigRange() throws FileNotFoundException {
-        double stdError = (1.04 / Math.sqrt(1 << precision())) * 100;
+        double stdError = (1.04 / Math.sqrt(1 << precision)) * 100;
         double maxError = Math.ceil(stdError + 3.0);
 
-        IntHashSet actualCount = new IntHashSet(runLength(), -1);
+        IntHashSet actualCount = new IntHashSet(runLength, -1);
         Random random = new Random();
         Histogram histogram = new Histogram(5);
         ByteBuffer bb = ByteBuffer.allocate(4);
@@ -73,17 +98,17 @@ public abstract class HyperLogLogEncoderAbstractTest {
         long expected;
         long actual;
 
-        for (int i = 1; i <= runLength(); i++) {
+        for (int i = 1; i <= runLength; i++) {
             int toCount = random.nextInt();
             actualCount.add(toCount);
 
             bb.clear();
             bb.putInt(toCount);
-            encoder.add(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
+            hyperLogLog.add(HashUtil.MurmurHash3_x64_64(bb.array(), 0, bb.array().length));
 
             if (i % sampleStep == 0) {
                 expected = actualCount.size();
-                actual = encoder.estimate();
+                actual = hyperLogLog.estimate();
                 double errorPct = ((actual * 100.0) / expected) - 100;
                 histogram.recordValue(Math.abs((long) (errorPct * 100)));
             }
@@ -91,8 +116,10 @@ public abstract class HyperLogLogEncoderAbstractTest {
 
         double errorPerc99 = histogram.getValueAtPercentile(99) / 100.0;
         if (errorPerc99 > maxError) {
-            fail("For P=" + precision() + ", max error=" + maxError + "% expected. " +
-                    "Error: " + errorPerc99 + "%.");
+            fail("For P=" + precision + ", Expected max error=" + maxError + "%. " +
+                    "Actual error: " + errorPerc99 + "%.");
         }
+
     }
+
 }

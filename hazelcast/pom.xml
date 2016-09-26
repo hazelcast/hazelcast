@@ -424,5 +424,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- HyperLogLog testing -->
+        <dependency>
+            <groupId>org.hdrhistogram</groupId>
+            <artifactId>HdrHistogram</artifactId>
+            <version>2.1.4</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

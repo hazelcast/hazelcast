@@ -771,13 +771,13 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
               -713.308999999892, },
     };
 
-    private static final long P_FENCE_MASK = 0x2000000000000L;
-
     private double[] invPowLookup;
     private byte[] register;
     private int numOfEmptyRegs;
     private int p;
     private int m;
+
+    private long pFenseMask;
 
     public DenseHyperLogLogEncoder() {
     }
@@ -796,16 +796,18 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
         this.numOfEmptyRegs = m;
         this.register = register != null ? register : new byte[m];
         this.invPowLookup = new double[64 - p + 1];
+        this.pFenseMask = 1 << (64 - p) - 1;
         this.prePopulateInvPowLookup();
     }
 
     @Override
     public boolean add(long hash) {
         final int index = (int) hash & (register.length - 1);
-        final int value = Long.numberOfTrailingZeros((hash >> p) | P_FENCE_MASK) + 1;
+        final int value = Long.numberOfTrailingZeros((hash >>> p) | pFenseMask) + 1;
 
         assert index < register.length;
         assert value <= (1 << 8) - 1;
+        assert value <= 64 - p;
 
         if (value > register[index]) {
             register[index] = (byte) value;
