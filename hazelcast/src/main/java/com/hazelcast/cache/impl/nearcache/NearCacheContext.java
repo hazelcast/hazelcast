@@ -32,6 +32,12 @@ public class NearCacheContext {
 
     public NearCacheContext(NearCacheManager nearCacheManager,
                             SerializationService serializationService,
+                            NearCacheExecutor nearCacheExecutor) {
+        this(nearCacheManager, serializationService, nearCacheExecutor, null);
+    }
+
+    public NearCacheContext(NearCacheManager nearCacheManager,
+                            SerializationService serializationService,
                             NearCacheExecutor nearCacheExecutor,
                             ClassLoader classLoader) {
         this.serializationService = serializationService;

@@ -194,8 +194,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     new NearCacheContext(
                             nearCacheManager,
                             clientContext.getSerializationService(),
-                            createNearCacheExecutor(clientContext.getExecutionService()),
-                            null);
+                            createNearCacheExecutor(clientContext.getExecutionService()));
             nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();
         }
