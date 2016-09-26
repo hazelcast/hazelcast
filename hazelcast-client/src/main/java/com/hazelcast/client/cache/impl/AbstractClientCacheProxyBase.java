@@ -32,7 +32,6 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
@@ -47,6 +46,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 /**
  * Abstract class providing cache open/close operations and {@link ClientContext} accessor which will be used
  * by implementation of {@link com.hazelcast.cache.ICache} for client.
@@ -54,18 +55,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <K> the type of key
  * @param <V> the type of value
  */
-abstract class AbstractClientCacheProxyBase<K, V>
-        extends ClientProxy
-        implements ICacheInternal<K, V> {
+abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements ICacheInternal<K, V> {
 
     static final int TIMEOUT = 10;
 
+    @SuppressWarnings("unchecked")
     private static final ClientMessageDecoder LOAD_ALL_DECODER = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
             return (T) Boolean.TRUE;
         }
     };
+
     private static final CompletionListener NULL_COMPLETION_LISTENER = new CompletionListener() {
         @Override
         public void onCompletion() {
@@ -76,12 +77,14 @@ abstract class AbstractClientCacheProxyBase<K, V>
         }
     };
 
-    protected ClientContext clientContext;
-    protected final CacheConfig<K, V> cacheConfig;
-    //this will represent the name from the user perspective
+    // this will represent the name from the user perspective
     protected final String name;
     protected final String nameWithPrefix;
+    protected final CacheConfig<K, V> cacheConfig;
+
+    protected ClientContext clientContext;
     protected ILogger logger;
+
     private final ConcurrentMap<Future, CompletionListener> loadAllCalls
             = new ConcurrentHashMap<Future, CompletionListener>();
 
@@ -90,7 +93,7 @@ abstract class AbstractClientCacheProxyBase<K, V>
 
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
-    protected AbstractClientCacheProxyBase(CacheConfig cacheConfig) {
+    protected AbstractClientCacheProxyBase(CacheConfig<K, V> cacheConfig) {
         super(ICacheService.SERVICE_NAME, cacheConfig.getName());
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
@@ -174,9 +177,7 @@ abstract class AbstractClientCacheProxyBase<K, V>
         if (isDestroyed.get()) {
             throw new IllegalStateException("Cache is already destroyed! Cannot be reopened");
         }
-        if (!isClosed.compareAndSet(true, false)) {
-            return;
-        }
+        isClosed.set(false);
     }
 
     protected abstract void closeListeners();
@@ -190,7 +191,6 @@ abstract class AbstractClientCacheProxyBase<K, V>
      * Gets the full cache name with prefixes.
      *
      * @return the full cache name with prefixes
-     *
      * @deprecated use #getPrefixedName instead
      */
     @Deprecated
@@ -198,49 +198,51 @@ abstract class AbstractClientCacheProxyBase<K, V>
         return getPrefixedName();
     }
 
+    @Override
     protected <T> T toObject(Object data) {
         return clientContext.getSerializationService().toObject(data);
     }
 
+    @Override
     protected Data toData(Object o) {
         return clientContext.getSerializationService().toData(o);
     }
 
+    @Override
     protected ClientMessage invoke(ClientMessage clientMessage) {
         try {
-            final Future<ClientMessage> future = new ClientInvocation(
+            Future<ClientMessage> future = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage).invoke();
             return future.get();
 
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
     protected ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
         try {
-            final int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
-            final Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
+            int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
+            Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
                     clientMessage, partitionId).invoke();
             return (ClientMessage) future.get();
 
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
-    protected void submitLoadAllTask(final ClientMessage request, final CompletionListener completionListener,
-                                     final Set<Data> keys) {
+    protected void submitLoadAllTask(ClientMessage request, CompletionListener completionListener, final Set<Data> keys) {
         final CompletionListener compListener = completionListener != null ? completionListener : NULL_COMPLETION_LISTENER;
         ClientDelegatingFuture<V> delegatingFuture = null;
         try {
             injectDependencies(completionListener);
 
             final long start = System.nanoTime();
-            final ClientInvocationFuture future = new ClientInvocation(
+            ClientInvocationFuture future = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request).invoke();
             SerializationService serializationService = clientContext.getSerializationService();
-            delegatingFuture = new ClientDelegatingFuture(future, serializationService, LOAD_ALL_DECODER);
+            delegatingFuture = new ClientDelegatingFuture<V>(future, serializationService, LOAD_ALL_DECODER);
             final Future delFuture = delegatingFuture;
             loadAllCalls.put(delegatingFuture, compListener);
             delegatingFuture.andThen(new ExecutionCallback<V>() {
@@ -265,8 +267,7 @@ abstract class AbstractClientCacheProxyBase<K, V>
         }
     }
 
-    private void handleFailureOnCompletionListener(CompletionListener completionListener,
-                                                   Throwable t) {
+    private void handleFailureOnCompletionListener(CompletionListener completionListener, Throwable t) {
         if (t instanceof Exception) {
             Throwable cause = t.getCause();
             if (t instanceof ExecutionException && cause instanceof CacheException) {
@@ -276,7 +277,7 @@ abstract class AbstractClientCacheProxyBase<K, V>
             }
         } else {
             if (t instanceof OutOfMemoryError) {
-                ExceptionUtil.rethrow(t);
+                throw rethrow(t);
             } else {
                 completionListener.onException(new CacheException(t));
             }
@@ -285,5 +286,4 @@ abstract class AbstractClientCacheProxyBase<K, V>
 
     protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
     }
-
 }

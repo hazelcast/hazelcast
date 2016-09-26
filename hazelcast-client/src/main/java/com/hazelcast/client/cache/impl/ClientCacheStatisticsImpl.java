@@ -22,8 +22,7 @@ import com.hazelcast.monitor.NearCacheStats;
 /**
  * {@link com.hazelcast.cache.CacheStatistics} implementation for client side {@link com.hazelcast.cache.ICache}.
  */
-public class ClientCacheStatisticsImpl
-        extends CacheStatisticsImpl {
+public class ClientCacheStatisticsImpl extends CacheStatisticsImpl {
 
     private NearCacheStats nearCacheStats;
 
@@ -76,5 +75,4 @@ public class ClientCacheStatisticsImpl
                 + (nearCacheStats != null ? ", nearCacheStats=" + nearCacheStats : "")
                 + '}';
     }
-
 }

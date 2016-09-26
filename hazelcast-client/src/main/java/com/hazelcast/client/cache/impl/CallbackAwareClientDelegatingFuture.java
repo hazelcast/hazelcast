@@ -28,8 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * A specific {@link ClientDelegatingFuture} implementation
- * which calls given {@link OneShotExecutionCallback} as sync on get.
+ * A specific {@link ClientDelegatingFuture} implementation which calls given {@link OneShotExecutionCallback} as sync on get.
  */
 class CallbackAwareClientDelegatingFuture<V> extends ClientDelegatingFuture<V> {
 

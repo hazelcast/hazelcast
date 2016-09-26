@@ -33,17 +33,15 @@ import java.util.List;
 
 /**
  * Client side cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
- * <p>
- * This implementation is used by client implementation of jcache.
- * </p>
+ *
+ * This implementation is used by client implementation of JCache.
+ *
  * Note: For more information on the iterator details, see {@link AbstractClusterWideIterator}.
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-public class ClientClusterWideIterator<K, V>
-        extends AbstractClusterWideIterator<K, V>
-        implements Iterator<Cache.Entry<K, V>> {
+public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
 
     private ClientCacheProxy<K, V> cacheProxy;
     private ClientContext context;
@@ -108,5 +106,4 @@ public class ClientClusterWideIterator<K, V>
     protected <T> T toObject(Object data) {
         return context.getSerializationService().toObject(data);
     }
-
 }

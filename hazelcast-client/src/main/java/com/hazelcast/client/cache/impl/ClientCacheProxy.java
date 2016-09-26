@@ -65,18 +65,17 @@ import java.util.Set;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * ICache implementation for client
- * <p/>
- * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
- * HazelcastClientCacheManager. Represent a cache on client.
- * <p/>
- * This implementation is a thin proxy implementation using hazelcast client infrastructure
+ * ICache implementation for client.
+ *
+ * This proxy is the implementation of ICache and javax.cache.Cache which is returned by {@link HazelcastClientCacheManager}.
+ * Represent a cache on client.
+ *
+ * This implementation is a thin proxy implementation using Hazelcast client infrastructure.
  *
  * @param <K> key type
  * @param <V> value type
  */
-public class ClientCacheProxy<K, V>
-        extends AbstractClientCacheProxy<K, V> {
+public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig) {
         super(cacheConfig);
@@ -100,7 +99,7 @@ public class ClientCacheProxy<K, V>
     public boolean containsKey(K key) {
         ensureOpen();
         validateNotNull(key);
-        final Data keyData = toData(key);
+        Data keyData = toData(key);
         Object cached = nearCache != null ? nearCache.get(keyData) : null;
         if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return true;
@@ -135,8 +134,8 @@ public class ClientCacheProxy<K, V>
     @Override
     protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
         if (statisticsEnabled) {
-            // We don't know how many of keys are actually loaded so we assume that all of them are loaded
-            // and calculates statistics based on this assumption.
+            // we don't know how many of keys are actually loaded, so we assume that all of them are loaded
+            // and calculate statistics based on this assumption
             statistics.increaseCachePuts(keys.size());
             statistics.addPutTimeNanos(end - start);
         }
@@ -164,8 +163,8 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean remove(K key) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, true, false);
+        long start = System.nanoTime();
+        ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, true, false);
         try {
             boolean removed = f.get();
             if (statisticsEnabled) {
@@ -179,8 +178,8 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, true, false);
+        long start = System.nanoTime();
+        ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, true, false);
         try {
             boolean removed = f.get();
             if (statisticsEnabled) {
@@ -194,8 +193,8 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public V getAndRemove(K key) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<V> f = getAndRemoveAsyncInternal(key, true, false);
+        long start = System.nanoTime();
+        ICompletableFuture<V> f = getAndRemoveAsyncInternal(key, true, false);
         try {
             V removedValue = toObject(f.get());
             if (statisticsEnabled) {
@@ -250,14 +249,13 @@ public class ClientCacheProxy<K, V>
     }
 
     @Override
-    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments)
-            throws EntryProcessorException {
+    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
         ensureOpen();
         validateNotNull(key);
         if (entryProcessor == null) {
             throw new NullPointerException("Entry Processor is null");
         }
-        final Data keyData = toData(key);
+        Data keyData = toData(key);
         Data epData = toData(entryProcessor);
         List<Data> argumentsData = null;
         if (arguments != null) {
@@ -266,14 +264,14 @@ public class ClientCacheProxy<K, V>
                 argumentsData.add(toData(arguments[i]));
             }
         }
-        final int completionId = nextCompletionId();
-        ClientMessage request =
-                CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData, completionId);
+        int completionId = nextCompletionId();
+        ClientMessage request
+                = CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData, completionId);
         try {
-            final ICompletableFuture<ClientMessage> f = invoke(request, keyData, completionId);
-            final ClientMessage response = getSafely(f);
-            final Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
-            // At client side, we don't know what entry processor does so we ignore it from statistics perspective
+            ICompletableFuture<ClientMessage> f = invoke(request, keyData, completionId);
+            ClientMessage response = getSafely(f);
+            Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
+            // at client side, we don't know what entry processor does so we ignore it from statistics perspective
             return toObject(data);
         } catch (CacheException ce) {
             throw ce;
@@ -285,7 +283,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
                                                          Object... arguments) {
-        // TODO Implement a multiple (batch) invoke operation and its factory
+        // TODO: implement a multiple (batch) invoke operation and its factory
         ensureOpen();
         validateNotNull(keys);
         if (entryProcessor == null) {
@@ -304,7 +302,7 @@ public class ClientCacheProxy<K, V>
                 allResult.put(key, ceResult);
             }
         }
-        // At client side, we don't know what entry processor does so we ignore it from statistics perspective
+        // at client side, we don't know what entry processor does so we ignore it from statistics perspective
         return allResult;
     }
 
@@ -327,11 +325,10 @@ public class ClientCacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        CacheEventListenerAdaptor<K, V> adaptor =
-                new CacheEventListenerAdaptor<K, V>(this,
-                        cacheEntryListenerConfiguration,
-                        clientContext.getSerializationService(),
-                        clientContext.getHazelcastInstance());
+        CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this,
+                cacheEntryListenerConfiguration,
+                clientContext.getSerializationService(),
+                clientContext.getHazelcastInstance());
         EventHandler handler = createHandler(adaptor);
         String regId = clientContext.getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
         if (regId != null) {
@@ -370,7 +367,7 @@ public class ClientCacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        final String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
+        String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId == null) {
             return;
         }
@@ -387,8 +384,8 @@ public class ClientCacheProxy<K, V>
 
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
-        final Collection<Member> members = clientContext.getClusterService().getMemberList();
-        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+        Collection<Member> members = clientContext.getClusterService().getMemberList();
+        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         for (Member member : members) {
             try {
                 final Address address = member.getAddress();
@@ -468,21 +465,17 @@ public class ClientCacheProxy<K, V>
 
         @Override
         public void beforeListenerRegister() {
-
         }
 
         @Override
         public void onListenerRegister() {
-
         }
 
         @Override
         public void handle(int partitionId, String uuid) {
-            final Member member = clientContext.getClusterService().getMember(uuid);
-            listener.partitionLost(new CachePartitionLostEvent(name, member, CacheEventType.PARTITION_LOST.getType(),
-                    partitionId));
+            Member member = clientContext.getClusterService().getMember(uuid);
+            listener.partitionLost(
+                    new CachePartitionLostEvent(name, member, CacheEventType.PARTITION_LOST.getType(), partitionId));
         }
-
     }
-
 }
