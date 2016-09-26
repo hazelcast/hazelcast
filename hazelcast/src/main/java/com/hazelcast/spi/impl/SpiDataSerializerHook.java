@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
-import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
@@ -33,7 +32,6 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.proxyservice.impl.DistributedObjectEventPacket;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
@@ -59,11 +57,9 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int POST_JOIN_REGISTRATION = 11;
     public static final int REGISTRATION = 12;
     public static final int SEND_EVENT = 13;
-    public static final int TRUE_EVENT_FILTER = 14;
-    public static final int DIST_OBJECT_INIT = 15;
-    public static final int DIST_OBJECT_DESTROY = 16;
-    public static final int POST_JOIN_PROXY = 17;
-    public static final int DIST_OBJECT_EVENT_PACKET = 18;
+    public static final int DIST_OBJECT_INIT = 14;
+    public static final int DIST_OBJECT_DESTROY = 15;
+    public static final int POST_JOIN_PROXY = 16;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -99,16 +95,12 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new RegistrationOperation();
                     case SEND_EVENT:
                         return new SendEventOperation();
-                    case TRUE_EVENT_FILTER:
-                        return new TrueEventFilter();
                     case DIST_OBJECT_INIT:
                         return new InitializeDistributedObjectOperation();
                     case DIST_OBJECT_DESTROY:
                         return new DistributedObjectDestroyOperation();
                     case POST_JOIN_PROXY:
                         return new PostJoinProxyOperation();
-                    case DIST_OBJECT_EVENT_PACKET:
-                        return new DistributedObjectEventPacket();
                     default:
                         return null;
                 }

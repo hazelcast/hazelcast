@@ -158,6 +158,11 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     }
 
     @Override
+    public Operation createOperation() {
+        return new PartitionWideEntryWithPredicateOperation(name, entryProcessor, predicate);
+    }
+
+    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }

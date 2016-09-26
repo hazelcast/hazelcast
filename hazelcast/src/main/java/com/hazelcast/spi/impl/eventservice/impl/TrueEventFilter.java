@@ -18,16 +18,15 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
 /**
  * An event filter which does not filter any event and always evaluates {@code true} results.
  */
-public final class TrueEventFilter implements EventFilter, IdentifiedDataSerializable {
+public final class TrueEventFilter implements EventFilter, DataSerializable {
 
     public static final TrueEventFilter INSTANCE = new TrueEventFilter();
 
@@ -52,16 +51,6 @@ public final class TrueEventFilter implements EventFilter, IdentifiedDataSeriali
     @Override
     public int hashCode() {
         return 0;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return SpiDataSerializerHook.TRUE_EVENT_FILTER;
     }
 
     @Override
