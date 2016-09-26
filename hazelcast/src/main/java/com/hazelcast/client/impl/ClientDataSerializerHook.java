@@ -19,6 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
+import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.operations.PostJoinClientOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -36,6 +37,7 @@ public class ClientDataSerializerHook implements DataSerializerHook {
     public static final int RE_AUTH = 1;
     public static final int GET_CONNECTED_CLIENTS = 2;
     public static final int POST_JOIN = 3;
+    public static final int OP_FACTORY_WRAPPER = 4;
 
     @Override
     public int getFactoryId() {
@@ -56,6 +58,8 @@ public class ClientDataSerializerHook implements DataSerializerHook {
                         return new GetConnectedClientsOperation();
                     case POST_JOIN:
                         return new PostJoinClientOperation();
+                    case OP_FACTORY_WRAPPER:
+                        return new OperationFactoryWrapper();
                     default:
                         return null;
                 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.operations;
 
+import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -25,8 +26,11 @@ import java.io.IOException;
 
 public final class OperationFactoryWrapper implements OperationFactory {
 
-    private final OperationFactory opFactory;
-    private final String uuid;
+    private OperationFactory opFactory;
+    private String uuid;
+
+    public OperationFactoryWrapper() {
+    }
 
     public OperationFactoryWrapper(OperationFactory opFactory, String uuid) {
         this.opFactory = opFactory;
@@ -40,6 +44,18 @@ public final class OperationFactoryWrapper implements OperationFactory {
         return op;
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(uuid);
+        out.writeObject(opFactory);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        uuid = in.readUTF();
+        opFactory = in.readObject();
+    }
+
     public OperationFactory getOperationFactory() {
         return opFactory;
     }
@@ -49,22 +65,12 @@ public final class OperationFactoryWrapper implements OperationFactory {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        throw new UnsupportedOperationException("local factory only");
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        throw new UnsupportedOperationException("local factory only");
-    }
-
-    @Override
     public int getFactoryId() {
-        throw new UnsupportedOperationException("local factory only");
+        return ClientDataSerializerHook.F_ID;
     }
 
     @Override
     public int getId() {
-        throw new UnsupportedOperationException("local factory only");
+        return ClientDataSerializerHook.OP_FACTORY_WRAPPER;
     }
 }
