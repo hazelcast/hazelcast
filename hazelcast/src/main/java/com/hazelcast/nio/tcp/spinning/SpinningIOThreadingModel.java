@@ -67,13 +67,13 @@ public class SpinningIOThreadingModel implements IOThreadingModel {
     @Override
     public SocketWriter newSocketWriter(TcpIpConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningSocketWriter.class);
-        return new SpinningSocketWriter(connection, metricsRegistry, logger);
+        return new SpinningSocketWriter(connection, logger);
     }
 
     @Override
     public SocketReader newSocketReader(TcpIpConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningSocketReader.class);
-        return new SpinningSocketReader(connection, metricsRegistry, logger);
+        return new SpinningSocketReader(connection, logger);
     }
 
     @Override

@@ -17,9 +17,10 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * To be implemented by an object that can provide metrics (so has a bunch of probes).
+ * A {@link MetricsProvider} that has the ability to discard to provided metrics. This is useful for dynamic metrics; so
+ * metrics that get added and removed during the lifecycle of the MetricsRegistry like a connection.
  */
-public interface MetricsProvider {
+public interface DiscardableMetricsProvider extends MetricsProvider {
 
-    void provideMetrics(MetricsRegistry registry);
+    void discardMetrics(MetricsRegistry registry);
 }

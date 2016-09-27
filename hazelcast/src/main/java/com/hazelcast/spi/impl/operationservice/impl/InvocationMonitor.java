@@ -126,8 +126,8 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry metricsRegistry) {
-        metricsRegistry.scanAndRegister(this, "operation.invocations");
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.scanAndRegister(this, "operation.invocations");
     }
 
     private ScheduledExecutorService newScheduler(final HazelcastThreadGroup threadGroup) {
