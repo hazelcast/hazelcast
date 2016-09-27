@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp.spinning;
 
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
@@ -45,7 +46,7 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningSocketReader extends AbstractHandler implements SocketReader {
+public class SpinningSocketReader extends AbstractHandler implements SocketReader, MetricsProvider {
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -53,18 +54,20 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final MetricsRegistry metricRegistry;
     private final SocketChannelWrapper socketChannel;
     private volatile long lastReadTime;
     private ReadHandler readHandler;
     private ByteBuffer inputBuffer;
     private ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
-    public SpinningSocketReader(TcpIpConnection connection, MetricsRegistry metricsRegistry, ILogger logger) {
+    public SpinningSocketReader(TcpIpConnection connection, ILogger logger) {
         super(connection, logger);
-        this.metricRegistry = metricsRegistry;
         this.socketChannel = connection.getSocketChannelWrapper();
-        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndWeakRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
     }
 
     @Override
@@ -94,7 +97,6 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
 
     @Override
     public void close() {
-        metricRegistry.deregister(this);
     }
 
     public void read() throws Exception {

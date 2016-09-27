@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
@@ -50,7 +51,7 @@ import static java.lang.System.currentTimeMillis;
  * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
  * {@link ReadHandler} to get processed.
  */
-public final class NonBlockingSocketReader extends AbstractHandler implements SocketReader {
+public final class NonBlockingSocketReader extends AbstractHandler implements SocketReader, MetricsProvider {
 
     @Probe(name = "eventCount")
     private final SwCounter eventCount = newSwCounter();
@@ -60,20 +61,19 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final MetricsRegistry metricRegistry;
 
     private ReadHandler readHandler;
     private ByteBuffer inputBuffer;
     private volatile long lastReadTime;
 
-    public NonBlockingSocketReader(
-            TcpIpConnection connection,
-            NonBlockingIOThread ioThread,
-            MetricsRegistry metricsRegistry) {
+    public NonBlockingSocketReader(TcpIpConnection connection, NonBlockingIOThread ioThread) {
         super(connection, ioThread, SelectionKey.OP_READ);
         this.ioThread = ioThread;
-        this.metricRegistry = metricsRegistry;
-        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndWeakRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
     }
 
     @Probe(name = "idleTimeMs")
@@ -221,7 +221,6 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
     public void close() {
         //todo:
         // ioThread race, shutdown can end up on the old selector
-        metricRegistry.deregister(this);
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {

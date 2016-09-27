@@ -108,6 +108,18 @@ public interface MetricsRegistry {
     <S> void scanAndRegister(S source, String namePrefix);
 
     /**
+     * Same as {@link #scanAndRegister(Object, String)} however the source object is wrapped in a
+     * {@link java.lang.ref.WeakReference} so it doesn't need to be {@link #deregister(Object)} manually. This call is useful
+     * when objects dynamically are added and removed like connections.
+     *
+     * @param source     the object to scan.
+     * @param namePrefix the name prefix.
+     * @throws NullPointerException     if namePrefix or source is null.
+     * @throws IllegalArgumentException if the source contains Gauge annotation on a field/method of unsupported type.
+     */
+    <S> void scanAndWeakRegister(S source, String namePrefix);
+
+    /**
      * Registers a probe.
      *
      * If a probe for the given name exists, it will be overwritten.

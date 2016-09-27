@@ -369,6 +369,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                     + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
             openedCount.inc();
 
+            metricsRegistry.collectMetrics(connection);
+
             return connection;
         } finally {
             acceptedSockets.remove(channel);
@@ -491,7 +493,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 serverSocketChannel,
                 this);
         acceptorThread.start();
-        metricsRegistry.scanAndRegister(acceptorThread, "tcp." + acceptorThread.getName());
+        metricsRegistry.scanAndWeakRegister(acceptorThread, "tcp." + acceptorThread.getName());
     }
 
     @Override

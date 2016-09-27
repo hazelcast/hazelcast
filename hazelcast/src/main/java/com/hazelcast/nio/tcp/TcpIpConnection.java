@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -43,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @see IOThreadingModel
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class TcpIpConnection implements Connection {
+public final class TcpIpConnection implements Connection, MetricsProvider {
 
     private final SocketChannelWrapper socketChannel;
 
@@ -79,6 +81,11 @@ public final class TcpIpConnection implements Connection {
         this.socketChannel = socketChannel;
         this.socketWriter = ioThreadingModel.newSocketWriter(this);
         this.socketReader = ioThreadingModel.newSocketReader(this);
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.collectMetrics(socketWriter, socketWriter);
     }
 
     public SocketReader getSocketReader() {

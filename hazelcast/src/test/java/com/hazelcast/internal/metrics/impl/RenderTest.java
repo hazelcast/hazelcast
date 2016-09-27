@@ -33,8 +33,8 @@ public class RenderTest {
 
         for (String name : metricsRegistry.getNames()) {
             ProbeInstance probeInstance = metricsRegistry.getProbeInstance(name);
-            if (probeInstance != null && probeInstance.source != null) {
-                metricsRegistry.deregister(probeInstance.source);
+            if (probeInstance != null && probeInstance.getSource() != null) {
+                metricsRegistry.deregister(probeInstance.getSource());
             }
         }
     }

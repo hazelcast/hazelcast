@@ -37,8 +37,8 @@ class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
         Object source = null;
 
         if (probeInstance != null) {
-            function = probeInstance.function;
-            source = probeInstance.source;
+            function = probeInstance.getFunction();
+            source = probeInstance.getSource();
         }
 
         if (function == null || source == null) {
