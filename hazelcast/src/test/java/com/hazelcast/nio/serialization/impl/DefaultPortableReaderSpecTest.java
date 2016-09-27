@@ -266,7 +266,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 // type-specific method case
                 String adjustedPath = pathToExplode.replace(tokenToReplace, fieldMethod.field);
                 if (fieldMethod != Method.getArrayMethodFor(possibleMethod)) {
-                    scenarios.add(scenario(input, IllegalArgumentException.class, Method.getArrayMethodFor(possibleMethod), adjustedPath, parent));
+                    scenarios.add(scenario(input, IllegalArgumentException.class, Method.getArrayMethodFor(possibleMethod),
+                            adjustedPath, parent));
                 }
                 scenarios.add(scenario(input, IllegalArgumentException.class, possibleMethod, adjustedPath, parent));
             }
@@ -299,7 +300,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     //    scenario(prim(NONE), null, UTF, "strings[0]"),
     //    scenario(prim(NULL), null, UTF, "strings[1]"),
     //
-    static Collection<Object[]> expandPrimitiveArrayScenario(Portable input, PrimitivePortable result, String pathToExplode, String parent) {
+    static Collection<Object[]> expandPrimitiveArrayScenario(Portable input, PrimitivePortable result, String pathToExplode,
+                                                             String parent) {
         List<Object[]> scenarios = new ArrayList<Object[]>();
         // group A:
         for (Method method : getPrimitiveArrays()) {
@@ -323,7 +325,9 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         // group B:
         for (Method method : getPrimitives(true)) {
             String path = pathToExplode.replace("primitiveArray", method.field).replace("_", "s");
-            if (result == null || result.getPrimitiveArray(method) == null || Array.getLength(result.getPrimitiveArray(method)) == 0) {
+            if (result == null
+                    || result.getPrimitiveArray(method) == null
+                    || Array.getLength(result.getPrimitiveArray(method)) == 0) {
                 if (method.equals(UTF)) {
                     scenarios.addAll(asList(
                             scenario(input, null, method, path + "[0]", parent),
@@ -369,7 +373,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     // The expected result should be the object that contains the portable array - that's the general contract.
     // The result for assertion will be automatically calculated
     //
-    static Collection<Object[]> expandPortableArrayPrimitiveScenario(Portable input, GroupPortable result, String pathToExplode, String parent) {
+    static Collection<Object[]> expandPortableArrayPrimitiveScenario(Portable input, GroupPortable result, String pathToExplode,
+                                                                     String parent) {
         List<Object[]> scenarios = new ArrayList<Object[]>();
         // Expansion of the portable array using the following quantifiers.
         for (String token : asList("0", "1", "2", "any")) {
@@ -482,18 +487,21 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
         // FULLy initialised primitive objects accessed from portable stored in array
         GroupPortable fullGroupVarious = group(prim(1, FULL), prim(10, FULL), prim(100, FULL));
-        result.addAll(expandPortableArrayPrimitiveScenario(fullGroupVarious, fullGroupVarious, "portableArray.primitiveUTF_", p));
+        result.addAll(expandPortableArrayPrimitiveScenario(fullGroupVarious, fullGroupVarious,
+                "portableArray.primitiveUTF_", p));
 
         GroupPortable fullEmptyNullGroup = group(prim(1, FULL), prim(10, NONE), prim(100, NULL));
-        result.addAll(expandPortableArrayPrimitiveScenario(fullEmptyNullGroup, fullEmptyNullGroup, "portableArray.primitiveUTF_", p));
+        result.addAll(expandPortableArrayPrimitiveScenario(fullEmptyNullGroup, fullEmptyNullGroup,
+                "portableArray.primitiveUTF_", p));
 
         // empty or null portable array de-referenced further
         GroupPortable nullArrayGroup = new GroupPortable((Portable[]) null);
-        result.addAll(expandPortableArrayPrimitiveScenario(nullArrayGroup, nullArrayGroup, "portableArray.primitiveUTF_", p));
+        result.addAll(expandPortableArrayPrimitiveScenario(nullArrayGroup, nullArrayGroup,
+                "portableArray.primitiveUTF_", p));
 
         GroupPortable emptyArrayGroup = new GroupPortable(new Portable[0]);
-        result.addAll(expandPortableArrayPrimitiveScenario(emptyArrayGroup, emptyArrayGroup, "portableArray.primitiveUTF_", p));
-
+        result.addAll(expandPortableArrayPrimitiveScenario(emptyArrayGroup, emptyArrayGroup,
+                "portableArray.primitiveUTF_", p));
 
         // FULLy initialised primitive arrays accessed from portable stored in array
         GroupPortable fullGroup = group(prim(FULL), prim(FULL), prim(FULL));
@@ -521,7 +529,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.add(scenario(emptyArrayGroup, null, UTF, "portables[1].string_", p));
         result.add(scenario(emptyArrayGroup, null, Generic, "portables[0].string_", p));
         result.add(scenario(emptyArrayGroup, null, Generic, "portables[1].string_", p));
-
 
         // EMPTY portable array -> de-referenced further for array access
         result.addAll(expandPrimitiveArrayScenario(emptyArrayGroup, null, "portables[0].primitiveArray", p));
@@ -551,20 +558,30 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         // FULLy initialised primitive objects accessed from portable stored in array
         NestedGroupPortable nestedFullGroup = nested(group(prim(1, FULL), prim(10, FULL), prim(100, FULL)));
         result.addAll(asList(
-                scenario(nestedFullGroup, (nestedFullGroup.portable), Portable, "portable", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portable, Portable, "portable.portable", p)
+                scenario(nestedFullGroup, (nestedFullGroup.portable), Portable,
+                        "portable", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portable, Portable,
+                        "portable.portable", p)
         ));
         result.addAll(asList(
-                scenario(nestedFullGroup, (nestedFullGroup.portable), Generic, "portable", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portable, Generic, "portable.portable", p)
+                scenario(nestedFullGroup, (nestedFullGroup.portable), Generic,
+                        "portable", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portable, Generic,
+                        "portable.portable", p)
         ));
-        result.addAll(expandPrimitiveScenario(nestedFullGroup, ((GroupPortable) nestedFullGroup.portable).portable, "portable.portable.primitiveUTF_", p));
-        result.addAll(expandPrimitiveArrayScenario(nestedFullGroup, (PrimitivePortable) ((GroupPortable) nestedFullGroup.portable).portable, "portable.portable.primitiveArray", p));
+        result.addAll(expandPrimitiveScenario(nestedFullGroup, ((GroupPortable) nestedFullGroup.portable).portable,
+                "portable.portable.primitiveUTF_", p));
+        result.addAll(expandPrimitiveArrayScenario(nestedFullGroup,
+                (PrimitivePortable) ((GroupPortable) nestedFullGroup.portable).portable,
+                "portable.portable.primitiveArray", p));
 
         NestedGroupPortable nestedFullEmptyNullGroup = nested(group(prim(1, FULL), prim(10, NONE), prim(100, NULL)));
-        result.addAll(expandPrimitiveScenario(nestedFullEmptyNullGroup, ((GroupPortable) nestedFullEmptyNullGroup.portable).portable, "portable.portable.primitiveUTF_", p));
-        result.addAll(expandPrimitiveArrayScenario(nestedFullEmptyNullGroup, (PrimitivePortable) ((GroupPortable) nestedFullEmptyNullGroup.portable).portable, "portable.portable.primitiveArray", p));
-
+        result.addAll(expandPrimitiveScenario(nestedFullEmptyNullGroup,
+                ((GroupPortable) nestedFullEmptyNullGroup.portable).portable,
+                "portable.portable.primitiveUTF_", p));
+        result.addAll(expandPrimitiveArrayScenario(nestedFullEmptyNullGroup,
+                (PrimitivePortable) ((GroupPortable) nestedFullEmptyNullGroup.portable).portable,
+                "portable.portable.primitiveArray", p));
 
         // empty or null portable array de-referenced further
         NestedGroupPortable nestedNullArrayGroup = nested(new GroupPortable((Portable[]) null));
@@ -601,31 +618,40 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         String p = "fromPortableToPortableToPrimitiveScenarios";
         NestedGroupPortable nestedFullGroup = nested(group(prim(1, FULL), prim(10, FULL), prim(100, FULL)));
         result.addAll(asList(
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, PortableArray, "portable.portables", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, PortableArray, "portable.portables[any]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[0], Portable, "portable.portables[0]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[1], Portable, "portable.portables[1]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[2], Portable, "portable.portables[2]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, PortableArray,
+                        "portable.portables", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, PortableArray,
+                        "portable.portables[any]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[0], Portable,
+                        "portable.portables[0]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[1], Portable,
+                        "portable.portables[1]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[2], Portable,
+                        "portable.portables[2]", p),
                 scenario(nestedFullGroup, null, Portable, "portable.portables[12]", p)
         ));
         result.addAll(asList(
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, Generic, "portable.portables", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, Generic, "portable.portables[any]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[0], Generic, "portable.portables[0]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[1], Generic, "portable.portables[1]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[2], Generic, "portable.portables[2]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, Generic,
+                        "portable.portables", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, Generic,
+                        "portable.portables[any]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[0], Generic,
+                        "portable.portables[0]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[1], Generic,
+                        "portable.portables[1]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[2], Generic,
+                        "portable.portables[2]", p),
                 scenario(nestedFullGroup, null, Generic, "portable.portables[12]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedFullGroup, (GroupPortable) nestedFullGroup.portable, "portable.portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedFullGroup, (GroupPortable) nestedFullGroup.portable,
+                "portable.portableArray.primitiveUTF_", p)
         );
 
 
         NestedGroupPortable nestedfullEmptyNullGroup = nested(group(prim(1, FULL), prim(10, NONE), prim(100, NULL)));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedfullEmptyNullGroup, (GroupPortable) nestedfullEmptyNullGroup.portable, "portable.portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedfullEmptyNullGroup,
+                (GroupPortable) nestedfullEmptyNullGroup.portable, "portable.portableArray.primitiveUTF_", p)
         );
-
 
         // empty or null portable array de-referenced further
         NestedGroupPortable nestedNullArrayGroup = nested(new GroupPortable((Portable[]) null));
@@ -643,10 +669,9 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNullArrayGroup, null, Generic, "portable.portables[1]", p),
                 scenario(nestedNullArrayGroup, null, Generic, "portable.portables[2]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedNullArrayGroup, (GroupPortable) nestedNullArrayGroup.portable, "portable.portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedNullArrayGroup, (GroupPortable) nestedNullArrayGroup.portable,
+                "portable.portableArray.primitiveUTF_", p)
         );
-
 
         NestedGroupPortable nestedEmptyArrayGroup = nested(new GroupPortable(new Portable[0]));
         result.addAll(asList(
@@ -663,10 +688,9 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedEmptyArrayGroup, null, Generic, "portable.portables[1]", p),
                 scenario(nestedEmptyArrayGroup, null, Generic, "portable.portables[2]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedEmptyArrayGroup, (GroupPortable) nestedEmptyArrayGroup.portable, "portable.portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedEmptyArrayGroup,
+                (GroupPortable) nestedEmptyArrayGroup.portable, "portable.portableArray.primitiveUTF_", p)
         );
-
 
         NestedGroupPortable nestedEmpty = nested(new GroupPortable[0]);
         result.addAll(asList(
@@ -683,10 +707,9 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedEmpty, null, Generic, "portable.portables[1]", p),
                 scenario(nestedEmpty, null, Generic, "portable.portables[2]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedEmpty, (GroupPortable) nestedEmpty.portable, "portable.portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedEmpty, (GroupPortable) nestedEmpty.portable,
+                "portable.portableArray.primitiveUTF_", p)
         );
-
 
         NestedGroupPortable nestedNull = nested((GroupPortable[]) null);
         result.addAll(asList(
@@ -703,8 +726,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNull, null, Generic, "portable.portables[1]", p),
                 scenario(nestedNull, null, Generic, "portable.portables[2]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedNull, (GroupPortable) nestedNull.portable, "portable.portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedNull, (GroupPortable) nestedNull.portable,
+                "portable.portableArray.primitiveUTF_", p)
         );
     }
 
@@ -728,7 +751,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 }
         );
 
-
         Class failure = IllegalArgumentException.class;
         result.addAll(asList(
                 scenario(input, failure, ByteArray, "portables[any].portables[any].byte_", p),
@@ -744,17 +766,25 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.add(scenario(input, expectedUtfArray, UTFArray, "portables[any].portables[any].string_", p));
 
         result.addAll(asList(
-                scenario(input, list(null, p1.byte_, p10.byte_, null, p20.byte_), Generic, "portables[any].portables[any].byte_", p),
-                scenario(input, list(null, p1.short_, p10.short_, null, p20.short_), Generic, "portables[any].portables[any].short_", p),
-                scenario(input, list(null, p1.int_, p10.int_, null, p20.int_), Generic, "portables[any].portables[any].int_", p),
-                scenario(input, list(null, p1.long_, p10.long_, null, p20.long_), Generic, "portables[any].portables[any].long_", p),
-                scenario(input, list(null, p1.char_, p10.char_, null, p20.char_), Generic, "portables[any].portables[any].char_", p),
-                scenario(input, list(null, p1.float_, p10.float_, null, p20.float_), Generic, "portables[any].portables[any].float_", p),
-                scenario(input, list(null, p1.double_, p10.double_, null, p20.double_), Generic, "portables[any].portables[any].double_", p),
-                scenario(input, list(null, p1.boolean_, p10.boolean_, null, p20.boolean_), Generic, "portables[any].portables[any].boolean_", p),
-                scenario(input, list(null, p1.string_, p10.string_, null, p20.string_), Generic, "portables[any].portables[any].string_", p)
+                scenario(input, list(null, p1.byte_, p10.byte_, null, p20.byte_), Generic,
+                        "portables[any].portables[any].byte_", p),
+                scenario(input, list(null, p1.short_, p10.short_, null, p20.short_), Generic,
+                        "portables[any].portables[any].short_", p),
+                scenario(input, list(null, p1.int_, p10.int_, null, p20.int_), Generic,
+                        "portables[any].portables[any].int_", p),
+                scenario(input, list(null, p1.long_, p10.long_, null, p20.long_), Generic,
+                        "portables[any].portables[any].long_", p),
+                scenario(input, list(null, p1.char_, p10.char_, null, p20.char_), Generic,
+                        "portables[any].portables[any].char_", p),
+                scenario(input, list(null, p1.float_, p10.float_, null, p20.float_), Generic,
+                        "portables[any].portables[any].float_", p),
+                scenario(input, list(null, p1.double_, p10.double_, null, p20.double_), Generic,
+                        "portables[any].portables[any].double_", p),
+                scenario(input, list(null, p1.boolean_, p10.boolean_, null, p20.boolean_), Generic,
+                        "portables[any].portables[any].boolean_", p),
+                scenario(input, list(null, p1.string_, p10.string_, null, p20.string_), Generic,
+                        "portables[any].portables[any].string_", p)
         ));
-
 
         // =============================================
         // INPUT empty
@@ -850,17 +880,25 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.add(scenario(input, expectedUtfArray, UTFArray, "portables[any].portables[any].strings[any]", p));
 
         result.addAll(asList(
-                scenario(input, list(null, null, p10.bytes, null, null, p20.bytes, null), Generic, "portables[any].portables[any].bytes[any]", p),
-                scenario(input, list(null, null, p10.shorts, null, null, p20.shorts, null), Generic, "portables[any].portables[any].shorts[any]", p),
-                scenario(input, list(null, null, p10.ints, null, null, p20.ints, null), Generic, "portables[any].portables[any].ints[any]", p),
-                scenario(input, list(null, null, p10.longs, null, null, p20.longs, null), Generic, "portables[any].portables[any].longs[any]", p),
-                scenario(input, list(null, null, p10.chars, null, null, p20.chars, null), Generic, "portables[any].portables[any].chars[any]", p),
-                scenario(input, list(null, null, p10.floats, null, null, p20.floats, null), Generic, "portables[any].portables[any].floats[any]", p),
-                scenario(input, list(null, null, p10.doubles, null, null, p20.doubles, null), Generic, "portables[any].portables[any].doubles[any]", p),
-                scenario(input, list(null, null, p10.booleans, null, null, p20.booleans, null), Generic, "portables[any].portables[any].booleans[any]", p),
-                scenario(input, list(null, null, p10.strings, null, null, p20.strings, null), Generic, "portables[any].portables[any].strings[any]", p)
+                scenario(input, list(null, null, p10.bytes, null, null, p20.bytes, null), Generic,
+                        "portables[any].portables[any].bytes[any]", p),
+                scenario(input, list(null, null, p10.shorts, null, null, p20.shorts, null), Generic,
+                        "portables[any].portables[any].shorts[any]", p),
+                scenario(input, list(null, null, p10.ints, null, null, p20.ints, null), Generic,
+                        "portables[any].portables[any].ints[any]", p),
+                scenario(input, list(null, null, p10.longs, null, null, p20.longs, null), Generic,
+                        "portables[any].portables[any].longs[any]", p),
+                scenario(input, list(null, null, p10.chars, null, null, p20.chars, null), Generic,
+                        "portables[any].portables[any].chars[any]", p),
+                scenario(input, list(null, null, p10.floats, null, null, p20.floats, null), Generic,
+                        "portables[any].portables[any].floats[any]", p),
+                scenario(input, list(null, null, p10.doubles, null, null, p20.doubles, null), Generic,
+                        "portables[any].portables[any].doubles[any]", p),
+                scenario(input, list(null, null, p10.booleans, null, null, p20.booleans, null), Generic,
+                        "portables[any].portables[any].booleans[any]", p),
+                scenario(input, list(null, null, p10.strings, null, null, p20.strings, null), Generic,
+                        "portables[any].portables[any].strings[any]", p)
         ));
-
 
         // =============================================
         // INPUT empty
@@ -931,35 +969,51 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         // FULLy initialised primitive objects accessed from portable stored in array
         NestedGroupPortable nestedFullGroup = nested(group(prim(1, FULL), prim(10, FULL), prim(100, FULL)));
         result.addAll(asList(
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, PortableArray, "portables[0].portables", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, PortableArray, "portables[0].portables[any]", p),
-                scenario(nestedFullGroup, new Portable[]{prim(1, FULL)}, PortableArray, "portables[any].portables[0]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, PortableArray, "portables[any].portables[any]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[0], Portable, "portables[0].portables[0]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[1], Portable, "portables[0].portables[1]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[2], Portable, "portables[0].portables[2]", p),
-                scenario(nestedFullGroup, null, Portable, "portables[0].portables[12]", p)
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, PortableArray,
+                        "portables[0].portables", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, PortableArray,
+                        "portables[0].portables[any]", p),
+                scenario(nestedFullGroup, new Portable[]{prim(1, FULL)}, PortableArray,
+                        "portables[any].portables[0]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, PortableArray,
+                        "portables[any].portables[any]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[0], Portable,
+                        "portables[0].portables[0]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[1], Portable,
+                        "portables[0].portables[1]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[2], Portable,
+                        "portables[0].portables[2]", p),
+                scenario(nestedFullGroup, null, Portable,
+                        "portables[0].portables[12]", p)
         ));
         result.addAll(asList(
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Generic, "portables[0].portables", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Generic, "portables[0].portables[any]", p),
-                scenario(nestedFullGroup, new Portable[]{prim(1, FULL)}, Generic, "portables[any].portables[0]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Generic, "portables[any].portables[any]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[0], Generic, "portables[0].portables[0]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[1], Generic, "portables[0].portables[1]", p),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[2], Generic, "portables[0].portables[2]", p),
-                scenario(nestedFullGroup, null, Generic, "portables[0].portables[12]", p)
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Generic,
+                        "portables[0].portables", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Generic,
+                        "portables[0].portables[any]", p),
+                scenario(nestedFullGroup, new Portable[]{prim(1, FULL)}, Generic,
+                        "portables[any].portables[0]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Generic,
+                        "portables[any].portables[any]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[0], Generic,
+                        "portables[0].portables[0]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[1], Generic,
+                        "portables[0].portables[1]", p),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[2], Generic,
+                        "portables[0].portables[2]", p),
+                scenario(nestedFullGroup, null, Generic,
+                        "portables[0].portables[12]", p)
         ));
 
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedFullGroup, (GroupPortable) nestedFullGroup.portable, "portables[0].portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedFullGroup, (GroupPortable) nestedFullGroup.portable,
+                "portables[0].portableArray.primitiveUTF_", p)
         );
 
         NestedGroupPortable anyGroup = nested(new Portable[]{
                 group(prim(1, FULL), prim(10, NONE), prim(50, NULL)), group(prim(2, FULL), prim(20, NONE), prim(80, NULL))
         });
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(anyGroup, (GroupPortable) anyGroup.portables[0], "portables[0].portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(anyGroup, (GroupPortable) anyGroup.portables[0],
+                "portables[0].portableArray.primitiveUTF_", p)
         );
 
         // empty or null portable array de-referenced further
@@ -982,8 +1036,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNullArrayGroup, null, Generic, "portables[0].portables[1]", p),
                 scenario(nestedNullArrayGroup, null, Generic, "portables[0].portables[2]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedNullArrayGroup, (GroupPortable) nestedNullArrayGroup.portable, "portables[0].portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedNullArrayGroup,
+                (GroupPortable) nestedNullArrayGroup.portable, "portables[0].portableArray.primitiveUTF_", p)
         );
 
         NestedGroupPortable nestedEmptyArrayGroup = nested(new GroupPortable(new Portable[0]));
@@ -1005,8 +1059,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedEmptyArrayGroup, null, Generic, "portables[0].portables[1]", p),
                 scenario(nestedEmptyArrayGroup, null, Generic, "portables[0].portables[2]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedEmptyArrayGroup, (GroupPortable) nestedEmptyArrayGroup.portable, "portables[0].portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedEmptyArrayGroup,
+                (GroupPortable) nestedEmptyArrayGroup.portable, "portables[0].portableArray.primitiveUTF_", p)
         );
 
         NestedGroupPortable nestedEmpty = nested(new GroupPortable[0]);
@@ -1028,8 +1082,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedEmpty, null, Generic, "portables[0].portables[1]", p),
                 scenario(nestedEmpty, null, Generic, "portables[0].portables[2]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedEmpty, (GroupPortable) nestedEmpty.portable, "portables[0].portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedEmpty,
+                (GroupPortable) nestedEmpty.portable, "portables[0].portableArray.primitiveUTF_", p)
         );
 
         NestedGroupPortable nestedNull = nested((GroupPortable[]) null);
@@ -1051,8 +1105,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNull, null, Generic, "portables[0].portables[1]", p),
                 scenario(nestedNull, null, Generic, "portables[0].portables[2]", p)
         ));
-        result.addAll(
-                expandPortableArrayPrimitiveScenario(nestedNull, (GroupPortable) nestedNull.portable, "portables[0].portableArray.primitiveUTF_", p)
+        result.addAll(expandPortableArrayPrimitiveScenario(nestedNull,
+                (GroupPortable) nestedNull.portable, "portables[0].portableArray.primitiveUTF_", p)
         );
     }
 
@@ -1066,55 +1120,82 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 group(prim(2, FULL), prim(20, NONE), prim(80, NULL))
         });
         result.addAll(asList(
-                scenario(anyGroup, ((GroupPortable) (anyGroup.portables[0])).portables, PortableArray, "portables[0].portables[any]", p),
-                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL)}, PortableArray, "portables[any].portables[0]", p),
-                scenario(anyGroup, new Portable[]{prim(10, FULL), prim(20, FULL)}, PortableArray, "portables[any].portables[1]", p),
-                scenario(anyGroup, new Portable[]{prim(50, FULL), prim(80, FULL)}, PortableArray, "portables[any].portables[2]", p),
-                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL), prim(2, FULL), prim(20, FULL), prim(80, FULL)},
-                        PortableArray, "portables[any].portables[any]", p)
+                scenario(anyGroup, ((GroupPortable) (anyGroup.portables[0])).portables, PortableArray,
+                        "portables[0].portables[any]", p),
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL)}, PortableArray,
+                        "portables[any].portables[0]", p),
+                scenario(anyGroup, new Portable[]{prim(10, FULL), prim(20, FULL)}, PortableArray,
+                        "portables[any].portables[1]", p),
+                scenario(anyGroup, new Portable[]{prim(50, FULL), prim(80, FULL)}, PortableArray,
+                        "portables[any].portables[2]", p),
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL), prim(2, FULL), prim(20, FULL),
+                        prim(80, FULL)}, PortableArray, "portables[any].portables[any]", p)
         ));
         result.addAll(asList(
-                scenario(anyGroup, ((GroupPortable) (anyGroup.portables[0])).portables, Generic, "portables[0].portables[any]", p),
-                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL)}, Generic, "portables[any].portables[0]", p),
-                scenario(anyGroup, new Portable[]{prim(10, FULL), prim(20, FULL)}, Generic, "portables[any].portables[1]", p),
-                scenario(anyGroup, new Portable[]{prim(50, FULL), prim(80, FULL)}, Generic, "portables[any].portables[2]", p),
-                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL), prim(2, FULL), prim(20, FULL), prim(80, FULL)},
-                        Generic, "portables[any].portables[any]", p)
+                scenario(anyGroup, ((GroupPortable) (anyGroup.portables[0])).portables, Generic,
+                        "portables[0].portables[any]", p),
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL)}, Generic,
+                        "portables[any].portables[0]", p),
+                scenario(anyGroup, new Portable[]{prim(10, FULL), prim(20, FULL)}, Generic,
+                        "portables[any].portables[1]", p),
+                scenario(anyGroup, new Portable[]{prim(50, FULL), prim(80, FULL)}, Generic,
+                        "portables[any].portables[2]", p),
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL), prim(2, FULL),
+                        prim(20, FULL), prim(80, FULL)}, Generic, "portables[any].portables[any]", p)
         ));
 
         NestedGroupPortable nestedEmptyArrayGroup = nested(new Portable[]{new GroupPortable(new Portable[0]), group(prim(1, FULL), prim(10, NONE), prim(50, NULL))});
         result.addAll(asList(
-                scenario(nestedEmptyArrayGroup, null, PortableArray, "portables[0].portables[any]", p),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL)}, PortableArray, "portables[any].portables[0]", p),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(10, FULL)}, PortableArray, "portables[any].portables[1]", p),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(50, FULL)}, PortableArray, "portables[any].portables[2]", p),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, PortableArray, "portables[any].portables[any]", p)
+                scenario(nestedEmptyArrayGroup, null, PortableArray,
+                        "portables[0].portables[any]", p),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL)}, PortableArray,
+                        "portables[any].portables[0]", p),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(10, FULL)}, PortableArray,
+                        "portables[any].portables[1]", p),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(50, FULL)}, PortableArray,
+                        "portables[any].portables[2]", p),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)},
+                        PortableArray, "portables[any].portables[any]", p)
         ));
         result.addAll(asList(
-                scenario(nestedEmptyArrayGroup, null, Generic, "portables[0].portables[any]", p),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL)}, Generic, "portables[any].portables[0]", p),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(10, FULL)}, Generic, "portables[any].portables[1]", p),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(50, FULL)}, Generic, "portables[any].portables[2]", p),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Generic, "portables[any].portables[any]", p)
+                scenario(nestedEmptyArrayGroup, null, Generic,
+                        "portables[0].portables[any]", p),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL)}, Generic,
+                        "portables[any].portables[0]", p),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(10, FULL)}, Generic,
+                        "portables[any].portables[1]", p),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(50, FULL)}, Generic,
+                        "portables[any].portables[2]", p),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Generic,
+                        "portables[any].portables[any]", p)
         ));
 
         NestedGroupPortable nestedNullArrayGroup = nested(new Portable[]{new GroupPortable((Portable[]) null), group(prim(1, FULL), prim(10, NONE), prim(50, NULL))});
         result.addAll(asList(
-                scenario(nestedNullArrayGroup, null, PortableArray, "portables[0].portables[any]", p),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL)}, PortableArray, "portables[any].portables[0]", p),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(10, FULL)}, PortableArray, "portables[any].portables[1]", p),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(50, FULL)}, PortableArray, "portables[any].portables[2]", p),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, PortableArray, "portables[any].portables[any]", p)
+                scenario(nestedNullArrayGroup, null, PortableArray,
+                        "portables[0].portables[any]", p),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL)}, PortableArray,
+                        "portables[any].portables[0]", p),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(10, FULL)}, PortableArray,
+                        "portables[any].portables[1]", p),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(50, FULL)}, PortableArray,
+                        "portables[any].portables[2]", p),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, PortableArray,
+                        "portables[any].portables[any]", p)
         ));
         result.addAll(asList(
-                scenario(nestedNullArrayGroup, null, PortableArray, "portables[0].portables[any]", p),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL)}, Generic, "portables[any].portables[0]", p),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(10, FULL)}, Generic, "portables[any].portables[1]", p),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(50, FULL)}, Generic, "portables[any].portables[2]", p),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Generic, "portables[any].portables[any]", p)
+                scenario(nestedNullArrayGroup, null, PortableArray,
+                        "portables[0].portables[any]", p),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL)}, Generic,
+                        "portables[any].portables[0]", p),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(10, FULL)}, Generic,
+                        "portables[any].portables[1]", p),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(50, FULL)}, Generic,
+                        "portables[any].portables[2]", p),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Generic,
+                        "portables[any].portables[any]", p)
         ));
     }
-
 
     //
     // Test data structure utilities:
@@ -1190,14 +1271,16 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     // Main goal is to steal a "real" serialised Data of a PortableObject to be as close as possible to real use-case
     //
     public static class EntryStealingProcessor extends AbstractEntryProcessor {
+
         protected final Object key;
         protected Data stolenEntryData;
 
-        public EntryStealingProcessor(String key) {
+        EntryStealingProcessor(String key) {
             super(false);
             this.key = key;
         }
 
+        @Override
         public Object process(Map.Entry entry) {
             // Hack to get rid of de-serialization cost.
             // And assuming in-memory-format is BINARY, if it is OBJECT you can replace
@@ -1209,5 +1292,4 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             return null;
         }
     }
-
 }

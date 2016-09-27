@@ -1,6 +1,5 @@
 package com.hazelcast.nio.serialization.impl;
 
-
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
@@ -38,7 +37,6 @@ public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
     private PortableReader primitiveReader;
     private InternalSerializationService ss;
 
-
     @Setup
     public void setup() throws IOException {
         ss = new DefaultSerializationServiceBuilder()
@@ -55,7 +53,6 @@ public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
         ss.createPortableReader(ss.toData(NON_EMPTY_PORSCHE));
         return ss.createPortableReader(ss.toData(portable));
     }
-
 
     @Benchmark
     public Object readByte() throws IOException {
@@ -186,5 +183,4 @@ public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
 
         new Runner(opt).run();
     }
-
 }

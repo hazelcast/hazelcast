@@ -86,8 +86,8 @@ public class DefaultPortableReaderTestStructure {
         }
     }
 
-
     public static class PrimitivePortable implements Portable {
+
         final static int FACTORY_ID = 1;
         final static int ID = 10;
 
@@ -98,7 +98,6 @@ public class DefaultPortableReaderTestStructure {
         public int getSeed() {
             return byte_ - 10;
         }
-
 
         public PrimitivePortable(int seed, Init init) {
             byte_ = (byte) (seed + 10);
@@ -162,14 +161,17 @@ public class DefaultPortableReaderTestStructure {
         public PrimitivePortable() {
         }
 
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeByte("byte_", byte_);
             writer.writeShort("short_", short_);
@@ -192,6 +194,7 @@ public class DefaultPortableReaderTestStructure {
             writer.writeUTFArray("strings", strings);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             byte_ = reader.readByte("byte_");
             short_ = reader.readShort("short_");
@@ -240,7 +243,7 @@ public class DefaultPortableReaderTestStructure {
             return "primitives{" + getSeed() + ", " + init + "}";
         }
 
-        public Object getPrimitive(Method method) {
+        Object getPrimitive(Method method) {
             switch (method) {
                 case Byte:
                     return byte_;
@@ -311,6 +314,7 @@ public class DefaultPortableReaderTestStructure {
     }
 
     static class GroupPortable implements Portable {
+
         final static int FACTORY_ID = 1;
         final static int ID = 11;
 
@@ -320,11 +324,11 @@ public class DefaultPortableReaderTestStructure {
         public GroupPortable() {
         }
 
-        public GroupPortable(Portable portable) {
+        GroupPortable(Portable portable) {
             this.portable = portable;
         }
 
-        public GroupPortable(Portable[] portables) {
+        GroupPortable(Portable[] portables) {
             if (portables != null && portables.length > 0) {
                 this.portable = portables[0];
             }
@@ -391,6 +395,7 @@ public class DefaultPortableReaderTestStructure {
     }
 
     static class NestedGroupPortable implements Portable {
+
         final static int FACTORY_ID = 1;
         final static int ID = 12;
 
@@ -400,12 +405,12 @@ public class DefaultPortableReaderTestStructure {
         public NestedGroupPortable() {
         }
 
-        public NestedGroupPortable(Portable portable) {
+        NestedGroupPortable(Portable portable) {
             this.portable = portable;
             this.portables = new Portable[]{portable};
         }
 
-        public NestedGroupPortable(Portable[] portables) {
+        NestedGroupPortable(Portable[] portables) {
             if (portables != null && portables.length > 0) {
                 this.portable = portables[0];
             }
@@ -471,7 +476,6 @@ public class DefaultPortableReaderTestStructure {
         }
     }
 
-
     static class TestPortableFactory implements PortableFactory {
         final static int ID = 1;
 
@@ -526,5 +530,4 @@ public class DefaultPortableReaderTestStructure {
     static PrimitivePortable prim(int seed, PrimitivePortable.Init init) {
         return new PrimitivePortable(seed, init);
     }
-
 }

@@ -1,6 +1,5 @@
 package com.hazelcast.nio.serialization.impl;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceProxy;
@@ -43,7 +42,6 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     public static final CarPortable PORSCHE = new CarPortable("Porsche", new EnginePortable(300),
             w("front", false), w("rear", false));
-
 
     @Test(expected = IllegalArgumentException.class)
     public void nullAttributeName() throws IOException {
@@ -358,7 +356,6 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         assertEquals(15, reader.readInt("engine.chip.power"));
         assertEquals("Porsche", reader.readUTF("name"));
-
     }
 
     //
@@ -387,14 +384,16 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     }
 
     public static class EntryStealingProcessor extends AbstractEntryProcessor {
+
         private final Object key;
         private Data stolenEntryData;
 
-        public EntryStealingProcessor(String key) {
+        EntryStealingProcessor(String key) {
             super(false);
             this.key = key;
         }
 
+        @Override
         public Object process(Map.Entry entry) {
             // Hack to get rid of de-serialization cost.
             // And assuming in-memory-format is BINARY, if it is OBJECT you can replace
@@ -408,6 +407,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     }
 
     static class CarPortable implements Portable {
+
         final static int FACTORY_ID = 1;
         final static int ID = 5;
 
@@ -418,7 +418,10 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         public String[] model;
 
-        public CarPortable(String name, EnginePortable engine, WheelPortable... wheels) {
+        public CarPortable() {
+        }
+
+        CarPortable(String name, EnginePortable engine, WheelPortable... wheels) {
             this.power = 100;
             this.name = name;
             this.engine = engine;
@@ -426,17 +429,17 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
             this.model = new String[]{"911", "GT"};
         }
 
-        public CarPortable() {
-        }
-
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("power", power);
             writer.writeUTF("name", name);
@@ -445,6 +448,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
             writer.writeUTFArray("model", model);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             power = reader.readInt("power");
             name = reader.readUTF("name");
@@ -455,12 +459,17 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             CarPortable that = (CarPortable) o;
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            if (name != null ? !name.equals(that.name) : that.name != null) {
+                return false;
+            }
             return engine != null ? engine.equals(that.engine) : that.engine == null;
-
         }
 
         @Override
@@ -472,33 +481,39 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     }
 
     static class EnginePortable implements Portable, Comparable<EnginePortable> {
+
         final static int FACTORY_ID = 1;
         final static int ID = 8;
+
         public Integer power;
         public ChipPortable chip;
-
-        public EnginePortable(int power) {
-            this.power = power;
-            this.chip = new ChipPortable();
-        }
 
         public EnginePortable() {
             this.chip = new ChipPortable();
         }
 
+        EnginePortable(int power) {
+            this.power = power;
+            this.chip = new ChipPortable();
+        }
+
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("power", power);
             writer.writePortable("chip", chip);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             power = reader.readInt("power");
             chip = reader.readPortable("chip");
@@ -506,8 +521,12 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             EnginePortable that = (EnginePortable) o;
             return power.equals(that.power);
 
@@ -525,38 +544,47 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     }
 
     static class ChipPortable implements Portable, Comparable<ChipPortable> {
+
         final static int FACTORY_ID = 1;
         final static int ID = 6;
         public Integer power;
-
-        public ChipPortable(int power) {
-            this.power = power;
-        }
 
         public ChipPortable() {
             this.power = 15;
         }
 
+        ChipPortable(int power) {
+            this.power = power;
+        }
+
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("power", power);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             power = reader.readInt("power");
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             ChipPortable that = (ChipPortable) o;
             return power.equals(that.power);
 
@@ -574,8 +602,10 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     }
 
     static class WheelPortable implements Portable, Comparable<WheelPortable> {
+
         final static int FACTORY_ID = 1;
         final static int ID = 7;
+
         public String name;
         public ChipPortable chip;
         public Portable chips[];
@@ -583,7 +613,10 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         public Portable nullChips[];
         public int serial[];
 
-        public WheelPortable(String name, boolean nonNull) {
+        public WheelPortable() {
+        }
+
+        WheelPortable(String name, boolean nonNull) {
             this.name = name;
             this.chip = new ChipPortable(100);
             this.chips = new Portable[]{new ChipPortable(20), new ChipPortable(40)};
@@ -598,17 +631,17 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
             this.serial = new int[]{41 + nameLength, 12 + nameLength, 79 + nameLength, 18 + nameLength, 102 + nameLength};
         }
 
-        public WheelPortable() {
-        }
-
+        @Override
         public int getFactoryId() {
             return FACTORY_ID;
         }
 
+        @Override
         public int getClassId() {
             return ID;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeUTF("name", name);
             writer.writePortable("chip", chip);
@@ -618,6 +651,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
             writer.writeIntArray("serial", serial);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             name = reader.readUTF("name");
             chip = reader.readPortable("chip");
@@ -627,14 +661,18 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
             serial = reader.readIntArray("serial");
         }
 
-        public static WheelPortable w(String name, boolean nonNull) {
+        static WheelPortable w(String name, boolean nonNull) {
             return new WheelPortable(name, nonNull);
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             WheelPortable that = (WheelPortable) o;
             return name != null ? name.equals(that.name) : that.name == null;
         }
@@ -651,21 +689,22 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     }
 
     public static class TestPortableFactory implements PortableFactory {
+
         public final static int ID = 1;
 
         @Override
         public Portable create(int classId) {
-            if (CarPortable.ID == classId)
+            if (CarPortable.ID == classId) {
                 return new CarPortable();
-            else if (EnginePortable.ID == classId)
+            } else if (EnginePortable.ID == classId) {
                 return new EnginePortable();
-            else if (WheelPortable.ID == classId)
+            } else if (WheelPortable.ID == classId) {
                 return new WheelPortable();
-            else if (ChipPortable.ID == classId)
+            } else if (ChipPortable.ID == classId) {
                 return new ChipPortable();
-            else
+            } else {
                 return null;
+            }
         }
     }
-
 }
