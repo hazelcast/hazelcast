@@ -97,4 +97,14 @@ public final class ConcurrencyUtil {
         return value;
     }
 
+    public static <K, V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, V newValue) {
+        V value = map.get(key);
+        if (value == null) {
+            value = newValue;
+            V current = map.putIfAbsent(key, value);
+            value = current == null ? value : current;
+        }
+        return value;
+    }
+
 }

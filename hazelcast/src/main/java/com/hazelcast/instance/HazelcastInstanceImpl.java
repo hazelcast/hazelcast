@@ -69,6 +69,8 @@ import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.scheduleexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduleexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.impl.TopicService;
@@ -402,6 +404,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     @Override
     public CardinalityEstimator getCardinalityEstimator(String name) {
         return getDistributedObject(CardinalityEstimatorService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public IScheduledExecutorService getScheduledExecutorService(String name) {
+        return getDistributedObject(DistributedScheduledExecutorService.SERVICE_NAME, name);
     }
 
     @Override
