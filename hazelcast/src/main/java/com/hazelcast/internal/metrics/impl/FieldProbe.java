@@ -55,9 +55,9 @@ abstract class FieldProbe implements ProbeFunction {
         field.setAccessible(true);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
+    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix, boolean weakReference) {
         String name = getName(namePrefix);
-        metricsRegistry.registerInternal(source, name, probe.level(), this);
+        metricsRegistry.register0(source, name, probe.level(), this, weakReference);
     }
 
     private String getName(String namePrefix) {

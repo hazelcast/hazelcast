@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -52,7 +53,7 @@ import static java.lang.System.currentTimeMillis;
 /**
  * The writing side of the {@link TcpIpConnection}.
  */
-public final class NonBlockingSocketWriter extends AbstractHandler implements Runnable, SocketWriter {
+public final class NonBlockingSocketWriter extends AbstractHandler implements Runnable, SocketWriter, MetricsProvider {
 
     private static final long TIMEOUT = 3;
 
@@ -72,7 +73,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
-    private final MetricsRegistry metricsRegistry;
 
     private volatile OutboundFrame currentFrame;
     private WriteHandler writeHandler;
@@ -83,12 +83,13 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     // This prevents running into an NonBlockingIOThread that is migrating.
     private NonBlockingIOThread newOwner;
 
-    NonBlockingSocketWriter(TcpIpConnection connection, NonBlockingIOThread ioThread, MetricsRegistry metricsRegistry) {
+    NonBlockingSocketWriter(TcpIpConnection connection, NonBlockingIOThread ioThread) {
         super(connection, ioThread, SelectionKey.OP_WRITE);
+    }
 
-        // sensors
-        this.metricsRegistry = metricsRegistry;
-        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndWeakRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
     }
 
     @Override
@@ -408,7 +409,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
     @Override
     public void close() {
-        metricsRegistry.deregister(this);
         writeQueue.clear();
         urgentWriteQueue.clear();
 

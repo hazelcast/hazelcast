@@ -26,6 +26,9 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -68,6 +71,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     private final AtomicReference<SortedProbeInstances> sortedProbeInstancesRef
             = new AtomicReference<SortedProbeInstances>(new SortedProbeInstances(0));
 
+    private final ReferenceQueue referenceQueue = new ReferenceQueue();
 
     /**
      * Creates a MetricsRegistryImpl instance.
@@ -92,8 +96,17 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public Set<String> getNames() {
+        clearFreedProbes();
+
         Set<String> names = new HashSet<String>(probeInstances.keySet());
         return Collections.unmodifiableSet(names);
+    }
+
+    ProbeInstance getProbeInstance(String name) {
+        clearFreedProbes();
+
+        checkNotNull(name, "name can't be null");
+        return probeInstances.get(name);
     }
 
     /**
@@ -115,62 +128,95 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public <S> void scanAndRegister(S source, String namePrefix) {
+        scanAndRegister(source, namePrefix, false);
+    }
+
+    @Override
+    public <S> void scanAndWeakRegister(S source, String namePrefix) {
+        scanAndRegister(source, namePrefix, true);
+    }
+
+    private <S> void scanAndRegister(S source, String namePrefix, boolean weakReference) {
         checkNotNull(source, "source can't be null");
         checkNotNull(namePrefix, "namePrefix can't be null");
 
         SourceMetadata metadata = loadSourceMetadata(source.getClass());
-        metadata.register(this, source, namePrefix);
+        metadata.register(this, source, namePrefix, weakReference);
     }
 
     @Override
     public <S> void register(S source, String name, ProbeLevel level, LongProbeFunction<S> function) {
-        checkNotNull(source, "source can't be null");
-        checkNotNull(name, "name can't be null");
-        checkNotNull(function, "function can't be null");
-        checkNotNull(level, "level can't be null");
-
-        registerInternal(source, name, level, function);
+        register0(source, name, level, function, false);
     }
 
     @Override
     public <S> void register(S source, String name, ProbeLevel level, DoubleProbeFunction<S> function) {
+        register0(source, name, level, function, false);
+    }
+
+    <S> void register0(S source, String name, ProbeLevel level, ProbeFunction function, boolean weakReference) {
         checkNotNull(source, "source can't be null");
         checkNotNull(name, "name can't be null");
         checkNotNull(function, "function can't be null");
         checkNotNull(level, "level can't be null");
 
-        registerInternal(source, name, level, function);
-    }
-
-    ProbeInstance getProbeInstance(String name) {
-        checkNotNull(name, "name can't be null");
-
-        return probeInstances.get(name);
-    }
-
-    <S> void registerInternal(S source, String name, ProbeLevel probeLevel, ProbeFunction function) {
-        if (!probeLevel.isEnabled(minimumLevel)) {
+        if (!level.isEnabled(minimumLevel)) {
             return;
         }
 
-        synchronized (lockStripe.getLock(source)) {
-            ProbeInstance probeInstance = probeInstances.get(name);
+        synchronized (lockStripe.getLock(name)) {
+            ProbeInstance<S> probeInstance = probeInstances.get(name);
+            Object ref = weakReference ? new WeakReference<S>(source, referenceQueue) : source;
             if (probeInstance == null) {
-                probeInstance = new ProbeInstance<S>(name, source, function);
+                probeInstance = new ProbeInstance<S>(name, ref, function);
                 probeInstances.put(name, probeInstance);
             } else {
-                logOverwrite(probeInstance);
+                logger.warning(format("Overwriting existing probe '%s'", probeInstance.name));
+                probeInstance.overwrite(ref, function);
             }
 
             if (logger.isFinestEnabled()) {
                 logger.finest("Registered probeInstance " + name);
             }
-
-            probeInstance.source = source;
-            probeInstance.function = function;
         }
 
         incrementMod();
+    }
+
+    @Override
+    public <S> void deregister(S source) {
+        checkNotNull(source, "source can't be null");
+
+        boolean changed = false;
+        for (Map.Entry<String, ProbeInstance> entry : probeInstances.entrySet()) {
+            ProbeInstance probeInstance = entry.getValue();
+
+            Object actualSource = probeInstance.getSource();
+            if (actualSource != null && actualSource != source) {
+                continue;
+            }
+
+            String name = entry.getKey();
+
+            boolean destroyed = false;
+            synchronized (lockStripe.getLock(name)) {
+                actualSource = probeInstance.getSource();
+                if (actualSource == null || actualSource == source) {
+                    changed = true;
+                    probeInstances.remove(name);
+                    probeInstance.destroy();
+                    destroyed = true;
+                }
+            }
+
+            if (destroyed && logger.isFinestEnabled()) {
+                logger.finest("Destroying probeInstance " + name);
+            }
+        }
+
+        if (changed) {
+            incrementMod();
+        }
     }
 
     private void incrementMod() {
@@ -183,9 +229,12 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
     }
 
-    private void logOverwrite(ProbeInstance probeInstance) {
-        if (probeInstance.function != null || probeInstance.source != null) {
-            logger.warning(format("Overwriting existing probe '%s'", probeInstance.name));
+    @Override
+    public void collectMetrics(Object... objects) {
+        for (Object object : objects) {
+            if (object instanceof MetricsProvider) {
+                ((MetricsProvider) object).provideMetrics(this);
+            }
         }
     }
 
@@ -204,54 +253,26 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void deregister(S source) {
-        checkNotNull(source, "source can't be null");
-
-        boolean changed = false;
-        for (Map.Entry<String, ProbeInstance> entry : probeInstances.entrySet()) {
-            ProbeInstance probeInstance = entry.getValue();
-
-            if (probeInstance.source != source) {
-                continue;
-            }
-
-            String name = entry.getKey();
-
-            boolean destroyed = false;
-            synchronized (lockStripe.getLock(source)) {
-                if (probeInstance.source == source) {
-                    changed = true;
-                    probeInstances.remove(name);
-                    probeInstance.source = null;
-                    probeInstance.function = null;
-                    destroyed = true;
-                }
-            }
-
-            if (destroyed && logger.isFinestEnabled()) {
-                logger.finest("Destroying probeInstance " + name);
-            }
-        }
-
-        if (changed) {
-            incrementMod();
-        }
-    }
-
-    @Override
     public void render(ProbeRenderer renderer) {
         checkNotNull(renderer, "renderer can't be null");
+
+        clearFreedProbes();
 
         for (ProbeInstance probeInstance : getSortedProbeInstances()) {
             render(renderer, probeInstance);
         }
     }
 
-    @Override
-    public void collectMetrics(Object... objects) {
-        for (Object object : objects) {
-            if (object instanceof MetricsProvider) {
-                ((MetricsProvider) object).provideMetrics(this);
+    private void clearFreedProbes() {
+        for (; ; ) {
+            Reference ref = referenceQueue.poll();
+            if (ref == null) {
+                break;
+            }
+
+            Object source = ref.get();
+            if (source != null) {
+                deregister(source);
             }
         }
     }
@@ -274,8 +295,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     private void render(ProbeRenderer renderer, ProbeInstance probeInstance) {
-        ProbeFunction function = probeInstance.function;
-        Object source = probeInstance.source;
+        ProbeFunction function = probeInstance.getFunction();
+        Object source = probeInstance.getSource();
         String name = probeInstance.name;
 
         if (function == null || source == null) {

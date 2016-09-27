@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp.spinning;
 
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -47,7 +48,7 @@ import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningSocketWriter extends AbstractHandler implements SocketWriter {
+public class SpinningSocketWriter extends AbstractHandler implements SocketWriter, MetricsProvider {
 
     private static final long TIMEOUT = 3;
 
@@ -68,20 +69,21 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
-    private final MetricsRegistry metricsRegistry;
     private volatile long lastWriteTime;
     private WriteHandler writeHandler;
     private volatile OutboundFrame currentFrame;
 
-    public SpinningSocketWriter(TcpIpConnection connection, MetricsRegistry metricsRegistry, ILogger logger) {
+    public SpinningSocketWriter(TcpIpConnection connection,  ILogger logger) {
         super(connection, logger);
-        this.metricsRegistry = metricsRegistry;
         this.logger = logger;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
         this.urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-        // sensors
-        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndWeakRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
     }
 
     @Override
@@ -212,7 +214,6 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
 
     @Override
     public void close() {
-        metricsRegistry.deregister(this);
         writeQueue.clear();
         urgentWriteQueue.clear();
 

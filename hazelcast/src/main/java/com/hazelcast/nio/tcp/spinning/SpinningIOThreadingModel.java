@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp.spinning;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
@@ -43,17 +42,14 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 public class SpinningIOThreadingModel implements IOThreadingModel {
 
     private final ILogger logger;
-    private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final SpinningInputThread inputThread;
     private final SpinningOutputThread outThread;
 
     public SpinningIOThreadingModel(
             LoggingService loggingService,
-            MetricsRegistry metricsRegistry,
             HazelcastThreadGroup hazelcastThreadGroup) {
         this.logger = loggingService.getLogger(SpinningIOThreadingModel.class);
-        this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
         this.inputThread = new SpinningInputThread(hazelcastThreadGroup);
         this.outThread = new SpinningOutputThread(hazelcastThreadGroup);
@@ -67,13 +63,13 @@ public class SpinningIOThreadingModel implements IOThreadingModel {
     @Override
     public SocketWriter newSocketWriter(TcpIpConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningSocketWriter.class);
-        return new SpinningSocketWriter(connection, metricsRegistry, logger);
+        return new SpinningSocketWriter(connection, logger);
     }
 
     @Override
     public SocketReader newSocketReader(TcpIpConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningSocketReader.class);
-        return new SpinningSocketReader(connection, metricsRegistry, logger);
+        return new SpinningSocketReader(connection, logger);
     }
 
     @Override
