@@ -38,10 +38,10 @@ import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
 /**
- * ClientReadHandler gets called by an IO-thread when there is space available to write to.
+ * ClientNonBlockingSocketReader gets called by an IO-thread when there is space available to write to.
  * It then writes some of its enqueued data to the socket from a bytebuffer.
  */
-public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable {
+public class ClientNonBlockingSocketWriter extends AbstractClientSelectionHandler implements Runnable {
 
     @Probe(name = "writeQueueSize")
     private final Queue<ClientMessage> writeQueue = new ConcurrentLinkedQueue<ClientMessage>();
@@ -60,8 +60,8 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private volatile long lastHandle;
 
-    public ClientWriteHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
-                              boolean direct, LoggingService loggingService) {
+    public ClientNonBlockingSocketWriter(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
+                                         boolean direct, LoggingService loggingService) {
         super(connection, ioThread, loggingService);
         buffer = IOUtil.newByteBuffer(bufferSize, direct);
     }

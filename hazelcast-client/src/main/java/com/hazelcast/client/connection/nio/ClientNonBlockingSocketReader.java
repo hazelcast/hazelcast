@@ -35,12 +35,11 @@ import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
 /**
- * ClientReadHandler gets called by an IO-thread when there is data available to read.
+ * ClientNonBlockingSocketReader gets called by an IO-thread when there is data available to read.
  * It then reads out the data from the socket into a bytebuffer and hands it over to the {@link ClientMessageBuilder}
  * to get processed.
  */
-public class ClientReadHandler
-        extends AbstractClientSelectionHandler {
+public class ClientNonBlockingSocketReader extends AbstractClientSelectionHandler {
 
     private final ByteBuffer buffer;
     private final ClientMessageBuilder builder;
@@ -51,8 +50,8 @@ public class ClientReadHandler
 
     private volatile long lastHandle;
 
-    public ClientReadHandler(final ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
-                             boolean direct, LoggingService loggingService) {
+    public ClientNonBlockingSocketReader(final ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
+                                         boolean direct, LoggingService loggingService) {
         super(connection, ioThread, loggingService);
 
         buffer = IOUtil.newByteBuffer(bufferSize, direct);
