@@ -119,6 +119,9 @@ public final class FactoryIdHelper {
     public static final String ENTERPRISE_HOTRESTART_BACKUP_DS_FACTORY = "hazelcast.serialization.ds.spi.hotrestart.backup";
     public static final int ENTERPRISE_HOTRESTART_BACKUP_DS_FACTORY_ID = -38;
 
+    public static final String SCHEDULED_EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.scheduled.executor";
+    public static final int SCHEDULED_EXECUTOR_DS_FACTORY_ID = -39;
+
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
