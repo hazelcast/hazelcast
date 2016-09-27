@@ -36,7 +36,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccessorTest {
+public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemoryAccessorTest {
 
     private static final int ALLOCATED_BLOCK_SIZE = 16;
 
