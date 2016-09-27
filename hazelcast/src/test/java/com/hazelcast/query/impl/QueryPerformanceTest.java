@@ -78,7 +78,6 @@ public class QueryPerformanceTest extends HazelcastTestSupport {
         }
     }
 
-
     @Setup
     public void setup() throws IOException {
         Config config = new Config();
@@ -224,5 +223,4 @@ public class QueryPerformanceTest extends HazelcastTestSupport {
 
         new Runner(opt).run();
     }
-
 }
