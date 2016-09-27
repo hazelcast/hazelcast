@@ -77,12 +77,12 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     protected HazelcastInstance serverInstance;
 
     @Before
-    public void setup() {
+    public final void factoryInitialization() {
         serverInstance = hazelcastFactory.newHazelcastInstance(createConfig());
     }
 
     @After
-    public void tearDown() {
+    public final void factoryShutdown() {
         hazelcastFactory.shutdownAll();
     }
 
