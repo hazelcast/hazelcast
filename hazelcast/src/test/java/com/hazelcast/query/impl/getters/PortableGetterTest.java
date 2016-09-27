@@ -1,9 +1,16 @@
 package com.hazelcast.query.impl.getters;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertFalse;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class PortableGetterTest {
 
     @Test(expected = IllegalArgumentException.class)
@@ -19,7 +26,6 @@ public class PortableGetterTest {
     @Test
     public void isCacheable() throws Exception {
         PortableGetter getter = new PortableGetter(null);
-        assertFalse("Portable getter shouln't be cacheable!", getter.isCacheable());
+        assertFalse("Portable getter shouldn't be cacheable!", getter.isCacheable());
     }
-
 }
