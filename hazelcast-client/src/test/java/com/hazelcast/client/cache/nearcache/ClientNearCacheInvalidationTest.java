@@ -86,7 +86,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     // we start MEMBER_COUNT members in the test and validate count of events against this number
     static final int MEMBER_COUNT = 2;
 
-    // when true, invoke operations which are supposed to deliver invalidation events from a Cache instance on a member
+    // when true, invokeDecoded operations which are supposed to deliver invalidation events from a Cache instance on a member
     // otherwise use the client-side proxy.
     @Parameter
     public boolean invokeCacheOperationsFromMember;

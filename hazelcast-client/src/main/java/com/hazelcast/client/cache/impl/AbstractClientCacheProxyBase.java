@@ -220,10 +220,10 @@ abstract class AbstractClientCacheProxyBase<K, V>
     protected ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
-            final Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
+            final Future<ClientMessage> future
+                    = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
                     clientMessage, partitionId).invoke();
-            return (ClientMessage) future.get();
-
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

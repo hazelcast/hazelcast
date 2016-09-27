@@ -74,6 +74,7 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -327,7 +328,7 @@ public class ClientMapProxy<K, V>
         }
     }
 
-    private ClientInvocationFuture invokeOnKeyOwner(ClientMessage request, Data keyData) {
+    private ClientInvocationFuture<ClientMessage> invokeOnKeyOwner(ClientMessage request, Data keyData) {
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
         final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
         return clientInvocation.invoke();
@@ -1028,12 +1029,13 @@ public class ClientMapProxy<K, V>
         List<MapGetAllCodec.ResponseParameters> responses = new ArrayList<MapGetAllCodec.ResponseParameters>(
                 partitionToKeyData.size());
 
+        ClientInvocationService invocationService = getClient().getInvocationService();
         for (final Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
             List<Data> keyList = entry.getValue();
             if (!keyList.isEmpty()) {
                 ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
-                futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+                futures.add(invocationService.invokeOnPartition(partitionId, request));
             }
         }
 

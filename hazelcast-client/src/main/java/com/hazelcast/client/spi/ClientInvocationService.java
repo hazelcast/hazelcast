@@ -17,19 +17,23 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 import java.io.IOException;
 
 /**
- * @author mdogan 5/16/13
+ * Invocation Service for clients.
  */
 public interface ClientInvocationService {
 
-    void start();
+    InternalCompletableFuture<ClientMessage> invokeOnPartition(int partitionId, ClientMessage request);
+
+    <E> InternalCompletableFuture<E> invokeOnPartition(int partitionId, ClientMessage request, ClientMessageDecoder decoder);
 
     void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException;
 
@@ -40,6 +44,8 @@ public interface ClientInvocationService {
     void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException;
 
     boolean isRedoOperation();
+
+    void start();
 
     void shutdown();
 

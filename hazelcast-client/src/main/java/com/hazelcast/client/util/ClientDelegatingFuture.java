@@ -38,7 +38,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
-    private final ClientInvocationFuture future;
+    private final ClientInvocationFuture<ClientMessage> future;
     private final SerializationService serializationService;
     private final ClientMessageDecoder clientMessageDecoder;
     private final V defaultValue;
@@ -51,7 +51,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
     private volatile Object response = mutex;
     private volatile boolean done;
 
-    public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
+    public ClientDelegatingFuture(ClientInvocationFuture<ClientMessage> clientInvocationFuture,
                                   SerializationService serializationService,
                                   ClientMessageDecoder clientMessageDecoder, V defaultValue) {
         this.future = clientInvocationFuture;
@@ -60,8 +60,9 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         this.defaultValue = defaultValue;
     }
 
-    public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
-                                  SerializationService serializationService, ClientMessageDecoder clientMessageDecoder) {
+    public ClientDelegatingFuture(ClientInvocationFuture<ClientMessage> clientInvocationFuture,
+                                  SerializationService serializationService,
+                                  ClientMessageDecoder clientMessageDecoder) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
         this.clientMessageDecoder = clientMessageDecoder;

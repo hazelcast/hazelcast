@@ -77,7 +77,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
         ClientInvocation invocation = new ClientInvocation(client, request);
         invocation.setEventHandler(handler);
 
-        ClientInvocationFuture future = invocation.invoke();
+        ClientInvocationFuture<ClientMessage> future = invocation.invoke();
         String registrationId = registrationKey.getCodec().decodeAddResponse(future.get());
         handler.onListenerRegister();
         Address address = future.getInvocation().getSendConnection().getRemoteEndpoint();

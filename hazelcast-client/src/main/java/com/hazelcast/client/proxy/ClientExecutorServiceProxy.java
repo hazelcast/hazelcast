@@ -536,7 +536,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return response;
     }
 
-    private Object retrieveResultFromMessage(ClientInvocationFuture f) {
+    private Object retrieveResultFromMessage(ClientInvocationFuture<ClientMessage> f) {
         Object response;
         try {
             SerializationService serializationService = getClient().getSerializationService();
@@ -631,7 +631,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private ClientInvocationFuture invokeOnPartitionOwner(ClientMessage request, int partitionId) {
+    private ClientInvocationFuture<ClientMessage> invokeOnPartitionOwner(ClientMessage request, int partitionId) {
         try {
             ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
             return clientInvocation.invoke();
@@ -640,7 +640,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private ClientInvocationFuture invokeOnTarget(ClientMessage request, Address target) {
+    private ClientInvocationFuture<ClientMessage> invokeOnTarget(ClientMessage request, Address target) {
         try {
             ClientInvocation invocation = new ClientInvocation(getClient(), request, target);
             return invocation.invoke();

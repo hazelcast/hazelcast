@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +51,8 @@ public class ClientAtomicReferenceTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
+        setLoggingLog4j();
+        setLogLevel(Level.DEBUG);
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         String name = randomString();

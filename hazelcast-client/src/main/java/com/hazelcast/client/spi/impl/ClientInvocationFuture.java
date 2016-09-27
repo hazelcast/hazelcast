@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.logging.ILogger;
@@ -24,20 +25,33 @@ import com.hazelcast.spi.impl.AbstractInvocationFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
+import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
-public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
+public class ClientInvocationFuture<E> extends AbstractInvocationFuture<E> {
+
+    private static final AtomicReferenceFieldUpdater<ClientInvocationFuture, Object> DESERIALIZED_VALUE
+            = newUpdater(ClientInvocationFuture.class, Object.class, "deserializedValue");
 
     protected final ClientMessage request;
     private final ClientInvocation invocation;
+    private final ClientMessageDecoder decoder;
+    private final HazelcastClientInstanceImpl client;
+    // client caches the deserialized value
+    private volatile Object deserializedValue;
 
-    public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
-                                  ClientMessage request, ILogger logger) {
-
+    public ClientInvocationFuture(ClientInvocation invocation,
+                                  HazelcastClientInstanceImpl client,
+                                  ClientMessage request,
+                                  ILogger logger,
+                                  ClientMessageDecoder decoder) {
         super(client.getClientExecutionService(), logger);
+        this.client = client;
         this.request = request;
         this.invocation = invocation;
+        this.decoder = decoder;
     }
 
     @Override
@@ -62,14 +76,43 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     protected Object resolve(Object value) {
+        if (deserializedValue == null && decoder != null) {
+            if (value instanceof ClientMessage) {
+                value = decoder.decodeClientMessage((ClientMessage) value);
+            }
+
+            value = client.getSerializationService().toObject(value);
+
+            // the client future apparently wants to have a shared deserialized value
+            // It could be that multiple threads deserialize the same blob concurrently, but the alternative is locking.
+            // and using this approach we keep it lock free.
+            for (; ; ) {
+                Object currentValue = deserializedValue;
+
+                if (currentValue != null) {
+                    // something already has been deserialized; so lets use that.
+                    value = currentValue;
+                    break;
+                }
+
+                if (DESERIALIZED_VALUE.compareAndSet(this, null, value)) {
+                    // we successfully managed to store the deserialized value, so we can use that
+                    break;
+                }
+            }
+        }
+
         if (value instanceof Throwable) {
             return new ExecutionException((Throwable) value);
         }
+
         return value;
     }
 
     @Override
-    public ClientMessage resolveAndThrow(Object response) throws ExecutionException, InterruptedException {
+    public E resolveAndThrow(Object response) throws ExecutionException, InterruptedException {
+        response = resolve(response);
+
         if (response instanceof Throwable) {
             fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
@@ -83,7 +126,8 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
             }
             throw new ExecutionException((Throwable) response);
         }
-        return (ClientMessage) response;
+
+        return (E) response;
     }
 
     public ClientInvocation getInvocation() {

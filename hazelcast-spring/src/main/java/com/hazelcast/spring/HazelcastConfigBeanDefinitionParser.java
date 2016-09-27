@@ -407,7 +407,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 return;
             }
             try {
-                method.invoke(this, new Object[]{child});
+                method.invokeDecoded(this, new Object[]{child});
             } catch (Exception e) {
                 e.printStackTrace();
             }

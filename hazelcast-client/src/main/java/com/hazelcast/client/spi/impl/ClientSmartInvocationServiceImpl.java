@@ -51,7 +51,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
         final Address randomAddress = getRandomAddress();
         if (randomAddress == null) {
-            throw new IOException("Not address found to invoke ");
+            throw new IOException("Not address found to invokeDecoded ");
         }
         final Connection connection = getConnection(randomAddress);
         send(invocation, (ClientConnection) connection);
