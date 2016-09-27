@@ -72,7 +72,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class SqlPredicateTest {
 
-    final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testEqualsWhenSqlMatches() {
@@ -390,8 +390,7 @@ public class SqlPredicateTest {
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 8000; i++) {
-            sb.append("intValue() == " + i);
-            sb.append(" or ");
+            sb.append("intValue() == ").append(i).append(" or ");
         }
         sb.append(" intValue() == -1");
 
