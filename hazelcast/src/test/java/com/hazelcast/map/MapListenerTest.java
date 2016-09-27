@@ -26,6 +26,7 @@ import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.SqlPredicate;
+import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * and exits (with regards to the value space defined by the predicate) as performed by the map randomizer
  * and as observed on the listener side.
  */
+@Ignore("Not a JUnit test")
 public class MapListenerTest {
 
     private static final AtomicInteger ENTRIES, EXITS, ENTRIES_OBSERVED, EXITS_OBSERVED;
