@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
+import org.junit.Ignore;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import java.util.logging.Logger;
 /**
  * A long running test
  */
+@Ignore("Not a JUnit test")
 public class LongRunningTest {
 
     private static final int STATS_SECONDS = 10;
@@ -52,7 +54,7 @@ public class LongRunningTest {
     private int nextActionMin = 90;
     private int nextActionMax = 180;
 
-    public LongRunningTest(String[] input) {
+    private LongRunningTest(String[] input) {
         if (input != null && input.length > 0) {
             for (String arg : input) {
                 arg = arg.trim();
@@ -122,11 +124,11 @@ public class LongRunningTest {
         }
     }
 
-    void log(Object obj) {
+    private void log(Object obj) {
         LOGGER.info(obj.toString());
     }
 
-    void addNode() {
+    private void addNode() {
         starts++;
         int entryCount = random(10000);
         int threadCount = random(10, 50);
@@ -138,7 +140,7 @@ public class LongRunningTest {
         log("Started " + node);
     }
 
-    void restartNode() {
+    private void restartNode() {
         restarts++;
         log("Restarting...");
         removeNode();
@@ -150,18 +152,18 @@ public class LongRunningTest {
         addNode();
     }
 
-    void removeNode() {
+    private void removeNode() {
         stops++;
         TheNode node = nodes.remove(random(nodes.size()));
         node.stop();
         log("Stopped " + node);
     }
 
-    int random(int length) {
+    private int random(int length) {
         return ((int) (random.nextFloat() * 10000000) % length);
     }
 
-    int random(int from, int to) {
+    private int random(int from, int to) {
         double diff = (to - from);
         return (int) (diff * random.nextFloat() + from);
     }
@@ -170,6 +172,7 @@ public class LongRunningTest {
      * A NodeEngine instance
      */
     class TheNode {
+
         final int entryCount;
         final int threadCount;
         final int valueSize;
@@ -178,6 +181,7 @@ public class LongRunningTest {
         final ExecutorService es;
         final ExecutorService esStats;
         final HazelcastInstance hazelcast;
+
         volatile boolean running = true;
 
         TheNode(int nodeId, int entryCount, int threadCount, int valueSize) {
@@ -274,7 +278,7 @@ public class LongRunningTest {
         private AtomicLong mapGets = new AtomicLong();
         private AtomicLong mapRemoves = new AtomicLong();
 
-        public Stats getAndReset() {
+        Stats getAndReset() {
             long mapPutsNow = mapPuts.getAndSet(0);
             long mapGetsNow = mapGets.getAndSet(0);
             long mapRemovesNow = mapRemoves.getAndSet(0);
@@ -290,7 +294,9 @@ public class LongRunningTest {
         }
 
         public String toString() {
-            return "total= " + total() + ", puts:" + mapPuts.get() + ", gets:" + mapGets.get()
+            return "total= " + total()
+                    + ", puts:" + mapPuts.get()
+                    + ", gets:" + mapGets.get()
                     + ", remove:" + mapRemoves.get();
         }
     }

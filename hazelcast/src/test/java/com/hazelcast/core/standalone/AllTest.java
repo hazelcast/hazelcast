@@ -27,6 +27,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.query.SqlPredicate;
+import org.junit.Ignore;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -47,26 +48,29 @@ import java.util.logging.Logger;
 /**
  * A test of queues, topics, Maps, AtomicInteger etc.
  */
+@Ignore("Not a JUnit test")
 public class AllTest {
 
     private static final int ONE_SECOND = 1000;
     private static final int STATS_SECONDS = 10;
     private static final int SIZE = 10000;
-    final Logger logger = Logger.getLogger("All-test");
-    final HazelcastInstance hazelcast;
-    private volatile boolean running = true;
-    private final int nThreads;
+
+    private final Logger logger = Logger.getLogger("All-test");
     private final List<Runnable> operations = new ArrayList<Runnable>();
-    private final ExecutorService ex;
     private final Random random = new Random();
     private final AtomicInteger messagesReceived = new AtomicInteger(0);
     private final AtomicInteger messagesSend = new AtomicInteger(0);
 
+    private final int nThreads;
+    private final ExecutorService ex;
+    private final HazelcastInstance hazelcast;
 
-    AllTest(int nThreads) {
+    private volatile boolean running = true;
+
+    private AllTest(int nThreads) {
         this.nThreads = nThreads;
-        ex = Executors.newFixedThreadPool(nThreads);
-        hazelcast = Hazelcast.newHazelcastInstance(null);
+        this.ex = Executors.newFixedThreadPool(nThreads);
+        this.hazelcast = Hazelcast.newHazelcastInstance(null);
         List<Runnable> mapOperations = loadMapOperations();
         List<Runnable> qOperations = loadQOperations();
         List<Runnable> topicOperations = loadTopicOperations();
@@ -167,11 +171,12 @@ public class AllTest {
      * An example customer class
      */
     public static class Customer implements Serializable {
+
         private int year;
         private String name;
         private byte[] field = new byte[100];
 
-        public Customer(int i, String s) {
+        Customer(int i, String s) {
             this.year = i;
             this.name = s;
         }
