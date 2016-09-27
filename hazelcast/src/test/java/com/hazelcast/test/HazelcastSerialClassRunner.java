@@ -68,6 +68,5 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
                 put(entry.getKey(), entry.getValue());
             }
         }
-
     }
 }

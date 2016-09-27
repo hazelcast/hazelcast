@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
+import com.hazelcast.util.EmptyStatement;
 import org.apache.log4j.MDC;
 import org.junit.After;
 import org.junit.Test;
@@ -47,12 +48,14 @@ import static java.lang.Boolean.getBoolean;
 import static java.lang.Integer.getInteger;
 
 /**
- * Base test runner which has base system properties and test repetition logic. The tests are run in random order.
+ * Base test runner which has base system properties and test repetition logic.
+ *
+ * The tests are run in random order.
  */
 public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
 
-    protected static final boolean THREAD_DUMP_ON_FAILURE = getBoolean("hazelcast.test.threadDumpOnFailure");
-    protected static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
+    private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
+    private static final boolean THREAD_DUMP_ON_FAILURE = getBoolean("hazelcast.test.threadDumpOnFailure");
 
     private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
     private static final boolean THREAD_CPU_TIME_INFO_AVAILABLE;
@@ -87,6 +90,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 threadMXBean.setThreadCpuTimeEnabled(true);
                 threadCPUTimeInfoAvailable = true;
             } catch (Throwable t) {
+                EmptyStatement.ignore(t);
             }
         }
         THREAD_CPU_TIME_INFO_AVAILABLE = threadCPUTimeInfoAvailable;
@@ -97,6 +101,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 threadMXBean.setThreadContentionMonitoringEnabled(true);
                 threadContentionInfoAvailable = true;
             } catch (Throwable t) {
+                EmptyStatement.ignore(t);
             }
         }
         THREAD_CONTENTION_INFO_AVAILABLE = threadContentionInfoAvailable;
@@ -115,18 +120,18 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         super(clazz, parameters, name);
     }
 
-    protected static void setThreadLocalTestMethodName(String name) {
+    public static String getTestMethodName() {
+        return TEST_NAME_THREAD_LOCAL.get();
+    }
+
+    static void setThreadLocalTestMethodName(String name) {
         MDC.put("test-name", name);
         TEST_NAME_THREAD_LOCAL.set(name);
     }
 
-    protected static void removeThreadLocalTestMethodName() {
+    static void removeThreadLocalTestMethodName() {
         TEST_NAME_THREAD_LOCAL.remove();
         MDC.remove("test-name");
-    }
-
-    public static String getTestMethodName() {
-        return TEST_NAME_THREAD_LOCAL.get();
     }
 
     @Override
@@ -138,6 +143,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected Statement withPotentialTimeout(FrameworkMethod method, Object test, Statement next) {
         long timeout = getTimeout(method.getAnnotation(Test.class));
         return new FailOnTimeoutStatement(method.getName(), next, timeout);
@@ -175,7 +181,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
     /**
      * Gets the {@link Repeat} annotation if set.
-     * <p/>
+     *
      * Method level definition overrides class level definition.
      */
     private Repeat getRepeatable(FrameworkMethod method) {
@@ -194,7 +200,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
         TestClass testClass = getTestClass();
 
-        // Find the required test rule classes from test class itself
+        // find the required test rule classes from test class itself
         Annotation[] classAnnotations = testClass.getAnnotations();
         for (Annotation annotation : classAnnotations) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
@@ -205,7 +211,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             }
         }
 
-        // Find the required test rule classes from methods
+        // find the required test rule classes from methods
         List<FrameworkMethod> annotatedMethods = testClass.getAnnotatedMethods();
         for (FrameworkMethod annotatedMethod : annotatedMethods) {
             Annotation[] methodAnnotations = annotatedMethod.getAnnotations();
@@ -219,7 +225,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             }
         }
 
-        // Create and register test rules
+        // create and register test rules
         for (Class<? extends TestRule> testRuleClass : testRuleClasses) {
             try {
                 TestRule testRule = testRuleClass.newInstance();
@@ -251,7 +257,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         };
     }
 
-    protected String generateThreadDump() {
+    private String generateThreadDump() {
         StringBuilder dump = new StringBuilder();
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(true, true);
@@ -300,7 +306,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         private final Object target;
         private final List<FrameworkMethod> afters;
 
-        protected ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target) {
+        ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target) {
             this.method = method;
             this.next = next;
             this.afters = afters;
@@ -340,7 +346,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         private final Method testMethod;
         private final int repeat;
 
-        protected TestRepeater(Statement statement, Method testMethod, int repeat) {
+        TestRepeater(Statement statement, Method testMethod, int repeat) {
             this.statement = statement;
             this.testMethod = testMethod;
             this.repeat = Math.max(1, repeat);

@@ -124,7 +124,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         private final FrameworkMethod method;
         private final RunNotifier notifier;
 
-        public TestRunner(final FrameworkMethod method, final RunNotifier notifier) {
+        TestRunner(final FrameworkMethod method, final RunNotifier notifier) {
             this.method = method;
             this.notifier = notifier;
         }

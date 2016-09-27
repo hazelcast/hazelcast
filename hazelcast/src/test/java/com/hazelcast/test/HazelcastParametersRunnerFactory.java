@@ -26,7 +26,7 @@ import org.junit.runners.parameterized.TestWithParameters;
 /**
  * ParametersRunnerFactory implementation which creates either {@link HazelcastSerialClassRunner}
  * or {@link HazelcastParallelClassRunner}, depending on existence of {@link ParallelTest} category.
- * <p/>
+ *
  * When {@link ParallelTest} category is used, test class will be run with parallel method execution
  * either on a single JVM or on multiple JVMs depending on the maven profile selected.
  * Otherwise it will be run in full isolation (single JVM, serial method execution).
@@ -61,13 +61,13 @@ public class HazelcastParametersRunnerFactory implements ParametersRunnerFactory
         return false;
     }
 
-    protected HazelcastSerialClassRunner getSerialClassRunner(Class<?> testClass, Object[] parameters, String testName)
+    private HazelcastSerialClassRunner getSerialClassRunner(Class<?> testClass, Object[] parameters, String testName)
             throws InitializationError {
         return new HazelcastSerialClassRunner(testClass, parameters, testName);
     }
 
-    protected HazelcastParallelClassRunner getParallelClassRunner(Class<?> testClass, Object[] parameters,
-                                                                  String testName) throws InitializationError {
+    private HazelcastParallelClassRunner getParallelClassRunner(Class<?> testClass, Object[] parameters, String testName)
+            throws InitializationError {
         return new HazelcastParallelClassRunner(testClass, parameters, testName);
     }
 }
