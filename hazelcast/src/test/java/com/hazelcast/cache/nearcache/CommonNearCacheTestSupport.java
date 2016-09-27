@@ -42,9 +42,7 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
     protected NearCacheContext createNearCacheContext() {
         final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorServices.add(scheduledExecutorService);
-        // no need for a NearCacheManager, so we can pass null
         return new NearCacheContext(
-                null,
                 new DefaultSerializationServiceBuilder().build(),
                 createNearCacheExecutor());
     }

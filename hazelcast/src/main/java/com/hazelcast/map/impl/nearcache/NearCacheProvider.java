@@ -78,9 +78,10 @@ public class NearCacheProvider {
     public <K, V> NearCache<K, V> getOrCreateNearCache(String mapName) {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
         NearCacheContext nearCacheContext = new NearCacheContext(
-                nearCacheManager,
                 nodeEngine.getSerializationService(),
-                new MemberNearCacheExecutor(nodeEngine.getExecutionService()));
+                new MemberNearCacheExecutor(nodeEngine.getExecutionService()),
+                nearCacheManager
+        );
 
         NearCache<K, V> nearCache = nearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig, nearCacheContext);
 

@@ -30,19 +30,25 @@ public class NearCacheContext {
 
     private NearCacheManager nearCacheManager;
 
-    public NearCacheContext(NearCacheManager nearCacheManager,
-                            SerializationService serializationService,
+    public NearCacheContext(SerializationService serializationService,
                             NearCacheExecutor nearCacheExecutor) {
-        this(nearCacheManager, serializationService, nearCacheExecutor, null);
+        this(serializationService, nearCacheExecutor, null, null);
     }
 
-    public NearCacheContext(NearCacheManager nearCacheManager,
-                            SerializationService serializationService,
+    public NearCacheContext(SerializationService serializationService,
                             NearCacheExecutor nearCacheExecutor,
+                            NearCacheManager nearCacheManager) {
+        this(serializationService, nearCacheExecutor, nearCacheManager, null);
+    }
+
+    public NearCacheContext(SerializationService serializationService,
+                            NearCacheExecutor nearCacheExecutor,
+                            NearCacheManager nearCacheManager,
                             ClassLoader classLoader) {
         this.serializationService = serializationService;
         this.nearCacheExecutor = nearCacheExecutor;
         this.classLoader = classLoader;
+
         this.nearCacheManager = nearCacheManager;
     }
 
