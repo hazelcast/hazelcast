@@ -95,4 +95,9 @@ public final class InternalLockNamespace implements ObjectNamespace {
         //warning: this intentionally does not use name field see class-level JavaDoc above
         return getServiceName().hashCode();
     }
+
+    @Override
+    public String toString() {
+        return "InternalLockNamespace{service='" + LockService.SERVICE_NAME + '\'' + ", objectName=" + name + '}';
+    }
 }
