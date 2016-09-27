@@ -3,12 +3,12 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -46,11 +46,13 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
     private static final int CLOCK_DIFFERENCE_MS = 2000;
 
     private InternalSerializationService serializationService;
+    private NodeEngineImpl nodeEngine;
 
     @Before
     public void setup() {
-        SerializationServiceBuilder serializationServiceBuilder = new DefaultSerializationServiceBuilder();
-        serializationService = serializationServiceBuilder.build();
+        HazelcastInstance hz = createHazelcastInstance();
+        this.nodeEngine = getNodeEngineImpl(hz);
+        this.serializationService = getSerializationService(hz);
     }
 
     private Data toData(Object item) {
@@ -78,57 +80,64 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
     }
 
     public void test(InMemoryFormat inMemoryFormat, int ttlSeconds) {
-        RingbufferConfig config = new RingbufferConfig("foobar")
+        final RingbufferConfig config = new RingbufferConfig("foobar")
                 .setCapacity(3)
                 .setAsyncBackupCount(2)
                 .setBackupCount(2)
                 .setInMemoryFormat(inMemoryFormat)
                 .setTimeToLiveSeconds(ttlSeconds);
 
-        RingbufferContainer ringbuffer = new RingbufferContainer(config, serializationService);
-        testSerialization(ringbuffer);
+        final RingbufferContainer rbContainer = new RingbufferContainer(config.getName(), config,
+                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        testSerialization(rbContainer);
 
         for (int k = 0; k < config.getCapacity() * 2; k++) {
-            ringbuffer.add(toData("old"));
-            testSerialization(ringbuffer);
+            rbContainer.add(toData("old"));
+            testSerialization(rbContainer);
         }
 
         // now we are going to force the head to move
+        final ArrayRingbuffer ringbuffer = (ArrayRingbuffer) rbContainer.getRingbuffer();
         for (int k = 0; k < config.getCapacity() / 2; k++) {
             ringbuffer.ringItems[k] = null;
             if (ttlSeconds != 0) {
                 // we need to set the expiration slot to 0, because it won't be serialized (optimization)
                 // serialization will only dump what is between head and tail
-                ringbuffer.ringExpirationMs[k] = 0;
+                rbContainer.getExpirationPolicy().ringExpirationMs[k] = 0;
             }
-            ringbuffer.headSequence++;
-            testSerialization(ringbuffer);
+            ringbuffer.setHeadSequence(ringbuffer.headSequence() + 1);
+            testSerialization(rbContainer);
         }
     }
 
     private void testSerialization(RingbufferContainer original) {
         RingbufferContainer clone = clone(original);
 
-        assertEquals(original.headSequence, clone.headSequence);
-        assertEquals(original.tailSequence, clone.tailSequence);
-        assertEquals(original.capacity, clone.capacity);
-        assertEquals(original.ttlMs, clone.ttlMs);
-        assertArrayEquals(original.ringItems, clone.ringItems);
+        assertEquals(original.headSequence(), clone.headSequence());
+        assertEquals(original.tailSequence(), clone.tailSequence());
+        assertEquals(original.getCapacity(), clone.getCapacity());
+        if (original.getExpirationPolicy() != null) {
+            assertNotNull(clone.getExpirationPolicy());
+            assertEquals(original.getExpirationPolicy().getTtlMs(), clone.getExpirationPolicy().getTtlMs());
+        }
+        final ArrayRingbuffer originalRingbuffer = (ArrayRingbuffer) original.getRingbuffer();
+        final ArrayRingbuffer cloneRingbuffer = (ArrayRingbuffer) original.getRingbuffer();
+        assertArrayEquals(originalRingbuffer.ringItems, cloneRingbuffer.ringItems);
 
 
         // the most complicated part is the expiration.
         if (original.getConfig().getTimeToLiveSeconds() == 0) {
-            assertNull(clone.ringExpirationMs);
+            assertNull(clone.getExpirationPolicy());
             return;
         }
 
-        assertNotNull(clone.ringExpirationMs);
-        assertEquals(original.ringExpirationMs.length, clone.ringExpirationMs.length);
+        assertNotNull(clone.getExpirationPolicy());
+        assertEquals(original.getExpirationPolicy().ringExpirationMs.length, clone.getExpirationPolicy().ringExpirationMs.length);
 
-        for (long seq = original.headSequence; seq <= original.tailSequence; seq++) {
-            int index = original.toIndex(seq);
-            long originalExpiration = original.ringExpirationMs[index];
-            long actualExpiration = clone.ringExpirationMs[index];
+        for (long seq = original.headSequence(); seq <= original.tailSequence(); seq++) {
+            int index = original.getExpirationPolicy().toIndex(seq);
+            long originalExpiration = original.getExpirationPolicy().ringExpirationMs[index];
+            long actualExpiration = clone.getExpirationPolicy().ringExpirationMs[index];
             double difference = actualExpiration - originalExpiration;
             assertTrue("difference was:" + difference, difference > 0.50 * CLOCK_DIFFERENCE_MS);
             assertTrue("difference was:" + difference, difference < 1.50 * CLOCK_DIFFERENCE_MS);
