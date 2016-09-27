@@ -58,8 +58,8 @@ public class ClientConnection implements Connection {
     private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
-    private final ClientWriteHandler writeHandler;
-    private final ClientReadHandler readHandler;
+    private final ClientNonBlockingSocketWriter writer;
+    private final ClientNonBlockingSocketReader reader;
     private final SocketChannelWrapper socketChannelWrapper;
     private final ClientConnectionManager connectionManager;
     private final LifecycleService lifecycleService;
@@ -86,18 +86,18 @@ public class ClientConnection implements Connection {
         this.lifecycleService = client.getLifecycleService();
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
-        LoggingService clientLoggingService = client.getLoggingService();
-        this.logger = clientLoggingService.getLogger(ClientConnection.class);
+        LoggingService loggingService = client.getLoggingService();
+        this.logger = loggingService.getLogger(ClientConnection.class);
         boolean directBuffer = client.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
-        this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize(), directBuffer, clientLoggingService);
-        this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize(), directBuffer, clientLoggingService);
+        this.reader = new ClientNonBlockingSocketReader(this, in, socket.getReceiveBufferSize(), directBuffer, loggingService);
+        this.writer = new ClientNonBlockingSocketWriter(this, out, socket.getSendBufferSize(), directBuffer, loggingService);
 
         MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
         String connectionName = "tcp.connection["
                 + socket.getLocalSocketAddress() + " -> " + socket.getRemoteSocketAddress() + "]";
         metricsRegistry.scanAndRegister(this, connectionName);
-        metricsRegistry.scanAndRegister(readHandler, connectionName + ".in");
-        metricsRegistry.scanAndRegister(writeHandler, connectionName + ".out");
+        metricsRegistry.scanAndRegister(reader, connectionName + ".in");
+        metricsRegistry.scanAndRegister(writer, connectionName + ".out");
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -106,8 +106,8 @@ public class ClientConnection implements Connection {
         this.connectionManager = client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;
-        writeHandler = null;
-        readHandler = null;
+        writer = null;
+        reader = null;
         socketChannelWrapper = null;
         logger = client.getLoggingService().getLogger(ClientConnection.class);
     }
@@ -132,7 +132,7 @@ public class ClientConnection implements Connection {
             }
             return false;
         }
-        writeHandler.enqueue(frame);
+        writer.enqueue(frame);
         return true;
     }
 
@@ -155,12 +155,12 @@ public class ClientConnection implements Connection {
 
     @Override
     public long lastReadTimeMillis() {
-        return readHandler.getLastHandle();
+        return reader.getLastHandle();
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        return writeHandler.getLastHandle();
+        return writer.getLastHandle();
     }
 
     @Override
@@ -201,8 +201,8 @@ public class ClientConnection implements Connection {
         return connectionManager;
     }
 
-    public ClientReadHandler getReadHandler() {
-        return readHandler;
+    public ClientNonBlockingSocketReader getReader() {
+        return reader;
     }
 
     public void setRemoteEndpoint(Address remoteEndpoint) {
@@ -251,13 +251,13 @@ public class ClientConnection implements Connection {
         if (socketChannelWrapper.isOpen()) {
             socketChannelWrapper.close();
         }
-        readHandler.shutdown();
-        writeHandler.shutdown();
+        reader.shutdown();
+        writer.shutdown();
 
         MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
         metricsRegistry.deregister(this);
-        metricsRegistry.deregister(writeHandler);
-        metricsRegistry.deregister(readHandler);
+        metricsRegistry.deregister(writer);
+        metricsRegistry.deregister(reader);
     }
 
     @Override
