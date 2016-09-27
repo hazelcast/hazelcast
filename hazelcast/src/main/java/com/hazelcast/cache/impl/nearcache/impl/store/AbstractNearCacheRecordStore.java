@@ -40,8 +40,7 @@ import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvicti
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
 
-public abstract class AbstractNearCacheRecordStore<
-        K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
+public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
         implements NearCacheRecordStore<K, V>, EvictionListener<KS, R> {
 
     /**
@@ -68,6 +67,7 @@ public abstract class AbstractNearCacheRecordStore<
     protected final EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<KS, R, NCRM> evictionStrategy;
+    protected final EvictionPolicyType evictionPolicyType;
 
     protected NCRM records;
 
@@ -90,6 +90,7 @@ public abstract class AbstractNearCacheRecordStore<
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         this.evictionChecker = createEvictionChecker(nearCacheConfig);
         this.evictionStrategy = createEvictionStrategy(evictionConfig);
+        this.evictionPolicyType = evictionConfig.getEvictionPolicyType();
     }
 
     protected abstract MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
@@ -114,6 +115,8 @@ public abstract class AbstractNearCacheRecordStore<
     protected abstract void putToRecord(R record, V value);
 
     protected abstract R removeRecord(K key);
+
+    protected abstract boolean containsRecordKey(K key);
 
     protected void checkAvailable() {
         if (!isAvailable()) {
@@ -224,7 +227,10 @@ public abstract class AbstractNearCacheRecordStore<
     }
 
     protected boolean isEvictionEnabled() {
-        return evictionStrategy != null && evictionPolicyEvaluator != null;
+        return evictionStrategy != null
+                && evictionPolicyEvaluator != null
+                && evictionPolicyType != null
+                && !evictionPolicyType.equals(EvictionPolicyType.NONE);
     }
 
     @Override
@@ -269,6 +275,12 @@ public abstract class AbstractNearCacheRecordStore<
     @Override
     public void put(K key, V value) {
         checkAvailable();
+
+        // if there is no eviction configured we return if the Near Cache is full and it's a new key
+        // (we have to check the key, otherwise we might lose updates on existing keys)
+        if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+            return;
+        }
 
         R record = null;
         R oldRecord = null;

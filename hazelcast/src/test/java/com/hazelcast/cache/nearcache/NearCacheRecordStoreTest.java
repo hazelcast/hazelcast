@@ -196,13 +196,13 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
     }
 
     @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndDefaultEvictionPolicyOnNearCacheObjectRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.OBJECT, null);
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndRandomEvictionPolicyNearCacheObjectRecordStore() {
+        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.OBJECT, EvictionPolicy.RANDOM);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void evictionNotSupportedWithEntryCountMaxSizePolicyAndRandomEvictionPolicyNearCacheObjectRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.OBJECT, EvictionPolicy.RANDOM);
+    @Test
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndDefaultEvictionPolicyOnNearCacheObjectRecordStore() {
+        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.OBJECT, null);
     }
 
     @Test
@@ -216,12 +216,12 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
     }
 
     @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndDefaultEvictionPolicyNearCacheDataRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.BINARY, EvictionPolicy.LFU);
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndRandomEvictionPolicyNearCacheDataRecordStore() {
+        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.BINARY, EvictionPolicy.RANDOM);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void evictionNotSupportedWithEntryCountMaxSizePolicyAndRandomEvictionPolicyNearCacheDataRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.BINARY, EvictionPolicy.RANDOM);
+    @Test
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndDefaultEvictionPolicyNearCacheDataRecordStore() {
+        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.BINARY, null);
     }
 }

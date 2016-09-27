@@ -235,16 +235,16 @@ public class LocalMapStatsProvider {
      * Adds Near Cache stats.
      */
     protected void addNearCacheStats(LocalMapStatsImpl stats,
-                                     LocalMapOnDemandCalculatedStats onDemandStats, MapContainer mapContainer) {
+                                     LocalMapOnDemandCalculatedStats onDemandStats,
+                                     MapContainer mapContainer) {
         if (!mapContainer.getMapConfig().isNearCacheEnabled()) {
             return;
         }
         NearCache nearCache = nearCacheProvider.getOrCreateNearCache(mapContainer.getName());
         NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
-        long nearCacheHeapCost = mapContainer.getNearCacheSizeEstimator().getSize();
 
         stats.setNearCacheStats(nearCacheStats);
-        onDemandStats.incrementHeapCost(nearCacheHeapCost);
+        onDemandStats.incrementHeapCost(nearCacheStats.getOwnedEntryMemoryCost());
     }
 
     protected static class LocalMapOnDemandCalculatedStats {
@@ -310,7 +310,5 @@ public class LocalMapStatsProvider {
             stats.setLockedEntryCount(lockedEntryCount);
             stats.setDirtyEntryCount(dirtyEntryCount);
         }
-
     }
-
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -48,6 +49,16 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     @Test
     public void whenEmptyMapThenPopulatedNearCacheShouldReturnNull_neverNULL_OBJECT() {
         whenEmptyMapThenPopulatedNearCacheShouldReturnNullNeverNULL_OBJECT(inMemoryFormat);
+    }
+
+    @Test
+    public void whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE_withLocalCachePolicyCACHE() {
+        whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE(inMemoryFormat, LocalUpdatePolicy.CACHE);
+    }
+
+    @Test
+    public void whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE_withLocalCachePolicyINVALIDATE() {
+        whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE(inMemoryFormat, LocalUpdatePolicy.INVALIDATE);
     }
 
     @Test

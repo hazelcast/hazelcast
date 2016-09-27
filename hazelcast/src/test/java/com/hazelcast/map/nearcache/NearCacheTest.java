@@ -18,6 +18,7 @@ package com.hazelcast.map.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -125,7 +126,6 @@ public class NearCacheTest extends NearCacheTestSupport {
                 }
             }
         });
-
     }
 
     @Override
@@ -154,6 +154,24 @@ public class NearCacheTest extends NearCacheTestSupport {
             // fetch value from Near Cache
             assertNull(map.get(i));
         }
+    }
+
+    @Test
+    public void test_whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE() {
+        int size = 10;
+        int maxSize = 5;
+        IMap<Integer, Integer> map = getMapConfiguredWithMaxSizeAndPolicy(EvictionPolicy.NONE, maxSize);
+
+        populateMap(map, size);
+        populateNearCache(map, size);
+
+        assertEquals(maxSize, getNearCacheSize(map));
+        assertEquals(1, map.get(1).intValue());
+
+        map.put(1, 1502);
+
+        assertEquals(1502, map.get(1).intValue());
+        assertEquals(1502, map.get(1).intValue());
     }
 
     @Test
@@ -686,7 +704,7 @@ public class NearCacheTest extends NearCacheTestSupport {
             public void run() {
                 triggerNearCacheEviction(map);
                 long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
+                assertEquals("owned entry count " + ownedEntryCount, maxSize, ownedEntryCount);
             }
         });
     }
@@ -705,35 +723,25 @@ public class NearCacheTest extends NearCacheTestSupport {
             public void run() {
                 triggerNearCacheEviction(map);
                 long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
+                assertEquals("owned entry count " + ownedEntryCount, maxSize, ownedEntryCount);
             }
         });
     }
 
     @Test
     public void testNearCacheInvalidation_WithRandom_whenMaxSizeExceeded() {
-        int mapSize = 2000;
-        final int maxSize = 1000;
-        final IMap<Integer, Integer> map = getMapConfiguredWithMaxSizeAndPolicy(EvictionPolicy.RANDOM, maxSize);
-
-        populateMap(map, mapSize);
-        populateNearCache(map, mapSize);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                triggerNearCacheEviction(map);
-                long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
-            }
-        });
+        testNearCacheInvalidation_whenMaxSizeExceeded(EvictionPolicy.RANDOM);
     }
 
     @Test
     public void testNearCacheInvalidation_WitNone_whenMaxSizeExceeded() {
+        testNearCacheInvalidation_whenMaxSizeExceeded(EvictionPolicy.NONE);
+    }
+
+    private void testNearCacheInvalidation_whenMaxSizeExceeded(EvictionPolicy evictionPolicy) {
         int mapSize = 2000;
         final int maxSize = 1000;
-        final IMap<Integer, Integer> map = getMapConfiguredWithMaxSizeAndPolicy(EvictionPolicy.NONE, maxSize);
+        final IMap<Integer, Integer> map = getMapConfiguredWithMaxSizeAndPolicy(evictionPolicy, maxSize);
 
         populateMap(map, mapSize);
         populateNearCache(map, mapSize);
@@ -764,6 +772,9 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        nearCacheConfig.getEvictionConfig()
+                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                .setSize(10);
 
         Config config = getConfig();
         config.addMapConfig(new MapConfig(mapName).setNearCacheConfig(nearCacheConfig));
@@ -898,5 +909,20 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         IMap<Integer, Integer> map = instance.getMap(mapName);
         testNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNearCache_whenInMemoryFormatIsNative_thenThrowIllegalArgumentException() {
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig()
+                .setInMemoryFormat(InMemoryFormat.NATIVE)
+        );
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        instance.getMap(mapName);
     }
 }
