@@ -11,6 +11,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,6 +33,13 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
     private Cluster cluster;
     private ManagementCenterService managementCenterService;
     private Map<String, Object> bindings = new HashMap<String, Object>();
+
+    /**
+     * Zulu 6 and 7 doesn't have Rhino script engine, so this test should be excluded.
+     * see http://zulu.org/forum/thread/nullpointerexception-on-loading-the-javascript-engine-in-zulu-7-u76/
+     */
+    @Rule
+    public ZuluExcludeRule zuluExcludeRule = new ZuluExcludeRule();
 
     @Before
     public void setUp() {
