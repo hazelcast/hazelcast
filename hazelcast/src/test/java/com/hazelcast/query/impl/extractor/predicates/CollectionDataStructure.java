@@ -15,7 +15,8 @@ import java.util.List;
 public class CollectionDataStructure {
 
     public static class Person implements Serializable {
-        public List<Limb> limbs_list = new ArrayList<Limb>();
+
+        List<Limb> limbs_list = new ArrayList<Limb>();
         Limb[] limbs_array = null;
 
         @Override

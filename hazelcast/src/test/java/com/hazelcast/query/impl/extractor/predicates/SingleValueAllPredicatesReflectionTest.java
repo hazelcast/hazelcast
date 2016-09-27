@@ -25,9 +25,9 @@ import static java.util.Collections.singletonList;
 
 /**
  * Tests whether all predicates work with the extraction in attributes that are not collections.
- * <p/>
+ *
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p/>
+ *
  * This test is parametrised:
  * - each test is executed separately for BINARY and OBJECT in memory format
  * - each test is executed separately having each query using NO_INDEX, UNORDERED_INDEX and ORDERED_INDEX.

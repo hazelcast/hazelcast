@@ -28,9 +28,9 @@ import static java.util.Arrays.asList;
  * Tests whether all predicates work with the extraction in collections.
  * Each predicate is tested with and without the extraction including "any" operator.
  * Extraction with the "any" operator may return multiple results, thus each predicate has to handle it.
- * <p/>
+ *
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p/>
+ *
  * The trick here is that each multi-value attribute in the used data structure is present as both an array and as
  * a collection. For more details have a look at CollectionDataStructure.
  * This test is parametrised, so that it's executed for both options too (arrays and collections).
@@ -38,7 +38,7 @@ import static java.util.Arrays.asList;
  * limbs_[1].power is unfolded to: limbs_array[1].power and limbs_list[1].power in two separate tests run.
  * In this way we are testing extraction in collection and arrays making sure that the default behavior is consistent
  * for both extraction sources!
- * <p/>
+ *
  * It's not the only parametrisation in this test; the other ones are:
  * - each test is executed separately for BINARY and OBJECT in memory format
  * - each test is executed separately having each query using NO_INDEX, UNORDERED_INDEX and ORDERED_INDEX.

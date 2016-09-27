@@ -110,13 +110,16 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
      * In this way we avoid the name validation and can reuse the dot names
      */
     public static class TestMapAttributeIndexConfig extends MapAttributeConfig {
+
         private String name;
 
+        @Override
         public MapAttributeConfig setName(String name) {
             this.name = name;
             return this;
         }
 
+        @Override
         public String getName() {
             return name;
         }

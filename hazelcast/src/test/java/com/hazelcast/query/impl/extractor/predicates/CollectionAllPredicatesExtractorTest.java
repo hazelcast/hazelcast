@@ -7,6 +7,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Limb;
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Person;
@@ -15,25 +17,26 @@ import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStruct
  * Tests whether all predicates work with the extraction in collections.
  * Each predicate is tested with and without the extraction including "any" operator.
  * Extraction with the "any" operator may return multiple results, thus each predicate has to handle it.
- * <p/>
+ *
  * Extraction mechanism: CUSTOM EXTRACTORS.
- * <p/>
+ *
  * The trick here is that each extractor is registered under the attribute name like "limbs_[1].power".
  * It is illegal in the production usage, but it enables reusing the test cases from
  * CollectionAllPredicatesReflectionTest without any code changes, so it is used here.
  * That is the reason why this test may extend the CollectionAllPredicatesReflectionTest, and the only difference
  * is the registration of the Extractors.
- * <p/>
+ *
  * This test is parametrised. See CollectionAllPredicatesReflectionTest for more details.
  */
+@RunWith(Parameterized.class)
 @SuppressWarnings("unused")
 public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicatesReflectionTest {
 
-    public CollectionAllPredicatesExtractorTest(InMemoryFormat inMemoryFormat, AbstractExtractionTest.Index index,
-                                                Multivalue multivalue) {
+    public CollectionAllPredicatesExtractorTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
     }
 
+    @Override
     protected AbstractExtractionTest.Configurator getInstanceConfigurator() {
         return new AbstractExtractionTest.Configurator() {
             @Override
@@ -42,26 +45,22 @@ public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicate
 
                 MapAttributeConfig reducedNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 reducedNameAttribute.setName(AbstractExtractionTest.parametrize("limb_[any].name", mv));
-                reducedNameAttribute.setExtractor(
-                        "com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$ReducedLimbNameExtractor");
+                reducedNameAttribute.setExtractor("com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$ReducedLimbNameExtractor");
                 mapConfig.addMapAttributeConfig(reducedNameAttribute);
 
                 MapAttributeConfig indexOneNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 indexOneNameAttribute.setName(AbstractExtractionTest.parametrize("limb_[1].name", mv));
-                indexOneNameAttribute.setExtractor(
-                        "com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$IndexOneLimbNameExtractor");
+                indexOneNameAttribute.setExtractor("com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$IndexOneLimbNameExtractor");
                 mapConfig.addMapAttributeConfig(indexOneNameAttribute);
 
                 MapAttributeConfig reducedPowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 reducedPowerAttribute.setName(AbstractExtractionTest.parametrize("limb_[any].power", mv));
-                reducedPowerAttribute.setExtractor(
-                        "com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$ReducedLimbPowerExtractor");
+                reducedPowerAttribute.setExtractor("com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$ReducedLimbPowerExtractor");
                 mapConfig.addMapAttributeConfig(reducedPowerAttribute);
 
                 MapAttributeConfig indexOnePowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 indexOnePowerAttribute.setName(AbstractExtractionTest.parametrize("limb_[1].power", mv));
-                indexOnePowerAttribute.setExtractor(
-                        "com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$IndexOneLimbPowerExtractor");
+                indexOnePowerAttribute.setExtractor("com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$IndexOneLimbPowerExtractor");
                 mapConfig.addMapAttributeConfig(indexOnePowerAttribute);
             }
         };
