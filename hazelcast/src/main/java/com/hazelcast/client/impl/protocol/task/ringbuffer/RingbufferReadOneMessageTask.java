@@ -32,7 +32,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_OFFER}
+ * {@link com.hazelcast.client.impl.protocol.codec.RingbufferMessageType#RINGBUFFER_READONE}
  */
 public class RingbufferReadOneMessageTask
         extends AbstractPartitionMessageTask<RingbufferReadOneCodec.RequestParameters> {
