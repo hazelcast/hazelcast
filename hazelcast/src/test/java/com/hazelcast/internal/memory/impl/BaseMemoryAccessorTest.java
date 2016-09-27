@@ -817,7 +817,9 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
         }
     }
 
+    @SuppressWarnings("unused")
     private static class SampleObjectBase {
+
         private byte byteValue;
         private boolean booleanValue;
         private char charValue;
@@ -829,7 +831,9 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
         private Object objectValue;
     }
 
+    @SuppressWarnings("unused")
     private static class SampleObject extends SampleObjectBase {
+
         private static final long BYTE_VALUE_OFFSET = getSampleObjectFieldOffset("byteValue");
         private static final long BOOLEAN_VALUE_OFFSET = getSampleObjectFieldOffset("booleanValue");
         private static final long CHAR_VALUE_OFFSET = getSampleObjectFieldOffset("charValue");
@@ -844,5 +848,4 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
         // unaligned access without causing heap corruption
         private long padding;
     }
-
 }

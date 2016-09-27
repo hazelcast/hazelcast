@@ -74,11 +74,13 @@ public class AlignmentAwareMemoryAccessorTest extends BaseMemoryAccessorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @Override
     public void test_compareAndSwapInt_whenUnaligned() {
         super.test_compareAndSwapInt_whenUnaligned();
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @Override
     public void test_compareAndSwapLong_whenUnaligned() {
         super.test_compareAndSwapLong_whenUnaligned();
     }
@@ -89,11 +91,13 @@ public class AlignmentAwareMemoryAccessorTest extends BaseMemoryAccessorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @Override
     public void test_putOrderedInt_whenUnaligned() {
         super.test_putOrderedInt_whenUnaligned();
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @Override
     public void test_putOrderedLong_whenUnaligned() {
         super.test_putOrderedLong_whenUnaligned();
     }

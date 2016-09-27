@@ -39,5 +39,4 @@ public class TestIgnoreRuleAccordingToUnsafeAvailability implements TestRule {
             };
         }
     }
-
 }

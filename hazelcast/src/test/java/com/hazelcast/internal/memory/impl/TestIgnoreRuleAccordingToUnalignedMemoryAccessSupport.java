@@ -24,8 +24,7 @@ import org.junit.runners.model.Statement;
 
 public class TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport implements TestRule {
 
-    private static final ILogger LOGGER
-            = Logger.getLogger(TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport.class);
+    private static final ILogger LOGGER = Logger.getLogger(TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport.class);
 
     @Override
     public Statement apply(Statement base, final Description description) {
@@ -41,5 +40,4 @@ public class TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport implements Te
         }
         return base;
     }
-
 }

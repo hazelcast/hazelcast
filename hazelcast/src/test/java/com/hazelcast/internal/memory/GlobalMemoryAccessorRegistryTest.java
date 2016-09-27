@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.memory;
 
+import com.hazelcast.internal.memory.impl.AbstractUnsafeDependentMemoryAccessorTest;
 import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
 import com.hazelcast.internal.memory.impl.AlignmentUtil;
 import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
-import com.hazelcast.internal.memory.impl.AbstractUnsafeDependentMemoryAccessorTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
