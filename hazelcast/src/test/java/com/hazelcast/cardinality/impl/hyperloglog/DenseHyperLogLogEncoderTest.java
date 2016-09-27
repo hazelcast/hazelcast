@@ -22,8 +22,13 @@ import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncoder;
 public class DenseHyperLogLogEncoderTest extends HyperLogLogEncoderAbstractTest {
 
     @Override
+    public int precision() {
+        return 14;
+    }
+
+    @Override
     public HyperLogLogEncoder createStore() {
-        return new DenseHyperLogLogEncoder(14);
+        return new DenseHyperLogLogEncoder(precision());
     }
 
     @Override

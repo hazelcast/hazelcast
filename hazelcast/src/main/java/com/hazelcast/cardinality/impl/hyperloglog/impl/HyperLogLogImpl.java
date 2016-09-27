@@ -60,8 +60,8 @@ public class HyperLogLogImpl implements HyperLogLog {
     @Override
     public long estimate() {
         if (cachedEstimate == null) {
-            cachedEstimate = encoder.estimate();
             convertToDenseIfNeeded();
+            cachedEstimate = encoder.estimate();
         }
 
         return cachedEstimate;

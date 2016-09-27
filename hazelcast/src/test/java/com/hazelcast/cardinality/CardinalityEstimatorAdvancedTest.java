@@ -40,6 +40,34 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testCardinalityEstimatorFailure_whenSwitchedToDense() {
+        int k = 4;
+        int sparseLimit = 10000;
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(k + 1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        String name = "testFailure_whenSwitchedToDense";
+        CardinalityEstimator estimator = instance.getCardinalityEstimator(name);
+        for (int i = 0; i < sparseLimit; i++) {
+            estimator.add(String.valueOf(i + 1));
+        }
+
+        long estimateSoFar = estimator.estimate();
+
+        for (int i = 0; i < k; i++) {
+            HazelcastInstance newInstance = nodeFactory.newHazelcastInstance();
+            CardinalityEstimator newEstimator = newInstance.getCardinalityEstimator(name);
+            assertEquals(estimateSoFar, newEstimator.estimate());
+
+            // Add numbers with huge gaps in between to guarantee change of est.
+            newEstimator.add(String.valueOf(1 << (14 + i)));
+            estimateSoFar = newEstimator.estimate();
+            instance.shutdown();
+            instance = newInstance;
+        }
+    }
+
+    @Test
     public void testCardinalityEstimatorSpawnNodeInParallel() throws InterruptedException {
         int total = 6;
         int parallel = 2;
