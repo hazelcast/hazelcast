@@ -58,6 +58,7 @@ public final class MapConfigValidator {
         logIgnoredConfig(mapConfig);
     }
 
+    @SuppressWarnings("deprecation")
     private static void logIgnoredConfig(MapConfig mapConfig) {
         if (DEFAULT_MIN_EVICTION_CHECK_MILLIS != mapConfig.getMinEvictionCheckMillis()
                 || DEFAULT_EVICTION_PERCENTAGE != mapConfig.getEvictionPercentage()) {
