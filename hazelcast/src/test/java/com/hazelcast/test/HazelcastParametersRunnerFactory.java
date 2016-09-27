@@ -61,12 +61,14 @@ public class HazelcastParametersRunnerFactory implements ParametersRunnerFactory
         return false;
     }
 
-    private HazelcastSerialClassRunner getSerialClassRunner(Class<?> testClass, Object[] parameters, String testName)
+    // needs to be protected for Hazelcast Enterprise HazelcastParametersRunnerFactory
+    protected HazelcastSerialClassRunner getSerialClassRunner(Class<?> testClass, Object[] parameters, String testName)
             throws InitializationError {
         return new HazelcastSerialClassRunner(testClass, parameters, testName);
     }
 
-    private HazelcastParallelClassRunner getParallelClassRunner(Class<?> testClass, Object[] parameters, String testName)
+    // needs to be protected for Hazelcast Enterprise HazelcastParametersRunnerFactory
+    protected HazelcastParallelClassRunner getParallelClassRunner(Class<?> testClass, Object[] parameters, String testName)
             throws InitializationError {
         return new HazelcastParallelClassRunner(testClass, parameters, testName);
     }
