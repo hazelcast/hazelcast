@@ -25,14 +25,12 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
- * <p>
  * A specific {@link ExecutionCallback} base implementation which has this behaviour:
  * <ul>
- *      <li>If it has not been called yet, it will be called and it will be waited to finish.</li>
- *      <li>If it has been called but not finished yet, it will be waited to finish.</li>
- *      <li>If it has been called and finished already, it will return immediately.</li>
+ * <li>If it has not been called yet, it will be called and it will be waited to finish.</li>
+ * <li>If it has been called but not finished yet, it will be waited to finish.</li>
+ * <li>If it has been called and finished already, it will return immediately.</li>
  * </ul>
- * </p>
  *
  * @param <V> type of the response
  */
@@ -66,11 +64,12 @@ abstract class OneShotExecutionCallback<V> implements ExecutionCallback<V> {
     }
 
     protected abstract void onResponseInternal(V response);
+
     protected abstract void onFailureInternal(Throwable t);
 
     private void onInternal(Object obj, boolean failure, long finishTime) {
         if (callState != CALL_FINISHED) {
-            // Call not finished yet so be sure that it finished by calling it or waiting it to finish
+            // call not finished yet so be sure that it finished by calling it or waiting it to finish
             if (CALL_STATE_UPDATER.compareAndSet(this, NOT_CALLED, CALL_IN_PROGRESS)) {
                 // Will be called only by this thread
                 try {
@@ -80,21 +79,19 @@ abstract class OneShotExecutionCallback<V> implements ExecutionCallback<V> {
                         onResponseInternal((V) obj);
                     }
                 } finally {
-                    // Call finished
+                    // call finished
                     callState = CALL_FINISHED;
                 }
             } else {
-                // Call has been started by another thread but not finished yet.
-                // So wait until it finished by busy-spin.
+                // call has been started by another thread but not finished yet,
+                // so wait until it finished by busy-spin
                 while (finishTime > Clock.currentTimeMillis()) {
                     if (callState == CALL_FINISHED) {
                         return;
                     }
                 }
-                sneakyThrow(new TimeoutException(
-                        "Waiting for sync execution callback to finish has failed due to timeout!"));
+                sneakyThrow(new TimeoutException("Waiting for sync execution callback to finish has failed due to timeout!"));
             }
         }
     }
-
 }

@@ -119,8 +119,7 @@ final class ClientCacheHelper {
      * @param statOrMan flag that represents which one of the statistics or management will be enabled
      * @param enabled   flag which represents whether it is enable or disable
      */
-    static void enableStatisticManagementOnNodes(HazelcastClientInstanceImpl client,
-                                                 String cacheName,
+    static void enableStatisticManagementOnNodes(HazelcastClientInstanceImpl client, String cacheName,
                                                  boolean statOrMan, boolean enabled) {
         Collection<Member> members = client.getClientClusterService().getMemberList();
         Collection<Future> futures = new ArrayList<Future>();

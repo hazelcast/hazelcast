@@ -52,20 +52,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
- * <p>Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
- * {@link com.hazelcast.cache.ICache} is the designated interface.</p>
- * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
- * <p>Note: this partial implementation is used by client.</p>
+ * Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
+ * {@link com.hazelcast.cache.ICache} is the designated interface.
+ *
+ * AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.
+ *
+ * Note: this partial implementation is used by client.
  *
  * @param <K> the type of key
  * @param <V> the type of value
  */
-abstract class AbstractClientCacheProxy<K, V>
-        extends AbstractClientInternalCacheProxy<K, V>
-        implements ICacheInternal<K, V> {
+abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCacheProxy<K, V> implements ICacheInternal<K, V> {
 
+    @SuppressWarnings("unchecked")
     private static ClientMessageDecoder cacheGetResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
@@ -73,7 +75,7 @@ abstract class AbstractClientCacheProxy<K, V>
         }
     };
 
-    protected AbstractClientCacheProxy(CacheConfig cacheConfig) {
+    protected AbstractClientCacheProxy(CacheConfig<K, V> cacheConfig) {
         super(cacheConfig);
     }
 
@@ -103,7 +105,7 @@ abstract class AbstractClientCacheProxy<K, V>
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
             future = clientInvocation.invoke();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
         SerializationService serializationService = clientContext.getSerializationService();
         ClientDelegatingFuture<V> delegatingFuture =
@@ -318,7 +320,7 @@ abstract class AbstractClientCacheProxy<K, V>
             // Then we invoke the operations and sync on completion of these operations
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, start);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -382,8 +384,7 @@ abstract class AbstractClientCacheProxy<K, V>
         waitResponseFromAllPartitionsForPutAll(futureEntriesTuples, start);
     }
 
-    private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples,
-                                                        long start) {
+    private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples, long start) {
         Throwable error = null;
         for (FutureEntriesTuple tuple : futureEntriesTuples) {
             Future future = tuple.future;
@@ -391,7 +392,7 @@ abstract class AbstractClientCacheProxy<K, V>
             try {
                 future.get();
                 if (nearCache != null) {
-                    handleNearCacheOnPutAll(entries, !cacheOnUpdate);
+                    handleNearCacheOnPutAll(entries);
                 }
                 // Note that we count the batch put only if there is no exception while putting to target partition.
                 // In case of error, some of the entries might have been put and others might fail.
@@ -401,7 +402,7 @@ abstract class AbstractClientCacheProxy<K, V>
                 }
             } catch (Throwable t) {
                 if (nearCache != null) {
-                    handleNearCacheOnPutAll(entries, true);
+                    handleNearCacheOnPutAll(entries);
                 }
                 logger.finest("Error occurred while putting entries as batch!", t);
                 if (error == null) {
@@ -429,11 +430,11 @@ abstract class AbstractClientCacheProxy<K, V>
              *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
              * So as a result, we only throw the first exception and others are suppressed by only logging.
              */
-            ExceptionUtil.rethrow(error);
+            throw rethrow(error);
         }
     }
 
-    private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries, boolean invalidate) {
+    private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries) {
         if (nearCache != null) {
             if (cacheOnUpdate) {
                 for (Map.Entry<Data, Data> entry : entries) {
@@ -513,5 +514,4 @@ abstract class AbstractClientCacheProxy<K, V>
     public CacheStatistics getLocalCacheStatistics() {
         return statistics;
     }
-
 }

@@ -38,13 +38,11 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * <p>
- * CacheManager implementation for client side
- * <p/>
- * Provides client side cacheManager functionality
+ * {@link javax.cache.CacheManager} implementation for client side.
+ *
+ * Provides client side CacheManager functionality.
  */
-public final class HazelcastClientCacheManager
-        extends AbstractHazelcastCacheManager {
+public final class HazelcastClientCacheManager extends AbstractHazelcastCacheManager {
 
     private final HazelcastClientInstanceImpl client;
     private final ClientCacheProxyFactory clientCacheProxyFactory;
@@ -87,7 +85,7 @@ public final class HazelcastClientCacheManager
         checkIfManagerNotClosed();
         checkNotNull(cacheName, "cacheName cannot be null");
         ClientCacheHelper.enableStatisticManagementOnNodes(client, getCacheNameWithPrefix(cacheName),
-                                                           statOrMan, enabled);
+                statOrMan, enabled);
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
@@ -114,7 +112,7 @@ public final class HazelcastClientCacheManager
         try {
             ClientCacheProxy<K, V> clientCacheProxy =
                     (ClientCacheProxy<K, V>) client.getCacheManager()
-                                                   .getCacheByFullName(cacheConfig.getNameWithPrefix());
+                            .getCacheByFullName(cacheConfig.getNameWithPrefix());
             clientCacheProxy.setCacheManager(this);
             return clientCacheProxy;
         } catch (Throwable t) {
@@ -142,7 +140,7 @@ public final class HazelcastClientCacheManager
     protected <K, V> CacheConfig<K, V> createCacheConfig(String cacheName, CacheConfig<K, V> config,
                                                          boolean createAlsoOnOthers, boolean syncCreate) {
         return ClientCacheHelper.createCacheConfig(client, configs, cacheName, config,
-                                                   createAlsoOnOthers, syncCreate);
+                createAlsoOnOthers, syncCreate);
     }
 
     @Override
@@ -179,5 +177,4 @@ public final class HazelcastClientCacheManager
     public NearCacheManager getNearCacheManager() {
         return client.getNearCacheManager();
     }
-
 }

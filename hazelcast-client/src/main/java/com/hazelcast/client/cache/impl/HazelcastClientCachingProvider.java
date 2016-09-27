@@ -31,9 +31,7 @@ import java.net.URL;
 import java.util.Properties;
 
 /**
- * Provides client cachingProvider implementation.
- *
- * @see javax.cache.spi.CachingProvider
+ * Client side {@link javax.cache.spi.CachingProvider} implementation.
  */
 public final class HazelcastClientCachingProvider extends AbstractHazelcastCachingProvider {
 
@@ -41,9 +39,7 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     }
 
     /**
-     * Helper method for creating caching provider for testing etc
-     * @param hazelcastInstance
-     * @return HazelcastClientCachingProvider
+     * Helper method for creating caching provider for testing etc.
      */
     public static HazelcastClientCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
         final HazelcastClientCachingProvider cachingProvider = new HazelcastClientCachingProvider();
@@ -54,8 +50,8 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     @Override
     protected HazelcastClientCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
                                                                       Properties properties) {
-        final boolean isDefaultURI = (uri == null || uri.equals(getDefaultURI()));
-        final HazelcastInstance instance;
+        boolean isDefaultURI = (uri == null || uri.equals(getDefaultURI()));
+        HazelcastInstance instance;
         try {
             instance = getOrCreateInstance(classLoader, properties, isDefaultURI);
             if (instance == null) {
@@ -72,22 +68,22 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
         HazelcastInstance instanceItself =
                 (HazelcastInstance) properties.get(HazelcastCachingProvider.HAZELCAST_INSTANCE_ITSELF);
 
-        // If instance itself is specified via properties, get instance through it.
+        // if instance itself is specified via properties, get instance through it
         if (instanceItself != null) {
             return instanceItself;
         }
 
         String location = properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION);
-        // If config location is specified, get instance through it.
+        // if config location is specified, get instance through it
         if (location != null) {
             URI uri = new URI(location);
             String scheme = uri.getScheme();
             if (scheme == null) {
-                // It is a place holder
+                // it is a place holder
                 uri = new URI(System.getProperty(uri.getRawSchemeSpecificPart()));
             }
             ClassLoader theClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
-            final URL configURL;
+            URL configURL;
             if ("classpath".equals(scheme)) {
                 configURL = theClassLoader.getResource(uri.getRawSchemeSpecificPart());
             } else if ("file".equals(scheme) || "http".equals(scheme) || "https".equals(scheme)) {
@@ -96,7 +92,7 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
                 throw new URISyntaxException(location, "Unsupported protocol in configuration location URL");
             }
             try {
-                final ClientConfig config = new XmlClientConfigBuilder(configURL).build();
+                ClientConfig config = new XmlClientConfigBuilder(configURL).build();
                 config.setClassLoader(theClassLoader);
                 return HazelcastClient.newHazelcastClient(config);
             } catch (Exception e) {
@@ -115,16 +111,16 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
 
     private HazelcastInstance getInstanceThroughDefaultInstanceIfItIsDefault(boolean isDefaultURI) {
         HazelcastInstance instance = null;
-        // No instance specified with name of config location,
-        // so we are going on with the default one if the URI is the default.
+        // no instance specified with name of config location,
+        // so we are going on with the default one if the URI is the default
         if (isDefaultURI) {
             if (hazelcastInstance == null) {
-                // If there is no default instance in use (not created yet and not specified), create a new one.
+                // if there is no default instance in use (not created yet and not specified), create a new one
                 instance = HazelcastClient.newHazelcastClient();
-                // Since there is no default instance in use, set new instance as default one.
+                // since there is no default instance in use, set new instance as default one
                 hazelcastInstance = instance;
             } else {
-                // Use the existing default instance.
+                // use the existing default instance
                 instance = hazelcastInstance;
             }
         }
