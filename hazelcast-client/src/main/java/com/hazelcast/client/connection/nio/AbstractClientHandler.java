@@ -25,16 +25,14 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 
+import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-/**
- * The AbstractClientSelectionHandler gets called by an IO-thread when there is data available to read,
- * or space available to write.
- */
-public abstract class AbstractClientSelectionHandler implements SelectionHandler, Runnable {
+abstract class AbstractClientHandler implements SelectionHandler {
 
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
@@ -42,31 +40,65 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     protected final ClientConnectionManager connectionManager;
     @Probe(name = "eventCount")
     protected final SwCounter eventCount = newSwCounter();
-    private final NonBlockingIOThread ioThread;
+    protected final NonBlockingIOThread ioThread;
     @Probe
     private final int ioThreadId;
-    private volatile SelectionKey sk;
+    private final int initialOps;
+    private volatile SelectionKey selectionKey;
 
-    public AbstractClientSelectionHandler(final ClientConnection connection, NonBlockingIOThread ioThread,
-                                          LoggingService loggingService) {
+    AbstractClientHandler(ClientConnection connection,
+                          NonBlockingIOThread ioThread,
+                          LoggingService loggingService,
+                          int initialOps) {
         this.connection = connection;
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
+        this.initialOps = initialOps;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = loggingService.getLogger(getClass().getName());
     }
 
     @Probe(level = DEBUG)
-    private long opsInterested() {
-        SelectionKey selectionKey = this.sk;
+    long opsInterested() {
+        SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
     @Probe(level = DEBUG)
-    private long opsReady() {
-        SelectionKey selectionKey = this.sk;
+    long opsReady() {
+        SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();
+    }
+
+    final void unregisterOp(int operation) throws IOException {
+        SelectionKey selectionKey = getSelectionKey();
+        selectionKey.interestOps(selectionKey.interestOps() & ~operation);
+    }
+
+    final void registerOp(int operation) throws IOException {
+        SelectionKey selectionKey = getSelectionKey();
+        selectionKey.interestOps(selectionKey.interestOps() | operation);
+    }
+
+    public SelectionKey getSelectionKey() throws ClosedChannelException {
+        if (selectionKey == null) {
+            selectionKey = socketChannel.register(ioThread.getSelector(), initialOps, this);
+        }
+        return selectionKey;
+    }
+
+    public void init() {
+        ioThread.addTaskAndWakeup(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    getSelectionKey();
+                } catch (Exception e) {
+                    onFailure(e);
+                }
+            }
+        });
     }
 
     protected void shutdown() {
@@ -74,35 +106,11 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
 
     @Override
     public final void onFailure(Throwable e) {
-        if (sk != null) {
-            sk.cancel();
+        if (selectionKey != null) {
+            selectionKey.cancel();
         }
+
         connectionManager.destroyConnection(connection, null, e);
-    }
-
-    final void registerOp(final int operation) {
-        try {
-            if (!connection.isAlive()) {
-                return;
-            }
-            if (sk == null) {
-                sk = socketChannel.keyFor(ioThread.getSelector());
-            }
-            if (sk == null) {
-                sk = socketChannel.register(ioThread.getSelector(), operation, this);
-            } else {
-                sk.interestOps(sk.interestOps() | operation);
-                if (sk.attachment() != this) {
-                    sk.attach(this);
-                }
-            }
-        } catch (Throwable e) {
-            onFailure(e);
-        }
-    }
-
-    public void register() {
-        ioThread.addTaskAndWakeup(this);
     }
 
 }

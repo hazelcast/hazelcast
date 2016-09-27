@@ -155,10 +155,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 outOfMemoryHandler);
         client.getMetricsRegistry().scanAndRegister(inputThread, "tcp." + inputThread.getName());
 
-        outputThread = new ClientNonBlockingOutputThread(
+        outputThread = new NonBlockingIOThread(
                 client.getThreadGroup(),
                 client.getName() + ".thread-out",
-                loggingService.getLogger(ClientNonBlockingOutputThread.class),
+                loggingService.getLogger(NonBlockingIOThread.class),
                 outOfMemoryHandler);
         client.getMetricsRegistry().scanAndRegister(outputThread, "tcp." + outputThread.getName());
     }
@@ -353,7 +353,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             socketChannel.configureBlocking(false);
             socket.setSoTimeout(0);
-            clientConnection.getReader().register();
             clientConnection.init();
             return clientConnection;
         } catch (Exception e) {
