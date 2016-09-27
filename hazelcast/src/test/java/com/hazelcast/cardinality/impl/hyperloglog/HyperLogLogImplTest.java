@@ -16,31 +16,20 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog;
 
-import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.cardinality.CardinalityEstimatorAbstractTest;
 import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.collection.IntHashSet;
 import org.HdrHistogram.Histogram;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -84,8 +73,16 @@ public class HyperLogLogImplTest {
         assertEquals(4L, hyperLogLog.estimate());
     }
 
+    /**
+     * - Add up-to runLength() random numbers on both a Set and a HyperLogLog encoder.
+     * - Sample the actual count, and the estimate respectively every 100 operations.
+     * - Compute the error rate, of the measurements and store it in a histogram.
+     * - Assert that the 99th percentile of the histogram is less than the expected max error,
+     *   which is the result of std error (1.04 / sqrt(m)) + 3%.
+     *   (2% is the typical accuracy, but tests on the implementation showed up rare occurrences of 3%)
+     */
     @Test
-    public void addBigRange() throws FileNotFoundException {
+    public void testEstimateErrorRateForBigCardinalities() {
         double stdError = (1.04 / Math.sqrt(1 << precision)) * 100;
         double maxError = Math.ceil(stdError + 3.0);
 
