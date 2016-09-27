@@ -23,24 +23,13 @@ enum HyperLogLogEncoding {
      * for estimates, suitable for small range cardinalities, or until its growing footprint
      * meets the DENSE constant size.
      */
-    SPARSE {
-        @Override
-        public HyperLogLogEncoder build() {
-            return new SparseHyperLogLogEncoder();
-        }
-    },
+    SPARSE,
 
     /**
      * Lower precision and constant memory footprint encoding relying on original HyperLogLog
      * computations for estimates, and bias corrections from HyperLogLog++. Suitable for mid to large
      * range cardinalities.
      */
-    DENSE {
-        @Override
-        public HyperLogLogEncoder build() {
-            return new DenseHyperLogLogEncoder();
-        }
-    };
+    DENSE
 
-    public abstract HyperLogLogEncoder build();
 }

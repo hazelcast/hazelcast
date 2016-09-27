@@ -39,7 +39,6 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     private int pPrimeMask;
     private long pDiffMask;
     private long pDiffEncodedMask;
-    private long encodedPDiffShiftBits;
 
     private VariableLengthDiffArray register;
 
@@ -64,7 +63,6 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
         this.pMask = ((1 << p) - 1);
         this.pDiffMask = pPrimeMask ^ pMask;
         this.pDiffEncodedMask = (1L << (pPrime - p)) - 1;
-        this.encodedPDiffShiftBits = (32 - pPrime) - (pPrime - p);
         this.register = register;
     }
 
@@ -131,7 +129,7 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     public HyperLogLogEncoder asDense() {
         byte[] dense = new byte[1 << this.p];
         for (int hash : register.explode()) {
-            int index = decodeHashPIndex(hash) & (dense.length - 1);
+            int index = decodeHashPIndex(hash);
             dense[index] = (byte) Math.max(dense[index], decodeHashRunOfZeros(hash));
         }
 
@@ -157,19 +155,24 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
 
     private int decodeHashPIndex(long hash) {
         if (!hasRunOfZerosEncoded(hash)) {
-            return (int) ((hash >> 1)) & pMask;
+            return (int) ((hash >>> 1)) & pMask;
         }
 
-        return (int) (hash >> (32 - pPrime)) & pMask;
+        return (int) (hash >>> (32 - pPrime)) & pMask;
     }
 
     private byte decodeHashRunOfZeros(long hash) {
         if (!hasRunOfZerosEncoded(hash)) {
-            int pDiff = (int) ((hash >> encodedPDiffShiftBits) & pDiffEncodedMask);
+            // |-25bits-||-1bit-
+            // (p - p') || 0
+            int pDiff = (int) ((hash >>> 1) & pDiffEncodedMask);
             return (byte) (Integer.numberOfTrailingZeros(pDiff) + 1);
         }
 
-        return (byte) ((hash & ((1 << (32 - pPrime)) - 1) >> 1) + (pPrime - p) + 1);
+        // |-25bits-||-6bits-||-1bit-|
+        // (p - p') || p(w') || 1
+        int pW = (int) (hash & ((1 << (32 - pPrime)) - 1)) >>> 1;
+        return (byte) (pW + (pPrime - p) + 1);
     }
 
     private boolean hasRunOfZerosEncoded(long hash) {
