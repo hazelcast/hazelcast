@@ -227,7 +227,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 if (connection != null) {
                     return connection;
                 }
-                AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
+                AuthenticationFuture firstCallback = triggerConnect(addressTranslator.translate(address), asOwner);
                 connection = firstCallback.get(connectionTimeout);
                 if (!asOwner) {
                     return connection;
