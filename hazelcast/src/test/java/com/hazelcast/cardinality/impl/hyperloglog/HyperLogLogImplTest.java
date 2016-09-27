@@ -42,17 +42,17 @@ public class HyperLogLogImplTest {
 
     @Parameterized.Parameters()
     public static Collection<Integer[]> params() {
-        return Arrays.asList(new Integer[][] {
+        return Arrays.asList(new Integer[][]{
                 {11, 10000000}, {12, 10000000}, {13, 10000000},
                 {14, 10000000}, {15, 10000000}, {16, 10000000}
         });
     }
+
     @Parameterized.Parameter()
     public int precision;
 
     @Parameterized.Parameter(1)
     public int runLength;
-
 
     private HyperLogLog hyperLogLog;
 
@@ -69,7 +69,7 @@ public class HyperLogLogImplTest {
 
     @Test
     public void addAll() {
-        hyperLogLog.addAll(new long[] { 1L, 1L, 2000L, 3000, 40000L });
+        hyperLogLog.addAll(new long[]{1L, 1L, 2000L, 3000, 40000L});
         assertEquals(4L, hyperLogLog.estimate());
     }
 
@@ -78,8 +78,8 @@ public class HyperLogLogImplTest {
      * - Sample the actual count, and the estimate respectively every 100 operations.
      * - Compute the error rate, of the measurements and store it in a histogram.
      * - Assert that the 99th percentile of the histogram is less than the expected max error,
-     *   which is the result of std error (1.04 / sqrt(m)) + 3%.
-     *   (2% is the typical accuracy, but tests on the implementation showed up rare occurrences of 3%)
+     * which is the result of std error (1.04 / sqrt(m)) + 3%.
+     * (2% is the typical accuracy, but tests on the implementation showed up rare occurrences of 3%)
      */
     @Test
     public void testEstimateErrorRateForBigCardinalities() {
@@ -116,7 +116,5 @@ public class HyperLogLogImplTest {
             fail("For P=" + precision + ", Expected max error=" + maxError + "%. " +
                     "Actual error: " + errorPerc99 + "%.");
         }
-
     }
-
 }

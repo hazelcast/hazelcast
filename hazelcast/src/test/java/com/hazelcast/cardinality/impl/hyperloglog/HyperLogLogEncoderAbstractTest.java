@@ -41,7 +41,9 @@ public abstract class HyperLogLogEncoderAbstractTest {
     private HyperLogLogEncoder encoder;
 
     public abstract int runLength();
+
     public abstract int precision();
+
     public abstract HyperLogLogEncoder createStore();
 
     @Before
@@ -61,8 +63,8 @@ public abstract class HyperLogLogEncoderAbstractTest {
      * - Sample the actual count, and the estimate respectively every 100 operations.
      * - Compute the error rate, of the measurements and store it in a histogram.
      * - Assert that the 99th percentile of the histogram is less than the expected max error,
-     *   which is the result of std error (1.04 / sqrt(m)) + 3%.
-     *   (2% is the typical accuracy, but tests on the implementation showed up rare occurrences of 3%)
+     * which is the result of std error (1.04 / sqrt(m)) + 3%.
+     * (2% is the typical accuracy, but tests on the implementation showed up rare occurrences of 3%)
      */
     @Test
     public void testEstimateErrorRateForBigCardinalities() {

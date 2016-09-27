@@ -18,7 +18,14 @@ package com.hazelcast.cardinality.impl.hyperloglog;
 
 import com.hazelcast.cardinality.impl.hyperloglog.impl.DenseHyperLogLogEncoder;
 import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncoder;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class DenseHyperLogLogEncoderTest extends HyperLogLogEncoderAbstractTest {
 
     @Override
