@@ -20,7 +20,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,6 +39,8 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_RetryTest extends HazelcastTestSupport {
+
+    private static final int NUMBER_OF_INVOCATIONS = 100;
 
     @Test
     public void whenPartitionTargetMemberDiesThenOperationSendToNewPartitionOwner() throws Exception {
@@ -62,7 +63,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         future.get();
     }
 
-    @Test
+    @Test(expected = MemberLeftException.class)
     public void whenTargetMemberDiesThenOperationAbortedWithMembersLeftException() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance();
@@ -77,31 +78,32 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         remote.getLifecycleService().terminate();
 
-        try {
-            future.get();
-            fail();
-        } catch (MemberLeftException ignored) {
-        }
+        future.get();
     }
 
     @Test
     public void testNoStuckInvocationsWhenRetriedMultipleTimes() throws Exception {
         Config config = new Config();
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
+
         NodeEngineImpl localNodeEngine = getNodeEngineImpl(local);
         NodeEngineImpl remoteNodeEngine = getNodeEngineImpl(remote);
         final OperationServiceImpl operationService = (OperationServiceImpl) localNodeEngine.getOperationService();
+
         NonResponsiveOperation op = new NonResponsiveOperation();
         op.setValidateTarget(false);
         op.setPartitionId(1);
+
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, remoteNodeEngine.getThisAddress());
+
         Field invocationField = InvocationFuture.class.getDeclaredField("invocation");
         invocationField.setAccessible(true);
-        final Invocation invocation = (Invocation) invocationField.get(future);
+        Invocation invocation = (Invocation) invocationField.get(future);
 
         invocation.notifyError(new RetryableHazelcastException());
         invocation.notifyError(new RetryableHazelcastException());
@@ -116,43 +118,41 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void invocationShouldComplete_whenRetried_DuringShutdown() throws InterruptedException {
+    public void invocationShouldComplete_whenRetried_DuringShutdown() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
-
-        final int numberOfInvocations = 100;
-        Future[] futures = new Future[numberOfInvocations];
 
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         waitAllForSafeState(hz1, hz2, hz3);
 
         InternalOperationService operationService = getNodeEngineImpl(hz1).getOperationService();
-        for (int k = 0; k < numberOfInvocations; k++) {
+
+        Future[] futures = new Future[NUMBER_OF_INVOCATIONS];
+        for (int i = 0; i < NUMBER_OF_INVOCATIONS; i++) {
             int partitionId = getRandomPartitionId(hz2);
 
-            Future<Object> future =
-                    operationService.createInvocationBuilder(null, new RetryingOperation(), partitionId)
-                            .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
-            futures[k] = future;
+            futures[i] = operationService.createInvocationBuilder(null, new RetryingOperation(), partitionId)
+                    .setTryCount(Integer.MAX_VALUE)
+                    .setCallTimeout(Long.MAX_VALUE)
+                    .invoke();
         }
 
         hz3.getLifecycleService().terminate();
         hz1.getLifecycleService().terminate();
 
-        for (int k = 0; k < numberOfInvocations; k++) {
-            Future future = futures[k];
+        for (Future future : futures) {
             try {
                 future.get(2, TimeUnit.MINUTES);
             } catch (ExecutionException ignored) {
             } catch (TimeoutException e) {
-                Assert.fail(e.getMessage());
+                fail(e.getMessage());
             }
         }
     }
 
     @Test
-    public void invocationShouldComplete_whenOperationsPending_DuringShutdown() throws InterruptedException {
+    public void invocationShouldComplete_whenOperationsPending_DuringShutdown() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
 
@@ -162,25 +162,22 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         operationService.invokeOnPartition(new SleepingOperation(Long.MAX_VALUE).setPartitionId(0));
         sleepSeconds(1);
 
-        final int numberOfInvocations = 100;
-        Future[] futures = new Future[numberOfInvocations];
-
-        for (int i = 0; i < numberOfInvocations; i++) {
-            Future<Object> future =
-                    operationService.createInvocationBuilder(null, new RetryingOperation(), 0)
-                            .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
-            futures[i]  = future;
+        Future[] futures = new Future[NUMBER_OF_INVOCATIONS];
+        for (int i = 0; i < NUMBER_OF_INVOCATIONS; i++) {
+            futures[i] = operationService.createInvocationBuilder(null, new RetryingOperation(), 0)
+                    .setTryCount(Integer.MAX_VALUE)
+                    .setCallTimeout(Long.MAX_VALUE)
+                    .invoke();
         }
 
         hz.getLifecycleService().terminate();
 
-        for (int k = 0; k < numberOfInvocations; k++) {
-            Future future = futures[k];
+        for (Future future : futures) {
             try {
                 future.get(2, TimeUnit.MINUTES);
             } catch (ExecutionException ignored) {
             } catch (TimeoutException e) {
-                Assert.fail(e.getMessage());
+                fail(e.getMessage());
             }
         }
     }
@@ -252,7 +249,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         public SleepingOperation() {
         }
 
-        public SleepingOperation(long sleepMillis) {
+        SleepingOperation(long sleepMillis) {
             this.sleepMillis = sleepMillis;
         }
 
