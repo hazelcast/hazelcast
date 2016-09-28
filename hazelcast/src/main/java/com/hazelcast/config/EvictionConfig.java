@@ -21,6 +21,7 @@ import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
 import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -249,8 +250,20 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         size = in.readInt();
         maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
         evictionPolicy = EvictionPolicy.valueOf(in.readUTF());
-        comparatorClassName = in.readUTF();
-        comparator = in.readObject();
+
+        // workaround to make clients older than 3.7 to work with 3.7+ servers due to changes in the config model!
+        BufferObjectDataInput bin = (BufferObjectDataInput) in;
+        int position = bin.position();
+        try {
+            if (bin.available() > 0) {
+                comparatorClassName = in.readUTF();
+                comparator = in.readObject();
+            }
+        } catch (Exception ex) {
+            comparatorClassName = null;
+            comparator = null;
+            bin.position(position);
+        }
     }
 
     @Override
