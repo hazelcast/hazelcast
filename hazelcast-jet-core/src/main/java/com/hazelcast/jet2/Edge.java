@@ -33,7 +33,6 @@ import java.io.IOException;
  */
 public class Edge implements IdentifiedDataSerializable {
 
-    private String name;
 
     private Vertex from;
     private Vertex to;
@@ -51,15 +50,12 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Creates an edge between two vertices.
      *
-     * @param name name of the edge
      * @param from the origin vertex
      * @param to   the destination vertex
      */
-    public Edge(String name,
-                Vertex from,
+    public Edge(Vertex from,
                 Vertex to) {
         this.to = to;
-        this.name = name;
         this.from = from;
     }
 
@@ -67,7 +63,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @return output vertex of edge
      */
     public Vertex getOutputVertex() {
-        return this.to;
+        return to;
     }
 
     /**
@@ -78,17 +74,10 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return name of the edge
-     */
-    public String getName() {
-        return this.name;
-    }
-
-    /**
      * @return input vertex of edge
      */
     public Vertex getInputVertex() {
-        return this.from;
+        return from;
     }
 
     /**
@@ -150,8 +139,8 @@ public class Edge implements IdentifiedDataSerializable {
      * @see com.hazelcast.jet.strategy.SingleMemberDistributionStrategy
      */
     public Edge distributed(MemberDistributionStrategy distributionStrategy) {
-        this.isLocal = false;
-        this.memberDistributionStrategy = distributionStrategy;
+        isLocal = false;
+        memberDistributionStrategy = distributionStrategy;
         return this;
     }
 
@@ -162,7 +151,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @link RoutingStrategy.BROADCAST
      */
     public Edge broadcast() {
-        this.routingStrategy = RoutingStrategy.BROADCAST;
+        routingStrategy = RoutingStrategy.BROADCAST;
         return this;
     }
 
@@ -174,7 +163,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @link RoutingStrategy.PARTITIONED
      */
     public Edge partitioned() {
-        this.routingStrategy = RoutingStrategy.PARTITIONED;
+        routingStrategy = RoutingStrategy.PARTITIONED;
         return this;
     }
 
@@ -187,7 +176,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @link RoutingStrategy.PARTITIONED
      */
     public Edge partitioned(PartitioningStrategy partitioningStrategy) {
-        this.routingStrategy = RoutingStrategy.PARTITIONED;
+        routingStrategy = RoutingStrategy.PARTITIONED;
         this.partitioningStrategy = partitioningStrategy;
         return this;
     }
@@ -202,7 +191,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @see HashingStrategy
      */
     public Edge partitioned(HashingStrategy hashingStrategy) {
-        this.routingStrategy = RoutingStrategy.PARTITIONED;
+        routingStrategy = RoutingStrategy.PARTITIONED;
         this.hashingStrategy = hashingStrategy;
         return this;
     }
@@ -226,99 +215,15 @@ public class Edge implements IdentifiedDataSerializable {
 
 
     @Override
-    @SuppressWarnings({
-            "checkstyle:npathcomplexity",
-            "checkstyle:cyclomaticcomplexity"
-    })
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Edge edge = (Edge) o;
-
-        if (isLocal != edge.isLocal) {
-            return false;
-        }
-
-        if (to != null
-                ? !to.equals(edge.to)
-                : edge.to != null) {
-            return false;
-        }
-
-        if (name != null
-                ? !name.equals(edge.name)
-                : edge.name != null) {
-            return false;
-        }
-
-        if (from != null
-                ? !from.equals(edge.from)
-                : edge.from != null) {
-            return false;
-        }
-
-        if (hashingStrategy != null
-                ?
-                !hashingStrategy.getClass().equals(edge.hashingStrategy.getClass())
-                :
-                edge.hashingStrategy != null) {
-            return false;
-        }
-
-        if (memberDistributionStrategy != null
-                ?
-                !memberDistributionStrategy.equals(edge.memberDistributionStrategy)
-                :
-                edge.memberDistributionStrategy != null) {
-            return false;
-        }
-
-        if (routingStrategy != edge.routingStrategy) {
-            return false;
-        }
-
-        return partitioningStrategy != null
-                ?
-                partitioningStrategy.getClass().equals(edge.partitioningStrategy.getClass())
-                :
-                edge.partitioningStrategy == null;
-
-    }
-
-    @Override
-    @SuppressWarnings({
-            "checkstyle:npathcomplexity"
-    })
-    public int hashCode() {
-        int result = to != null ? to.hashCode() : 0;
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + (from != null ? from.hashCode() : 0);
-        result = 31 * result + (isLocal ? 1 : 0);
-        result = 31 * result + (hashingStrategy != null ? hashingStrategy.getClass().hashCode() : 0);
-        result = 31 * result + (memberDistributionStrategy != null ? memberDistributionStrategy.hashCode() : 0);
-        result = 31 * result + (routingStrategy != null ? routingStrategy.getClass().hashCode() : 0);
-        result = 31 * result + (partitioningStrategy != null ? partitioningStrategy.getClass().hashCode() : 0);
-        return result;
-    }
-
-    @Override
     public String toString() {
         return "Edge{"
-                + "name='" + name + '\''
-                + ", from=" + from
+                + "from=" + from
                 + ", to=" + to
                 + '}';
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
         out.writeObject(from);
         out.writeObject(to);
         out.writeBoolean(isLocal);
@@ -331,7 +236,6 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
         from = in.readObject();
         to = in.readObject();
         isLocal = in.readBoolean();

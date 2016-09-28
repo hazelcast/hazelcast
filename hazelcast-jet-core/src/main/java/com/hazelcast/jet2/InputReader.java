@@ -16,13 +16,7 @@
 
 package com.hazelcast.jet2;
 
-import java.io.Serializable;
-import java.util.Collection;
+public interface InputReader<T> {
 
-
-public interface Sink extends Serializable {
-
-    Collection<Consumer> getConsumers();
-
-    String getName();
+    T next();
 }

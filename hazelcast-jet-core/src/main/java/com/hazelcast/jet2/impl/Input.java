@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-public interface Producer<T> {
+import com.hazelcast.jet2.Chunk;
 
-    T next();
+public interface Input<T> {
+
+    /**
+     * @return next chunk to be processed or null if input is exhausted
+     */
+    Chunk<T> nextChunk();
+
 }

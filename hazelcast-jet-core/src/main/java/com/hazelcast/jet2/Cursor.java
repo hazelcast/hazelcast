@@ -20,7 +20,7 @@ public interface Cursor<T> {
 
     boolean advance();
 
-    T get();
+    T value();
 
     void reset();
 }

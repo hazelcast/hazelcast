@@ -16,33 +16,32 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.jet2.Cursor;
 
-import com.hazelcast.jet2.Vertex;
-import java.util.Iterator;
-import java.util.Stack;
+import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+public class ListCursor<T> implements Cursor<T> {
 
-public class TopologicalOrderIterator implements Iterator<Vertex> {
-    private final Stack<Vertex> topologicalVertexStack;
+    private final List<T> list;
 
-    public TopologicalOrderIterator(Stack<Vertex> topologicalVertexStack) {
-        checkNotNull(topologicalVertexStack, "topologicalVertexStack can't be null");
-        this.topologicalVertexStack = topologicalVertexStack;
+    ListCursor(List<T> list) {
+        this.list = list;
+    }
+
+    private int index = -1;
+
+    @Override
+    public boolean advance() {
+        return ++index < list.size();
     }
 
     @Override
-    public boolean hasNext() {
-        return !topologicalVertexStack.isEmpty();
+    public T value() {
+        return list.get(index);
     }
 
     @Override
-    public Vertex next() {
-        return topologicalVertexStack.pop();
-    }
-
-    @Override
-    public void remove() {
-        throw new IllegalStateException("Not supported");
+    public void reset() {
+        index = -1;
     }
 }

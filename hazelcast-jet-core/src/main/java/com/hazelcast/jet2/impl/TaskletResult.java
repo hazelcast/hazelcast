@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
 public enum TaskletResult {
     DONE,

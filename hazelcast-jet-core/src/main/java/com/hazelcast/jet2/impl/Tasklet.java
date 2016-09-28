@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-public interface Producer<T> {
+import java.util.concurrent.Callable;
 
-    T next();
+public interface Tasklet extends Callable<TaskletResult> {
+
+    default boolean isBlocking() {
+        return false;
+    }
 }

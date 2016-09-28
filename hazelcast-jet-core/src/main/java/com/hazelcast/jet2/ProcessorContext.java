@@ -16,7 +16,23 @@
 
 package com.hazelcast.jet2;
 
-public interface Producer<T> {
+import com.hazelcast.spi.NodeEngine;
 
-    T next();
+public class ProcessorContext {
+
+    private final int parallelism;
+    private final NodeEngine nodeEngine;
+
+    public ProcessorContext(int parallelism, NodeEngine nodeEngine) {
+        this.parallelism = parallelism;
+        this.nodeEngine = nodeEngine;
+    }
+
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
+
+    public int getParallelism() {
+        return parallelism;
+    }
 }

@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-import java.util.concurrent.Callable;
+/**
+ * Bounded by size
+ */
+public interface Output<T> {
 
-public interface Tasklet extends Callable<TaskletResult> {
+    /**
+     * @return false if output buffer is full
+     */
+    boolean collect(T value);
 
-    default boolean isBlocking() {
-        return false;
-    }
 }

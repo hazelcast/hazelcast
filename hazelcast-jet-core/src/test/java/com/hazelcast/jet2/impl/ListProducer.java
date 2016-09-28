@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-public interface Input<T> {
+import com.hazelcast.jet2.Producer;
 
-    /**
-     * @return next chunk to be processed or null if input is exhausted
-     */
-    Chunk<T> nextChunk();
+import java.util.Iterator;
+import java.util.List;
+
+public class ListProducer<T> implements Producer<T> {
+
+    private Iterator<T> iterator;
+
+    public ListProducer(List<T> list) {
+        this.iterator = list.iterator();
+    }
+
+    @Override
+    public T next() {
+        return iterator.hasNext() ? iterator.next() : null;
+    }
 
 }

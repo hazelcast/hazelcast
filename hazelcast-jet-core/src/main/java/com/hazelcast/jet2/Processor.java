@@ -16,15 +16,9 @@
 
 package com.hazelcast.jet2;
 
-import java.util.Map;
+public interface Processor<I, O> {
 
-public interface Processor extends Tasklet {
+    void process(String input, I value, OutputCollector<O> collector);
 
-    /**
-     * @param inputs
-     * @param outputs
-     */
-    void initialize(Map<String, Input> inputs, Map<String, Output> outputs);
-
+    void complete(OutputCollector<O> collector);
 }
-

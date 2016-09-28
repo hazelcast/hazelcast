@@ -23,6 +23,7 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.Job;
 import com.hazelcast.jet2.Vertex;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -37,12 +38,12 @@ import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
     private final String name;
+    private final ILogger logger;
 
     protected JetEngineImpl(String name, NodeEngine nodeEngine, JetService service) {
         super(nodeEngine, service);
         this.name = name;
-
-
+        this.logger = nodeEngine.getLogger(JetEngine.class);
     }
 
     @Override
@@ -68,7 +69,6 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
     public void executeLocal(DAG dag) {
         for (Vertex vertex : dag) {
             for (int i = 0; i < vertex.getParallelism(); i++) {
-                vertex.getSources();
                 dag.getInputEdges(vertex);
                 // 1 tasklet per parallelism of vertex
                 // n*m boundedqueues (1-1) where n producers, m consumers - overall storage can be fixed as

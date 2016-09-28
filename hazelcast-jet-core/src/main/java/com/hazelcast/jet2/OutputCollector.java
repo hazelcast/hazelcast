@@ -16,17 +16,7 @@
 
 package com.hazelcast.jet2;
 
-/**
- * Bounded by size
- *
- * @param <T>
- */
-public interface Output<T> {
+public interface OutputCollector<T> {
 
-    /*
-     * @param object
-     * @return false if output buffer is full
-     */
-    boolean collect(T object);
-
+    void collect(T object);
 }

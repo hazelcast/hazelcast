@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet2;
 
-public interface Consumer<T> extends Tasklet {
+public interface Consumer<T> {
 
-    void initialize(Input<T> input);
+    void consume(T object);
 
+    void complete();
 }

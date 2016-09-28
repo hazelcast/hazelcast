@@ -17,12 +17,8 @@
 package com.hazelcast.jet2;
 
 import java.io.Serializable;
-import java.util.Collection;
 
-public interface Source extends Serializable {
-
-    String getName();
-
-    Collection<Producer> getProducers();
-
+@FunctionalInterface
+public interface ProcessorSupplier extends Serializable {
+    Processor get(ProcessorContext context);
 }
