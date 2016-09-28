@@ -59,6 +59,8 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         assertEquals(6, clientStats.get(ClientType.JAVA).intValue());
         assertEquals(0, clientStats.get(ClientType.CPP).intValue());
         assertEquals(0, clientStats.get(ClientType.CSHARP).intValue());
+        assertEquals(0, clientStats.get(ClientType.NODEJS).intValue());
+        assertEquals(0, clientStats.get(ClientType.PYTHON).intValue());
         assertEquals(0, clientStats.get(ClientType.OTHER).intValue());
 
     }
