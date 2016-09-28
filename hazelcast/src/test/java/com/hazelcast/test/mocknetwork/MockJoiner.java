@@ -36,10 +36,6 @@ class MockJoiner extends AbstractJoiner {
         this.registry = registry;
     }
 
-    private static void verifyInvariant(boolean check, String msg) {
-        if (!check) throw new AssertionError(msg);
-    }
-
     public void doJoin() {
         synchronized (registry) {
             registry.registerNode(node);
@@ -150,6 +146,7 @@ class MockJoiner extends AbstractJoiner {
         return "mock";
     }
 
+    @Override
     public String toString() {
         return "MockJoiner";
     }
@@ -166,5 +163,11 @@ class MockJoiner extends AbstractJoiner {
     @Override
     public boolean isBlacklisted(Address address) {
         return false;
+    }
+
+    private static void verifyInvariant(boolean check, String msg) {
+        if (!check) {
+            throw new AssertionError(msg);
+        }
     }
 }
