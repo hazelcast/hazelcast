@@ -20,6 +20,11 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
 
+    protected static final int DEFAULT_RECORD_COUNT = 100;
+    protected static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
+
+    protected List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
+
     @After
     public final void shutdownExecutorServices() {
         for (ScheduledExecutorService scheduledExecutorService : scheduledExecutorServices) {
@@ -28,11 +33,6 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         scheduledExecutorServices.clear();
     }
 
-    protected static final int DEFAULT_RECORD_COUNT = 100;
-    protected static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
-
-    protected List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
-
     protected NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat) {
         return new NearCacheConfig()
                 .setName(name)
@@ -40,11 +40,8 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected NearCacheContext createNearCacheContext() {
-        final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
-        scheduledExecutorServices.add(scheduledExecutorService);
-        return new NearCacheContext(
-                new DefaultSerializationServiceBuilder().build(),
-                createNearCacheExecutor());
+        NearCacheExecutor nearCacheExecutor = createNearCacheExecutor();
+        return new NearCacheContext(new DefaultSerializationServiceBuilder().build(), nearCacheExecutor);
     }
 
     protected NearCacheExecutor createNearCacheExecutor() {
@@ -52,8 +49,7 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         scheduledExecutorServices.add(scheduledExecutorService);
         return new NearCacheExecutor() {
             @Override
-            public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay,
-                                                             long delay, TimeUnit unit) {
+            public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long delay, TimeUnit unit) {
                 return scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
             }
         };
