@@ -172,8 +172,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         initNearCache();
 
         if (nearCache != null) {
-            statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis(),
-                    nearCache.getNearCacheStats());
+            statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis(), nearCache.getNearCacheStats());
         } else {
             statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis());
         }
@@ -771,6 +770,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     }
 
+    @Override
     public void countDownCompletionLatch(int countDownLatchId) {
         if (countDownLatchId != IGNORE_COMPLETION) {
             CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
