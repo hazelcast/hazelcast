@@ -36,6 +36,7 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.MapUtil;
+import com.hazelcast.version.Version;
 
 import java.util.Collection;
 import java.util.Map;
@@ -126,7 +127,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         ClusterService clusterService = nodeEngine.getClusterService();
         MemberImpl member = clusterService.getMember(topicEvent.publisherAddress);
         if (member == null) {
-            member = new MemberImpl(topicEvent.publisherAddress, false);
+            member = new MemberImpl(topicEvent.publisherAddress, Version.UNKNOWN, false);
         }
         Message message = new DataAwareMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime, member
                 , nodeEngine.getSerializationService());

@@ -20,6 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Map;
@@ -35,16 +36,16 @@ public final class MemberImpl extends AbstractMember implements Member {
     public MemberImpl() {
     }
 
-    public MemberImpl(Address address) {
-        super(address);
+    public MemberImpl(Address address, Version version) {
+        super(address, version);
     }
 
-    public MemberImpl(Address address, String uuid) {
-        super(address, uuid);
+    public MemberImpl(Address address, Version version, String uuid) {
+        super(address, version, uuid);
     }
 
-    public MemberImpl(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
-        super(address, uuid, attributes, liteMember);
+    public MemberImpl(Address address, Version version, String uuid, Map<String, Object> attributes, boolean liteMember) {
+        super(address, version, uuid, attributes, liteMember);
     }
 
     public MemberImpl(AbstractMember member) {

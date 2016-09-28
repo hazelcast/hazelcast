@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -32,6 +33,7 @@ public class MemberInfo implements DataSerializable {
     private Address address;
     private String uuid;
     private boolean liteMember;
+    private Version version;
     private Map<String, Object> attributes;
 
     public MemberInfo() {
@@ -41,24 +43,29 @@ public class MemberInfo implements DataSerializable {
         this.address = address;
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
-        this(address, uuid, attributes, false);
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, Version version) {
+        this(address, uuid, attributes, false, version);
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, Version version) {
         this.address = address;
         this.uuid = uuid;
         this.attributes = attributes == null || attributes.isEmpty()
                 ? Collections.<String, Object>emptyMap() : new HashMap<String, Object>(attributes);
         this.liteMember = liteMember;
+        this.version = version;
     }
 
     public MemberInfo(MemberImpl member) {
-        this(member.getAddress(), member.getUuid(), member.getAttributes(), member.isLiteMember());
+        this(member.getAddress(), member.getUuid(), member.getAttributes(), member.isLiteMember(), member.getVersion());
     }
 
     public Address getAddress() {
         return address;
+    }
+
+    public Version getVersion() {
+        return version;
     }
 
     public String getUuid() {

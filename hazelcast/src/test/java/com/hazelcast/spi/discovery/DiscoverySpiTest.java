@@ -53,6 +53,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -567,10 +568,10 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     private static Collection<Member> createMembers() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
         InetAddress fakeAddress = InetAddress.getLocalHost();
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), true));
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), Version.of("3.8.0"), true));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), Version.of("3.8.0"), false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), Version.of("3.8.0"), false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), Version.of("3.8.0"), false));
         return members;
     }
 

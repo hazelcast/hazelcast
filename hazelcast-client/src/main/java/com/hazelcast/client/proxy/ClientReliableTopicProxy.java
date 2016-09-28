@@ -42,6 +42,7 @@ import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.version.Version;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -259,7 +260,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         private Message<E> toMessage(ReliableTopicMessage m) {
             Member member = null;
             if (m.getPublisherAddress() != null) {
-                member = new com.hazelcast.client.impl.MemberImpl(m.getPublisherAddress());
+                member = new com.hazelcast.client.impl.MemberImpl(m.getPublisherAddress(), Version.UNKNOWN);
             }
             E payload = serializationService.toObject(m.getPayload());
             return new Message<E>(name, payload, m.getPublishTime(), member);

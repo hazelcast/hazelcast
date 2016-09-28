@@ -32,6 +32,7 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -50,29 +51,32 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     private String clusterId;
     private long clusterStartTime;
     private ClusterState clusterState;
+    private Version clusterVersion;
 
     public FinalizeJoinOperation() {
     }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-                                 String clusterId, long clusterStartTime, ClusterState clusterState,
+                                 String clusterId, long clusterStartTime, ClusterState clusterState, Version clusterVersion,
                                  PartitionRuntimeState partitionRuntimeState) {
         super(members, masterTime, true);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
         this.clusterStartTime = clusterStartTime;
         this.clusterState = clusterState;
+        this.clusterVersion = clusterVersion;
         this.partitionRuntimeState = partitionRuntimeState;
     }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-                                 String clusterId, long clusterStartTime, ClusterState clusterState,
+                                 String clusterId, long clusterStartTime, ClusterState clusterState, Version clusterVersion,
                                  PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(members, masterTime, sendResponse);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
         this.clusterStartTime = clusterStartTime;
         this.clusterState = clusterState;
+        this.clusterVersion = clusterVersion;
         this.partitionRuntimeState = partitionRuntimeState;
     }
 
@@ -105,7 +109,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     private void initClusterStates(ClusterServiceImpl clusterService) {
-        clusterService.initialClusterState(clusterState);
+        clusterService.initialClusterState(clusterState, clusterVersion);
         clusterService.setClusterId(clusterId);
         ClusterClockImpl clusterClock = clusterService.getClusterClock();
         clusterClock.setClusterStartTime(clusterStartTime);
@@ -171,6 +175,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         out.writeUTF(clusterId);
         out.writeLong(clusterStartTime);
         out.writeUTF(clusterState.toString());
+        out.writeObject(clusterVersion);
         out.writeObject(partitionRuntimeState);
     }
 
@@ -186,6 +191,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         clusterStartTime = in.readLong();
         String stateName = in.readUTF();
         clusterState = ClusterState.valueOf(stateName);
+        clusterVersion = in.readObject();
         partitionRuntimeState = in.readObject();
     }
 

@@ -5,6 +5,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +42,7 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withAddress() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
 
         assertBasicMemberImplFields(member);
         assertFalse(member.isLiteMember());
@@ -49,7 +50,7 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withAddressAndUUid() {
-        MemberImpl member = new MemberImpl(address, "uuid2342");
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"), "uuid2342");
 
         assertBasicMemberImplFields(member);
         assertEquals("uuid2342", member.getUuid());
@@ -69,7 +70,7 @@ public class MemberImplTest extends HazelcastTestSupport {
         attributes.put("floatKey", Float.MAX_VALUE);
         attributes.put("doubleKey", Double.MAX_VALUE);
 
-        MemberImpl member = new MemberImpl(address, "uuid2342", attributes, true);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"), "uuid2342", attributes, true);
 
         assertBasicMemberImplFields(member);
         assertEquals("uuid2342", member.getUuid());
@@ -113,62 +114,62 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withMemberImpl() {
-        MemberImpl member = new MemberImpl(new MemberImpl(address));
+        MemberImpl member = new MemberImpl(new MemberImpl(address, Version.of("3.8.0")));
 
         assertBasicMemberImplFields(member);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetStringAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.setStringAttribute("stringKey", "stringValue");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetBooleanAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.setBooleanAttribute("booleanKeyTrue", true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetByteAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.setByteAttribute("byteKey", Byte.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetShortAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.setShortAttribute("shortKey", Short.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetIntAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.setIntAttribute("intKey", Integer.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetLongAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.setLongAttribute("longKey", Long.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetFloatAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.setFloatAttribute("floatKey", Float.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetDoubleAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.setDoubleAttribute("doubleKey", Double.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRemoveAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, Version.of("3.8.0"));
         member.removeAttribute("removeKey");
     }
 

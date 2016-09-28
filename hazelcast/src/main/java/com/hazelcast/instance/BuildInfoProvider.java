@@ -53,6 +53,11 @@ public final class BuildInfoProvider {
         }
         boolean enterprise = !"Hazelcast".equals(distribution);
 
+        // TODO RU -> for PoC testing purposes
+        if (System.getProperty("hazelcast.version") != null) {
+            version = System.getProperty("hazelcast.version");
+        }
+
         // override BUILD_NUMBER with a system property
         String build;
         Integer hazelcastBuild = Integer.getInteger("hazelcast.build", -1);

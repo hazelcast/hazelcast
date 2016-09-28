@@ -29,6 +29,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.version.Version;
 
 import java.util.Map;
 
@@ -46,21 +47,21 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     public MemberImpl() {
     }
 
-    public MemberImpl(Address address, boolean localMember) {
-        this(address, localMember, null, null);
+    public MemberImpl(Address address, Version version, boolean localMember) {
+        this(address, version, localMember, null, null);
     }
 
-    public MemberImpl(Address address, boolean localMember, boolean liteMember) {
-        this(address, localMember, null, null, null, liteMember);
+    public MemberImpl(Address address, Version version, boolean localMember, boolean liteMember) {
+        this(address, version, localMember, null, null, null, liteMember);
     }
 
-    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance) {
-        this(address, localMember, uuid, instance, null, false);
+    public MemberImpl(Address address, Version version, boolean localMember, String uuid, HazelcastInstanceImpl instance) {
+        this(address, version, localMember, uuid, instance, null, false);
     }
 
-    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance,
+    public MemberImpl(Address address, Version version, boolean localMember, String uuid, HazelcastInstanceImpl instance,
                       Map<String, Object> attributes, boolean liteMember) {
-        super(address, uuid, attributes, liteMember);
+        super(address, version, uuid, attributes, liteMember);
         this.localMember = localMember;
         this.instance = instance;
     }
