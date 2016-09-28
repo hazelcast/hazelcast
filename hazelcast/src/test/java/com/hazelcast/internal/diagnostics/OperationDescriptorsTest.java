@@ -70,6 +70,16 @@ public class OperationDescriptorsTest extends HazelcastTestSupport {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
         }
+
+        @Override
+        public int getFactoryId() {
+            return 0;
+        }
+
+        @Override
+        public int getId() {
+            return 0;
+        }
     }
 
     static class DummyBackupOperation extends Operation implements BackupOperation {

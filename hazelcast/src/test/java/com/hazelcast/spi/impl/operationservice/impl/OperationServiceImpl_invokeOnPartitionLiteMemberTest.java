@@ -151,8 +151,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         assertFalse(resultMap.isEmpty());
     }
 
-    private static class DummyOperationFactory
-            implements OperationFactory {
+    private static class DummyOperationFactory implements OperationFactory {
 
         @Override
         public Operation createOperation() {
@@ -171,6 +170,15 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
 
         }
 
+        @Override
+        public int getFactoryId() {
+            return 0;
+        }
+
+        @Override
+        public int getId() {
+            return 0;
+        }
     }
 
     static class DummyExecutionCallback

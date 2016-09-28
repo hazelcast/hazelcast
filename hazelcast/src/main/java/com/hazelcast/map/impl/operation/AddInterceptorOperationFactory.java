@@ -17,14 +17,14 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class AddInterceptorOperationFactory implements OperationFactory {
+public class AddInterceptorOperationFactory extends AbstractMapOperationFactory {
 
     private String id;
     private String name;
@@ -56,5 +56,10 @@ public class AddInterceptorOperationFactory implements OperationFactory {
         name = in.readUTF();
         id = in.readUTF();
         mapInterceptor = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.ADD_INTERCEPTOR_FACTORY;
     }
 }

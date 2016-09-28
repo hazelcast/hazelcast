@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
@@ -154,5 +155,20 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
             keyList.add(key);
         }
         return partitionToKeys;
+    }
+
+    @Override
+    public Operation createOperation() {
+        return new PartitionWideEntryWithPredicateOperation(name, entryProcessor, predicate);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PARTITION_WIDE_PREDICATE_ENTRY_FACTORY;
     }
 }

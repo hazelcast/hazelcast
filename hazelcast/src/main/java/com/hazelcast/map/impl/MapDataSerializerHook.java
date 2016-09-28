@@ -22,44 +22,57 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
+import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
+import com.hazelcast.map.impl.operation.AddInterceptorOperationFactory;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.ClearBackupOperation;
 import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.ContainsValueOperation;
+import com.hazelcast.map.impl.operation.ContainsValueOperationFactory;
 import com.hazelcast.map.impl.operation.DeleteOperation;
 import com.hazelcast.map.impl.operation.EntryBackupOperation;
 import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.map.impl.operation.EvictAllBackupOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
+import com.hazelcast.map.impl.operation.EvictAllOperationFactory;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.EvictOperation;
 import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.map.impl.operation.GetEntryViewOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
+import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
+import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
 import com.hazelcast.map.impl.operation.MapFlushOperation;
+import com.hazelcast.map.impl.operation.MapFlushOperationFactory;
+import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
 import com.hazelcast.map.impl.operation.MapIsEmptyOperation;
+import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
 import com.hazelcast.map.impl.operation.MapSizeOperation;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryBackupOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryOperation;
+import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateBackupOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
+import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.PartitionWideEntryBackupOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryOperation;
+import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
 import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateBackupOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperation;
 import com.hazelcast.map.impl.operation.PutAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutAllOperation;
+import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutFromLoadAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutFromLoadAllOperation;
@@ -68,10 +81,12 @@ import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.PutTransientOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
+import com.hazelcast.map.impl.operation.RemoveInterceptorOperationFactory;
 import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
 import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
+import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
 import com.hazelcast.map.impl.query.QueryOperation;
@@ -89,6 +104,7 @@ import com.hazelcast.map.impl.tx.TxnUnlockBackupOperation;
 import com.hazelcast.map.impl.tx.TxnUnlockOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
@@ -172,8 +188,25 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int TXN_SET = 71;
     public static final int TXN_UNLOCK = 72;
     public static final int TXN_UNLOCK_BACKUP = 73;
+    public static final int CHECK_IF_LOADED_FACTORY = 74;
+    public static final int ADD_INDEX_FACTORY = 75;
+    public static final int ADD_INTERCEPTOR_FACTORY = 76;
+    public static final int CLEAR_FACTORY = 77;
+    public static final int CONTAINS_VALUE_FACTORY = 78;
+    public static final int EVICT_ALL_FACTORY = 79;
+    public static final int IS_EMPTY_FACTORY = 80;
+    public static final int LOAD_STATUS_FACTORY = 81;
+    public static final int MAP_FLUSH_FACTORY = 82;
+    public static final int MAP_GET_ALL_FACTORY = 83;
+    public static final int LOAD_ALL_FACTORY = 84;
+    public static final int PARTITION_WIDE_ENTRY_FACTORY = 85;
+    public static final int PARTITION_WIDE_PREDICATE_ENTRY_FACTORY = 86;
+    public static final int PUT_ALL_PARTITION_AWARE_FACTORY = 87;
+    public static final int REMOVE_INTERCEPTOR_FACTORY = 88;
+    public static final int SIZE_FACTORY = 89;
+    public static final int MULTIPLE_ENTRY_FACTORY = 90;
 
-    private static final int LEN = TXN_UNLOCK_BACKUP + 1;
+    private static final int LEN = MULTIPLE_ENTRY_FACTORY + 1;
 
     @Override
     public int getFactoryId() {
@@ -542,6 +575,86 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[TXN_UNLOCK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new TxnUnlockBackupOperation();
+            }
+        };
+        constructors[CHECK_IF_LOADED_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionCheckIfLoadedOperationFactory();
+            }
+        };
+        constructors[ADD_INDEX_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AddIndexOperationFactory();
+            }
+        };
+        constructors[ADD_INTERCEPTOR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AddInterceptorOperationFactory();
+            }
+        };
+        constructors[CLEAR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearOperationFactory();
+            }
+        };
+        constructors[CONTAINS_VALUE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ContainsValueOperationFactory();
+            }
+        };
+        constructors[EVICT_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EvictAllOperationFactory();
+            }
+        };
+        constructors[IS_EMPTY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new IsEmptyOperationFactory();
+            }
+        };
+        constructors[LOAD_STATUS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LoadStatusOperationFactory();
+            }
+        };
+        constructors[MAP_FLUSH_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapFlushOperationFactory();
+            }
+        };
+        constructors[MAP_GET_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapGetAllOperationFactory();
+            }
+        };
+        constructors[LOAD_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapLoadAllOperationFactory();
+            }
+        };
+        constructors[PARTITION_WIDE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionWideEntryOperationFactory();
+            }
+        };
+        constructors[PUT_ALL_PARTITION_AWARE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PutAllPartitionAwareOperationFactory();
+            }
+        };
+        constructors[REMOVE_INTERCEPTOR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveInterceptorOperationFactory();
+            }
+        };
+        constructors[SIZE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SizeOperationFactory();
+            }
+        };
+        constructors[MULTIPLE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MultipleEntryOperationFactory();
             }
         };
 

@@ -16,16 +16,16 @@
 
 package com.hazelcast.client.impl.operations;
 
+import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PostJoinClientOperation extends Operation {
+public class PostJoinClientOperation extends AbstractClientOperation {
 
     private Map<String, String> mappings;
 
@@ -83,5 +83,10 @@ public class PostJoinClientOperation extends Operation {
             String ownerUuid = in.readUTF();
             mappings.put(clientUuid, ownerUuid);
         }
+    }
+
+    @Override
+    public int getId() {
+        return ClientDataSerializerHook.POST_JOIN;
     }
 }

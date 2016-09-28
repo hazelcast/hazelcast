@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -24,8 +25,7 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class MultiMapOperationFactory
-        implements OperationFactory {
+public class MultiMapOperationFactory implements OperationFactory {
 
     private String name;
 
@@ -96,6 +96,16 @@ public class MultiMapOperationFactory
         threadId = in.readLong();
         key = in.readData();
         value = in.readData();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MultiMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MultiMapDataSerializerHook.MULTIMAP_OP_FACTORY;
     }
 
     public enum OperationFactoryType {

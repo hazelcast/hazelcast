@@ -16,14 +16,14 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class PartitionCheckIfLoadedOperationFactory implements OperationFactory {
+public class PartitionCheckIfLoadedOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
 
@@ -47,5 +47,10 @@ public class PartitionCheckIfLoadedOperationFactory implements OperationFactory 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CHECK_IF_LOADED_FACTORY;
     }
 }

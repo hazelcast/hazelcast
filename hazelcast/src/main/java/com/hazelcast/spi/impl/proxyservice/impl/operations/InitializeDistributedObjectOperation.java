@@ -18,12 +18,14 @@ package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
-public class InitializeDistributedObjectOperation extends Operation {
+public class InitializeDistributedObjectOperation extends Operation implements IdentifiedDataSerializable {
 
     private String serviceName;
     private String name;
@@ -66,4 +68,13 @@ public class InitializeDistributedObjectOperation extends Operation {
         name = in.readObject();
     }
 
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.DIST_OBJECT_INIT;
+    }
 }

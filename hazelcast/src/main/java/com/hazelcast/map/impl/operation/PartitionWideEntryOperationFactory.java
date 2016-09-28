@@ -17,14 +17,14 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class PartitionWideEntryOperationFactory implements OperationFactory {
+public class PartitionWideEntryOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
     private EntryProcessor entryProcessor;
@@ -52,5 +52,10 @@ public class PartitionWideEntryOperationFactory implements OperationFactory {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         entryProcessor = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PARTITION_WIDE_ENTRY_FACTORY;
     }
 }

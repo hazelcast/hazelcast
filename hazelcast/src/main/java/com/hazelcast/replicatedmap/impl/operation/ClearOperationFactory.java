@@ -48,5 +48,15 @@ public class ClearOperationFactory implements OperationFactory {
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
     }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.CLEAR_OP_FACTORY;
+    }
 }
 

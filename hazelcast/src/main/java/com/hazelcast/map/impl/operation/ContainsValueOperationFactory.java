@@ -16,15 +16,15 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public final class ContainsValueOperationFactory implements OperationFactory {
+public final class ContainsValueOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
     private Data value;
@@ -52,5 +52,10 @@ public final class ContainsValueOperationFactory implements OperationFactory {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         value = in.readData();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CONTAINS_VALUE_FACTORY;
     }
 }

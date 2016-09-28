@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 
 import java.io.IOException;
 
@@ -36,5 +37,15 @@ public class CollectRemoteTransactionsOperationFactory implements OperationFacto
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+    }
+
+    @Override
+    public int getFactoryId() {
+        return TransactionDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return TransactionDataSerializerHook.COLLECT_REMOTE_TX_FACTORY;
     }
 }

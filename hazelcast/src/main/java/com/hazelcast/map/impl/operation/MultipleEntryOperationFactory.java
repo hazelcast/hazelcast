@@ -17,17 +17,17 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MultipleEntryOperationFactory implements OperationFactory {
+public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
     private Set<Data> keys;
@@ -67,5 +67,10 @@ public class MultipleEntryOperationFactory implements OperationFactory {
             keys.add(key);
         }
         this.entryProcessor = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.MULTIPLE_ENTRY_FACTORY;
     }
 }

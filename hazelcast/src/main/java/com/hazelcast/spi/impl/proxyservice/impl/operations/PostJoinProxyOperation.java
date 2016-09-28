@@ -19,10 +19,12 @@ package com.hazelcast.spi.impl.proxyservice.impl.operations;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
@@ -31,7 +33,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class PostJoinProxyOperation extends Operation {
+public class PostJoinProxyOperation extends Operation implements IdentifiedDataSerializable {
 
     private Collection<ProxyInfo> proxies;
 
@@ -103,6 +105,16 @@ public class PostJoinProxyOperation extends Operation {
                 proxies.add(proxy);
             }
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.POST_JOIN_PROXY;
     }
 
     private class InitializeRunnable implements Runnable {

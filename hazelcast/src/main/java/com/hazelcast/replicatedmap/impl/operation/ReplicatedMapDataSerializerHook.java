@@ -58,8 +58,10 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int REQUEST_MAP_DATA = 20;
     public static final int SYNC_REPLICATED_DATA = 21;
     public static final int VALUES = 22;
+    public static final int CLEAR_OP_FACTORY = 23;
+    public static final int PUT_ALL_OP_FACTORY = 24;
 
-    private static final int LEN = VALUES + 1;
+    private static final int LEN = PUT_ALL_OP_FACTORY + 1;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -205,6 +207,18 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ValuesOperation();
+            }
+        };
+        constructors[CLEAR_OP_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearOperationFactory();
+            }
+        };
+        constructors[PUT_ALL_OP_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PutAllOperationFactory();
             }
         };
 

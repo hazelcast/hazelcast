@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.client.impl.operations;
 
+import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.Operation;
 
-/**
- * A Factory for creating {@link Operation} instances.
- * <p>The operations that will be sent to all partitions causes redundant serialization and network overhead.
- * An {@link com.hazelcast.spi.OperationFactory} instance is sent to each {@link com.hazelcast.core.Member} (node) instead to
- * improve the performance.
- * {@link OperationService} uses this factory to create {@link Operation}s for each partition by calling
- * {@link #createOperation()}
- * </p>
- */
-public interface OperationFactory extends IdentifiedDataSerializable {
+public abstract class AbstractClientOperation extends Operation implements IdentifiedDataSerializable {
 
-    /**
-     * Creates the operation.
-     *
-     * @return the created operation.
-     */
-    Operation createOperation();
+    @Override
+    public int getFactoryId() {
+        return ClientDataSerializerHook.F_ID;
+    }
 
 }

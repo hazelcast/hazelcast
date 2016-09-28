@@ -21,6 +21,10 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
+import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
@@ -28,6 +32,9 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
+import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
+import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
@@ -46,6 +53,13 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int COLLECTION = 7;
     public static final int CALL_TIMEOUT_RESPONSE = 8;
     public static final int ERROR_RESPONSE = 9;
+    public static final int DEREGISTRATION = 10;
+    public static final int POST_JOIN_REGISTRATION = 11;
+    public static final int REGISTRATION = 12;
+    public static final int SEND_EVENT = 13;
+    public static final int DIST_OBJECT_INIT = 14;
+    public static final int DIST_OBJECT_DESTROY = 15;
+    public static final int POST_JOIN_PROXY = 16;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -73,6 +87,20 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new CallTimeoutResponse();
                     case ERROR_RESPONSE:
                         return new ErrorResponse();
+                    case DEREGISTRATION:
+                        return new DeregistrationOperation();
+                    case POST_JOIN_REGISTRATION:
+                        return new PostJoinRegistrationOperation();
+                    case REGISTRATION:
+                        return new RegistrationOperation();
+                    case SEND_EVENT:
+                        return new SendEventOperation();
+                    case DIST_OBJECT_INIT:
+                        return new InitializeDistributedObjectOperation();
+                    case DIST_OBJECT_DESTROY:
+                        return new DistributedObjectDestroyOperation();
+                    case POST_JOIN_PROXY:
+                        return new PostJoinProxyOperation();
                     default:
                         return null;
                 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -78,5 +79,15 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
             entry.readData(in);
             mapEntries[i] = entry;
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_ALL_PARTITION_AWARE_FACTORY;
     }
 }
