@@ -1,7 +1,5 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -14,7 +12,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -28,13 +25,7 @@ public class NonStopInvalidatorTest {
         key = mock(Data.class);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
-
-        MapServiceContext context = mock(MapServiceContext.class);
-        when(context.getNodeEngine()).thenReturn(nodeEngine);
-
-        NearCacheProvider nearCacheProvider = mock(NearCacheProvider.class);
-
-        invalidator = new NonStopInvalidator(context, nearCacheProvider);
+        invalidator = new NonStopInvalidator(nodeEngine);
     }
 
     @RequireAssertEnabled
@@ -47,5 +38,17 @@ public class NonStopInvalidatorTest {
     @Test(expected = AssertionError.class)
     public void testInvalidate_withInvalidSourceUuid() {
         invalidator.invalidate(key, "anyMapName", null);
+    }
+
+    @RequireAssertEnabled
+    @Test(expected = AssertionError.class)
+    public void testClear_withInvalidMapName() {
+        invalidator.clear(null, "anySourceUuid");
+    }
+
+    @RequireAssertEnabled
+    @Test(expected = AssertionError.class)
+    public void testClear_withInvalidSourceUuid() {
+        invalidator.clear("anyMapName", null);
     }
 }

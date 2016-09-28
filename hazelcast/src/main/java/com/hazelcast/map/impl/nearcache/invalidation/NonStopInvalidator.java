@@ -16,10 +16,8 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 
@@ -30,20 +28,20 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
  */
 public class NonStopInvalidator extends AbstractNearCacheInvalidator {
 
-    public NonStopInvalidator(MapServiceContext mapServiceContext, NearCacheProvider nearCacheProvider) {
-        super(mapServiceContext, nearCacheProvider);
+    public NonStopInvalidator(NodeEngine nodeEngine) {
+        super(nodeEngine);
     }
 
     @Override
-    public void invalidate(Data key, String mapName, String sourceUuid) {
-        assert mapName != null;
-        assert sourceUuid != null;
+    protected void invalidateInternal(Invalidation invalidation, int orderKey) {
+        String mapName = invalidation.getName();
+        String sourceUuid = invalidation.getSourceUuid();
 
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, mapName);
         for (EventRegistration registration : registrations) {
-            if (canSendInvalidationEvent(registration, sourceUuid)) {
-                SingleNearCacheInvalidation invalidation = new SingleNearCacheInvalidation(key, mapName, sourceUuid);
-                eventService.publishEvent(SERVICE_NAME, registration, invalidation, orderKey(invalidation));
+
+            if (canSendInvalidation(registration.getFilter(), sourceUuid)) {
+                eventService.publishEvent(SERVICE_NAME, registration, invalidation, orderKey);
             }
         }
     }

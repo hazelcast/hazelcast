@@ -71,5 +71,4 @@ public abstract class Invalidation implements IMapEvent, DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
     }
-
 }

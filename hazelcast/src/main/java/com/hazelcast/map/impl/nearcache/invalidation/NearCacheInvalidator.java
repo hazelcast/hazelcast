@@ -27,13 +27,21 @@ import com.hazelcast.spi.ManagedService;
 public interface NearCacheInvalidator {
 
     /**
-     * Invalidates supplied key from this maps near-caches.
+     * Invalidates supplied key from near-caches of supplied map name.
      *
-     * @param key        key of the entry to be removed from near-cache.
-     * @param mapName    name of the map.
+     * @param key        key of the entry to be removed from near-cache
+     * @param mapName    name of the map to be invalidated
      * @param sourceUuid caller uuid
      */
     void invalidate(Data key, String mapName, String sourceUuid);
+
+    /**
+     * Invalidates all keys from near-caches of supplied map name.
+     *
+     * @param mapName    name of the map to be cleared
+     * @param sourceUuid caller  uuid
+     */
+    void clear(String mapName, String sourceUuid);
 
     /**
      * Removes supplied maps invalidation queue and flushes its content.

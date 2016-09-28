@@ -20,11 +20,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.ArrayList;
@@ -42,8 +41,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static java.util.Collections.singletonList;
+import static java.lang.Math.min;
+import static java.util.Collections.emptyList;
 
 /**
  * Sends invalidations to Near Cache in batches.
@@ -71,134 +72,112 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
 
     private final int batchSize;
     private final String nodeShutdownListenerId;
+    private final ExecutionService executionService;
 
-    public BatchInvalidator(MapServiceContext mapServiceContext, NearCacheProvider nearCacheProvider) {
-        super(mapServiceContext, nearCacheProvider);
-        batchSize = getBatchSize();
-        nodeShutdownListenerId = registerNodeShutdownListener();
+    public BatchInvalidator(NodeEngine nodeEngine) {
+        super(nodeEngine);
+
+        this.batchSize = getBatchSize();
+        this.nodeShutdownListenerId = registerNodeShutdownListener();
+        this.executionService = nodeEngine.getExecutionService();
         startBackgroundBatchProcessor();
     }
 
     @Override
-    public void invalidate(Data key, String mapName, String sourceUuid) {
-        accumulateOrInvalidate(key, mapName, sourceUuid);
-    }
-
-    private void accumulateOrInvalidate(Data key, String mapName, String sourceUuid) {
-        assert mapName != null;
-        assert sourceUuid != null;
-
+    protected void invalidateInternal(Invalidation invalidation, int orderKey) {
+        String mapName = invalidation.getName();
         InvalidationQueue invalidationQueue = getOrPutIfAbsent(invalidationQueues, mapName, invalidationQueueConstructor);
-        invalidationQueue.offer(new SingleNearCacheInvalidation(toHeapData(key), mapName, sourceUuid));
+        invalidationQueue.offer(invalidation);
 
         if (invalidationQueue.size() >= batchSize) {
-            invalidate(invalidationQueue, true, mapName);
+            createAndSendInvalidations(mapName, invalidationQueue, true);
         }
     }
 
-    private void invalidate(InvalidationQueue invalidationQueue, boolean offloadEventSending, String mapName) {
-        if (invalidationQueue == null) {
-            return;
-        }
-        // if still in progress, no need to another attempt, so just return
+    private void createAndSendInvalidations(String mapName, InvalidationQueue invalidationQueue, boolean offloadEventSending) {
+        assert invalidationQueue != null;
+
         if (!invalidationQueue.tryAcquire()) {
+            // if still in progress, no need to another attempt, so just return
             return;
         }
 
-        final int size = Math.min(batchSize, invalidationQueue.size());
-        if (size == 0) {
-            return;
-        }
-
-        List<SingleNearCacheInvalidation> invalidations = createInvalidations(invalidationQueue, size);
         try {
-            sendInvalidations(invalidations, offloadEventSending, mapName);
+            List<Invalidation> invalidations = createInvalidations(invalidationQueue);
+            if (!isEmpty(invalidations)) {
+                sendInvalidations(mapName, invalidations, offloadEventSending);
+            }
         } finally {
             invalidationQueue.release();
         }
     }
 
-    private static List<SingleNearCacheInvalidation> createInvalidations(InvalidationQueue invalidationQueue, int size) {
-        boolean foundClearEvent = false;
-        List<SingleNearCacheInvalidation> invalidations = new ArrayList<SingleNearCacheInvalidation>(size);
+    private List<Invalidation> createInvalidations(InvalidationQueue invalidationQueue) {
+        final int size = min(batchSize, invalidationQueue.size());
+        if (size == 0) {
+            return emptyList();
+        }
+
+        List<Invalidation> invalidations = new ArrayList<Invalidation>(size);
 
         for (int i = 0; i < size; i++) {
-            SingleNearCacheInvalidation invalidation = invalidationQueue.poll();
+            Invalidation invalidation = invalidationQueue.poll();
             if (invalidation == null) {
                 break;
             }
 
-            if (foundClearEvent) {
-                continue;
-            }
-
-            if (invalidation.getKey() == null) {
-                foundClearEvent = true;
-                invalidations = singletonList(invalidation);
-            } else {
-                invalidations.add(invalidation);
-            }
+            invalidations.add(invalidation);
 
         }
         return invalidations;
     }
 
-    private void sendInvalidations(List<SingleNearCacheInvalidation> invalidations,
-                                   boolean offloadEventSending, String mapName) {
+    private void sendInvalidations(String mapName, List<Invalidation> invalidations, boolean offloadEventSending) {
         if (offloadEventSending) {
-            nodeEngine.getExecutionService().execute(mapName, new EventSender(invalidations, mapName));
+            executionService.execute(mapName, new EventSender(mapName, invalidations));
         } else {
-            sendInvalidationsInternal(invalidations, mapName);
+            sendInvalidations(mapName, invalidations);
         }
     }
 
     private final class EventSender implements Runnable {
 
-        private final List<SingleNearCacheInvalidation> invalidationList;
         private final String mapName;
+        private final List<Invalidation> invalidations;
 
-        public EventSender(List<SingleNearCacheInvalidation> invalidationList, String mapName) {
-            this.invalidationList = invalidationList;
+        public EventSender(String mapName, List<Invalidation> invalidations) {
             this.mapName = mapName;
+            this.invalidations = invalidations;
         }
 
         @Override
         public void run() {
-            sendInvalidationsInternal(invalidationList, mapName);
+            sendInvalidations(mapName, invalidations);
         }
     }
 
-    private void sendInvalidationsInternal(final List<SingleNearCacheInvalidation> invalidationList, final String mapName) {
+    private void sendInvalidations(String mapName, List<Invalidation> invalidations) {
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, mapName);
         for (EventRegistration registration : registrations) {
-            List<SingleNearCacheInvalidation> filteredInvalidations = null;
-            for (SingleNearCacheInvalidation invalidation : invalidationList) {
-                if (canSendInvalidationEvent(registration, invalidation.getSourceUuid())) {
-
-                    if (filteredInvalidations == null) {
-                        filteredInvalidations = new ArrayList<SingleNearCacheInvalidation>();
-                    }
-
-                    filteredInvalidations.add(invalidation);
-                }
-            }
-
-            if (filteredInvalidations != null) {
-                BatchNearCacheInvalidation invalidation = new BatchNearCacheInvalidation(filteredInvalidations, mapName);
+            List<Invalidation> selection = filterInvalidations(invalidations, registration.getFilter());
+            if (selection != null) {
+                Invalidation invalidation = new BatchNearCacheInvalidation(selection, mapName);
                 eventService.publishEvent(SERVICE_NAME, registration, invalidation, mapName.hashCode());
             }
         }
     }
 
-    private void sendSingleInvalidationEvent(SingleNearCacheInvalidation invalidation) {
-        final String mapName = invalidation.getName();
-
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, mapName);
-        for (EventRegistration registration : registrations) {
-            if (canSendInvalidationEvent(registration, invalidation.getSourceUuid())) {
-                eventService.publishEvent(SERVICE_NAME, registration, invalidation, orderKey(invalidation));
+    private List<Invalidation> filterInvalidations(List<Invalidation> invalidations, EventFilter filter) {
+        List<Invalidation> selection = null;
+        for (Invalidation invalidation : invalidations) {
+            if (canSendInvalidation(filter, invalidation.getSourceUuid())) {
+                if (selection == null) {
+                    selection = new ArrayList<Invalidation>();
+                }
+                selection.add(invalidation);
             }
         }
+        return selection;
     }
 
     /**
@@ -213,7 +192,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
                 if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
                     Set<Map.Entry<String, InvalidationQueue>> entries = invalidationQueues.entrySet();
                     for (Map.Entry<String, InvalidationQueue> entry : entries) {
-                        invalidate(entry.getValue(), false, entry.getKey());
+                        createAndSendInvalidations(entry.getKey(), entry.getValue(), false);
                     }
                 }
             }
@@ -250,81 +229,9 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
                 String mapName = entry.getKey();
                 InvalidationQueue invalidationQueue = entry.getValue();
                 if (invalidationQueue.size() > 0) {
-                    invalidate(invalidationQueue, false, mapName);
+                    createAndSendInvalidations(mapName, invalidationQueue, false);
                 }
             }
-        }
-    }
-
-    private static class InvalidationQueue extends ConcurrentLinkedQueue<SingleNearCacheInvalidation> {
-
-        private final AtomicInteger elementCount = new AtomicInteger(0);
-        private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
-
-        @Override
-        public int size() {
-            return elementCount.get();
-        }
-
-        @Override
-        public boolean offer(SingleNearCacheInvalidation invalidation) {
-            boolean offered = super.offer(invalidation);
-            if (offered) {
-                elementCount.incrementAndGet();
-            }
-            return offered;
-        }
-
-        @Override
-        public SingleNearCacheInvalidation poll() {
-            SingleNearCacheInvalidation invalidation = super.poll();
-            if (invalidation != null) {
-                elementCount.decrementAndGet();
-            }
-            return invalidation;
-        }
-
-        public boolean tryAcquire() {
-            return flushingInProgress.compareAndSet(false, true);
-        }
-
-        public void release() {
-            flushingInProgress.set(false);
-        }
-
-        @Override
-        public boolean add(SingleNearCacheInvalidation invalidation) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SingleNearCacheInvalidation remove() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean remove(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean addAll(Collection<? extends SingleNearCacheInvalidation> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean removeAll(Collection<?> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean retainAll(Collection<?> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void clear() {
-            throw new UnsupportedOperationException();
         }
     }
 
@@ -332,7 +239,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     public void destroy(String mapName, String sourceUuid) {
         InvalidationQueue invalidationQueue = invalidationQueues.remove(mapName);
         if (invalidationQueue != null) {
-            sendSingleInvalidationEvent(new SingleNearCacheInvalidation(null, mapName, sourceUuid));
+            invalidateInternal(new ClearNearCacheInvalidation(mapName, sourceUuid), mapName.hashCode());
         }
     }
 
@@ -351,5 +258,78 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     @Override
     public void reset() {
         invalidationQueues.clear();
+    }
+
+    private static class InvalidationQueue extends ConcurrentLinkedQueue<Invalidation> {
+        private final AtomicInteger elementCount = new AtomicInteger(0);
+
+        private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
+
+        @Override
+        public int size() {
+            return elementCount.get();
+        }
+
+        @Override
+        public boolean offer(Invalidation invalidation) {
+            boolean offered = super.offer(invalidation);
+            if (offered) {
+                elementCount.incrementAndGet();
+            }
+            return offered;
+        }
+
+        @Override
+        public Invalidation poll() {
+            Invalidation invalidation = super.poll();
+            if (invalidation != null) {
+                elementCount.decrementAndGet();
+            }
+            return invalidation;
+        }
+
+        public boolean tryAcquire() {
+            return flushingInProgress.compareAndSet(false, true);
+        }
+
+        public void release() {
+            flushingInProgress.set(false);
+        }
+
+        @Override
+        public boolean add(Invalidation invalidation) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Invalidation remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends Invalidation> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+
     }
 }
