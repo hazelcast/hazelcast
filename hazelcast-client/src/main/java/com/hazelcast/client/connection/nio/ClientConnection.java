@@ -238,7 +238,7 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         closeReason = reason;
 
         closedTime = System.currentTimeMillis();
-        String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
+        String message = this + " lost. Reason: ";
         if (cause != null) {
             message += cause.getClass().getName() + '[' + cause.getMessage() + ']';
         } else {
