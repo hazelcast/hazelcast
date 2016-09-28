@@ -22,6 +22,13 @@ package com.hazelcast.map.impl.nearcache.invalidation;
 public interface InvalidationHandler {
 
     /**
+     * Handles a single key invalidation
+     *
+     * @param invalidation invalidation event
+     */
+    void handle(SingleNearCacheInvalidation invalidation);
+
+    /**
      * Handles batch invalidations
      *
      * @param invalidation invalidation event
@@ -29,9 +36,9 @@ public interface InvalidationHandler {
     void handle(BatchNearCacheInvalidation invalidation);
 
     /**
-     * Handles a single invalidation
+     * Handles clear near-cache invalidation
      *
      * @param invalidation invalidation event
      */
-    void handle(SingleNearCacheInvalidation invalidation);
+    void handle(ClearNearCacheInvalidation invalidation);
 }

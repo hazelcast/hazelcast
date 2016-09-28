@@ -45,6 +45,6 @@ abstract class AbstractMapAllPartitionsMessageTask<P> extends AbstractAllPartiti
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
-        nearCacheInvalidator.invalidate(null, mapName, getEndpoint().getUuid());
+        nearCacheInvalidator.clear(mapName, getEndpoint().getUuid());
     }
 }

@@ -910,7 +910,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected void sendNearCacheClearEvent() {
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
-        nearCacheInvalidator.invalidate(null, name, localMemberUuid);
+        nearCacheInvalidator.clear(name, localMemberUuid);
     }
 
     public String addMapInterceptorInternal(MapInterceptor interceptor) {

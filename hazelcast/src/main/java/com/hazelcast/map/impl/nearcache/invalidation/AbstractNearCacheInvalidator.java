@@ -16,16 +16,12 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 
@@ -33,45 +29,42 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
 /**
  * Contains common functionality of a {@code NearCacheInvalidator}
  */
-public abstract class AbstractNearCacheInvalidator implements NearCacheInvalidator {
+abstract class AbstractNearCacheInvalidator implements NearCacheInvalidator {
 
-    protected final EventService eventService;
-    protected final OperationService operationService;
-    protected final ClusterService clusterService;
-    protected final MapServiceContext mapServiceContext;
-    protected final NearCacheProvider nearCacheProvider;
     protected final NodeEngine nodeEngine;
+    protected final EventService eventService;
+    protected final SerializationService serializationService;
 
-    public AbstractNearCacheInvalidator(MapServiceContext mapServiceContext, NearCacheProvider nearCacheProvider) {
-        this.mapServiceContext = mapServiceContext;
-        this.nearCacheProvider = nearCacheProvider;
-        this.nodeEngine = mapServiceContext.getNodeEngine();
+    AbstractNearCacheInvalidator(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
         this.eventService = nodeEngine.getEventService();
-        this.operationService = nodeEngine.getOperationService();
-        this.clusterService = nodeEngine.getClusterService();
+        this.serializationService = nodeEngine.getSerializationService();
     }
+
+    @Override
+    public final void invalidate(Data key, String mapName, String sourceUuid) {
+        assert key != null;
+        assert mapName != null;
+        assert sourceUuid != null;
+
+        invalidateInternal(new SingleNearCacheInvalidation(toHeapData(key), mapName, sourceUuid), key.hashCode());
+    }
+
+    @Override
+    public final void clear(String mapName, String sourceUuid) {
+        assert mapName != null;
+        assert sourceUuid != null;
+
+        invalidateInternal(new ClearNearCacheInvalidation(mapName, sourceUuid), mapName.hashCode());
+    }
+
+    protected abstract void invalidateInternal(Invalidation invalidation, int orderKey);
 
     protected final Data toHeapData(Data key) {
-        if (key == null) {
-            return null;
-        }
-
-        return mapServiceContext.toData(key);
+        return serializationService.toData(key);
     }
 
-    protected static int orderKey(SingleNearCacheInvalidation invalidation) {
-        Data key = invalidation.getKey();
-
-        if (key != null) {
-            return key.hashCode();
-        }
-
-        return invalidation.getName().hashCode();
-    }
-
-    protected final boolean canSendInvalidationEvent(final EventRegistration registration, final String sourceUuid) {
-        EventFilter filter = registration.getFilter();
-
+    protected final boolean canSendInvalidation(final EventFilter filter, final String sourceUuid) {
         if (!(filter instanceof EventListenerFilter)) {
             return false;
         }

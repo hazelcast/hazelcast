@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCode
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.ClearNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationHandler;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
@@ -99,6 +100,12 @@ public class MapAddNearCacheEntryListenerMessageTask
         }
 
         @Override
+        public void handle(SingleNearCacheInvalidation invalidation) {
+            Data key = invalidation.getKey();
+            sendClientMessage(key, encodeIMapInvalidationEvent(key));
+        }
+
+        @Override
         public void handle(BatchNearCacheInvalidation batchNearCacheInvalidation) {
             List<Data> keys = getKeysOrNull(batchNearCacheInvalidation);
 
@@ -116,21 +123,19 @@ public class MapAddNearCacheEntryListenerMessageTask
          * @see SingleNearCacheInvalidation
          */
         private List<Data> getKeysOrNull(BatchNearCacheInvalidation batch) {
-            List<SingleNearCacheInvalidation> invalidations = batch.getInvalidations();
+            List<Invalidation> invalidations = batch.getInvalidations();
 
             List<Data> keyList = null;
-            for (SingleNearCacheInvalidation invalidation : invalidations) {
-                Data key = invalidation.getKey();
-                // if key is null, it means this is a clear event and no need to process
-                // other invalidations.
-                if (key == null) {
+            for (Invalidation invalidation : invalidations) {
+                if (invalidation instanceof ClearNearCacheInvalidation) {
                     return null;
                 }
 
                 if (keyList == null) {
                     keyList = new ArrayList<Data>(invalidations.size());
                 }
-                keyList.add(key);
+
+                keyList.add(((SingleNearCacheInvalidation) invalidation).getKey());
             }
 
             assert keyList != null;
@@ -138,16 +143,9 @@ public class MapAddNearCacheEntryListenerMessageTask
             return keyList;
         }
 
-
         @Override
-        public void handle(SingleNearCacheInvalidation singleNearCacheInvalidation) {
-            Data key = singleNearCacheInvalidation.getKey();
-
-            if (key == null) {
-                sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
-            } else {
-                sendClientMessage(key, encodeIMapInvalidationEvent(key));
-            }
+        public void handle(ClearNearCacheInvalidation invalidation) {
+            sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
         }
 
     }

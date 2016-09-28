@@ -49,8 +49,7 @@ public class NearCacheProvider {
     protected final NearCacheManager nearCacheManager;
     protected final MapServiceContext mapServiceContext;
     protected final NodeEngine nodeEngine;
-
-    private final NearCacheInvalidator nearCacheInvalidator;
+    protected final NearCacheInvalidator nearCacheInvalidator;
 
     public NearCacheProvider(MapServiceContext mapServiceContext) {
         this(mapServiceContext, new DefaultNearCacheManager());
@@ -60,13 +59,7 @@ public class NearCacheProvider {
         this.nearCacheManager = nearCacheManager;
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.nearCacheInvalidator = createNearCacheInvalidator(mapServiceContext);
-    }
-
-    private NearCacheInvalidator createNearCacheInvalidator(MapServiceContext mapServiceContext) {
-        return isBatchingEnabled()
-                ? new BatchInvalidator(mapServiceContext, this)
-                : new NonStopInvalidator(mapServiceContext, this);
+        this.nearCacheInvalidator = isBatchingEnabled() ? new BatchInvalidator(nodeEngine) : new NonStopInvalidator(nodeEngine);
     }
 
     private boolean isBatchingEnabled() {

@@ -18,32 +18,25 @@ package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Represents a single key invalidation.
+ * Represents a clear invalidation event.
  */
-public class SingleNearCacheInvalidation extends Invalidation {
+public class ClearNearCacheInvalidation extends Invalidation {
 
-    private Data key;
     private String sourceUuid;
 
-    public SingleNearCacheInvalidation() {
+    public ClearNearCacheInvalidation() {
     }
 
-    public SingleNearCacheInvalidation(Data key, String mapName, String sourceUuid) {
+    public ClearNearCacheInvalidation(String mapName, String sourceUuid) {
         super(mapName);
 
-        this.key = checkNotNull(key, "key cannot be null");
         this.sourceUuid = checkNotNull(sourceUuid, "sourceUuid cannot be null");
-    }
-
-    public Data getKey() {
-        return key;
     }
 
     @Override
@@ -61,7 +54,6 @@ public class SingleNearCacheInvalidation extends Invalidation {
         super.writeData(out);
 
         out.writeUTF(sourceUuid);
-        out.writeData(key);
     }
 
     @Override
@@ -69,15 +61,13 @@ public class SingleNearCacheInvalidation extends Invalidation {
         super.readData(in);
 
         sourceUuid = in.readUTF();
-        key = in.readData();
     }
 
     @Override
     public String toString() {
-        return "SingleNearCacheInvalidation{"
+        return "ClearNearCacheInvalidation{"
                 + "mapName='" + mapName + '\''
                 + ", sourceUuid='" + sourceUuid + '\''
-                + ", key='" + key + '\''
                 + '}';
     }
 }

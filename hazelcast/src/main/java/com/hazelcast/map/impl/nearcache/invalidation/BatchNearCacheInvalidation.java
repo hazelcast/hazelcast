@@ -28,16 +28,12 @@ import static java.util.Collections.emptyList;
 
 public class BatchNearCacheInvalidation extends Invalidation {
 
-    private List<SingleNearCacheInvalidation> invalidations;
+    private List<Invalidation> invalidations = emptyList();
 
     public BatchNearCacheInvalidation() {
     }
 
-    public BatchNearCacheInvalidation(int size, String mapName) {
-        this(new ArrayList<SingleNearCacheInvalidation>(size), mapName);
-    }
-
-    public BatchNearCacheInvalidation(List<SingleNearCacheInvalidation> invalidations, String mapName) {
+    public BatchNearCacheInvalidation(List<Invalidation> invalidations, String mapName) {
         super(mapName);
 
         this.invalidations = checkNotNull(invalidations, "invalidations cannot be null");
@@ -48,11 +44,11 @@ public class BatchNearCacheInvalidation extends Invalidation {
         invalidationHandler.handle(this);
     }
 
-    public void add(SingleNearCacheInvalidation invalidation) {
+    public void add(Invalidation invalidation) {
         invalidations.add(invalidation);
     }
 
-    public List<SingleNearCacheInvalidation> getInvalidations() {
+    public List<Invalidation> getInvalidations() {
         return invalidations;
     }
 
@@ -61,8 +57,8 @@ public class BatchNearCacheInvalidation extends Invalidation {
         super.writeData(out);
 
         out.writeInt(invalidations.size());
-        for (SingleNearCacheInvalidation singleNearCacheInvalidation : invalidations) {
-            singleNearCacheInvalidation.writeData(out);
+        for (Invalidation invalidation : invalidations) {
+            out.writeObject(invalidation);
         }
     }
 
@@ -72,23 +68,19 @@ public class BatchNearCacheInvalidation extends Invalidation {
 
         int size = in.readInt();
         if (size != 0) {
-            List<SingleNearCacheInvalidation> invalidations = new ArrayList<SingleNearCacheInvalidation>(size);
+            List<Invalidation> invalidations = new ArrayList<Invalidation>(size);
             for (int i = 0; i < size; i++) {
-                SingleNearCacheInvalidation invalidation = new SingleNearCacheInvalidation();
-                invalidation.readData(in);
-
+                Invalidation invalidation = in.readObject();
                 invalidations.add(invalidation);
             }
             this.invalidations = invalidations;
-        } else {
-            this.invalidations = emptyList();
         }
     }
 
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
-        for (SingleNearCacheInvalidation invalidation : invalidations) {
+        for (Invalidation invalidation : invalidations) {
             str.append(invalidation.toString());
         }
         return str.toString();

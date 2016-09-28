@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper;
 import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.ClearNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationHandler;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
@@ -443,23 +444,22 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
 
         @Override
-        public void handle(BatchNearCacheInvalidation batchNearCacheInvalidation) {
-            List<SingleNearCacheInvalidation> invalidations = batchNearCacheInvalidation.getInvalidations();
+        public void handle(BatchNearCacheInvalidation batch) {
+            List<Invalidation> invalidations = batch.getInvalidations();
 
-            for (SingleNearCacheInvalidation invalidation : invalidations) {
-                handle(invalidation);
+            for (Invalidation invalidation : invalidations) {
+                invalidation.consumedBy(this);
             }
         }
 
         @Override
-        public void handle(SingleNearCacheInvalidation singleNearCacheInvalidation) {
-            Data key = singleNearCacheInvalidation.getKey();
+        public void handle(SingleNearCacheInvalidation invalidation) {
+            nearCache.remove(invalidation.getKey());
+        }
 
-            if (key == null) {
-                nearCache.clear();
-            } else {
-                nearCache.remove(key);
-            }
+        @Override
+        public void handle(ClearNearCacheInvalidation invalidation) {
+            nearCache.clear();
         }
     }
 }
