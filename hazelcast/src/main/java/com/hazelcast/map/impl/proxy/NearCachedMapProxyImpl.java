@@ -88,7 +88,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (invalidateOnChange) {
             addNearCacheInvalidateListener();
         }
-
     }
 
     // this operation returns the object in data format,
@@ -308,7 +307,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             keyStates.put(key, keyStateMarker.tryMark(key));
         }
 
-
         int currentSize = resultingKeyValuePairs.size();
         super.getAllObjectInternal(keys, resultingKeyValuePairs);
 
@@ -350,15 +348,16 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public InternalCompletableFuture executeOnKeyInternal(
-            Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
-        InternalCompletableFuture future = super.executeOnKeyInternal(key, entryProcessor, callback);
+    public InternalCompletableFuture<Object> executeOnKeyInternal(Data key, EntryProcessor entryProcessor,
+                                                                  ExecutionCallback<Object> callback) {
+        InternalCompletableFuture<Object> future = super.executeOnKeyInternal(key, entryProcessor, callback);
         invalidateCache(key);
         return future;
     }
 
     @Override
-    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> resultingKeyValuePairs) {
+    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate,
+                                         List<Data> resultingKeyValuePairs) {
         super.executeOnEntriesInternal(entryProcessor, predicate, resultingKeyValuePairs);
 
         for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
@@ -416,7 +415,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return thisAddress.equals(partitionOwner);
     }
 
-    public NearCache getNearCache() {
+    public NearCache<Data, Object> getNearCache() {
         return nearCache;
     }
 

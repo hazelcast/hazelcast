@@ -452,8 +452,8 @@ public class NearCacheLiteMemberTest {
     }
 
     private static NearCache<Data, Object> getNearCache(HazelcastInstance instance, String mapName) {
-        IMap map = instance.getMap(mapName);
-        return ((NearCachedMapProxyImpl) map).getNearCache();
+        IMap<Data, Object> map = instance.getMap(mapName);
+        return ((NearCachedMapProxyImpl<Data, Object>) map).getNearCache();
     }
 
     private static void assertNullNearCacheEntryEventually(final HazelcastInstance instance, String mapName, Object key) {
