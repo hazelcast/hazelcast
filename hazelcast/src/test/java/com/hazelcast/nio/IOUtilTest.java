@@ -47,11 +47,27 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
+import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.nio.IOUtil.compress;
+import static com.hazelcast.nio.IOUtil.decompress;
+import static com.hazelcast.nio.IOUtil.delete;
+import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
+import static com.hazelcast.nio.IOUtil.getFileFromResources;
+import static com.hazelcast.nio.IOUtil.newInputStream;
+import static com.hazelcast.nio.IOUtil.newOutputStream;
+import static com.hazelcast.nio.IOUtil.readByteArray;
+import static com.hazelcast.nio.IOUtil.readFully;
+import static com.hazelcast.nio.IOUtil.readFullyOrNothing;
+import static com.hazelcast.nio.IOUtil.readObject;
+import static com.hazelcast.nio.IOUtil.toFileName;
+import static com.hazelcast.nio.IOUtil.writeByteArray;
+import static com.hazelcast.nio.IOUtil.writeObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -59,9 +75,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * @author Tomasz Nurkiewicz
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class IOUtilTest extends HazelcastTestSupport {
@@ -135,15 +148,15 @@ public class IOUtilTest extends HazelcastTestSupport {
         assertNull(output);
     }
 
-    private static byte[] writeAndReadByteArray(byte[] bytes) throws IOException {
+    private static byte[] writeAndReadByteArray(byte[] bytes) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectDataOutput out = createObjectDataOutputStream(bout, serializationService);
-        IOUtil.writeByteArray(out, bytes);
+        writeByteArray(out, bytes);
         byte[] data = bout.toByteArray();
 
         ByteArrayInputStream bin = new ByteArrayInputStream(data);
         ObjectDataInput in = createObjectDataInputStream(bin, serializationService);
-        return IOUtil.readByteArray(in);
+        return readByteArray(in);
     }
 
     @Test
@@ -166,21 +179,82 @@ public class IOUtilTest extends HazelcastTestSupport {
         assertEquals(expected, actual);
     }
 
-    private static Object writeAndReadObject(Object input) throws IOException {
+    private static Object writeAndReadObject(Object input) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectDataOutput out = createObjectDataOutputStream(bout, serializationService);
-        IOUtil.writeObject(out, input);
+        writeObject(out, input);
         byte[] data = bout.toByteArray();
 
         ByteArrayInputStream bin = new ByteArrayInputStream(data);
         ObjectDataInput in = createObjectDataInputStream(bin, serializationService);
-        return IOUtil.readObject(in);
+        return readObject(in);
+    }
+
+    private final byte[] streamInput = {1, 2, 3, 4};
+
+    @Test
+    public void testReadFullyOrNothing() throws Exception {
+        InputStream in = new ByteArrayInputStream(streamInput);
+        byte[] buffer = new byte[4];
+
+        boolean result = readFullyOrNothing(in, buffer);
+
+        assertTrue(result);
+        for (int i = 0; i < buffer.length; i++) {
+            assertEquals(buffer[i], streamInput[i]);
+        }
+    }
+
+    @Test
+    public void testReadFullyOrNothing_whenThereIsNoData_thenReturnFalse() throws Exception {
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+        byte[] buffer = new byte[4];
+
+        boolean result = readFullyOrNothing(in, buffer);
+
+        assertFalse(result);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testReadFullyOrNothing_whenThereIsNotEnoughData_thenThrowException() throws Exception {
+        InputStream in = new ByteArrayInputStream(streamInput);
+        byte[] buffer = new byte[8];
+
+        readFullyOrNothing(in, buffer);
+    }
+
+    @Test
+    public void testReadFully() throws Exception {
+        InputStream in = new ByteArrayInputStream(streamInput);
+        byte[] buffer = new byte[4];
+
+        readFully(in, buffer);
+
+        for (int i = 0; i < buffer.length; i++) {
+            assertEquals(buffer[i], streamInput[i]);
+        }
+    }
+
+    @Test(expected = EOFException.class)
+    public void testReadFully_whenThereIsNoData_thenThrowException() throws Exception {
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+        byte[] buffer = new byte[4];
+
+        readFully(in, buffer);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testReadFully_whenThereIsNotEnoughData_thenThrowException() throws Exception {
+        InputStream in = new ByteArrayInputStream(streamInput);
+        byte[] buffer = new byte[8];
+
+        readFully(in, buffer);
     }
 
     @Test
     public void testNewOutputStream_shouldWriteWholeByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = IOUtil.newOutputStream(buffer);
+        OutputStream outputStream = newOutputStream(buffer);
         assertEquals(SIZE, buffer.remaining());
 
         outputStream.write(new byte[SIZE]);
@@ -191,7 +265,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewOutputStream_shouldWriteSingleByte() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = IOUtil.newOutputStream(buffer);
+        OutputStream outputStream = newOutputStream(buffer);
         assertEquals(SIZE, buffer.remaining());
 
         outputStream.write(23);
@@ -202,7 +276,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewOutputStream_shouldWriteInChunks() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = IOUtil.newOutputStream(buffer);
+        OutputStream outputStream = newOutputStream(buffer);
         assertEquals(SIZE, buffer.remaining());
 
         outputStream.write(new byte[1], 0, 1);
@@ -214,7 +288,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test(expected = BufferOverflowException.class)
     public void testNewOutputStream_shouldThrowWhenTryingToWriteToEmptyByteBuffer() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        OutputStream outputStream = IOUtil.newOutputStream(empty);
+        OutputStream outputStream = newOutputStream(empty);
 
         outputStream.write(23);
     }
@@ -222,7 +296,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenEmptyByteBufferProvidedAndReadingOneByte() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        InputStream inputStream = IOUtil.newInputStream(empty);
+        InputStream inputStream = newInputStream(empty);
 
         int read = inputStream.read();
 
@@ -232,7 +306,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewInputStream_shouldReadWholeByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = IOUtil.newInputStream(buffer);
+        InputStream inputStream = newInputStream(buffer);
 
         int read = inputStream.read(new byte[SIZE]);
 
@@ -242,7 +316,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewInputStream_shouldAllowReadingByteBufferInChunks() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = IOUtil.newInputStream(buffer);
+        InputStream inputStream = newInputStream(buffer);
 
         int firstRead = inputStream.read(new byte[1]);
         int secondRead = inputStream.read(new byte[SIZE - 1]);
@@ -254,7 +328,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenNothingRemainingInByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = IOUtil.newInputStream(buffer);
+        InputStream inputStream = newInputStream(buffer);
 
         int firstRead = inputStream.read(new byte[SIZE]);
         int secondRead = inputStream.read();
@@ -266,7 +340,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenEmptyByteBufferProvidedAndReadingSeveralBytes() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        InputStream inputStream = IOUtil.newInputStream(empty);
+        InputStream inputStream = newInputStream(empty);
 
         int read = inputStream.read(NON_EMPTY_BYTE_ARRAY);
 
@@ -276,7 +350,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test(expected = EOFException.class)
     public void testNewInputStream_shouldThrowWhenTryingToReadFullyFromEmptyByteBuffer() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        DataInputStream inputStream = new DataInputStream(IOUtil.newInputStream(empty));
+        DataInputStream inputStream = new DataInputStream(newInputStream(empty));
 
         inputStream.readFully(NON_EMPTY_BYTE_ARRAY);
     }
@@ -284,7 +358,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test(expected = EOFException.class)
     public void testNewInputStream_shouldThrowWhenByteBufferExhaustedAndTryingToReadFully() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        DataInputStream inputStream = new DataInputStream(IOUtil.newInputStream(buffer));
+        DataInputStream inputStream = new DataInputStream(newInputStream(buffer));
         inputStream.readFully(new byte[SIZE]);
 
         inputStream.readFully(NON_EMPTY_BYTE_ARRAY);
@@ -296,8 +370,8 @@ public class IOUtilTest extends HazelcastTestSupport {
                 + " and I will give you a complete account of the system, and expound the actual teachings of the great explorer"
                 + " of the truth, the master-builder of human happiness.";
 
-        byte[] compressed = IOUtil.compress(expected.getBytes());
-        byte[] decompressed = IOUtil.decompress(compressed);
+        byte[] compressed = compress(expected.getBytes());
+        byte[] decompressed = decompress(compressed);
 
         assertEquals(expected, new String(decompressed));
     }
@@ -306,8 +380,8 @@ public class IOUtilTest extends HazelcastTestSupport {
     public void testCompressAndDecompress_withEmptyString() throws Exception {
         String expected = "";
 
-        byte[] compressed = IOUtil.compress(expected.getBytes());
-        byte[] decompressed = IOUtil.decompress(compressed);
+        byte[] compressed = compress(expected.getBytes());
+        byte[] decompressed = decompress(compressed);
 
         assertEquals(expected, new String(decompressed));
     }
@@ -316,7 +390,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     public void testCloseResource() throws Exception {
         Closeable closeable = mock(Closeable.class);
 
-        IOUtil.closeResource(closeable);
+        closeResource(closeable);
 
         verify(closeable).close();
         verifyNoMoreInteractions(closeable);
@@ -327,7 +401,7 @@ public class IOUtilTest extends HazelcastTestSupport {
         Closeable closeable = mock(Closeable.class);
         doThrow(new IOException("expected")).when(closeable).close();
 
-        IOUtil.closeResource(closeable);
+        closeResource(closeable);
 
         verify(closeable).close();
         verifyNoMoreInteractions(closeable);
@@ -335,26 +409,14 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testCloseResource_withNull() {
-        IOUtil.closeResource(null);
-    }
-
-    private static class IoUtilTestOperation extends AbstractTestOperation {
-
-        public IoUtilTestOperation(int partitionId) {
-            super(partitionId);
-        }
-
-        @Override
-        protected Object doRun() {
-            return null;
-        }
+        closeResource(null);
     }
 
     @Test
     public void testDelete_shouldDoNothingWithNonExistentFile() {
         File file = new File("notFound");
 
-        IOUtil.delete(file);
+        delete(file);
     }
 
     @Test
@@ -366,7 +428,7 @@ public class IOUtilTest extends HazelcastTestSupport {
         File childFile1 = createFile(childDir, "childFile1");
         File childFile2 = createFile(childDir, "childFile2");
 
-        IOUtil.delete(parentDir);
+        delete(parentDir);
 
         assertFalse(parentDir.exists());
         assertFalse(file1.exists());
@@ -380,18 +442,36 @@ public class IOUtilTest extends HazelcastTestSupport {
     public void testDelete_shouldDeleteSingleFile() throws Exception {
         File file = createFile("singleFile");
 
-        IOUtil.delete(file);
+        delete(file);
 
         assertFalse(file.exists());
     }
 
     @Test(expected = HazelcastException.class)
-    public void testDelete_shouldThrowIfFileCouldNotBeDeleted() throws Exception {
+    public void testDelete_shouldThrowIfFileCouldNotBeDeleted() {
         File file = mock(File.class);
         when(file.exists()).thenReturn(true);
         when(file.delete()).thenReturn(false);
 
-        IOUtil.delete(file);
+        delete(file);
+    }
+
+    @Test
+    public void testDeleteQuietly_shouldDeleteSingleFile() throws Exception {
+        File file = createFile("singleFile");
+
+        deleteQuietly(file);
+
+        assertFalse(file.exists());
+    }
+
+    @Test
+    public void testDeleteQuietly_shouldDoNothingIfFileCouldNotBeDeleted() {
+        File file = mock(File.class);
+        when(file.exists()).thenReturn(true);
+        when(file.delete()).thenReturn(false);
+
+        deleteQuietly(file);
     }
 
     private static File createDirectory(String dirName) throws IOException {
@@ -438,7 +518,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     public void testToFileName_shouldNotChangeValidFileName() {
         String expected = "valid-fileName_23.txt";
 
-        String actual = IOUtil.toFileName(expected);
+        String actual = toFileName(expected);
 
         assertEquals(expected, actual);
     }
@@ -447,14 +527,38 @@ public class IOUtilTest extends HazelcastTestSupport {
     public void testToFileName_shouldChangeInvalidFileName() {
         String expected = "a_b_c_d_e_f_g_h_j_k_l_m.txt";
 
-        String actual = IOUtil.toFileName("a:b?c*d\"e|f<g>h'j,k\\l/m.txt");
+        String actual = toFileName("a:b?c*d\"e|f<g>h'j,k\\l/m.txt");
 
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void testGetFileFromResources_shouldReturnExistingFile() {
+        File file = getFileFromResources("logging.properties");
+
+        assertTrue(file.exists());
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testGetFileFromResources_shouldThrowExceptionIfFileDoesNotExist() {
+        getFileFromResources("doesNotExist");
+    }
+
+    private static class IoUtilTestOperation extends AbstractTestOperation {
+
+        IoUtilTestOperation(int partitionId) {
+            super(partitionId);
+        }
+
+        @Override
+        protected Object doRun() {
+            return null;
+        }
+    }
+
     private static class IdentifiedIoUtilTestOperation extends IoUtilTestOperation implements IdentifiedDataSerializable {
 
-        public IdentifiedIoUtilTestOperation(int partitionId) {
+        IdentifiedIoUtilTestOperation(int partitionId) {
             super(partitionId);
         }
 
