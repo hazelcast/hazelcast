@@ -21,7 +21,7 @@
     <name>hazelcast-aws</name>
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-aws</artifactId>
-    <version>1.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>Hazelcast In-Memory DataGrid Aws Plugin</description>
     <url>http://www.hazelcast.com/</url>
