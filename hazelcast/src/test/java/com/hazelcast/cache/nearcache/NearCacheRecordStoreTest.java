@@ -6,157 +6,122 @@ import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
 
-    @Test
-    public void putAndGetRecordFromNearCacheObjectRecordStore() {
-        putAndGetRecord(InMemoryFormat.OBJECT);
+    @Parameterized.Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameterized.Parameters(name = "format:{0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {InMemoryFormat.BINARY},
+                {InMemoryFormat.OBJECT},
+        });
     }
 
     @Test
-    public void putAndGetRecordSuccessfullyFromNearCacheDataRecordStore() {
-        putAndGetRecord(InMemoryFormat.BINARY);
+    public void putAndGetRecord() {
+        putAndGetRecord(inMemoryFormat);
     }
 
     @Test
-    public void putAndRemoveRecordFromNearCacheObjectRecordStore() {
-        putAndRemoveRecord(InMemoryFormat.OBJECT);
+    public void putAndRemoveRecord() {
+        putAndRemoveRecord(inMemoryFormat);
     }
 
     @Test
-    public void putAndRemoveRecordSuccessfullyFromNearCacheDataRecordStore() {
-        putAndRemoveRecord(InMemoryFormat.BINARY);
-    }
-
-    @Test
-    public void clearRecordsFromNearCacheObjectRecordStore() {
-        clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat.OBJECT, false);
-    }
-
-    @Test
-    public void clearRecordsSuccessfullyFromNearCacheDataRecordStore() {
-        clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat.BINARY, false);
+    public void clearRecords() {
+        clearRecordsOrDestroyStore(inMemoryFormat, false);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void destroyStoreFromNearCacheObjectRecordStore() {
-        clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat.OBJECT, true);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void destroyStoreFromNearCacheDataRecordStore() {
-        clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat.BINARY, true);
+    public void destroyStore() {
+        clearRecordsOrDestroyStore(inMemoryFormat, true);
     }
 
     @Test
-    public void statsCalculatedOnNearCacheObjectRecordStore() {
-        statsCalculated(InMemoryFormat.OBJECT);
+    public void statsCalculated() {
+        statsCalculated(inMemoryFormat);
     }
 
     @Test
-    public void statsCalculatedOnNearCacheDataRecordStore() {
-        statsCalculated(InMemoryFormat.BINARY);
+    public void ttlEvaluated() {
+        ttlEvaluated(inMemoryFormat);
     }
 
     @Test
-    public void ttlEvaluatedOnNearCacheObjectRecordStore() {
-        ttlEvaluated(InMemoryFormat.OBJECT);
+    public void maxIdleTimeEvaluatedSuccessfully() {
+        maxIdleTimeEvaluatedSuccessfully(inMemoryFormat);
     }
 
     @Test
-    public void ttlEvaluatedSuccessfullyOnNearCacheDataRecordStore() {
-        ttlEvaluated(InMemoryFormat.BINARY);
+    public void expiredRecordsCleanedUpSuccessfullyBecauseOfTTL() {
+        expiredRecordsCleanedUpSuccessfully(inMemoryFormat, false);
     }
 
     @Test
-    public void maxIdleTimeEvaluatedSuccessfullyOnNearCacheObjectRecordStore() {
-        maxIdleTimeEvaluatedSuccessfully(InMemoryFormat.OBJECT);
+    public void expiredRecordsCleanedUpSuccessfullyBecauseOfIdleTime() {
+        expiredRecordsCleanedUpSuccessfully(inMemoryFormat, true);
     }
 
     @Test
-    public void maxIdleTimeEvaluatedSuccessfullyOnNearCacheDataRecordStore() {
-        maxIdleTimeEvaluatedSuccessfully(InMemoryFormat.BINARY);
-    }
-
-    @Test
-    public void expiredRecordsCleanedUpSuccessfullyBecauseOfTTLOnNearCacheObjectRecordStore() {
-        expiredRecordsCleanedUpSuccessfully(InMemoryFormat.OBJECT, false);
-    }
-
-    @Test
-    public void expiredRecordsCleanedUpSuccessfullyBecauseOfTTLOnNearCacheDataRecordStore() {
-        expiredRecordsCleanedUpSuccessfully(InMemoryFormat.BINARY, false);
-    }
-
-    @Test
-    public void expiredRecordsCleanedUpSuccessfullyBecauseOfIdleTimeOnNearCacheObjectRecordStore() {
-        expiredRecordsCleanedUpSuccessfully(InMemoryFormat.OBJECT, true);
-    }
-
-    @Test
-    public void expiredRecordsCleanedUpSuccessfullyBecauseOfIdleTimeOnNearCacheDataRecordStore() {
-        expiredRecordsCleanedUpSuccessfully(InMemoryFormat.BINARY, true);
-    }
-
-    @Test
-    public void canCreateNearCacheObjectRecordStoreWithEntryCountMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.OBJECT, MaxSizePolicy.ENTRY_COUNT, 1000);
+    public void canCreateWithEntryCountMaxSizePolicy() {
+        createNearCacheWithMaxSizePolicy(inMemoryFormat, MaxSizePolicy.ENTRY_COUNT, 1000);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void cannotCreateNearCacheObjectRecordStoreWithUsedNativeMemorySizeMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.OBJECT, MaxSizePolicy.USED_NATIVE_MEMORY_SIZE, 1000000);
+    public void cannotCreateWithUsedNativeMemorySizeMaxSizePolicy() {
+        createNearCacheWithMaxSizePolicy(inMemoryFormat, MaxSizePolicy.USED_NATIVE_MEMORY_SIZE, 1000000);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void cannotCreateNearCacheObjectRecordStoreWithFreeNativeMemorySizeMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.OBJECT, MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE, 1000000);
+    public void cannotCreateWithFreeNativeMemorySizeMaxSizePolicy() {
+        createNearCacheWithMaxSizePolicy(inMemoryFormat, MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE, 1000000);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void cannotCreateNearCacheObjectRecordStoreWithUsedNativeMemoryPercentageMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.OBJECT, MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE, 99);
+    public void cannotCreateWithUsedNativeMemoryPercentageMaxSizePolicy() {
+        createNearCacheWithMaxSizePolicy(inMemoryFormat, MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE, 99);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void cannotCreateNearCacheObjectRecordStoreWithFreeNativeMemoryPercentageMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.OBJECT, MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE, 1);
+    public void cannotCreateNearWithFreeNativeMemoryPercentageMaxSizePolicy() {
+        createNearCacheWithMaxSizePolicy(inMemoryFormat, MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE, 1);
     }
 
     @Test
-    public void canCreateNearCacheDataRecordStoreWithEntryCountMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.BINARY, MaxSizePolicy.ENTRY_COUNT, 1000);
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndLRUEvictionPolicy() {
+        doEvictionWithEntryCountMaxSizePolicy(inMemoryFormat, EvictionPolicy.LRU);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void cannotCreateNearCacheDataRecordStoreWithUsedNativeMemorySizeMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.BINARY, MaxSizePolicy.USED_NATIVE_MEMORY_SIZE, 1000000);
+    @Test
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndLFUEvictionPolicy() {
+        doEvictionWithEntryCountMaxSizePolicy(inMemoryFormat, EvictionPolicy.LFU);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void cannotCreateNearCacheDataRecordStoreWithFreeNativeMemorySizeMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.BINARY, MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE, 1000000);
+    @Test
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndRandomEvictionPolicy() {
+        doEvictionWithEntryCountMaxSizePolicy(inMemoryFormat, EvictionPolicy.RANDOM);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void cannotCreateNearCacheDataRecordStoreWithUsedNativeMemoryPercentageMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.BINARY, MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE, 99);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void cannotCreateNearCacheDataRecordStoreWithFreeNativeMemoryPercentageMaxSizePolicy() {
-        createNearCacheWithMaxSizePolicy(InMemoryFormat.BINARY, MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE, 1);
+    @Test
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndDefaultEvictionPolicy() {
+        doEvictionWithEntryCountMaxSizePolicy(inMemoryFormat, null);
     }
 
     private void doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat inMemoryFormat, EvictionPolicy evictionPolicy) {
@@ -183,45 +148,5 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
             nearCacheRecordStore.doEvictionIfRequired();
             assertTrue(maxSize >= nearCacheRecordStore.size());
         }
-    }
-
-    @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndLRUEvictionPolicyOnNearCacheObjectRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.OBJECT, EvictionPolicy.LRU);
-    }
-
-    @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndLFUEvictionPolicyOnNearCacheObjectRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.OBJECT, EvictionPolicy.LFU);
-    }
-
-    @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndRandomEvictionPolicyNearCacheObjectRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.OBJECT, EvictionPolicy.RANDOM);
-    }
-
-    @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndDefaultEvictionPolicyOnNearCacheObjectRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.OBJECT, null);
-    }
-
-    @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndLRUEvictionPolicyNearCacheDataRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.BINARY, EvictionPolicy.LRU);
-    }
-
-    @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndLFUEvictionPolicyNearCacheDataRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.BINARY, EvictionPolicy.LFU);
-    }
-
-    @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndRandomEvictionPolicyNearCacheDataRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.BINARY, EvictionPolicy.RANDOM);
-    }
-
-    @Test
-    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndDefaultEvictionPolicyNearCacheDataRecordStore() {
-        doEvictionWithEntryCountMaxSizePolicy(InMemoryFormat.BINARY, null);
     }
 }

@@ -53,7 +53,7 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         assertEquals(0, nearCacheRecordStore.size());
     }
 
-    protected void clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat inMemoryFormat, boolean destroy) {
+    protected void clearRecordsOrDestroyStore(InMemoryFormat inMemoryFormat, boolean destroy) {
         NearCacheRecordStore<Integer, String> nearCacheRecordStore =
                 createNearCacheRecordStore(
                         createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat),
