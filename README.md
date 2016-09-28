@@ -1,11 +1,16 @@
 # Table of Contents
 
-* [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
-  * [AWSClient Configuration](#awsclient-configuration)
   * [Supported Hazelcast Versions](#supported-hazelcast-versions)
+  * [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
+  * [AWSClient Configuration](#awsclient-configuration)
   * [Debugging](#debugging)
 
-# Discovering Members within EC2 Cloud
+## Supported Hazelcast Versions
+
+- Hazelcast 3.6+
+
+
+## Discovering Members within EC2 Cloud
 
 Hazelcast supports EC2 auto-discovery. It is useful when you do not want to provide or you cannot provide the list of possible IP addresses. 
 
@@ -72,10 +77,6 @@ public static void main( String[] args )throws Exception{
   }
 }
 ```
-## Supported Hazelcast Versions
-
-- Hazelcast 3.6+
-
 
 ## Debugging
 
