@@ -29,7 +29,6 @@ import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,64 +39,57 @@ import static com.hazelcast.instance.TestUtil.getNode;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableCollection;
 
 public class TestHazelcastInstanceFactory {
 
     private static final AtomicInteger PORTS = new AtomicInteger(5000);
 
+    private final ConcurrentMap<Integer, Address> addressMap = new ConcurrentHashMap<Integer, Address>();
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final AtomicInteger nodeIndex = new AtomicInteger();
 
-    protected TestNodeRegistry registry;
-    protected final ConcurrentMap<Integer, Address> addressMap = new ConcurrentHashMap<Integer, Address>();
     private final int count;
+    private final TestNodeRegistry registry;
+
+    public TestHazelcastInstanceFactory() {
+        this(0);
+    }
 
     public TestHazelcastInstanceFactory(int count) {
         this.count = count;
-        if (mockNetwork) {
-            List<Address> addresses = createAddresses(PORTS, count);
-            initFactory(addresses);
-        }
+        this.registry = getRegistry(createAddresses(PORTS, count));
     }
 
-    public TestHazelcastInstanceFactory() {
-        this.count = 0;
-        this.registry = new TestNodeRegistry(Collections.unmodifiableCollection(addressMap.values()));
+    public TestHazelcastInstanceFactory(String... addresses) {
+        this(-1, addresses);
     }
 
     public TestHazelcastInstanceFactory(int initialPort, String... addresses) {
         this.count = addresses.length;
-        if (mockNetwork) {
-            List<Address> addressList = createAddresses(initialPort, PORTS, addresses);
-            initFactory(addressList);
-        }
-    }
-
-    public TestHazelcastInstanceFactory(String... addresses) {
-        this.count = addresses.length;
-        if (mockNetwork) {
-            List<Address> addressesList = createAddresses(-1, PORTS, addresses);
-            initFactory(addressesList);
-        }
+        this.registry = getRegistry(createAddresses(initialPort, PORTS, addresses));
     }
 
     public TestHazelcastInstanceFactory(Collection<Address> addresses) {
         this.count = addresses.size();
-        if (mockNetwork) {
-            initFactory(addresses);
-        }
+        this.registry = getRegistry(addresses);
     }
 
-    private void initFactory(Collection<Address> addresses) {
+    private TestNodeRegistry getRegistry(Collection<Address> addresses) {
+        if (!mockNetwork) {
+            return null;
+        }
+
         int ix = 0;
         for (Address address : addresses) {
             addressMap.put(ix++, address);
         }
-        this.registry = new TestNodeRegistry(Collections.unmodifiableCollection(addressMap.values()));
+        return new TestNodeRegistry(getKnownAddresses());
     }
 
     /**
-     * Delegates to {@link #newHazelcastInstance(Config) <code>newHazelcastInstance(null)</code>}.
+     * Delegates to {@link #newHazelcastInstance(Config) {@code newHazelcastInstance(null)}}.
      */
     public HazelcastInstance newHazelcastInstance() {
         return newHazelcastInstance((Config) null);
@@ -106,7 +98,7 @@ public class TestHazelcastInstanceFactory {
     /**
      * Creates a new test Hazelcast instance.
      *
-     * @param config the config to use; use <code>null</code> to get the default config.
+     * @param config the config to use; use {@code null} to get the default config
      */
     public HazelcastInstance newHazelcastInstance(Config config) {
         String instanceName = config != null ? config.getInstanceName() : null;
@@ -116,6 +108,19 @@ public class TestHazelcastInstanceFactory {
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         }
         return HazelcastInstanceFactory.newHazelcastInstance(config);
+    }
+
+    private Address pickAddress() {
+        int id = nodeIndex.getAndIncrement();
+
+        Address currentAddress = addressMap.get(id);
+        if (currentAddress != null) {
+            return currentAddress;
+        }
+
+        Address newAddress = createAddress("127.0.0.1", PORTS.incrementAndGet());
+        addressMap.put(id, newAddress);
+        return newAddress;
     }
 
     /**
@@ -131,7 +136,7 @@ public class TestHazelcastInstanceFactory {
      * Creates a new test Hazelcast instance.
      *
      * @param address the address to use as Member's address instead of picking the next address
-     * @param config  the config to use; use <code>null</code> to get the default config.
+     * @param config  the config to use; use {@code null} to get the default config
      */
     public HazelcastInstance newHazelcastInstance(Address address, Config config) {
         final String instanceName = config != null ? config.getInstanceName() : null;
@@ -141,19 +146,6 @@ public class TestHazelcastInstanceFactory {
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
-    }
-
-    private Address pickAddress() {
-        int id = nodeIndex.getAndIncrement();
-
-        Address currentAddress = addressMap.get(id);
-        if (currentAddress != null) {
-            return currentAddress;
-        }
-
-        Address newAddress = createAddress("127.0.0.1", PORTS.incrementAndGet());
-        addressMap.put(id, newAddress);
-        return newAddress;
     }
 
     public HazelcastInstance[] newInstances() {
@@ -179,15 +171,12 @@ public class TestHazelcastInstanceFactory {
         return Hazelcast.getAllHazelcastInstances();
     }
 
-    /**
-     * Terminates supplied instance by releasing internal resources.
-     *
-     * @param instance the instance.
-     */
-    public void terminate(HazelcastInstance instance) {
-        Address address = getNode(instance).address;
-        terminateInstance(instance);
-        registry.removeInstance(address);
+    public Collection<Address> getKnownAddresses() {
+        return unmodifiableCollection(addressMap.values());
+    }
+
+    public TestNodeRegistry getRegistry() {
+        return registry;
     }
 
     public HazelcastInstance getInstance(Address address) {
@@ -202,6 +191,17 @@ public class TestHazelcastInstanceFactory {
             }
         }
         return null;
+    }
+
+    /**
+     * Terminates supplied instance by releasing internal resources.
+     *
+     * @param instance the instance to terminate
+     */
+    public void terminate(HazelcastInstance instance) {
+        Address address = getNode(instance).address;
+        terminateInstance(instance);
+        registry.removeInstance(address);
     }
 
     public void shutdownAll() {
@@ -221,7 +221,15 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
-    private static List<Address> createAddresses(AtomicInteger ports, int count) {
+    @Override
+    public String toString() {
+        return "TestHazelcastInstanceFactory{addresses=" + addressMap.values() + '}';
+    }
+
+    private List<Address> createAddresses(AtomicInteger ports, int count) {
+        if (!mockNetwork || count == 0) {
+            return emptyList();
+        }
         List<Address> addresses = new ArrayList<Address>(count);
         for (int i = 0; i < count; i++) {
             addresses.add(createAddress("127.0.0.1", ports.incrementAndGet()));
@@ -229,7 +237,10 @@ public class TestHazelcastInstanceFactory {
         return addresses;
     }
 
-    private static List<Address> createAddresses(int initialPort, AtomicInteger ports, String... addressArray) {
+    private List<Address> createAddresses(int initialPort, AtomicInteger ports, String... addressArray) {
+        if (!mockNetwork) {
+            return emptyList();
+        }
         checkElementsNotNull(addressArray);
 
         int count = addressArray.length;
@@ -241,7 +252,7 @@ public class TestHazelcastInstanceFactory {
         return addresses;
     }
 
-    protected static Address createAddress(String host, int port) {
+    private static Address createAddress(String host, int port) {
         try {
             return new Address(host, port);
         } catch (UnknownHostException e) {
@@ -266,18 +277,5 @@ public class TestHazelcastInstanceFactory {
         config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
-    }
-
-    public Collection<Address> getKnownAddresses() {
-        return Collections.unmodifiableCollection(addressMap.values());
-    }
-
-    @Override
-    public String toString() {
-        return "TestHazelcastInstanceFactory{addresses=" + addressMap.values() + '}';
-    }
-
-    public TestNodeRegistry getRegistry() {
-        return registry;
     }
 }

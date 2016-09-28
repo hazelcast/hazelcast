@@ -37,10 +37,6 @@ public final class TestNodeRegistry {
     private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<Address, Node>(10);
     private final Collection<Address> joinAddresses;
 
-    private static void verifyInvariant(boolean check, String msg) {
-        if (!check) throw new AssertionError(msg);
-    }
-
     public TestNodeRegistry(Collection<Address> addresses) {
         this.joinAddresses = addresses;
     }
@@ -118,5 +114,11 @@ public final class TestNodeRegistry {
 
     Collection<Address> getAddresses() {
         return Collections.unmodifiableCollection(nodes.keySet());
+    }
+
+    private static void verifyInvariant(boolean check, String msg) {
+        if (!check) {
+            throw new AssertionError(msg);
+        }
     }
 }
