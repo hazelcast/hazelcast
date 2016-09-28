@@ -192,8 +192,6 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
         nearCacheConfig.setInMemoryFormat(getNearCacheInMemoryFormat());
         nearCacheConfig.setName(mapName);
         nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setCacheLocalEntries(true);
-
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addNearCacheConfig(nearCacheConfig);

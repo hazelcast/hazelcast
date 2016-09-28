@@ -23,8 +23,8 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
-import static com.hazelcast.map.impl.MapConfigValidator.checkMapConfig;
-import static com.hazelcast.map.impl.MapConfigValidator.checkNotNative;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 
 /**
  * Defines remote service behavior of map service.
@@ -47,7 +47,7 @@ class MapRemoteService implements RemoteService {
         checkMapConfig(mapConfig);
 
         if (mapConfig.isNearCacheEnabled()) {
-            checkNotNative(mapConfig.getNearCacheConfig().getInMemoryFormat());
+            checkNearCacheConfig(mapConfig.getNearCacheConfig(), false);
 
             return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         } else {
@@ -59,5 +59,4 @@ class MapRemoteService implements RemoteService {
     public void destroyDistributedObject(String name) {
         mapServiceContext.destroyMap(name);
     }
-
 }

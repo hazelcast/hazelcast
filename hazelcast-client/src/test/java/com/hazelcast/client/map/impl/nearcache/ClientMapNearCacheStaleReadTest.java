@@ -124,18 +124,12 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
 
     // will be overridden
     protected ClientConfig getClientConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(mapName)
+                .setInMemoryFormat(InMemoryFormat.OBJECT);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addNearCacheConfig(nearCacheConfig);
         return clientConfig;
-    }
-
-    private NearCacheConfig getNearCacheConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(mapName);
-        nearCacheConfig.setCacheLocalEntries(true); // this enables caching of local entries
-        nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        return nearCacheConfig;
     }
 
     /**
