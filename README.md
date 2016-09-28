@@ -2,6 +2,7 @@
 
 * [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
   * [AWSClient Configuration](#awsclient-configuration)
+  * [Supported Hazelcast Versions](#supported-hazelcast-versions)
   * [Debugging](#debugging)
 
 # Discovering Members within EC2 Cloud
@@ -71,6 +72,9 @@ public static void main( String[] args )throws Exception{
   }
 }
 ```
+## Supported Hazelcast Versions
+
+- Hazelcast 3.6+
 
 
 ## Debugging
