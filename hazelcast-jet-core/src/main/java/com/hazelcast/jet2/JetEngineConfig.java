@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
+package com.hazelcast.jet2;
 
-public enum TaskletResult {
-    DONE,
-    MADE_PROGRESS,
-    NO_PROGRESS
+/**
+ * Javadoc pending.
+ */
+public class JetEngineConfig {
+    public int parallelism() {
+        return 1;
+    }
 }

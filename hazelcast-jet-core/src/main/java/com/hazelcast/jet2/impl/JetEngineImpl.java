@@ -56,7 +56,6 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         return JetService.SERVICE_NAME;
     }
 
-
     @Override
     public Job newJob(DAG dag) {
         return new JobImpl(this, dag);

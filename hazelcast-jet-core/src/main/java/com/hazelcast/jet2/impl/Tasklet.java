@@ -17,8 +17,9 @@
 package com.hazelcast.jet2.impl;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
-public interface Tasklet extends Callable<TaskletResult> {
+public interface Tasklet extends Callable<TaskletResult>, Future<Void> {
 
     default boolean isBlocking() {
         return false;
