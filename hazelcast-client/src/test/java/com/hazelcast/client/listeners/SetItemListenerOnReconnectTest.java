@@ -31,12 +31,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Category({QuickTest.class, ParallelTest.class})
 public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
-    private ISet iSet;
+    private ISet<String> iSet;
 
     @Override
     protected String addListener(final AtomicInteger eventCount) {
         iSet = client.getSet(randomString());
-        ItemListener listener = new ItemListener() {
+
+        ItemListener<String> listener = new ItemListener<String>() {
             @Override
             public void itemAdded(ItemEvent item) {
                 eventCount.incrementAndGet();
@@ -44,7 +45,6 @@ public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnect
 
             @Override
             public void itemRemoved(ItemEvent item) {
-
             }
         };
         return iSet.addItemListener(listener, true);

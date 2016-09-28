@@ -31,12 +31,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Category({QuickTest.class, ParallelTest.class})
 public class QueueItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
-    private IQueue iQueue;
+    private IQueue<String> iQueue;
 
     @Override
     protected String addListener(final AtomicInteger eventCount) {
         iQueue = client.getQueue(randomString());
-        ItemListener listener = new ItemListener() {
+
+        ItemListener<String> listener = new ItemListener<String>() {
             @Override
             public void itemAdded(ItemEvent item) {
                 eventCount.incrementAndGet();

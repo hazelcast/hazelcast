@@ -31,11 +31,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Category({QuickTest.class, ParallelTest.class})
 public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
-    private IMap iMap;
+    private IMap<String, String> iMap;
 
     @Override
     protected String addListener(final AtomicInteger eventCount) {
         iMap = client.getMap(randomString());
+
         final EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void onEntryEvent(EntryEvent<Object, Object> event) {
                 eventCount.incrementAndGet();

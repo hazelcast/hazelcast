@@ -15,12 +15,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Category({QuickTest.class, ParallelTest.class})
 public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
 
-    private ITopic topic;
+    private ITopic<String> topic;
 
     @Override
     protected String addListener(final AtomicInteger eventCount) {
         topic = client.getTopic(randomString());
-        MessageListener listener = new MessageListener() {
+
+        MessageListener<String> listener = new MessageListener<String>() {
             @Override
             public void onMessage(Message message) {
                 eventCount.incrementAndGet();

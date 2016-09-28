@@ -38,8 +38,9 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupport {
 
+    private static final int EVENT_COUNT = 10;
     protected HazelcastInstance client;
-    private int EVENT_COUNT = 10;
+
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
