@@ -28,6 +28,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -85,6 +86,7 @@ public class ClientLoggingServiceTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testLog_whenGetLevel_thenDefaultLevelIsReturned() {
         ILogger logger = loggingService.getLogger("test");
         assertEquals(Level.OFF, logger.getLevel());
