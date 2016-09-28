@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
@@ -205,7 +206,9 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public <S> void deregister(S source) {
-        checkNotNull(source, "source can't be null");
+        if (source == null) {
+            return;
+        }
 
         boolean changed = false;
         for (Map.Entry<String, ProbeInstance> entry : probeInstances.entrySet()) {
@@ -252,6 +255,15 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         for (Object object : objects) {
             if (object instanceof MetricsProvider) {
                 ((MetricsProvider) object).provideMetrics(this);
+            }
+        }
+    }
+
+    @Override
+    public void discardMetrics(Object... objects) {
+        for (Object object : objects) {
+            if (object instanceof DiscardableMetricsProvider) {
+                ((DiscardableMetricsProvider) object).discardMetrics(this);
             }
         }
     }

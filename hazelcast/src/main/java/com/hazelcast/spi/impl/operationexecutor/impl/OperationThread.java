@@ -144,8 +144,8 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry metricsRegistry) {
-        metricsRegistry.scanAndRegister(this, "operation.thread[" + getName() + "]");
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.scanAndRegister(this, "operation.thread[" + getName() + "]");
     }
 
     public final void shutdown() {

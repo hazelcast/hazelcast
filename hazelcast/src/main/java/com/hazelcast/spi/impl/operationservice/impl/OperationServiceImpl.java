@@ -451,9 +451,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry metricsRegistry) {
-        metricsRegistry.scanAndRegister(this, "operation");
-        metricsRegistry.collectMetrics(invocationRegistry, invocationMonitor, responseHandler, asyncResponseHandler,
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.scanAndRegister(this, "operation");
+        registry.collectMetrics(invocationRegistry, invocationMonitor, responseHandler, asyncResponseHandler,
                 operationExecutor);
     }
 

@@ -105,8 +105,8 @@ public class ProxyServiceImpl
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry metricsRegistry) {
-        metricsRegistry.scanAndRegister(this, "proxy");
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.scanAndRegister(this, "proxy");
     }
 
     public void init() {

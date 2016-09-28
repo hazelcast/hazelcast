@@ -138,8 +138,7 @@ public interface MetricsRegistry {
      *
      * If the object was never registered, the call is ignored.
      *
-     * @param source the object to deregister
-     * @throws NullPointerException if source is null.
+     * @param source the object to deregister. If called with null, then ignored.
      */
     <S> void deregister(S source);
 
@@ -171,4 +170,12 @@ public interface MetricsRegistry {
      * @param objects the array of objects to initialize.
      */
     void collectMetrics(Object... objects);
+
+    /**
+     * For each object that implements {@link DiscardableMetricsProvider} the
+     * {@link DiscardableMetricsProvider#discardMetrics(MetricsRegistry)} is called.
+     *
+     * @param objects the array of objects to check.
+     */
+    void discardMetrics(Object... objects);
 }

@@ -19,9 +19,10 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -50,7 +51,7 @@ import static com.hazelcast.util.StringUtil.timeToStringFriendly;
  * Client implementation of {@link Connection}.
  * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
  */
-public class ClientConnection implements Connection {
+public class ClientConnection implements Connection, DiscardableMetricsProvider {
 
     @Probe
     protected final int connectionId;
@@ -91,13 +92,6 @@ public class ClientConnection implements Connection {
         boolean directBuffer = client.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
         this.reader = new ClientNonBlockingSocketReader(this, in, socket.getReceiveBufferSize(), directBuffer, loggingService);
         this.writer = new ClientNonBlockingSocketWriter(this, out, socket.getSendBufferSize(), directBuffer, loggingService);
-
-        MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
-        String connectionName = "tcp.connection["
-                + socket.getLocalSocketAddress() + " -> " + socket.getRemoteSocketAddress() + "]";
-        metricsRegistry.scanAndRegister(this, connectionName);
-        metricsRegistry.scanAndRegister(reader, connectionName + ".in");
-        metricsRegistry.scanAndRegister(writer, connectionName + ".out");
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -106,10 +100,27 @@ public class ClientConnection implements Connection {
         this.connectionManager = client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;
-        writer = null;
-        reader = null;
-        socketChannelWrapper = null;
-        logger = client.getLoggingService().getLogger(ClientConnection.class);
+        this.writer = null;
+        this.reader = null;
+        this.socketChannelWrapper = null;
+        this.logger = client.getLoggingService().getLogger(ClientConnection.class);
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry registry) {
+        Socket socket = socketChannelWrapper.socket();
+        String connectionName = "tcp.connection["
+                + socket.getLocalSocketAddress() + " -> " + socket.getRemoteSocketAddress() + "]";
+        registry.scanAndRegister(this, connectionName);
+        registry.scanAndRegister(reader, connectionName + ".in");
+        registry.scanAndRegister(writer, connectionName + ".out");
+    }
+
+    @Override
+    public void discardMetrics(MetricsRegistry registry) {
+        registry.deregister(this);
+        registry.deregister(reader);
+        registry.deregister(writer);
     }
 
     public void incrementPendingPacketCount() {
@@ -245,6 +256,8 @@ public class ClientConnection implements Connection {
         } else {
             logger.finest(message);
         }
+
+        client.getMetricsRegistry().discardMetrics(this);
     }
 
     protected void innerClose() throws IOException {
@@ -253,11 +266,6 @@ public class ClientConnection implements Connection {
         }
         reader.shutdown();
         writer.shutdown();
-
-        MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
-        metricsRegistry.deregister(this);
-        metricsRegistry.deregister(writer);
-        metricsRegistry.deregister(reader);
     }
 
     @Override

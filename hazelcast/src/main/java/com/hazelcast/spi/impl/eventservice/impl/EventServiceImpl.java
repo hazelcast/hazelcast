@@ -130,8 +130,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry metricsRegistry) {
-        metricsRegistry.scanAndRegister(this, "event");
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.scanAndRegister(this, "event");
     }
 
     @Override
