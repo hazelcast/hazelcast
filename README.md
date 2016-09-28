@@ -28,6 +28,7 @@ The following is an example declarative configuration.
       <aws enabled="true">
         <access-key>my-access-key</access-key>
         <secret-key>my-secret-key</secret-key>
+        <iam-role>s3access</iam-role>
         <region>us-west-1</region>
         <host-header>ec2.amazonaws.com</host-header>
         <security-group-name>hazelcast-sg</security-group-name>
@@ -41,7 +42,8 @@ Here are the definitions of `aws` element's attributes and sub-elements:
 
 * `enabled`: Specifies whether the EC2 discovery is enabled or not, true or false.
 * `access-key`, `secret-key`: Access and secret keys of your account on EC2.
-region: The region where your members are running. Default value is us-east-1. You need to specify this if the region is other than the default one.
+* `iam-role`: If you want to use access key and secret key. You can use iam-role configuration. Hazelcast-aws fetches your credentials by using your iam role. It is optional.
+* `region`: The region where your members are running. Default value is us-east-1. You need to specify this if the region is other than the default one.
 * `host-header`: The URL that is the entry point for a web service. It is optional.
 * `security-group-name`: Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast members to be within this group. It is optional.
 * `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast members, you can set these parameters as the ones you specified in the EC2 console. They are optional.
