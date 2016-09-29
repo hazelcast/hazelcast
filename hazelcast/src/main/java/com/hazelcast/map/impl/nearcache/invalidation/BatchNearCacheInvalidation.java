@@ -44,10 +44,6 @@ public class BatchNearCacheInvalidation extends Invalidation {
         invalidationHandler.handle(this);
     }
 
-    public void add(Invalidation invalidation) {
-        invalidations.add(invalidation);
-    }
-
     public List<Invalidation> getInvalidations() {
         return invalidations;
     }
