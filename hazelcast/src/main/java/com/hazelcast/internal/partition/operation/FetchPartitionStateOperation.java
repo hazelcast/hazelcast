@@ -21,13 +21,13 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
-public final class FetchPartitionStateOperation extends Operation
+public final class FetchPartitionStateOperation extends AbstractPartitionOperation
         implements MigrationCycleOperation {
 
     private PartitionRuntimeState partitionState;
@@ -68,4 +68,8 @@ public final class FetchPartitionStateOperation extends Operation
         return InternalPartitionService.SERVICE_NAME;
     }
 
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.FETCH_PARTITION_STATE;
+    }
 }

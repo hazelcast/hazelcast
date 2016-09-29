@@ -24,7 +24,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -35,7 +34,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 // runs locally...
-public final class FinalizeMigrationOperation extends Operation
+public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
     private final MigrationInfo migrationInfo;
@@ -188,6 +187,11 @@ public final class FinalizeMigrationOperation extends Operation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getId() {
         throw new UnsupportedOperationException();
     }
 }

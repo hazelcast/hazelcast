@@ -21,6 +21,7 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationManager;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -242,5 +243,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
         sb.append(", migration=").append(migrationInfo);
         sb.append(", replicaVersions=").append(Arrays.toString(replicaVersions));
         sb.append(", numberOfTasks=").append(numberOfTasks);
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.MIGRATION;
     }
 }

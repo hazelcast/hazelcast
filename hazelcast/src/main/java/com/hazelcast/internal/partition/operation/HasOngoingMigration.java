@@ -19,12 +19,13 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-public final class HasOngoingMigration extends Operation implements AllowedDuringPassiveState {
+public final class HasOngoingMigration extends AbstractPartitionOperation
+        implements AllowedDuringPassiveState {
 
     private Object response;
 
@@ -53,5 +54,10 @@ public final class HasOngoingMigration extends Operation implements AllowedDurin
     @Override
     public String getServiceName() {
         return InternalPartitionService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.HAS_ONGOING_MIGRATION;
     }
 }

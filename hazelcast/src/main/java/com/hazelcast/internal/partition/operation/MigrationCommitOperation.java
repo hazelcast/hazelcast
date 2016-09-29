@@ -22,11 +22,11 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ import java.io.IOException;
  * Used for committing a migration on migration destination.
  * It updates the partition table on migration destination and finalizes the migration.
  */
-public class MigrationCommitOperation extends Operation implements MigrationCycleOperation {
+public class MigrationCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     private PartitionRuntimeState partitionState;
 
@@ -98,5 +98,10 @@ public class MigrationCommitOperation extends Operation implements MigrationCycl
         super.writeInternal(out);
         out.writeUTF(expectedMemberUuid);
         partitionState.writeData(out);
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.MIGRATION_COMMIT;
     }
 }

@@ -21,18 +21,18 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public class ReplicaSyncRetryResponse extends Operation
+public class ReplicaSyncRetryResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation {
 
     public ReplicaSyncRetryResponse() {
@@ -92,5 +92,10 @@ public class ReplicaSyncRetryResponse extends Operation
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.REPLICA_SYNC_RETRY_RESPONSE;
     }
 }

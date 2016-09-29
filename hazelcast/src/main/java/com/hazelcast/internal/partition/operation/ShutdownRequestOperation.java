@@ -20,12 +20,12 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 
-public class ShutdownRequestOperation extends Operation implements MigrationCycleOperation {
+public class ShutdownRequestOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     public ShutdownRequestOperation() {
     }
@@ -61,5 +61,10 @@ public class ShutdownRequestOperation extends Operation implements MigrationCycl
     @Override
     public String getServiceName() {
         return InternalPartitionService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.SHUTDOWN_REQUEST;
     }
 }

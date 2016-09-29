@@ -23,12 +23,12 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Used for committing a promotion on destination.
  * Updates the partition table on destination and commits the promotion.
  */
-public class PromotionCommitOperation extends Operation implements MigrationCycleOperation {
+public class PromotionCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     private PartitionRuntimeState partitionState;
 
@@ -140,6 +140,11 @@ public class PromotionCommitOperation extends Operation implements MigrationCycl
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
             operationService.execute(op);
         }
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.PROMOTION_COMMIT;
     }
 
     private static class BeforePromotionTask implements PartitionSpecificRunnable {

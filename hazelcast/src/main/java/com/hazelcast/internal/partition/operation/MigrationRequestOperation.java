@@ -24,6 +24,7 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationManager;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
@@ -226,6 +227,11 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             }
         }
         return tasks;
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.MIGRATION_REQUEST;
     }
 
     private static final class MigrationCallback extends SimpleExecutionCallback<Object> {

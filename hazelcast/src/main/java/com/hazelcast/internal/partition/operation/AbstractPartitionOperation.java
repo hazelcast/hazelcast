@@ -16,24 +16,15 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.Operation;
 
-public class AssignPartitions extends AbstractPartitionOperation {
-
-    @Override
-    public void run() {
-        InternalPartitionServiceImpl service = getService();
-        service.firstArrangement();
-    }
+abstract class AbstractPartitionOperation extends Operation implements IdentifiedDataSerializable {
 
     @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
+    public final int getFactoryId() {
+        return PartitionDataSerializerHook.F_ID;
     }
 
-    @Override
-    public int getId() {
-        return PartitionDataSerializerHook.ASSIGN_PARTITIONS;
-    }
 }
