@@ -80,13 +80,7 @@ final class PortableHookLoader {
     private void register(int factoryId, PortableFactory factory) {
         final PortableFactory current = factories.get(factoryId);
         if (current != null) {
-            if (current.equals(factory)) {
-                Logger.getLogger(getClass()).warning("PortableFactory[" + factoryId + "] is already registered! Skipping "
-                        + factory);
-            } else {
-                throw new IllegalArgumentException("PortableFactory[" + factoryId
-                        + "] is already registered! " + current + " -> " + factory);
-            }
+            Logger.getLogger(getClass()).warning("PortableFactory[" + factoryId + "] is already registered! Skipping " + factory);
         } else {
             factories.put(factoryId, factory);
         }
