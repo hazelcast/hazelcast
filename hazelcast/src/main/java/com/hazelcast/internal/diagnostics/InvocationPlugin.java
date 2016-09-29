@@ -55,9 +55,16 @@ public class InvocationPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty SLOW_THRESHOLD_SECONDS
             = new HazelcastProperty(PREFIX + ".invocation.slow.threshold.seconds", 5, SECONDS);
 
+    /**
+     * The maximum number of slow invocations to print
+     */
+    public static final HazelcastProperty SLOW_MAX_COUNT
+            = new HazelcastProperty(PREFIX + ".invocation.slow.max.count", 100);
+
     private final InvocationRegistry invocationRegistry;
     private final long samplePeriodMillis;
     private final long thresholdMillis;
+    private final int maxCount;
     private final ItemCounter<String> slowOccurrences = new ItemCounter<String>();
     private final ItemCounter<String> occurrences = new ItemCounter<String>();
 
@@ -68,6 +75,7 @@ public class InvocationPlugin extends DiagnosticsPlugin {
         HazelcastProperties props = nodeEngine.getProperties();
         this.samplePeriodMillis = props.getMillis(SAMPLE_PERIOD_SECONDS);
         this.thresholdMillis = props.getMillis(SLOW_THRESHOLD_SECONDS);
+        this.maxCount = props.getInteger(SLOW_MAX_COUNT);
     }
 
     @Override
@@ -97,15 +105,27 @@ public class InvocationPlugin extends DiagnosticsPlugin {
 
     private void runCurrent(DiagnosticsLogWriter writer, long now) {
         writer.startSection("Pending");
+        int count = 0;
+        boolean maxPrinted = false;
         for (Invocation invocation : invocationRegistry) {
             long durationMs = now - invocation.firstInvocationTimeMillis;
             String operationDesc = toOperationDesc(invocation.op);
-            if (durationMs >= thresholdMillis) {
-                writer.writeEntry(invocation.toString() + " duration=" + durationMs + " ms");
-                slowOccurrences.add(operationDesc, 1);
+            occurrences.add(operationDesc, 1);
+
+            if (durationMs < thresholdMillis) {
+                // short invocation, lets move on to the next.
+                continue;
             }
 
-            occurrences.add(operationDesc, 1);
+            // it is a slow invocation.
+            count++;
+            if (count < maxCount) {
+                writer.writeEntry(invocation.toString() + " duration=" + durationMs + " ms");
+            } else if (!maxPrinted) {
+                maxPrinted = true;
+                writer.writeEntry("max number of invocations to print reached.");
+            }
+            slowOccurrences.add(operationDesc, 1);
         }
         writer.endSection();
     }
