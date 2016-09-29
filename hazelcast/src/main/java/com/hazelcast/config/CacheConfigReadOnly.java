@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
@@ -33,6 +35,7 @@ import java.util.Set;
  *
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
+@BinaryInterface
 public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     CacheConfigReadOnly(CacheConfig config) {

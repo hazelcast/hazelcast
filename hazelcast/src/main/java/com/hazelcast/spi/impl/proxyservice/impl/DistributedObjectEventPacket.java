@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.proxyservice.impl;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -24,6 +25,7 @@ import java.io.IOException;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType;
 
+@BinaryInterface
 public final class DistributedObjectEventPacket implements DataSerializable {
 
     private EventType eventType;

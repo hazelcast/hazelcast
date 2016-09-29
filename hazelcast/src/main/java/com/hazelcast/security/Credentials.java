@@ -16,6 +16,8 @@
 
 package com.hazelcast.security;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.io.Serializable;
 
 /**
@@ -24,6 +26,7 @@ import java.io.Serializable;
  * <p/>
  * It is used on authentication process by {@link javax.security.auth.spi.LoginModule}s.
  */
+@BinaryInterface
 public interface Credentials extends Serializable {
 
     /**

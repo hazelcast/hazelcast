@@ -33,6 +33,14 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
 
     private final int version;
 
+    /**
+     * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
+     * coding conventions.
+     */
+    public UnlockIfLeaseExpiredOperation() {
+        version = 0;
+    }
+
     public UnlockIfLeaseExpiredOperation(ObjectNamespace namespace, Data key, int version) {
         super(namespace, key, -1, true);
         this.version = version;
@@ -80,6 +88,11 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+        throw new UnsupportedOperationException("This operation is intended to be executed on local member only!");
+    }
+
+    @Override
+    public int getId() {
         throw new UnsupportedOperationException("This operation is intended to be executed on local member only!");
     }
 }

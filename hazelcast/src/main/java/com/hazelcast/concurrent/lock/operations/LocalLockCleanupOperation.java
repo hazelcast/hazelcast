@@ -35,6 +35,14 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
 
     private final String uuid;
 
+    /**
+     * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
+     * coding conventions.
+     */
+    public LocalLockCleanupOperation() {
+        uuid = "";
+    }
+
     public LocalLockCleanupOperation(ObjectNamespace namespace, Data key, String uuid) {
         super(namespace, key, -1, true);
         this.uuid = uuid;
@@ -71,5 +79,10 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getId() {
+        throw new UnsupportedOperationException("LocalLockCleanupOperation is local only.");
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
@@ -34,6 +35,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Configuration for eviction.
  * You can set a limit for number of entries or total memory cost of entries.
  */
+@BinaryInterface
 public class EvictionConfig implements EvictionConfiguration, DataSerializable, Serializable {
 
     /**

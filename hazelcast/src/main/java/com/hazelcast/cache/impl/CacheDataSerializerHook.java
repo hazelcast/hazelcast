@@ -127,8 +127,9 @@ public final class CacheDataSerializerHook
     public static final short CACHE_POST_JOIN = 46;
     public static final short CACHE_DATA_RECORD = 47;
     public static final short CACHE_OBJECT_RECORD = 48;
+    public static final short CACHE_PARTITION_EVENT_DATA = 49;
 
-    private static final int LEN = 49;
+    private static final int LEN = CACHE_PARTITION_EVENT_DATA + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -377,6 +378,11 @@ public final class CacheDataSerializerHook
         constructors[CACHE_OBJECT_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheObjectRecord();
+            }
+        };
+        constructors[CACHE_PARTITION_EVENT_DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachePartitionEventData();
             }
         };
         return new ArrayDataSerializableFactory(constructors);
