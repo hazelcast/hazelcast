@@ -26,15 +26,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ExecutionService {
 
@@ -49,37 +45,45 @@ public class ExecutionService {
     }
 
     public Future<Void> execute(List<Tasklet> tasklets) {
-        final List<Tasklet>[] perWorkerTasklets = new List[workers.length];
-        Arrays.setAll(perWorkerTasklets, i -> new ArrayList());
+        final List<TaskletTracker>[] trackers = new List[workers.length];
+        Arrays.setAll(trackers, i -> new ArrayList());
         int i = 0;
-        for (Tasklet t : tasklets) {
-            perWorkerTasklets[i++ % perWorkerTasklets.length].add(t);
-        }
         final CountDownLatch completionLatch = new CountDownLatch(workers.length);
         final AtomicReference<Throwable> trouble = new AtomicReference<>();
-        Arrays.setAll(workers, j -> new Worker(completionLatch, trouble, perWorkerTasklets[j]));
+        for (Tasklet t : tasklets) {
+            trackers[i++ % trackers.length].add(new TaskletTracker(t, completionLatch, trouble));
+        }
+        Arrays.setAll(workers, j -> new Worker(trackers[j]));
         return new JobFuture(completionLatch, trouble);
     }
 
     private class Worker implements Runnable {
-        private final List<Tasklet> tasklets;
-        private final CountDownLatch completionLatch;
-        private final AtomicReference<Throwable> trouble;
+        private final List<TaskletTracker> trackers;
         private long idleCount;
 
-        public Worker(CountDownLatch completionLatch, AtomicReference<Throwable> trouble, List<Tasklet> tasklets) {
-            this.completionLatch = completionLatch;
-            this.trouble = trouble;
-            this.tasklets = new CopyOnWriteArrayList<>(tasklets);
+        public Worker(List<TaskletTracker> trackers) {
+            this.trackers = new CopyOnWriteArrayList<>(trackers);
         }
 
         @Override
         public void run() {
-            try {
-                boolean madeProgress = false;
-                for (Iterator<Tasklet> it = tasklets.iterator(); it.hasNext(); ) {
-                    final Tasklet t = it.next();
-                    final TaskletResult result = t.call();
+            boolean madeProgress = false;
+            for (Iterator<TaskletTracker> it = trackers.iterator(); it.hasNext(); ) {
+                final TaskletTracker t = it.next();
+                if (t.trouble.get() != null) {
+                    t.completionLatch.countDown();
+                    it.remove();
+                    stealWork();
+                    continue;
+                }
+                final Worker stealingWorker = t.stealingWorker.get();
+                if (stealingWorker != null) {
+                    t.stealingWorker.set(null);
+                    it.remove();
+                    stealingWorker.trackers.add(t);
+                }
+                try {
+                    final TaskletResult result = t.tasklet.call();
                     switch (result) {
                         case DONE:
                             it.remove();
@@ -91,91 +95,51 @@ public class ExecutionService {
                         case NO_PROGRESS:
                             break;
                     }
+                } catch (Throwable e) {
+                    t.trouble.compareAndSet(null, e);
+                    it.remove();
+                    stealWork();
                 }
-                if (tasklets.isEmpty()) {
-                    return;
-                }
-                if (madeProgress) {
-                    idleCount = 0;
-                } else {
-                    IDLER.idle(++idleCount);
-                }
-            } catch (Throwable e) {
-                trouble.compareAndSet(null, e);
-            } finally {
-                completionLatch.countDown();
+            }
+            if (madeProgress) {
+                idleCount = 0;
+            } else {
+                IDLER.idle(++idleCount);
             }
         }
 
         private void stealWork() {
             while (true) {
-                List<Tasklet> toStealFrom = tasklets;
+                // start with own tasklet list, try to find a longer one
+                List<TaskletTracker> toStealFrom = trackers;
                 for (Worker w : workers) {
-                    if (w.tasklets.size() > toStealFrom.size()) {
-                        toStealFrom = w.tasklets;
+                    if (w.trackers.size() > toStealFrom.size()) {
+                        toStealFrom = w.trackers;
                     }
                 }
-                if (toStealFrom == tasklets) {
+                // if we couldn't find a longer one, there's nothing to steal
+                if (toStealFrom == trackers) {
                     return;
                 }
-                final Iterator<Tasklet> it = toStealFrom.iterator();
-                if (!it.hasNext()) {
-                    continue;
-                }
-                final Tasklet stolenTask = it.next();
-                if (toStealFrom.remove(stolenTask)) {
-                    tasklets.add(stolenTask);
-                    return;
+                for (TaskletTracker t : toStealFrom) {
+                    if (t.stealingWorker.compareAndSet(null, this)) {
+                        return;
+                    }
                 }
             }
         }
     }
 
+    static final class TaskletTracker {
+        final Tasklet tasklet;
+        final CountDownLatch completionLatch;
+        final AtomicReference<Throwable> trouble;
+        final AtomicReference<Worker> stealingWorker = new AtomicReference<>();
 
-    static class JobFuture implements Future<Void> {
-
-        private final CountDownLatch completionLatch;
-        private final AtomicReference<Throwable> trouble;
-
-        JobFuture(CountDownLatch completionLatch, AtomicReference<Throwable> trouble) {
+        public TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, AtomicReference<Throwable> trouble) {
             this.completionLatch = completionLatch;
+            this.tasklet = tasklet;
             this.trouble = trouble;
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return completionLatch.getCount() == 0;
-        }
-
-        @Override
-        public Void get() throws InterruptedException, ExecutionException {
-            try {
-                return get(Long.MAX_VALUE, SECONDS);
-            } catch (TimeoutException e) {
-                throw new Error("Impossible timeout");
-            }
-        }
-
-        @Override
-        public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            if (!completionLatch.await(timeout, unit)) {
-                throw new TimeoutException("Jet Execution Service");
-            }
-            final Throwable t = trouble.get();
-            if (t != null) {
-                throw new ExecutionException(t);
-            }
-            return null;
         }
     }
 }

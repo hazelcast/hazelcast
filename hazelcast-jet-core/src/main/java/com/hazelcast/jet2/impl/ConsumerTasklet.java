@@ -26,14 +26,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class ConsumerTasklet implements Tasklet {
+public class ConsumerTasklet<T> implements Tasklet {
 
-    private final List<Input> inputs;
-    private final Consumer consumer;
-    private Cursor<Object> chunkCursor;
-    Iterator<Input> inputIterator;
+    private final List<Input<? extends T>> inputs;
+    private final Consumer<? super T> consumer;
+    private Cursor<? extends T> chunkCursor;
+    Iterator<Input<? extends T>> inputIterator;
 
-    public ConsumerTasklet(Consumer<?> consumer, Map<String, Input> inputs) {
+    public ConsumerTasklet(Consumer<? super T> consumer, Map<String, Input<? extends T>> inputs) {
         Preconditions.checkNotNull(consumer, "consumer");
         Preconditions.checkTrue(!inputs.isEmpty(), "There must be at least one input");
 
@@ -56,7 +56,7 @@ public class ConsumerTasklet implements Tasklet {
                     return TaskletResult.NO_PROGRESS;
             }
         }
-        Chunk<Object> chunk = getNextChunk();
+        Chunk<? extends T> chunk = getNextChunk();
         if (chunk == null) {
             if (inputs.isEmpty()) {
                 consumer.complete();
@@ -86,7 +86,7 @@ public class ConsumerTasklet implements Tasklet {
         return ConsumeResult.CONSUMED_ALL;
     }
 
-    private Chunk<Object> getNextChunk() {
+    private Chunk<? extends T> getNextChunk() {
         inputIterator = inputs.iterator();
         while (inputIterator.hasNext()) {
             Input input = inputIterator.next();
