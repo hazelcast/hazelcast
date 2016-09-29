@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import java.io.PrintWriter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -33,12 +34,21 @@ import static java.util.Calendar.YEAR;
  */
 public abstract class DiagnosticsLogWriter {
 
-    protected final StringBuilder sb = new StringBuilder();
+    //32 chars should be more than enough to encode primitives
+    private static final int CHARS_LENGTH = 32;
+
     protected int sectionLevel = -1;
+    private PrintWriter printWriter;
+
     // lots of stuff to write a date without generating litter
     private final Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
     private final Date date = new Date();
 
+    // used for encoding primitives.
+    private char[] chars = new char[CHARS_LENGTH];
+
+    // used to write primitives without causing litter.
+    private StringBuilder stringBuilder = new StringBuilder();
 
     public abstract void startSection(String name);
 
@@ -54,16 +64,48 @@ public abstract class DiagnosticsLogWriter {
 
     public abstract void writeKeyValueEntry(String key, boolean value);
 
-    protected void clean() {
-        sb.setLength(0);
+    protected void init(PrintWriter printWriter) {
+        this.printWriter = printWriter;
     }
 
-    public int length() {
-        return sb.length();
+    protected DiagnosticsLogWriter write(char c) {
+        printWriter.write(c);
+        return this;
     }
 
-    public void copyInto(char[] target) {
-        sb.getChars(0, sb.length(), target, 0);
+    protected DiagnosticsLogWriter write(int i) {
+        stringBuilder.append(i);
+        flushSb();
+        return this;
+    }
+
+    protected DiagnosticsLogWriter write(double i) {
+        stringBuilder.append(i);
+        flushSb();
+        return this;
+    }
+
+    protected DiagnosticsLogWriter write(long i) {
+        stringBuilder.append(i);
+        flushSb();
+        return this;
+    }
+
+    private void flushSb() {
+        int length = stringBuilder.length();
+        stringBuilder.getChars(0, length, chars, 0);
+        printWriter.write(chars, 0, length);
+        stringBuilder.setLength(0);
+    }
+
+    protected DiagnosticsLogWriter write(boolean b) {
+        write(b ? "true" : "false");
+        return this;
+    }
+
+    protected DiagnosticsLogWriter write(String s) {
+        printWriter.write(s);
+        return this;
     }
 
     // we can't rely on DateFormat since it generates a ton of garbage
@@ -71,36 +113,36 @@ public abstract class DiagnosticsLogWriter {
         date.setTime(System.currentTimeMillis());
         calendar.setTime(date);
         appendDate();
-        sb.append(' ');
+        write(' ');
         appendTime();
     }
 
     private void appendDate() {
-        sb.append(calendar.get(DAY_OF_MONTH));
-        sb.append('-');
-        sb.append(calendar.get(MONTH));
-        sb.append('-');
-        sb.append(calendar.get(YEAR));
+        write(calendar.get(DAY_OF_MONTH));
+        write('-');
+        write(calendar.get(MONTH));
+        write('-');
+        write(calendar.get(YEAR));
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
     private void appendTime() {
         int hour = calendar.get(HOUR_OF_DAY);
         if (hour < 10) {
-            sb.append('0');
+            write('0');
         }
-        sb.append(hour);
-        sb.append(':');
+        write(hour);
+        write(':');
         int minute = calendar.get(MINUTE);
         if (minute < 10) {
-            sb.append('0');
+            write('0');
         }
-        sb.append(minute);
-        sb.append(':');
+        write(minute);
+        write(':');
         int second = calendar.get(SECOND);
         if (second < 10) {
-            sb.append('0');
+            write('0');
         }
-        sb.append(second);
+        write(second);
     }
 }

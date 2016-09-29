@@ -61,7 +61,6 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                logWriter.clean();
                 plugin.run(logWriter);
 
                 assertContains("Lifecycle[\n" +
@@ -76,7 +75,6 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                logWriter.clean();
                 plugin.run(logWriter);
                 assertContains("MemberAdded[");
             }
@@ -86,7 +84,6 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                logWriter.clean();
                 plugin.run(logWriter);
                 assertContains("MemberRemoved[");
             }
@@ -105,7 +102,6 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                logWriter.clean();
                 plugin.run(logWriter);
                 assertContains("MigrationStarted");
                 assertContains("MigrationCompleted");

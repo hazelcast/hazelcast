@@ -1,20 +1,28 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Before;
+
+import java.io.CharArrayWriter;
+import java.io.PrintWriter;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 
-    protected DiagnosticsLogWriter logWriter = new MultiLineDiagnosticsLogWriter();
+    protected DiagnosticsLogWriter logWriter;
+    private CharArrayWriter out;
 
-    protected void clean() {
-        logWriter.clean();
+    @Before
+    public void setupLogWriter(){
+        logWriter = new MultiLineDiagnosticsLogWriter();
+        out = new CharArrayWriter();
+        logWriter.init(new PrintWriter(out));
     }
 
     protected String getContent() {
-        return logWriter.sb.toString();
+        return out.toString();
     }
 
     protected void assertContains(String expected) {

@@ -22,8 +22,8 @@ public class ConfigPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Before
     public void setup() {
-        Config config = new Config();
-        config.setProperty("property1", "value1");
+        Config config = new Config()
+                .setProperty("property1", "value1");
         HazelcastInstance hz = createHazelcastInstance(config);
         plugin = new ConfigPropertiesPlugin(getNodeEngineImpl(hz));
         plugin.onStart();

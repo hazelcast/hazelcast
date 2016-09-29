@@ -41,8 +41,6 @@ public class SystemLogPluginConnectionTest extends AbstractDiagnosticsPluginTest
 
     @Before
     public void setUp() {
-        setLoggingLog4j();
-
         Config config = new Config();
         config.setProperty(LOG_PARTITIONS.getName(), "true");
 
@@ -63,7 +61,6 @@ public class SystemLogPluginConnectionTest extends AbstractDiagnosticsPluginTest
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                clean();
                 plugin.run(logWriter);
                 assertContains("ConnectionAdded");
             }
@@ -73,7 +70,6 @@ public class SystemLogPluginConnectionTest extends AbstractDiagnosticsPluginTest
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                clean();
                 plugin.run(logWriter);
                 assertContains("ConnectionRemoved");
             }

@@ -27,9 +27,9 @@ public class PendingInvocationsPluginTest extends AbstractDiagnosticsPluginTest 
 
     @Before
     public void setup() {
-        Config config = new Config();
-        config.setProperty(PendingInvocationsPlugin.PERIOD_SECONDS.getName(), "1");
-        config.setProperty(PendingInvocationsPlugin.THRESHOLD.getName(), "1");
+        Config config = new Config()
+                .setProperty(PendingInvocationsPlugin.PERIOD_SECONDS.getName(), "1")
+                .setProperty(PendingInvocationsPlugin.THRESHOLD.getName(), "1");
 
         hz = createHazelcastInstance(config);
 

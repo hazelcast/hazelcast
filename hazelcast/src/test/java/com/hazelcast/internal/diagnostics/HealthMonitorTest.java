@@ -15,6 +15,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_LEVEL;
+import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
+import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -29,10 +33,10 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL.getName(), HealthMonitorLevel.NOISY.toString());
-        config.setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS.getName(), "1");
-        config.setProperty(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE.getName(), "70");
-        config.setProperty(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE.getName(), "70");
+        config.setProperty(HEALTH_MONITORING_LEVEL.getName(), HealthMonitorLevel.NOISY.toString())
+                .setProperty(HEALTH_MONITORING_DELAY_SECONDS.getName(), "1")
+                .setProperty(HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE.getName(), "70")
+                .setProperty(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE.getName(), "70");
 
         HazelcastInstance hz = createHazelcastInstance(config);
         healthMonitor = new HealthMonitor(getNode(hz));

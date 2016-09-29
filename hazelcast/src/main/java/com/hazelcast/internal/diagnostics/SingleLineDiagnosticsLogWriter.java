@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import java.io.PrintWriter;
+
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -29,66 +31,66 @@ class SingleLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
     public void startSection(String name) {
         if (sectionLevel == -1) {
             appendDateTime();
-            sb.append(' ');
+            write(' ');
         }
 
         appendComma();
-        sb.append(name).append('[');
+        write(name).write('[');
         firstEntry = true;
         sectionLevel++;
     }
 
     @Override
     public void endSection() {
-        sb.append(']');
+        write(']');
         sectionLevel--;
 
         if (sectionLevel == -1) {
-            sb.append(LINE_SEPARATOR);
+            write(LINE_SEPARATOR);
         }
     }
 
     @Override
     public void writeEntry(String s) {
         appendComma();
-        sb.append(s);
+        write(s);
     }
 
     private void appendComma() {
         if (firstEntry) {
             firstEntry = false;
         } else {
-            sb.append(',');
+            write(',');
         }
     }
 
     @Override
     public void writeKeyValueEntry(String key, String value) {
         appendComma();
-        sb.append(key).append('=').append(value);
+        write(key).write('=').write(value);
     }
 
     @Override
     public void writeKeyValueEntry(String key, double value) {
         appendComma();
-        sb.append(key).append('=').append(value);
+        write(key).write('=').write(value);
     }
 
     @Override
     public void writeKeyValueEntry(String key, long value) {
         appendComma();
-        sb.append(key).append('=').append(value);
+        write(key).write('=').write(value);
     }
 
     @Override
     public void writeKeyValueEntry(String key, boolean value) {
         appendComma();
-        sb.append(key).append('=').append(value);
+        write(key).write('=').write(value);
     }
 
     @Override
-    protected void clean() {
+    protected void init(PrintWriter writer) {
         firstEntry = true;
-        super.clean();
+        super.init(writer);
     }
 }

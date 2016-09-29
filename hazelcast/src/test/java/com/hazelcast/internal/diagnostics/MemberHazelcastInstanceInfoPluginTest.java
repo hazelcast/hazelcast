@@ -9,8 +9,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -28,7 +28,7 @@ public class MemberHazelcastInstanceInfoPluginTest extends AbstractDiagnosticsPl
 
     @Test
     public void testGetPeriodMillis() {
-        assertEquals(TimeUnit.SECONDS.toMillis(60), plugin.getPeriodMillis());
+        assertEquals(SECONDS.toMillis(60), plugin.getPeriodMillis());
     }
 
     @Test

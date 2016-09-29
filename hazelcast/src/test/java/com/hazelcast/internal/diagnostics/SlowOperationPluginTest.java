@@ -29,12 +29,11 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Before
     public void setup() {
-        Config config = new Config();
-        config.setProperty(SLOW_OPERATION_DETECTOR_ENABLED.getName(), "true");
-        config.setProperty(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000");
-        config.setProperty(SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000");
-        config.setProperty(SlowOperationPlugin.PERIOD_SECONDS.getName(), "1");
-
+        Config config = new Config()
+                .setProperty(SLOW_OPERATION_DETECTOR_ENABLED.getName(), "true")
+                .setProperty(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000")
+                .setProperty(SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000")
+                .setProperty(SlowOperationPlugin.PERIOD_SECONDS.getName(), "1");
 
         hz = createHazelcastInstance(config);
 
