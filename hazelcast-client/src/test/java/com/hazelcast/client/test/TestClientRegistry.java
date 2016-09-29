@@ -91,7 +91,7 @@ public class TestClientRegistry {
                 try {
                     addressTranslator = new AwsAddressTranslator(awsConfig, client.getLoggingService());
                 } catch (NoClassDefFoundError e) {
-                    LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                    LOGGER.log(Level.WARNING, "hazelcast-aws.jar might be missing!");
                     throw e;
                 }
             } else if (discoveryService != null) {

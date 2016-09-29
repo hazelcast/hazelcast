@@ -274,7 +274,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 addressProviders.add(new AwsAddressProvider(awsConfig, loggingService));
             } catch (NoClassDefFoundError e) {
                 ILogger logger = loggingService.getLogger(HazelcastClient.class);
-                logger.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                logger.log(Level.WARNING, "hazelcast-aws.jar might be missing!");
                 throw e;
             }
         }

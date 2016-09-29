@@ -143,8 +143,8 @@
 
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-cloud</artifactId>
-            <version>3.6</version>
+            <artifactId>hazelcast-aws</artifactId>
+            <version>1.0</version>
             <optional>true</optional>
             <scope>provided</scope>
         </dependency>

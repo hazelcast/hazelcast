@@ -155,8 +155,8 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-cloud</artifactId>
-            <version>3.6.5</version>
+            <artifactId>hazelcast-aws</artifactId>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -171,7 +171,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
-            <version>3.7</version>
+            <version>3.7.1</version>
         </dependency>
     </dependencies>
 </project>
