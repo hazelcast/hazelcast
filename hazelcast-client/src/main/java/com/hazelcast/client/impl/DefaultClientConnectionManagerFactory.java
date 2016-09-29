@@ -49,7 +49,7 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
             try {
                 addressTranslator = new AwsAddressTranslator(awsConfig, loggingService);
             } catch (NoClassDefFoundError e) {
-                logger.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                logger.log(Level.WARNING, "hazelcast-aws.jar might be missing!");
                 throw e;
             }
         } else if (discoveryService != null) {
