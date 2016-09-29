@@ -1171,6 +1171,12 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="ringbuffer-store">
+        <xs:all>
+            <xs:element ref="factory-or-class-name" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+    </xs:complexType>
     <xs:complexType name="ringbuffer">
         <xs:all>
             <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
@@ -1218,6 +1224,14 @@
                         BINARY (default): keys and values are stored as binary data.
                         OBJECT: values are stored in their object forms.
                         NATIVE: keys and values are stored in native memory. Only available on Hazelcast Enterprise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ringbuffer-store" type="ringbuffer-store" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Includes the ring buffer store factory class name. The store format is the same as the
+                        in-memory-format for the ringbuffer.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

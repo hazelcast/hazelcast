@@ -23,6 +23,7 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
     private HazelcastInstance hz;
     private Ringbuffer ringbuffer;
     private RingbufferContainer ringbufferContainer;
+    private ArrayRingbuffer arrayRingbuffer;
 
     public void setup(RingbufferConfig ringbufferConfig) {
         Config config = new Config();
@@ -32,6 +33,7 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
 
         RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
         ringbufferContainer = ringbufferService.getContainer(ringbufferConfig.getName());
+        arrayRingbuffer = (ArrayRingbuffer) ringbufferContainer.getRingbuffer();
     }
 
     // when ttl is set, then eventually all the items needs to get expired.
@@ -63,7 +65,7 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
 
         // and we verify that the slots are nulled so we don't have a memory leak on our hands.
         for (int k = 0; k < ringbuffer.capacity(); k++) {
-            assertNull(ringbufferContainer.ringItems[k]);
+            assertNull(arrayRingbuffer.ringItems[k]);
         }
     }
 
