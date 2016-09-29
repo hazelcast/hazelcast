@@ -40,11 +40,11 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
-        config.setProperty(Diagnostics.ENABLED.getName(), "true");
-        config.setProperty(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName(), "0.2");
-        config.setProperty(Diagnostics.MAX_ROLLED_FILE_COUNT.getName(), "3");
-        config.setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
+        Config config = new Config()
+                .setProperty(Diagnostics.ENABLED.getName(), "true")
+                .setProperty(Diagnostics.MAX_ROLLED_FILE_SIZE_MB.getName(), "0.2")
+                .setProperty(Diagnostics.MAX_ROLLED_FILE_COUNT.getName(), "3")
+                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
 
         HazelcastInstance hz = createHazelcastInstance(config);
 

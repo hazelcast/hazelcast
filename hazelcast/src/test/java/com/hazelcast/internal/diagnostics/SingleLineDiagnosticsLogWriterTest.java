@@ -9,6 +9,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.CharArrayWriter;
+import java.io.PrintWriter;
+
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -16,12 +19,13 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SingleLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
-
+    private CharArrayWriter out = new CharArrayWriter();
     private SingleLineDiagnosticsLogWriter writer;
 
     @Before
     public void setup() {
         writer = new SingleLineDiagnosticsLogWriter();
+        writer.init(new PrintWriter(out));
     }
 
     @Test
@@ -29,7 +33,7 @@ public class SingleLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
         writer.startSection("SomeSection");
 
         writer.writeKeyValueEntry("boolean", true);
-        writer.writeKeyValueEntry("long", 10l);
+        writer.writeKeyValueEntry("long", 10L);
 
         writer.startSection("SubSection");
         writer.writeKeyValueEntry("integer", 10);
@@ -41,7 +45,7 @@ public class SingleLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
 
         writer.endSection();
 
-        assertTrue(writer.sb.toString().contains("SomeSection[boolean=true,long=10,SubSection[integer=10],string=foo,double=11.0,foobar]"));
+         assertTrue(out.toString().contains("SomeSection[boolean=true,long=10,SubSection[integer=10],string=foo,double=11.0,foobar]"));
     }
 
     @Test
@@ -49,7 +53,7 @@ public class SingleLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
         DummyDiagnosticsPlugin plugin = new DummyDiagnosticsPlugin();
         plugin.run(writer);
 
-        String content = writer.sb.toString();
+        String content = out.toString();
         String[] split = content.split(" ");
         assertEquals(3, split.length);
         assertEquals("somesection[]" + LINE_SEPARATOR, split[2]);

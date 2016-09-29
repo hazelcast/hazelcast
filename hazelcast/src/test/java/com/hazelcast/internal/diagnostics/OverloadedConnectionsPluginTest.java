@@ -38,10 +38,10 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
     public void setup() throws InterruptedException {
         Hazelcast.shutdownAll();
 
-        Config config = new Config();
-        config.setProperty(OverloadedConnectionsPlugin.PERIOD_SECONDS.getName(), "1");
-        config.setProperty(OverloadedConnectionsPlugin.SAMPLES.getName(), "10");
-        config.setProperty(OverloadedConnectionsPlugin.THRESHOLD.getName(), "10");
+        Config config = new Config()
+                .setProperty(OverloadedConnectionsPlugin.PERIOD_SECONDS.getName(), "1")
+                .setProperty(OverloadedConnectionsPlugin.SAMPLES.getName(), "10")
+                .setProperty(OverloadedConnectionsPlugin.THRESHOLD.getName(), "10");
 
         local = Hazelcast.newHazelcastInstance(config);
         serializationService = getSerializationService(local);

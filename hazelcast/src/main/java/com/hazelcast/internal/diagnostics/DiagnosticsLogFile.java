@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
@@ -42,7 +43,6 @@ import static java.lang.String.format;
 final class DiagnosticsLogFile {
 
     private static final int ONE_MB = 1024 * 1024;
-    private static final int INITIAL_CHAR_BUFF_SIZE = 4 * 1024;
 
     // points to the file where the log content is written to
     volatile File file;
@@ -51,14 +51,11 @@ final class DiagnosticsLogFile {
     private final ILogger logger;
     private final String fileName;
 
-    private char[] charBuff = new char[INITIAL_CHAR_BUFF_SIZE];
     private int index;
-    private BufferedWriter bufferedWriter;
+    private PrintWriter printWriter;
     private int maxRollingFileCount;
     private int maxRollingFileSizeBytes;
     private final DiagnosticsLogWriter logWriter;
-    // calling File.length generates a lot of litter; so we'll track it ourselves
-    private long fileLength;
 
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
@@ -80,21 +77,21 @@ final class DiagnosticsLogFile {
         try {
             if (file == null) {
                 file = new File(diagnostics.directory, format(fileName, index));
-                bufferedWriter = newWriter();
+                printWriter = newWriter();
                 renderStaticPlugins();
             }
 
             renderPlugin(plugin);
 
-            bufferedWriter.flush();
-            if (fileLength >= maxRollingFileSizeBytes) {
+            printWriter.flush();
+            if (file.length() >= maxRollingFileSizeBytes) {
                 rollover();
             }
         } catch (IOException e) {
             logger.warning("Failed to write to file:" + file.getAbsolutePath(), e);
             file = null;
-            closeResource(bufferedWriter);
-            bufferedWriter = null;
+            closeResource(printWriter);
+            printWriter = null;
         } catch (RuntimeException e) {
             logger.warning("Failed to write file: " + file, e);
         }
@@ -107,36 +104,22 @@ final class DiagnosticsLogFile {
     }
 
     private void renderPlugin(DiagnosticsPlugin plugin) throws IOException {
-        logWriter.clean();
+        logWriter.init(printWriter);
+
         plugin.run(logWriter);
-        //bufferedWriter.append()
-        int desiredLength = charBuff.length;
-        int actualSize = logWriter.length();
-        while (desiredLength < actualSize) {
-            desiredLength *= 2;
-        }
-
-        if (desiredLength != charBuff.length) {
-            charBuff = new char[desiredLength];
-        }
-
-        logWriter.copyInto(charBuff);
-        bufferedWriter.write(charBuff, 0, actualSize);
-        fileLength += actualSize;
     }
 
-    private BufferedWriter newWriter() throws FileNotFoundException {
+    private PrintWriter newWriter() throws FileNotFoundException {
         FileOutputStream fos = new FileOutputStream(file, true);
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-        return new BufferedWriter(new OutputStreamWriter(fos, encoder));
+        return new PrintWriter(new BufferedWriter(new OutputStreamWriter(fos, encoder), Short.MAX_VALUE));
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void rollover() {
-        closeResource(bufferedWriter);
-        bufferedWriter = null;
+        closeResource(printWriter);
+        printWriter = null;
         file = null;
-        fileLength = 0;
         index++;
 
         File file = new File(format(fileName, index - maxRollingFileCount));

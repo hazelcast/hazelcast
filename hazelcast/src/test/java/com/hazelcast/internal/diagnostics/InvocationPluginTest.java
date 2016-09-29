@@ -26,9 +26,9 @@ public class InvocationPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Before
     public void setup() {
-        Config config = new Config();
-        config.setProperty(InvocationPlugin.SAMPLE_PERIOD_SECONDS.getName(), "1");
-        config.setProperty(InvocationPlugin.SLOW_THRESHOLD_SECONDS.getName(), "5");
+        Config config = new Config()
+                .setProperty(InvocationPlugin.SAMPLE_PERIOD_SECONDS.getName(), "1")
+                .setProperty(InvocationPlugin.SLOW_THRESHOLD_SECONDS.getName(), "5");
 
         hz = createHazelcastInstance(config);
 
