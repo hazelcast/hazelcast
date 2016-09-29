@@ -18,5 +18,12 @@ package com.hazelcast.jet2;
 
 public interface Producer<T> {
 
-    T next();
+    /**
+     * Return true if producer is finished, false otherwise
+     */
+    boolean produce(OutputCollector<T> collector);
+
+    default boolean isBlocking() {
+        return false;
+    }
 }

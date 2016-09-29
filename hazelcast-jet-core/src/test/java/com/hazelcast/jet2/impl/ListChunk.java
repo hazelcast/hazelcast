@@ -16,11 +16,35 @@
 
 package com.hazelcast.jet2.impl;
 
-import java.util.concurrent.Callable;
+import com.hazelcast.jet2.Chunk;
+import com.hazelcast.jet2.Cursor;
 
-public interface Tasklet extends Callable<TaskletResult> {
+import java.util.List;
 
-    default boolean isBlocking() {
-        return false;
+public class ListChunk<T> implements Chunk<T> {
+
+    private final List<T> list;
+    private final Cursor<T> cursor;
+
+    public ListChunk(List<T> list) {
+        this.list = list;
+        this.cursor = new ListCursor<>(list);
+    }
+
+    @Override
+    public Cursor<T> cursor() {
+        return cursor;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return list.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return "ListChunk{" +
+                "list=" + list +
+                '}';
     }
 }

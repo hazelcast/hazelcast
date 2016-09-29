@@ -17,6 +17,5 @@
 package com.hazelcast.jet2;
 
 public interface OutputCollector<T> {
-
     void collect(T object);
 }

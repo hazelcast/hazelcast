@@ -18,7 +18,17 @@ package com.hazelcast.jet2;
 
 public interface Consumer<T> {
 
-    void consume(T object);
+    /**
+     * Return true if item is consumed, false if not
+     */
+    boolean consume(T object);
 
+    /**
+     * Called after all input has been exhausted
+     */
     void complete();
+
+    default boolean isBlocking() {
+        return false;
+    }
 }

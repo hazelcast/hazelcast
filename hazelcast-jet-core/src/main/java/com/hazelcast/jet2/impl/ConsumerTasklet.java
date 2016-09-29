@@ -19,6 +19,7 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.Chunk;
 import com.hazelcast.jet2.Consumer;
 import com.hazelcast.jet2.Cursor;
+import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,48 +30,84 @@ public class ConsumerTasklet implements Tasklet {
 
     private final List<Input> inputs;
     private final Consumer consumer;
+    private Cursor<Object> chunkCursor;
+    Iterator<Input> inputIterator;
 
     public ConsumerTasklet(Consumer<?> consumer, Map<String, Input> inputs) {
+        Preconditions.checkNotNull(consumer, "consumer");
+        Preconditions.checkTrue(!inputs.isEmpty(), "There must be at least one input");
+
         this.consumer = consumer;
         this.inputs = new ArrayList<>(inputs.values());
     }
 
     @Override
     public TaskletResult call() {
-        boolean consumedSome;
-        do {
-            consumedSome = consumeInputs();
-        } while (consumedSome);
-
-        if (inputs.isEmpty()) {
-            consumer.complete();
-            return TaskletResult.DONE;
-        } else {
-            return TaskletResult.NOT_DONE_BACKOFF;
+        if (chunkCursor != null) {
+            // retry to consume the last chunk
+            ConsumeResult result = tryConsume();
+            switch (result) {
+                case CONSUMED_ALL:
+                    // move on to next chunk
+                    break;
+                case CONSUMED_SOME:
+                    return TaskletResult.MADE_PROGRESS;
+                case CONSUMED_NONE:
+                    return TaskletResult.NO_PROGRESS;
+            }
         }
+        Chunk<Object> chunk = getNextChunk();
+        if (chunk == null) {
+            if (inputs.isEmpty()) {
+                consumer.complete();
+                return TaskletResult.DONE;
+            }
+            // could not find any chunk to read
+            return TaskletResult.NO_PROGRESS;
+        }
+
+        chunkCursor = chunk.cursor();
+        chunkCursor.advance();
+        tryConsume();
+        // we have made progress no matter what since we managed read a new chunk from the input
+        return TaskletResult.MADE_PROGRESS;
     }
 
-    private boolean consumeInputs() {
-        //TODO: avoid creating new iterator here
-        Iterator<Input> iterator = inputs.iterator();
+    private ConsumeResult tryConsume() {
         boolean consumedSome = false;
-        while (iterator.hasNext()) {
-            Chunk chunk = iterator.next().nextChunk();
-            //input is exhausted
-            if (chunk == null) {
-                iterator.remove();
-                continue;
+        do {
+            boolean consumed = consumer.consume(chunkCursor.value());
+            consumedSome |= consumed;
+            if (!consumed) {
+                return consumedSome ? ConsumeResult.CONSUMED_SOME : ConsumeResult.CONSUMED_NONE;
             }
-            if (chunk.isEmpty()) {
-                continue;
-            }
+        } while (chunkCursor.advance());
+        chunkCursor = null;
+        return ConsumeResult.CONSUMED_ALL;
+    }
 
-            Cursor cursor = chunk.cursor();
-            while (cursor.advance()) {
-                consumer.consume(cursor.value());
+    private Chunk<Object> getNextChunk() {
+        inputIterator = inputs.iterator();
+        while (inputIterator.hasNext()) {
+            Input input = inputIterator.next();
+            Chunk chunk = input.nextChunk();
+            if (chunk == null) {
+                inputIterator.remove();
+            } else if (!chunk.isEmpty()) {
+                return chunk;
             }
-            consumedSome = true;
         }
-        return consumedSome;
+        return null;
+    }
+
+    @Override
+    public boolean isBlocking() {
+        return consumer.isBlocking();
+    }
+
+    private enum ConsumeResult {
+        CONSUMED_NONE,
+        CONSUMED_SOME,
+        CONSUMED_ALL
     }
 }

@@ -16,35 +16,45 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.OutputCollector;
-import com.hazelcast.jet2.Producer;
+import com.hazelcast.jet2.Consumer;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
-public class ListProducer<T> implements Producer<T> {
+public class ListConsumer<T> implements Consumer<T> {
 
-    private Iterator<T> iterator;
-    private boolean skipNextCall;
+    private final List<T> list;
+    private boolean isComplete;
+    private int yieldIndex = -1;
 
-    public ListProducer(List<T> list) {
-        this.iterator = list.iterator();
+    public ListConsumer() {
+        list = new ArrayList<T>();
     }
 
-    public void skipNext() {
-        skipNextCall = true;
-    }
     @Override
-    public boolean produce(OutputCollector<T> collector) {
-        if (iterator.hasNext()) {
-            if (skipNextCall) {
-                skipNextCall = false;
-                return false;
-            }
-
-            collector.collect(iterator.next());
-            return !iterator.hasNext();
+    public boolean consume(T object) {
+        if (list.size() == yieldIndex) {
+            yieldIndex = -1;
+            return false;
         }
+        list.add(object);
         return true;
+    }
+
+    public void yieldOn(int index) {
+        yieldIndex = index;
+    }
+
+    @Override
+    public void complete() {
+        isComplete = true;
+    }
+
+    public boolean isComplete() {
+        return isComplete;
+    }
+
+    public List<T> getList() {
+        return list;
     }
 }

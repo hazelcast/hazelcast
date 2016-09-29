@@ -24,6 +24,7 @@ import org.junit.experimental.categories.Category;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -32,7 +33,7 @@ public class ProducerTaskletTest {
 
     private List<Integer> list;
     private ListProducer<Integer> producer;
-    private HashMap<String, Output> outputMap;
+    private Map<String, Output> outputMap;
 
     @Before
     public void setup() {
@@ -76,7 +77,7 @@ public class ProducerTaskletTest {
 
         TaskletResult result = tasklet.call();
 
-        assertEquals(TaskletResult.NOT_DONE, result);
+        assertEquals(TaskletResult.MADE_PROGRESS, result);
     }
 
     @Test
@@ -87,11 +88,11 @@ public class ProducerTaskletTest {
 
         TaskletResult result = tasklet.call();
 
-        assertEquals(TaskletResult.NOT_DONE, result);
+        assertEquals(TaskletResult.MADE_PROGRESS, result);
 
         result = tasklet.call();
 
-        assertEquals(TaskletResult.NOT_DONE_BACKOFF, result);
+        assertEquals(TaskletResult.NO_PROGRESS, result);
 
         assertEquals(Arrays.asList(0, 1, 2, 3, 4), output1.get());
     }
@@ -104,7 +105,7 @@ public class ProducerTaskletTest {
 
         TaskletResult result = tasklet.call();
 
-        assertEquals(TaskletResult.NOT_DONE, result);
+        assertEquals(TaskletResult.MADE_PROGRESS, result);
         assertEquals(Arrays.asList(0, 1, 2, 3, 4), output1.drain());
 
         result = tasklet.call();
@@ -124,7 +125,7 @@ public class ProducerTaskletTest {
 
         TaskletResult result = tasklet.call();
 
-        assertEquals(TaskletResult.NOT_DONE, result);
+        assertEquals(TaskletResult.MADE_PROGRESS, result);
         assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), output1.get());
         assertEquals(Arrays.asList(0, 1, 2, 3, 4), output2.drain());
 

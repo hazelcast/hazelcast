@@ -16,35 +16,41 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.jet2.Cursor;
 import com.hazelcast.jet2.OutputCollector;
-import com.hazelcast.jet2.Producer;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
-public class ListProducer<T> implements Producer<T> {
+public class ArrayListCollector<T> implements OutputCollector<T> {
 
-    private Iterator<T> iterator;
-    private boolean skipNextCall;
+    private final ArrayList<T> buffer;
+    private final ListCursor<T> cursor;
 
-    public ListProducer(List<T> list) {
-        this.iterator = list.iterator();
+    public ArrayListCollector() {
+        buffer = new ArrayList<>();
+        cursor = new ListCursor<>(buffer);
     }
 
-    public void skipNext() {
-        skipNextCall = true;
-    }
     @Override
-    public boolean produce(OutputCollector<T> collector) {
-        if (iterator.hasNext()) {
-            if (skipNextCall) {
-                skipNextCall = false;
-                return false;
-            }
-
-            collector.collect(iterator.next());
-            return !iterator.hasNext();
-        }
-        return true;
+    public void collect(T object) {
+        buffer.add(object);
     }
+
+    public void clear() {
+        buffer.clear();
+    }
+
+    public boolean isEmpty() {
+        return buffer.isEmpty();
+    }
+
+    public Cursor<T> cursor() {
+        return cursor;
+    }
+
+    public List<T> buffer() {
+        return buffer;
+    }
+
 }

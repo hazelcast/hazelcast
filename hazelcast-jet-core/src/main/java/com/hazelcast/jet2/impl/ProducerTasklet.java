@@ -25,10 +25,10 @@ import java.util.Map;
 
 public class ProducerTasklet implements Tasklet {
 
-    private final Producer<?> producer;
-    private Object lastProduced;
+    private final Producer producer;
+    private final ArrayListCollector<Object> collector;
+    private Cursor<Object> collectorCursor;
     private Cursor<Output> outputCursor;
-    private boolean lastPushSuccess = true;
 
     public ProducerTasklet(Producer<?> producer, Map<String, Output> outputs) {
         Preconditions.checkNotNull(producer, "producer");
@@ -36,35 +36,61 @@ public class ProducerTasklet implements Tasklet {
 
         this.producer = producer;
         this.outputCursor = new ListCursor<>(new ArrayList<>(outputs.values()));
+        this.collector = new ArrayListCollector<>();
     }
 
     @Override
     public TaskletResult call() {
-        if (!lastPushSuccess && !tryPush()) {
-            return TaskletResult.NOT_DONE_BACKOFF;
+        if (collectorCursor != null) {
+            switch (tryPush()) {
+                case PUSHED_NONE:
+                    return TaskletResult.NO_PROGRESS;
+                case PUSHED_SOME:
+                    return TaskletResult.MADE_PROGRESS;
+                case PUSHED_ALL:
+                    break;
+            }
+        }
+        boolean complete = producer.produce(collector);
+        if (complete && collector.isEmpty()) {
+            return TaskletResult.DONE;
+        }
+        if (collector.isEmpty()) {
+            return TaskletResult.NO_PROGRESS;
         }
 
-        do {
-            lastProduced = producer.next();
-            // we reached the end of the input
-            if (lastProduced == null) {
-                return TaskletResult.DONE;
-            }
-            outputCursor.reset();
-            outputCursor.advance();
-            lastPushSuccess = tryPush();
-        } while (lastPushSuccess);
-        return TaskletResult.NOT_DONE;
+        tryPush();
+        return TaskletResult.MADE_PROGRESS;
     }
 
-    private boolean tryPush() {
-        do {
-            if (!outputCursor.value().collect(lastProduced)) {
-                return false;
-            }
-        } while (outputCursor.advance());
-        return true;
+    @Override
+    public boolean isBlocking() {
+        return producer.isBlocking();
     }
 
+    private PushResult tryPush() {
+        boolean pushedSome = false;
+        do {
+            do {
+                boolean pushed = outputCursor.value().collect(collectorCursor.value());
+                pushedSome |= pushed;
+                if (!pushed) {
+                    return pushedSome ? PushResult.PUSHED_SOME : PushResult.PUSHED_NONE;
+                }
+            } while (outputCursor.advance());
+        } while (collectorCursor.advance());
+
+        outputCursor.reset();
+        outputCursor.advance();
+        collector.clear();
+        collectorCursor = null;
+        return PushResult.PUSHED_ALL;
+    }
+
+    private enum PushResult {
+        PUSHED_ALL,
+        PUSHED_SOME,
+        PUSHED_NONE,
+    }
 }
 
