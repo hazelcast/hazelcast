@@ -29,6 +29,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -53,13 +54,19 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
     public static final String TOPIC_RB_PREFIX = "_hz_rb_";
 
     public static final String SERVICE_NAME = "hz:impl:ringbufferService";
-
-    private NodeEngine nodeEngine;
     private final ConcurrentMap<String, RingbufferContainer> containers
             = new ConcurrentHashMap<String, RingbufferContainer>();
+    private NodeEngine nodeEngine;
 
     public RingbufferService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = checkNotNull(nodeEngine, "nodeEngine can't be null");
+    }
+
+    private static String getConfigName(String name) {
+        if (name.startsWith(TOPIC_RB_PREFIX)) {
+            name = name.substring(TOPIC_RB_PREFIX.length());
+        }
+        return name;
     }
 
     // just for testing.
@@ -158,7 +165,8 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
         }
 
         RingbufferConfig ringbufferConfig = getRingbufferConfig(name);
-        ringbuffer = new RingbufferContainer(name, ringbufferConfig, nodeEngine.getSerializationService());
+        ringbuffer = new RingbufferContainer(name, ringbufferConfig,
+                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
         containers.put(name, ringbuffer);
         return ringbuffer;
     }
@@ -171,16 +179,10 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
     public void addRingbuffer(String name, RingbufferContainer ringbuffer) {
         checkNotNull(name, "name can't be null");
         checkNotNull(ringbuffer, "ringbuffer can't be null");
-
-        ringbuffer.init(nodeEngine);
+        final RingbufferConfig config = nodeEngine.getConfig().getRingbufferConfig(name);
+        final SerializationService serializationService = nodeEngine.getSerializationService();
+        ringbuffer.init(name, config, serializationService, nodeEngine.getConfigClassLoader());
         containers.put(name, ringbuffer);
-    }
-
-    private static String getConfigName(String name) {
-        if (name.startsWith(TOPIC_RB_PREFIX)) {
-            name = name.substring(TOPIC_RB_PREFIX.length());
-        }
-        return name;
     }
 
 }

@@ -18,14 +18,15 @@ package com.hazelcast.ringbuffer;
 
 /**
  * An {@link RuntimeException} that is thrown when accessing an item in the {@link Ringbuffer} using a sequence that is smaller
- * than the current head sequence. This means that the and old item is read, but it isn't available anymore in the ringbuffer.
+ * than the current head sequence and that the ringbuffer store is disabled. This means that the item isn't available in the
+ * ringbuffer and it cannot be loaded from the store either, thus being completely unavailable.
  */
 public class StaleSequenceException extends RuntimeException {
 
     private final long headSeq;
 
     /**
-     * Creates a SequenceOutOfBoundsException with the given message.
+     * Creates a StaleSequenceException with the given message.
      *
      * @param message the message
      * @param headSeq the last known head sequence.

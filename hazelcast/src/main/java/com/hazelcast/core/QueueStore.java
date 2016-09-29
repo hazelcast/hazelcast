@@ -62,7 +62,7 @@ public interface QueueStore<T> {
      * Implementation can use any means of loading the given key;
      * such as an O/R mapping tool, simple SQL, reading a file, etc.
      *
-     * @param key
+     * @param key the key of the requested value
      * @return value of the key
      */
     T load(Long key);
