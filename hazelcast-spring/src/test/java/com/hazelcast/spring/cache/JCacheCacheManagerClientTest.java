@@ -25,7 +25,5 @@ import org.springframework.test.context.ContextConfiguration;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"jCacheClientCacheManager-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-public class JCacheCacheManagerClientTest
-        extends JCacheCacheManagerTest {
-
+public class JCacheCacheManagerClientTest extends JCacheCacheManagerTest {
 }

@@ -20,7 +20,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,6 +35,7 @@ import javax.cache.CacheManager;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"jCacheCacheManager-applicationContext-hazelcast.xml"})
@@ -62,10 +62,23 @@ public class JCacheCacheManagerTest {
     @Before
     public void reset() {
         Iterable<String> cacheNames = springCacheManager.getCacheManager().getCacheNames();
-        for (String cacheName :  cacheNames) {
+        for (String cacheName : cacheNames) {
             springCacheManager.getCacheManager().getCache(cacheName).removeAll();
         }
         bean.reset();
+    }
+
+    @Test
+    public void testBean() {
+        for (int i = 0; i < 100; i++) {
+            bean.reset();
+            bean.getName(i);
+            bean.getCity(i);
+        }
+        for (int i = 0; i < 100; i++) {
+            assertEquals("name:" + i, bean.getName(i));
+            assertEquals("city:" + i, bean.getCity(i));
+        }
     }
 
     @Test
@@ -81,20 +94,7 @@ public class JCacheCacheManagerTest {
     }
 
     @Test
-    public void test() {
-        for (int i = 0; i < 100; i++) {
-            bean.reset();
-            bean.getName(i);
-            bean.getCity(i);
-        }
-        for (int i = 0; i < 100; i++) {
-            assertEquals("name:" + i, bean.getName(i));
-            assertEquals("city:" + i, bean.getCity(i));
-        }
-    }
-
-    @Test
-    public void testCacheNames() throws InterruptedException {
+    public void testCacheNames() {
         assertNotNull(springCacheManager.getCacheManager().getCache("name"));
         assertNotNull(springCacheManager.getCacheManager().getCache("city"));
     }
@@ -104,23 +104,25 @@ public class JCacheCacheManagerTest {
         private boolean alreadyCalledName;
         private boolean alreadyCalledCity;
 
+        @Override
         @Cacheable("name")
-        public String getName(int k) {
+        public String getName(int index) {
             if (!alreadyCalledName) {
                 alreadyCalledName = true;
-                return "name:" + k;
+                return "name:" + index;
             }
-            Assert.fail("value is not retireved from cache on second call!");
+            fail("value is not retrieved from cache on second call!");
             return null;
         }
 
+        @Override
         @Cacheable("city")
         public String getCity(int k) {
             if (!alreadyCalledCity) {
                 alreadyCalledCity = true;
                 return "city:" + k;
             }
-            Assert.fail("value is not retrieved from cache on second call!");
+            fail("value is not retrieved from cache on second call!");
             return null;
         }
 

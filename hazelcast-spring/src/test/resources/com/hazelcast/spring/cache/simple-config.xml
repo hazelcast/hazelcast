@@ -24,12 +24,11 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:map name="test" />
+            <hz:map name="test"/>
         </hz:config>
     </hz:hazelcast>
 
     <bean id="cacheManager" class="com.hazelcast.spring.cache.HazelcastCacheManager">
         <constructor-arg ref="instance"/>
     </bean>
-
 </beans>
