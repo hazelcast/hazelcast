@@ -21,10 +21,10 @@ import org.springframework.cache.annotation.Cacheable;
 public interface IJCacheDummyBean {
 
     @Cacheable("name")
-    String getName(int k);
+    String getName(int index);
 
     @Cacheable("city")
-    String getCity(int k);
+    String getCity(int index);
 
     void reset();
 }

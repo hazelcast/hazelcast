@@ -34,6 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -70,13 +71,14 @@ public class HazelcastCacheTest {
         doTestCacheGetCallable(null);
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void doTestCacheGetCallable(final Object returnValue) {
         String key = createRandomKey();
 
         assertNull(cache.get(key));
         Object value = cache.get(key, new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return returnValue;
             }
         });
@@ -100,7 +102,7 @@ public class HazelcastCacheTest {
 
         Object value = cache.get(key, new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 throw new IllegalStateException("Should not have been invoked");
             }
         });
@@ -115,23 +117,21 @@ public class HazelcastCacheTest {
         try {
             cache.get(key, new Callable<Object>() {
                 @Override
-                public Object call() throws Exception {
+                public Object call() {
                     throw new UnsupportedOperationException("Expected exception");
                 }
             });
-        }
-        catch (Cache.ValueRetrievalException ex) {
+        } catch (Cache.ValueRetrievalException ex) {
             assertNotNull(ex.getCause());
             assertEquals(UnsupportedOperationException.class, ex.getCause().getClass());
         }
     }
 
     /**
-     * Test that a call to get with a Callable concurrently properly synchronize the
-     * invocations.
+     * Tests that a call to get with a Callable concurrently properly synchronize the invocations.
      */
     @Test
-    public void testCacheGetSynchronized() throws InterruptedException {
+    public void testCacheGetSynchronized() throws Exception {
         final AtomicInteger counter = new AtomicInteger();
         final List<Object> results = new CopyOnWriteArrayList<Object>();
         final CountDownLatch latch = new CountDownLatch(10);
@@ -143,15 +143,15 @@ public class HazelcastCacheTest {
                 try {
                     Integer value = cache.get(key, new Callable<Integer>() {
                         @Override
-                        public Integer call() throws Exception {
+                        public Integer call() {
+                            // make sure the thread will overlap
+                            sleepMillis(50);
 
-                            Thread.sleep(50); // make sure the thread will overlap
                             return counter.incrementAndGet();
                         }
                     });
                     results.add(value);
-                }
-                finally {
+                } finally {
                     latch.countDown();
                 }
             }
@@ -168,8 +168,7 @@ public class HazelcastCacheTest {
         }
     }
 
-    protected String createRandomKey() {
+    private String createRandomKey() {
         return UUID.randomUUID().toString();
     }
-
 }

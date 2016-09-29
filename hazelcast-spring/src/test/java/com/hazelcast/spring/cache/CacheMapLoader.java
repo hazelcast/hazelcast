@@ -25,29 +25,30 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-/**
- * @author mdogan 4/3/12
- */
 public class CacheMapLoader implements MapStore, MapLoaderLifecycleSupport {
 
     private String type;
 
-    public void init(final HazelcastInstance hazelcastInstance,
-                     final Properties properties, final String mapName) {
+    @Override
+    public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
         type = mapName;
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public Object load(final Object key) {
         return type + ":" + key;
     }
 
+    @Override
     public Map loadAll(final Collection keys) {
         return null;
     }
 
+    @Override
     public Set loadAllKeys() {
         return null;
     }

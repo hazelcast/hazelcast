@@ -26,7 +26,7 @@
 		http://www.hazelcast.com/schema/spring
 		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
-    <cache:annotation-driven cache-manager="cacheManager" />
+    <cache:annotation-driven cache-manager="cacheManager"/>
 
     <hz:hazelcast id="instance">
         <hz:config>
@@ -46,7 +46,7 @@
                 <hz:map-store enabled="true" write-delay-seconds="0"
                               class-name="com.hazelcast.spring.cache.CacheMapLoader"/>
             </hz:map>
-            <hz:map name="null-map" />
+            <hz:map name="null-map"/>
             <hz:map name="map-with-ttl" time-to-live-seconds="1">
             </hz:map>
         </hz:config>
@@ -56,5 +56,5 @@
         <constructor-arg ref="instance"/>
     </bean>
 
-    <bean id="dummy" class="com.hazelcast.spring.cache.TestCacheManager.DummyBean" />
+    <bean id="dummy" class="com.hazelcast.spring.cache.TestCacheManager.DummyBean"/>
 </beans>

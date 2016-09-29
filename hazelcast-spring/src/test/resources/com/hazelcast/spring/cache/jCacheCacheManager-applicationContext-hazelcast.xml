@@ -18,15 +18,15 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
-       xmlns:cache="http://www.springframework.org/schema/cache" xmlns:p="http://jboss.org/xml/ns/javax/validation/mapping"
+       xmlns:cache="http://www.springframework.org/schema/cache"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.springframework.org/schema/cache
 		http://www.springframework.org/schema/cache/spring-cache.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.7.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.8.xsd">
 
-    <cache:annotation-driven cache-manager="cacheManager" />
+    <cache:annotation-driven cache-manager="cacheManager"/>
 
     <hz:hazelcast id="instance">
         <hz:config>
@@ -43,15 +43,15 @@
                     <hz:interface>127.0.0.1</hz:interface>
                 </hz:interfaces>
             </hz:network>
-            <hz:cache name="name" />
-            <hz:cache name="city" />
+            <hz:cache name="name"/>
+            <hz:cache name="city"/>
         </hz:config>
     </hz:hazelcast>
 
     <hz:cache-manager id="hazelcastJCacheCacheManager" instance-ref="instance" name="hazelcastJCacheCacheManager"/>
 
     <bean id="cacheManager" class="org.springframework.cache.jcache.JCacheCacheManager">
-        <constructor-arg ref="hazelcastJCacheCacheManager" />
+        <constructor-arg ref="hazelcastJCacheCacheManager"/>
     </bean>
 
     <hz:cache-manager id="cacheManager2" name="cacheManager2" uri="testURI">
@@ -61,5 +61,5 @@
         </hz:properties>
     </hz:cache-manager>
 
-    <bean id="dummy" class="com.hazelcast.spring.cache.JCacheCacheManagerTest.DummyBean" />
+    <bean id="dummy" class="com.hazelcast.spring.cache.JCacheCacheManagerTest.DummyBean"/>
 </beans>
