@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
+import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -29,9 +31,12 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-public abstract class AbstractHandler implements SelectionHandler, MigratableHandler {
+public abstract class AbstractHandler implements SelectionHandler, MigratableHandler, DiscardableMetricsProvider {
 
+    @Probe(name = "eventCount")
+    protected final SwCounter eventCount = newSwCounter();
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
     protected final TcpIpConnection connection;
@@ -47,7 +52,7 @@ public abstract class AbstractHandler implements SelectionHandler, MigratableHan
 
     // counts the number of migrations that have happened so far.
     @Probe
-    private SwCounter migrationCount = SwCounter.newSwCounter();
+    private SwCounter migrationCount = newSwCounter();
 
     public AbstractHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, int initialOps) {
         this.connection = connection;
@@ -58,6 +63,16 @@ public abstract class AbstractHandler implements SelectionHandler, MigratableHan
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLogger(this.getClass().getName());
         this.initialOps = initialOps;
+    }
+
+    @Override
+    public void discardMetrics(MetricsRegistry registry) {
+        registry.deregister(this);
+    }
+
+    @Override
+    public long getEventCount() {
+        return eventCount.get();
     }
 
     @Probe(level = DEBUG)

@@ -53,8 +53,6 @@ import static java.lang.System.currentTimeMillis;
  */
 public final class NonBlockingSocketReader extends AbstractHandler implements SocketReader, DiscardableMetricsProvider {
 
-    @Probe(name = "eventCount")
-    private final SwCounter eventCount = newSwCounter();
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
     @Probe(name = "normalFramesRead")
@@ -68,17 +66,11 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
 
     public NonBlockingSocketReader(TcpIpConnection connection, NonBlockingIOThread ioThread) {
         super(connection, ioThread, SelectionKey.OP_READ);
-        this.ioThread = ioThread;
     }
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
         registry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
-    }
-
-    @Override
-    public void discardMetrics(MetricsRegistry registry) {
-        registry.deregister(this);
     }
 
     @Probe(name = "idleTimeMs")
@@ -99,11 +91,6 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
     @Override
     public long getLastReadTimeMillis() {
         return lastReadTime;
-    }
-
-    @Override
-    public long getEventCount() {
-        return eventCount.get();
     }
 
     @Override
@@ -246,7 +233,7 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
     private class StartMigrationTask implements Runnable {
         private final NonBlockingIOThread newOwner;
 
-        public StartMigrationTask(NonBlockingIOThread newOwner) {
+        StartMigrationTask(NonBlockingIOThread newOwner) {
             this.newOwner = newOwner;
         }
 

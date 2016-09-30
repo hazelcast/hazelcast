@@ -93,11 +93,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     }
 
     @Override
-    public void discardMetrics(MetricsRegistry registry) {
-        registry.deregister(this);
-    }
-
-    @Override
     public int totalFramesPending() {
         return writeQueue.size() + urgentWriteQueue.size();
     }
@@ -306,10 +301,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         ioThread.addTask(this);
     }
 
-    @Override
-    public long getEventCount() {
-        return eventCount.get();
-    }
 
     @Override
     @SuppressWarnings("unchecked")
