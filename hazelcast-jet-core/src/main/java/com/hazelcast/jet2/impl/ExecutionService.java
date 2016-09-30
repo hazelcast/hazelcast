@@ -28,6 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -45,66 +46,77 @@ public class ExecutionService {
     }
 
     public Future<Void> execute(List<Tasklet> tasklets) {
-        final List<TaskletTracker>[] trackers = new List[workers.length];
-        Arrays.setAll(trackers, i -> new ArrayList());
-        int i = 0;
+        ensureThreadsStarted();
+        final List<TaskletTracker>[] trackersByThread = new List[workers.length];
+        Arrays.setAll(trackersByThread, i -> new ArrayList());
         final CountDownLatch completionLatch = new CountDownLatch(workers.length);
-        final AtomicReference<Throwable> trouble = new AtomicReference<>();
+        final JobFuture jobFuture = new JobFuture(completionLatch);
+        int i = 0;
         for (Tasklet t : tasklets) {
-            trackers[i++ % trackers.length].add(new TaskletTracker(t, completionLatch, trouble));
+            trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, completionLatch, jobFuture));
         }
-        Arrays.setAll(workers, j -> new Worker(trackers[j]));
-        return new JobFuture(completionLatch, trouble);
+        for (i = 0; i < trackersByThread.length; i++) {
+            workers[i].trackers.addAll(trackersByThread[i]);
+        }
+        Arrays.stream(threads).forEach(LockSupport::unpark);
+        return jobFuture;
+    }
+
+    private void ensureThreadsStarted() {
+        if (workers[0] != null) {
+            return;
+        }
+        Arrays.setAll(workers, i -> new Worker());
+        Arrays.setAll(threads, i -> new Thread(workers[i]));
+        Arrays.stream(threads).forEach(Thread::start);
     }
 
     private class Worker implements Runnable {
         private final List<TaskletTracker> trackers;
-        private long idleCount;
 
-        public Worker(List<TaskletTracker> trackers) {
-            this.trackers = new CopyOnWriteArrayList<>(trackers);
+        public Worker() {
+            this.trackers = new CopyOnWriteArrayList<>();
         }
 
         @Override
         public void run() {
-            boolean madeProgress = false;
-            for (Iterator<TaskletTracker> it = trackers.iterator(); it.hasNext(); ) {
-                final TaskletTracker t = it.next();
-                if (t.trouble.get() != null) {
-                    t.completionLatch.countDown();
-                    it.remove();
-                    stealWork();
-                    continue;
-                }
-                final Worker stealingWorker = t.stealingWorker.get();
-                if (stealingWorker != null) {
-                    t.stealingWorker.set(null);
-                    it.remove();
-                    stealingWorker.trackers.add(t);
-                }
-                try {
-                    final TaskletResult result = t.tasklet.call();
-                    switch (result) {
-                        case DONE:
-                            it.remove();
-                            stealWork();
-                            break;
-                        case MADE_PROGRESS:
-                            madeProgress = true;
-                            break;
-                        case NO_PROGRESS:
-                            break;
+            long idleCount = 0;
+            while (true) {
+                boolean madeProgress = false;
+                for (Iterator<TaskletTracker> it = trackers.iterator(); it.hasNext(); ) {
+                    final TaskletTracker t = it.next();
+                    final Worker stealingWorker = t.stealingWorker.get();
+                    if (stealingWorker != null) {
+                        t.stealingWorker.set(null);
+                        it.remove();
+                        stealingWorker.trackers.add(t);
                     }
-                } catch (Throwable e) {
-                    t.trouble.compareAndSet(null, e);
-                    it.remove();
-                    stealWork();
+                    try {
+                        final TaskletResult result = t.tasklet.call();
+                        switch (result) {
+                            case DONE:
+                                t.completionLatch.countDown();
+                                it.remove();
+                                stealWork();
+                                break;
+                            case MADE_PROGRESS:
+                                madeProgress = true;
+                                break;
+                            case NO_PROGRESS:
+                                break;
+                        }
+                    } catch (Throwable e) {
+                        t.troubleSetter.setTrouble(e);
+                        t.completionLatch.countDown();
+                        it.remove();
+                        stealWork();
+                    }
                 }
-            }
-            if (madeProgress) {
-                idleCount = 0;
-            } else {
-                IDLER.idle(++idleCount);
+                if (madeProgress) {
+                    idleCount = 0;
+                } else {
+                    IDLER.idle(++idleCount);
+                }
             }
         }
 
@@ -117,10 +129,11 @@ public class ExecutionService {
                         toStealFrom = w.trackers;
                     }
                 }
-                // if we couldn't find a longer one, there's nothing to steal
-                if (toStealFrom == trackers) {
+                // if we couldn't find a list longer by more than one, there's nothing to steal
+                if (toStealFrom.size() <= trackers.size() + 1) {
                     return;
                 }
+                // now we must find a task on this list which isn't already scheduled for moving
                 for (TaskletTracker t : toStealFrom) {
                     if (t.stealingWorker.compareAndSet(null, this)) {
                         return;
@@ -130,16 +143,16 @@ public class ExecutionService {
         }
     }
 
-    static final class TaskletTracker {
+    private static final class TaskletTracker {
         final Tasklet tasklet;
+        final TroubleSetter troubleSetter;
         final CountDownLatch completionLatch;
-        final AtomicReference<Throwable> trouble;
         final AtomicReference<Worker> stealingWorker = new AtomicReference<>();
 
-        public TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, AtomicReference<Throwable> trouble) {
+        public TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, TroubleSetter troubleSetter) {
             this.completionLatch = completionLatch;
             this.tasklet = tasklet;
-            this.trouble = trouble;
+            this.troubleSetter = troubleSetter;
         }
     }
 }

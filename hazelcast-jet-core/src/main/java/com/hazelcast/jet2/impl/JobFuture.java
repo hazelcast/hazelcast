@@ -28,14 +28,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Javadoc pending.
  */
-class JobFuture implements Future<Void> {
+class JobFuture implements Future<Void>, TroubleSetter {
 
+    private AtomicReference<Throwable> trouble = new AtomicReference<>();
     private final CountDownLatch completionLatch;
-    private final AtomicReference<Throwable> trouble;
 
-    JobFuture(CountDownLatch completionLatch, AtomicReference<Throwable> trouble) {
+    JobFuture(CountDownLatch completionLatch) {
         this.completionLatch = completionLatch;
-        this.trouble = trouble;
     }
 
     @Override
@@ -72,5 +71,11 @@ class JobFuture implements Future<Void> {
             throw new ExecutionException(t);
         }
         return null;
+    }
+
+
+    @Override
+    public void setTrouble(Throwable t) {
+        trouble.compareAndSet(null, t);
     }
 }
