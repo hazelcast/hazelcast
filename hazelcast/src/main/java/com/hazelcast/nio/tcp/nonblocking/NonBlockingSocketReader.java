@@ -205,18 +205,23 @@ public final class NonBlockingSocketReader
         try {
             connection.setReceiveBufferSize(size);
         } catch (SocketException e) {
-            logger.finest("Failed to adjust TCP receive buffer of " + connection + " to "
-                    + size + " B.", e);
+            logger.finest("Failed to adjust TCP receive buffer of " + connection + " to " + size + " B.", e);
         }
     }
 
     @Override
     public void close() {
-        //todo:
-        // ioThread race, shutdown can end up on the old selector
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
+                if (ioThread != Thread.currentThread()) {
+                    // the NonBlockingSocketReader has migrated to a different IOThread after the close got called.
+                    // so we need to send the task to the right ioThread. Otherwise multiple ioThreads could be accessing
+                    // the same socketChannel.
+                    ioThread.addTaskAndWakeup(this);
+                    return;
+                }
+
                 try {
                     socketChannel.closeInbound();
                 } catch (IOException e) {
