@@ -38,6 +38,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * store format) before forwarding the calls to the underlying ring buffer store.
  */
 public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
+
     private boolean enabled;
 
     /**
@@ -46,7 +47,6 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
     private InMemoryFormat inMemoryFormat;
     private RingbufferStore store;
     private SerializationService serializationService;
-
 
     private RingbufferStoreWrapper() {
     }
@@ -142,6 +142,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
         return enabled;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public void store(long sequence, Data value) {
         final Object actualValue;

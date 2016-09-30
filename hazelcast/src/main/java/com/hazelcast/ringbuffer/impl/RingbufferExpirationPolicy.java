@@ -22,6 +22,7 @@ import static com.hazelcast.util.Clock.currentTimeMillis;
  * The expiration policy for the ring buffer items. Currently keeps the expiration times in an array of longs.
  */
 final class RingbufferExpirationPolicy {
+
     // contains the expiration time in ms when the item should be expired.
     long[] ringExpirationMs;
     private final long ttlMs;

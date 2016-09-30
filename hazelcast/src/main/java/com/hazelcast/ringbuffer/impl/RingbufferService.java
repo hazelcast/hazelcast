@@ -184,5 +184,4 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
         ringbuffer.init(name, config, serializationService, nodeEngine.getConfigClassLoader());
         containers.put(name, ringbuffer);
     }
-
 }

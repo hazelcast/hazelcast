@@ -43,9 +43,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * therwise it is null to save space.
  */
 public class RingbufferContainer implements DataSerializable {
+
     private static final long TTL_DISABLED = 0;
 
-    String name;
+    private final String name;
 
     // a cached version of the wait notify key needed to wait for a change if the ringbuffer is empty
     private final RingbufferWaitNotifyKey emptyRingWaitNotifyKey;
@@ -194,7 +195,6 @@ public class RingbufferContainer implements DataSerializable {
         return ringbuffer.getCapacity();
     }
 
-
     /**
      * Adds one item to the ring buffer. Also attempts to store the item in the data store if one is configured.
      *
@@ -320,7 +320,6 @@ public class RingbufferContainer implements DataSerializable {
         }
     }
 
-
     /**
      * Check if the sequence can be read from the ring buffer.
      *
@@ -436,6 +435,10 @@ public class RingbufferContainer implements DataSerializable {
         }
     }
 
+    String getName() {
+        return name;
+    }
+
     Ringbuffer getRingbuffer() {
         return ringbuffer;
     }
@@ -444,4 +447,3 @@ public class RingbufferContainer implements DataSerializable {
         return expirationPolicy;
     }
 }
-
