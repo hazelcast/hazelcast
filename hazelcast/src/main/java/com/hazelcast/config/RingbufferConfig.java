@@ -62,6 +62,7 @@ public class RingbufferConfig {
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
+    private RingbufferStoreConfig ringbufferStoreConfig;
 
     /**
      * Creates a RingbufferConfig with the provided name.
@@ -219,9 +220,9 @@ public class RingbufferConfig {
 
     /**
      * Sets the time to live in seconds.
-     *
+     * <p>
      * Time to live is the time the ringbuffer is going to retain items before deleting them.
-     *
+     * <p>
      * Time to live can be disabled by setting timeToLiveSeconds to 0. It means that items won't get removed because they
      * retire. They will only overwrite. This means that when timeToLiveSeconds is disabled, that after tail did a full
      * loop in the ring that the size will always be equal to the capacity.
@@ -246,23 +247,23 @@ public class RingbufferConfig {
 
     /**
      * Sets the InMemoryFormat.
-     *
+     * <p>
      * Setting the InMemoryFormat controls format of storing an item in the ringbuffer:
      * <ol>
-     *     <li>{@link InMemoryFormat#OBJECT}: the item is stored in deserialized format (so a regular object)</li>
-     *     <li>{@link InMemoryFormat#BINARY}: the item is stored in serialized format (so a is binary blob) </li>
+     * <li>{@link InMemoryFormat#OBJECT}: the item is stored in deserialized format (so a regular object)</li>
+     * <li>{@link InMemoryFormat#BINARY}: the item is stored in serialized format (so a is binary blob) </li>
      * </ol>
-     *
+     * <p>
      * The default is binary. The object InMemoryFormat is useful when:
      * <ol>
-     *     <li>of the object stored in object format has a smaller footprint than in binary format</li>
-     *     <li>if there are readers using a filter. Since for every filter invocation, the object needs to be available in
-     *     object format.</li>
+     * <li>of the object stored in object format has a smaller footprint than in binary format</li>
+     * <li>if there are readers using a filter. Since for every filter invocation, the object needs to be available in
+     * object format.</li>
      * </ol>
      *
      * @param inMemoryFormat the new in memory format.
      * @return the updated Config.
-     * @throws NullPointerException if inMemoryFormat is null.
+     * @throws NullPointerException     if inMemoryFormat is null.
      * @throws IllegalArgumentException if {@link InMemoryFormat#NATIVE} in memory format is selected.
      */
     public RingbufferConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
@@ -285,13 +286,43 @@ public class RingbufferConfig {
     }
 
     /**
+     * Get the RingbufferStore (load and store ring buffer items from/to a database) configuration.
+     *
+     * @return The ring buffer configuration.
+     */
+    public RingbufferStoreConfig getRingbufferStoreConfig() {
+        return ringbufferStoreConfig;
+    }
+
+    /**
+     * Set the RingbufferStore (load and store ring buffer items from/to a database) configuration.
+     *
+     * @param ringbufferStoreConfig Set the RingbufferStore configuration to this configuration.
+     * @return The RingbufferStore configuration.
+     */
+    public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
+        this.ringbufferStoreConfig = ringbufferStoreConfig;
+        return this;
+    }
+
+    /**
      * A readonly version of the {@link RingbufferConfig}.
      */
     @Beta
-    static class RingbufferConfigReadonly extends RingbufferConfig {
+    private static class RingbufferConfigReadonly extends RingbufferConfig {
 
-        public RingbufferConfigReadonly(RingbufferConfig config) {
+        RingbufferConfigReadonly(RingbufferConfig config) {
             super(config);
+        }
+
+        @Override
+        public RingbufferStoreConfig getRingbufferStoreConfig() {
+            final RingbufferStoreConfig storeConfig = super.getRingbufferStoreConfig();
+            if (storeConfig != null) {
+                return storeConfig.getAsReadOnly();
+            } else {
+                return null;
+            }
         }
 
         @Override
@@ -316,6 +347,11 @@ public class RingbufferConfig {
 
         @Override
         public RingbufferConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
             throw new UnsupportedOperationException("This config is read-only");
         }
     }

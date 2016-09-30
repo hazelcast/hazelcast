@@ -89,6 +89,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
         setConfig(config, nodeEngine, service);
     }
 
+    /**
+     * Initializes the item queue with items from the queue store if the store is enabled and if item queue is not being
+     * initialized as a part of a backup operation. If the item queue is being initialized as a part of a backup operation then
+     * the operation is in charge of adding items to a queue and the items are not loaded from a queue store.
+     *
+     * @param fromBackup indicates if this item queue is being initialized from a backup operation. If false, the
+     *                   item queue will initialize from the queue store. If true, it will not initialize
+     */
     public void init(boolean fromBackup) {
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
@@ -589,6 +597,17 @@ public class QueueContainer implements IdentifiedDataSerializable {
         drainFromBackup(itemIdSet);
     }
 
+    /**
+     * Tries to load the data for the given queue item. The method will also try to load data in batches. To do so,
+     * it will check the item ID's in the item queue and load up to {@link QueueStoreWrapper#getBulkLoad()} items. If the
+     * {@link QueueStoreWrapper#getBulkLoad()} is 1, it will just load data for the given item. Otherwise, it will load items
+     * for other items in the queue too by collecting the IDs of the items in the queue sequentially. This method could
+     * mistakenly not load the data for the given parameter if it is located after the {@link QueueStoreWrapper#getBulkLoad()}
+     * item in the queue.
+     *
+     * @param item the item for which the data is being set
+     * @throws Exception if there is any exception. For example, when calling methods on the queue store
+     */
     private void load(QueueItem item) throws Exception {
         int bulkLoad = store.getBulkLoad();
         bulkLoad = Math.min(getItemQueue().size(), bulkLoad);
