@@ -42,17 +42,19 @@ import static java.util.logging.Level.INFO;
  * spinning on the selector. This is an experimental feature and will cause the io threads to run hot. For this reason, when
  * this feature is enabled, the number of io threads should be reduced (preferably 1).
  */
-public class NonBlockingIOThreadingModel implements IOThreadingModel {
+public class NonBlockingIOThreadingModel
+        implements IOThreadingModel<TcpIpConnection, SocketReader, SocketWriter> {
 
     private final NonBlockingIOThread[] inputThreads;
     private final NonBlockingIOThread[] outputThreads;
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
-    private final IOService ioService;
     private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final HazelcastThreadGroup hazelcastThreadGroup;
+    private final NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
+    private final int balanceIntervalSeconds;
     // The selector mode determines how IO threads will block (or not) on the Selector:
     //  select:         this is the default mode, uses Selector.select(long timeout)
     //  selectnow:      use Selector.selectNow()
@@ -66,17 +68,41 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
     private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
 
     public NonBlockingIOThreadingModel(
-            IOService ioService,
+            final IOService ioService,
             LoggingService loggingService,
             MetricsRegistry metricsRegistry,
             HazelcastThreadGroup hazelcastThreadGroup) {
-        this.ioService = ioService;
+
+        this(loggingService,
+                metricsRegistry,
+                hazelcastThreadGroup,
+                ioService.getInputSelectorThreadCount(),
+                ioService.getOutputSelectorThreadCount(),
+                ioService.getBalancerIntervalSeconds(),
+                new NonBlockingIOThreadOutOfMemoryHandler() {
+                    @Override
+                    public void handle(OutOfMemoryError error) {
+                        ioService.onOutOfMemory(error);
+                    }
+                });
+    }
+
+    public NonBlockingIOThreadingModel(
+            LoggingService loggingService,
+            MetricsRegistry metricsRegistry,
+            HazelcastThreadGroup hazelcastThreadGroup,
+            int inputThreadCount,
+            int outputThreadCount,
+            int balanceIntervalSeconds,
+            NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
         this.hazelcastThreadGroup = hazelcastThreadGroup;
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(NonBlockingIOThreadingModel.class);
-        this.inputThreads = new NonBlockingIOThread[ioService.getInputSelectorThreadCount()];
-        this.outputThreads = new NonBlockingIOThread[ioService.getOutputSelectorThreadCount()];
+        this.inputThreads = new NonBlockingIOThread[inputThreadCount];
+        this.outputThreads = new NonBlockingIOThread[outputThreadCount];
+        this.oomeHandler = oomeHandler;
+        this.balanceIntervalSeconds = balanceIntervalSeconds;
     }
 
     private SelectorMode getSelectorMode() {
@@ -127,21 +153,13 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
         logger.log(getSelectorMode() != SelectorMode.SELECT ? INFO : FINE,
                 "IO threads selector mode is " + getSelectorMode());
 
-        NonBlockingIOThreadOutOfMemoryHandler oomeHandler = new NonBlockingIOThreadOutOfMemoryHandler() {
-            @Override
-            public void handle(OutOfMemoryError error) {
-                ioService.onOutOfMemory(error);
-            }
-        };
-
         for (int i = 0; i < inputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
-                    ioService.getThreadGroup(),
-                    ioService.getThreadPrefix() + "in-" + i,
-                    ioService.getLogger(NonBlockingIOThread.class.getName()),
+                    hazelcastThreadGroup.getInternalThreadGroup(),
+                    hazelcastThreadGroup.getThreadPoolNamePrefix("IO") + "in-" + i,
+                    loggingService.getLogger(NonBlockingIOThread.class),
                     oomeHandler,
-                    selectorMode
-            );
+                    selectorMode);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inputThreads[i] = thread;
@@ -151,12 +169,11 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
 
         for (int i = 0; i < outputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
-                    ioService.getThreadGroup(),
-                    ioService.getThreadPrefix() + "out-" + i,
-                    ioService.getLogger(NonBlockingIOThread.class.getName()),
+                    hazelcastThreadGroup.getInternalThreadGroup(),
+                    hazelcastThreadGroup.getThreadPoolNamePrefix("IO") + "out-" + i,
+                    loggingService.getLogger(NonBlockingIOThread.class),
                     oomeHandler,
-                    selectorMode
-            );
+                    selectorMode);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outputThreads[i] = thread;
@@ -182,7 +199,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
 
     private void startIOBalancer() {
         ioBalancer = new IOBalancer(inputThreads, outputThreads,
-                hazelcastThreadGroup, ioService.getBalancerIntervalSeconds(), loggingService);
+                hazelcastThreadGroup, balanceIntervalSeconds, loggingService);
         ioBalancer.start();
         metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
     }

@@ -16,9 +16,9 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -75,7 +75,7 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
                            SocketChannelWrapper socketChannel,
-                           IOThreadingModel ioThreadingModel) {
+                           IOThreadingModel<TcpIpConnection, SocketReader, SocketWriter> ioThreadingModel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.getIoService().getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
@@ -196,7 +196,7 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
 
     @Override
     public boolean isClient() {
-        final ConnectionType t = type;
+        ConnectionType t = type;
         return (t != null) && t != ConnectionType.NONE && t.isClient();
     }
 
