@@ -24,7 +24,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 
 import java.net.UnknownHostException;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -35,7 +35,7 @@ import java.util.logging.Level;
 public class AwsAddressTranslator implements AddressTranslator {
 
     private static final ILogger LOGGER = Logger.getLogger(AwsAddressTranslator.class);
-    private volatile Map<String, String> privateToPublic;
+    private volatile Map<String, String> privateToPublic = new HashMap<String, String>();
     private final AWSClient awsClient;
     private final boolean isInsideAws;
 
@@ -61,6 +61,10 @@ public class AwsAddressTranslator implements AddressTranslator {
             return constructPrivateAddress(publicAddress, address);
         }
 
+        // if it is already translated and cached, no need to refresh again.
+        if (privateToPublic.values().contains(address.getHost())) {
+            return address;
+        }
         refresh();
 
         publicAddress = getLookupTable().get(address.getHost());
@@ -68,7 +72,7 @@ public class AwsAddressTranslator implements AddressTranslator {
             return constructPrivateAddress(publicAddress, address);
         }
 
-        return null;
+        return address;
     }
 
     private Address constructPrivateAddress(String privateAddress, Address address) {
@@ -80,8 +84,7 @@ public class AwsAddressTranslator implements AddressTranslator {
     }
 
     private Map<String, String> getLookupTable() {
-        Map<String, String> table = privateToPublic;
-        return table != null ? table : Collections.<String, String>emptyMap();
+        return privateToPublic;
     }
 
     public void refresh() {
