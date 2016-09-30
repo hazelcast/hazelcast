@@ -23,7 +23,7 @@ import java.util.Map;
 
 public final class ParameterUtil {
 
-    private static final int UTF8_MAX_BYTES_PER_CHAR = 3;
+    static final int UTF8_MAX_BYTES_PER_CHAR = 3;
 
     private ParameterUtil() { }
 
