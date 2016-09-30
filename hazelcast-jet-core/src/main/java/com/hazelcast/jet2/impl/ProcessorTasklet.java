@@ -22,24 +22,24 @@ import com.hazelcast.jet2.Processor;
 import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
 
-public class ProcessorTasklet implements Tasklet {
+public class ProcessorTasklet<I, O> implements Tasklet {
 
-    private final Processor processor;
-    private final ArrayListCollector collector;
-    private final Map<String, Input> inputs;
+    private final Processor<? super I, ? extends O> processor;
+    private final ArrayListCollector<O> collector;
+    private final Map<String, Input<? extends I>> inputs;
+    private final RemovableCircularCursor<Map.Entry<String, Input<? extends I>>> inputCursor;
+    private final Cursor<Output<O>> outputCursor;
 
-    private Cursor<Object> collectorCursor;
-    private Iterator<Map.Entry<String, Input>> inputIterator;
-    private final Cursor<Output> outputCursor;
-    private Map.Entry<String, Input> currentInput;
+    private Cursor<O> collectorCursor;
+    private Cursor<? extends I> chunkCursor;
+    private boolean processingComplete;
 
 
-    public ProcessorTasklet(Processor<?, ?> processor,
-                            Map<String, Input> inputs,
-                            Map<String, Output> outputs) {
+    public ProcessorTasklet(Processor<? super I, ? extends O> processor,
+                            Map<String, Input<? extends I>> inputs,
+                            Map<String, Output<O>> outputs) {
         Preconditions.checkNotNull(processor, "processor");
         Preconditions.checkTrue(!inputs.isEmpty(), "There must be at least one input");
         Preconditions.checkTrue(!outputs.isEmpty(), "There must be at least one output");
@@ -47,110 +47,145 @@ public class ProcessorTasklet implements Tasklet {
         this.processor = processor;
         this.inputs = inputs;
         this.outputCursor = new ListCursor<>(new ArrayList<>(outputs.values()));
-        this.collector = new ArrayListCollector();
+        this.collector = new ArrayListCollector<>();
+        this.inputCursor = new RemovableCircularCursor<>(new ArrayList<>(this.inputs.entrySet()));
 
     }
 
     @Override
     public TaskletResult call() throws Exception {
-        // if there is something already in output buffer that needs processing
+
+        boolean didPendingWork = false;
+        // process pending output
         if (collectorCursor != null) {
-            switch (tryPush()) {
-                case PUSHED_NONE:
+            switch (tryOffer()) {
+                case OFFERED_NONE:
                     return TaskletResult.NO_PROGRESS;
-                case PUSHED_SOME:
+                case OFFERED_SOME:
                     return TaskletResult.MADE_PROGRESS;
-                case PUSHED_ALL:
+                case OFFERED_ALL:
+                    if (processingComplete) {
+                        return TaskletResult.DONE;
+                    }
+                    didPendingWork = true;
                     break;
             }
         }
 
-        Chunk chunk = getNextChunk();
-        // no more chunks possible
-        if (chunk == null) {
-            if (inputs.size() == 0) {
-                PushResult result = complete();
-                switch (result) {
-                    case PUSHED_ALL:
-                        return TaskletResult.DONE;
-                    case PUSHED_SOME:
+        // process pending input
+        if (chunkCursor != null) {
+            boolean processedAll = tryProcess();
+            if (!collector.isEmpty()) {
+                switch (tryOffer()) {
+                    case OFFERED_ALL:
+                        if (!processedAll) {
+                            return TaskletResult.MADE_PROGRESS;
+                        }
+                        didPendingWork = true;
+                        break;
+                    case OFFERED_SOME:
+                    case OFFERED_NONE:
                         return TaskletResult.MADE_PROGRESS;
-                    case PUSHED_NONE:
-                        return TaskletResult.NO_PROGRESS;
-                }
-                if (result == PushResult.PUSHED_ALL) {
-                    return TaskletResult.DONE;
-                } else {
-                    return TaskletResult.MADE_PROGRESS;
                 }
             }
-            return TaskletResult.MADE_PROGRESS;
+        }
+        Chunk<? extends I> chunk = getNextChunk();
+
+        if (chunk == null) {
+            if (inputs.size() > 0) {
+                // did not find anything to read, but inputs are not complete yet
+                return didPendingWork ? TaskletResult.MADE_PROGRESS : TaskletResult.NO_PROGRESS;
+            } else {
+                // done reading inputs, try complete the processing
+                processingComplete = tryComplete();
+                if (processingComplete && collector.isEmpty()) {
+                    return TaskletResult.DONE;
+                }
+
+                collectorCursor = collector.cursor();
+                collectorCursor.advance();
+                OfferResult result = tryOffer();
+                if (processingComplete && result == OfferResult.OFFERED_ALL) {
+                    return TaskletResult.DONE;
+                }
+                return TaskletResult.MADE_PROGRESS;
+            }
         }
 
-        processChunk(chunk);
+        chunkCursor = chunk.cursor();
+        chunkCursor.advance();
+        tryProcess();
+        if (!collector.isEmpty()) {
+            collectorCursor = collector.cursor();
+            collectorCursor.advance();
+            tryOffer();
+        }
+        // made progress no matter what, as we read a new input chunk
         return TaskletResult.MADE_PROGRESS;
     }
 
-    private PushResult processChunk(Chunk chunk) {
-        Cursor chunkCursor = chunk.cursor();
-        while (chunkCursor.advance()) {
-            processor.process(currentInput.getKey(), chunkCursor.value(), collector);
-        }
+    private boolean tryProcess() {
+        do {
+            boolean processed = processor.process(inputCursor.value().getKey(), chunkCursor.value(), collector);
+            if (!processed) {
+                return false;
+            }
+        } while ((chunkCursor.advance()));
 
-        if (collector.isEmpty()) {
-            return PushResult.PUSHED_ALL;
-        }
-        collectorCursor = collector.cursor();
-        collectorCursor.advance();
-
-        return tryPush();
+        chunkCursor = null;
+        return true;
     }
 
-    private PushResult complete() {
-        processor.complete(collector);
-        if (collector.isEmpty()) {
-            return PushResult.PUSHED_ALL;
-        }
-        return tryPush();
+    private boolean tryComplete() {
+        collector.clear();
+        return processor.complete(collector);
     }
 
-    private Chunk getNextChunk() {
-        inputIterator = inputs.entrySet().iterator();
-        while (inputIterator.hasNext()) {
-            currentInput = inputIterator.next();
-            Chunk chunk = currentInput.getValue().nextChunk();
+    private Chunk<? extends I> getNextChunk() {
+        Input<? extends I> end = inputCursor.value().getValue();
+        while (inputCursor.advance()) {
+            Input<? extends I> current = inputCursor.value().getValue();
+            Chunk<? extends I> chunk = current.nextChunk();
             if (chunk == null) {
-                inputIterator.remove();
-            } else if (!chunk.isEmpty()) {
+                inputCursor.remove();
+                if (current == end) {
+                    break;
+                }
+                continue;
+            }
+            if (!chunk.isEmpty()) {
                 return chunk;
+            }
+            if (current == end) {
+                break;
             }
         }
         return null;
     }
 
-    private PushResult tryPush() {
+    private OfferResult tryOffer() {
         boolean pushedSome = false;
         do {
             do {
-                boolean pushed = outputCursor.value().collect(collectorCursor.value());
+                boolean pushed = outputCursor.value().offer(collectorCursor.value());
                 pushedSome |= pushed;
                 if (!pushed) {
-                    return pushedSome ? PushResult.PUSHED_SOME : PushResult.PUSHED_NONE;
+                    return pushedSome ? OfferResult.OFFERED_SOME : OfferResult.OFFERED_NONE;
                 }
             } while (outputCursor.advance());
+            outputCursor.reset();
+            outputCursor.advance();
         } while (collectorCursor.advance());
 
-        outputCursor.reset();
-        outputCursor.advance();
-        collectorCursor = null;
         collector.clear();
-        return PushResult.PUSHED_ALL;
+        collectorCursor = null;
+        return OfferResult.OFFERED_ALL;
     }
 
-    private enum PushResult {
-        PUSHED_ALL,
-        PUSHED_SOME,
-        PUSHED_NONE,
+    private enum OfferResult {
+        OFFERED_ALL,
+        OFFERED_SOME,
+        OFFERED_NONE,
     }
 }
 

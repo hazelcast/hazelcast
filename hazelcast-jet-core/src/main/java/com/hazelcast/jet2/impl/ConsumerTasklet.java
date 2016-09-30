@@ -44,11 +44,13 @@ public class ConsumerTasklet<T> implements Tasklet {
 
     @Override
     public TaskletResult call() {
+        boolean didPendingWork = false;
         if (chunkCursor != null) {
             // retry to consume the last chunk
             ConsumeResult result = tryConsume();
             switch (result) {
                 case CONSUMED_ALL:
+                    didPendingWork = true;
                     // move on to next chunk
                     break;
                 case CONSUMED_SOME:
@@ -64,7 +66,7 @@ public class ConsumerTasklet<T> implements Tasklet {
                 return TaskletResult.DONE;
             }
             // could not find any chunk to read
-            return TaskletResult.NO_PROGRESS;
+            return didPendingWork ? TaskletResult.MADE_PROGRESS : TaskletResult.NO_PROGRESS;
         }
 
         chunkCursor = chunk.cursor();

@@ -43,16 +43,18 @@ public class ProducerTasklet<T> implements Tasklet {
 
     @Override
     public TaskletResult call() {
+        boolean didPendingWork = false;
         if (collectorCursor != null) {
-            switch (tryPush()) {
-                case PUSHED_NONE:
+            switch (tryOffer()) {
+                case OFFERED_NONE:
                     return TaskletResult.NO_PROGRESS;
-                case PUSHED_SOME:
+                case OFFERED_SOME:
                     return TaskletResult.MADE_PROGRESS;
-                case PUSHED_ALL:
+                case OFFERED_ALL:
                     if (complete) {
                         return TaskletResult.DONE;
                     }
+                    didPendingWork = true;
                     break;
             }
         }
@@ -62,14 +64,14 @@ public class ProducerTasklet<T> implements Tasklet {
             return TaskletResult.DONE;
         }
         if (collector.isEmpty()) {
-            return TaskletResult.NO_PROGRESS;
+            return didPendingWork ? TaskletResult.MADE_PROGRESS : TaskletResult.NO_PROGRESS;
         }
 
         collectorCursor = collector.cursor();
         collectorCursor.reset();
         collectorCursor.advance();
-        PushResult result = tryPush();
-        return (complete && result == PushResult.PUSHED_ALL) ? TaskletResult.DONE : TaskletResult.MADE_PROGRESS;
+        OfferResult result = tryOffer();
+        return (complete && result == OfferResult.OFFERED_ALL) ? TaskletResult.DONE : TaskletResult.MADE_PROGRESS;
     }
 
     @Override
@@ -77,14 +79,14 @@ public class ProducerTasklet<T> implements Tasklet {
         return producer.isBlocking();
     }
 
-    private PushResult tryPush() {
+    private OfferResult tryOffer() {
         boolean pushedSome = false;
         do {
             do {
-                boolean pushed = outputCursor.value().collect(collectorCursor.value());
+                boolean pushed = outputCursor.value().offer(collectorCursor.value());
                 pushedSome |= pushed;
                 if (!pushed) {
-                    return pushedSome ? PushResult.PUSHED_SOME : PushResult.PUSHED_NONE;
+                    return pushedSome ? OfferResult.OFFERED_SOME : OfferResult.OFFERED_NONE;
                 }
             } while (outputCursor.advance());
             outputCursor.reset();
@@ -93,13 +95,13 @@ public class ProducerTasklet<T> implements Tasklet {
 
         collector.clear();
         collectorCursor = null;
-        return PushResult.PUSHED_ALL;
+        return OfferResult.OFFERED_ALL;
     }
 
-    private enum PushResult {
-        PUSHED_ALL,
-        PUSHED_SOME,
-        PUSHED_NONE,
+    private enum OfferResult {
+        OFFERED_ALL,
+        OFFERED_SOME,
+        OFFERED_NONE,
     }
 }
 

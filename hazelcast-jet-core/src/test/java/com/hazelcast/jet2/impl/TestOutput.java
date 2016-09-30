@@ -30,7 +30,7 @@ public class TestOutput<T> implements Output<T> {
     }
 
     @Override
-    public boolean collect(Object value) {
+    public boolean offer(Object value) {
         if (buffer.size() == capacity) {
             return false;
         }

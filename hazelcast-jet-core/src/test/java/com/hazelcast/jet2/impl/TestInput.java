@@ -28,6 +28,7 @@ public class TestInput<T> implements Input<T> {
     private final List<T> input;
     private int lastToIndex;
     private boolean done;
+    private boolean paused;
 
     public TestInput(int chunkSize, List<T> input) {
         this.chunkSize = chunkSize;
@@ -52,10 +53,22 @@ public class TestInput<T> implements Input<T> {
             return null;
         }
 
+        if (paused) {
+            return new ListChunk<>(new ArrayList<>());
+        }
+
         List<T> chunk = new ArrayList<>();
         for (int i = from; i < lastToIndex; i++) {
             chunk.add(input.get(i));
         }
         return new ListChunk<>(chunk);
+    }
+
+    public void pause() {
+        paused = true;
+    }
+
+    public void resume() {
+        paused = false;
     }
 }

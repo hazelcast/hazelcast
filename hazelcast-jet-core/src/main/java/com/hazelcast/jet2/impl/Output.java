@@ -24,6 +24,6 @@ public interface Output<T> {
     /**
      * @return false if output buffer is full
      */
-    boolean collect(T value);
+    boolean offer(T value);
 
 }

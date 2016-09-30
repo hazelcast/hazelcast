@@ -47,7 +47,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduceSingleChunk_whenSingleOutput() throws Exception {
+    public void testSingleChunk_whenSingleOutput() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(10);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
@@ -56,7 +56,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduceSingleChunk_whenMultipleOutputs() throws Exception {
+    public void testSingleChunk_whenMultipleOutputs() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(10);
         TestOutput<Integer> output2 = new TestOutput<>(10);
         outputMap.put("output1", output1);
@@ -70,7 +70,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduceAllChunks_whenSingleOutput() throws Exception {
+    public void testAllChunks_whenSingleOutput() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(10);
         outputMap.put("output1", output1);
 
@@ -84,7 +84,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduceAllChunks_whenMultipleOutputs() throws Exception {
+    public void testAllChunks_whenMultipleOutputs() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(10);
         TestOutput<Integer> output2 = new TestOutput<>(10);
         outputMap.put("output1", output1);
@@ -101,7 +101,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduce_whenOutputIsFull() throws Exception {
+    public void testProgress_whenOutputIsFull() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(4);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
@@ -123,7 +123,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduce_whenOutputFullThenFullyDrained() throws Exception {
+    public void testProgress_whenOutputFullThenFullyDrained() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(1);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
@@ -139,7 +139,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduce_whenOnlyOneOutputFull() throws Exception {
+    public void testProgress_whenOnlyOneOutputFull() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(2);
         TestOutput<Integer> output2 = new TestOutput<>(4);
         outputMap.put("output1", output1);
@@ -155,7 +155,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduce_whenProducerIdle() throws Exception {
+    public void testNoProgress_whenProducerIdle() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(10);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
@@ -173,7 +173,7 @@ public class ProducerTaskletTest {
     }
 
     @Test
-    public void testProduce_whenProducerIdleAndComplete() throws Exception {
+    public void testDone_whenProducerIdleAndComplete() throws Exception {
         TestOutput<Integer> output1 = new TestOutput<>(10);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
@@ -185,6 +185,21 @@ public class ProducerTaskletTest {
         assertEquals(TaskletResult.DONE, tasklet.call());
 
         assertTrue(output1.drain().isEmpty());
+    }
+
+    @Test
+    public void testProgress_whenProducerIdleButPendingOutput() throws Exception {
+        TestOutput<Integer> output1 = new TestOutput<>(2);
+        outputMap.put("output1", output1);
+        Tasklet tasklet = createTasklet();
+
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(Arrays.asList(0, 1), output1.drain());
+        producer.pause();
+
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(Arrays.asList(2, 3), output1.drain());
+
     }
 
     @Test

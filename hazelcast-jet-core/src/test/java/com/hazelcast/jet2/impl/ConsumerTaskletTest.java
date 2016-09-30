@@ -46,7 +46,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsumeSingleChunk_whenSingleInput() throws Exception {
+    public void testSingleChunk_whenSingleInput() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(4, list);
         input1.done();
 
@@ -60,7 +60,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsumeAllChunks_whenSingleInput() throws Exception {
+    public void testAllChunks_whenSingleInput() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(4, list);
         input1.done();
 
@@ -78,7 +78,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsume_whenSingleInputNotComplete() throws Exception {
+    public void testProgress_whenSingleInputNotComplete() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -90,7 +90,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsume_whenSingleInputNewData() throws Exception {
+    public void testProgress_whenSingleInputNewData() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -108,7 +108,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsume_whenSingleInputNoProgress() throws Exception {
+    public void testProgress_whenSingleInputNoProgress() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -119,7 +119,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsume_whenMultipleInput() throws Exception {
+    public void testProgress_whenMultipleInput() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(list.size(), list);
         TestInput<Integer> input2 = new TestInput<>(list.size(), list);
         input1.done();
@@ -137,7 +137,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsume_whenMultipleInput_oneFinishedEarlier() throws Exception {
+    public void testProgress_whenMultipleInput_oneFinishedEarlier() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(2, Arrays.asList(1, 2));
         TestInput<Integer> input2 = new TestInput<>(list.size(), list);
         input1.done();
@@ -156,7 +156,7 @@ public class ConsumerTaskletTest {
 
 
     @Test
-    public void testConsume_whenConsumerYields() throws Exception {
+    public void testProgress_whenConsumerYields() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(10, list);
         input1.done();
         inputMap.put("input1", input1);
@@ -170,7 +170,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsume_whenConsumerYieldsOnSameItem() throws Exception {
+    public void testProgress_whenConsumerYieldsOnSameItem() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(10, list);
         input1.done();
         inputMap.put("input1", input1);
@@ -185,7 +185,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsume_whenConsumerYieldsAgain() throws Exception {
+    public void testProgress_whenConsumerYieldsAgain() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(10, list);
         input1.done();
         inputMap.put("input1", input1);
@@ -207,7 +207,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testConsume_whenConsumerYieldsAndThenRuns() throws Exception {
+    public void testProgress_whenConsumerYieldsAndThenRuns() throws Exception {
         TestInput<Integer> input1 = new TestInput<>(10, list);
         input1.done();
         inputMap.put("input1", input1);
@@ -220,6 +220,24 @@ public class ConsumerTaskletTest {
 
         assertEquals(list, consumer.getList());
         assertTrue("isComplete", consumer.isComplete());
+    }
+
+    @Test
+    public void testProgress_whenConsumerYieldsAndNoInput() throws Exception {
+        TestInput<Integer> input1 = new TestInput<>(3, list);
+        input1.done();
+        inputMap.put("input1", input1);
+        Tasklet tasklet = createTasklet();
+
+        consumer.yieldOn(2);
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+
+        input1.pause();
+
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+
+        assertEquals(Arrays.asList(0, 1, 2), consumer.getList());
+        assertFalse("isComplete", consumer.isComplete());
     }
 
     @Test

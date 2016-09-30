@@ -25,12 +25,12 @@ public interface Processor<I, O> {
      * @param collector collector for the output items
      * @return true if item is processed, false otherwise
      */
-    boolean process(String input, I value, OutputCollector<O> collector);
+    boolean process(String input, I value, OutputCollector<? super O> collector);
 
     /**
      * Called after all the input has been exhausted. If false is returned, the method will be called again.
      *
      * @return true if done, false otherwise.
      */
-    boolean complete(OutputCollector<O> collector);
+    boolean complete(OutputCollector<? super O> collector);
 }
