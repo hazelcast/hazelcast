@@ -22,6 +22,7 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -42,7 +43,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-public final class ReplicaSyncRequest extends Operation
+public final class ReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
     public ReplicaSyncRequest() {
@@ -225,5 +226,10 @@ public final class ReplicaSyncRequest extends Operation
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.REPLICA_SYNC_REQUEST;
     }
 }

@@ -21,15 +21,15 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public final class PartitionStateOperation extends Operation
+public final class PartitionStateOperation extends AbstractPartitionOperation
         implements MigrationCycleOperation, JoinOperation {
 
     private PartitionRuntimeState partitionState;
@@ -90,5 +90,10 @@ public final class PartitionStateOperation extends Operation
         super.writeInternal(out);
         partitionState.writeData(out);
         out.writeBoolean(sync);
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.PARTITION_STATE_OP;
     }
 }

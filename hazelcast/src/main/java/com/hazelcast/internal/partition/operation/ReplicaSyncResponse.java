@@ -20,6 +20,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
@@ -45,7 +46,7 @@ import java.util.logging.Level;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class ReplicaSyncResponse extends Operation
+public class ReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState {
 
     private List<Operation> tasks;
@@ -249,5 +250,10 @@ public class ReplicaSyncResponse extends Operation
         super.toString(sb);
 
         sb.append(", replicaVersions=").append(Arrays.toString(replicaVersions));
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.REPLICA_SYNC_RESPONSE;
     }
 }

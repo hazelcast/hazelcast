@@ -32,7 +32,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -41,7 +40,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.util.logging.Level;
 
-abstract class BaseMigrationOperation extends Operation
+abstract class BaseMigrationOperation extends AbstractPartitionOperation
         implements MigrationCycleOperation, PartitionAwareOperation {
 
     protected MigrationInfo migrationInfo;

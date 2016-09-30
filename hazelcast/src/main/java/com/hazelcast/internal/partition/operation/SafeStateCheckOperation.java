@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * @see com.hazelcast.core.PartitionService#isClusterSafe
  * @see com.hazelcast.core.PartitionService#isMemberSafe
  */
-public class SafeStateCheckOperation extends Operation implements AllowedDuringPassiveState {
+public class SafeStateCheckOperation extends AbstractPartitionOperation implements AllowedDuringPassiveState {
 
     private transient boolean safe;
 
@@ -40,5 +40,10 @@ public class SafeStateCheckOperation extends Operation implements AllowedDuringP
     @Override
     public Object getResponse() {
         return safe;
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.SAFE_STATE_CHECK;
     }
 }

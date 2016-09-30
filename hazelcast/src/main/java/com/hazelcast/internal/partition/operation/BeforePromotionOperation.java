@@ -51,4 +51,9 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
             }
         }
     }
+
+    @Override
+    public int getId() {
+        throw new UnsupportedOperationException();
+    }
 }
