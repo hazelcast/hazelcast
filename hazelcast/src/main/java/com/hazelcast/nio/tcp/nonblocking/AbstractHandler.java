@@ -21,10 +21,9 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -33,18 +32,18 @@ import java.nio.channels.SelectionKey;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-public abstract class AbstractHandler implements SelectionHandler, MigratableHandler, DiscardableMetricsProvider {
+public abstract class AbstractHandler<C extends Connection>
+        implements SelectionHandler, MigratableHandler, DiscardableMetricsProvider {
 
     @Probe(name = "eventCount")
     protected final SwCounter eventCount = newSwCounter();
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
-    protected final TcpIpConnection connection;
-    protected final TcpIpConnectionManager connectionManager;
-    protected final IOService ioService;
+    protected final C connection;
     protected NonBlockingIOThread ioThread;
     protected SelectionKey selectionKey;
     private final int initialOps;
+    private final IOBalancer ioBalancer;
 
     // shows the id of the ioThread that is currently owning the handler
     @Probe
@@ -54,15 +53,19 @@ public abstract class AbstractHandler implements SelectionHandler, MigratableHan
     @Probe
     private SwCounter migrationCount = newSwCounter();
 
-    public AbstractHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, int initialOps) {
+    public AbstractHandler(C connection,
+                           NonBlockingIOThread ioThread,
+                           int initialOps,
+                           SocketChannelWrapper socketChannel,
+                           ILogger logger,
+                           IOBalancer ioBalancer) {
         this.connection = connection;
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
-        this.socketChannel = connection.getSocketChannelWrapper();
-        this.connectionManager = connection.getConnectionManager();
-        this.ioService = connectionManager.getIoService();
-        this.logger = ioService.getLogger(this.getClass().getName());
+        this.socketChannel = socketChannel;
+        this.logger = logger;
         this.initialOps = initialOps;
+        this.ioBalancer = ioBalancer;
     }
 
     @Override
@@ -116,7 +119,7 @@ public abstract class AbstractHandler implements SelectionHandler, MigratableHan
     @Override
     public void onFailure(Throwable e) {
         if (e instanceof OutOfMemoryError) {
-            ioService.onOutOfMemory((OutOfMemoryError) e);
+            ioThread.getOomeHandler().handle((OutOfMemoryError) e);
         }
         if (selectionKey != null) {
             selectionKey.cancel();
@@ -128,7 +131,6 @@ public abstract class AbstractHandler implements SelectionHandler, MigratableHan
             connection.close("Exception in " + getClass().getSimpleName(), e);
         }
     }
-
 
     // This method run on the oldOwner NonBlockingIOThread
     void startMigration(final NonBlockingIOThread newOwner) throws IOException {
@@ -163,9 +165,7 @@ public abstract class AbstractHandler implements SelectionHandler, MigratableHan
     private void completeMigration(NonBlockingIOThread newOwner) throws IOException {
         assert ioThread == newOwner;
 
-        NonBlockingIOThreadingModel threadingModel =
-                (NonBlockingIOThreadingModel) connection.getConnectionManager().getIoThreadingModel();
-        threadingModel.getIOBalancer().signalMigrationComplete();
+        ioBalancer.signalMigrationComplete();
 
         if (!socketChannel.isOpen()) {
             return;
