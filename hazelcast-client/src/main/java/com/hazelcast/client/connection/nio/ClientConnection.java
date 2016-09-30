@@ -267,8 +267,8 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         if (socketChannelWrapper.isOpen()) {
             socketChannelWrapper.close();
         }
-        reader.shutdown();
-        writer.shutdown();
+        reader.close();
+        writer.close();
     }
 
     @Override

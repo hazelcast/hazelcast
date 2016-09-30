@@ -39,7 +39,8 @@ import static java.lang.System.currentTimeMillis;
  * It then reads out the data from the socket into a bytebuffer and hands it over to the {@link ClientMessageBuilder}
  * to get processed.
  */
-public class ClientNonBlockingSocketReader extends AbstractClientHandler {
+public class ClientNonBlockingSocketReader
+        extends AbstractClientHandler {
 
     private final ByteBuffer buffer;
     private final ClientMessageBuilder builder;

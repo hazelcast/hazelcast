@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -53,7 +52,7 @@ import static java.lang.System.currentTimeMillis;
  */
 public final class NonBlockingSocketReader
         extends AbstractHandler
-        implements SocketReader, DiscardableMetricsProvider {
+        implements SocketReader {
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();

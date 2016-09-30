@@ -41,7 +41,9 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
  * ClientNonBlockingSocketReader gets called by an IO-thread when there is space available to write to.
  * It then writes some of its enqueued data to the socket from a bytebuffer.
  */
-public class ClientNonBlockingSocketWriter extends AbstractClientHandler implements Runnable {
+public class ClientNonBlockingSocketWriter
+        extends AbstractClientHandler
+        implements Runnable {
 
     @Probe(name = "writeQueueSize")
     private final Queue<ClientMessage> writeQueue = new ConcurrentLinkedQueue<ClientMessage>();
@@ -78,8 +80,7 @@ public class ClientNonBlockingSocketWriter extends AbstractClientHandler impleme
     }
 
     public void write(OutboundFrame frame) {
-         writeQueue.offer((ClientMessage) frame);
-
+        writeQueue.offer((ClientMessage) frame);
         schedule();
     }
 
@@ -219,7 +220,7 @@ public class ClientNonBlockingSocketWriter extends AbstractClientHandler impleme
     }
 
     @Override
-    public void shutdown() {
+    public void close() {
         writeQueue.clear();
     }
 }

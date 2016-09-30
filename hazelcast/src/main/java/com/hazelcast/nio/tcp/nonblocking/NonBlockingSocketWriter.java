@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.IOUtil;
@@ -55,7 +54,7 @@ import static java.lang.System.currentTimeMillis;
  */
 public final class NonBlockingSocketWriter
         extends AbstractHandler
-        implements Runnable, SocketWriter, DiscardableMetricsProvider {
+        implements Runnable, SocketWriter {
 
     private static final long TIMEOUT = 3;
 

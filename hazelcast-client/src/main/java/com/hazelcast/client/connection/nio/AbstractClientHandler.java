@@ -101,7 +101,7 @@ abstract class AbstractClientHandler implements SelectionHandler {
         });
     }
 
-    protected void shutdown() {
+    protected void close() {
     }
 
     @Override
