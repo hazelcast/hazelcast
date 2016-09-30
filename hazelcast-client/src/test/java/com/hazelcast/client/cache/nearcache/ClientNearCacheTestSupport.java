@@ -667,7 +667,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected void testNearCacheMemoryCostCalculation(InMemoryFormat inMemoryFormat, int threadCount) {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat).setCacheLocalEntries(true);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         final NearCacheTestContext context = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {

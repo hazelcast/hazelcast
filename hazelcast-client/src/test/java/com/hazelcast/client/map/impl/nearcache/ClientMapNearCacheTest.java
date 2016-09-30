@@ -180,7 +180,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -202,7 +202,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -224,7 +224,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -246,7 +246,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -268,7 +268,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -290,7 +290,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -312,7 +312,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -334,7 +334,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -356,7 +356,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -378,7 +378,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -400,7 +400,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int mapSize = 1000;
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -423,7 +423,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -446,7 +446,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -469,7 +469,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -490,7 +490,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         Config config = server.getConfig();
         SimpleMapStore store = new SimpleMapStore();
@@ -519,7 +519,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         Config config = member.getConfig();
         SimpleMapStore store = new SimpleMapStore();
@@ -549,7 +549,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         Config config = server.getConfig();
         SimpleMapStore store = new SimpleMapStore();
@@ -585,7 +585,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
         hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
@@ -616,7 +616,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
 
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
@@ -647,7 +647,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         Random random = new Random();
         hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -670,7 +670,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         Random random = new Random();
         hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -706,7 +706,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         Random random = new Random();
         hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateMap(clientMap, mapSize);
@@ -728,7 +728,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
 
         hazelcastFactory.newHazelcastInstance(newConfig());
-        NearCacheConfig nearCacheConfig = newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName);
+        NearCacheConfig nearCacheConfig = newInvalidationOnChangeEnabledNearCacheConfig(mapName);
         HazelcastInstance client = getClient(hazelcastFactory, nearCacheConfig);
 
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
@@ -867,7 +867,8 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
     @Test
     public void testNearCacheEviction() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfigWithEntryCountEviction(EvictionPolicy.LRU, MAX_CACHE_SIZE);
+        NearCacheConfig nearCacheConfig = newNearCacheConfigWithEntryCountEviction(EvictionPolicy.LRU, MAX_CACHE_SIZE)
+                .setCacheLocalEntries(false);
         IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
 
         testNearCacheEviction(map, MAX_CACHE_SIZE);
@@ -1258,6 +1259,12 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         getNearCachedMapFromClient(nearCacheConfig);
     }
 
+    @Override
+    protected NearCacheConfig newNearCacheConfigWithEntryCountEviction(EvictionPolicy evictionPolicy, int size) {
+        return super.newNearCacheConfigWithEntryCountEviction(evictionPolicy, size)
+                .setCacheLocalEntries(false);
+    }
+
     protected NearCacheConfig newNoneNearCacheConfig() {
         return newNearCacheConfigWithEntryCountEviction(EvictionPolicy.NONE, MAX_CACHE_SIZE)
                 .setInvalidateOnChange(true);
@@ -1299,10 +1306,9 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         return nearCacheConfig;
     }
 
-    protected NearCacheConfig newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(String name) {
+    protected NearCacheConfig newInvalidationOnChangeEnabledNearCacheConfig(String name) {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setCacheLocalEntries(true);
         nearCacheConfig.setName(name);
         return nearCacheConfig;
     }

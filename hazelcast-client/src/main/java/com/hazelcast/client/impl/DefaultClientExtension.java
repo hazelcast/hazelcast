@@ -42,7 +42,7 @@ import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ExceptionUtil;
 
-import static com.hazelcast.map.impl.MapConfigValidator.checkNotNative;
+import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 
 public class DefaultClientExtension implements ClientExtension {
 
@@ -59,6 +59,7 @@ public class DefaultClientExtension implements ClientExtension {
     public void afterStart(HazelcastClientInstanceImpl client) {
     }
 
+    @Override
     public InternalSerializationService createSerializationService(byte version) {
         InternalSerializationService ss;
         try {
@@ -121,7 +122,7 @@ public class DefaultClientExtension implements ClientExtension {
             public ClientProxy create(String id) {
                 NearCacheConfig nearCacheConfig = client.getClientConfig().getNearCacheConfig(id);
                 if (nearCacheConfig != null) {
-                    checkNotNative(nearCacheConfig.getInMemoryFormat());
+                    checkNearCacheConfig(nearCacheConfig, true);
                     return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id);
                 } else {
                     return new ClientMapProxy(MapService.SERVICE_NAME, id);
