@@ -46,8 +46,6 @@ public class ListCursor<T> implements Cursor<T> {
 
     @Override
     public String toString() {
-        return "ListCursor{" +
-                "index=" + index +
-                '}';
+        return "ListCursor{index=" + index + '}';
     }
 }

@@ -72,7 +72,6 @@ public class ConsumerTasklet<T> implements Tasklet {
         chunkCursor = chunk.cursor();
         chunkCursor.advance();
         tryConsume();
-        // we have made progress no matter what since we managed read a new chunk from the input
         return TaskletResult.MADE_PROGRESS;
     }
 

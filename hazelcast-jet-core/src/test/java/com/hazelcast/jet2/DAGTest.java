@@ -37,12 +37,11 @@ public class DAGTest {
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
         dag.addVertex(c)
-                .addVertex(b)
-                .addVertex(a)
-                .addEdge(new Edge(a, b))
-                .addEdge(new Edge(b, c))
-                .addEdge(new Edge(a, c));
-
+           .addVertex(b)
+           .addVertex(a)
+           .addEdge(new Edge(a, b))
+           .addEdge(new Edge(b, c))
+           .addEdge(new Edge(a, c));
 
         Iterator<Vertex> iterator = dag.iterator();
         assertEquals(a, iterator.next());
@@ -59,12 +58,11 @@ public class DAGTest {
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
         dag.addVertex(c)
-                .addVertex(b)
-                .addVertex(a)
-                .addEdge(new Edge(a, b))
-                .addEdge(new Edge(b, c))
-                .addEdge(new Edge(a, c));
-
+           .addVertex(b)
+           .addVertex(a)
+           .addEdge(new Edge(a, b))
+           .addEdge(new Edge(b, c))
+           .addEdge(new Edge(a, c));
 
         Iterator<Vertex> iterator = dag.reverseIterator();
         assertEquals(c, iterator.next());
@@ -76,7 +74,7 @@ public class DAGTest {
     private static class TestProcessor implements Processor {
 
         @Override
-        public boolean process(String input, Object value, OutputCollector collector) {
+        public boolean process(String input, Object item, OutputCollector collector) {
             return true;
         }
 

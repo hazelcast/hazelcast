@@ -25,8 +25,8 @@ class RemovableCircularCursor<T> extends ListCursor<T> {
     }
 
     /**
-     * Removes the current element from the underlying collection, and places the cursor on the previous element,
-     * looping around if necessary
+     * Removes the current item from the underlying collection and points the cursor
+     * to the previous item, wrapping around to the last item if necessary
      */
     public void remove() {
         list.remove(index--);
@@ -50,7 +50,7 @@ class RemovableCircularCursor<T> extends ListCursor<T> {
 
     @Override
     public boolean advance() {
-        if (list.size() == 0) {
+        if (list.isEmpty()) {
             return false;
         }
 

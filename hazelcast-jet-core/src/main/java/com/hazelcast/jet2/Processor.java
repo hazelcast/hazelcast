@@ -16,21 +16,35 @@
 
 package com.hazelcast.jet2;
 
+/**
+ * Does the computation needed to transform one or more named input data streams into one
+ * output stream.
+ * <p>
+ * The processing methods should limit the amount of processing time and data they output per
+ * one invocation. A method should return <code>false</code> to signal it's not done with the
+ * current item. When the caller is ready to invoke the method again, it will invoke it with
+ * the same arguments as the previous time.
+ *
+ * @param <I> type of input objects
+ * @param <O> type of output objects
+ */
 public interface Processor<I, O> {
 
     /**
-     * Process the next item. If item is not processed immediately, the method will be called with the same item again.
-     * @param input name of the input for the input
-     * @param value value to be processed
-     * @param collector collector for the output items
-     * @return true if item is processed, false otherwise
+     * Processes the supplied input item and pushes the results into the supplied output collector.
+     *
+     * @param input name of the input
+     * @param item value to be processed
+     * @param collector collector of the output items
+     * @return <code>true</code> if the method is done with the current item, <code>false</code> otherwise.
      */
-    boolean process(String input, I value, OutputCollector<? super O> collector);
+    boolean process(String input, I item, OutputCollector<O> collector);
 
     /**
-     * Called after all the input has been exhausted. If false is returned, the method will be called again.
+     * Called after all the input has been exhausted. See {@link #process(String, Object, OutputCollector)}
+     * for an explanation on the expected behavior of thi
      *
-     * @return true if done, false otherwise.
+     * @return <code>true</code> if the method is done completing the processing, <code>false</code> otherwise.
      */
     boolean complete(OutputCollector<? super O> collector);
 }

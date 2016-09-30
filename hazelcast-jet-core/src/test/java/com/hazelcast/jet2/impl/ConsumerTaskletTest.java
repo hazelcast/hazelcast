@@ -246,7 +246,7 @@ public class ConsumerTaskletTest {
         ConsumerTasklet<Integer> tasklet =
                 new ConsumerTasklet<>(new Consumer<Integer>() {
             @Override
-            public boolean consume(Integer object) {
+            public boolean consume(Integer item) {
                 throw new UnsupportedOperationException();
             }
 

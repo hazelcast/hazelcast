@@ -33,10 +33,8 @@ import java.io.IOException;
  */
 public class Edge implements IdentifiedDataSerializable {
 
-
     private Vertex from;
     private Vertex to;
-
     private boolean isLocal = true;
     private HashingStrategy hashingStrategy = SerializedHashingStrategy.INSTANCE;
     private MemberDistributionStrategy memberDistributionStrategy;

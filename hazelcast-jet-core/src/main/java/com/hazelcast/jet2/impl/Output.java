@@ -17,13 +17,16 @@
 package com.hazelcast.jet2.impl;
 
 /**
- * Bounded by size
+ * Buffered data sink with bounded capacity.
  */
 public interface Output<T> {
 
     /**
-     * @return false if output buffer is full
+     * Offers an item to this output. If the output cannot accept it now, the call
+     * should be retried later.
+     *
+     * @return <code>true</code> means "item was accepted", <code>false</code> means "try again later".
      */
-    boolean offer(T value);
+    boolean offer(T item);
 
 }

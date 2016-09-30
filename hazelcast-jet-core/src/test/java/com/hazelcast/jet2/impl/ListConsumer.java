@@ -32,12 +32,12 @@ public class ListConsumer<T> implements Consumer<T> {
     }
 
     @Override
-    public boolean consume(T object) {
+    public boolean consume(T item) {
         if (list.size() == yieldIndex) {
             yieldIndex = -1;
             return false;
         }
-        list.add(object);
+        list.add(item);
         return true;
     }
 

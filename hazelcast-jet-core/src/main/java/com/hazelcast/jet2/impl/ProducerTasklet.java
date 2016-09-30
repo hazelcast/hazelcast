@@ -33,7 +33,7 @@ public class ProducerTasklet<T> implements Tasklet {
 
     public ProducerTasklet(Producer<? extends T> producer, Map<String, Output<T>> outputs) {
         Preconditions.checkNotNull(producer, "producer");
-        Preconditions.checkTrue(outputs.size() > 0, "There must be at least one output");
+        Preconditions.checkFalse(outputs.isEmpty(), "There must be at least one output");
 
         this.producer = producer;
         this.outputCursor = new ListCursor<>(new ArrayList<>(outputs.values()));
