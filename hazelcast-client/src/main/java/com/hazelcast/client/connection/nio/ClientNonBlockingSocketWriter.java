@@ -49,13 +49,9 @@ public class ClientNonBlockingSocketWriter extends AbstractClientHandler impleme
     private final SwCounter bytesWritten = newSwCounter();
     @Probe(name = "messagesWritten")
     private final SwCounter messagesWritten = newSwCounter();
-
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
-
     private final ByteBuffer buffer;
-
     private ClientMessage currentMessage;
-
     private volatile long lastWriteTime;
 
     public ClientNonBlockingSocketWriter(ClientConnection connection,

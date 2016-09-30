@@ -8,9 +8,6 @@ public class Spinning_IOThreadingModelFactory implements IOThreadingModelFactory
 
     @Override
     public SpinningIOThreadingModel create(MockIOService ioService, MetricsRegistry metricsRegistry) {
-        return new SpinningIOThreadingModel(
-                ioService.loggingService,
-                metricsRegistry,
-                ioService.hazelcastThreadGroup);
+        return new SpinningIOThreadingModel(ioService.loggingService, ioService.hazelcastThreadGroup);
     }
 }

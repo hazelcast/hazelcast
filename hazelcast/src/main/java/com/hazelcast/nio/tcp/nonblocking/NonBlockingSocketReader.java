@@ -51,7 +51,9 @@ import static java.lang.System.currentTimeMillis;
  * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
  * {@link ReadHandler} to get processed.
  */
-public final class NonBlockingSocketReader extends AbstractHandler implements SocketReader, DiscardableMetricsProvider {
+public final class NonBlockingSocketReader
+        extends AbstractHandler
+        implements SocketReader, DiscardableMetricsProvider {
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();

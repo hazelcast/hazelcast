@@ -47,7 +47,6 @@ public class ClientNonBlockingSocketReader extends AbstractClientHandler {
     private final SwCounter messagesRead = newSwCounter();
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
-
     private volatile long lastReadTime;
 
     public ClientNonBlockingSocketReader(final ClientConnection connection,

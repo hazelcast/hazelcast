@@ -53,7 +53,9 @@ import static java.lang.System.currentTimeMillis;
 /**
  * The writing side of the {@link TcpIpConnection}.
  */
-public final class NonBlockingSocketWriter extends AbstractHandler implements Runnable, SocketWriter, DiscardableMetricsProvider {
+public final class NonBlockingSocketWriter
+        extends AbstractHandler
+        implements Runnable, SocketWriter, DiscardableMetricsProvider {
 
     private static final long TIMEOUT = 3;
 
@@ -161,19 +163,21 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     }
 
     private void createWriterHandler(String protocol) throws IOException {
-        if (writeHandler == null) {
-            if (CLUSTER.equals(protocol)) {
-                configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
-                writeHandler = ioService.createWriteHandler(connection);
-                outputBuffer.put(stringToBytes(CLUSTER));
-                registerOp(SelectionKey.OP_WRITE);
-            } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-                configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-                writeHandler = new ClientWriteHandler();
-            } else {
-                configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
-                writeHandler = new TextWriteHandler(connection);
-            }
+        if (writeHandler != null) {
+            return;
+        }
+
+        if (CLUSTER.equals(protocol)) {
+            configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
+            writeHandler = ioService.createWriteHandler(connection);
+            outputBuffer.put(stringToBytes(CLUSTER));
+            registerOp(SelectionKey.OP_WRITE);
+        } else if (CLIENT_BINARY_NEW.equals(protocol)) {
+            configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
+            writeHandler = new ClientWriteHandler();
+        } else {
+            configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
+            writeHandler = new TextWriteHandler(connection);
         }
     }
 

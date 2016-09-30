@@ -63,7 +63,6 @@ public class DefaultNodeContext implements NodeContext {
         if (spinning) {
             return new SpinningIOThreadingModel(
                     node.loggingService,
-                    node.nodeEngine.getMetricsRegistry(),
                     node.getHazelcastThreadGroup());
         } else {
             return new NonBlockingIOThreadingModel(
