@@ -28,10 +28,10 @@ public class ProducerTasklet<T> implements Tasklet {
     private final Producer<? extends T> producer;
     private final ArrayListCollector<T> collector;
     private Cursor<T> collectorCursor;
-    private final Cursor<Output<T>> outputCursor;
+    private final Cursor<QueueTail<T>> outputCursor;
     private boolean complete;
 
-    public ProducerTasklet(Producer<? extends T> producer, Map<String, Output<T>> outputs) {
+    public ProducerTasklet(Producer<? extends T> producer, Map<String, QueueTail<T>> outputs) {
         Preconditions.checkNotNull(producer, "producer");
         Preconditions.checkFalse(outputs.isEmpty(), "There must be at least one output");
 

@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TestInput<T> implements Input<T> {
+public class TestQueueHead<T> implements QueueHead<T> {
 
     private final int chunkSize;
     private final List<T> input;
@@ -30,7 +30,7 @@ public class TestInput<T> implements Input<T> {
     private boolean done;
     private boolean paused;
 
-    public TestInput(int chunkSize, List<T> input) {
+    public TestQueueHead(int chunkSize, List<T> input) {
         this.chunkSize = chunkSize;
         this.input = new ArrayList<>(input);
         this.lastToIndex = 0;
@@ -45,7 +45,7 @@ public class TestInput<T> implements Input<T> {
     }
 
     @Override
-    public Chunk<T> nextChunk() {
+    public Chunk<T> pollChunk() {
         int from = lastToIndex;
         lastToIndex = Math.min(input.size(), lastToIndex + chunkSize);
 

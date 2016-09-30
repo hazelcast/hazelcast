@@ -22,7 +22,7 @@ import com.hazelcast.jet.runtime.Consumer;
 import java.io.Serializable;
 
 /**
- * Abstract class which represents any sink
+ * Describes a data sink and acts as a factory of {@code Consumer}s that will write to that sink.
  */
 public interface Sink extends Serializable {
     /**

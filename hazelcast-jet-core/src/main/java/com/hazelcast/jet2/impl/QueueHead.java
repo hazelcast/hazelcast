@@ -18,11 +18,17 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Chunk;
 
-public interface Input<T> {
+/**
+ * The head-end of a bounded non-blocking queue.
+ * @param <T> Type if items in the queue.
+ */
+public interface QueueHead<T> {
 
     /**
-     * @return next chunk to be processed or null if input is exhausted
+     * Polls a chunk of items from the queue. If the result is an empty chunk,
+     * data is not currently available; if it's <code>null</code>, all the data
+     * has already been retrieved.
      */
-    Chunk<T> nextChunk();
+    Chunk<T> pollChunk();
 
 }

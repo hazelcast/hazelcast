@@ -19,7 +19,7 @@ package com.hazelcast.jet2;
 public interface Consumer<T> {
 
     /**
-     * Attempts to consume the supplied item. If it cannot immediately consuem it, it will
+     * Attempts to consume the supplied item. If it cannot immediately consume it, it will
      * return <code>false</code>  to signal to the caller that it should be called again with the
      * same item.
      *

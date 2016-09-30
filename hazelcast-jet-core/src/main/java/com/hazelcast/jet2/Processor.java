@@ -34,16 +34,14 @@ public interface Processor<I, O> {
      * Processes the supplied input item and pushes the results into the supplied output collector.
      *
      * @param input name of the input
-     * @param item value to be processed
-     * @param collector collector of the output items
+     * @param item item to be processed
+     * @param collector collector of output items
      * @return <code>true</code> if the method is done with the current item, <code>false</code> otherwise.
      */
-    boolean process(String input, I item, OutputCollector<O> collector);
+    boolean process(String input, I item, OutputCollector<? super O> collector);
 
     /**
-     * Called after all the input has been exhausted. See {@link #process(String, Object, OutputCollector)}
-     * for an explanation on the expected behavior of thi
-     *
+     * Called after all the input has been exhausted.
      * @return <code>true</code> if the method is done completing the processing, <code>false</code> otherwise.
      */
     boolean complete(OutputCollector<? super O> collector);

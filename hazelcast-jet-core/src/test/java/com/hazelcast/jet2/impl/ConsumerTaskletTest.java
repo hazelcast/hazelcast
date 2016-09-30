@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 public class ConsumerTaskletTest {
 
     private List<Integer> list;
-    private Map<String, Input<? extends Integer>> inputMap;
+    private Map<String, QueueHead<? extends Integer>> inputMap;
     private ListConsumer<Integer> consumer;
 
     @Before
@@ -47,7 +47,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testSingleChunk_whenSingleInput() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(4, list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(4, list);
         input1.done();
 
         inputMap.put("input1", input1);
@@ -61,7 +61,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testAllChunks_whenSingleInput() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(4, list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(4, list);
         input1.done();
 
         inputMap.put("input1", input1);
@@ -79,7 +79,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenSingleInputNotComplete() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(list.size(), list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -91,7 +91,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenSingleInputNewData() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(list.size(), list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -109,7 +109,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenSingleInputNoProgress() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(list.size(), list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -120,8 +120,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenMultipleInput() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(list.size(), list);
-        TestInput<Integer> input2 = new TestInput<>(list.size(), list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
+        TestQueueHead<Integer> input2 = new TestQueueHead<>(list.size(), list);
         input1.done();
         input2.done();
         inputMap.put("input1", input1);
@@ -138,8 +138,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenMultipleInput_oneFinishedEarlier() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(2, Arrays.asList(1, 2));
-        TestInput<Integer> input2 = new TestInput<>(list.size(), list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(2, Arrays.asList(1, 2));
+        TestQueueHead<Integer> input2 = new TestQueueHead<>(list.size(), list);
         input1.done();
         input2.done();
         inputMap.put("input1", input1);
@@ -157,7 +157,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenConsumerYields() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(10, list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
         input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -171,7 +171,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenConsumerYieldsOnSameItem() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(10, list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
         input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -186,7 +186,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenConsumerYieldsAgain() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(10, list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
         input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -208,7 +208,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenConsumerYieldsAndThenRuns() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(10, list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
         input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -224,7 +224,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_whenConsumerYieldsAndNoInput() throws Exception {
-        TestInput<Integer> input1 = new TestInput<>(3, list);
+        TestQueueHead<Integer> input1 = new TestQueueHead<>(3, list);
         input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -242,7 +242,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testIsBlocking() {
-        inputMap.put("input1", new TestInput<>(10, list));
+        inputMap.put("input1", new TestQueueHead<>(10, list));
         ConsumerTasklet<Integer> tasklet =
                 new ConsumerTasklet<>(new Consumer<Integer>() {
             @Override

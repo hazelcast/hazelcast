@@ -27,18 +27,18 @@ import java.util.Map;
 
 public class ConsumerTasklet<T> implements Tasklet {
 
-    private final List<Input<? extends T>> inputs;
+    private final List<QueueHead<? extends T>> queueHeads;
     private final Consumer<? super T> consumer;
-    private final RemovableCircularCursor<Input<? extends T>> inputCursor;
+    private final RemovableCircularCursor<QueueHead<? extends T>> inputCursor;
     private Cursor<? extends T> chunkCursor;
 
-    public ConsumerTasklet(Consumer<? super T> consumer, Map<String, Input<? extends T>> inputs) {
+    public ConsumerTasklet(Consumer<? super T> consumer, Map<String, QueueHead<? extends T>> inputs) {
         Preconditions.checkNotNull(consumer, "consumer");
         Preconditions.checkTrue(!inputs.isEmpty(), "There must be at least one input");
 
         this.consumer = consumer;
-        this.inputs = new ArrayList<>(inputs.values());
-        this.inputCursor = new RemovableCircularCursor<>(this.inputs);
+        this.queueHeads = new ArrayList<>(inputs.values());
+        this.inputCursor = new RemovableCircularCursor<>(this.queueHeads);
         inputCursor.advance();
     }
 
@@ -61,7 +61,7 @@ public class ConsumerTasklet<T> implements Tasklet {
         }
         Chunk<? extends T> chunk = getNextChunk();
         if (chunk == null) {
-            if (inputs.isEmpty()) {
+            if (queueHeads.isEmpty()) {
                 consumer.complete();
                 return TaskletResult.DONE;
             }
@@ -90,10 +90,10 @@ public class ConsumerTasklet<T> implements Tasklet {
     }
 
     private Chunk<? extends T> getNextChunk() {
-        Input<? extends T> end = inputCursor.value();
+        QueueHead<? extends T> end = inputCursor.value();
         while (inputCursor.advance()) {
-            Input<? extends T> current = inputCursor.value();
-            Chunk<? extends T> chunk = current.nextChunk();
+            QueueHead<? extends T> current = inputCursor.value();
+            Chunk<? extends T> chunk = current.pollChunk();
             if (chunk == null) {
                 inputCursor.remove();
                 if (current == end) {

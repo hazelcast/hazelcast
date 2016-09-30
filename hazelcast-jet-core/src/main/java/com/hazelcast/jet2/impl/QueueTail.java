@@ -17,9 +17,9 @@
 package com.hazelcast.jet2.impl;
 
 /**
- * Buffered data sink with bounded capacity.
+ * The tail-end of a bounded, non-blocking queue.
  */
-public interface Output<T> {
+public interface QueueTail<T> {
 
     /**
      * Offers an item to this output. If the output cannot accept it now, the call
