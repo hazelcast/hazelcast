@@ -29,7 +29,7 @@ public final class EvictionConfigAccessor {
 
     public static EvictionConfig initDefaultMaxSize(EvictionConfig evictionConfig) {
         if (!evictionConfig.sizeConfigured) {
-            evictionConfig.setSize(NearCacheConfig.DEFAULT_MAX_SIZE);
+            evictionConfig.setSize(EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP);
         }
         return evictionConfig;
     }

@@ -51,9 +51,9 @@ public class NearCacheConfig implements DataSerializable, Serializable {
     /**
      * Default value of the maximum size.
      *
-     * @deprecated since 3.8, please use {@link EvictionConfig#DEFAULT_MAX_ENTRY_COUNT}
+     * @deprecated since 3.8, please use {@link EvictionConfig#DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP}
      */
-    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+    public static final int DEFAULT_MAX_SIZE = EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP;
 
     /**
      * Default value for the eviction policy.
@@ -82,8 +82,8 @@ public class NearCacheConfig implements DataSerializable, Serializable {
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
 
-    private int maxSize = DEFAULT_MAX_SIZE;
-    private String evictionPolicy = DEFAULT_EVICTION_POLICY;
+    private int maxSize = EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP;
+    private String evictionPolicy = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
 
     private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
 
