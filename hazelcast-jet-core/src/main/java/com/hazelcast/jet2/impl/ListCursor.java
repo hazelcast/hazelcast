@@ -22,13 +22,12 @@ import java.util.List;
 
 public class ListCursor<T> implements Cursor<T> {
 
-    private final List<T> list;
+    protected int index = -1;
+    protected final List<T> list;
 
-    ListCursor(List<T> list) {
+    public ListCursor(List<T> list) {
         this.list = list;
     }
-
-    private int index = -1;
 
     @Override
     public boolean advance() {
@@ -43,5 +42,12 @@ public class ListCursor<T> implements Cursor<T> {
     @Override
     public void reset() {
         index = -1;
+    }
+
+    @Override
+    public String toString() {
+        return "ListCursor{" +
+                "index=" + index +
+                '}';
     }
 }

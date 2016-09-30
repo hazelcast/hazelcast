@@ -19,15 +19,20 @@ package com.hazelcast.jet2;
 public interface Consumer<T> {
 
     /**
-     * Return true if item is consumed, false if not
+     * Try to consume the given item. If item is not consumed immediately, the method will be called again with the
+     * same item.
+     * @return true if item is consumed, false otherwise
      */
     boolean consume(T object);
 
     /**
-     * Called after all input has been exhausted
+     * Called once all the input has been exhausted.
      */
     void complete();
 
+    /**
+     * Return if {@link Consumer} performs blocking operations (such as IO) on calls to {@link #consume(Object)}.
+     */
     default boolean isBlocking() {
         return false;
     }

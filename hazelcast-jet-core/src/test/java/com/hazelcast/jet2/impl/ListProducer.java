@@ -25,26 +25,48 @@ import java.util.List;
 public class ListProducer<T> implements Producer<T> {
 
     private Iterator<T> iterator;
-    private boolean skipNextCall;
+    private int batchSize;
+    private boolean paused;
+    private boolean completeEarly;
+    private boolean completed;
 
     public ListProducer(List<T> list) {
         this.iterator = list.iterator();
     }
 
-    public void skipNext() {
-        skipNextCall = true;
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
     }
-    @Override
-    public boolean produce(OutputCollector<T> collector) {
-        if (iterator.hasNext()) {
-            if (skipNextCall) {
-                skipNextCall = false;
-                return false;
-            }
 
-            collector.collect(iterator.next());
-            return !iterator.hasNext();
+    public void pause() {
+        paused = true;
+    }
+
+    public void resume() {
+        paused = false;
+    }
+
+    public void completeEarly() {
+        completeEarly = true;
+    }
+
+    @Override
+    public boolean produce(OutputCollector<? super T> collector) {
+        if (completed) {
+            throw new IllegalStateException("produce() called after completion");
         }
-        return true;
+        if (completeEarly) {
+            completed = true;
+            return true;
+        }
+        if (paused) {
+            return false;
+        }
+
+        for (int i = 0; i < batchSize && iterator.hasNext(); i++) {
+            collector.collect(iterator.next());
+        }
+        completed = !iterator.hasNext();
+        return completed;
     }
 }

@@ -76,13 +76,13 @@ public class DAGTest {
     private static class TestProcessor implements Processor {
 
         @Override
-        public void process(String input, Object value, OutputCollector collector) {
-
+        public boolean process(String input, Object value, OutputCollector collector) {
+            return true;
         }
 
         @Override
-        public void complete(OutputCollector collector) {
-
+        public boolean complete(OutputCollector collector) {
+            return true;
         }
     }
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.jet2.OutputCollector;
+import com.hazelcast.jet2.Producer;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,114 +29,180 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 public class ProducerTaskletTest {
 
     private List<Integer> list;
     private ListProducer<Integer> producer;
-    private Map<String, Output> outputMap;
+    private Map<String, Output<Integer>> outputMap;
 
     @Before
     public void setup() {
         this.list = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
         this.producer = new ListProducer<>(list);
+        producer.setBatchSize(4);
         this.outputMap = new HashMap<>();
     }
 
     @Test
-    public void testProduce_whenSingleOutput() throws Exception {
-        TestOutput<Object> output1 = new TestOutput<>(10);
+    public void testProduceSingleChunk_whenSingleOutput() throws Exception {
+        TestOutput<Integer> output1 = new TestOutput<>(10);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
-
-        TaskletResult result = tasklet.call();
-
-        assertEquals(TaskletResult.DONE, result);
-        assertEquals(list, output1.get());
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(Arrays.asList(0, 1, 2, 3), output1.getBuffer());
     }
 
     @Test
-    public void testProduce_whenMultipleOutputs() throws Exception {
-        TestOutput<Object> output1 = new TestOutput<>(10);
-        TestOutput<Object> output2 = new TestOutput<>(10);
+    public void testProduceSingleChunk_whenMultipleOutputs() throws Exception {
+        TestOutput<Integer> output1 = new TestOutput<>(10);
+        TestOutput<Integer> output2 = new TestOutput<>(10);
         outputMap.put("output1", output1);
         outputMap.put("output2", output2);
+
         Tasklet tasklet = createTasklet();
 
-        TaskletResult result = tasklet.call();
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(Arrays.asList(0, 1, 2, 3), output1.getBuffer());
+        assertEquals(Arrays.asList(0, 1, 2, 3), output2.getBuffer());
+    }
 
-        assertEquals(TaskletResult.DONE, result);
-        assertEquals(list, output1.get());
-        assertEquals(list, output2.get());
+    @Test
+    public void testProduceAllChunks_whenSingleOutput() throws Exception {
+        TestOutput<Integer> output1 = new TestOutput<>(10);
+        outputMap.put("output1", output1);
+
+        Tasklet tasklet = createTasklet();
+
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.DONE, tasklet.call());
+
+        assertEquals(list, output1.getBuffer());
+    }
+
+    @Test
+    public void testProduceAllChunks_whenMultipleOutputs() throws Exception {
+        TestOutput<Integer> output1 = new TestOutput<>(10);
+        TestOutput<Integer> output2 = new TestOutput<>(10);
+        outputMap.put("output1", output1);
+        outputMap.put("output2", output2);
+
+        Tasklet tasklet = createTasklet();
+
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.DONE, tasklet.call());
+
+        assertEquals(list, output1.getBuffer());
+        assertEquals(list, output2.getBuffer());
     }
 
     @Test
     public void testProduce_whenOutputIsFull() throws Exception {
-        TestOutput<Object> output1 = new TestOutput<>(5);
+        TestOutput<Integer> output1 = new TestOutput<>(4);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
 
-        TaskletResult result = tasklet.call();
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
 
-        assertEquals(TaskletResult.MADE_PROGRESS, result);
+        assertEquals(Arrays.asList(0, 1, 2, 3), output1.drain());
+
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+
+        assertEquals(Arrays.asList(4, 5, 6, 7), output1.drain());
+
+        assertEquals(TaskletResult.DONE, tasklet.call());
+
+        assertEquals(Arrays.asList(8, 9), output1.drain());
     }
 
     @Test
-    public void testProduce_whenBackoff() throws Exception {
-        TestOutput<Object> output1 = new TestOutput<>(5);
+    public void testProduce_whenOutputFullThenFullyDrained() throws Exception {
+        TestOutput<Integer> output1 = new TestOutput<>(1);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
 
-        TaskletResult result = tasklet.call();
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+        assertEquals(Arrays.asList(0), output1.drain());
 
-        assertEquals(TaskletResult.MADE_PROGRESS, result);
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
 
-        result = tasklet.call();
-
-        assertEquals(TaskletResult.NO_PROGRESS, result);
-
-        assertEquals(Arrays.asList(0, 1, 2, 3, 4), output1.get());
-    }
-
-    @Test
-    public void testProduce_whenOutputFullThenDrained() throws Exception {
-        TestOutput<Object> output1 = new TestOutput<>(5);
-        outputMap.put("output1", output1);
-        Tasklet tasklet = createTasklet();
-
-        TaskletResult result = tasklet.call();
-
-        assertEquals(TaskletResult.MADE_PROGRESS, result);
-        assertEquals(Arrays.asList(0, 1, 2, 3, 4), output1.drain());
-
-        result = tasklet.call();
-
-        assertEquals(TaskletResult.DONE, result);
-
-        assertEquals(Arrays.asList(5, 6, 7, 8, 9), output1.get());
+        assertEquals(Arrays.asList(1), output1.getBuffer());
     }
 
     @Test
     public void testProduce_whenOnlyOneOutputFull() throws Exception {
-        TestOutput<Object> output1 = new TestOutput<>(10);
-        TestOutput<Object> output2 = new TestOutput<>(5);
+        TestOutput<Integer> output1 = new TestOutput<>(2);
+        TestOutput<Integer> output2 = new TestOutput<>(4);
         outputMap.put("output1", output1);
         outputMap.put("output2", output2);
         Tasklet tasklet = createTasklet();
 
-        TaskletResult result = tasklet.call();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, result);
-        assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), output1.get());
-        assertEquals(Arrays.asList(0, 1, 2, 3, 4), output2.drain());
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
 
-        result = tasklet.call();
+        assertEquals(Arrays.asList(0, 1), output1.getBuffer());
+        assertEquals(Arrays.asList(0, 1), output2.getBuffer());
+    }
 
-        assertEquals(TaskletResult.DONE, result);
+    @Test
+    public void testProduce_whenProducerIdle() throws Exception {
+        TestOutput<Integer> output1 = new TestOutput<>(10);
+        outputMap.put("output1", output1);
+        Tasklet tasklet = createTasklet();
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(Arrays.asList(0, 1, 2, 3), output1.drain());
 
-        assertEquals(list, output1.get());
-        assertEquals(Arrays.asList(5, 6, 7, 8, 9), output2.get());
+        producer.pause();
+
+        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+
+        producer.resume();
+
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(Arrays.asList(4, 5, 6, 7), output1.drain());
+    }
+
+    @Test
+    public void testProduce_whenProducerIdleAndComplete() throws Exception {
+        TestOutput<Integer> output1 = new TestOutput<>(10);
+        outputMap.put("output1", output1);
+        Tasklet tasklet = createTasklet();
+        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(Arrays.asList(0, 1, 2, 3), output1.drain());
+
+        producer.completeEarly();
+
+        assertEquals(TaskletResult.DONE, tasklet.call());
+
+        assertTrue(output1.drain().isEmpty());
+    }
+
+    @Test
+    public void testIsBlocking() {
+        outputMap.put("input1", new TestOutput<>(10));
+        ProducerTasklet<Integer> tasklet =
+                new ProducerTasklet<>(new Producer<Integer>() {
+                    @Override
+                    public boolean produce(OutputCollector<? super Integer> collector) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isBlocking() {
+                        return true;
+                    }
+                }, outputMap);
+        assertTrue(tasklet.isBlocking());
     }
 
     private ProducerTasklet createTasklet() {

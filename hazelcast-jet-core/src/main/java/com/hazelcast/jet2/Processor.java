@@ -18,7 +18,19 @@ package com.hazelcast.jet2;
 
 public interface Processor<I, O> {
 
-    void process(String input, I value, OutputCollector<O> collector);
+    /**
+     * Process the next item. If item is not processed immediately, the method will be called with the same item again.
+     * @param input name of the input for the input
+     * @param value value to be processed
+     * @param collector collector for the output items
+     * @return true if item is processed, false otherwise
+     */
+    boolean process(String input, I value, OutputCollector<O> collector);
 
-    void complete(OutputCollector<O> collector);
+    /**
+     * Called after all the input has been exhausted. If false is returned, the method will be called again.
+     *
+     * @return true if done, false otherwise.
+     */
+    boolean complete(OutputCollector<O> collector);
 }

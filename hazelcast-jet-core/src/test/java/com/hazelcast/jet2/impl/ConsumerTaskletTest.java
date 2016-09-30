@@ -35,8 +35,8 @@ import static org.junit.Assert.assertTrue;
 public class ConsumerTaskletTest {
 
     private List<Integer> list;
-    private Map<String, Input> inputMap;
-    private ListConsumer<Object> consumer;
+    private Map<String, Input<? extends Integer>> inputMap;
+    private ListConsumer<Integer> consumer;
 
     @Before
     public void setup() {
@@ -225,9 +225,10 @@ public class ConsumerTaskletTest {
     @Test
     public void testIsBlocking() {
         inputMap.put("input1", new TestInput<>(10, list));
-        ConsumerTasklet tasklet = new ConsumerTasklet(new Consumer<Object>() {
+        ConsumerTasklet<Integer> tasklet =
+                new ConsumerTasklet<>(new Consumer<Integer>() {
             @Override
-            public boolean consume(Object object) {
+            public boolean consume(Integer object) {
                 throw new UnsupportedOperationException();
             }
 
@@ -245,6 +246,6 @@ public class ConsumerTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        return new ConsumerTasklet(consumer, inputMap);
+        return new ConsumerTasklet<>(consumer, inputMap);
     }
 }

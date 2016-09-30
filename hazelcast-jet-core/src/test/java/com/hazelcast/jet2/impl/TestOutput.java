@@ -44,7 +44,7 @@ public class TestOutput<T> implements Output<T> {
         return copy;
     }
 
-    public List<Object> get() {
+    public List<Object> getBuffer() {
         return buffer;
     }
 

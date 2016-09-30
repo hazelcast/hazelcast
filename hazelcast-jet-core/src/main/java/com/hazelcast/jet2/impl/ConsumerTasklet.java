@@ -22,7 +22,6 @@ import com.hazelcast.jet2.Cursor;
 import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -30,8 +29,8 @@ public class ConsumerTasklet<T> implements Tasklet {
 
     private final List<Input<? extends T>> inputs;
     private final Consumer<? super T> consumer;
+    private final RemovableCircularCursor<Input<? extends T>> inputCursor;
     private Cursor<? extends T> chunkCursor;
-    Iterator<Input<? extends T>> inputIterator;
 
     public ConsumerTasklet(Consumer<? super T> consumer, Map<String, Input<? extends T>> inputs) {
         Preconditions.checkNotNull(consumer, "consumer");
@@ -39,6 +38,8 @@ public class ConsumerTasklet<T> implements Tasklet {
 
         this.consumer = consumer;
         this.inputs = new ArrayList<>(inputs.values());
+        this.inputCursor = new RemovableCircularCursor<>(this.inputs);
+        inputCursor.advance();
     }
 
     @Override
@@ -76,6 +77,7 @@ public class ConsumerTasklet<T> implements Tasklet {
     private ConsumeResult tryConsume() {
         boolean consumedSome = false;
         do {
+            chunkCursor.value();
             boolean consumed = consumer.consume(chunkCursor.value());
             consumedSome |= consumed;
             if (!consumed) {
@@ -87,14 +89,22 @@ public class ConsumerTasklet<T> implements Tasklet {
     }
 
     private Chunk<? extends T> getNextChunk() {
-        inputIterator = inputs.iterator();
-        while (inputIterator.hasNext()) {
-            Input input = inputIterator.next();
-            Chunk chunk = input.nextChunk();
+        Input<? extends T> end = inputCursor.value();
+        while (inputCursor.advance()) {
+            Input<? extends T> current = inputCursor.value();
+            Chunk<? extends T> chunk = current.nextChunk();
             if (chunk == null) {
-                inputIterator.remove();
-            } else if (!chunk.isEmpty()) {
+                inputCursor.remove();
+                if (current == end) {
+                    break;
+                }
+                continue;
+            }
+            if (!chunk.isEmpty()) {
                 return chunk;
+            }
+            if (current == end) {
+                break;
             }
         }
         return null;

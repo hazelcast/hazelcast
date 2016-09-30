@@ -23,19 +23,21 @@ import com.hazelcast.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class ProducerTasklet implements Tasklet {
+public class ProducerTasklet<T> implements Tasklet {
 
-    private final Producer producer;
-    private final ArrayListCollector<Object> collector;
-    private Cursor<Object> collectorCursor;
-    private Cursor<Output> outputCursor;
+    private final Producer<? extends T> producer;
+    private final ArrayListCollector<T> collector;
+    private Cursor<T> collectorCursor;
+    private final Cursor<Output<T>> outputCursor;
+    private boolean complete;
 
-    public ProducerTasklet(Producer<?> producer, Map<String, Output> outputs) {
+    public ProducerTasklet(Producer<? extends T> producer, Map<String, Output<T>> outputs) {
         Preconditions.checkNotNull(producer, "producer");
         Preconditions.checkTrue(outputs.size() > 0, "There must be at least one output");
 
         this.producer = producer;
         this.outputCursor = new ListCursor<>(new ArrayList<>(outputs.values()));
+        outputCursor.advance();
         this.collector = new ArrayListCollector<>();
     }
 
@@ -48,10 +50,14 @@ public class ProducerTasklet implements Tasklet {
                 case PUSHED_SOME:
                     return TaskletResult.MADE_PROGRESS;
                 case PUSHED_ALL:
+                    if (complete) {
+                        return TaskletResult.DONE;
+                    }
                     break;
             }
         }
-        boolean complete = producer.produce(collector);
+
+        complete = producer.produce(collector);
         if (complete && collector.isEmpty()) {
             return TaskletResult.DONE;
         }
@@ -59,8 +65,11 @@ public class ProducerTasklet implements Tasklet {
             return TaskletResult.NO_PROGRESS;
         }
 
-        tryPush();
-        return TaskletResult.MADE_PROGRESS;
+        collectorCursor = collector.cursor();
+        collectorCursor.reset();
+        collectorCursor.advance();
+        PushResult result = tryPush();
+        return (complete && result == PushResult.PUSHED_ALL) ? TaskletResult.DONE : TaskletResult.MADE_PROGRESS;
     }
 
     @Override
@@ -78,10 +87,10 @@ public class ProducerTasklet implements Tasklet {
                     return pushedSome ? PushResult.PUSHED_SOME : PushResult.PUSHED_NONE;
                 }
             } while (outputCursor.advance());
+            outputCursor.reset();
+            outputCursor.advance();
         } while (collectorCursor.advance());
 
-        outputCursor.reset();
-        outputCursor.advance();
         collector.clear();
         collectorCursor = null;
         return PushResult.PUSHED_ALL;
