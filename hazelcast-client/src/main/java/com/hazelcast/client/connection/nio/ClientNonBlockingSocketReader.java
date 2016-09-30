@@ -39,7 +39,7 @@ import static java.lang.System.currentTimeMillis;
  * It then reads out the data from the socket into a bytebuffer and hands it over to the {@link ClientMessageBuilder}
  * to get processed.
  */
-public class ClientNonBlockingSocketReader extends AbstractClientSelectionHandler {
+public class ClientNonBlockingSocketReader extends AbstractClientHandler {
 
     private final ByteBuffer buffer;
     private final ClientMessageBuilder builder;
@@ -48,15 +48,18 @@ public class ClientNonBlockingSocketReader extends AbstractClientSelectionHandle
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
 
-    private volatile long lastHandle;
+    private volatile long lastReadTime;
 
-    public ClientNonBlockingSocketReader(final ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
-                                         boolean direct, LoggingService loggingService) {
-        super(connection, ioThread, loggingService);
+    public ClientNonBlockingSocketReader(final ClientConnection connection,
+                                         NonBlockingIOThread ioThread,
+                                         int bufferSize,
+                                         boolean direct,
+                                         LoggingService loggingService) {
+        super(connection, ioThread, loggingService, SelectionKey.OP_READ);
 
-        buffer = IOUtil.newByteBuffer(bufferSize, direct);
-        lastHandle = Clock.currentTimeMillis();
-        builder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
+        this.buffer = IOUtil.newByteBuffer(bufferSize, direct);
+        this.lastReadTime = Clock.currentTimeMillis();
+        this.builder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
             @Override
             public void handleMessage(ClientMessage message) {
                 connectionManager.handleClientMessage(message, connection);
@@ -64,21 +67,20 @@ public class ClientNonBlockingSocketReader extends AbstractClientSelectionHandle
         });
     }
 
-    @Probe(name = "idleTimeMs", level = DEBUG)
+    @Probe(level = DEBUG)
     private long idleTimeMs() {
-        return max(currentTimeMillis() - lastHandle, 0);
+        return max(currentTimeMillis() - lastReadTime, 0);
     }
 
-    @Override
-    public void run() {
-        registerOp(SelectionKey.OP_READ);
+    long getLastReadTime() {
+        return lastReadTime;
     }
 
     @Override
     public void handle() throws Exception {
         eventCount.inc();
 
-        lastHandle = Clock.currentTimeMillis();
+        lastReadTime = Clock.currentTimeMillis();
 
         int readBytes = socketChannel.read(buffer);
         if (readBytes <= 0) {
@@ -99,9 +101,4 @@ public class ClientNonBlockingSocketReader extends AbstractClientSelectionHandle
             buffer.clear();
         }
     }
-
-    long getLastHandle() {
-        return lastHandle;
-    }
-
 }

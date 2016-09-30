@@ -55,7 +55,7 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
 
     @Probe
     protected final int connectionId;
-    private final AtomicBoolean live = new AtomicBoolean(true);
+    private final AtomicBoolean alive = new AtomicBoolean(true);
     private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
@@ -137,21 +137,24 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (!live.get()) {
+        if (!alive.get()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, dropping frame -> " + frame);
             }
             return false;
         }
-        writer.enqueue(frame);
+        writer.write(frame);
         return true;
     }
 
     public void init() throws IOException {
-        final ByteBuffer buffer = ByteBuffer.allocate(3);
+        ByteBuffer buffer = ByteBuffer.allocate(3);
         buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
         buffer.flip();
         socketChannelWrapper.write(buffer);
+
+        // we need to give the reader a kick so it starts reading from the socket.
+        reader.init();
     }
 
     @Override
@@ -161,17 +164,17 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
 
     @Override
     public boolean isAlive() {
-        return live.get();
+        return alive.get();
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return reader.getLastHandle();
+        return reader.getLastReadTime();
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        return writer.getLastHandle();
+        return writer.getLastWriteTime();
     }
 
     @Override
@@ -230,7 +233,7 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
 
     @Override
     public void close(String reason, Throwable cause) {
-        if (!live.compareAndSet(true, false)) {
+        if (!alive.compareAndSet(true, false)) {
             return;
         }
 
@@ -308,7 +311,7 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
     }
 
     public boolean isHeartBeating() {
-        return live.get() && isHeartBeating;
+        return alive.get() && isHeartBeating;
     }
 
     public boolean isAuthenticatedAsOwner() {
@@ -345,7 +348,7 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
     @Override
     public String toString() {
         return "ClientConnection{"
-                + "live=" + live
+                + "alive=" + alive
                 + ", connectionId=" + connectionId
                 + ", socketChannel=" + socketChannelWrapper
                 + ", remoteEndpoint=" + remoteEndpoint
