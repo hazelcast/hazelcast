@@ -20,6 +20,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextReadHandler;
@@ -28,6 +30,8 @@ import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -51,7 +55,7 @@ import static java.lang.System.currentTimeMillis;
  * {@link ReadHandler} to get processed.
  */
 public final class NonBlockingSocketReader
-        extends AbstractHandler
+        extends AbstractHandler<TcpIpConnection>
         implements SocketReader {
 
     @Probe(name = "bytesRead")
@@ -60,13 +64,22 @@ public final class NonBlockingSocketReader
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
+    private final TcpIpConnectionManager connectionManager;
+    private final IOService ioService;
 
     private ReadHandler readHandler;
     private ByteBuffer inputBuffer;
     private volatile long lastReadTime;
 
-    public NonBlockingSocketReader(TcpIpConnection connection, NonBlockingIOThread ioThread) {
-        super(connection, ioThread, SelectionKey.OP_READ);
+    public NonBlockingSocketReader(
+            TcpIpConnection connection,
+            NonBlockingIOThread ioThread,
+            ILogger logger,
+            IOBalancer balancer) {
+        super(connection, ioThread, SelectionKey.OP_READ, connection.getSocketChannelWrapper(), logger, balancer);
+
+        this.connectionManager = connection.getConnectionManager();
+        this.ioService = connectionManager.getIoService();
     }
 
     @Override

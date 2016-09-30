@@ -216,7 +216,8 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
         if (outputThread == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
-        return new NonBlockingSocketWriter(connection, outputThread);
+        return new NonBlockingSocketWriter(
+                connection, outputThread, loggingService.getLogger(NonBlockingSocketWriter.class), ioBalancer);
     }
 
     @Override
@@ -226,6 +227,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
         if (inputThread == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
-        return new NonBlockingSocketReader(connection, inputThread);
+        return new NonBlockingSocketReader(
+                connection, inputThread, loggingService.getLogger(NonBlockingSocketReader.class), ioBalancer);
     }
 }

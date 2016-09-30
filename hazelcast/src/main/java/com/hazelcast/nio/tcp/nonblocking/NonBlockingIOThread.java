@@ -135,6 +135,10 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         return selector;
     }
 
+    public NonBlockingIOThreadOutOfMemoryHandler getOomeHandler() {
+        return oomeHandler;
+    }
+
     /**
      * Returns the total number of selection-key events that have been processed by this thread.
      *
