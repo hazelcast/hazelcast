@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet2;
 
-public interface Producer<T> {
+public interface Producer<O> {
 
     /**
      * Pushes a batch of items into the supplied collector.
      *
      * @return <code>true</code> if all items have now been produced, <code>false</code> if not yet.
      */
-    boolean produce(OutputCollector<? super T> collector);
+    boolean produce(OutputCollector<? super O> collector);
 
     /**
      * Tells whether this producer's {@link #produce(OutputCollector)} method performs any

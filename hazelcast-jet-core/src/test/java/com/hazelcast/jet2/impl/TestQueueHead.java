@@ -27,7 +27,6 @@ public class TestQueueHead<T> implements QueueHead<T> {
     private final int chunkSize;
     private final List<T> input;
     private int lastToIndex;
-    private boolean done;
     private boolean paused;
 
     public TestQueueHead(int chunkSize, List<T> input) {
@@ -40,21 +39,17 @@ public class TestQueueHead<T> implements QueueHead<T> {
         input.addAll(Arrays.asList(items));
     }
 
-    public void done() {
-        done = true;
-    }
-
     @Override
     public Chunk<T> pollChunk() {
         int from = lastToIndex;
         lastToIndex = Math.min(input.size(), lastToIndex + chunkSize);
 
-        if (from == lastToIndex && done) {
-            return null;
-        }
-
         if (paused) {
             return new ListChunk<>(new ArrayList<>());
+        }
+
+        if (from == lastToIndex) {
+            return null;
         }
 
         List<T> chunk = new ArrayList<>();

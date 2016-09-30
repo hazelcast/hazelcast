@@ -46,6 +46,10 @@ public class ArrayListCollector<T> implements OutputCollector<T> {
     }
 
     public Cursor<T> cursor() {
+        if (isEmpty()) {
+            throw new IllegalArgumentException("Can't create cursor on empty list");
+        }
+        cursor.reset();
         return cursor;
     }
 

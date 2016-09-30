@@ -56,13 +56,10 @@ public class ProcessorTasklet<I, O> implements Tasklet {
         this.queueHeadCursor = new RemovableCircularCursor<>(new ArrayList<>(this.queueHeads.entrySet()));
         this.pendingOutputCollector = new ArrayListCollector<>();
         this.queueTailCursor = new ListCursor<>(new ArrayList<>(queueTails.values()));
-        queueHeadCursor.advance();
-        queueTailCursor.advance();
     }
 
     @Override
     public TaskletResult call() throws Exception {
-
         boolean didPendingWork = false;
         if (pendingOutputCursor != null) {
             switch (offerPendingOutput()) {
@@ -83,6 +80,7 @@ public class ProcessorTasklet<I, O> implements Tasklet {
         if (pendingInputCursor != null) {
             boolean pendingInputDone = tryProcessPendingInput();
             if (!pendingOutputCollector.isEmpty()) {
+                pendingOutputCursor = pendingOutputCollector.cursor();
                 switch (offerPendingOutput()) {
                     case ACCEPTED_ALL:
                         if (!pendingInputDone) {
@@ -105,7 +103,7 @@ public class ProcessorTasklet<I, O> implements Tasklet {
             if (processingComplete && pendingOutputCollector.isEmpty()) {
                 return DONE;
             }
-            resetPendingOutputCursor();
+            pendingOutputCursor = pendingOutputCollector.cursor();
             OfferResult offerResult = offerPendingOutput();
             if (processingComplete && offerResult == ACCEPTED_ALL) {
                 return DONE;
@@ -119,20 +117,13 @@ public class ProcessorTasklet<I, O> implements Tasklet {
         // Invariant at this point: there is pending input and no pending output
 
         pendingInputCursor = chunk.cursor();
-        pendingInputCursor.advance();
         tryProcessPendingInput();
         if (!pendingOutputCollector.isEmpty()) {
-            resetPendingOutputCursor();
+            pendingOutputCursor = pendingOutputCollector.cursor();
             offerPendingOutput();
         }
 
         return MADE_PROGRESS;
-    }
-
-    private void resetPendingOutputCursor() {
-        pendingOutputCursor = pendingOutputCollector.cursor();
-        pendingOutputCursor.reset();
-        pendingOutputCursor.advance();
     }
 
     private boolean tryProcessPendingInput() {
@@ -185,7 +176,6 @@ public class ProcessorTasklet<I, O> implements Tasklet {
                 }
             } while (queueTailCursor.advance());
             queueTailCursor.reset();
-            queueTailCursor.advance();
         } while (pendingOutputCursor.advance());
 
         pendingOutputCollector.clear();

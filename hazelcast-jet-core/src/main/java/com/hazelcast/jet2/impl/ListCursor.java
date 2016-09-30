@@ -17,12 +17,13 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Cursor;
+import com.hazelcast.util.Preconditions;
 
 import java.util.List;
 
 public class ListCursor<T> implements Cursor<T> {
 
-    protected int index = -1;
+    protected int index = 0;
     protected final List<T> list;
 
     public ListCursor(List<T> list) {
@@ -41,7 +42,7 @@ public class ListCursor<T> implements Cursor<T> {
 
     @Override
     public void reset() {
-        index = -1;
+        index = 0;
     }
 
     @Override

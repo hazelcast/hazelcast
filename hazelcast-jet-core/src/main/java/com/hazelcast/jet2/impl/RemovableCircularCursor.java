@@ -41,14 +41,6 @@ class RemovableCircularCursor<T> extends ListCursor<T> {
     }
 
     @Override
-    public T value() {
-        if (index == -1) {
-            return null;
-        }
-        return super.value();
-    }
-
-    @Override
     public boolean advance() {
         if (list.isEmpty()) {
             return false;

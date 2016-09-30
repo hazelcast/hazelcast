@@ -23,21 +23,20 @@ import com.hazelcast.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class ProducerTasklet<T> implements Tasklet {
+public class ProducerTasklet<O> implements Tasklet {
 
-    private final Producer<? extends T> producer;
-    private final ArrayListCollector<T> collector;
-    private Cursor<T> collectorCursor;
-    private final Cursor<QueueTail<T>> outputCursor;
+    private final Producer<? extends O> producer;
+    private final ArrayListCollector<O> collector;
+    private Cursor<? extends O> collectorCursor;
+    private final Cursor<QueueTail<? super O>> queueTailCursor;
     private boolean complete;
 
-    public ProducerTasklet(Producer<? extends T> producer, Map<String, QueueTail<T>> outputs) {
+    public ProducerTasklet(Producer<? extends O> producer, Map<String, QueueTail<? super O>> queueTails) {
         Preconditions.checkNotNull(producer, "producer");
-        Preconditions.checkFalse(outputs.isEmpty(), "There must be at least one output");
+        Preconditions.checkFalse(queueTails.isEmpty(), "There must be at least one output");
 
         this.producer = producer;
-        this.outputCursor = new ListCursor<>(new ArrayList<>(outputs.values()));
-        outputCursor.advance();
+        this.queueTailCursor = new ListCursor<>(new ArrayList<>(queueTails.values()));
         this.collector = new ArrayListCollector<>();
     }
 
@@ -45,12 +44,12 @@ public class ProducerTasklet<T> implements Tasklet {
     public TaskletResult call() {
         boolean didPendingWork = false;
         if (collectorCursor != null) {
-            switch (tryOffer()) {
-                case OFFERED_NONE:
+            switch (offerPendingOutput()) {
+                case ACCEPTED_NONE:
                     return TaskletResult.NO_PROGRESS;
-                case OFFERED_SOME:
+                case ACCEPTED_SOME:
                     return TaskletResult.MADE_PROGRESS;
-                case OFFERED_ALL:
+                case ACCEPTED_ALL:
                     if (complete) {
                         return TaskletResult.DONE;
                     }
@@ -68,10 +67,8 @@ public class ProducerTasklet<T> implements Tasklet {
         }
 
         collectorCursor = collector.cursor();
-        collectorCursor.reset();
-        collectorCursor.advance();
-        OfferResult result = tryOffer();
-        return (complete && result == OfferResult.OFFERED_ALL) ? TaskletResult.DONE : TaskletResult.MADE_PROGRESS;
+        OfferResult result = offerPendingOutput();
+        return (complete && result == OfferResult.ACCEPTED_ALL) ? TaskletResult.DONE : TaskletResult.MADE_PROGRESS;
     }
 
     @Override
@@ -79,29 +76,28 @@ public class ProducerTasklet<T> implements Tasklet {
         return producer.isBlocking();
     }
 
-    private OfferResult tryOffer() {
+    private OfferResult offerPendingOutput() {
         boolean pushedSome = false;
         do {
             do {
-                boolean pushed = outputCursor.value().offer(collectorCursor.value());
+                boolean pushed = queueTailCursor.value().offer(collectorCursor.value());
                 pushedSome |= pushed;
                 if (!pushed) {
-                    return pushedSome ? OfferResult.OFFERED_SOME : OfferResult.OFFERED_NONE;
+                    return pushedSome ? OfferResult.ACCEPTED_SOME : OfferResult.ACCEPTED_NONE;
                 }
-            } while (outputCursor.advance());
-            outputCursor.reset();
-            outputCursor.advance();
+            } while (queueTailCursor.advance());
+            queueTailCursor.reset();
         } while (collectorCursor.advance());
 
         collector.clear();
         collectorCursor = null;
-        return OfferResult.OFFERED_ALL;
+        return OfferResult.ACCEPTED_ALL;
     }
 
     private enum OfferResult {
-        OFFERED_ALL,
-        OFFERED_SOME,
-        OFFERED_NONE,
+        ACCEPTED_ALL,
+        ACCEPTED_SOME,
+        ACCEPTED_NONE,
     }
 }
 

@@ -33,6 +33,7 @@ public class ListChunk<T> implements Chunk<T> {
 
     @Override
     public Cursor<T> cursor() {
+        cursor.reset();
         return cursor;
     }
 

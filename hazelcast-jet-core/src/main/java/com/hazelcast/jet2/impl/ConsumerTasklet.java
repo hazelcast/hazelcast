@@ -22,24 +22,23 @@ import com.hazelcast.jet2.Cursor;
 import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-public class ConsumerTasklet<T> implements Tasklet {
+import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
+import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
 
-    private final List<QueueHead<? extends T>> queueHeads;
-    private final Consumer<? super T> consumer;
-    private final RemovableCircularCursor<QueueHead<? extends T>> inputCursor;
-    private Cursor<? extends T> chunkCursor;
+public class ConsumerTasklet<I> implements Tasklet {
 
-    public ConsumerTasklet(Consumer<? super T> consumer, Map<String, QueueHead<? extends T>> inputs) {
+    private final Consumer<? super I> consumer;
+    private final RemovableCircularCursor<QueueHead<? extends I>> queueHeadCursor;
+    private Cursor<? extends I> chunkCursor;
+
+    public ConsumerTasklet(Consumer<? super I> consumer, Map<String, QueueHead<? extends I>> queueHeads) {
         Preconditions.checkNotNull(consumer, "consumer");
-        Preconditions.checkTrue(!inputs.isEmpty(), "There must be at least one input");
+        Preconditions.checkTrue(!queueHeads.isEmpty(), "There must be at least one input");
 
         this.consumer = consumer;
-        this.queueHeads = new ArrayList<>(inputs.values());
-        this.inputCursor = new RemovableCircularCursor<>(this.queueHeads);
-        inputCursor.advance();
+        this.queueHeadCursor = new RemovableCircularCursor<>(new ArrayList<>(queueHeads.values()));
     }
 
     @Override
@@ -59,18 +58,15 @@ public class ConsumerTasklet<T> implements Tasklet {
                     return TaskletResult.NO_PROGRESS;
             }
         }
-        Chunk<? extends T> chunk = getNextChunk();
+        Chunk<? extends I> chunk = pollChunk();
         if (chunk == null) {
-            if (queueHeads.isEmpty()) {
-                consumer.complete();
-                return TaskletResult.DONE;
-            }
-            // could not find any chunk to read
-            return didPendingWork ? TaskletResult.MADE_PROGRESS : TaskletResult.NO_PROGRESS;
+            consumer.complete();
+            return TaskletResult.DONE;
         }
-
+        if (chunk.isEmpty()) {
+            return didPendingWork ? MADE_PROGRESS : NO_PROGRESS;
+        }
         chunkCursor = chunk.cursor();
-        chunkCursor.advance();
         tryConsume();
         return TaskletResult.MADE_PROGRESS;
     }
@@ -89,26 +85,25 @@ public class ConsumerTasklet<T> implements Tasklet {
         return ConsumeResult.CONSUMED_ALL;
     }
 
-    private Chunk<? extends T> getNextChunk() {
-        QueueHead<? extends T> end = inputCursor.value();
-        while (inputCursor.advance()) {
-            QueueHead<? extends T> current = inputCursor.value();
-            Chunk<? extends T> chunk = current.pollChunk();
+    private Chunk<? extends I> pollChunk() {
+        QueueHead<? extends I> end = queueHeadCursor.value();
+        Chunk<? extends I> result = null;
+        while (queueHeadCursor.advance()) {
+            QueueHead<? extends I> current = queueHeadCursor.value();
+            Chunk<? extends I> chunk = current.pollChunk();
             if (chunk == null) {
-                inputCursor.remove();
-                if (current == end) {
+                queueHeadCursor.remove();
+            } else {
+                result = chunk;
+                if (!chunk.isEmpty()) {
                     break;
                 }
-                continue;
-            }
-            if (!chunk.isEmpty()) {
-                return chunk;
             }
             if (current == end) {
                 break;
             }
         }
-        return null;
+        return result;
     }
 
     @Override

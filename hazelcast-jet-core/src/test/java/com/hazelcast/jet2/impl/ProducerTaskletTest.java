@@ -36,7 +36,7 @@ public class ProducerTaskletTest {
 
     private List<Integer> list;
     private ListProducer<Integer> producer;
-    private Map<String, QueueTail<Integer>> outputMap;
+    private Map<String, QueueTail<? super Integer>> outputMap;
 
     @Before
     public void setup() {

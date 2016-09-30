@@ -46,9 +46,8 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testSingleChunk_whenSingleInput() throws Exception {
+    public void testSingleChunk_when_singleInput() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(4, list);
-        input1.done();
 
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -60,10 +59,8 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testAllChunks_whenSingleInput() throws Exception {
+    public void testAllChunks_when_singleInput() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(4, list);
-        input1.done();
-
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -78,7 +75,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_whenSingleInputNotComplete() throws Exception {
+    public void testProgress_when_singleInputNotComplete() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -90,7 +87,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_whenSingleInputNewData() throws Exception {
+    public void testProgress_when_singleInputNewData() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -98,7 +95,6 @@ public class ConsumerTaskletTest {
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
 
         input1.push(10, 11);
-        input1.done();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.DONE, tasklet.call());
@@ -108,22 +104,21 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_whenSingleInputNoProgress() throws Exception {
+    public void testProgress_when_singleInputNoProgress() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        input1.pause();
         assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
         assertFalse("isComplete", consumer.isComplete());
     }
 
     @Test
-    public void testProgress_whenMultipleInput() throws Exception {
+    public void testProgress_when_multipleInput() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
         TestQueueHead<Integer> input2 = new TestQueueHead<>(list.size(), list);
-        input1.done();
-        input2.done();
         inputMap.put("input1", input1);
         inputMap.put("input2", input2);
         Tasklet tasklet = createTasklet();
@@ -137,11 +132,9 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_whenMultipleInput_oneFinishedEarlier() throws Exception {
+    public void testProgress_when_multipleInput_oneFinishedEarlier() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(2, Arrays.asList(1, 2));
         TestQueueHead<Integer> input2 = new TestQueueHead<>(list.size(), list);
-        input1.done();
-        input2.done();
         inputMap.put("input1", input1);
         inputMap.put("input2", input2);
         Tasklet tasklet = createTasklet();
@@ -156,9 +149,8 @@ public class ConsumerTaskletTest {
 
 
     @Test
-    public void testProgress_whenConsumerYields() throws Exception {
+    public void testProgress_when_consumerYields() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
-        input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -170,9 +162,8 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_whenConsumerYieldsOnSameItem() throws Exception {
+    public void testProgress_when_consumerYieldsOnSameItem() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
-        input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -185,9 +176,8 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_whenConsumerYieldsAgain() throws Exception {
+    public void testProgress_when_consumerYieldsAgain() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
-        input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -207,9 +197,8 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_whenConsumerYieldsAndThenRuns() throws Exception {
+    public void testProgress_when_consumerYieldsAndThenRuns() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
-        input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -223,9 +212,8 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_whenConsumerYieldsAndNoInput() throws Exception {
+    public void testProgress_when_consumerYieldsAndNoInput() throws Exception {
         TestQueueHead<Integer> input1 = new TestQueueHead<>(3, list);
-        input1.done();
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet2;
 
-public interface Consumer<T> {
+public interface Consumer<I> {
 
     /**
      * Attempts to consume the supplied item. If it cannot immediately consume it, it will
@@ -25,7 +25,7 @@ public interface Consumer<T> {
      *
      * @return <code>true</code> if item was consumed, <code>false</code> otherwise
      */
-    boolean consume(T item);
+    boolean consume(I item);
 
     /**
      * Called when all the input has been exhausted.
