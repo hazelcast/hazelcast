@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.spi.Operation;
 
@@ -29,5 +30,10 @@ abstract class AbstractClusterOperation extends Operation implements JoinOperati
     @Override
     public final String getServiceName() {
         return ClusterServiceImpl.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
     }
 }

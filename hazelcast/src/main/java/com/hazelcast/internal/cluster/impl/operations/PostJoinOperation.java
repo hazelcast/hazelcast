@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,7 +33,7 @@ import java.util.logging.Level;
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class PostJoinOperation extends Operation implements UrgentSystemOperation, JoinOperation {
+public class PostJoinOperation extends AbstractJoinOperation implements UrgentSystemOperation {
 
     private Operation[] operations;
 
@@ -140,7 +141,11 @@ public class PostJoinOperation extends Operation implements UrgentSystemOperatio
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-
         sb.append(", operations=").append(Arrays.toString(operations));
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.POST_JOIN;
     }
 }

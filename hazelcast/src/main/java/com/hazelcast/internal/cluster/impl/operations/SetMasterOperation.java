@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -23,7 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class SetMasterOperation extends AbstractClusterOperation implements JoinOperation {
+public class SetMasterOperation extends AbstractClusterOperation {
 
     protected Address masterAddress;
 
@@ -58,7 +59,11 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-
         sb.append(", master=").append(masterAddress);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.SET_MASTER;
     }
 }

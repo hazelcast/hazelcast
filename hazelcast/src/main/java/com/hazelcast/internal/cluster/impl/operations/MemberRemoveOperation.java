@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -98,4 +99,10 @@ public class MemberRemoveOperation extends AbstractClusterOperation implements A
         address.writeData(out);
         out.writeUTF(memberUuid);
     }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MEMBER_REMOVE;
+    }
+
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,8 +32,7 @@ import java.io.IOException;
  *
  * @see AuthenticationFailureOperation
  */
-public class ConfigMismatchOperation extends AbstractClusterOperation
-        implements JoinOperation {
+public class ConfigMismatchOperation extends AbstractClusterOperation {
 
     private String msg;
 
@@ -63,6 +63,11 @@ public class ConfigMismatchOperation extends AbstractClusterOperation
         logger.severe("Node could not join cluster. A Configuration mismatch was detected: "
                 + msg + " Node is going to shutdown now!");
         node.shutdown(true);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.CONFIG_MISMATCH;
     }
 }
 

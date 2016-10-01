@@ -17,24 +17,13 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.spi.Operation;
 
-/**
- * Requests member list publish from master node
- */
-public class TriggerMemberListPublishOperation extends AbstractClusterOperation {
-
-    public TriggerMemberListPublishOperation() {
-    }
+public abstract class AbstractJoinOperation extends Operation implements JoinOperation {
 
     @Override
-    public void run() throws Exception {
-        final ClusterServiceImpl clusterService = getService();
-        clusterService.sendMemberListToMember(getCallerAddress());
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
     }
 
-    @Override
-    public int getId() {
-        return ClusterDataSerializerHook.TRIGGER_MEMBER_LIST_PUBLISH;
-    }
 }

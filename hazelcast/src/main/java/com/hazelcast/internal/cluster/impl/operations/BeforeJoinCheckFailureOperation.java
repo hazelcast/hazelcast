@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,8 +25,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class BeforeJoinCheckFailureOperation extends AbstractClusterOperation
-        implements JoinOperation {
+public class BeforeJoinCheckFailureOperation extends AbstractClusterOperation {
 
     private String failReasonMsg;
 
@@ -61,5 +61,10 @@ public class BeforeJoinCheckFailureOperation extends AbstractClusterOperation
         logger.severe("Node could not join cluster. Before join check failed node is going to shutdown now!");
         logger.severe("Reason of failure for node join : " + failReasonMsg);
         node.shutdown(true);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.BEFORE_JOIN_CHECK_FAILURE;
     }
 }

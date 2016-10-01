@@ -19,12 +19,12 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class MasterClaimOperation extends Operation implements JoinOperation {
+public class MasterClaimOperation extends AbstractJoinOperation {
 
     private transient boolean approvedAsMaster;
 
@@ -52,5 +52,10 @@ public class MasterClaimOperation extends Operation implements JoinOperation {
     @Override
     public Object getResponse() {
         return approvedAsMaster;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MASTER_CLAIM;
     }
 }

@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
  * Marker interface for join and post-join operations.
  */
-public interface JoinOperation extends UrgentSystemOperation, AllowedDuringPassiveState {
-
+public interface JoinOperation extends UrgentSystemOperation, AllowedDuringPassiveState, IdentifiedDataSerializable {
 }
