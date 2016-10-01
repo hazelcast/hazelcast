@@ -18,7 +18,6 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
@@ -93,12 +92,12 @@ public final class NonBlockingSocketReader
     }
 
     @Override
-    public Counter getNormalFramesReadCounter() {
+    public SwCounter getNormalFramesReadCounter() {
         return normalFramesRead;
     }
 
     @Override
-    public Counter getPriorityFramesReadCounter() {
+    public SwCounter getPriorityFramesReadCounter() {
         return priorityFramesRead;
     }
 
@@ -197,7 +196,7 @@ public final class NonBlockingSocketReader
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 socketWriter.setProtocol(CLIENT_BINARY_NEW);
-                readHandler = new ClientReadHandler(connection, ioService);
+                readHandler = new ClientReadHandler(getNormalFramesReadCounter(), connection, ioService);
             } else {
                 configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 socketWriter.setProtocol(Protocols.TEXT);

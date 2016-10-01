@@ -17,11 +17,12 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
+import com.hazelcast.client.impl.protocol.util.ClientMessageReadHandler;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
@@ -36,14 +37,14 @@ import static java.lang.System.currentTimeMillis;
 
 /**
  * ClientNonBlockingSocketReader gets called by an IO-thread when there is data available to read.
- * It then reads out the data from the socket into a bytebuffer and hands it over to the {@link ClientMessageBuilder}
+ * It then reads out the data from the socket into a bytebuffer and hands it over to the {@link ClientMessageReadHandler}
  * to get processed.
  */
 public class ClientNonBlockingSocketReader
         extends AbstractClientHandler {
 
-    private final ByteBuffer buffer;
-    private final ClientMessageBuilder builder;
+    private final ByteBuffer inputBuffer;
+    private final ReadHandler readHandler;
     @Probe(name = "messagesRead")
     private final SwCounter messagesRead = newSwCounter();
     @Probe(name = "bytesRead")
@@ -57,9 +58,9 @@ public class ClientNonBlockingSocketReader
                                          LoggingService loggingService) {
         super(connection, ioThread, loggingService, SelectionKey.OP_READ);
 
-        this.buffer = IOUtil.newByteBuffer(bufferSize, direct);
+        this.inputBuffer = IOUtil.newByteBuffer(bufferSize, direct);
         this.lastReadTime = Clock.currentTimeMillis();
-        this.builder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
+        this.readHandler = new ClientMessageReadHandler(messagesRead, new ClientMessageReadHandler.MessageHandler() {
             @Override
             public void handleMessage(ClientMessage message) {
                 connectionManager.handleClientMessage(message, connection);
@@ -82,7 +83,7 @@ public class ClientNonBlockingSocketReader
 
         lastReadTime = Clock.currentTimeMillis();
 
-        int readBytes = socketChannel.read(buffer);
+        int readBytes = socketChannel.read(inputBuffer);
         if (readBytes <= 0) {
             if (readBytes == -1) {
                 throw new EOFException("Remote socket closed!");
@@ -91,14 +92,14 @@ public class ClientNonBlockingSocketReader
         }
         bytesRead.inc(readBytes);
 
-        buffer.flip();
+        inputBuffer.flip();
 
-        messagesRead.inc(builder.onData(buffer));
+        readHandler.onRead(inputBuffer);
 
-        if (buffer.hasRemaining()) {
-            buffer.compact();
+        if (inputBuffer.hasRemaining()) {
+            inputBuffer.compact();
         } else {
-            buffer.clear();
+            inputBuffer.clear();
         }
     }
 }

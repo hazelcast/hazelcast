@@ -1,6 +1,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -26,12 +27,14 @@ public class ClientReadHandlerTest {
     private ClientReadHandler readHandler;
     private IOService ioService;
     private Connection connection;
+    private SwCounter counter;
 
     @Before
     public void setup() throws IOException {
         ioService = mock(IOService.class);
         connection = mock(Connection.class);
-        readHandler = new ClientReadHandler(connection, ioService);
+        counter = SwCounter.newSwCounter();
+        readHandler = new ClientReadHandler(counter, connection, ioService);
     }
 
     @Test

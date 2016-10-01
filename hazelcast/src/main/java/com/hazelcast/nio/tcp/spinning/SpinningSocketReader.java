@@ -168,7 +168,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
             socketWriter.setProtocol(CLIENT_BINARY_NEW);
-            readHandler = new ClientReadHandler(connection, ioService);
+            readHandler = new ClientReadHandler(normalFramesRead, connection, ioService);
         } else {
             configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
             socketWriter.setProtocol(Protocols.TEXT);
