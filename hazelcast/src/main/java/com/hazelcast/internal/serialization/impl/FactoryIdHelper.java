@@ -106,6 +106,9 @@ public final class FactoryIdHelper {
 
     public static final String DURABLE_EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.durable.executor";
     public static final int DURABLE_EXECUTOR_DS_FACTORY_ID = -34;
+
+    public static final String ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY = "hazelcast.serialization.ds.spi.hotrestart.cluster";
+    public static final int ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY_ID = -35;
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
@@ -167,9 +170,6 @@ public final class FactoryIdHelper {
 
     public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
     public static final int ENTERPRISE_MAP_PORTABLE_FACTORY_ID = -30;
-
-    public static final String ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY = "com.serialization.spi.hotrestart.cluster";
-    public static final int ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY_ID = -31;
 
     // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
