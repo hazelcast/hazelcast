@@ -20,16 +20,21 @@ import com.hazelcast.jet2.Chunk;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
-public class TestQueueHead<T> implements QueueHead<T> {
+import static com.hazelcast.jet2.impl.TaskletResult.DONE_WITHOUT_PROGRESS;
+import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
+import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
+
+public class MockQueueHead<T> implements QueueHead<T> {
 
     private final int chunkSize;
     private final List<T> input;
     private int lastToIndex;
     private boolean paused;
 
-    public TestQueueHead(int chunkSize, List<T> input) {
+    public MockQueueHead(int chunkSize, List<T> input) {
         this.chunkSize = chunkSize;
         this.input = new ArrayList<>(input);
         this.lastToIndex = 0;
@@ -40,23 +45,19 @@ public class TestQueueHead<T> implements QueueHead<T> {
     }
 
     @Override
-    public Chunk<T> pollChunk() {
+    public TaskletResult drainTo(Collection<? super T> dest) {
+        if (paused) {
+            return NO_PROGRESS;
+        }
         int from = lastToIndex;
         lastToIndex = Math.min(input.size(), lastToIndex + chunkSize);
-
-        if (paused) {
-            return new ListChunk<>(new ArrayList<>());
-        }
-
         if (from == lastToIndex) {
-            return null;
+            return DONE_WITHOUT_PROGRESS;
         }
-
-        List<T> chunk = new ArrayList<>();
         for (int i = from; i < lastToIndex; i++) {
-            chunk.add(input.get(i));
+            dest.add(input.get(i));
         }
-        return new ListChunk<>(chunk);
+        return MADE_PROGRESS;
     }
 
     public void pause() {

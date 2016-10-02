@@ -19,12 +19,12 @@ package com.hazelcast.jet2.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestQueueTail<T> implements QueueTail<T> {
+public class MockQueueTail<T> implements QueueTail<T> {
 
     private final ArrayList<Object> buffer;
     private final int capacity;
 
-    public TestQueueTail(int capacity) {
+    public MockQueueTail(int capacity) {
         this.capacity = capacity;
         this.buffer = new ArrayList<>(capacity);
     }
