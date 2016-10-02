@@ -24,7 +24,7 @@ import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.impl.MapKeyValueSource;
+import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
@@ -56,7 +56,7 @@ public class MapReduceForMultiMapMessageTask
 
     @Override
     protected KeyValueSource getKeyValueSource() {
-        return new MapKeyValueSource(parameters.multiMapName);
+        return new MultiMapKeyValueSource(parameters.multiMapName);
     }
 
     @Override
