@@ -47,7 +47,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testSingleChunk_when_singleInput() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(4, list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, list);
 
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
@@ -60,14 +60,14 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testAllChunks_when_singleInput() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(4, list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(list, consumer.getList());
         assertTrue("isComplete", consumer.isComplete());
@@ -76,7 +76,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_singleInputNotComplete() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -88,7 +88,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_singleInputNewData() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -97,7 +97,7 @@ public class ConsumerTaskletTest {
         input1.push(10, 11);
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), consumer.getList());
         assertTrue("isComplete", consumer.isComplete());
@@ -105,7 +105,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_singleInputNoProgress() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -117,15 +117,15 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_multipleInput() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(list.size(), list);
-        TestQueueHead<Integer> input2 = new TestQueueHead<>(list.size(), list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(list.size(), list);
+        MockQueueHead<Integer> input2 = new MockQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         inputMap.put("input2", input2);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(list.size() * 2, consumer.getList().size());
         assertTrue("isComplete", consumer.isComplete());
@@ -133,15 +133,15 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_multipleInput_oneFinishedEarlier() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(2, Arrays.asList(1, 2));
-        TestQueueHead<Integer> input2 = new TestQueueHead<>(list.size(), list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(2, Arrays.asList(1, 2));
+        MockQueueHead<Integer> input2 = new MockQueueHead<>(list.size(), list);
         inputMap.put("input1", input1);
         inputMap.put("input2", input2);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(12, consumer.getList().size());
         assertTrue("isComplete", consumer.isComplete());
@@ -150,7 +150,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYields() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -163,7 +163,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsOnSameItem() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -177,7 +177,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsAgain() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -190,7 +190,7 @@ public class ConsumerTaskletTest {
 
         assertEquals(Arrays.asList(0, 1, 2, 3), consumer.getList());
 
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(list, consumer.getList());
         assertTrue("isComplete", consumer.isComplete());
@@ -198,14 +198,14 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsAndThenRuns() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
         consumer.yieldOn(2);
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(list, consumer.getList());
         assertTrue("isComplete", consumer.isComplete());
@@ -213,7 +213,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsAndNoInput() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(3, list);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(3, list);
         inputMap.put("input1", input1);
         Tasklet tasklet = createTasklet();
 
@@ -230,7 +230,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testIsBlocking() {
-        inputMap.put("input1", new TestQueueHead<>(10, list));
+        inputMap.put("input1", new MockQueueHead<>(10, list));
         ConsumerTasklet<Integer> tasklet =
                 new ConsumerTasklet<>(new Consumer<Integer>() {
             @Override

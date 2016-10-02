@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Chunk;
+import java.util.Collection;
 
 /**
  * The head-end of a bounded non-blocking queue.
@@ -25,10 +25,10 @@ import com.hazelcast.jet2.Chunk;
 public interface QueueHead<T> {
 
     /**
-     * Polls a chunk of items from the queue. If the result is an empty chunk,
-     * data is not currently available; if it's <code>null</code>, all the data
-     * has already been retrieved.
+     * Drains all available items to the supplied destination collection.
+     * @return <code>true</code> if the data source connectod to this queue is exhausted;
+     * <code>false</code> otherwise.
      */
-    Chunk<T> pollChunk();
+    TaskletResult drainTo(Collection<? super T> dest);
 
 }

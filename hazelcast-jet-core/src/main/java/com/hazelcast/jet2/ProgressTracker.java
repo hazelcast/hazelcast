@@ -16,6 +16,36 @@
 
 package com.hazelcast.jet2;
 
-public interface OutputCollector<T> {
-    void collect(T item);
+import com.hazelcast.jet2.impl.ProgressState;
+
+/**
+ * Javadoc pending.
+ */
+public class ProgressTracker implements ProgressState {
+    private boolean isMadeProgress;
+    private boolean isDone = true;
+
+    public void reset() {
+        isMadeProgress = false;
+        isDone = true;
+    }
+
+    public void update(ProgressState prog) {
+        isMadeProgress |= prog.isMadeProgress();
+        isDone &= prog.isDone();
+    }
+
+    public void notDone() {
+        isDone = false;
+    }
+
+    @Override
+    public boolean isMadeProgress() {
+        return isMadeProgress;
+    }
+
+    @Override
+    public boolean isDone() {
+        return isDone;
+    }
 }

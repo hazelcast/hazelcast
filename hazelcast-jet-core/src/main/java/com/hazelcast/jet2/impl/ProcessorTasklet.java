@@ -16,33 +16,30 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Chunk;
 import com.hazelcast.jet2.Cursor;
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProgressTracker;
 import com.hazelcast.util.Preconditions;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Map;
 
-import static com.hazelcast.jet2.impl.ProcessorTasklet.OfferResult.ACCEPTED_ALL;
-import static com.hazelcast.jet2.impl.ProcessorTasklet.OfferResult.ACCEPTED_NONE;
-import static com.hazelcast.jet2.impl.ProcessorTasklet.OfferResult.ACCEPTED_SOME;
-import static com.hazelcast.jet2.impl.TaskletResult.DONE;
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
-import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
 
 public class ProcessorTasklet<I, O> implements Tasklet {
 
+    private final int bufferSize = 16;
+
     private final Processor<? super I, ? extends O> processor;
-    private final ArrayListCollector<O> pendingOutputCollector;
-    private final Map<String, QueueHead<? extends I>> queueHeads;
-    private final RemovableCircularCursor<Map.Entry<String, QueueHead<? extends I>>> queueHeadCursor;
+    private final Deque<I> pendingInput;
+    private final ArrayDequeCollector<O> pendingOutput;
+    private RemovableCircularCursor<Map.Entry<String, QueueHead<? extends I>>> queueHeadCursor;
     private final Cursor<QueueTail<? super O>> queueTailCursor;
+    private final ProgressTracker progTracker = new ProgressTracker();
 
-    private Cursor<O> pendingOutputCursor;
-    private Cursor<? extends I> pendingInputCursor;
-    private boolean processingComplete;
-
+    private boolean processorCompleted;
 
     public ProcessorTasklet(Processor<? super I, ? extends O> processor,
                             Map<String, QueueHead<? extends I>> queueHeads,
@@ -52,141 +49,65 @@ public class ProcessorTasklet<I, O> implements Tasklet {
         Preconditions.checkFalse(queueTails.isEmpty(), "There must be at least one output");
 
         this.processor = processor;
-        this.queueHeads = queueHeads;
-        this.queueHeadCursor = new RemovableCircularCursor<>(new ArrayList<>(this.queueHeads.entrySet()));
-        this.pendingOutputCollector = new ArrayListCollector<>();
-        this.queueTailCursor = new ListCursor<>(new ArrayList<>(queueTails.values()));
+        if (!queueHeads.isEmpty()) {
+            this.queueHeadCursor = new RemovableCircularCursor<>(new ArrayList<>(queueHeads.entrySet()));
+        }
+        this.queueTailCursor = queueTails.isEmpty() ? null : new ListCursor<>(new ArrayList<>(queueTails.values()));
+        this.pendingInput = new ArrayDeque<>();
+        this.pendingOutput = new ArrayDequeCollector<>();
     }
 
     @Override
     public TaskletResult call() throws Exception {
-        boolean didPendingWork = false;
-        if (pendingOutputCursor != null) {
-            switch (offerPendingOutput()) {
-                case ACCEPTED_NONE:
-                    return NO_PROGRESS;
-                case ACCEPTED_SOME:
-                    return MADE_PROGRESS;
-                case ACCEPTED_ALL:
-                    if (processingComplete) {
-                        return DONE;
-                    }
-                    didPendingWork = true;
-                    break;
+        progTracker.reset();
+        ensurePendingInput();
+        if (progTracker.isDone()) {
+            if (!processorCompleted) {
+                processorCompleted = processor.complete(pendingOutput);
+            }
+        } else if (!pendingInput.isEmpty()) {
+            progTracker.update(MADE_PROGRESS);
+            while (processor.process(queueHeadCursor.value().getKey(), pendingInput.peek(), pendingOutput)) {
+                pendingInput.remove();
             }
         }
-        // Invariant at this point: there is no pending output
-
-        if (pendingInputCursor != null) {
-            boolean pendingInputDone = tryProcessPendingInput();
-            if (!pendingOutputCollector.isEmpty()) {
-                pendingOutputCursor = pendingOutputCollector.cursor();
-                switch (offerPendingOutput()) {
-                    case ACCEPTED_ALL:
-                        if (!pendingInputDone) {
-                            return MADE_PROGRESS;
-                        }
-                        didPendingWork = true;
-                        break;
-                    case ACCEPTED_SOME:
-                    case ACCEPTED_NONE:
-                        return MADE_PROGRESS;
-                }
-            }
-        }
-
-        // Invariant at this point: there is neither pending input nor pending output
-
-        Chunk<? extends I> chunk = pollChunk();
-        if (chunk == null) {
-            processingComplete = tryComplete();
-            if (processingComplete && pendingOutputCollector.isEmpty()) {
-                return DONE;
-            }
-            pendingOutputCursor = pendingOutputCollector.cursor();
-            OfferResult offerResult = offerPendingOutput();
-            if (processingComplete && offerResult == ACCEPTED_ALL) {
-                return DONE;
-            }
-            return MADE_PROGRESS;
-        }
-        if (chunk.isEmpty()) {
-            return didPendingWork ? MADE_PROGRESS : NO_PROGRESS;
-        }
-
-        // Invariant at this point: there is pending input and no pending output
-
-        pendingInputCursor = chunk.cursor();
-        tryProcessPendingInput();
-        if (!pendingOutputCollector.isEmpty()) {
-            pendingOutputCursor = pendingOutputCollector.cursor();
-            offerPendingOutput();
-        }
-
-        return MADE_PROGRESS;
+        offerPendingOutput();
+        return TaskletResult.valueOf(progTracker);
     }
 
-    private boolean tryProcessPendingInput() {
+    private void ensurePendingInput() {
+        if (queueHeadCursor == null) {
+            return;
+        }
+        if (pendingInput.size() >= bufferSize / 2) {
+            progTracker.notDone();
+            return;
+        }
+        final QueueHead<? extends I> first = queueHeadCursor.value().getValue();
+        QueueHead<? extends I> current = first;
         do {
-            boolean currentItemDone =
-                    processor.process(queueHeadCursor.value().getKey(), pendingInputCursor.value(), pendingOutputCollector);
-            if (!currentItemDone) {
-                return false;
-            }
-        } while (pendingInputCursor.advance());
-
-        pendingInputCursor = null;
-        return true;
-    }
-
-    private boolean tryComplete() {
-        pendingOutputCollector.clear();
-        return processor.complete(pendingOutputCollector);
-    }
-
-    private Chunk<? extends I> pollChunk() {
-        QueueHead<? extends I> end = queueHeadCursor.value().getValue();
-        Chunk<? extends I> result = null;
-        while (queueHeadCursor.advance()) {
-            QueueHead<? extends I> current = queueHeadCursor.value().getValue();
-            Chunk<? extends I> chunk = current.pollChunk();
-            if (chunk == null) {
+            final TaskletResult result = current.drainTo(pendingInput);
+            progTracker.update(result);
+            if (result.isDone()) {
                 queueHeadCursor.remove();
-            } else {
-                result = chunk;
-                if (!chunk.isEmpty()) {
-                    break;
-                }
             }
-            if (current == end) {
-                break;
+            if (!queueHeadCursor.advance()) {
+                return;
             }
+            current = queueHeadCursor.value().getValue();
+        } while (current != first && pendingInput.size() < bufferSize);
+        progTracker.notDone();
+    }
+
+    private void offerPendingOutput() {
+        for (O item; (item = pendingOutput.peek()) != null;) {
+            if (!queueTailCursor.value().offer(item)) {
+                progTracker.notDone();
+                return;
+            }
+            progTracker.update(MADE_PROGRESS);
+            pendingOutput.remove();
         }
-        return result;
-    }
-
-    private OfferResult offerPendingOutput() {
-        boolean pushedSome = false;
-        do {
-            do {
-                boolean pushed = queueTailCursor.value().offer(pendingOutputCursor.value());
-                pushedSome |= pushed;
-                if (!pushed) {
-                    return pushedSome ? ACCEPTED_SOME : ACCEPTED_NONE;
-                }
-            } while (queueTailCursor.advance());
-            queueTailCursor.reset();
-        } while (pendingOutputCursor.advance());
-
-        pendingOutputCollector.clear();
-        pendingOutputCursor = null;
-        return ACCEPTED_ALL;
-    }
-
-    enum OfferResult {
-        ACCEPTED_ALL,
-        ACCEPTED_SOME,
-        ACCEPTED_NONE,
     }
 }
 

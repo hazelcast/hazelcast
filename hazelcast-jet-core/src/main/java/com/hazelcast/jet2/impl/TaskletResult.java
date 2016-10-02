@@ -16,8 +16,33 @@
 
 package com.hazelcast.jet2.impl;
 
-public enum TaskletResult {
-    DONE,
-    MADE_PROGRESS,
-    NO_PROGRESS
+public enum TaskletResult implements ProgressState {
+    NO_PROGRESS(false, false),
+    MADE_PROGRESS(true, false),
+    DONE(true, true),
+    WAS_ALREADY_DONE(true, false);
+
+    private final boolean madeProgress;
+    private final boolean isDone;
+
+    TaskletResult(boolean madeProgress, boolean isDone) {
+        this.madeProgress = madeProgress;
+        this.isDone = isDone;
+    }
+
+    @Override
+    public boolean isMadeProgress() {
+        return madeProgress;
+    }
+
+    @Override
+    public boolean isDone() {
+        return isDone;
+    }
+
+    public static TaskletResult valueOf(ProgressState state) {
+        return state.isDone()
+                ? state.isMadeProgress() ? DONE : WAS_ALREADY_DONE
+                : state.isMadeProgress() ? MADE_PROGRESS : NO_PROGRESS;
+    }
 }

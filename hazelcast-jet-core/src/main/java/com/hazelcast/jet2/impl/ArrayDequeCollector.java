@@ -14,8 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-public interface OutputCollector<T> {
-    void collect(T item);
+import com.hazelcast.jet2.OutputCollector;
+
+import java.util.ArrayDeque;
+
+/**
+ * Javadoc pending.
+ */
+public class ArrayDequeCollector<E> implements OutputCollector<E> {
+    private final ArrayDeque<E> deque = new ArrayDeque<>();
+
+    @Override
+    public void collect(E item) {
+        deque.add(item);
+    }
+
+    public E peek() {
+        return deque.peek();
+    }
+
+    public void remove() {
+        deque.remove();
+    }
 }

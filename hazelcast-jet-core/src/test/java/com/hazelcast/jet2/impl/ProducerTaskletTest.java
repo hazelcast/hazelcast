@@ -48,7 +48,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testSingleChunk_whenSingleOutput() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -57,8 +57,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testSingleChunk_whenMultipleOutputs() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
-        TestQueueTail<Integer> output2 = new TestQueueTail<>(10);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
+        MockQueueTail<Integer> output2 = new MockQueueTail<>(10);
         outputMap.put("output1", output1);
         outputMap.put("output2", output2);
 
@@ -71,7 +71,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testAllChunks_whenSingleOutput() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
         outputMap.put("output1", output1);
 
         Tasklet tasklet = createTasklet();
@@ -85,8 +85,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testAllChunks_whenMultipleOutputs() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
-        TestQueueTail<Integer> output2 = new TestQueueTail<>(10);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
+        MockQueueTail<Integer> output2 = new MockQueueTail<>(10);
         outputMap.put("output1", output1);
         outputMap.put("output2", output2);
 
@@ -102,7 +102,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenOutputIsFull() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(4);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(4);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
 
@@ -124,7 +124,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenOutputFullThenFullyDrained() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(1);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(1);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
 
@@ -140,8 +140,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenOnlyOneOutputFull() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(2);
-        TestQueueTail<Integer> output2 = new TestQueueTail<>(4);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(2);
+        MockQueueTail<Integer> output2 = new MockQueueTail<>(4);
         outputMap.put("output1", output1);
         outputMap.put("output2", output2);
         Tasklet tasklet = createTasklet();
@@ -156,7 +156,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testNoProgress_whenProducerIdle() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -174,7 +174,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testDone_whenProducerIdleAndComplete() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -189,7 +189,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenProducerIdleButPendingOutput() throws Exception {
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(2);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(2);
         outputMap.put("output1", output1);
         Tasklet tasklet = createTasklet();
 
@@ -204,7 +204,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testIsBlocking() {
-        outputMap.put("input1", new TestQueueTail<>(10));
+        outputMap.put("input1", new MockQueueTail<>(10));
         ProducerTasklet<Integer> tasklet =
                 new ProducerTasklet<>(new Producer<Integer>() {
                     @Override

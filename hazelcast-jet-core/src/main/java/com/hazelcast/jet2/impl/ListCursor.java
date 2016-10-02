@@ -21,9 +21,15 @@ import com.hazelcast.util.Preconditions;
 
 import java.util.List;
 
+/**
+ * Cursor over a {@code java.util.List}. A new cursor is positioned at the first
+ * list element. It is impossible to create a cursor on an empty list.
+ *
+ * @param <T>
+ */
 public class ListCursor<T> implements Cursor<T> {
 
-    protected int index = 0;
+    protected int index;
     protected final List<T> list;
 
     public ListCursor(List<T> list) {
@@ -40,6 +46,10 @@ public class ListCursor<T> implements Cursor<T> {
         return list.get(index);
     }
 
+    /**
+     * Resets the cursor to the initial state, which means pointing to the
+     * first element.
+     */
     @Override
     public void reset() {
         index = 0;

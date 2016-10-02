@@ -93,17 +93,12 @@ public class ExecutionService {
                     }
                     try {
                         final TaskletResult result = t.tasklet.call();
-                        switch (result) {
-                            case DONE:
-                                t.completionLatch.countDown();
-                                it.remove();
-                                stealWork();
-                                break;
-                            case MADE_PROGRESS:
-                                madeProgress = true;
-                                break;
-                            case NO_PROGRESS:
-                                break;
+                        if (result.isDone()) {
+                            t.completionLatch.countDown();
+                            it.remove();
+                            stealWork();
+                        } else {
+                            madeProgress |= result.isMadeProgress();
                         }
                     } catch (Throwable e) {
                         t.troubleSetter.setTrouble(e);

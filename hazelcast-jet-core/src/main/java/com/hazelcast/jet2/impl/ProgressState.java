@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-public interface OutputCollector<T> {
-    void collect(T item);
+/**
+ * Javadoc pending.
+ */
+public interface ProgressState {
+    boolean isMadeProgress();
+    boolean isDone();
 }

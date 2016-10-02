@@ -51,8 +51,8 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testSingleChunk_when_singleOutput() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
 
         inputMap.put("input1", input1);
         outputMap.put("output1", output1);
@@ -60,7 +60,7 @@ public class ProcessorTaskletTest {
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(list, output1.getBuffer());
         assertEquals("input1", processor.lastInput);
@@ -68,9 +68,9 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testSingleChunk_when_multipleOutputs() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(10, list);
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
-        TestQueueTail<Integer> output2 = new TestQueueTail<>(10);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
+        MockQueueTail<Integer> output2 = new MockQueueTail<>(10);
 
         inputMap.put("input1", input1);
         outputMap.put("output1", output1);
@@ -79,7 +79,7 @@ public class ProcessorTaskletTest {
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(list, output1.getBuffer());
         assertEquals(list, output2.getBuffer());
@@ -88,8 +88,8 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testProgress_when_multipleChunks() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(4, list);
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, list);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
 
         inputMap.put("input1", input1);
         outputMap.put("output1", output1);
@@ -99,7 +99,7 @@ public class ProcessorTaskletTest {
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(list, output1.getBuffer());
         assertEquals("input1", processor.lastInput);
@@ -107,10 +107,10 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testProgress_when_multipleInputs() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(4, Arrays.asList(0, 1, 2, 3));
-        TestQueueHead<Integer> input2 = new TestQueueHead<>(4, Arrays.asList(4, 5, 6, 7));
-        TestQueueHead<Integer> input3 = new TestQueueHead<>(4, Arrays.asList(8, 9));
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, Arrays.asList(0, 1, 2, 3));
+        MockQueueHead<Integer> input2 = new MockQueueHead<>(4, Arrays.asList(4, 5, 6, 7));
+        MockQueueHead<Integer> input3 = new MockQueueHead<>(4, Arrays.asList(8, 9));
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
 
         inputMap.put("input1", input1);
         inputMap.put("input2", input2);
@@ -122,15 +122,15 @@ public class ProcessorTaskletTest {
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertTrue(tasklet.call().isDone());
 
         assertEquals(new HashSet<>(list), new HashSet<>(output1.getBuffer()));
     }
 
     @Test
     public void testProgress_when_pendingInputAndOutputEmpty() throws Exception {
-        TestQueueHead<Integer> input1 = new TestQueueHead<>(4, list);
-        TestQueueTail<Integer> output1 = new TestQueueTail<>(10);
+        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, list);
+        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
 
         inputMap.put("input1", input1);
         outputMap.put("output1", output1);

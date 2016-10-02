@@ -33,8 +33,8 @@ public class ArrayListCollector<T> implements OutputCollector<T> {
     }
 
     @Override
-    public void collect(T object) {
-        buffer.add(object);
+    public void collect(T item) {
+        buffer.add(item);
     }
 
     public void clear() {
@@ -45,6 +45,10 @@ public class ArrayListCollector<T> implements OutputCollector<T> {
         return buffer.isEmpty();
     }
 
+    /**
+     * Returns the singleton cursor associated with this collector.
+     * Resets the cursor before returning it.
+     */
     public Cursor<T> cursor() {
         if (isEmpty()) {
             throw new IllegalArgumentException("Can't create cursor on empty list");
@@ -57,5 +61,5 @@ public class ArrayListCollector<T> implements OutputCollector<T> {
         return buffer;
     }
 
-    
+
 }
