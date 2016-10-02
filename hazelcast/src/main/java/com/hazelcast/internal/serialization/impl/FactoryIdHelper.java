@@ -168,6 +168,9 @@ public final class FactoryIdHelper {
     public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
     public static final int ENTERPRISE_MAP_PORTABLE_FACTORY_ID = -30;
 
+    public static final String ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY = "com.serialization.spi.hotrestart.cluster";
+    public static final int ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY_ID = -31;
+
     // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
     private FactoryIdHelper() {
