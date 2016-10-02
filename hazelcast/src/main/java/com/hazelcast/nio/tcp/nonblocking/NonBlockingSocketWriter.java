@@ -325,6 +325,9 @@ public final class NonBlockingSocketWriter
         }
 
         fillOutputBuffer();
+        if (shutdown) {
+            return;
+        }
 
         if (dirtyOutputBuffer()) {
             writeOutputBufferToSocket();
