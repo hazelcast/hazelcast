@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-public interface ProcessorContext {
+import com.hazelcast.jet2.ProcessorContext;
 
+public class ProcessorContextImpl implements ProcessorContext {
+
+
+    public ProcessorContextImpl() {
+    }
 
 }
-
-
-

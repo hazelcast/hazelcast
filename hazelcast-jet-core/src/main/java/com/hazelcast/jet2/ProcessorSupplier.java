@@ -20,5 +20,5 @@ import java.io.Serializable;
 
 @FunctionalInterface
 public interface ProcessorSupplier extends Serializable {
-    Processor get(ProcessorContext context);
+    Processor get();
 }

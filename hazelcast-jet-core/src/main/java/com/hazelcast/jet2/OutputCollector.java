@@ -16,6 +16,18 @@
 
 package com.hazelcast.jet2;
 
-public interface OutputCollector<T> {
-    void collect(T item);
+/**
+ * Accepts processing output
+ */
+public interface OutputCollector {
+
+    /**
+     * Accept the given item for all outputs
+     */
+    void accept(Object item);
+
+    /**
+     * Accept the given item for the specified output at <code>ordinal</code>.
+     */
+    void accept(int ordinal, Object item);
 }

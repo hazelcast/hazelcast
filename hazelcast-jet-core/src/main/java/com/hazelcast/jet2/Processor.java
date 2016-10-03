@@ -16,33 +16,55 @@
 
 package com.hazelcast.jet2;
 
+import javax.annotation.Nonnull;
+
 /**
- * Does the computation needed to transform one or more named input data streams into one
+ * Does the computation needed to transform zero or more named input data streams into one
  * output stream.
- * <p>
+ * <p/>
  * The processing methods should limit the amount of processing time and data they output per
  * one invocation. A method should return <code>false</code> to signal it's not done with the
  * current item. When the caller is ready to invoke the method again, it will invoke it with
  * the same arguments as the previous time.
- *
- * @param <I> type of input objects
- * @param <O> type of output objects
  */
-public interface Processor<I, O> {
+public interface Processor {
 
     /**
-     * Processes the supplied input item and pushes the results into the supplied output collector.
+     * Initialize the processor with the {@link ProcessorContext} and an {@link OutputCollector} that
+     * can accept processing results. This method will be called exactly once and strictly before any
+     * calls to {@link #process(int, Object)} or {@link #complete(int)}.
+     */
+    void init(@Nonnull ProcessorContext context, @Nonnull OutputCollector collector);
+
+    /**
+     * Processes the supplied input item
      *
-     * @param input name of the input
-     * @param item item to be processed
-     * @param collector collector of output items
+     * @param ordinal ordinal of the input where the item originates from
+     * @param item    item to be processed
      * @return <code>true</code> if the method is done with the current item, <code>false</code> otherwise.
      */
-    boolean process(String input, I item, OutputCollector<? super O> collector);
+    boolean process(int ordinal, Object item);
 
     /**
-     * Called after all the input has been exhausted.
+     * Called after all the input at <code>ordinal</code> is exhausted
+     *
      * @return <code>true</code> if the method is done completing the processing, <code>false</code> otherwise.
      */
-    boolean complete(OutputCollector<? super O> collector);
+    boolean complete(int ordinal);
+
+    /**
+     * Called after all the inputs are exhausted
+     *
+     * @return <code>true</code> if the method is done completing the processing, <code>false</code> otherwise.
+     */
+    boolean complete();
+
+    /**
+     * Tells whether this processor performs any blocking operations
+     * (such as using a blocking I/O). By returning <code>false</code> the processor promises
+     * not to spend any time waiting for a blocking operation to complete.
+     */
+    default boolean isBlocking() {
+        return false;
+    }
 }
