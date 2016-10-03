@@ -79,6 +79,30 @@ public class QueueStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testRemoveAll() {
+        int maxSize = 2000;
+        final Config config = new Config();
+        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
+                .setStoreImplementation(new TestQueueStore())
+                .setProperty("bulk-load", String.valueOf(200));
+        config.getQueueConfig("testQueueStore")
+                .setMaxSize(maxSize)
+                .setQueueStoreConfig(queueStoreConfig);
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IQueue<Object> queue = instance.getQueue("testQueueStore");
+
+        for (int i = 0; i < maxSize; i++) {
+            queue.add(i);
+        }
+        assertEquals(maxSize, queue.size());
+
+        for (Object o : queue) {
+            queue.remove(o);
+        }
+        assertEquals(0, queue.size());
+    }
+
+    @Test
     public void testIssue1401QueueStoreWithTxnPoll() {
         QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         queueStoreConfig.setStoreImplementation(new MyQueueStore());
@@ -102,65 +126,6 @@ public class QueueStoreTest extends HazelcastTestSupport {
             String queueData = queue.poll();
             assertNotNull(queueData);
             context.commitTransaction();
-        }
-    }
-
-    private static class MyQueueStore implements QueueStore<Object>, Serializable {
-
-        static final Map<Long, Object> map = new HashMap<Long, Object>();
-
-        static {
-            map.put(1L, "hola");
-            map.put(3L, "dias");
-            map.put(4L, "pescado");
-            map.put(6L, "oso");
-            map.put(2L, "manzana");
-            map.put(10L, "manana");
-            map.put(12L, "perro");
-            map.put(17L, "gato");
-            map.put(19L, "toro");
-            map.put(15L, "tortuga");
-        }
-
-        @Override
-        public void store(Long key, Object value) {
-            map.put(key, value);
-        }
-
-        @Override
-        public void storeAll(Map<Long, Object> valueMap) {
-            map.putAll(valueMap);
-        }
-
-        @Override
-        public void delete(Long key) {
-            map.remove(key);
-        }
-
-        @Override
-        public void deleteAll(Collection<Long> keys) {
-            for (Long key : keys) {
-                map.remove(key);
-            }
-        }
-
-        @Override
-        public Object load(Long key) {
-            return map.get(key);
-        }
-
-        @Override
-        public Map<Long, Object> loadAll(Collection<Long> keys) {
-            Map<Long, Object> resultMap = new HashMap<Long, Object>();
-            for (Long key : keys) {
-                resultMap.put(key, map.get(key));
-            }
-            return resultMap;
-        }
-
-        @Override
-        public Set<Long> loadAllKeys() {
-            return map.keySet();
         }
     }
 
@@ -305,6 +270,63 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queueStoreConfig.setProperty("memory-limit", "0");
         queueStoreConfig.setProperty("bulk-load", "100");
         return queueStoreConfig;
+    }
+
+    private static class MyQueueStore implements QueueStore<Object>, Serializable {
+        static final Map<Long, Object> map = new HashMap<Long, Object>();
+        static {
+            map.put(1L, "hola");
+            map.put(3L, "dias");
+            map.put(4L, "pescado");
+            map.put(6L, "oso");
+            map.put(2L, "manzana");
+            map.put(10L, "manana");
+            map.put(12L, "perro");
+            map.put(17L, "gato");
+            map.put(19L, "toro");
+            map.put(15L, "tortuga");
+        }
+
+        @Override
+        public void store(Long key, Object value) {
+            map.put(key, value);
+        }
+
+        @Override
+        public void storeAll(Map<Long, Object> valueMap) {
+            map.putAll(valueMap);
+        }
+
+        @Override
+        public void delete(Long key) {
+            map.remove(key);
+        }
+
+        @Override
+        public void deleteAll(Collection<Long> keys) {
+            for (Long key : keys) {
+                map.remove(key);
+            }
+        }
+
+        @Override
+        public Object load(Long key) {
+            return map.get(key);
+        }
+
+        @Override
+        public Map<Long, Object> loadAll(Collection<Long> keys) {
+            Map<Long, Object> resultMap = new HashMap<Long, Object>();
+            for (Long key : keys) {
+                resultMap.put(key, map.get(key));
+            }
+            return resultMap;
+        }
+
+        @Override
+        public Set<Long> loadAllKeys() {
+            return map.keySet();
+        }
     }
 
     static class SimpleQueueStoreFactory implements QueueStoreFactory<Integer> {

@@ -51,6 +51,15 @@ import java.util.concurrent.TimeUnit;
  * This class contains methods be notable for the Queue.
  * such as pool,peek,clear..
  */
+
+/**
+ * The {@code QueueContainer} contains the actual queue and provides functionalities such as :
+ * <ul>
+ *     <li>queue functionalities</li>
+ *     <li>transactional operation functionalities</li>
+ *     <li>schedules queue destruction if it is configured to be destroyed once empty</li>
+ * </ul>
+ */
 public class QueueContainer implements IdentifiedDataSerializable {
     private static final int ID_PROMOTION_OFFSET = 100000;
     private final Map<Long, TxQueueItem> txMap = new HashMap<Long, TxQueueItem>();
@@ -200,10 +209,11 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     private void addTxItemOrdered(TxQueueItem txQueueItem) {
-        ListIterator<QueueItem> iterator = ((List) getItemQueue()).listIterator();
+        final ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
         while (iterator.hasNext()) {
-            QueueItem queueItem = iterator.next();
+            final QueueItem queueItem = iterator.next();
             if (txQueueItem.itemId < queueItem.itemId) {
                 iterator.previous();
                 break;
@@ -317,11 +327,19 @@ public class QueueContainer implements IdentifiedDataSerializable {
         getBackupMap().put(itemId, item);
     }
 
+    /**
+     * Adds all items from the {@code dataList} to the queue. The data will be stored in the queue store if configured and
+     * enabled. If the store is enabled, only {@link QueueStoreWrapper#getMemoryLimit()} item data will be stored in memory.
+     * Cancels the eviction if one is scheduled.
+     *
+     * @param dataList the items to be added to the queue and stored in the queue store
+     * @return map of item ID and items added
+     */
     public Map<Long, Data> addAll(Collection<Data> dataList) {
-        Map<Long, Data> map = new HashMap<Long, Data>(dataList.size());
-        List<QueueItem> list = new ArrayList<QueueItem>(dataList.size());
+        final Map<Long, Data> map = new HashMap<Long, Data>(dataList.size());
+        final List<QueueItem> list = new ArrayList<QueueItem>(dataList.size());
         for (Data data : dataList) {
-            QueueItem item = new QueueItem(this, nextId(), null);
+            final QueueItem item = new QueueItem(this, nextId(), null);
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(data);
             }
@@ -352,8 +370,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * Retrieves, but does not remove, the head of this queue, or returns {@code null} if this queue is empty.
+     * Loads the data from the queue store if the item data is empty.
+     *
+     * @return the first item in the queue
+     */
     public QueueItem peek() {
-        QueueItem item = getItemQueue().peek();
+        final QueueItem item = getItemQueue().peek();
         if (item == null) {
             return null;
         }
@@ -367,8 +391,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return item;
     }
 
+    /**
+     * Retrieves and removes the head of the queue (in other words, the first item), or returns {@code null} if it is empty.
+     * Also calls the queue store for item deletion by item ID.
+     *
+     * @return the first item in the queue
+     */
     public QueueItem poll() {
-        QueueItem item = peek();
+        final QueueItem item = peek();
         if (item == null) {
             return null;
         }
@@ -393,12 +423,20 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * Removes items from the queue and the queue store (if configured), up to {@code maxSize} or the size of the queue,
+     * whichever is smaller. Also schedules the queue for destruction if it is empty or destroys it immediately if it is
+     * empty and {@link QueueConfig#getEmptyQueueTtl()} is 0.
+     *
+     * @param maxSize the maximum number of items to be removed
+     * @return the map of IDs and removed (drained) items
+     */
     public Map<Long, Data> drain(int maxSize) {
         int maxSizeParam = maxSize;
         if (maxSizeParam < 0 || maxSizeParam > getItemQueue().size()) {
             maxSizeParam = getItemQueue().size();
         }
-        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(maxSizeParam);
+        final LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(maxSizeParam);
         mapDrainIterator(maxSizeParam, map);
         if (store.isEnabled() && maxSizeParam != 0) {
             try {
@@ -409,7 +447,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
         long current = Clock.currentTimeMillis();
         for (int i = 0; i < maxSizeParam; i++) {
-            QueueItem item = getItemQueue().poll();
+            final QueueItem item = getItemQueue().poll();
             //For Stats
             age(item, current);
         }
@@ -508,8 +546,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
         getBackupMap().remove(itemId);
     }
 
+
     /**
-     * This method does not trigger store load.
+     * Checks if the queue contains all items in the dataSet. This method does not trigger store load.
+     *
+     * @param dataSet the items which should be stored in the queue
+     * @return true if the queue contains all items, false otherwise
      */
     public boolean contains(Collection<Data> dataSet) {
         for (Data data : dataSet) {
@@ -528,10 +570,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * This method triggers store load.
+     * Returns data in the queue. This method triggers store load.
+     *
+     * @return the item data in the queue.
      */
     public List<Data> getAsDataList() {
-        List<Data> dataList = new ArrayList<Data>(getItemQueue().size());
+        final List<Data> dataList = new ArrayList<Data>(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             if (store.isEnabled() && item.getData() == null) {
                 try {
@@ -546,10 +590,19 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * This method triggers store load
+     * Compares if the queue contains the items in the dataList and removes them according to the retain parameter. If
+     * the retain parameter is true, it will remove items which are not in the dataList (retaining the items which are in the
+     * list). If the retain parameter is false, it will remove items which are in the dataList (retaining all other items which
+     * are not in the list).
+     *
+     * Note : this method will trigger store load.
+     *
+     * @param dataList the list of items which are to be retained in the queue or which are to be removed from the queue
+     * @param retain does the method retain the items in the list (true) or remove them from the queue (false)
+     * @return map of removed items by id
      */
     public Map<Long, Data> compareAndRemove(Collection<Data> dataList, boolean retain) {
-        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();
+        final LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();
         for (QueueItem item : getItemQueue()) {
             if (item.getData() == null && store.isEnabled()) {
                 try {
@@ -569,7 +622,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return map;
     }
 
-    public void mapIterateAndRemove(Map map) {
+    /**
+     * Deletes items from the queue which have IDs contained in the key set of the given map. Also schedules the queue for
+     * destruction if it is empty or destroys it immediately if it is empty and {@link QueueConfig#getEmptyQueueTtl()} is 0.
+     *
+     * @param map the map of items which to be removed.
+     */
+    public void mapIterateAndRemove(Map<Long, Data> map) {
         if (map.size() <= 0) {
             return;
         }
@@ -581,9 +640,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        Iterator<QueueItem> iter = getItemQueue().iterator();
+        final Iterator<QueueItem> iter = getItemQueue().iterator();
         while (iter.hasNext()) {
-            QueueItem item = iter.next();
+            final QueueItem item = iter.next();
             if (map.containsKey(item.getItemId())) {
                 iter.remove();
                 //For Stats
@@ -598,12 +657,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Tries to load the data for the given queue item. The method will also try to load data in batches. To do so,
-     * it will check the item ID's in the item queue and load up to {@link QueueStoreWrapper#getBulkLoad()} items. If the
-     * {@link QueueStoreWrapper#getBulkLoad()} is 1, it will just load data for the given item. Otherwise, it will load items
-     * for other items in the queue too by collecting the IDs of the items in the queue sequentially. This method could
-     * mistakenly not load the data for the given parameter if it is located after the {@link QueueStoreWrapper#getBulkLoad()}
-     * item in the queue.
+     * Tries to load the data for the given queue item. The method will also try to load data in batches if configured to do so.
+     * <p>
+     * If the {@link QueueStoreWrapper#getBulkLoad()} is 1, it will just load data for the given item. Otherwise, it will
+     * load items for other items in the queue too by collecting the IDs of the items in the queue sequentially up to
+     * {@link QueueStoreWrapper#getBulkLoad()} items. While doing so, it will make sure that the ID of the initially requested
+     * item is also being loaded even though it is not amongst the first {@link QueueStoreWrapper#getBulkLoad()} items in the
+     * queue.
      *
      * @param item the item for which the data is being set
      * @throws Exception if there is any exception. For example, when calling methods on the queue store
@@ -614,21 +674,35 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (bulkLoad == 1) {
             item.setData(store.load(item.getItemId()));
         } else if (bulkLoad > 1) {
-            Iterator<QueueItem> iter = getItemQueue().iterator();
-            HashSet<Long> keySet = new HashSet<Long>(bulkLoad);
-            for (int i = 0; i < bulkLoad; i++) {
+            final Iterator<QueueItem> iter = getItemQueue().iterator();
+            final HashSet<Long> keySet = new HashSet<Long>(bulkLoad);
+
+            keySet.add(item.getItemId());
+            while (keySet.size() < bulkLoad) {
                 keySet.add(iter.next().getItemId());
             }
-            Map<Long, Data> values = store.loadAll(keySet);
+
+            final Map<Long, Data> values = store.loadAll(keySet);
             dataMap.putAll(values);
             item.setData(getDataFromMap(item.getItemId()));
         }
     }
 
+    /**
+     * Returns if this queue can accommodate one item.
+     *
+     * @return if the queue has capacity for one item
+     */
     public boolean hasEnoughCapacity() {
         return hasEnoughCapacity(1);
     }
 
+    /**
+     * Returns if this queue can accommodate for {@code delta} items.
+     *
+     * @param delta the number of items that should be stored in the queue
+     * @return if the queue has enough capacity for the items
+     */
     public boolean hasEnoughCapacity(int delta) {
         return (getItemQueue().size() + delta) <= config.getMaxSize();
     }
@@ -718,6 +792,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
         stats.setAveAge(totalAge / totalAgedCountVal);
     }
 
+    /**
+     * Schedules the queue for destruction if the queue is empty. Destroys the queue immediately the queue is empty and the
+     * {@link QueueConfig#getEmptyQueueTtl()} is 0. Upon scheduled execution, the queue will be checked if it is still empty.
+     */
     private void scheduleEvictionIfEmpty() {
         final int emptyQueueTtl = config.getEmptyQueueTtl();
         if (emptyQueueTtl < 0) {
