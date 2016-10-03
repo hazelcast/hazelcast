@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio.tcp.spinning;
 
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -48,7 +46,7 @@ import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningSocketWriter extends AbstractHandler implements SocketWriter, DiscardableMetricsProvider {
+public class SpinningSocketWriter extends AbstractHandler implements SocketWriter {
 
     private static final long TIMEOUT = 3;
 
@@ -73,22 +71,12 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private WriteHandler writeHandler;
     private volatile OutboundFrame currentFrame;
 
-    public SpinningSocketWriter(TcpIpConnection connection,  ILogger logger) {
+    public SpinningSocketWriter(TcpIpConnection connection, ILogger logger) {
         super(connection, logger);
         this.logger = logger;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
         this.urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
-    }
-
-    @Override
-    public void discardMetrics(MetricsRegistry registry) {
-        registry.deregister(this);
     }
 
     @Override

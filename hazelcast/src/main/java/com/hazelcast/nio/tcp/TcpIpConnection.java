@@ -85,13 +85,19 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
     }
 
     @Override
-    public void discardMetrics(MetricsRegistry registry) {
-        registry.discardMetrics(socketReader, socketWriter);
+    public void provideMetrics(MetricsRegistry registry) {
+        Socket socket = socketChannel.socket();
+        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
+        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
+        String metricsId = localSocketAddress + "->" + remoteSocketAddress;
+        registry.scanAndRegister(socketWriter, "tcp.connection[" + metricsId + "].out");
+        registry.scanAndRegister(socketReader, "tcp.connection[" + metricsId + "].in");
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.collectMetrics(socketReader, socketWriter);
+    public void discardMetrics(MetricsRegistry registry) {
+        registry.deregister(socketReader);
+        registry.deregister(socketWriter);
     }
 
     public SocketReader getSocketReader() {
@@ -177,13 +183,6 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
 
     public int getConnectionId() {
         return connectionId;
-    }
-
-    public Object getMetricsId() {
-        Socket socket = socketChannel.socket();
-        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
-        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return localSocketAddress + "->" + remoteSocketAddress;
     }
 
     public void setSendBufferSize(int size) throws SocketException {

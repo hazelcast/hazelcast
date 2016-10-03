@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -79,11 +78,6 @@ public final class NonBlockingSocketReader
 
         this.connectionManager = connection.getConnectionManager();
         this.ioService = connectionManager.getIoService();
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
     }
 
     @Probe(name = "idleTimeMs")

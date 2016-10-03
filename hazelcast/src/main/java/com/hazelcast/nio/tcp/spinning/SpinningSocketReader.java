@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio.tcp.spinning;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -46,7 +44,7 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningSocketReader extends AbstractHandler implements SocketReader, DiscardableMetricsProvider {
+public class SpinningSocketReader extends AbstractHandler implements SocketReader {
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -60,19 +58,9 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     private ByteBuffer inputBuffer;
     private ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
-    public SpinningSocketReader(TcpIpConnection connection,  ILogger logger) {
+    public SpinningSocketReader(TcpIpConnection connection, ILogger logger) {
         super(connection, logger);
         this.socketChannel = connection.getSocketChannelWrapper();
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
-    }
-
-    @Override
-    public void discardMetrics(MetricsRegistry registry) {
-        registry.deregister(this);
     }
 
     @Override

@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -33,7 +31,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 public abstract class AbstractHandler<C extends Connection>
-        implements SelectionHandler, MigratableHandler, DiscardableMetricsProvider {
+        implements SelectionHandler, MigratableHandler {
 
     @Probe(name = "eventCount")
     protected final SwCounter eventCount = newSwCounter();
@@ -66,11 +64,6 @@ public abstract class AbstractHandler<C extends Connection>
         this.logger = logger;
         this.initialOps = initialOps;
         this.ioBalancer = ioBalancer;
-    }
-
-    @Override
-    public void discardMetrics(MetricsRegistry registry) {
-        registry.deregister(this);
     }
 
     @Override
