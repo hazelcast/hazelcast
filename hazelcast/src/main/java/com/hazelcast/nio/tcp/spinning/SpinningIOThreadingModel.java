@@ -39,7 +39,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
  *
  * This is an experimental feature and disabled by default.
  */
-public class SpinningIOThreadingModel implements IOThreadingModel {
+public class SpinningIOThreadingModel implements IOThreadingModel<TcpIpConnection, SocketReader, SocketWriter> {
 
     private final ILogger logger;
     private final LoggingService loggingService;

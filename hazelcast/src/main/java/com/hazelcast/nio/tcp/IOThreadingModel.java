@@ -16,17 +16,19 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.nio.Connection;
+
 /**
- * An abstract of the threading model used by the {@link TcpIpConnection}.
+ * An abstract of the threading model used by the {@link Connection}.
  *
  * The default implementation of this is the {@link com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel}
  * that relies on selectors. But also different implementations can be added like spinning, thread per connection etc.
  *
- * Apart from providing a hook to add new functionality, it also simplifies the {@link TcpIpConnection} and
- * {@link TcpIpConnectionManager} since concerns are separated:
+ * Apart from providing a hook to add new functionality, it also simplifies the {@link Connection} and
+ * {@link com.hazelcast.nio.ConnectionManager} since concerns are separated:
  * separated:
  * <ol>
- * <li>the TcpIpConnectManager is responsible for managing connections</li>
+ * <li>the ConnectionManager is responsible for managing connections</li>
  * <li>the IOThreadingModel is responsible for providing threads to the connections.</li>
  * </ol>
  *
@@ -46,13 +48,8 @@ package com.hazelcast.nio.tcp;
  *
  * @see com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel
  * @see com.hazelcast.nio.tcp.spinning.SpinningIOThreadingModel
- * @see SocketReader
- * @see SocketWriter
- * @see ReadHandler
- * @see WriteHandler
- * @see TcpIpConnection
  */
-public interface IOThreadingModel {
+public interface IOThreadingModel<C extends Connection, R, W> {
 
     /**
      * Tells whether or not every I/O operation on SocketChannel should block until it completes.
@@ -68,7 +65,7 @@ public interface IOThreadingModel {
      * @param connection the TcpIpConnection to create the SocketWriter for.
      * @return the created SocketWriter
      */
-    SocketWriter newSocketWriter(TcpIpConnection connection);
+    W newSocketWriter(C connection);
 
     /**
      * Creates a new SocketReader for the given connection.
@@ -76,33 +73,29 @@ public interface IOThreadingModel {
      * @param connection the TcpIpConnection to create the SocketReader for.
      * @return the created SocketReader
      */
-    SocketReader newSocketReader(TcpIpConnection connection);
+    R newSocketReader(C connection);
 
     /**
      * Is called when a connection is added.
      *
      * @param connection the connection added.
      */
-    void onConnectionAdded(TcpIpConnection connection);
+    void onConnectionAdded(C connection);
 
     /**
      * Is called when a connection is removed.
      *
      * @param connection the connection removed.
      */
-    void onConnectionRemoved(TcpIpConnection connection);
+    void onConnectionRemoved(C connection);
 
     /**
-     * Starts the IOThreadingModel. Is called by the {@link TcpIpConnectionManager} when it starts.
-     *
-     * @see TcpIpConnectionManager#start()
-     */
+     * Starts the IOThreadingModel.
+      */
     void start();
 
     /**
-     * Shuts down the IOThreadingModel. Is called by the {@link TcpIpConnectionManager} when it shuts down.
-     *
-     * @see TcpIpConnectionManager#shutdown()
-     */
+     * Shuts down the IOThreadingModel.
+      */
     void shutdown();
 }
