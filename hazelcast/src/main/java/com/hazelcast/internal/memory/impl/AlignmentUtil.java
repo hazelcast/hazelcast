@@ -18,10 +18,15 @@ package com.hazelcast.internal.memory.impl;
 
 import java.nio.ByteOrder;
 
+import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
+
 @SuppressWarnings("checkstyle:magicnumber")
 public final class AlignmentUtil {
 
-    public static final int OBJECT_REFERENCE_ALIGN = UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class);
+    public static final int OBJECT_REFERENCE_ALIGN = UNSAFE_AVAILABLE
+            ? UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class)
+            : -1;
+
     public static final int OBJECT_REFERENCE_MASK = OBJECT_REFERENCE_ALIGN - 1;
     public static final boolean IS_PLATFORM_BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
