@@ -51,14 +51,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     public DAG addEdge(Edge edge) {
-        if (!vertices.containsValue(edge.getInputVertex())) {
+        if (!vertices.containsValue(edge.getDestination())) {
             throw new IllegalArgumentException(
-                    "Input vertex " + edge.getInputVertex() + " doesn't exist!");
+                    "Input vertex " + edge.getDestination() + " doesn't exist!");
         }
 
-        if (!vertices.containsValue(edge.getOutputVertex())) {
+        if (!vertices.containsValue(edge.getSource())) {
             throw new IllegalArgumentException(
-                    "Output vertex " + edge.getOutputVertex() + " doesn't exist!");
+                    "Output vertex " + edge.getSource() + " doesn't exist!");
         }
 
         if (edges.contains(edge)) {
@@ -79,7 +79,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
         List<Edge> inputEdges = new ArrayList<>();
         for (Edge edge : edges) {
-            if (edge.getOutputVertex().equals(vertex)) {
+            if (edge.getSource().equals(vertex)) {
                 inputEdges.add(edge);
             }
         }
@@ -96,7 +96,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
         List<Edge> inputEdges = new ArrayList<>();
         for (Edge edge : edges) {
-            if (edge.getInputVertex().equals(vertex)) {
+            if (edge.getDestination().equals(vertex)) {
                 inputEdges.add(edge);
             }
         }
@@ -157,8 +157,8 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                             Map<Vertex, List<Edge>> edgeMap) {
         for (Edge e : edges) {
             // Construct structure for cycle detection
-            Vertex inputVertex = e.getInputVertex();
-            Vertex outputVertex = e.getOutputVertex();
+            Vertex inputVertex = e.getDestination();
+            Vertex outputVertex = e.getSource();
             List<Edge> edgeList = edgeMap.get(inputVertex);
             if (edgeList == null) {
                 edgeList = new ArrayList<>();
@@ -217,7 +217,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
         if (edges != null) {
             for (Edge e : edgeMap.get(av.v)) {
-                AnnotatedVertex outVertex = vertexMap.get(e.getOutputVertex().getName());
+                AnnotatedVertex outVertex = vertexMap.get(e.getSource().getName());
 
                 if (outVertex.index == -1) {
                     strongConnect(outVertex, vertexMap, edgeMap, stack, nextIndex);
@@ -248,7 +248,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 // detect self-cycle
                 if (edgeMap.containsKey(pop.v)) {
                     for (Edge edge : edgeMap.get(pop.v)) {
-                        if (edge.getOutputVertex().equals(pop.v)) {
+                        if (edge.getSource().equals(pop.v)) {
                             throw new IllegalStateException("DAG contains a self-cycle on vertex:" + pop.v.getName());
                         }
                     }

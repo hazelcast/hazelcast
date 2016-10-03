@@ -29,4 +29,5 @@ public interface QueueTail<T> {
      */
     boolean offer(T item);
 
+    int getOrdinal();
 }
