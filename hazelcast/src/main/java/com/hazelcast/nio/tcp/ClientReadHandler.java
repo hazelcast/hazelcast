@@ -17,7 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
+import com.hazelcast.client.impl.protocol.util.ClientMessageReadHandler;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 
@@ -25,7 +26,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link ReadHandler} for the new-client. It passes the ByteBuffer to the ClientMessageBuilder. For each
+ * A {@link ReadHandler} for the new-client. It passes the ByteBuffer to the ClientMessageReadHandler. For each
  * constructed ClientMessage, the {@link #handleMessage(ClientMessage)} is called; which passes the message
  * to the {@link IOService#handleClientMessage(ClientMessage, Connection)}.
  *
@@ -35,21 +36,21 @@ import java.nio.ByteBuffer;
  *
  * @see ClientWriteHandler
  */
-public class ClientReadHandler implements ReadHandler, ClientMessageBuilder.MessageHandler {
+public class ClientReadHandler implements ReadHandler, ClientMessageReadHandler.MessageHandler {
 
-    private final ClientMessageBuilder builder;
+    private final ClientMessageReadHandler readHandler;
     private final Connection connection;
     private final IOService ioService;
 
-    public ClientReadHandler(Connection connection, IOService ioService) throws IOException {
+    public ClientReadHandler(SwCounter messageCounter, Connection connection, IOService ioService) throws IOException {
         this.connection = connection;
         this.ioService = ioService;
-        this.builder = new ClientMessageBuilder(this);
+        this.readHandler = new ClientMessageReadHandler(messageCounter, this);
     }
 
     @Override
     public void onRead(ByteBuffer src) throws Exception {
-        builder.onData(src);
+        readHandler.onRead(src);
     }
 
     @Override

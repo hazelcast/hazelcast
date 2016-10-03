@@ -17,6 +17,8 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 
 import java.nio.ByteBuffer;
@@ -28,23 +30,26 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FLAG;
 /**
  * Builds {@link ClientMessage}s from byte chunks. Fragmented messages are merged into single messages before processed.
  */
-public class ClientMessageBuilder {
+public class ClientMessageReadHandler implements ReadHandler {
 
     private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
 
     private final MessageHandler delegate;
+    private final SwCounter messageCounter;
     private ClientMessage message = ClientMessage.create();
 
-    public ClientMessageBuilder(MessageHandler delegate) {
-        this.delegate = delegate;
+    public ClientMessageReadHandler(SwCounter messageCounter, MessageHandler messageHandler) {
+        this.messageCounter = messageCounter;
+        this.delegate = messageHandler;
     }
 
-    public int onData(final ByteBuffer buffer) {
+    @Override
+    public void onRead(ByteBuffer src) throws Exception {
         int messagesCreated = 0;
-        while (buffer.hasRemaining()) {
-            final boolean complete = message.readFrom(buffer);
+        while (src.hasRemaining()) {
+            final boolean complete = message.readFrom(src);
             if (!complete) {
-                return messagesCreated;
+                messageCounter.inc(messagesCreated);
             }
 
             //MESSAGE IS COMPLETE HERE
@@ -83,8 +88,6 @@ public class ClientMessageBuilder {
             message = ClientMessage.create();
             messagesCreated++;
         }
-
-        return messagesCreated;
     }
 
     private void handleMessage(ClientMessage message) {
