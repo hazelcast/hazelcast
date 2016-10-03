@@ -68,8 +68,6 @@ public final class NonBlockingSocketWriter
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    @Probe(name = "eventCount")
-    private final SwCounter eventCount = newSwCounter();
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private final TcpIpConnectionManager connectionManager;
     private final IOService ioService;
