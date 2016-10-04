@@ -73,6 +73,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testConfigurationWithFileName() throws Exception {
         File file = createTempFile("foo", "bar");
         file.deleteOnExit();
+
         String xml = HAZELCAST_START_TAG
                 + "    <group>\n"
                 + "        <name>foobar</name>\n"
@@ -83,8 +84,9 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         writer.write(xml);
         writer.close();
 
-        Config config = new XmlConfigBuilder(file.getAbsolutePath()).build();
-        assertEquals(file, config.getConfigurationFile());
+        String path = file.getAbsolutePath();
+        Config config = new XmlConfigBuilder(path).build();
+        assertEquals(path, config.getConfigurationFile().getAbsolutePath());
     }
 
     @Test(expected = IllegalArgumentException.class)
