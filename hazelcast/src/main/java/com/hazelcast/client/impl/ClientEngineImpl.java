@@ -446,6 +446,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         int numberOfCppClients = 0;
         int numberOfDotNetClients = 0;
         int numberOfJavaClients = 0;
+        int numberOfNodeJSClients = 0;
+        int numberOfPythonClients = 0;
         int numberOfOtherClients = 0;
 
         OperationService operationService = node.nodeEngine.getOperationService();
@@ -483,6 +485,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 case CPP:
                     numberOfCppClients++;
                     break;
+                case NODEJS:
+                    numberOfNodeJSClients++;
+                    break;
+                case PYTHON:
+                    numberOfPythonClients++;
+                    break;
                 default:
                     numberOfOtherClients++;
             }
@@ -491,6 +499,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         resultMap.put(ClientType.CPP, numberOfCppClients);
         resultMap.put(ClientType.CSHARP, numberOfDotNetClients);
         resultMap.put(ClientType.JAVA, numberOfJavaClients);
+        resultMap.put(ClientType.NODEJS, numberOfNodeJSClients);
+        resultMap.put(ClientType.PYTHON, numberOfPythonClients);
         resultMap.put(ClientType.OTHER, numberOfOtherClients);
 
         return resultMap;

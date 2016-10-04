@@ -60,6 +60,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("ccpp"), "0");
         assertEquals(parameters.get("cdn"), "0");
         assertEquals(parameters.get("cjv"), "0");
+        assertEquals(parameters.get("cnjs"), "0");
+        assertEquals(parameters.get("cpy"), "0");
         assertFalse(Integer.parseInt(parameters.get("cuptm")) < 0);
         assertNotEquals(parameters.get("nuptm"), "0");
         assertNotEquals(parameters.get("nuptm"), parameters.get("cuptm"));
