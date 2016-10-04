@@ -145,7 +145,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
      * Constructs a XMLConfigBuilder that reads from the given URL.
      *
      * @param url the given url that the XMLConfigBuilder reads from
-     * @throws IOException
+     * @throws IOException if URL is invalid
      */
     public XmlConfigBuilder(URL url) throws IOException {
         checkNotNull(url, "URL is null!");
@@ -169,6 +169,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
      * @return the current used properties.
      * @see #setProperties(java.util.Properties)
      */
+    @Override
     public Properties getProperties() {
         return properties;
     }

@@ -65,7 +65,6 @@ public class MapStoreConfig {
         EAGER
     }
 
-
     public MapStoreConfig() {
     }
 
@@ -324,7 +323,6 @@ public class MapStoreConfig {
                 + ", implementation=" + implementation
                 + ", factoryImplementation=" + factoryImplementation
                 + ", properties=" + properties
-                + ", readOnly=" + readOnly
                 + ", initialLoadMode=" + initialLoadMode
                 + ", writeCoalescing=" + writeCoalescing
                 + '}';

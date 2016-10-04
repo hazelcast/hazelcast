@@ -72,7 +72,6 @@ public class UrlXmlConfig extends Config {
         this(url, System.getProperties());
     }
 
-
     /**
      * Creates new Config which is loaded from the given url.
      *

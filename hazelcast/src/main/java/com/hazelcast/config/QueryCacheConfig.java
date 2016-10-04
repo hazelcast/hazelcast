@@ -25,7 +25,6 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
-
 /**
  * Contains configuration for {@code QueryCache}.
  *
@@ -357,12 +356,10 @@ public class QueryCacheConfig {
      * Default value is {@value #DEFAULT_COALESCE}.
      *
      * @param coalesce set {@code true} to enable, otherwise set {@code false}
-     * @return this {@code QueryCacheConfig} instance.
      */
     public void setCoalesce(boolean coalesce) {
         this.coalesce = coalesce;
     }
-
 
     /**
      * Returns {@link EvictionConfig} instance for this {@code QueryCache}
@@ -389,7 +386,7 @@ public class QueryCacheConfig {
     /**
      * Adds {@link EntryListenerConfig} to this {@code QueryCacheConfig}.
      *
-     * @param listenerConfig
+     * @param listenerConfig the {@link EntryListenerConfig} to add
      * @return this {@code QueryCacheConfig} instance.
      */
     public QueryCacheConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
@@ -436,13 +433,11 @@ public class QueryCacheConfig {
         if (this == o) {
             return true;
         }
-
         if (!(o instanceof QueryCacheConfig)) {
             return false;
         }
 
         QueryCacheConfig that = (QueryCacheConfig) o;
-
         if (batchSize != that.batchSize) {
             return false;
         }
@@ -478,9 +473,7 @@ public class QueryCacheConfig {
             return false;
         }
         return !(indexConfigs != null ? !indexConfigs.equals(that.indexConfigs) : that.indexConfigs != null);
-
     }
-
 
     @Override
     public int hashCode() {
@@ -515,8 +508,6 @@ public class QueryCacheConfig {
                 + ", evictionConfig=" + evictionConfig
                 + ", entryListenerConfigs=" + entryListenerConfigs
                 + ", indexConfigs=" + indexConfigs
-                + ", readOnly=" + (this instanceof QueryCacheConfigReadOnly)
                 + '}';
     }
-
 }

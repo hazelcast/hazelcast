@@ -20,10 +20,10 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 
 /**
  * Configuration for MapPartitionLostListener
+ *
  * @see com.hazelcast.map.listener.MapPartitionLostListener
  */
-public class MapPartitionLostListenerConfig
-        extends ListenerConfig {
+public class MapPartitionLostListenerConfig extends ListenerConfig {
 
     private MapPartitionLostListenerConfigReadOnly readOnly;
 
@@ -43,6 +43,7 @@ public class MapPartitionLostListenerConfig
         className = config.getClassName();
     }
 
+    @Override
     public MapPartitionLostListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new MapPartitionLostListenerConfigReadOnly(this);
@@ -50,6 +51,7 @@ public class MapPartitionLostListenerConfig
         return readOnly;
     }
 
+    @Override
     public MapPartitionLostListener getImplementation() {
         return (MapPartitionLostListener) implementation;
     }

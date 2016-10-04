@@ -39,7 +39,6 @@ public class SecurityConfig {
 
     private Set<PermissionConfig> clientPermissionConfigs = new HashSet<PermissionConfig>();
 
-
     public SecurityConfig addSecurityInterceptorConfig(SecurityInterceptorConfig interceptorConfig) {
         securityInterceptorConfigs.add(interceptorConfig);
         return this;

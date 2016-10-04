@@ -29,10 +29,12 @@ public class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConf
         super(config);
     }
 
+    @Override
     public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
         throw new UnsupportedOperationException("This config is read-only");
     }

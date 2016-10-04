@@ -27,10 +27,12 @@ public class MapIndexConfigReadOnly extends MapIndexConfig {
         super(config);
     }
 
+    @Override
     public MapIndexConfig setAttribute(String attribute) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public MapIndexConfig setOrdered(boolean ordered) {
         throw new UnsupportedOperationException("This config is read-only");
     }

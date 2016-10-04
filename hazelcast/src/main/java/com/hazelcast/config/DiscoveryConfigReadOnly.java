@@ -19,13 +19,14 @@ package com.hazelcast.config;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 
+import java.util.List;
+
 /**
  * Readonly version of {@link DiscoveryConfig}
  *
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
-public class DiscoveryConfigReadOnly
-        extends DiscoveryConfig {
+public class DiscoveryConfigReadOnly extends DiscoveryConfig {
 
     DiscoveryConfigReadOnly(DiscoveryConfig discoveryConfig) {
         super(discoveryConfig.getDiscoveryServiceProvider(), discoveryConfig.getNodeFilter(),
@@ -52,4 +53,8 @@ public class DiscoveryConfigReadOnly
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 
+    @Override
+    public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+        throw new UnsupportedOperationException("Configuration is readonly");
+    }
 }

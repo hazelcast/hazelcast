@@ -31,6 +31,7 @@ public class SetConfigReadOnly extends SetConfig {
         super(config);
     }
 
+    @Override
     public List<ItemListenerConfig> getItemListenerConfigs() {
         final List<ItemListenerConfig> itemListenerConfigs = super.getItemListenerConfigs();
         final List<ItemListenerConfig> readOnlyItemListenerConfigs
@@ -41,30 +42,37 @@ public class SetConfigReadOnly extends SetConfig {
         return Collections.unmodifiableList(readOnlyItemListenerConfigs);
     }
 
+    @Override
     public SetConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 
+    @Override
     public SetConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 
+    @Override
     public SetConfig setBackupCount(int backupCount) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 
+    @Override
     public SetConfig setAsyncBackupCount(int asyncBackupCount) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 
+    @Override
     public SetConfig setMaxSize(int maxSize) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 
+    @Override
     public SetConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 
+    @Override
     public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }

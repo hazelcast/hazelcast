@@ -24,17 +24,18 @@ import com.hazelcast.internal.eviction.EvictionPolicyComparator;
  * @deprecated Use {@link com.hazelcast.config.EvictionConfigReadOnly} instead of this
  */
 @Deprecated
-public class CacheEvictionConfigReadOnly
-        extends CacheEvictionConfig {
+public class CacheEvictionConfigReadOnly extends CacheEvictionConfig {
 
     public CacheEvictionConfigReadOnly(EvictionConfig config) {
         super(config);
     }
 
+    @Override
     public CacheEvictionConfigReadOnly setSize(int size) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public CacheEvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
@@ -58,5 +59,4 @@ public class CacheEvictionConfigReadOnly
     public CacheEvictionConfig setComparator(EvictionPolicyComparator comparator) {
         throw new UnsupportedOperationException("This config is read-only");
     }
-
 }

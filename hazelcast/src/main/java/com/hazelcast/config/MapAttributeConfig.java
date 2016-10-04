@@ -142,10 +142,9 @@ public class MapAttributeConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("MapAttributeConfig{");
-        sb.append("name='").append(name).append('\'');
-        sb.append("extractor='").append(extractor).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "MapAttributeConfig{"
+                + "name='" + name + '\''
+                + "extractor='" + extractor + '\''
+                + '}';
     }
 }

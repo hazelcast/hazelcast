@@ -48,5 +48,4 @@ public enum WANQueueFullBehavior {
     public int getId() {
         return id;
     }
-
 }

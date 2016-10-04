@@ -73,10 +73,9 @@ public class HotRestartConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("HotRestartConfig{");
-        sb.append("enabled=").append(enabled);
-        sb.append(", fsync=").append(fsync);
-        sb.append('}');
-        return sb.toString();
+        return "HotRestartConfig{"
+                + "enabled=" + enabled
+                + ", fsync=" + fsync
+                + '}';
     }
 }

@@ -103,16 +103,14 @@ public class DiscoveryConfig {
     }
 
     /**
-     * Adds an enabled {@link DiscoveryStrategy}
-     * configuration.
+     * Adds an enabled {@link DiscoveryStrategy} configuration.
      * <p/>
      * All added configurations are strictly meant to be enabled, this is to
      * remember when building custom {@link com.hazelcast.config.Config} instances.
      *
-     * @param discoveryStrategyConfig
+     * @param discoveryStrategyConfig the {@link DiscoveryStrategyConfig} to add
      */
     public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         discoveryStrategyConfigs.add(discoveryStrategyConfig);
     }
-
 }

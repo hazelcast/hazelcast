@@ -31,6 +31,7 @@ public class TopicConfigReadOnly extends TopicConfig {
         super(config);
     }
 
+    @Override
     public List<ListenerConfig> getMessageListenerConfigs() {
         final List<ListenerConfig> messageListenerConfigs = super.getMessageListenerConfigs();
         final List<ListenerConfig> readOnlyMessageListenerConfigs = new ArrayList<ListenerConfig>(messageListenerConfigs.size());
@@ -40,26 +41,32 @@ public class TopicConfigReadOnly extends TopicConfig {
         return Collections.unmodifiableList(readOnlyMessageListenerConfigs);
     }
 
+    @Override
     public TopicConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }
 
+    @Override
     public TopicConfig setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }
 
+    @Override
     public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }
 
+    @Override
     public TopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }
 
+    @Override
     public TopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }
 
+    @Override
     public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }

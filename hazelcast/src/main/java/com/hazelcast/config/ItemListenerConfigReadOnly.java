@@ -31,18 +31,22 @@ public class ItemListenerConfigReadOnly extends ItemListenerConfig {
         super(config);
     }
 
+    @Override
     public ItemListenerConfig setImplementation(ItemListener implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public ItemListenerConfig setIncludeValue(boolean includeValue) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public ListenerConfig setClassName(String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public ListenerConfig setImplementation(EventListener implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }

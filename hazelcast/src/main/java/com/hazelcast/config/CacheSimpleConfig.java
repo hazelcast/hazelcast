@@ -416,8 +416,8 @@ public class CacheSimpleConfig {
      * @param asyncBackupCount the number of asynchronous synchronous backups to set.
      * @return the updated CacheSimpleConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *              or larger than the maximum number of backups,
-     *              or the sum of the backups and async backups is larger than the maximum number of backups.
+     *                                  or larger than the maximum number of backups,
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups.
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -440,9 +440,10 @@ public class CacheSimpleConfig {
      *
      * @param backupCount the new backupCount
      * @return the updated CacheSimpleConfig
-     * @throws new IllegalArgumentException if backupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @throws IllegalArgumentException if backupCount smaller than 0,
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger
+     *                                  than the maximum number of backups
      */
     public CacheSimpleConfig setBackupCount(int backupCount) {
         this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
@@ -553,7 +554,6 @@ public class CacheSimpleConfig {
      * Associates this cache configuration to a quorum.
      *
      * @param quorumName name of the desired quorum.
-     *
      * @return the updated CacheSimpleConfig.
      */
     public CacheSimpleConfig setQuorumName(String quorumName) {
@@ -566,7 +566,7 @@ public class CacheSimpleConfig {
      * implementation of this cache config.
      *
      * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     *         implementation of this cache config
+     * implementation of this cache config
      */
     public String getMergePolicy() {
         return mergePolicy;
@@ -585,6 +585,7 @@ public class CacheSimpleConfig {
 
     /**
      * Gets the {@code HotRestartConfig} for this {@code CacheSimpleConfig}
+     *
      * @return hot restart config
      */
     public HotRestartConfig getHotRestartConfig() {
@@ -593,6 +594,7 @@ public class CacheSimpleConfig {
 
     /**
      * Sets the {@code HotRestartConfig} for this {@code CacheSimpleConfig}
+     *
      * @param hotRestartConfig hot restart config
      * @return this {@code CacheSimpleConfig} instance
      */
@@ -605,7 +607,7 @@ public class CacheSimpleConfig {
      * Returns invalidation events disabled status for per entry.
      *
      * @return <tt>true</tt> if invalidation events are disabled for per entry,
-     *         otherwise <tt>false</tt>
+     * otherwise <tt>false</tt>
      */
     public boolean isDisablePerEntryInvalidationEvents() {
         return disablePerEntryInvalidationEvents;

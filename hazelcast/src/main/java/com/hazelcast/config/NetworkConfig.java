@@ -275,7 +275,6 @@ public class NetworkConfig {
      * be used.
      *
      * @return the SymmetricEncryptionConfig
-     * @see
      */
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;

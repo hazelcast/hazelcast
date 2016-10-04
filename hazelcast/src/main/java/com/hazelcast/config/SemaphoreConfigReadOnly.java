@@ -27,18 +27,22 @@ public class SemaphoreConfigReadOnly extends SemaphoreConfig {
         super(config);
     }
 
+    @Override
     public SemaphoreConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
     }
 
+    @Override
     public SemaphoreConfig setInitialPermits(int initialPermits) {
         throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
     }
 
+    @Override
     public SemaphoreConfig setBackupCount(int backupCount) {
         throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
     }
 
+    @Override
     public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
         throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
     }
