@@ -176,6 +176,13 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
     }
 
     public EvictionConfig setSize(int size) {
+        return setSizeInternal(size);
+    }
+
+    /**
+     * Package private method for {@link EvictionConfigAccessor}.
+     */
+    EvictionConfig setSizeInternal(int size) {
         this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
         return this;
