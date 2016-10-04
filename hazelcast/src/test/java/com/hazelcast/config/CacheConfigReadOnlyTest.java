@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.config;
+package com.hazelcast.config;
 
-import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheConfigReadOnly;
-import com.hazelcast.config.HotRestartConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -184,5 +180,4 @@ public class CacheConfigReadOnlyTest {
     public void settingDisablePerEntryInvalidationEventsOfReadOnlyCacheSimpleConfigShouldFail() {
         getCacheConfigReadOnly().setDisablePerEntryInvalidationEvents(true);
     }
-
 }

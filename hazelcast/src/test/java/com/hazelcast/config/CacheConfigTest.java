@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.config;
+package com.hazelcast.config;
 
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import com.hazelcast.config.CacheSimpleEntryListenerConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
@@ -96,11 +88,11 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertEquals("test-pass1", config1.getGroupConfig().getPassword());
 
         CacheSimpleConfig cacheConfig1 = config1.getCacheConfig("cache1");
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyCacheLoaderFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyCacheLoaderFactory",
                 cacheConfig1.getCacheLoaderFactory());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyCacheWriterFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyCacheWriterFactory",
                 cacheConfig1.getCacheWriterFactory());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyExpirePolicyFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyExpirePolicyFactory",
                 cacheConfig1.getExpiryPolicyFactoryConfig().getClassName());
         assertTrue(cacheConfig1.isReadThrough());
         assertTrue(cacheConfig1.isWriteThrough());
@@ -119,17 +111,17 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleEntryListenerConfig listenerConfig0 = cacheEntryListeners.get(0);
         assertFalse(listenerConfig0.isSynchronous());
         assertFalse(listenerConfig0.isOldValueRequired());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyEntryListenerFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyEntryListenerFactory",
                 listenerConfig0.getCacheEntryListenerFactory());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MyEntryEventFilterFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyEntryEventFilterFactory",
                 listenerConfig0.getCacheEntryEventFilterFactory());
 
         CacheSimpleEntryListenerConfig listenerConfig1 = cacheEntryListeners.get(1);
         assertTrue(listenerConfig1.isSynchronous());
         assertTrue(listenerConfig1.isOldValueRequired());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MySyncEntryListenerFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MySyncEntryListenerFactory",
                 listenerConfig1.getCacheEntryListenerFactory());
-        assertEquals("com.hazelcast.cache.config.CacheConfigTest$MySyncEntryEventFilterFactory",
+        assertEquals("com.hazelcast.config.CacheConfigTest$MySyncEntryEventFilterFactory",
                 listenerConfig1.getCacheEntryEventFilterFactory());
 
         WanReplicationRef wanRefCacheConfig = config1.getCacheConfig("wanRefTestCache").getWanReplicationRef();
@@ -270,8 +262,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void cacheConfigXmlTest_DefaultMergePolicy() throws IOException {
         Config config = new XmlConfigBuilder(configUrl1).build();
 
-        CacheSimpleConfig cacheWithDefaultMergePolicyConfig =
-                config.getCacheConfig("cacheWithDefaultMergePolicy");
+        CacheSimpleConfig cacheWithDefaultMergePolicyConfig = config.getCacheConfig("cacheWithDefaultMergePolicy");
 
         assertNotNull(cacheWithDefaultMergePolicyConfig);
         assertEquals(CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY, cacheWithDefaultMergePolicyConfig.getMergePolicy());
@@ -281,8 +272,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void cacheConfigXmlTest_CustomMergePolicy() throws IOException {
         Config config = new XmlConfigBuilder(configUrl1).build();
 
-        CacheSimpleConfig cacheWithCustomMergePolicyConfig =
-                config.getCacheConfig("cacheWithCustomMergePolicy");
+        CacheSimpleConfig cacheWithCustomMergePolicyConfig = config.getCacheConfig("cacheWithCustomMergePolicy");
 
         assertNotNull(cacheWithCustomMergePolicyConfig);
         assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicy());
@@ -379,8 +369,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void configUrlShouldBeUsedAsInstanceNameIfInstanceNameIsNotSpecified()
-            throws URISyntaxException, IOException {
+    public void configUrlShouldBeUsedAsInstanceNameIfInstanceNameIsNotSpecified() throws Exception {
         URI uri = new URI("MY-SCOPE");
         Properties properties = new Properties();
         properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, configUrl2.toString());
@@ -392,8 +381,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void instanceNamePropertyShouldBeUsedWhenNoInstanceNameIsSpecified()
-            throws URISyntaxException, IOException {
+    public void instanceNamePropertyShouldBeUsedWhenNoInstanceNameIsSpecified() throws Exception {
         String instanceName = randomName();
         URI uri = new URI("MY-SCOPE");
         Properties properties = new Properties();
@@ -407,8 +395,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void instanceNamePropertyShouldBeUsedEvenThoughInstanceNameIsSpecifiedInTheConfig()
-            throws URISyntaxException, IOException {
+    public void instanceNamePropertyShouldBeUsedEvenThoughInstanceNameIsSpecifiedInTheConfig() throws Exception {
         String instanceName = randomName();
         URI uri = new URI("MY-SCOPE");
         Properties properties = new Properties();
@@ -537,10 +524,9 @@ public class CacheConfigTest extends HazelcastTestSupport {
         final String managerPrefix = "hz:";
         final String fullCacheName = managerPrefix + cacheName;
         final Config config = new Config();
-        final CacheConfig cacheConfig =
-                new CacheConfig()
-                        .setName(cacheName)
-                        .setManagerPrefix(managerPrefix);
+        final CacheConfig cacheConfig = new CacheConfig()
+                .setName(cacheName)
+                .setManagerPrefix(managerPrefix);
 
         final TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = instanceFactory.newHazelcastInstance(config);
@@ -628,5 +614,4 @@ public class CacheConfigTest extends HazelcastTestSupport {
             return null;
         }
     }
-
 }

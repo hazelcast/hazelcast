@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.config;
+package com.hazelcast.config;
 
-import com.hazelcast.config.CacheEvictionConfig;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -26,10 +24,10 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CacheEvictionConfigReadOnlyTest {
+public class EvictionConfigReadOnlyTest {
 
     private EvictionConfig getEvictionConfigReadOnly() {
-        return new CacheEvictionConfig().getAsReadOnly();
+        return new EvictionConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -56,5 +54,4 @@ public class CacheEvictionConfigReadOnlyTest {
     public void settingComparatorOnReadOnlyCacheConfigShouldFail() {
         getEvictionConfigReadOnly().setComparator(null);
     }
-
 }

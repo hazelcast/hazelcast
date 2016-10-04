@@ -33,18 +33,18 @@
         <management-enabled>true</management-enabled>
         <read-through>true</read-through>
         <write-through>true</write-through>
-        <cache-loader-factory class-name="com.hazelcast.cache.config.CacheConfigTest$MyCacheLoaderFactory"/>
-        <cache-writer-factory class-name="com.hazelcast.cache.config.CacheConfigTest$MyCacheWriterFactory"/>
-        <expiry-policy-factory class-name="com.hazelcast.cache.config.CacheConfigTest$MyExpirePolicyFactory"/>
+        <cache-loader-factory class-name="com.hazelcast.config.CacheConfigTest$MyCacheLoaderFactory"/>
+        <cache-writer-factory class-name="com.hazelcast.config.CacheConfigTest$MyCacheWriterFactory"/>
+        <expiry-policy-factory class-name="com.hazelcast.config.CacheConfigTest$MyExpirePolicyFactory"/>
         <eviction size="50" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
         <cache-entry-listeners>
             <cache-entry-listener old-value-required="false" synchronous="false">
-                <cache-entry-listener-factory class-name="com.hazelcast.cache.config.CacheConfigTest$MyEntryListenerFactory"/>
-                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.config.CacheConfigTest$MyEntryEventFilterFactory"/>
+                <cache-entry-listener-factory class-name="com.hazelcast.config.CacheConfigTest$MyEntryListenerFactory"/>
+                <cache-entry-event-filter-factory class-name="com.hazelcast.config.CacheConfigTest$MyEntryEventFilterFactory"/>
             </cache-entry-listener>
            <cache-entry-listener old-value-required="true" synchronous="true">
-                <cache-entry-listener-factory class-name="com.hazelcast.cache.config.CacheConfigTest$MySyncEntryListenerFactory"/>
-                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.config.CacheConfigTest$MySyncEntryEventFilterFactory"/>
+                <cache-entry-listener-factory class-name="com.hazelcast.config.CacheConfigTest$MySyncEntryListenerFactory"/>
+                <cache-entry-event-filter-factory class-name="com.hazelcast.config.CacheConfigTest$MySyncEntryEventFilterFactory"/>
             </cache-entry-listener>
         </cache-entry-listeners>
         <backup-count>3</backup-count>
@@ -127,5 +127,4 @@
             <republishing-enabled>false</republishing-enabled>
         </wan-replication-ref>
     </cache>
-
 </hazelcast>

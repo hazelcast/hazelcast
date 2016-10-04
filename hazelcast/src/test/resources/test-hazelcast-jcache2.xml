@@ -51,5 +51,4 @@
         <statistics-enabled>false</statistics-enabled>
         <management-enabled>false</management-enabled>
     </cache>
-
 </hazelcast>
