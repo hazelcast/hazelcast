@@ -158,6 +158,8 @@ public final class PhoneHome {
         parameterCreator.addParam("ccpp", Integer.toString(clusterClientStats.get(ClientType.CPP)));
         parameterCreator.addParam("cdn", Integer.toString(clusterClientStats.get(ClientType.CSHARP)));
         parameterCreator.addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)));
+        parameterCreator.addParam("cnjs", Integer.toString(clusterClientStats.get(ClientType.NODEJS)));
+        parameterCreator.addParam("cpy", Integer.toString(clusterClientStats.get(ClientType.PYTHON)));
         parameterCreator.addParam("cuptm", Long.toString(clusterUpTime));
         parameterCreator.addParam("nuptm", Long.toString(runtimeMxBean.getUptime()));
         parameterCreator.addParam("jvmn", runtimeMxBean.getVmName());
