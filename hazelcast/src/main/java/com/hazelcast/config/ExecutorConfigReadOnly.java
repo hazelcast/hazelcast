@@ -27,18 +27,22 @@ public class ExecutorConfigReadOnly extends ExecutorConfig {
         super(config);
     }
 
+    @Override
     public ExecutorConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }
 
+    @Override
     public ExecutorConfig setPoolSize(int poolSize) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }
 
+    @Override
     public ExecutorConfig setQueueCapacity(int queueCapacity) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }
 
+    @Override
     public ExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }

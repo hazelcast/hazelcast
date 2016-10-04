@@ -163,7 +163,7 @@ public class MulticastConfig {
      * the value is set too low, nodes might give up too early and create their own cluster.
      *
      * @param multicastTimeoutSeconds the multicastTimeoutSeconds to set
-     * @returns the updated MulticastConfig
+     * @return the updated MulticastConfig
      * @see #getMulticastTimeoutSeconds()
      */
     public MulticastConfig setMulticastTimeoutSeconds(int multicastTimeoutSeconds) {

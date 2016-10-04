@@ -41,6 +41,11 @@ class PredicateConfigReadOnly extends PredicateConfig {
     }
 
     @Override
+    public void setSql(String sql) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
     public String toString() {
         return "PredicateConfigReadOnly{} " + super.toString();
     }

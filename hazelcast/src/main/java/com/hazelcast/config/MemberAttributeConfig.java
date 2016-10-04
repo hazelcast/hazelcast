@@ -124,5 +124,4 @@ public class MemberAttributeConfig {
     private void setAttribute(String key, Object value) {
         attributes.put(key, value);
     }
-
 }

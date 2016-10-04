@@ -178,7 +178,6 @@ public class PredicateConfig {
     }
     //CHECKSTYLE:ON
 
-
     @Override
     public int hashCode() {
         int result = className != null ? className.hashCode() : 0;

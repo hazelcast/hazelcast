@@ -72,6 +72,7 @@ public class EntryListenerConfig extends ListenerConfig {
         className = config.getClassName();
     }
 
+    @Override
     public EntryListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new EntryListenerConfigReadOnly(this);
@@ -87,6 +88,7 @@ public class EntryListenerConfig extends ListenerConfig {
         return this;
     }
 
+    @Override
     public EntryListener getImplementation() {
         return (EntryListener) implementation;
     }
@@ -185,6 +187,7 @@ public class EntryListenerConfig extends ListenerConfig {
         return this;
     }
 
+    @Override
     public boolean isLocal() {
         return local;
     }
@@ -194,6 +197,7 @@ public class EntryListenerConfig extends ListenerConfig {
         return this;
     }
 
+    @Override
     public boolean isIncludeValue() {
         return includeValue;
     }

@@ -102,7 +102,6 @@ public class RingbufferConfig {
         this.name = checkNotNull(name, "name can't be null");
     }
 
-
     /**
      * Returns the name of the ringbuffer.
      *
@@ -111,7 +110,6 @@ public class RingbufferConfig {
     public String getName() {
         return name;
     }
-
 
     /**
      * Gets the capacity of the ringbuffer.

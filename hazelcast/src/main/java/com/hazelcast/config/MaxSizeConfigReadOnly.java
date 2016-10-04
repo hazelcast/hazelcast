@@ -27,10 +27,12 @@ public class MaxSizeConfigReadOnly extends MaxSizeConfig {
         super(config);
     }
 
+    @Override
     public MaxSizeConfig setSize(int size) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }

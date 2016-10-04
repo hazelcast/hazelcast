@@ -91,7 +91,7 @@ public class AwsConfig {
      *
      * @param secretKey the secret key to access AWS
      * @return the updated AwsConfig.
-     * @throw IllegalArgumentException if secretKey is null or empty.
+     * @throws IllegalArgumentException if secretKey is null or empty.
      * @see #getSecretKey()
      * @see #setAccessKey(String)
      */

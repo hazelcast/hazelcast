@@ -22,29 +22,32 @@ import java.util.EventListener;
 
 /**
  * Read-Only Configuration for MapPartitionLostListener
- * @see com.hazelcast.map.listener.MapPartitionLostListener
  *
+ * @see com.hazelcast.map.listener.MapPartitionLostListener
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
-public class MapPartitionLostListenerConfigReadOnly
-        extends MapPartitionLostListenerConfig {
+public class MapPartitionLostListenerConfigReadOnly extends MapPartitionLostListenerConfig {
 
     public MapPartitionLostListenerConfigReadOnly(MapPartitionLostListenerConfig config) {
         super(config);
     }
 
+    @Override
     public MapPartitionLostListener getImplementation() {
         return (MapPartitionLostListener) implementation;
     }
 
+    @Override
     public ListenerConfig setClassName(String className) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 
+    @Override
     public ListenerConfig setImplementation(EventListener implementation) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 
+    @Override
     public MapPartitionLostListenerConfig setImplementation(MapPartitionLostListener implementation) {
         throw new UnsupportedOperationException("this config is read-only");
     }

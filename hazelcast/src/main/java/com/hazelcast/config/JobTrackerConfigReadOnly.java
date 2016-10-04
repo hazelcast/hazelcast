@@ -17,13 +17,13 @@
 package com.hazelcast.config;
 
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.mapreduce.JobTracker}.
  *
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
-public class JobTrackerConfigReadOnly
-        extends JobTrackerConfig {
+public class JobTrackerConfigReadOnly extends JobTrackerConfig {
 
     JobTrackerConfigReadOnly(JobTrackerConfig jobTrackerConfig) {
         super(jobTrackerConfig);
@@ -63,5 +63,4 @@ public class JobTrackerConfigReadOnly
     public void setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
-
 }

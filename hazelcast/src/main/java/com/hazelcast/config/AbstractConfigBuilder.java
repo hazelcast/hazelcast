@@ -138,6 +138,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     /**
      * @return ConfigType of current config class as enum value.
      */
+    @Override
     protected abstract ConfigType getXmlType();
 
     private void traverseChildsAndReplaceVariables(Node root) {

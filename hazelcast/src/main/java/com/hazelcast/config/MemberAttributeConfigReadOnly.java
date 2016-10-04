@@ -84,5 +84,4 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(super.getAttributes());
     }
-
 }

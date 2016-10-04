@@ -33,18 +33,22 @@ public class CachePartitionLostListenerConfigReadOnly
         super(config);
     }
 
+    @Override
     public CachePartitionLostListener getImplementation() {
         return (CachePartitionLostListener) implementation;
     }
 
+    @Override
     public ListenerConfig setClassName(String className) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 
+    @Override
     public ListenerConfig setImplementation(EventListener implementation) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 
+    @Override
     public CachePartitionLostListenerConfig setImplementation(CachePartitionLostListener implementation) {
         throw new UnsupportedOperationException("this config is read-only");
     }

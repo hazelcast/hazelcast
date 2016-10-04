@@ -25,8 +25,7 @@ import java.util.List;
  *
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
-public class CacheSimpleConfigReadOnly
-        extends CacheSimpleConfig {
+public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
 
     public CacheSimpleConfigReadOnly(CacheSimpleConfig cacheSimpleConfig) {
         super(cacheSimpleConfig);
@@ -87,6 +86,7 @@ public class CacheSimpleConfigReadOnly
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
+    @Override
     public CacheSimpleConfig setExpiryPolicyFactory(String className) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
@@ -167,4 +167,8 @@ public class CacheSimpleConfigReadOnly
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
+    @Override
+    public CacheSimpleConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
 }

@@ -133,5 +133,4 @@ public class MapIndexConfig {
         }
         return attribute;
     }
-
 }

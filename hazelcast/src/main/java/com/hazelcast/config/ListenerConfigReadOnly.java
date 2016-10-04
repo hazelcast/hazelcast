@@ -29,10 +29,12 @@ public class ListenerConfigReadOnly extends ListenerConfig {
         super(config);
     }
 
+    @Override
     public ListenerConfig setClassName(String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public ListenerConfig setImplementation(EventListener implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }

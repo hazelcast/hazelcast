@@ -52,5 +52,4 @@ public class QuorumListenerConfig extends ListenerConfig {
     public boolean isLocal() {
         return true;
     }
-
 }

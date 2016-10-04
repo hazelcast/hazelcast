@@ -96,6 +96,7 @@ public abstract class AbstractXmlConfigHelper {
             this.maximum = wrapped.getLength();
         }
 
+        @Override
         public Iterator<Node> iterator() {
             return new Iterator<Node>() {
                 private int index;

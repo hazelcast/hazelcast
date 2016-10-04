@@ -46,6 +46,7 @@ public class ItemListenerConfig extends ListenerConfig {
         className = config.getClassName();
     }
 
+    @Override
     public ItemListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new ItemListenerConfigReadOnly(this);
@@ -53,6 +54,7 @@ public class ItemListenerConfig extends ListenerConfig {
         return readOnly;
     }
 
+    @Override
     public ItemListener getImplementation() {
         return (ItemListener) implementation;
     }
@@ -62,6 +64,7 @@ public class ItemListenerConfig extends ListenerConfig {
         return this;
     }
 
+    @Override
     public boolean isIncludeValue() {
         return includeValue;
     }

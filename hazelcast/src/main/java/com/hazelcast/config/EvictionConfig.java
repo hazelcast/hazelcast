@@ -266,7 +266,6 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
                 + ", evictionPolicy=" + evictionPolicy
                 + ", comparatorClassName=" + comparatorClassName
                 + ", comparator=" + comparator
-                + ", readOnly=" + readOnly
                 + '}';
     }
 }

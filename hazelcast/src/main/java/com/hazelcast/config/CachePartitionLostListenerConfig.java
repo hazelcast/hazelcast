@@ -45,6 +45,7 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
         className = config.getClassName();
     }
 
+    @Override
     public CachePartitionLostListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new CachePartitionLostListenerConfigReadOnly(this);
@@ -52,6 +53,7 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
         return readOnly;
     }
 
+    @Override
     public CachePartitionLostListener getImplementation() {
         return (CachePartitionLostListener) implementation;
     }

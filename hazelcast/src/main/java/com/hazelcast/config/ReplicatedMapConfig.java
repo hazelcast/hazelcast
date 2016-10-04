@@ -58,7 +58,6 @@ public class ReplicatedMapConfig {
     private boolean statisticsEnabled = true;
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
-
     private List<ListenerConfig> listenerConfigs;
 
     public ReplicatedMapConfig() {
@@ -251,7 +250,7 @@ public class ReplicatedMapConfig {
      * the initial replication is completed.
      *
      * @param asyncFillup True if the replicated map is available for reads before the initial
-     * replication is completed, false otherwise.
+     *                    replication is completed, false otherwise.
      */
     public void setAsyncFillup(boolean asyncFillup) {
         this.asyncFillup = asyncFillup;
@@ -281,7 +280,6 @@ public class ReplicatedMapConfig {
         return this;
     }
 
-
     /**
      * Gets the replicated map merge policy {@link com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy}
      *
@@ -301,7 +299,6 @@ public class ReplicatedMapConfig {
         this.mergePolicy = mergePolicy;
         return this;
     }
-
 
     @Override
     public String toString() {

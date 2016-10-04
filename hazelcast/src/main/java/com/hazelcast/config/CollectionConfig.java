@@ -177,7 +177,6 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
     /**
      * Sets the maximum size for the collection.
      *
-     * @return The maximum size to set for the collection.
      * @return the current CollectionConfig.
      */
     public T setMaxSize(int maxSize) {

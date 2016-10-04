@@ -170,6 +170,4 @@ public class RingbufferStoreConfig {
             throw new UnsupportedOperationException("This config is read-only.");
         }
     }
-
-
 }

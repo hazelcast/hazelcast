@@ -239,7 +239,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      * NONE is the default.
      * Regardless of the eviction policy used, time-to-live-seconds will still apply.
      *
-     * @return TThe eviction policy for the Near Cache.
+     * @return The eviction policy for the Near Cache.
      * @deprecated since 3.8, use {@link #getEvictionConfig()} and {@link EvictionConfig#getEvictionPolicy()} instead
      */
     public String getEvictionPolicy() {

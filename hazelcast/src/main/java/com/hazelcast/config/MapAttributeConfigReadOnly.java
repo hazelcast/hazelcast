@@ -36,5 +36,4 @@ public class MapAttributeConfigReadOnly extends MapAttributeConfig {
     public MapAttributeConfig setExtractor(String type) {
         throw new UnsupportedOperationException("This config is read-only");
     }
-
 }

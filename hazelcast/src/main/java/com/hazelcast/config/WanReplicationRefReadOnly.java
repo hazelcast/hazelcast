@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import java.util.List;
+
 /**
  * Configuration for Wan target replication reference(read only)
  *
@@ -27,15 +29,18 @@ public class WanReplicationRefReadOnly extends WanReplicationRef {
         super(ref);
     }
 
+    @Override
     public WanReplicationRef setName(String name) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
     public WanReplicationRef setMergePolicy(String mergePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
-    public WanReplicationRef setFilter(String mergePolicy) {
+    @Override
+    public WanReplicationRef setFilters(List<String> filters) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

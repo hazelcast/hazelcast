@@ -52,8 +52,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * @param <K> the key type.
  * @param <V> the value type.
  */
-public class CacheConfig<K, V>
-        extends AbstractCacheConfig<K, V> {
+public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     private String name;
     private String managerPrefix;
@@ -62,10 +61,9 @@ public class CacheConfig<K, V>
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     // Default value of eviction config is
-    //      * ENTRY_COUNT with 10.000 max entry count
+    //      * ENTRY_COUNT with 10000 max entry count
     //      * LRU as eviction policy
-    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
-    // since "CacheEvictionConfig" is deprecated
+    // TODO: change to "EvictionConfig" in the future since "CacheEvictionConfig" is deprecated
     private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
 
     private WanReplicationRef wanReplicationRef;
@@ -97,7 +95,7 @@ public class CacheConfig<K, V>
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
             this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
-            // Eviction config cannot be null
+            // eviction config is not allowed to be null
             if (config.evictionConfig != null) {
                 this.evictionConfig = new CacheEvictionConfig(config.evictionConfig);
             }
@@ -136,7 +134,7 @@ public class CacheConfig<K, V>
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
         this.backupCount = simpleConfig.getBackupCount();
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
-        // Eviction config cannot be null
+        // eviction config is not allowed to be null
         if (simpleConfig.getEvictionConfig() != null) {
             this.evictionConfig = new CacheEvictionConfig(simpleConfig.getEvictionConfig());
         }
@@ -156,7 +154,7 @@ public class CacheConfig<K, V>
             boolean synchronous = simpleListener.isSynchronous();
             MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration =
                     new MutableCacheEntryListenerConfiguration<K, V>(
-                    listenerFactory, filterFactory, isOldValueRequired, synchronous);
+                            listenerFactory, filterFactory, isOldValueRequired, synchronous);
             addCacheEntryListenerConfiguration(listenerConfiguration);
         }
         for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
@@ -186,25 +184,25 @@ public class CacheConfig<K, V>
                             this.expiryPolicyFactory =
                                     CreatedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                         durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount()));
                             break;
                         case MODIFIED:
                             this.expiryPolicyFactory =
                                     ModifiedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                         durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount()));
                             break;
                         case ACCESSED:
                             this.expiryPolicyFactory =
                                     AccessedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                         durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount()));
                             break;
                         case TOUCHED:
                             this.expiryPolicyFactory =
                                     TouchedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                         durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount()));
                             break;
                         case ETERNAL:
                             this.expiryPolicyFactory = EternalExpiryPolicy.factoryOf();
@@ -340,10 +338,10 @@ public class CacheConfig<K, V>
      * @param asyncBackupCount The number of asynchronous backups to set
      *                         for this {@link com.hazelcast.cache.ICache}.
      * @return the updated CacheConfig
-     * @throws new IllegalArgumentException if asyncBackupCount is smaller than 0,
-     *             or larger than the maximum number of backups,
-     *             or the sum of the synchronous and asynchronous backups is larger
-     *             than the maximum number of backups.
+     * @throws IllegalArgumentException if asyncBackupCount is smaller than 0,
+     *                                  or larger than the maximum number of backups,
+     *                                  or the sum of the synchronous and asynchronous backups is larger
+     *                                  than the maximum number of backups.
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -366,8 +364,7 @@ public class CacheConfig<K, V>
      *
      * @return The {@link EvictionConfig} instance of the eviction configuration.
      */
-    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
-    // since "CacheEvictionConfig" is deprecated
+    // TODO: change to "EvictionConfig" in the future since "CacheEvictionConfig" is deprecated
     public CacheEvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
@@ -381,7 +378,7 @@ public class CacheConfig<K, V>
     public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
         isNotNull(evictionConfig, "evictionConfig");
 
-        // TODO Remove this check in the future since "CacheEvictionConfig" is deprecated
+        // TODO: remove this check in the future since "CacheEvictionConfig" is deprecated
         if (evictionConfig instanceof CacheEvictionConfig) {
             this.evictionConfig = (CacheEvictionConfig) evictionConfig;
         } else {
@@ -459,7 +456,6 @@ public class CacheConfig<K, V>
      * Associates this cache configuration to a quorum.
      *
      * @param quorumName name of the desired quorum.
-     *
      * @return the updated CacheConfig.
      */
     public CacheConfig setQuorumName(String quorumName) {
@@ -472,7 +468,7 @@ public class CacheConfig<K, V>
      * implementation of this cache config.
      *
      * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     *         implementation of this cache config
+     * implementation of this cache config
      */
     public String getMergePolicy() {
         return mergePolicy;
@@ -493,7 +489,7 @@ public class CacheConfig<K, V>
      * Returns invalidation events disabled status for per entry.
      *
      * @return <tt>true</tt> if invalidation events are disabled for per entry,
-     *         otherwise <tt>false</tt>
+     * otherwise <tt>false</tt>
      */
     public boolean isDisablePerEntryInvalidationEvents() {
         return disablePerEntryInvalidationEvents;
@@ -510,8 +506,7 @@ public class CacheConfig<K, V>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(managerPrefix);
         out.writeUTF(uriString);
@@ -553,8 +548,7 @@ public class CacheConfig<K, V>
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         managerPrefix = in.readUTF();
         uriString = in.readUTF();
