@@ -42,7 +42,6 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.config.EvictionConfigAccessor;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -407,8 +406,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             if (nearCacheConfig == null) {
                 return;
             }
-            EvictionConfigAccessor.initDefaultMaxSize(nearCacheConfig.getEvictionConfig());
-
             NearCacheContext nearCacheContext = new NearCacheContext(
                     getContext().getSerializationService(),
                     new ClientNearCacheExecutor(getContext().getExecutionService()));

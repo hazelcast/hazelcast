@@ -21,7 +21,6 @@ import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCacheManager;
-import com.hazelcast.config.EvictionConfigAccessor;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
@@ -83,10 +82,7 @@ public class NearCacheProvider {
     }
 
     private NearCacheConfig getNearCacheConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = nodeEngine.getConfig().getMapConfig(mapName).getNearCacheConfig();
-        EvictionConfigAccessor.initDefaultMaxSize(nearCacheConfig.getEvictionConfig());
-
-        return nearCacheConfig;
+        return nodeEngine.getConfig().getMapConfig(mapName).getNearCacheConfig();
     }
 
     /**

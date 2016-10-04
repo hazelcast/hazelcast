@@ -29,7 +29,6 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
-import com.hazelcast.config.EvictionConfigAccessor;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -88,7 +87,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         ClientContext context = getContext();
 
         NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
-        EvictionConfigAccessor.initDefaultMaxSize(nearCacheConfig.getEvictionConfig());
 
         NearCacheContext nearCacheContext = new NearCacheContext(
                 context.getSerializationService(),
