@@ -147,7 +147,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
             }
         });
 
-        connectionManager.destroyConnection(connectionToServer, null, null);
+        connectionToServer.close(null,null );
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -157,7 +157,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
             }
         });
 
-        connectionManager.destroyConnection(connectionToServer, null, null);
+        connectionToServer.close(null, null);
 
         assertEquals("connection removed should be called only once", 1, listener.count.get());
     }

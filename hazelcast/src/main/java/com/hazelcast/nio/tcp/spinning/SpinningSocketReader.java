@@ -64,7 +64,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     }
 
     @Override
-    public long getLastReadTimeMillis() {
+    public long lastReadTimeMillis() {
         return lastReadTime;
     }
 

@@ -75,7 +75,7 @@ public abstract class AbstractNonBlockingSocketReader<C extends Connection>
     }
 
     @Override
-    public long getLastReadTimeMillis() {
+    public long lastReadTimeMillis() {
         return lastReadTime;
     }
 

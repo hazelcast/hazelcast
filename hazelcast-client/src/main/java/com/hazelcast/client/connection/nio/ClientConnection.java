@@ -90,8 +90,10 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         LoggingService loggingService = client.getLoggingService();
         this.logger = loggingService.getLogger(ClientConnection.class);
         boolean directBuffer = client.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
-        this.reader = new ClientNonBlockingSocketReader(this, in, socket.getReceiveBufferSize(), directBuffer, loggingService);
-        this.writer = new ClientNonBlockingSocketWriter(this, out, socket.getSendBufferSize(), directBuffer, loggingService);
+        this.reader = new ClientNonBlockingSocketReader(this, in, socket.getReceiveBufferSize(), directBuffer,
+                loggingService.getLogger(ClientNonBlockingSocketReader.class), null);
+        this.writer = new ClientNonBlockingSocketWriter(this, out, socket.getSendBufferSize(), directBuffer,
+                loggingService.getLogger(ClientNonBlockingSocketWriter.class), null);
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -158,23 +160,18 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
     }
 
     @Override
-    public Address getEndPoint() {
-        return remoteEndpoint;
-    }
-
-    @Override
     public boolean isAlive() {
         return alive.get();
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return reader.getLastReadTime();
+        return reader.lastReadTimeMillis();
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        return writer.getLastWriteTime();
+        return writer.lastWriteTimeMillis();
     }
 
     @Override
@@ -219,6 +216,11 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         return reader;
     }
 
+    @Override
+    public Address getEndPoint() {
+        return remoteEndpoint;
+    }
+
     public void setRemoteEndpoint(Address remoteEndpoint) {
         this.remoteEndpoint = remoteEndpoint;
     }
@@ -253,6 +255,8 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         } catch (Exception e) {
             logger.warning(e);
         }
+
+        connectionManager.onClose(this);
 
         if (lifecycleService.isRunning()) {
             logger.warning(message);
@@ -322,6 +326,10 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         this.isAuthenticatedAsOwner = true;
     }
 
+    public long getClosedTime() {
+        return closedTime;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -358,9 +366,5 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
                 + ", lastHeartbeatRequested=" + timeToStringFriendly(lastHeartbeatRequestedMillis)
                 + ", lastHeartbeatReceived=" + timeToStringFriendly(lastHeartbeatReceivedMillis)
                 + '}';
-    }
-
-    public long getClosedTime() {
-        return closedTime;
     }
 }
