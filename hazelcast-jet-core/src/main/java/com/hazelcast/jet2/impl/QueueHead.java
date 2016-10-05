@@ -31,7 +31,9 @@ public interface QueueHead<T> {
      */
     TaskletResult drainTo(Collection<? super T> dest);
 
-    int getOrdinal();
+    boolean isDone();
 
-    int getPriority();
+    int ordinal();
+
+    int priority();
 }

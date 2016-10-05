@@ -16,45 +16,51 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Cursor;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProgressTracker;
 import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
-import java.util.Map;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Queue;
 
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
+import static java.util.Map.Entry.comparingByKey;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
-public class ProcessorTasklet<I, O> implements Tasklet {
+public class ProcessorTasklet implements Tasklet {
 
     private final int bufferSize = 16;
 
-    private final Processor<? super I, ? extends O> processor;
-    private final Deque<I> pendingInput;
-    private final ArrayDequeCollector<O> pendingOutput;
-    private RemovableCircularCursor<Map.Entry<String, QueueHead<? extends I>>> queueHeadCursor;
-    private final Cursor<QueueTail<? super O>> queueTailCursor;
+    private final Processor processor;
+    private final List<ArrayList<QueueHead>> prioritizedQueueHeads;
+    private CircularCursor<QueueHead> queueHeadCursor;
+    private final Queue pendingInput;
+    private final ArrayDequeCollector pendingOutput;
+    private final QueueTail[] queueTails;
     private final ProgressTracker progTracker = new ProgressTracker();
 
+    private QueueHead currentQueueHead;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(Processor<? super I, ? extends O> processor,
-                            Map<String, QueueHead<? extends I>> queueHeads,
-                            Map<String, QueueTail<? super O>> queueTails) {
+    public ProcessorTasklet(Processor processor, List<QueueHead> queueHeads, List<QueueTail> queueTails) {
         Preconditions.checkNotNull(processor, "processor");
-        Preconditions.checkFalse(queueHeads.isEmpty(), "There must be at least one input");
-        Preconditions.checkFalse(queueTails.isEmpty(), "There must be at least one output");
-
+        Preconditions.checkFalse(queueHeads.isEmpty(), "There must be at least one queue head");
+        Preconditions.checkFalse(queueTails.isEmpty(), "There must be at least one queue tail");
         this.processor = processor;
-        if (!queueHeads.isEmpty()) {
-            this.queueHeadCursor = new RemovableCircularCursor<>(new ArrayList<>(queueHeads.entrySet()));
-        }
-        this.queueTailCursor = queueTails.isEmpty() ? null : new ListCursor<>(new ArrayList<>(queueTails.values()));
-        this.pendingInput = new ArrayDeque<>();
-        this.pendingOutput = new ArrayDequeCollector<>();
+        this.prioritizedQueueHeads = queueHeads.stream()
+                                               .collect(groupingBy(QueueHead::priority, toCollection(ArrayList::new)))
+                                               .entrySet().stream()
+                                               .sorted(comparingByKey())
+                                               .map(Entry::getValue).collect(toList());
+        this.pendingInput = new ArrayDeque();
+        this.pendingOutput = new ArrayDequeCollector(queueTails.size());
+        this.queueTails = queueTails.toArray(new QueueTail[queueHeads.size()]);
+        popQueueHeadGroup();
     }
 
     @Override
@@ -62,13 +68,21 @@ public class ProcessorTasklet<I, O> implements Tasklet {
         progTracker.reset();
         ensurePendingInput();
         if (progTracker.isDone()) {
-            if (!processorCompleted) {
-                processorCompleted = processor.complete(pendingOutput);
-            }
+            idempotentComplete();
         } else if (!pendingInput.isEmpty()) {
-            progTracker.update(MADE_PROGRESS);
-            while (processor.process(queueHeadCursor.value().getKey(), pendingInput.peek(), pendingOutput)) {
+            final int inputOrdinal = currentQueueHead.ordinal();
+            final Queue outQ = pendingOutput.queueWithOrdinal(inputOrdinal);
+            for (Object item; (item = pendingInput.peek()) != null && outQ.size() < bufferSize;) {
+                progTracker.update(MADE_PROGRESS);
+                if (!processor.process(inputOrdinal, item)) {
+                    break;
+                }
                 pendingInput.remove();
+            }
+        } else if (currentQueueHead.isDone()) {
+            progTracker.update(MADE_PROGRESS);
+            if (processor.complete(currentQueueHead.ordinal())) {
+                currentQueueHead = null;
             }
         }
         offerPendingOutput();
@@ -76,37 +90,57 @@ public class ProcessorTasklet<I, O> implements Tasklet {
     }
 
     private void ensurePendingInput() {
-        if (queueHeadCursor == null) {
-            return;
-        }
-        if (pendingInput.size() >= bufferSize / 2) {
+        if (!pendingInput.isEmpty() || currentQueueHead != null && currentQueueHead.isDone()) {
             progTracker.notDone();
             return;
         }
-        final QueueHead<? extends I> first = queueHeadCursor.value().getValue();
-        QueueHead<? extends I> current = first;
+        if (queueHeadCursor == null) {
+            return;
+        }
+        final QueueHead first = queueHeadCursor.value();
+        TaskletResult result;
         do {
-            final TaskletResult result = current.drainTo(pendingInput);
+            currentQueueHead = queueHeadCursor.value();
+            result = currentQueueHead.drainTo(pendingInput);
             progTracker.update(result);
             if (result.isDone()) {
                 queueHeadCursor.remove();
             }
             if (!queueHeadCursor.advance()) {
-                return;
+                popQueueHeadGroup();
+                break;
             }
-            current = queueHeadCursor.value().getValue();
-        } while (current != first && pendingInput.size() < bufferSize);
+        } while (!result.isMadeProgress() && queueHeadCursor.value() != first);
         progTracker.notDone();
     }
 
+    private void popQueueHeadGroup() {
+        this.queueHeadCursor = !prioritizedQueueHeads.isEmpty()
+                ? new CircularCursor<>(prioritizedQueueHeads.remove(0)) : null;
+    }
+
+    private boolean idempotentComplete() {
+        if (processorCompleted) {
+            return true;
+        }
+        if (processor.complete()) {
+            processorCompleted = true;
+        } else {
+            progTracker.notDone();
+        }
+        return processorCompleted;
+    }
+
     private void offerPendingOutput() {
-        for (O item; (item = pendingOutput.peek()) != null;) {
-            if (!queueTailCursor.value().offer(item)) {
-                progTracker.notDone();
-                return;
+        for (int i = 0; i < pendingOutput.queueCount(); i++) {
+            final Queue q = pendingOutput.queueWithOrdinal(i);
+            for (Object item; (item = q.peek()) != null; ) {
+                if (!queueTails[i].offer(item)) {
+                    progTracker.notDone();
+                    return;
+                }
+                progTracker.update(MADE_PROGRESS);
             }
-            progTracker.update(MADE_PROGRESS);
-            pendingOutput.remove();
         }
     }
 }

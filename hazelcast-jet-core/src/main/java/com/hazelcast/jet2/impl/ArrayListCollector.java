@@ -25,11 +25,11 @@ import java.util.List;
 public class ArrayListCollector<T> implements OutputCollector<T> {
 
     private final ArrayList<T> buffer;
-    private final ListCursor<T> cursor;
+    private final ArrayListCursor<T> cursor;
 
     public ArrayListCollector() {
         buffer = new ArrayList<>();
-        cursor = new ListCursor<>(buffer);
+        cursor = new ArrayListCursor<>(buffer);
     }
 
     @Override

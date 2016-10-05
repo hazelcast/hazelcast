@@ -16,17 +16,19 @@
 
 package com.hazelcast.jet2.impl;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
-class RemovableCircularCursor<T> extends ListCursor<T> {
+class CircularCursor<E> extends ArrayListCursor<E> {
 
-    RemovableCircularCursor(List<T> list) {
+    CircularCursor(ArrayList<E> list) {
         super(list);
     }
 
     /**
      * Removes the current item from the underlying collection and points the cursor
-     * to the previous item, wrapping around to the last item if necessary
+     * to the previous item, wrapping around to the last item if necessary.
      */
     public void remove() {
         list.remove(index--);
@@ -36,17 +38,11 @@ class RemovableCircularCursor<T> extends ListCursor<T> {
     }
 
     @Override
-    public void reset() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean advance() {
         if (list.isEmpty()) {
             return false;
         }
-
-        if (++index == list.size()) {
+        if (!advance()) {
             index = 0;
         }
         return true;

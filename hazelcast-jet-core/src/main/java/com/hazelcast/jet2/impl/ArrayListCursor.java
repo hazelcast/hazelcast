@@ -19,6 +19,7 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.Cursor;
 import com.hazelcast.util.Preconditions;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,12 +28,12 @@ import java.util.List;
  *
  * @param <T>
  */
-public class ListCursor<T> implements Cursor<T> {
+public class ArrayListCursor<T> implements Cursor<T> {
 
     protected int index;
-    protected final List<T> list;
+    protected final ArrayList<T> list;
 
-    public ListCursor(List<T> list) {
+    public ArrayListCursor(ArrayList<T> list) {
         this.list = list;
     }
 

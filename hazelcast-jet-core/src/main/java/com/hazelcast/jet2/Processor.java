@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
  * <p/>
  * The processing methods should limit the amount of processing time and data they output per
  * one invocation. A method should return <code>false</code> to signal it's not done with the
- * current item. When the caller is ready to invoke the method again, it will invoke it with
+ * current step/item. When the caller is ready to invoke the method again, it will invoke it with
  * the same arguments as the previous time.
  */
 public interface Processor {
@@ -41,21 +41,21 @@ public interface Processor {
      *
      * @param ordinal ordinal of the input where the item originates from
      * @param item    item to be processed
-     * @return <code>true</code> if the method is done with the current item, <code>false</code> otherwise.
+     * @return <code>true</code> if this item has now been processed, <code>false</code> otherwise.
      */
     boolean process(int ordinal, Object item);
 
     /**
-     * Called after all the input at <code>ordinal</code> is exhausted
+     * Called after the input with the supplied <code>ordinal</code> is exhausted.
      *
-     * @return <code>true</code> if the method is done completing the processing, <code>false</code> otherwise.
+     * @return <code>true</code> if completing this input is now done, <code>false</code> otherwise.
      */
     boolean complete(int ordinal);
 
     /**
-     * Called after all the inputs are exhausted
+     * Called after all the inputs are exhausted.
      *
-     * @return <code>true</code> if the method is done completing the processing, <code>false</code> otherwise.
+     * @return <code>true</code> if the completing is now done, <code>false</code> otherwise.
      */
     boolean complete();
 
