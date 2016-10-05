@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.util.Preconditions.checkFalse;
 
 /**
@@ -138,7 +139,7 @@ public class ClientConfig {
         return this;
     }
 
-     /**
+    /**
      * Gets {@link java.util.Properties} object
      *
      * @return {@link java.util.Properties} object
@@ -288,7 +289,13 @@ public class ClientConfig {
         NearCacheConfig nearCacheConfig = lookupByPattern(nearCacheConfigMap, name);
         if (nearCacheConfig == null) {
             nearCacheConfig = nearCacheConfigMap.get("default");
+            if (nearCacheConfig != null) {
+                // if there is a default config we have to clone it,
+                // otherwise you will modify the same instances via different Near Cache names
+                nearCacheConfig = new NearCacheConfig(nearCacheConfig);
+            }
         }
+        initDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
         return nearCacheConfig;
     }
 

@@ -19,18 +19,23 @@ package com.hazelcast.config;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * Accessor for the {@link EvictionConfig} to initialize the old default max size, if no size was configured by the user.
+ * Accessor for the {@link EvictionConfig} of a {@link NearCacheConfig} to initialize the old default max size,
+ * if no size was configured by the user.
  */
 @PrivateApi
-public final class EvictionConfigAccessor {
+public final class NearCacheConfigAccessor {
 
-    private EvictionConfigAccessor() {
+    private NearCacheConfigAccessor() {
     }
 
-    public static EvictionConfig initDefaultMaxSize(EvictionConfig evictionConfig) {
-        if (!evictionConfig.sizeConfigured) {
-            evictionConfig.setSizeInternal(EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP);
+    public static void initDefaultMaxSizeForOnHeapMaps(NearCacheConfig nearCacheConfig) {
+        if (nearCacheConfig == null) {
+            return;
         }
-        return evictionConfig;
+
+        EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
+        if (nearCacheConfig.getInMemoryFormat() != InMemoryFormat.NATIVE && !evictionConfig.sizeConfigured) {
+            evictionConfig.setSize(EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP);
+        }
     }
 }

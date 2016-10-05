@@ -26,10 +26,15 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class EvictionConfigAccessorTest extends HazelcastTestSupport {
+public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor() {
-        assertUtilityConstructor(EvictionConfigAccessor.class);
+        assertUtilityConstructor(NearCacheConfigAccessor.class);
+    }
+
+    @Test
+    public void testInitDefaultMaxSizeForOnHeapMaps_whenNull_thenDoNothing() {
+        NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(null);
     }
 }

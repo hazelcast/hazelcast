@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.text.MessageFormat.format;
@@ -244,6 +245,7 @@ public class Config {
         String baseName = getBaseName(name);
         MapConfig config = lookupByPattern(mapConfigs, baseName);
         if (config != null) {
+            initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
             return config.getAsReadOnly();
         }
         return getMapConfig("default").getAsReadOnly();
@@ -259,6 +261,7 @@ public class Config {
         if (defConfig == null) {
             defConfig = new MapConfig();
             defConfig.setName("default");
+            initDefaultMaxSizeForOnHeapMaps(defConfig.getNearCacheConfig());
             addMapConfig(defConfig);
         }
         config = new MapConfig(defConfig);
@@ -290,7 +293,6 @@ public class Config {
         }
         return this;
     }
-
 
     public CacheSimpleConfig findCacheConfig(String name) {
         name = getBaseName(name);
@@ -665,7 +667,6 @@ public class Config {
         return this;
     }
 
-
     /**
      * @return the topicConfigs
      */
@@ -861,7 +862,6 @@ public class Config {
         return this;
     }
 
-
     public WanReplicationConfig getWanReplicationConfig(String name) {
         return wanReplicationConfigs.get(name);
     }
@@ -956,7 +956,6 @@ public class Config {
         }
         return getQuorumConfig("default");
     }
-
 
     public Config setQuorumConfigs(Map<String, QuorumConfig> quorumConfigs) {
         this.quorumConfigs.clear();
@@ -1157,9 +1156,10 @@ public class Config {
     // See {@link ConfigCheck} for more information.
 
     /**
-     * @param config
-     * @return true if config is compatible with this one,
-     * false if config belongs to another group
+     * Checks if a {@link Config} matches the group configuration.
+     *
+     * @param config the {@link Config} to check
+     * @return {@code true} if config is compatible with this one, {@code false} if config belongs to another group
      * @throws RuntimeException if map, queue, topic configs are incompatible
      */
     public boolean isCompatible(final Config config) {
