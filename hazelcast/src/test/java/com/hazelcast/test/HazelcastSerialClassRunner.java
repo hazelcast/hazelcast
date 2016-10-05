@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Run the tests in series and log the running test.
+ * Run the tests in series and log the duration of the running test.
  */
 public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
 

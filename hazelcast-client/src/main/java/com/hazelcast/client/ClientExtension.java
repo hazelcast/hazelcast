@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 
@@ -72,7 +73,7 @@ public interface ClientExtension {
     NearCacheManager createNearCacheManager();
 
     /**
-     * Creates a {@code ClientProxyFactory} for the supplied service class.
+     * Creates a {@code ClientProxyFactory} for the supplied service class. Currently only the {@link MapService} is supported.
      *
      * @param service service for the proxy to create.
      * @return {@code ClientProxyFactory} for the service.
