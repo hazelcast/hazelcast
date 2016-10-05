@@ -80,7 +80,7 @@ public abstract class AbstractNonBlockingSocketWriter<C extends Connection>
                                     NonBlockingIOThread ioThread,
                                     ILogger logger,
                                     IOBalancer balancer) {
-        super(connection, ioThread, OP_WRITE, socketChannel, logger, balancer);
+        super(connection, ioThread, 0, socketChannel, logger, balancer);
     }
 
     @Override
