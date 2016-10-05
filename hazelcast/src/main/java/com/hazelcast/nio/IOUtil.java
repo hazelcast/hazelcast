@@ -24,6 +24,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,10 +33,14 @@ import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static java.lang.String.format;
 
 @PrivateApi
 public final class IOUtil {
@@ -66,7 +71,7 @@ public final class IOUtil {
      * format is changed, this extraction method must be changed as well.
      */
     public static long extractOperationCallId(Data data, InternalSerializationService serializationService)
-    throws IOException {
+            throws IOException {
         ObjectDataInput input = serializationService.createObjectDataInput(data);
         boolean identified = input.readBoolean();
         if (identified) {
@@ -118,6 +123,43 @@ public final class IOUtil {
             return (T) in.readData();
         }
         return in.readObject();
+    }
+
+    /**
+     * Fills a buffer from an {@link InputStream}.
+     *
+     * @param in     the {@link InputStream} to read from
+     * @param buffer the buffer to fill
+     * @return {@code true} if the buffer could be filled completely,
+     * {@code false} if there was no data in the {@link InputStream}
+     * @throws IOException if there was not enough data in the {@link InputStream} to fill the buffer
+     */
+    public static boolean readFullyOrNothing(InputStream in, byte[] buffer) throws IOException {
+        int bytesRead = 0;
+        do {
+            int count = in.read(buffer, bytesRead, buffer.length - bytesRead);
+            if (count < 0) {
+                if (bytesRead == 0) {
+                    return false;
+                }
+                throw new EOFException();
+            }
+            bytesRead += count;
+        } while (bytesRead < buffer.length);
+        return true;
+    }
+
+    /**
+     * Fills a buffer from an {@link InputStream} unless it doesn't contain enough data.
+     *
+     * @param in     the {@link InputStream} to read from
+     * @param buffer the buffer to fill
+     * @throws IOException if there was no data or not enough data in the {@link InputStream} to fill the buffer
+     */
+    public static void readFully(InputStream in, byte[] buffer) throws IOException {
+        if (!readFullyOrNothing(in, buffer)) {
+            throw new EOFException();
+        }
     }
 
     public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, InputStream in) throws IOException {
@@ -274,6 +316,7 @@ public final class IOUtil {
 
     /**
      * Quietly attempts to close a {@link Closeable} resource, swallowing any exception.
+     *
      * @param closeable the resource to close. If {@code null}, no action is taken.
      */
     public static void closeResource(Closeable closeable) {
@@ -284,6 +327,20 @@ public final class IOUtil {
             closeable.close();
         } catch (IOException e) {
             Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+        }
+    }
+
+    /**
+     * Ensures that the file described by the supplied parameter does not exist
+     * after the method returns. If the file didn't exist, returns silently.
+     * If the file could not be deleted, returns silently.
+     * If the file is a directory, its children are recursively deleted.
+     */
+    public static void deleteQuietly(File f) {
+        try {
+            delete(f);
+        } catch (Exception e) {
+            ignore(e);
         }
     }
 
@@ -313,7 +370,7 @@ public final class IOUtil {
      * First attempts to perform a direct, atomic rename; if that fails, checks whether the target exists,
      * deletes it, and retries. Throws an exception in each case where the rename failed.
      *
-     * @param fileNow describes an existing file
+     * @param fileNow  describes an existing file
      * @param fileToBe describes the desired pathname for the file
      */
     public static void rename(File fileNow, File fileToBe) {
@@ -321,21 +378,21 @@ public final class IOUtil {
             return;
         }
         if (!fileNow.exists()) {
-            throw new HazelcastException(String.format("Failed to rename %s to %s because %s doesn't exist.",
+            throw new HazelcastException(format("Failed to rename %s to %s because %s doesn't exist.",
                     fileNow, fileToBe, fileNow));
 
         }
         if (!fileToBe.exists()) {
-            throw new HazelcastException(String.format("Failed to rename %s to %s even though %s doesn't exist.",
+            throw new HazelcastException(format("Failed to rename %s to %s even though %s doesn't exist.",
                     fileNow, fileToBe, fileToBe));
 
         }
         if (!fileToBe.delete()) {
-            throw new HazelcastException(String.format("Failed to rename %s to %s. %s exists and could not be deleted.",
+            throw new HazelcastException(format("Failed to rename %s to %s. %s exists and could not be deleted.",
                     fileNow, fileToBe, fileToBe));
         }
         if (!fileNow.renameTo(fileToBe)) {
-            throw new HazelcastException(String.format("Failed to rename %s to %s even after deleting %s.",
+            throw new HazelcastException(format("Failed to rename %s to %s even after deleting %s.",
                     fileNow, fileToBe, fileToBe));
         }
     }
@@ -344,6 +401,15 @@ public final class IOUtil {
         return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
     }
 
+    public static File getFileFromResources(String resourceFileName) {
+        try {
+            URL resource = IOUtil.class.getClassLoader().getResource(resourceFileName);
+            //noinspection ConstantConditions
+            return new File(resource.toURI());
+        } catch (Exception e) {
+            throw new HazelcastException("Could not find resource file " + resourceFileName, e);
+        }
+    }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
 
@@ -354,10 +420,12 @@ public final class IOUtil {
             this.classLoader = classLoader;
         }
 
+        @Override
         protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
             return ClassLoaderUtil.loadClass(classLoader, desc.getName());
         }
 
+        @Override
         protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
             ClassLoader theClassLoader = getClassLoader();
             if (theClassLoader == null) {
@@ -392,6 +460,5 @@ public final class IOUtil {
             }
             return theClassLoader;
         }
-
     }
 }
