@@ -16,16 +16,10 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.ascii.TextWriteHandler;
 import com.hazelcast.nio.tcp.ClientWriteHandler;
-import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.tcp.WriteHandler;
@@ -33,144 +27,42 @@ import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 
 import java.io.IOException;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.stringToBytes;
-import static java.lang.Math.max;
-import static java.lang.System.currentTimeMillis;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
  * The writing side of the {@link TcpIpConnection}.
  */
 public final class NonBlockingSocketWriter
-        extends AbstractHandler<TcpIpConnection>
-        implements Runnable, SocketWriter {
+        extends AbstractNonBlockingSocketWriter<TcpIpConnection> {
 
-    private static final long TIMEOUT = 3;
-
-    @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "writeQueueSize")
-    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "priorityWriteQueueSize")
-    public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private final TcpIpConnectionManager connectionManager;
     private final IOService ioService;
-    private ByteBuffer outputBuffer;
-    @Probe(name = "bytesWritten")
-    private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = "normalFramesWritten")
-    private final SwCounter normalFramesWritten = newSwCounter();
-    @Probe(name = "priorityFramesWritten")
-    private final SwCounter priorityFramesWritten = newSwCounter();
 
-    private volatile OutboundFrame currentFrame;
-    private WriteHandler writeHandler;
-    private volatile long lastWriteTime;
-
-    // this field will be accessed by the NonBlockingIOThread or
-    // it is accessed by any other thread but only that thread managed to cas the scheduled flag to true.
-    // This prevents running into an NonBlockingIOThread that is migrating.
-    private NonBlockingIOThread newOwner;
-
-    NonBlockingSocketWriter(TcpIpConnection connection, NonBlockingIOThread ioThread, ILogger logger, IOBalancer balancer) {
-        super(connection, ioThread, SelectionKey.OP_WRITE, connection.getSocketChannelWrapper(), logger, balancer);
+    public NonBlockingSocketWriter(TcpIpConnection connection,
+                                   NonBlockingIOThread ioThread,
+                                   ILogger logger,
+                                   IOBalancer balancer) {
+        super(connection, connection.getSocketChannelWrapper(), ioThread, logger, balancer);
         this.connectionManager = connection.getConnectionManager();
         this.ioService = connectionManager.getIoService();
     }
 
     @Override
-    public int totalFramesPending() {
-        return writeQueue.size() + urgentWriteQueue.size();
-    }
+    protected WriteHandler createWriterHandler(String protocol) throws IOException {
+        logger.log(Level.WARNING, "SocketWriter is not set, creating WriteHandler with CLUSTER protocol!");
 
-    @Override
-    public long getLastWriteTimeMillis() {
-        return lastWriteTime;
-    }
-
-    @Override
-    public WriteHandler getWriteHandler() {
-        return writeHandler;
-    }
-
-    @Probe(name = "writeQueuePendingBytes", level = DEBUG)
-    public long bytesPending() {
-        return bytesPending(writeQueue);
-    }
-
-    @Probe(name = "priorityWriteQueuePendingBytes", level = DEBUG)
-    public long priorityBytesPending() {
-        return bytesPending(urgentWriteQueue);
-    }
-
-    private long bytesPending(Queue<OutboundFrame> writeQueue) {
-        long bytesPending = 0;
-        for (OutboundFrame frame : writeQueue) {
-            if (frame instanceof Packet) {
-                bytesPending += ((Packet) frame).packetSize();
-            }
-        }
-        return bytesPending;
-    }
-
-    @Probe(name = "idleTimeMs")
-    private long idleTimeMs() {
-        return max(currentTimeMillis() - lastWriteTime, 0);
-    }
-
-    @Probe(name = "isScheduled", level = DEBUG)
-    private long isScheduled() {
-        return scheduled.get() ? 1 : 0;
-    }
-
-    // accessed from ReadHandler and SocketConnector
-    @Override
-    public void setProtocol(final String protocol) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        ioThread.addTaskAndWakeup(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    createWriterHandler(protocol);
-                } catch (Throwable t) {
-                    onFailure(t);
-                } finally {
-                    latch.countDown();
-                }
-            }
-        });
-        try {
-            latch.await(TIMEOUT, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            logger.finest("CountDownLatch::await interrupted", e);
-        }
-    }
-
-    private void createWriterHandler(String protocol) throws IOException {
-        if (writeHandler != null) {
-            return;
-        }
-
+        WriteHandler writeHandler;
         if (CLUSTER.equals(protocol)) {
             configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
             writeHandler = ioService.createWriteHandler(connection);
             outputBuffer.put(stringToBytes(CLUSTER));
-            registerOp(SelectionKey.OP_WRITE);
+            registerOp(OP_WRITE);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
             writeHandler = new ClientWriteHandler();
@@ -178,322 +70,18 @@ public final class NonBlockingSocketWriter
             configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
             writeHandler = new TextWriteHandler(connection);
         }
+
+        return writeHandler;
     }
 
     private void configureBuffers(int size) {
-        outputBuffer = IOUtil.newByteBuffer(size, ioService.isSocketBufferDirect());
+        configureBuffers(size, ioService.isSocketBufferDirect());
+
         try {
             connection.setSendBufferSize(size);
         } catch (SocketException e) {
             logger.finest("Failed to adjust TCP send buffer of " + connection + " to "
                     + size + " B.", e);
-        }
-    }
-
-    @Override
-    public void write(OutboundFrame frame) {
-        if (frame.isUrgent()) {
-            urgentWriteQueue.offer(frame);
-        } else {
-            writeQueue.offer(frame);
-        }
-
-        schedule();
-    }
-
-    private OutboundFrame poll() {
-        for (; ; ) {
-            boolean urgent = true;
-            OutboundFrame frame = urgentWriteQueue.poll();
-
-            if (frame == null) {
-                urgent = false;
-                frame = writeQueue.poll();
-            }
-
-            if (frame == null) {
-                return null;
-            }
-
-            if (frame.getClass() == TaskFrame.class) {
-                TaskFrame taskFrame = (TaskFrame) frame;
-                taskFrame.task.run();
-                continue;
-            }
-
-            if (urgent) {
-                priorityFramesWritten.inc();
-            } else {
-                normalFramesWritten.inc();
-            }
-
-            return frame;
-        }
-    }
-
-    /**
-     * Makes sure this WriteHandler is scheduled to be executed by the IO thread.
-     * <p/>
-     * This call is made by 'outside' threads that interact with the connection. For example when a frame is placed
-     * on the connection to be written. It will never be made by an IO thread.
-     * <p/>
-     * If the WriteHandler already is scheduled, the call is ignored.
-     */
-    private void schedule() {
-        if (scheduled.get()) {
-            // So this WriteHandler is still scheduled, we don't need to schedule it again
-            return;
-        }
-
-        if (!scheduled.compareAndSet(false, true)) {
-            // Another thread already has scheduled this WriteHandler, we are done. It
-            // doesn't matter which thread does the scheduling, as long as it happens.
-            return;
-        }
-
-        // We managed to schedule this WriteHandler. This means we need to add a task to
-        // the ioThread and give it a kick so that it processes our frames.
-        ioThread.addTaskAndWakeup(this);
-    }
-
-    /**
-     * Tries to unschedule this WriteHandler.
-     * <p/>
-     * It will only be unscheduled if:
-     * - the outputBuffer is empty
-     * - there are no pending frames.
-     * <p/>
-     * If the outputBuffer is dirty then it will register itself for an OP_WRITE since we are interested in knowing
-     * if there is more space in the socket output buffer.
-     * If the outputBuffer is not dirty, then it will unregister itself from an OP_WRITE since it isn't interested
-     * in space in the socket outputBuffer.
-     * <p/>
-     * This call is only made by the IO thread.
-     */
-    private void unschedule() throws IOException {
-        if (dirtyOutputBuffer() || currentFrame != null) {
-            // Because not all data was written to the socket, we need to register for OP_WRITE so we get
-            // notified when the socketChannel is ready for more data.
-            registerOp(SelectionKey.OP_WRITE);
-
-            // If the outputBuffer is not empty, we don't need to unschedule ourselves. This is because the
-            // WriteHandler will be triggered by a nio write event to continue sending data.
-            return;
-        }
-
-        // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
-        unregisterOp(SelectionKey.OP_WRITE);
-        // So the outputBuffer is empty, so we are going to unschedule ourselves.
-        scheduled.set(false);
-
-        if (writeQueue.isEmpty() && urgentWriteQueue.isEmpty()) {
-            // there are no remaining frames, so we are done.
-            return;
-        }
-
-        // So there are frames, but we just unscheduled ourselves. If we don't try to reschedule, then these
-        // Frames are at risk not to be send.
-        if (!scheduled.compareAndSet(false, true)) {
-            //someone else managed to schedule this WriteHandler, so we are done.
-            return;
-        }
-
-        // We managed to reschedule. So lets add ourselves to the ioThread so we are processed again.
-        // We don't need to call wakeup because the current thread is the IO-thread and the selectionQueue will be processed
-        // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
-        ioThread.addTask(this);
-    }
-
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void handle() throws Exception {
-        eventCount.inc();
-        lastWriteTime = currentTimeMillis();
-
-        if (writeHandler == null) {
-            logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
-            createWriterHandler(CLUSTER);
-        }
-
-        fillOutputBuffer();
-
-        if (dirtyOutputBuffer()) {
-            writeOutputBufferToSocket();
-        }
-
-        if (newOwner == null) {
-            unschedule();
-        } else {
-            startMigration();
-        }
-    }
-
-    private void startMigration() throws IOException {
-        NonBlockingIOThread newOwner = this.newOwner;
-        this.newOwner = null;
-        startMigration(newOwner);
-    }
-
-    /**
-     * Checks of the outputBuffer is dirty.
-     *
-     * @return true if dirty, false otherwise.
-     */
-    private boolean dirtyOutputBuffer() {
-        return outputBuffer.position() > 0;
-    }
-
-    /**
-     * Writes to content of the outputBuffer to the socket.
-     */
-    private void writeOutputBufferToSocket() throws IOException {
-        // So there is data for writing, so lets prepare the buffer for writing and then write it to the socketChannel.
-        outputBuffer.flip();
-        int written = socketChannel.write(outputBuffer);
-
-        bytesWritten.inc(written);
-
-        // Now we verify if all data is written.
-        if (outputBuffer.hasRemaining()) {
-            // We did not manage to write all data to the socket. So lets compact the buffer so new data can be added at the end.
-            outputBuffer.compact();
-        } else {
-            // We managed to fully write the outputBuffer to the socket, so we are done.
-            outputBuffer.clear();
-        }
-    }
-
-    /**
-     * Fills the outBuffer with frames. This is done till there are no more frames or till there is no more space in the
-     * outputBuffer.
-     *
-     * @throws Exception
-     */
-    private void fillOutputBuffer() throws Exception {
-        for (; ; ) {
-            if (!outputBuffer.hasRemaining()) {
-                // The buffer is completely filled, we are done.
-                return;
-            }
-
-            // If there currently is not frame sending, lets try to get one.
-            if (currentFrame == null) {
-                currentFrame = poll();
-                if (currentFrame == null) {
-                    // There is no frames to write, we are done.
-                    return;
-                }
-            }
-
-            // Lets write the currentFrame to the outputBuffer.
-            if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
-                // We are done for this round because not all data of the current frame fits in the outputBuffer
-                return;
-            }
-
-            // The current frame has been written completely. So lets null it and lets try to write another frame.
-            currentFrame = null;
-        }
-    }
-
-    @Override
-    public void run() {
-        try {
-            handle();
-        } catch (Throwable t) {
-            onFailure(t);
-        }
-    }
-
-    @Override
-    public void close() {
-        writeQueue.clear();
-        urgentWriteQueue.clear();
-
-        CloseTask closeTask = new CloseTask();
-        write(new TaskFrame(closeTask));
-        closeTask.awaitCompletion();
-    }
-
-    @Override
-    public void requestMigration(NonBlockingIOThread newOwner) {
-        write(new TaskFrame(new StartMigrationTask(newOwner)));
-    }
-
-    @Override
-    public String toString() {
-        return connection + ".socketWriter";
-    }
-
-    /**
-     * The TaskFrame is not really a Frame. It is a way to put a task on one of the frame-queues. Using this approach we
-     * can lift on top of the Frame scheduling mechanism and we can prevent having:
-     * - multiple NonBlockingIOThread-tasks for a SocketWriter on multiple NonBlockingIOThread
-     * - multiple NonBlockingIOThread-tasks for a SocketWriter on the same NonBlockingIOThread.
-     */
-    private static final class TaskFrame implements OutboundFrame {
-
-        private final Runnable task;
-
-        private TaskFrame(Runnable task) {
-            this.task = task;
-        }
-
-        @Override
-        public boolean isUrgent() {
-            return true;
-        }
-    }
-
-    /**
-     * Triggers the migration when executed by setting the SocketWriter.newOwner field. When the handle method completes, it
-     * checks if this field if set, if so, the migration starts.
-     *
-     * If the current ioThread is the same as 'theNewOwner' then the call is ignored.
-     */
-    private final class StartMigrationTask implements Runnable {
-        // field is called 'theNewOwner' to prevent any ambiguity problems with the writeHandler.newOwner.
-        // Else you get a lot of ugly WriteHandler.this.newOwner is ...
-        private final NonBlockingIOThread theNewOwner;
-
-        StartMigrationTask(NonBlockingIOThread theNewOwner) {
-            this.theNewOwner = theNewOwner;
-        }
-
-        @Override
-        public void run() {
-            assert newOwner == null : "No migration can be in progress";
-
-            if (ioThread == theNewOwner) {
-                // if there is no change, we are done
-                return;
-            }
-
-            newOwner = theNewOwner;
-        }
-    }
-
-    private class CloseTask implements Runnable {
-        private final CountDownLatch latch = new CountDownLatch(1);
-
-        @Override
-        public void run() {
-            try {
-                socketChannel.closeOutbound();
-            } catch (IOException e) {
-                logger.finest("Error while closing outbound", e);
-            } finally {
-                latch.countDown();
-            }
-        }
-
-        void awaitCompletion() {
-            try {
-                latch.await(TIMEOUT, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                ignore(e);
-            }
         }
     }
 }
