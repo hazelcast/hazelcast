@@ -20,7 +20,6 @@ import static com.hazelcast.util.OperatingSystemMXBeanSupport.readLongAttribute;
 
 /**
  * This class provides heap usage statistics
- *
  */
 public final class MemoryStatsSupport {
 
@@ -33,18 +32,38 @@ public final class MemoryStatsSupport {
      */
     private MemoryStatsSupport() { }
 
+    /**
+     * Returns the total available physical memory on the system in bytes or -1 if not available.
+     *
+     * @return physical memory in bytes or -1 if not available
+     */
     public static long totalPhysicalMemory() {
         return TOTAL_PHYSICAL_MEMORY;
     }
 
+    /**
+     * Returns the amount of physical memory that is available on the system in bytes or -1 if not available.
+     *
+     * @return free physical memory in bytes or -1 if not available
+     */
     public static long freePhysicalMemory() {
         return readLongAttribute("FreePhysicalMemorySize", -1L);
     }
 
+    /**
+     * Returns the total amount of swap space in bytes or -1 if not available.
+     *
+     * @return total amount of swap space in bytes or -1 if not available
+     */
     public static long totalSwapSpace() {
         return TOTAL_SWAP_SPACE;
     }
 
+    /**
+     * Returns the amount of free swap space in bytes or -1 if not available.
+     *
+     * @return amount of free swap space in bytes or -1 if not available
+     */
     public static long freeSwapSpace() {
         return readLongAttribute("FreeSwapSpaceSize", -1L);
     }

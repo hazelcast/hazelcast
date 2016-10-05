@@ -223,6 +223,13 @@ public final class ProxyManager {
         }
     }
 
+    /**
+     * Creates a {@code ClientProxyFactory} for the supplied service class. Currently only the {@link MapService} is supported.
+     *
+     * @param service service for the proxy to create.
+     * @return {@code ClientProxyFactory} for the service.
+     * @throws java.lang.IllegalArgumentException if service is not known. Currently only the {@link MapService} is known
+     */
     private <T> ClientProxyFactory createServiceProxyFactory(Class<T> service) {
         ClientExtension clientExtension = client.getClientExtension();
         return clientExtension.createServiceProxyFactory(service);

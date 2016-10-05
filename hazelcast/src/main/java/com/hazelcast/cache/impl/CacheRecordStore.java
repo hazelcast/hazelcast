@@ -24,7 +24,7 @@ import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -71,17 +71,28 @@ public class CacheRecordStore
         this.cacheRecordFactory = createCacheRecordFactory();
     }
 
+    /**
+     * Creates an instance for checking if the maximum cache size has been reached. Supports only the
+     * {@link MaxSizePolicy#ENTRY_COUNT} policy. Throws an {@link IllegalArgumentException} if other {@code maxSizePolicy} is
+     * used.
+     *
+     * @param size          the maximum number of entries
+     * @param maxSizePolicy the way in which the size is interpreted, only the {@link MaxSizePolicy#ENTRY_COUNT}
+     *                      {@code maxSizePolicy} is supported.
+     * @return the instance which will check if the maximum number of entries has been reached
+     * @throws IllegalArgumentException if the policy is not {@link MaxSizePolicy#ENTRY_COUNT} or if the {@code maxSizePolicy}
+     *                                  is null
+     */
     @Override
-    protected MaxSizeChecker createCacheMaxSizeChecker(int size,
-                                                       EvictionConfig.MaxSizePolicy maxSizePolicy) {
+    protected MaxSizeChecker createCacheMaxSizeChecker(int size, MaxSizePolicy maxSizePolicy) {
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
 
-        if (maxSizePolicy != EvictionConfig.MaxSizePolicy.ENTRY_COUNT) {
+        if (maxSizePolicy != MaxSizePolicy.ENTRY_COUNT) {
             throw new IllegalArgumentException("Invalid max-size policy "
                     + '(' + maxSizePolicy + ") for " + getClass().getName() + "! Only "
-                    + EvictionConfig.MaxSizePolicy.ENTRY_COUNT + " is supported.");
+                    + MaxSizePolicy.ENTRY_COUNT + " is supported.");
         } else {
             return super.createCacheMaxSizeChecker(size, maxSizePolicy);
         }

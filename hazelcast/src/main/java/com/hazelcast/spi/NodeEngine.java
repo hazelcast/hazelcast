@@ -147,7 +147,8 @@ public interface NodeEngine {
     Config getConfig();
 
     /**
-     * Returns the Config ClassLoader.
+     * Returns the Config ClassLoader. This class loader will be used for instantiation of all classes defined by the
+     * configuration (e.g. listeners, policies, stores, partitioning strategies, quorum functions, ...)
      * <p/>
      * todo: add more documentation what the purpose is of the config classloader.
      *
