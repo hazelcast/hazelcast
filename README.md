@@ -55,6 +55,24 @@ Here are the definitions of `aws` element's attributes and sub-elements:
 * `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast members, you can set these parameters as the ones you specified in the EC2 console. They are optional.
 * `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 
+#### NOTE:
+If you are using iam-role. You need to give at least following policy to your iam user.
+`"ec2:DescribeInstances"`
+```
+{
+  "Version": "XXXXXXXX",
+  "Statement": [
+    {
+      "Sid": "XXXXXXXX",
+      "Action": [
+        "ec2:DescribeInstances"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+```
 ## AWSClient Configuration
 
 To make sure EC2 instances are found correctly, you can use the AWSClient class. It determines the private IP addresses of EC2 instances to be connected. Give the AWSClient class the values for the parameters that you specified in the aws element, as shown below. You will see whether your EC2 instances are found.
