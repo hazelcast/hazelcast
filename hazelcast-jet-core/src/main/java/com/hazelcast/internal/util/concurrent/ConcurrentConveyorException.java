@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
-
-import java.util.Collection;
+package com.hazelcast.internal.util.concurrent;
 
 /**
- * The head-end of a bounded non-blocking queue.
- * @param <T> Type if items in the queue.
+ * Exception thrown by the {@link ConcurrentConveyor}.
  */
-public interface QueueHead<T> {
+public class ConcurrentConveyorException extends RuntimeException {
+    public ConcurrentConveyorException(String message) {
+        super(message);
+    }
 
-    /**
-     * Drains all available items to the supplied destination collection.
-     * @return <code>true</code> if the data source connectod to this queue is exhausted;
-     * <code>false</code> otherwise.
-     */
-    TaskletResult drainTo(Collection<? super T> dest);
-
-    boolean isDone();
-
-    int ordinal();
-
-    int priority();
+    public ConcurrentConveyorException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

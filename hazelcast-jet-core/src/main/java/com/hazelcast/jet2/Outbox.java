@@ -14,14 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl.queue;
+package com.hazelcast.jet2;
 
+import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Queue;
 
 /**
- * Composed interface for concurrent queues and sequenced containers.
- *
- * @param <E> type of the elements stored in the {@link Queue}.
+ * Javadoc pending.
  */
-public interface QueuedPipe<E> extends Queue<E>, Pipe<E> {
+public class Outbox {
+    private final ArrayDeque<Object>[] queues;
+
+    public Outbox(int length) {
+        this.queues = new ArrayDeque[length];
+        Arrays.setAll(queues, i -> new ArrayDeque());
+    }
+
+    public boolean isHighWater() {
+        return false;
+    }
+
+    public int queueCount() {
+        return queues.length;
+    }
+
+    public Queue queueWithOrdinal(int ordinal) {
+        return queues[ordinal];
+    }
 }

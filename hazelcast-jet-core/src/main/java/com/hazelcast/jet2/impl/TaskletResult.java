@@ -41,8 +41,13 @@ public enum TaskletResult implements ProgressState {
     }
 
     public static TaskletResult valueOf(ProgressState state) {
-        return state.isDone()
-                ? state.isMadeProgress() ? DONE : WAS_ALREADY_DONE
-                : state.isMadeProgress() ? MADE_PROGRESS : NO_PROGRESS;
+        return valueOf(state.isMadeProgress(), state.isDone());
+    }
+
+    public static TaskletResult valueOf(boolean isMadeProgress, boolean isDone) {
+        return isDone
+                ? isMadeProgress ? DONE : WAS_ALREADY_DONE
+                : isMadeProgress ? MADE_PROGRESS : NO_PROGRESS;
+
     }
 }

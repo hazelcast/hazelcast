@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl.queue;
+package com.hazelcast.internal.util.concurrent;
 
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
@@ -175,6 +175,12 @@ public class ConcurrentConveyor<E> {
      */
     public final QueuedPipe<E> queue(int index) {
         return queues[index];
+    }
+
+    public final boolean removeQueue(int index) {
+        final boolean didRemove = queues[index] != null;
+        queues[index] = null;
+        return didRemove;
     }
 
     /**

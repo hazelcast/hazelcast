@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProgressTracker;
 import com.hazelcast.util.Preconditions;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -34,74 +34,74 @@ import static java.util.stream.Collectors.toList;
 
 public class ProcessorTasklet implements Tasklet {
 
-    private final int bufferSize = 16;
-
     private final Processor processor;
-    private final List<ArrayList<QueueHead>> prioritizedQueueHeads;
-    private CircularCursor<QueueHead> queueHeadCursor;
-    private final Queue pendingInput;
-    private final ArrayDequeCollector pendingOutput;
-    private final QueueTail[] queueTails;
+    private final List<ArrayList<InboundEdgeStream>> prioritizedQueueHeads;
+    private CircularCursor<InboundEdgeStream> queueHeadCursor;
+    private final ArrayDequeWithObserver inbox;
+    private final Outbox outbox;
+    private final OutboundEdgeStream[] outboundStreams;
     private final ProgressTracker progTracker = new ProgressTracker();
 
-    private QueueHead currentQueueHead;
+    private InboundEdgeStream selectedInboundStream;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(Processor processor, List<QueueHead> queueHeads, List<QueueTail> queueTails) {
+    public ProcessorTasklet(
+            Processor processor, List<InboundEdgeStream> inboundStreams, List<OutboundEdgeStream> outboundStreams
+    ) {
         Preconditions.checkNotNull(processor, "processor");
-        Preconditions.checkFalse(queueHeads.isEmpty(), "There must be at least one queue head");
-        Preconditions.checkFalse(queueTails.isEmpty(), "There must be at least one queue tail");
+        Preconditions.checkFalse(inboundStreams.isEmpty(), "There must be at least one queue head");
+        Preconditions.checkFalse(outboundStreams.isEmpty(), "There must be at least one queue tail");
         this.processor = processor;
-        this.prioritizedQueueHeads = queueHeads.stream()
-                                               .collect(groupingBy(QueueHead::priority, toCollection(ArrayList::new)))
-                                               .entrySet().stream()
-                                               .sorted(comparingByKey())
-                                               .map(Entry::getValue).collect(toList());
-        this.pendingInput = new ArrayDeque();
-        this.pendingOutput = new ArrayDequeCollector(queueTails.size());
-        this.queueTails = queueTails.toArray(new QueueTail[queueHeads.size()]);
+        this.prioritizedQueueHeads = inboundStreams
+                .stream()
+                .collect(groupingBy(InboundEdgeStream::priority, toCollection(ArrayList::new)))
+                .entrySet().stream()
+                .sorted(comparingByKey())
+                .map(Entry::getValue).collect(toList());
+        this.inbox = new ArrayDequeWithObserver();
+        this.outbox = new Outbox(outboundStreams.size());
+        this.outboundStreams = outboundStreams.toArray(new OutboundEdgeStream[inboundStreams.size()]);
         popQueueHeadGroup();
     }
 
     @Override
     public TaskletResult call() throws Exception {
         progTracker.reset();
-        ensurePendingInput();
+        tryFillInbox();
         if (progTracker.isDone()) {
-            idempotentComplete();
-        } else if (!pendingInput.isEmpty()) {
-            final int inputOrdinal = currentQueueHead.ordinal();
-            final Queue outQ = pendingOutput.queueWithOrdinal(inputOrdinal);
-            for (Object item; (item = pendingInput.peek()) != null && outQ.size() < bufferSize;) {
+            completeIfNeeded();
+        } else if (!inbox.isEmpty()) {
+            final int inboundOrdinal = selectedInboundStream.ordinal();
+            for (Object item; (item = inbox.peek()) != null && !outbox.isHighWater();) {
                 progTracker.update(MADE_PROGRESS);
-                if (!processor.process(inputOrdinal, item)) {
+                if (!processor.process(inboundOrdinal, item)) {
                     break;
                 }
-                pendingInput.remove();
+                inbox.remove();
             }
-        } else if (currentQueueHead.isDone()) {
+        } else if (selectedInboundStream.isDone()) {
             progTracker.update(MADE_PROGRESS);
-            if (processor.complete(currentQueueHead.ordinal())) {
-                currentQueueHead = null;
+            if (processor.complete(selectedInboundStream.ordinal())) {
+                selectedInboundStream = null;
             }
         }
         offerPendingOutput();
         return TaskletResult.valueOf(progTracker);
     }
 
-    private void ensurePendingInput() {
-        if (!pendingInput.isEmpty() || currentQueueHead != null && currentQueueHead.isDone()) {
+    private void tryFillInbox() {
+        if (!inbox.isEmpty() || selectedInboundStream != null && selectedInboundStream.isDone()) {
             progTracker.notDone();
             return;
         }
         if (queueHeadCursor == null) {
             return;
         }
-        final QueueHead first = queueHeadCursor.value();
+        final InboundEdgeStream first = queueHeadCursor.value();
         TaskletResult result;
         do {
-            currentQueueHead = queueHeadCursor.value();
-            result = currentQueueHead.drainTo(pendingInput);
+            selectedInboundStream = queueHeadCursor.value();
+            result = selectedInboundStream.drainTo(inbox);
             progTracker.update(result);
             if (result.isDone()) {
                 queueHeadCursor.remove();
@@ -119,7 +119,7 @@ public class ProcessorTasklet implements Tasklet {
                 ? new CircularCursor<>(prioritizedQueueHeads.remove(0)) : null;
     }
 
-    private boolean idempotentComplete() {
+    private boolean completeIfNeeded() {
         if (processorCompleted) {
             return true;
         }
@@ -132,10 +132,10 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private void offerPendingOutput() {
-        for (int i = 0; i < pendingOutput.queueCount(); i++) {
-            final Queue q = pendingOutput.queueWithOrdinal(i);
+        for (int i = 0; i < outbox.queueCount(); i++) {
+            final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null; ) {
-                if (!queueTails[i].offer(item)) {
+                if (!outboundStreams[i].offer(item)) {
                     progTracker.notDone();
                     return;
                 }

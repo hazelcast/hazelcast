@@ -19,12 +19,12 @@ package com.hazelcast.jet2.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MockQueueTail<T> implements QueueTail<T> {
+public class MockOutboundStream implements OutboundEdgeStream {
 
     private final ArrayList<Object> buffer;
     private final int capacity;
 
-    public MockQueueTail(int capacity) {
+    public MockOutboundStream(int capacity) {
         this.capacity = capacity;
         this.buffer = new ArrayList<>(capacity);
     }
@@ -36,6 +36,11 @@ public class MockQueueTail<T> implements QueueTail<T> {
         }
         buffer.add(item);
         return true;
+    }
+
+    @Override
+    public int getOrdinal() {
+        return 0;
     }
 
     public List<Object> drain() {

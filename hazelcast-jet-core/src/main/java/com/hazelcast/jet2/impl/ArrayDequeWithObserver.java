@@ -16,38 +16,25 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.OutputCollector;
-
 import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Queue;
+import java.util.function.Consumer;
 
 /**
  * Javadoc pending.
  */
-public class ArrayDequeCollector implements OutputCollector {
-    private final ArrayDeque[] queues;
+public class ArrayDequeWithObserver extends ArrayDeque<Object> implements CollectionWithObserver {
+    private Consumer<Object> observer;
 
-    public ArrayDequeCollector(int length) {
-        this.queues = new ArrayDeque[length];
-        Arrays.setAll(queues, i -> new ArrayDeque());
+    @Override
+    public void setObserverOfAdd(Consumer<? super Object> observer) {
+        this.observer = observer;
     }
 
     @Override
-    public void accept(Object item) {
-        accept(0, item);
-    }
-
-    @Override
-    public void accept(int ordinal, Object item) {
-        queues[ordinal].add(item);
-    }
-
-    public int queueCount() {
-        return queues.length;
-    }
-
-    public Queue queueWithOrdinal(int ordinal) {
-        return queues[ordinal];
+    public boolean add(Object o) {
+        if (observer != null) {
+            observer.accept(o);
+        }
+        return super.add(o);
     }
 }

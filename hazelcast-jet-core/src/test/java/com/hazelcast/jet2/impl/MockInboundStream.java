@@ -26,25 +26,26 @@ import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
 import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
 import static com.hazelcast.jet2.impl.TaskletResult.WAS_ALREADY_DONE;
 
-public class MockQueueHead<T> implements QueueHead<T> {
+public class MockInboundStream implements InboundEdgeStream {
 
     private final int chunkSize;
-    private final List<T> input;
+    private final List<Object> input;
     private int inputIndex;
     private boolean paused;
+    private boolean done;
 
-    public MockQueueHead(int chunkSize, List<T> input) {
+    public MockInboundStream(int chunkSize, List<?> input) {
         this.chunkSize = chunkSize;
         this.input = new ArrayList<>(input);
         this.inputIndex = 0;
     }
 
-    public void push(T... items) {
+    public void push(Object... items) {
         input.addAll(Arrays.asList(items));
     }
 
     @Override
-    public TaskletResult drainTo(Collection<? super T> dest) {
+    public TaskletResult drainTo(CollectionWithObserver dest) {
         if (paused) {
             return NO_PROGRESS;
         }
@@ -55,7 +56,27 @@ public class MockQueueHead<T> implements QueueHead<T> {
         for (; inputIndex < limit; inputIndex++) {
             dest.add(input.get(inputIndex));
         }
-        return inputIndex == input.size() ? DONE : MADE_PROGRESS;
+        if (inputIndex == input.size()) {
+            done = true;
+            return DONE;
+        } else {
+            return MADE_PROGRESS;
+        }
+    }
+
+    @Override
+    public boolean isDone() {
+        return done;
+    }
+
+    @Override
+    public int ordinal() {
+        return 0;
+    }
+
+    @Override
+    public int priority() {
+        return 0;
     }
 
     public void pause() {

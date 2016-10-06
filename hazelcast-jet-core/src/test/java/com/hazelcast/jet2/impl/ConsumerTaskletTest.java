@@ -16,17 +16,20 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Consumer;
+import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -34,22 +37,22 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ConsumerTaskletTest {
 
-    private List<Integer> list;
-    private Map<String, QueueHead<? extends Integer>> inputMap;
-    private ListConsumer<Integer> consumer;
+    private List list;
+    private List<InboundEdgeStream> inboundStreams;
+    private ListConsumer consumer;
 
     @Before
     public void setup() {
         this.list = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-        this.consumer = new ListConsumer<>();
-        this.inputMap = new HashMap<>();
+        this.consumer = new ListConsumer();
+        this.inboundStreams = new ArrayList<>();
     }
 
     @Test
     public void testSingleChunk_when_singleInput() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, list);
+        MockInboundStream input1 = new MockInboundStream(4, list);
 
-        inputMap.put("input1", input1);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -60,8 +63,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testAllChunks_when_singleInput() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(4, list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -76,8 +79,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_singleInputNotComplete() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(list.size(), list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(list.size(), list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -88,8 +91,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_singleInputNewData() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(list.size(), list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(list.size(), list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -105,8 +108,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_singleInputNoProgress() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(list.size(), list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(list.size(), list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -117,10 +120,10 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_multipleInput() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(list.size(), list);
-        MockQueueHead<Integer> input2 = new MockQueueHead<>(list.size(), list);
-        inputMap.put("input1", input1);
-        inputMap.put("input2", input2);
+        MockInboundStream input1 = new MockInboundStream(list.size(), list);
+        MockInboundStream input2 = new MockInboundStream(list.size(), list);
+        inboundStreams.add(input1);
+        inboundStreams.add(input2);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -133,10 +136,10 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_multipleInput_oneFinishedEarlier() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(2, Arrays.asList(1, 2));
-        MockQueueHead<Integer> input2 = new MockQueueHead<>(list.size(), list);
-        inputMap.put("input1", input1);
-        inputMap.put("input2", input2);
+        MockInboundStream input1 = new MockInboundStream(2, Arrays.asList(1, 2));
+        MockInboundStream input2 = new MockInboundStream(list.size(), list);
+        inboundStreams.add(input1);
+        inboundStreams.add(input2);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -150,8 +153,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYields() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(10, list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         consumer.yieldOn(2);
@@ -163,8 +166,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsOnSameItem() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(10, list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         consumer.yieldOn(2);
@@ -177,8 +180,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsAgain() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(10, list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         consumer.yieldOn(2);
@@ -198,8 +201,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsAndThenRuns() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(10, list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         consumer.yieldOn(2);
@@ -213,8 +216,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsAndNoInput() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(3, list);
-        inputMap.put("input1", input1);
+        MockInboundStream input1 = new MockInboundStream(3, list);
+        inboundStreams.add(input1);
         Tasklet tasklet = createTasklet();
 
         consumer.yieldOn(2);
@@ -230,28 +233,35 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testIsBlocking() {
-        inputMap.put("input1", new MockQueueHead<>(10, list));
-        ConsumerTasklet<Integer> tasklet =
-                new ConsumerTasklet<>(new Consumer<Integer>() {
-            @Override
-            public boolean consume(Integer item) {
-                throw new UnsupportedOperationException();
-            }
+        inboundStreams.add(new MockInboundStream(10, list));
+        ProcessorTasklet tasklet =
+                new ProcessorTasklet(new Processor() {
+                    @Override
+                    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
 
-            @Override
-            public void complete() {
-                throw new UnsupportedOperationException();
-            }
+                    }
+                    @Override
+                    public boolean process(int ordinal, Object item) {
+                        return false;
+                    }
+                    @Override
+                    public boolean complete(int ordinal) {
+                        return false;
+                    }
+                    @Override
+                    public boolean complete() {
+                        return false;
+                    }
 
-            @Override
+                    @Override
             public boolean isBlocking() {
                 return true;
             }
-        }, inputMap);
+        }, emptyList(), emptyList());
         assertTrue(tasklet.isBlocking());
     }
 
     private Tasklet createTasklet() {
-        return new ConsumerTasklet<>(consumer, inputMap);
+        return new ProcessorTasklet(consumer, inboundStreams, emptyList());
     }
 }

@@ -16,18 +16,21 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.OutputCollector;
-import com.hazelcast.jet2.Producer;
+import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -35,21 +38,21 @@ import static org.junit.Assert.assertTrue;
 public class ProducerTaskletTest {
 
     private List<Integer> list;
-    private ListProducer<Integer> producer;
-    private Map<String, QueueTail<? super Integer>> outputMap;
+    private ListProducer producer;
+    private List<OutboundEdgeStream> outboundStreams;
 
     @Before
     public void setup() {
         this.list = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-        this.producer = new ListProducer<>(list);
+        this.producer = new ListProducer(list);
         producer.setBatchSize(4);
-        this.outputMap = new HashMap<>();
+        this.outboundStreams = new ArrayList<>();
     }
 
     @Test
     public void testSingleChunk_whenSingleOutput() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
-        outputMap.put("output1", output1);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1, 2, 3), output1.getBuffer());
@@ -57,10 +60,10 @@ public class ProducerTaskletTest {
 
     @Test
     public void testSingleChunk_whenMultipleOutputs() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
-        MockQueueTail<Integer> output2 = new MockQueueTail<>(10);
-        outputMap.put("output1", output1);
-        outputMap.put("output2", output2);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        MockOutboundStream<Integer> output2 = new MockOutboundStream<>(10);
+        outboundStreams.add(output1);
+        outboundStreams.add(output2);
 
         Tasklet tasklet = createTasklet();
 
@@ -71,8 +74,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testAllChunks_whenSingleOutput() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
-        outputMap.put("output1", output1);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        outboundStreams.add(output1);
 
         Tasklet tasklet = createTasklet();
 
@@ -85,10 +88,10 @@ public class ProducerTaskletTest {
 
     @Test
     public void testAllChunks_whenMultipleOutputs() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
-        MockQueueTail<Integer> output2 = new MockQueueTail<>(10);
-        outputMap.put("output1", output1);
-        outputMap.put("output2", output2);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        MockOutboundStream<Integer> output2 = new MockOutboundStream<>(10);
+        outboundStreams.add(output1);
+        outboundStreams.add(output2);
 
         Tasklet tasklet = createTasklet();
 
@@ -102,8 +105,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenOutputIsFull() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(4);
-        outputMap.put("output1", output1);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(4);
+        outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -124,26 +127,26 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenOutputFullThenFullyDrained() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(1);
-        outputMap.put("output1", output1);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(1);
+        outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
-        assertEquals(Arrays.asList(0), output1.drain());
+        assertEquals(singletonList(0), output1.drain());
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
 
-        assertEquals(Arrays.asList(1), output1.getBuffer());
+        assertEquals(singletonList(1), output1.getBuffer());
     }
 
     @Test
     public void testProgress_whenOnlyOneOutputFull() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(2);
-        MockQueueTail<Integer> output2 = new MockQueueTail<>(4);
-        outputMap.put("output1", output1);
-        outputMap.put("output2", output2);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(2);
+        MockOutboundStream<Integer> output2 = new MockOutboundStream<>(4);
+        outboundStreams.add(output1);
+        outboundStreams.add(output2);
         Tasklet tasklet = createTasklet();
 
 
@@ -156,8 +159,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testNoProgress_whenProducerIdle() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
-        outputMap.put("output1", output1);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1, 2, 3), output1.drain());
@@ -174,8 +177,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testDone_whenProducerIdleAndComplete() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
-        outputMap.put("output1", output1);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1, 2, 3), output1.drain());
@@ -189,8 +192,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenProducerIdleButPendingOutput() throws Exception {
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(2);
-        outputMap.put("output1", output1);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(2);
+        outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -204,11 +207,22 @@ public class ProducerTaskletTest {
 
     @Test
     public void testIsBlocking() {
-        outputMap.put("input1", new MockQueueTail<>(10));
-        ProducerTasklet<Integer> tasklet =
-                new ProducerTasklet<>(new Producer<Integer>() {
+        ProcessorTasklet tasklet =
+                new ProcessorTasklet(new Processor() {
                     @Override
-                    public boolean produce(OutputCollector<? super Integer> collector) {
+                    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox collector) {
+
+                    }
+                    @Override
+                    public boolean process(int ordinal, Object item) {
+                        return false;
+                    }
+                    @Override
+                    public boolean complete(int ordinal) {
+                        return false;
+                    }
+                    @Override
+                    public boolean complete() {
                         return false;
                     }
 
@@ -216,11 +230,11 @@ public class ProducerTaskletTest {
                     public boolean isBlocking() {
                         return true;
                     }
-                }, outputMap);
+                }, emptyList(), outboundStreams);
         assertTrue(tasklet.isBlocking());
     }
 
-    private ProducerTasklet createTasklet() {
-        return new ProducerTasklet(producer, outputMap);
+    private ProcessorTasklet createTasklet() {
+        return new ProcessorTasklet(producer, emptyList(), outboundStreams);
     }
 }

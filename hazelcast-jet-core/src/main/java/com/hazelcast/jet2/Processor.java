@@ -30,11 +30,11 @@ import javax.annotation.Nonnull;
 public interface Processor {
 
     /**
-     * Initialize the processor with the {@link ProcessorContext} and an {@link OutputCollector} that
+     * Initialize the processor with the {@link ProcessorContext} and an {@link Outbox} that
      * can accept processing results. This method will be called exactly once and strictly before any
      * calls to {@link #process(int, Object)} or {@link #complete(int)}.
      */
-    void init(@Nonnull ProcessorContext context, @Nonnull OutputCollector collector);
+    void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox);
 
     /**
      * Processes the supplied input item

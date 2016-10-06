@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl.queue;
+package com.hazelcast.jet2.impl;
 
 /**
- * Exception thrown by the {@link ConcurrentConveyor}.
+ * Data stream of an inbound edge.
  */
-public class ConcurrentConveyorException extends RuntimeException {
-    public ConcurrentConveyorException(String message) {
-        super(message);
-    }
+public interface InboundEdgeStream {
 
-    public ConcurrentConveyorException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    /**
+     * Drains all available items to the supplied destination collection.
+     * @return a {@code TaskletResult} that says whether any items were drained
+     * (the {@code isMadeProgress} property) and whether the stream is now completely exhausted
+     * (the {@code isDone} property)
+     */
+    TaskletResult drainTo(CollectionWithObserver dest);
+
+    boolean isDone();
+
+    int ordinal();
+
+    int priority();
 }

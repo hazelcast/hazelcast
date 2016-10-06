@@ -16,23 +16,31 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Consumer;
+import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorContext;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListConsumer<T> implements Consumer<T> {
+public class ListConsumer implements Processor {
 
-    private final List<T> list;
+    private final List<Object> list;
     private boolean isComplete;
     private int yieldIndex = -1;
 
     public ListConsumer() {
-        list = new ArrayList<T>();
+        list = new ArrayList<>();
     }
 
     @Override
-    public boolean consume(T item) {
+    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
+
+    }
+
+    @Override
+    public boolean process(int ordinal, Object item) {
         if (list.size() == yieldIndex) {
             yieldIndex = -1;
             return false;
@@ -41,20 +49,26 @@ public class ListConsumer<T> implements Consumer<T> {
         return true;
     }
 
-    public void yieldOn(int index) {
-        yieldIndex = index;
+    @Override
+    public boolean complete(int ordinal) {
+        return true;
     }
 
     @Override
-    public void complete() {
+    public boolean complete() {
         isComplete = true;
+        return true;
+    }
+
+    public void yieldOn(int index) {
+        yieldIndex = index;
     }
 
     public boolean isComplete() {
         return isComplete;
     }
 
-    public List<T> getList() {
+    public List<Object> getList() {
         return list;
     }
 }

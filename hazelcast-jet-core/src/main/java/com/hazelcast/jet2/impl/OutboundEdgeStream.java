@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
 /**
- * Accepts processing output
+ * The tail-end of a bounded, non-blocking queue.
  */
-public interface OutputCollector {
+public interface OutboundEdgeStream {
 
     /**
-     * Accept the given item for all outputs
+     * Offers an item to this output. If the output cannot accept it now, the call
+     * should be retried later.
+     *
+     * @return <code>true</code> means "item was accepted", <code>false</code> means "try again later".
      */
-    void accept(Object item);
+    boolean offer(Object item);
 
-    /**
-     * Accept the given item for the specified output at <code>ordinal</code>.
-     */
-    void accept(int ordinal, Object item);
+    int getOrdinal();
 }

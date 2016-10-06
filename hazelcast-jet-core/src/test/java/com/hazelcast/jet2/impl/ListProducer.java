@@ -16,22 +16,60 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.OutputCollector;
-import com.hazelcast.jet2.Producer;
+import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorContext;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
 
-public class ListProducer<T> implements Producer<T> {
+public class ListProducer implements Processor {
 
-    private Iterator<T> iterator;
+    private Iterator<?> iterator;
     private int batchSize;
     private boolean paused;
     private boolean completeEarly;
     private boolean completed;
+    private Outbox outbox;
 
-    public ListProducer(List<T> list) {
+    public ListProducer(List<?> list) {
         this.iterator = list.iterator();
+    }
+
+    @Override
+    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
+        this.outbox = outbox;
+    }
+
+    @Override
+    public boolean process(int ordinal, Object item) {
+        throw new UnsupportedOperationException("process");
+    }
+
+    @Override
+    public boolean complete(int ordinal) {
+        return false;
+    }
+
+    @Override
+    public boolean complete() {
+        if (completed) {
+            throw new IllegalStateException("process() called after completion");
+        }
+        if (completeEarly) {
+            completed = true;
+            return true;
+        }
+        if (paused) {
+            return false;
+        }
+
+        for (int i = 0; i < batchSize && iterator.hasNext(); i++) {
+            outbox.queueWithOrdinal(0).add(iterator.next());
+        }
+        completed = !iterator.hasNext();
+        return completed;
     }
 
     public void setBatchSize(int batchSize) {
@@ -48,25 +86,5 @@ public class ListProducer<T> implements Producer<T> {
 
     public void completeEarly() {
         completeEarly = true;
-    }
-
-    @Override
-    public boolean produce(OutputCollector<? super T> collector) {
-        if (completed) {
-            throw new IllegalStateException("produce() called after completion");
-        }
-        if (completeEarly) {
-            completed = true;
-            return true;
-        }
-        if (paused) {
-            return false;
-        }
-
-        for (int i = 0; i < batchSize && iterator.hasNext(); i++) {
-            collector.collect(iterator.next());
-        }
-        completed = !iterator.hasNext();
-        return completed;
     }
 }

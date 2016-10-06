@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.OutputCollector;
+import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -36,8 +36,8 @@ import static org.junit.Assert.assertTrue;
 public class ProcessorTaskletTest {
 
     private List<Integer> list;
-    private Map<String, QueueHead<? extends Integer>> inputMap;
-    private Map<String, QueueTail<? super Integer>> outputMap;
+    private Map<String, InboundEdgeStream<? extends Integer>> inputMap;
+    private Map<String, OutboundEdgeStream<? super Integer>> outputMap;
     private TestProcessor<Integer> processor;
 
 
@@ -51,8 +51,8 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testSingleChunk_when_singleOutput() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
+        MockInboundStream<Integer> input1 = new MockInboundStream<>(10, list);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
 
         inputMap.put("input1", input1);
         outputMap.put("output1", output1);
@@ -68,9 +68,9 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testSingleChunk_when_multipleOutputs() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(10, list);
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
-        MockQueueTail<Integer> output2 = new MockQueueTail<>(10);
+        MockInboundStream<Integer> input1 = new MockInboundStream<>(10, list);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        MockOutboundStream<Integer> output2 = new MockOutboundStream<>(10);
 
         inputMap.put("input1", input1);
         outputMap.put("output1", output1);
@@ -88,8 +88,8 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testProgress_when_multipleChunks() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, list);
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
+        MockInboundStream<Integer> input1 = new MockInboundStream<>(4, list);
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
 
         inputMap.put("input1", input1);
         outputMap.put("output1", output1);
@@ -107,10 +107,10 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testProgress_when_multipleInputs() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, Arrays.asList(0, 1, 2, 3));
-        MockQueueHead<Integer> input2 = new MockQueueHead<>(4, Arrays.asList(4, 5, 6, 7));
-        MockQueueHead<Integer> input3 = new MockQueueHead<>(4, Arrays.asList(8, 9));
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
+        MockInboundStream<Integer> input1 = new MockInboundStream<>(4, Arrays.asList(0, 1, 2, 3));
+        MockInboundStream<Integer> input2 = new MockInboundStream<>(4, Arrays.asList(4, 5, 6, 7));
+        MockInboundStream<Integer> input3 = new MockInboundStream<>(4, Arrays.asList(8, 9));
+        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
 
         inputMap.put("input1", input1);
         inputMap.put("input2", input2);
@@ -129,8 +129,8 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testProgress_when_pendingInputAndOutputEmpty() throws Exception {
-        MockQueueHead<Integer> input1 = new MockQueueHead<>(4, list);
-        MockQueueTail<Integer> output1 = new MockQueueTail<>(10);
+        MockInboundStream input1 = new MockInboundStream(4, list);
+        MockOutboundStream output1 = new MockOutboundStream(10);
 
         inputMap.put("input1", input1);
         outputMap.put("output1", output1);
@@ -149,14 +149,14 @@ public class ProcessorTaskletTest {
         return new ProcessorTasklet<>(processor, inputMap, outputMap);
     }
 
-    private static class TestProcessor<T> implements Processor<T, T> {
+    private static class TestProcessor implements Processor {
 
         private String lastInput;
         private boolean paused;
         private boolean produceIfPaused;
 
         @Override
-        public boolean process(String input, T item, OutputCollector<? super T> collector) {
+        public boolean process(String input, T item, Outbox<? super T> collector) {
             if (paused) {
                 if (produceIfPaused) {
                     collector.collect(item);
@@ -169,7 +169,7 @@ public class ProcessorTaskletTest {
         }
 
         @Override
-        public boolean complete(OutputCollector<? super T> collector) {
+        public boolean complete(Outbox<? super T> collector) {
             return true;
         }
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl.queue;
+package com.hazelcast.internal.util.concurrent;
 
 /**
  * Specialization of {@link ConcurrentConveyor} to a single queue.

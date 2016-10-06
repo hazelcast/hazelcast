@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
+package com.hazelcast.internal.util.concurrent;
+
+import java.util.Queue;
 
 /**
- * The tail-end of a bounded, non-blocking queue.
+ * Composed interface for concurrent queues and sequenced containers.
+ *
+ * @param <E> type of the elements stored in the {@link Queue}.
  */
-public interface QueueTail<T> {
-
-    /**
-     * Offers an item to this output. If the output cannot accept it now, the call
-     * should be retried later.
-     *
-     * @return <code>true</code> means "item was accepted", <code>false</code> means "try again later".
-     */
-    boolean offer(T item);
-
-    int getOrdinal();
+public interface QueuedPipe<E> extends Queue<E>, Pipe<E> {
 }
