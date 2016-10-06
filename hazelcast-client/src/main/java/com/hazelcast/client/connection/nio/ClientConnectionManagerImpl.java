@@ -364,18 +364,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public void destroyConnection(final Connection connection, final String reason, final Throwable cause) {
+    public void onClose(Connection connection) {
         Address endPoint = connection.getEndPoint();
-        ClientConnection conn = (ClientConnection) connection;
-        if (endPoint != null && connections.remove(endPoint, conn)) {
+
+        if (endPoint != null && connections.remove(endPoint, connection)) {
             logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
 
-            conn.close(reason, cause);
-            for (ConnectionListener connectionListener : connectionListeners) {
-                connectionListener.connectionRemoved(conn);
+            for (ConnectionListener listener : connectionListeners) {
+                listener.connectionRemoved(connection);
             }
-        } else {
-            connection.close(reason, cause);
         }
     }
 
@@ -445,7 +442,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 heartbeatListener.heartbeatStopped(connection);
             }
         }
-
     }
 
     @Override
@@ -503,21 +499,21 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         break;
                     case CREDENTIALS_FAILED:
                         AuthenticationException e = new AuthenticationException("Invalid credentials!");
-                        failed(target, connection, e);
+                        onAuthenticationFailed(target, connection, e);
                         callback.onFailure(e);
                         break;
                     default:
                         AuthenticationException exception =
                                 new AuthenticationException("Authentication status code not supported. status:"
                                         + authenticationStatus);
-                        failed(target, connection, exception);
+                        onAuthenticationFailed(target, connection, exception);
                         callback.onFailure(exception);
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                failed(target, connection, t);
+                onAuthenticationFailed(target, connection, t);
                 callback.onFailure(t);
             }
         }, executionService.getInternalExecutor());
@@ -553,14 +549,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 authenticate(target, connection, asOwner, callback);
             } catch (Exception e) {
                 callback.onFailure(e);
-                destroyConnection(connection, "Failed to authenticate connection", e);
+                connection.close("Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
             }
         }
     }
 
     private void authenticated(Address target, ClientConnection connection) {
-        ClientConnection oldConnection = connections.put(connection.getRemoteEndpoint(), connection);
+        ClientConnection oldConnection = connections.put(connection.getEndPoint(), connection);
         if (oldConnection == null) {
             fireConnectionAddedEvent(connection);
         }
@@ -568,11 +564,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionsInProgress.remove(target);
     }
 
-    private void failed(Address target, ClientConnection connection, Throwable cause) {
+    private void onAuthenticationFailed(Address target, ClientConnection connection, Throwable cause) {
         logger.finest(cause);
-        destroyConnection(connection, null, cause);
+        connection.close(null, cause);
         connectionsInProgress.remove(target);
     }
-
-
 }

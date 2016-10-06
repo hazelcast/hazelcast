@@ -156,12 +156,12 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
 
     @Override
     public long lastWriteTimeMillis() {
-        return socketWriter.getLastWriteTimeMillis();
+        return socketWriter.lastWriteTimeMillis();
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return socketReader.getLastReadTimeMillis();
+        return socketReader.lastReadTimeMillis();
     }
 
     @Override

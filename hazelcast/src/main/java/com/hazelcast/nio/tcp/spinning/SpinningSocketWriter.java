@@ -119,7 +119,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
-    public long getLastWriteTimeMillis() {
+    public long lastWriteTimeMillis() {
         return lastWriteTime;
     }
 

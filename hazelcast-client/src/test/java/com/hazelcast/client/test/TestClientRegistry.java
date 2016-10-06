@@ -360,9 +360,7 @@ public class TestClientRegistry {
         @Override
         public void close(String reason, Throwable cause) {
             super.close(reason, cause);
-            ClientConnectionManager connectionManager = responseConnection.getConnectionManager();
-            connectionManager.destroyConnection(responseConnection, reason,
-                    new TargetDisconnectedException("Mocked Remote socket closed"));
+            responseConnection.close(reason, new TargetDisconnectedException("Mocked Remote socket closed"));
         }
 
         @Override

@@ -69,17 +69,12 @@ public interface ClientConnectionManager extends ConnectionListenable {
     Connection getOrTriggerConnect(Address address, boolean asOwner);
 
     /**
-     * Destroys the connection
-     * Clears related resources of given connection.
-     * ConnectionListener.connectionRemoved is called on registered listeners.
-     * <p/>
-     * If connection is already destroyed before calling this then does nothing.
+     * A callback to ClientConnectionManager to let it deal with a connection that is closed. It is used to clean up
+     * resources, send events etc etc.
      *
-     * @param connection to be closed
-     * @param reason the reason of closing this exception. Can be null if no reason is given.
-     * @param cause  exception that cause connection to be closed, null if closed explicitly
+     * @param connection the connection being closed.
      */
-    void destroyConnection(Connection connection, String reason, Throwable cause);
+    void onClose(Connection connection);
 
     /**
      * Handles incoming network package

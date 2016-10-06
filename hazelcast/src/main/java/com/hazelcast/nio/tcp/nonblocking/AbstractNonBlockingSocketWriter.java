@@ -50,7 +50,6 @@ public abstract class AbstractNonBlockingSocketWriter<C extends Connection>
 
     private static final long TIMEOUT = 3;
 
-
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
     public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
@@ -77,7 +76,7 @@ public abstract class AbstractNonBlockingSocketWriter<C extends Connection>
     // This prevents running into an NonBlockingIOThread that is migrating.
     private NonBlockingIOThread newOwner;
 
-    AbstractNonBlockingSocketWriter(C connection,
+    protected AbstractNonBlockingSocketWriter(C connection,
                                     SocketChannelWrapper socketChannel,
                                     NonBlockingIOThread ioThread,
                                     ILogger logger,
@@ -91,7 +90,7 @@ public abstract class AbstractNonBlockingSocketWriter<C extends Connection>
     }
 
     @Override
-    public long getLastWriteTimeMillis() {
+    public long lastWriteTimeMillis() {
         return lastWriteTime;
     }
 
