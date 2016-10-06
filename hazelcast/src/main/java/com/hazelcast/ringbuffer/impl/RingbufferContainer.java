@@ -39,8 +39,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * keeping the wait/notify key for blocking operations, ring buffer item expiration and other things not related to the
  * actual ring buffer data structure.
  * <p>
- * The ringExpiration contains the expiration time of an item. If a time to live is set, the ringExpiration array is created,
- * therwise it is null to save space.
+ * The expirationPolicy contains the expiration policy of the items. If a time to live is set, the policy is created, otherwise
+ * it is null to save space.
  */
 public class RingbufferContainer implements DataSerializable {
 
