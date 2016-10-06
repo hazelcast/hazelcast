@@ -17,30 +17,18 @@
 package com.hazelcast.nio.tcp.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.ascii.TextReadHandler;
-import com.hazelcast.nio.tcp.ClientReadHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.SocketReaderInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.io.EOFException;
-import java.io.IOException;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.nio.ConnectionType.MEMBER;
-import static com.hazelcast.nio.IOService.KILO_BYTE;
-import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
-import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.StringUtil.bytesToString;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
@@ -53,14 +41,34 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
     private final SocketChannelWrapper socketChannel;
+    private final SocketReaderInitializer initializer;
     private volatile long lastReadTime;
     private ReadHandler readHandler;
     private ByteBuffer inputBuffer;
-    private ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
+    private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
-    public SpinningSocketReader(TcpIpConnection connection, ILogger logger) {
+    public SpinningSocketReader(TcpIpConnection connection,
+                                ILogger logger,
+                                SocketChannelWrapper socketChannel,
+                                SocketReaderInitializer initializer) {
         super(connection, logger);
-        this.socketChannel = connection.getSocketChannelWrapper();
+        this.socketChannel = socketChannel;
+        this.initializer = initializer;
+    }
+
+    @Override
+    public ByteBuffer getProtocolBuffer() {
+        return protocolBuffer;
+    }
+
+    @Override
+    public void initInputBuffer(ByteBuffer inputBuffer) {
+        this.inputBuffer = inputBuffer;
+    }
+
+    @Override
+    public void initReadHandler(ReadHandler readHandler) {
+        this.readHandler = readHandler;
     }
 
     @Override
@@ -74,13 +82,18 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     }
 
     @Override
-    public Counter getNormalFramesReadCounter() {
+    public SwCounter getNormalFramesReadCounter() {
         return normalFramesRead;
     }
 
     @Override
-    public Counter getPriorityFramesReadCounter() {
+    public SwCounter getPriorityFramesReadCounter() {
         return priorityFramesRead;
+    }
+
+    @Override
+    public SocketChannelWrapper getSocketChannel() {
+        return socketChannel;
     }
 
     @Override
@@ -100,7 +113,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         }
 
         if (readHandler == null) {
-            initializeSocketReader();
+            initializer.init(connection, this);
             if (readHandler == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
                 return;
@@ -123,56 +136,6 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
             inputBuffer.compact();
         } else {
             inputBuffer.clear();
-        }
-    }
-
-    private void initializeSocketReader() throws IOException {
-        if (readHandler != null) {
-            return;
-        }
-
-        int readBytes = socketChannel.read(protocolBuffer);
-        if (readBytes == -1) {
-            throw new EOFException("Could not read protocol type!");
-        }
-
-        if (readBytes == 0 && connectionManager.isSSLEnabled()) {
-            // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
-            return;
-        }
-
-        if (protocolBuffer.hasRemaining()) {
-            // we have not yet received all protocol bytes
-            return;
-        }
-
-        String protocol = bytesToString(protocolBuffer.array());
-        SocketWriter socketWriter = connection.getSocketWriter();
-        if (CLUSTER.equals(protocol)) {
-            configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
-            connection.setType(MEMBER);
-            socketWriter.setProtocol(CLUSTER);
-            readHandler = ioService.createReadHandler(connection);
-        } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-            configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-            socketWriter.setProtocol(CLIENT_BINARY_NEW);
-            readHandler = new ClientReadHandler(normalFramesRead, connection, ioService);
-        } else {
-            configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
-            socketWriter.setProtocol(Protocols.TEXT);
-            inputBuffer.put(protocolBuffer.array());
-            readHandler = new TextReadHandler(connection);
-            connection.getConnectionManager().incrementTextConnections();
-        }
-    }
-
-    private void configureBuffers(int size) {
-        inputBuffer = IOUtil.newByteBuffer(size, ioService.isSocketBufferDirect());
-
-        try {
-            connection.setReceiveBufferSize(size);
-        } catch (SocketException e) {
-            logger.finest("Failed to adjust TCP receive buffer of " + connection + " to " + size + " B.", e);
         }
     }
 }

@@ -23,6 +23,8 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.SocketReaderInitializer;
+import com.hazelcast.nio.tcp.SocketReaderInitializerImpl;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.SocketWriterInitializer;
 import com.hazelcast.nio.tcp.SocketWriterInitializerImpl;
@@ -58,6 +60,8 @@ public class NonBlockingIOThreadingModel
     private final NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
     private final int balanceIntervalSeconds;
     private final SocketWriterInitializer socketWriterInitializer;
+    private final SocketReaderInitializer socketReaderInitializer;
+
     // The selector mode determines how IO threads will block (or not) on the Selector:
     //  select:         this is the default mode, uses Selector.select(long timeout)
     //  selectnow:      use Selector.selectNow()
@@ -83,6 +87,7 @@ public class NonBlockingIOThreadingModel
                 ioService.getOutputSelectorThreadCount(),
                 ioService.getBalancerIntervalSeconds(),
                 new SocketWriterInitializerImpl(loggingService.getLogger(SocketWriterInitializerImpl.class)),
+                new SocketReaderInitializerImpl(loggingService.getLogger(SocketReaderInitializerImpl.class)),
                 new NonBlockingIOThreadOutOfMemoryHandler() {
                     @Override
                     public void handle(OutOfMemoryError error) {
@@ -98,7 +103,9 @@ public class NonBlockingIOThreadingModel
             int inputThreadCount,
             int outputThreadCount,
             int balanceIntervalSeconds,
-            SocketWriterInitializer socketWriterInitializer, NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
+            SocketWriterInitializer socketWriterInitializer,
+            SocketReaderInitializer socketReaderInitializer,
+            NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
         this.hazelcastThreadGroup = hazelcastThreadGroup;
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
@@ -108,6 +115,7 @@ public class NonBlockingIOThreadingModel
         this.oomeHandler = oomeHandler;
         this.balanceIntervalSeconds = balanceIntervalSeconds;
         this.socketWriterInitializer = socketWriterInitializer;
+        this.socketReaderInitializer = socketReaderInitializer;
     }
 
     private SelectorMode getSelectorMode() {
@@ -255,7 +263,13 @@ public class NonBlockingIOThreadingModel
         if (inputThread == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
+
         return new NonBlockingSocketReader(
-                connection, inputThread, loggingService.getLogger(NonBlockingSocketReader.class), ioBalancer);
+                connection,
+                connection.getSocketChannelWrapper(),
+                inputThread,
+                loggingService.getLogger(NonBlockingSocketReader.class),
+                ioBalancer,
+                socketReaderInitializer);
     }
 }

@@ -66,6 +66,10 @@ public abstract class AbstractHandler<C extends Connection>
         this.ioBalancer = ioBalancer;
     }
 
+    public SocketChannelWrapper getSocketChannel() {
+        return socketChannel;
+    }
+
     @Override
     public long getEventCount() {
         return eventCount.get();

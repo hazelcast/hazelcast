@@ -16,7 +16,9 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
+
+import java.nio.ByteBuffer;
 
 /**
  * The SocketReader is responsible for reading data from the socket, on behalf of a connection, into a
@@ -27,14 +29,14 @@ import com.hazelcast.internal.util.counters.Counter;
  *
  * There are many different flavors of SocketReader:
  * <ol>
- *     <li>reader for member to member communication</li>
- *     <li>reader for (old and new) client to member communication</li>
- *     <li>reader for encrypted member to member communication</li>
- *     <li>reader for REST/Memcached</li>
+ * <li>reader for member to member communication</li>
+ * <li>reader for (old and new) client to member communication</li>
+ * <li>reader for encrypted member to member communication</li>
+ * <li>reader for REST/Memcached</li>
  * </ol>
  *
  * A SocketReader is tightly coupled to the threading model; so a SocketReader instance is created using
- * {@link IOThreadingModel#newSocketReader(TcpIpConnection)}.
+ * {@link IOThreadingModel#newSocketReader(Connection)}.
  *
  * Before Hazelcast 3.6 the name of this interface was ReadHandler.
  *
@@ -52,18 +54,18 @@ public interface SocketReader {
     long getLastReadTimeMillis();
 
     /**
-     * Gets the Counter that counts the number of normal packets that have been read.
+     * Gets the SwCounter that counts the number of normal packets that have been read.
      *
-     * @return the normal packets counter.
+     * @return the normal frame counter.
      */
-    Counter getNormalFramesReadCounter();
+    SwCounter getNormalFramesReadCounter();
 
     /**
-     * Gets the Counter that counts the number of priority packets that have been read.
+     * Gets the SwCounter that counts the number of priority packets that have been read.
      *
-     * @return the priority packets counter.
+     * @return the priority frame counter.
      */
-    Counter getPriorityFramesReadCounter();
+    SwCounter getPriorityFramesReadCounter();
 
     /**
      * Initializes this SocketReader.
@@ -76,7 +78,15 @@ public interface SocketReader {
      * Closes this SocketReader.
      *
      * This method can be called from an arbitrary thread, and should only be called once. This should be coordinated
-     * through the {@link TcpIpConnection#close()} method.
+     * through the {@link Connection#close()} method.
      */
     void close();
+
+    void initInputBuffer(ByteBuffer inputBuffer);
+
+    void initReadHandler(ReadHandler readHandler);
+
+    SocketChannelWrapper getSocketChannel();
+
+    ByteBuffer getProtocolBuffer();
 }
