@@ -17,29 +17,33 @@
 package com.hazelcast.nio.tcp.spinning;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.SocketConnection;
+import com.hazelcast.nio.tcp.SocketChannelWrapper;
 
 import java.io.EOFException;
 
 public abstract class AbstractHandler {
 
-    protected final TcpIpConnectionManager connectionManager;
-    protected final TcpIpConnection connection;
+    protected final SocketConnection connection;
     protected final ILogger logger;
-    protected final IOService ioService;
+    protected final SocketChannelWrapper socketChannel;
+    private final IOOutOfMemoryHandler oomeHandler;
 
-    public AbstractHandler(TcpIpConnection connection, ILogger logger) {
+    public AbstractHandler(SocketConnection connection, ILogger logger, IOOutOfMemoryHandler oomeHandler) {
         this.connection = connection;
-        this.connectionManager = connection.getConnectionManager();
+        this.oomeHandler = oomeHandler;
         this.logger = logger;
-        this.ioService = connectionManager.getIoService();
+        this.socketChannel = connection.getSocketChannel();
+    }
+
+    public SocketChannelWrapper getSocketChannel() {
+        return socketChannel;
     }
 
     public void onFailure(Throwable e) {
         if (e instanceof OutOfMemoryError) {
-            connectionManager.getIoService().onOutOfMemory((OutOfMemoryError) e);
+            oomeHandler.handle((OutOfMemoryError) e);
         }
 
         if (e instanceof EOFException) {

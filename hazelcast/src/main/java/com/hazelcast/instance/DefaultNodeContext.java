@@ -17,9 +17,12 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
+import com.hazelcast.nio.tcp.SocketReaderInitializerImpl;
+import com.hazelcast.nio.tcp.SocketWriterInitializerImpl;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.nio.tcp.spinning.SpinningIOThreadingModel;
@@ -60,16 +63,30 @@ public class DefaultNodeContext implements NodeContext {
 
     private IOThreadingModel createTcpIpConnectionThreadingModel(Node node, NodeIOService ioService) {
         boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
+        LoggingServiceImpl loggingService = node.loggingService;
+
+        SocketWriterInitializerImpl socketWriterInitializer
+                = new SocketWriterInitializerImpl(loggingService.getLogger(SocketWriterInitializerImpl.class));
+        SocketReaderInitializerImpl socketReaderInitializer
+                = new SocketReaderInitializerImpl(loggingService.getLogger(SocketReaderInitializerImpl.class));
         if (spinning) {
             return new SpinningIOThreadingModel(
-                    node.loggingService,
-                    node.getHazelcastThreadGroup());
+                    loggingService,
+                    node.getHazelcastThreadGroup(),
+                    ioService.getIoOutOfMemoryHandler(),
+                    socketWriterInitializer,
+                    socketReaderInitializer);
         } else {
             return new NonBlockingIOThreadingModel(
-                    ioService,
-                    node.loggingService,
+                    loggingService,
                     node.nodeEngine.getMetricsRegistry(),
-                    node.getHazelcastThreadGroup());
+                    node.getHazelcastThreadGroup(),
+                    ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
+                    ioService.getOutputSelectorThreadCount(),
+                    ioService.getBalancerIntervalSeconds(),
+                    socketWriterInitializer,
+                    socketReaderInitializer
+            );
         }
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp.nonblocking;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.tcp.SocketConnection;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 
@@ -30,14 +30,14 @@ import java.nio.channels.SelectionKey;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-public abstract class AbstractHandler<C extends Connection>
+public abstract class AbstractHandler
         implements SelectionHandler, MigratableHandler {
 
     @Probe(name = "eventCount")
     protected final SwCounter eventCount = newSwCounter();
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
-    protected final C connection;
+    protected final SocketConnection connection;
     protected NonBlockingIOThread ioThread;
     protected SelectionKey selectionKey;
     private final int initialOps;
@@ -51,16 +51,15 @@ public abstract class AbstractHandler<C extends Connection>
     @Probe
     private SwCounter migrationCount = newSwCounter();
 
-    public AbstractHandler(C connection,
+    public AbstractHandler(SocketConnection connection,
                            NonBlockingIOThread ioThread,
                            int initialOps,
-                           SocketChannelWrapper socketChannel,
                            ILogger logger,
                            IOBalancer ioBalancer) {
         this.connection = connection;
+        this.socketChannel = connection.getSocketChannel();
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
-        this.socketChannel = socketChannel;
         this.logger = logger;
         this.initialOps = initialOps;
         this.ioBalancer = ioBalancer;

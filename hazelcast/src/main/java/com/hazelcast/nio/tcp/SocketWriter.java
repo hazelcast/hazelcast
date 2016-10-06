@@ -49,7 +49,7 @@ public interface SocketWriter {
      *
      * @return the last time something was written to the socket.
      */
-    long getLastWriteTimeMillis();
+    long lastWriteTimeMillis();
 
     /**
      * Offers a Frame to be written to the socket.

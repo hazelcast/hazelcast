@@ -51,7 +51,7 @@ public interface SocketReader {
      *
      * @return the last time a read from the socket was done.
      */
-    long getLastReadTimeMillis();
+    long lastReadTimeMillis();
 
     /**
      * Gets the SwCounter that counts the number of normal packets that have been read.

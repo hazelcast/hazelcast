@@ -22,7 +22,6 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 
@@ -46,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @see IOThreadingModel
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class TcpIpConnection implements Connection, MetricsProvider, DiscardableMetricsProvider {
+public final class TcpIpConnection implements SocketConnection, MetricsProvider, DiscardableMetricsProvider {
 
     private final SocketChannelWrapper socketChannel;
 
@@ -75,7 +74,7 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
                            SocketChannelWrapper socketChannel,
-                           IOThreadingModel<TcpIpConnection, SocketReader, SocketWriter> ioThreadingModel) {
+                           IOThreadingModel ioThreadingModel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.getIoService().getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
@@ -109,6 +108,11 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
     }
 
     @Override
+    public SocketChannelWrapper getSocketChannel() {
+        return socketChannel;
+    }
+
+    @Override
     public ConnectionType getType() {
         return type;
     }
@@ -128,10 +132,6 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
 
     public TcpIpConnectionManager getConnectionManager() {
         return connectionManager;
-    }
-
-    public SocketChannelWrapper getSocketChannelWrapper() {
-        return socketChannel;
     }
 
     @Override
@@ -156,12 +156,12 @@ public final class TcpIpConnection implements Connection, MetricsProvider, Disca
 
     @Override
     public long lastWriteTimeMillis() {
-        return socketWriter.getLastWriteTimeMillis();
+        return socketWriter.lastWriteTimeMillis();
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return socketReader.getLastReadTimeMillis();
+        return socketReader.lastReadTimeMillis();
     }
 
     @Override
