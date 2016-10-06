@@ -137,12 +137,12 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig setWanReplicationRef(final WanReplicationRef wanReplicationRef) {
+    public CacheConfig<K, V> setWanReplicationRef(final WanReplicationRef wanReplicationRef) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
     @Override
-    public CacheConfig setQuorumName(String quorumName) {
+    public CacheConfig<K, V> setQuorumName(String quorumName) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
@@ -152,7 +152,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig setPartitionLostListenerConfigs(
+    public CacheConfig<K, V> setPartitionLostListenerConfigs(
             List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }

@@ -375,7 +375,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * @param evictionConfig The {@link EvictionConfig} instance to set for the eviction configuration.
      * @return The current cache config instance.
      */
-    public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
+    public CacheConfig<K, V> setEvictionConfig(EvictionConfig evictionConfig) {
         isNotNull(evictionConfig, "evictionConfig");
 
         // TODO: remove this check in the future since "CacheEvictionConfig" is deprecated
@@ -392,7 +392,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         return wanReplicationRef;
     }
 
-    public CacheConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+    public CacheConfig<K, V> setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
         return this;
     }
@@ -414,7 +414,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      *
      * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list.
      */
-    public CacheConfig setPartitionLostListenerConfigs(List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
+    public CacheConfig<K, V> setPartitionLostListenerConfigs(
+            List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
         this.partitionLostListenerConfigs = partitionLostListenerConfigs;
         return this;
     }
@@ -458,7 +459,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * @param quorumName name of the desired quorum.
      * @return the updated CacheConfig.
      */
-    public CacheConfig setQuorumName(String quorumName) {
+    public CacheConfig<K, V> setQuorumName(String quorumName) {
         this.quorumName = quorumName;
         return this;
     }
