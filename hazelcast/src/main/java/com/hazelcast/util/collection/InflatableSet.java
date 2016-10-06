@@ -53,18 +53,19 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <T> the type of elements maintained by this set
  */
 public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializable, Cloneable {
+
     private static final long serialVersionUID = 0L;
 
     private enum State {
-        //Only array-backed representation exists
+        // only array-backed representation exists
         COMPACT,
 
-        //both array-backed & hashset-backed representation exist.
-        //this is needed as we are creating HashSet on contains()
-        //but we don't want invalidate existing iterators.
+        // both array-backed & hashset-backed representation exist.
+        // this is needed as we are creating HashSet on contains()
+        // but we don't want invalidate existing iterators.
         HYBRID,
 
-        //only hashset based representation exists
+        // only hashset based representation exists
         INFLATED
     }
 
@@ -219,10 +220,11 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
     }
 
     private class HybridIterator implements Iterator<T> {
+
         private Iterator<T> innerIterator;
         private T currentValue;
 
-        public HybridIterator() {
+        HybridIterator() {
             innerIterator = compactList.iterator();
         }
 
@@ -247,12 +249,13 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
     }
 
     /**
-     * Builder for {@link InflatableSet}
-     * This is the only way to create a new instance of InflatableSet
+     * Builder for {@link InflatableSet}.
+     * This is the only way to create a new instance of InflatableSet.
      *
      * @param <T> the type of elements maintained by this set
      */
     public static final class Builder<T> {
+
         private List<T> list;
 
         private Builder(int initialCapacity) {
@@ -263,6 +266,10 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
             this.list = checkNotNull(list, "list cannot be null");
         }
 
+        public int size() {
+            return list.size();
+        }
+
         public Builder add(T item) {
             list.add(item);
             return this;
@@ -271,7 +278,7 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
         public InflatableSet<T> build() {
             InflatableSet<T> set = new InflatableSet<T>(list);
 
-            //make sure no further insertions are possible
+            // make sure no further insertions are possible
             list = Collections.emptyList();
             return set;
         }

@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
@@ -24,6 +23,20 @@ import static org.junit.Assert.assertThat;
 @Category({QuickTest.class, ParallelTest.class})
 public class InflatableSetTest {
 
+    @Test
+    public void testBuilderSize() {
+        InflatableSet.Builder<MyObject> builder = InflatableSet.newBuilder(1);
+
+        builder.add(new MyObject());
+        assertEquals(1, builder.size());
+
+        builder.add(new MyObject());
+        assertEquals(2, builder.size());
+
+        InflatableSet<MyObject> set = builder.build();
+        assertEquals(2, set.size());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void whenInitialCapacityNegative_thenThrowIllegalArgumentException() {
         InflatableSet.newBuilder(-1);
@@ -35,14 +48,14 @@ public class InflatableSetTest {
     }
 
     @Test
-    public void serialization_whenInInitialLoadingAndEmpty() throws IOException, ClassNotFoundException {
+    public void serialization_whenInInitialLoadingAndEmpty() throws Exception {
         InflatableSet<Object> set = InflatableSet.newBuilder(0).build();
         InflatableSet<Object> clone = TestJavaSerializationUtils.serializeAndDeserialize(set);
         assertEquals(set, clone);
     }
 
     @Test
-    public void serialization_whenInClosedState() throws IOException, ClassNotFoundException {
+    public void serialization_whenInClosedState() throws Exception {
         Serializable object = TestJavaSerializationUtils.newSerializableObject(1);
         InflatableSet<Object> set = InflatableSet.newBuilder(1).add(object).build();
         InflatableSet<Object> clone = TestJavaSerializationUtils.serializeAndDeserialize(set);
@@ -50,7 +63,7 @@ public class InflatableSetTest {
     }
 
     @Test
-    public void serialization_whenInflated() throws IOException, ClassNotFoundException {
+    public void serialization_whenInflated() throws Exception {
         InflatableSet<Object> set = InflatableSet.newBuilder(0).build();
         set.add(TestJavaSerializationUtils.newSerializableObject(1));
         InflatableSet<Object> clone = TestJavaSerializationUtils.serializeAndDeserialize(set);
@@ -58,7 +71,7 @@ public class InflatableSetTest {
     }
 
     @Test
-    public void clone_whenInflatedAndEntryInserted_thenCloneDoesNotContainTheObject() throws CloneNotSupportedException {
+    public void clone_whenInflatedAndEntryInserted_thenCloneDoesNotContainTheObject() {
         InflatableSet<Object> set = InflatableSet.newBuilder(0).build();
         set.add(new Object()); //inflate it
         InflatableSet<Object> clone = (InflatableSet<Object>) set.clone();
@@ -111,7 +124,6 @@ public class InflatableSetTest {
         assertThat(set, is(empty()));
     }
 
-
     @Test
     public void remove_whenClosed_thenRemoveObject() {
         MyObject o = new MyObject();
@@ -150,7 +162,6 @@ public class InflatableSetTest {
         assertThat(set, hasSize(1));
     }
 
-
     @Test(expected = ConcurrentModificationException.class)
     public void iterator_next_whenModifiedInClosedState_thenFailFast() {
         MyObject o1 = new MyObject();
@@ -175,7 +186,6 @@ public class InflatableSetTest {
 
         assertThat(set, is(empty()));
     }
-
 
     private static class MyObject {
         int equalsCount;
