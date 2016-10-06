@@ -51,7 +51,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testSingleChunk_whenSingleOutput() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        MockOutboundStream output1 = new MockOutboundStream(10);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -60,8 +60,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testSingleChunk_whenMultipleOutputs() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
-        MockOutboundStream<Integer> output2 = new MockOutboundStream<>(10);
+        MockOutboundStream output1 = new MockOutboundStream(10);
+        MockOutboundStream output2 = new MockOutboundStream(10);
         outboundStreams.add(output1);
         outboundStreams.add(output2);
 
@@ -74,7 +74,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testAllChunks_whenSingleOutput() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        MockOutboundStream output1 = new MockOutboundStream(10);
         outboundStreams.add(output1);
 
         Tasklet tasklet = createTasklet();
@@ -88,8 +88,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testAllChunks_whenMultipleOutputs() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
-        MockOutboundStream<Integer> output2 = new MockOutboundStream<>(10);
+        MockOutboundStream output1 = new MockOutboundStream(10);
+        MockOutboundStream output2 = new MockOutboundStream(10);
         outboundStreams.add(output1);
         outboundStreams.add(output2);
 
@@ -105,7 +105,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenOutputIsFull() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(4);
+        MockOutboundStream output1 = new MockOutboundStream(4);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
@@ -127,7 +127,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenOutputFullThenFullyDrained() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(1);
+        MockOutboundStream output1 = new MockOutboundStream(1);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
@@ -143,8 +143,8 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenOnlyOneOutputFull() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(2);
-        MockOutboundStream<Integer> output2 = new MockOutboundStream<>(4);
+        MockOutboundStream output1 = new MockOutboundStream(2);
+        MockOutboundStream output2 = new MockOutboundStream(4);
         outboundStreams.add(output1);
         outboundStreams.add(output2);
         Tasklet tasklet = createTasklet();
@@ -159,7 +159,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testNoProgress_whenProducerIdle() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        MockOutboundStream output1 = new MockOutboundStream(10);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -177,7 +177,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testDone_whenProducerIdleAndComplete() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(10);
+        MockOutboundStream output1 = new MockOutboundStream(10);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
         assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
@@ -192,7 +192,7 @@ public class ProducerTaskletTest {
 
     @Test
     public void testProgress_whenProducerIdleButPendingOutput() throws Exception {
-        MockOutboundStream<Integer> output1 = new MockOutboundStream<>(2);
+        MockOutboundStream output1 = new MockOutboundStream(2);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
@@ -210,9 +210,7 @@ public class ProducerTaskletTest {
         ProcessorTasklet tasklet =
                 new ProcessorTasklet(new Processor() {
                     @Override
-                    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox collector) {
-
-                    }
+                    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox collector) { }
                     @Override
                     public boolean process(int ordinal, Object item) {
                         return false;
@@ -225,7 +223,6 @@ public class ProducerTaskletTest {
                     public boolean complete() {
                         return false;
                     }
-
                     @Override
                     public boolean isBlocking() {
                         return true;

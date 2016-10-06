@@ -20,6 +20,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
@@ -27,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class DAGTest {
 
-    private static final ProcessorSupplier PROCESSOR_SUPPLIER = context -> new TestProcessor();
+    private static final ProcessorSupplier PROCESSOR_SUPPLIER = TestProcessor::new;
 
     @Test
     public void testIterator() {
@@ -72,14 +73,19 @@ public class DAGTest {
     }
 
     private static class TestProcessor implements Processor {
-
         @Override
-        public boolean process(String input, Object item, Outbox collector) {
+        public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
+        }
+        @Override
+        public boolean process(int ordinal, Object item) {
             return true;
         }
-
         @Override
-        public boolean complete(Outbox collector) {
+        public boolean complete(int ordinal) {
+            return true;
+        }
+        @Override
+        public boolean complete() {
             return true;
         }
     }

@@ -32,9 +32,7 @@ public class ArrayDequeWithObserver extends ArrayDeque<Object> implements Collec
 
     @Override
     public boolean add(Object o) {
-        if (observer != null) {
-            observer.accept(o);
-        }
+        observer.accept(o);
         return super.add(o);
     }
 }

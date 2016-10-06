@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet2.impl.TaskletResult.DONE;
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
@@ -53,9 +54,11 @@ public class MockInboundStream implements InboundEdgeStream {
         if (limit == inputIndex) {
             return WAS_ALREADY_DONE;
         }
+        dest.setObserverOfAdd(x -> {});
         for (; inputIndex < limit; inputIndex++) {
             dest.add(input.get(inputIndex));
         }
+        dest.setObserverOfAdd(null);
         if (inputIndex == input.size()) {
             done = true;
             return DONE;

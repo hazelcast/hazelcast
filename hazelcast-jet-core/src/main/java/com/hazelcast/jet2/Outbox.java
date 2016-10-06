@@ -39,7 +39,7 @@ public class Outbox {
         return queues.length;
     }
 
-    public Queue queueWithOrdinal(int ordinal) {
+    public Queue<Object> queueWithOrdinal(int ordinal) {
         return queues[ordinal];
     }
 }

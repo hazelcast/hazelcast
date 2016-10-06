@@ -42,7 +42,7 @@ class CircularCursor<E> extends ArrayListCursor<E> {
         if (list.isEmpty()) {
             return false;
         }
-        if (!advance()) {
+        if (!super.advance()) {
             index = 0;
         }
         return true;
