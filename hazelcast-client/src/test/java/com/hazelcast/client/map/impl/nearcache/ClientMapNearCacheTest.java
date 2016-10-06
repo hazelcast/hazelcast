@@ -86,19 +86,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void test_whenEmptyMap_thenPopulatedNearCacheShouldReturnNull_neverNULL_OBJECT() {
-        int size = 10;
-
-        IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
-        for (int i = 0; i < size; i++) {
-            // populate Near Cache
-            assertNull(map.get(i));
-            // fetch value from Near Cache
-            assertNull(map.get(i));
-        }
-    }
-
-    @Test
     public void testGetAllChecksNearCacheFirst() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
 
@@ -154,25 +141,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         NearCacheStats stats = getNearCacheStats(map);
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
-    }
-
-    @Test
-    public void testGetAsyncPopulatesNearCache() throws Exception {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig().setInvalidateOnChange(false);
-        IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
-
-        int size = 1239;
-        populateMap(map, size);
-        // populate Near Cache
-        for (int i = 0; i < size; i++) {
-            Future future = map.getAsync(i);
-            future.get();
-        }
-        // generate Near Cache hits
-        populateNearCache(map, size);
-
-        long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-        assertTrue("Near Cache must have some entries but current size is = " + ownedEntryCount, ownedEntryCount > 0);
     }
 
     @Test
@@ -580,36 +548,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testAfterPutAllNearCacheIsInvalidated() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory,
-                newInvalidationOnChangeEnabledNearCacheConfig(mapName));
-
-        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-
-        HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>();
-        for (int i = 0; i < mapSize; i++) {
-            clientMap.put(i, i);
-            hashMap.put(i, i);
-        }
-
-        for (int i = 0; i < mapSize; i++) {
-            clientMap.get(i);
-        }
-
-        clientMap.putAll(hashMap);
-
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
-    }
-
-
-    @Test
     public void testMemberPutAll_invalidates_clientNearCache() {
         int mapSize = 1000;
         String mapName = randomMapName();
@@ -866,15 +804,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testNearCacheEviction() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfigWithEntryCountEviction(EvictionPolicy.LRU, MAX_CACHE_SIZE)
-                .setCacheLocalEntries(false);
-        IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
-
-        testNearCacheEviction(map, MAX_CACHE_SIZE);
-    }
-
-    @Test
     public void testNearCacheTTLExpiration() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newTTLNearCacheConfig());
 
@@ -886,21 +815,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newMaxIdleSecondsNearCacheConfig());
 
         testNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
-    }
-
-    @Test
-    public void testNearCacheMemoryCostCalculation() {
-        testNearCacheMemoryCostCalculation(1);
-    }
-
-    @Test
-    public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses() {
-        testNearCacheMemoryCostCalculation(10);
-    }
-
-    private void testNearCacheMemoryCostCalculation(int threadCount) {
-        IMap<Integer, Integer> map = getNearCachedMapFromClient(newNearCacheConfig());
-        testNearCacheMemoryCostCalculation(map, false, threadCount);
     }
 
     @Test

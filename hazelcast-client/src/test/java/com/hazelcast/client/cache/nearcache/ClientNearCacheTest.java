@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
@@ -45,21 +44,6 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
                 {InMemoryFormat.BINARY},
                 {InMemoryFormat.OBJECT},
         });
-    }
-
-    @Test
-    public void whenEmptyMapThenPopulatedNearCacheShouldReturnNull_neverNULL_OBJECT() {
-        whenEmptyMapThenPopulatedNearCacheShouldReturnNullNeverNULL_OBJECT(inMemoryFormat);
-    }
-
-    @Test
-    public void whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE_withLocalCachePolicyCACHE() {
-        whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE(inMemoryFormat, LocalUpdatePolicy.CACHE);
-    }
-
-    @Test
-    public void whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE_withLocalCachePolicyINVALIDATE() {
-        whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE(inMemoryFormat, LocalUpdatePolicy.INVALIDATE);
     }
 
     @Test
@@ -119,11 +103,6 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
-    public void testNearCacheEviction_() {
-        testNearCacheEviction(inMemoryFormat);
-    }
-
-    @Test
     public void testNearCacheTTLRecordsExpired_() {
         testNearCacheExpiration_withTTL(inMemoryFormat);
     }
@@ -131,15 +110,5 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     @Test
     public void testNearCacheIdleRecordsExpired_() {
         testNearCacheExpiration_withMaxIdle(inMemoryFormat);
-    }
-
-    @Test
-    public void testNearCacheMemoryCostCalculation() {
-        testNearCacheMemoryCostCalculation(inMemoryFormat, 1);
-    }
-
-    @Test
-    public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses() {
-        testNearCacheMemoryCostCalculation(inMemoryFormat, 10);
     }
 }
