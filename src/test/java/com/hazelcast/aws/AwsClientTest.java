@@ -32,19 +32,6 @@ import static org.junit.Assert.assertEquals;
 public class AwsClientTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAwsClient_whenInvalidKey() {
-        AwsConfig awsConfig = new AwsConfig();
-        new AWSClient(awsConfig);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testAwsClient_whenInvalidSecretKey() {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("AccessKey");
-        new AWSClient(awsConfig);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void testAwsClient_whenNoAwsConfig() {
         new AWSClient(null);
     }

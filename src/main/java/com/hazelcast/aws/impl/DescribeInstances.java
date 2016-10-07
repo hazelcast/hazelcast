@@ -18,6 +18,8 @@ package com.hazelcast.aws.impl;
 
 import com.hazelcast.aws.security.EC2RequestSigner;
 import com.hazelcast.aws.utility.CloudyUtility;
+import com.hazelcast.aws.utility.Environment;
+import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 
@@ -41,7 +43,8 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 
 public class DescribeInstances {
 
-    private static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
+    public static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
+    public static final String IAM_TASK_ROLE_ENDPOINT = "169.254.170.2";
 
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
@@ -52,15 +55,11 @@ public class DescribeInstances {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
-        if (awsConfig.getAccessKey() == null && awsConfig.getIamRole() == null) {
-            throw new IllegalArgumentException("AWS access key or IAM Role is required!");
-        }
         this.awsConfig = awsConfig;
         this.endpoint = endpoint;
-        if (awsConfig.getIamRole() != null) {
-            tryGetDefaultIamRole();
-            getKeysFromIamRole();
-        }
+
+        checkKeysFromIamRoles(new Environment());
+
         String timeStamp = getFormattedTimestamp();
         rs = new EC2RequestSigner(awsConfig, timeStamp, endpoint);
         attributes.put("Action", this.getClass().getSimpleName());
@@ -72,21 +71,77 @@ public class DescribeInstances {
         attributes.put("X-Amz-Expires", "30");
     }
 
-    private void tryGetDefaultIamRole() throws IOException {
-        InputStreamReader is = null;
-        BufferedReader reader = null;
-        if (!awsConfig.getIamRole().equals("DEFAULT")) {
+    DescribeInstances(AwsConfig awsConfig) {
+        if (awsConfig == null) {
+            throw new IllegalArgumentException("AwsConfig is required!");
+        }
+        this.awsConfig = awsConfig;
+    }
+
+    void checkKeysFromIamRoles(Environment env) throws IOException {
+        if (awsConfig.getAccessKey() != null && awsConfig.getIamRole() != null) {
+            throw new InvalidConfigurationException("You should only define one of `<iam-role>` and `<access-key>`");
+        }
+        if (awsConfig.getAccessKey() != null) {
             return;
         }
+
+        // in case no IAM role has been defined, this will attempt to retrieve name of default role.
+        tryGetDefaultIamRole();
+
+        // if IAM role is still empty, one last attempt
+        if (awsConfig.getIamRole() == null || "".equals(awsConfig.getIamRole())) {
+            getKeysFromIamTaskRole(env);
+
+        } else {
+            getKeysFromIamRole();
+        }
+    }
+
+    private void getKeysFromIamTaskRole(Environment env) throws IOException {
+        // before giving up, attempt to discover whether we're running in an ECS Container,
+        // in which case, AWS_CONTAINER_CREDENTIALS_RELATIVE_URI will exist as an env var.
+        String uri = env.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME);
+        if (uri == null) {
+            throw new IllegalArgumentException("Could not acquire credentials! "
+              + "Did not find declared AWS access key or IAM Role, and could not discover IAM Task Role or default role.");
+        }
+        uri = "http://" + IAM_TASK_ROLE_ENDPOINT + uri;
+
+        String json = "";
         try {
-            String query = "latest/meta-data/iam/security-credentials/";
-            URL url;
-            url = new URL("http", IAM_ROLE_ENDPOINT, query);
+            json = retrieveRoleFromURI(uri);
+            parseAndStoreRoleCreds(json);
+
+        } catch (Exception io) {
+            throw new InvalidConfigurationException("Unable to retrieve credentials from IAM Task Role. "
+              + "URI: " + uri + ". \n HTTP Response content: " + json, io);
+        }
+
+    }
+
+    /**
+     * This is a helper method that simply performs the HTTP request to retrieve the role, from a given URI.
+     * (It allows us to cleanly separate the network calls out of our main code logic, so we can mock in our UT.)
+     * @param uri the full URI where a `GET` request will retrieve the role information, represented as JSON.
+     * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
+     */
+    String retrieveRoleFromURI(String uri) throws IOException {
+        StringBuilder response = new StringBuilder();
+
+        InputStreamReader is = null;
+        BufferedReader reader = null;
+        try {
+            URL url = new URL(uri);
             is = new InputStreamReader(url.openStream(), "UTF-8");
             reader = new BufferedReader(is);
-            awsConfig.setIamRole(reader.readLine());
-        } catch (IOException e) {
-            throw new InvalidConfigurationException("Invalid Aws Configuration");
+            String resp;
+            while ((resp = reader.readLine()) != null) {
+                response = response.append(resp);
+            }
+            return response.toString();
+        } catch (IOException io) {
+            throw new InvalidConfigurationException("Unable to lookup role in URI: " + uri, io);
         } finally {
             if (is != null) {
                 is.close();
@@ -95,23 +150,62 @@ public class DescribeInstances {
                 reader.close();
             }
         }
+
+    }
+
+    private void tryGetDefaultIamRole() throws IOException {
+        // if none of the below are true
+        if (!(
+            awsConfig.getIamRole() == null
+            || "".equals(awsConfig.getIamRole())
+            || "DEFAULT".equals(awsConfig.getIamRole())
+            )
+        ) {
+          // stop here. No point looking up the default role.
+            return;
+        }
+        try {
+            String query = "latest/meta-data/iam/security-credentials/";
+            String uri = "http://" + IAM_ROLE_ENDPOINT + "/" + query;
+            String roleName = retrieveRoleFromURI(uri);
+            awsConfig.setIamRole(roleName);
+        } catch (IOException e) {
+            throw new InvalidConfigurationException("Invalid Aws Configuration", e);
+        }
     }
 
     private void getKeysFromIamRole() {
         try {
             String query = "latest/meta-data/iam/security-credentials/" + awsConfig.getIamRole();
-            URL url = new URL("http", IAM_ROLE_ENDPOINT, query);
-            InputStreamReader is = new InputStreamReader(url.openStream(), "UTF-8");
-            BufferedReader reader = new BufferedReader(is);
-            Map<String, String> map = parseIamRole(reader);
-            awsConfig.setAccessKey(map.get("AccessKeyId"));
-            awsConfig.setSecretKey(map.get("SecretAccessKey"));
-            attributes.put("X-Amz-Security-Token", map.get("Token"));
-        } catch (IOException io) {
-            throw new InvalidConfigurationException("Invalid Aws Configuration");
+            String uri = "http://" + IAM_ROLE_ENDPOINT + "/" + query;
+            String json = retrieveRoleFromURI(uri);
+            parseAndStoreRoleCreds(json);
+        } catch (Exception io) {
+            throw new InvalidConfigurationException("Unable to retrieve credentials from IAM Role: "
+              + awsConfig.getIamRole(), io);
         }
     }
 
+    /** This helper method is responsible for just parsing the content of the HTTP response and
+     * storing the access keys and token it finds there.
+     *
+     * @param json The JSON representation of the IAM (Task) Role.
+     */
+    private void parseAndStoreRoleCreds(String json) {
+        JsonObject roleAsJson = JsonObject.readFrom(json);
+        awsConfig.setAccessKey(roleAsJson.getString("AccessKeyId", null));
+        awsConfig.setSecretKey(roleAsJson.getString("SecretAccessKey", null));
+        attributes.put("X-Amz-Security-Token", roleAsJson.getString("Token", null));
+    }
+
+    /**
+     * @deprecated Since we moved JSON parsing from manual pattern matching to using
+     * `com.hazelcast.com.eclipsesource.json.JsonObject`, this method should be deprecated.
+     * @param reader The reader that gives access to the JSON-formatted content that includes all the role information.
+     * @return A map with all the parsed keys and values from the JSON content.
+     * @throws IOException In case the input from reader cannot be correctly parsed.
+     */
+    @Deprecated
     public Map<String, String> parseIamRole(BufferedReader reader) throws IOException {
         Map<String, String> map = new HashMap<String, String>();
         Pattern keyPattern = Pattern.compile("\"(.*?)\" : ");
