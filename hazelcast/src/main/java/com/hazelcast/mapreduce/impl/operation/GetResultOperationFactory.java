@@ -24,8 +24,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 
 /**
- * This class is used to create {@link com.hazelcast.mapreduce.impl.operation.GetResultOperation}
- * instances.<br/>
+ * This class is used to create {@link com.hazelcast.mapreduce.impl.operation.GetResultOperation} instances.
+ *
  * In difference to other implementations of {@link com.hazelcast.spi.OperationFactory} this class
  * is never ever serialized and the DataSerializable methods {@link #readData(com.hazelcast.nio.ObjectDataInput)}
  * and {@link #writeData(com.hazelcast.nio.ObjectDataOutput)} throw {@link java.lang.UnsupportedOperationException}s.
@@ -46,14 +46,12 @@ public class GetResultOperationFactory implements OperationFactory {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         throw new UnsupportedOperationException("local factory only");
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         throw new UnsupportedOperationException("local factory only");
     }
 
