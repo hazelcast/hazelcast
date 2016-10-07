@@ -262,4 +262,8 @@ public class StoreWorker implements Runnable {
         return mapStoreConfig.getWriteDelaySeconds();
     }
 
+    @Override
+    public String toString() {
+        return "StoreWorker{" + "mapName='" + mapName + "'}";
+    }
 }
