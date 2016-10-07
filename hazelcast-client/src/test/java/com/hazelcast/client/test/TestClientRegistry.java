@@ -62,21 +62,23 @@ import java.util.logging.Level;
 public class TestClientRegistry {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
+
     private final TestNodeRegistry nodeRegistry;
 
-    public TestClientRegistry(TestNodeRegistry nodeRegistry) {
+    TestClientRegistry(TestNodeRegistry nodeRegistry) {
         this.nodeRegistry = nodeRegistry;
     }
 
-    public ClientConnectionManagerFactory createClientServiceFactory(String host, AtomicInteger ports) {
+    ClientConnectionManagerFactory createClientServiceFactory(String host, AtomicInteger ports) {
         return new MockClientConnectionManagerFactory(host, ports);
     }
 
     private class MockClientConnectionManagerFactory implements ClientConnectionManagerFactory {
+
         private final String host;
         private final AtomicInteger ports;
 
-        public MockClientConnectionManagerFactory(String host, AtomicInteger ports) {
+        MockClientConnectionManagerFactory(String host, AtomicInteger ports) {
             this.host = host;
             this.ports = ports;
         }
@@ -84,7 +86,6 @@ public class TestClientRegistry {
         @Override
         public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
                                                                DiscoveryService discoveryService) {
-
             final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
             AddressTranslator addressTranslator;
             if (awsConfig != null && awsConfig.isEnabled()) {
@@ -104,7 +105,6 @@ public class TestClientRegistry {
         }
     }
 
-
     public class MockClientConnectionManager extends ClientConnectionManagerImpl {
 
         private final String host;
@@ -112,8 +112,8 @@ public class TestClientRegistry {
         private final HazelcastClientInstanceImpl client;
         private final Map<Address, State> stateMap = new ConcurrentHashMap<Address, State>();
 
-        public MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
-                                           String host, AtomicInteger ports) {
+        MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator, String host,
+                                    AtomicInteger ports) {
             super(client, addressTranslator);
             this.client = client;
             this.host = host;
@@ -122,17 +122,14 @@ public class TestClientRegistry {
 
         @Override
         protected void initializeSelectors(HazelcastClientInstanceImpl client) {
-
         }
 
         @Override
         protected void startSelectors() {
-
         }
 
         @Override
         protected void shutdownSelectors() {
-
         }
 
         @Override
@@ -147,8 +144,8 @@ public class TestClientRegistry {
                 }
                 Node node = TestUtil.getNode(instance);
                 Address localAddress = new Address(host, ports.incrementAndGet());
-                MockedClientConnection connection = new MockedClientConnection(client,
-                        connectionIdGen.incrementAndGet(), node.nodeEngine, address, localAddress, stateMap);
+                MockedClientConnection connection = new MockedClientConnection(client, connectionIdGen.incrementAndGet(),
+                        node.nodeEngine, address, localAddress, stateMap);
                 LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
                 return connection;
             } catch (Exception e) {
@@ -159,30 +156,24 @@ public class TestClientRegistry {
         /**
          * Stores incoming messages from address to a temporary queue
          * When unblocked first this queue will be processed after that new messages will be consumed
-         *
-         * @param address
          */
         public void block(Address address) {
             stateMap.put(address, State.BLOCKING);
         }
 
         /**
-         * Drops incoming messages from address
-         *
-         * @param address
-         */
-        public void drop(Address address) {
-            stateMap.put(address, State.DROPPING);
-        }
-
-        /**
          * Removes the filter that is put by either block or drop
          * Consumes from the temporary queue if there is anything then continues to normal behaviour
-         *
-         * @param address
          */
         public void unblock(Address address) {
             stateMap.remove(address);
+        }
+
+        /**
+         * Drops incoming messages from address
+         */
+        public void drop(Address address) {
+            stateMap.put(address, State.DROPPING);
         }
     }
 
@@ -191,8 +182,7 @@ public class TestClientRegistry {
     }
 
     public class MockedClientConnection extends ClientConnection {
-        private volatile long lastReadTime;
-        private volatile long lastWriteTime;
+
         private final NodeEngineImpl serverNodeEngine;
         private final Address remoteAddress;
         private final Address localAddress;
@@ -201,20 +191,23 @@ public class TestClientRegistry {
         private final Queue<ClientMessage> incomingMessages = new ConcurrentLinkedQueue<ClientMessage>();
         private final Map<Address, State> stateMap;
 
-        public MockedClientConnection(HazelcastClientInstanceImpl client, int connectionId, NodeEngineImpl serverNodeEngine,
-                                      Address address, Address localAddress, Map<Address, State> stateMap) throws IOException {
+        private volatile long lastReadTime;
+        private volatile long lastWriteTime;
+
+        MockedClientConnection(HazelcastClientInstanceImpl client, int connectionId, NodeEngineImpl serverNodeEngine,
+                               Address address, Address localAddress, Map<Address, State> stateMap) throws IOException {
             super(client, connectionId);
             this.serverNodeEngine = serverNodeEngine;
             this.remoteAddress = address;
             this.localAddress = localAddress;
             this.stateMap = stateMap;
-            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress,
-                    localAddress, serverNodeEngine, this);
+            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress, localAddress, serverNodeEngine,
+                    this);
         }
 
         @Override
         public void init() throws IOException {
-            //No init for mock connections
+            // no init for mock connections
         }
 
         void handleClientMessage(ClientMessage clientMessage) {
@@ -311,8 +304,8 @@ public class TestClientRegistry {
         private final MockedClientConnection responseConnection;
         private final int connectionId;
 
-        public MockedNodeConnection(int connectionId, Address localEndpoint, Address remoteEndpoint, NodeEngineImpl nodeEngine
-                , MockedClientConnection responseConnection) {
+        MockedNodeConnection(int connectionId, Address localEndpoint, Address remoteEndpoint, NodeEngineImpl nodeEngine,
+                             MockedClientConnection responseConnection) {
             super(localEndpoint, remoteEndpoint, nodeEngine);
             this.responseConnection = responseConnection;
             this.connectionId = connectionId;
@@ -346,15 +339,20 @@ public class TestClientRegistry {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             MockedNodeConnection that = (MockedNodeConnection) o;
 
-            if (connectionId != that.connectionId) return false;
+            if (connectionId != that.connectionId) {
+                return false;
+            }
             Address remoteEndpoint = getEndPoint();
             return !(remoteEndpoint != null ? !remoteEndpoint.equals(that.getEndPoint()) : that.getEndPoint() != null);
-
         }
 
         @Override
@@ -380,11 +378,11 @@ public class TestClientRegistry {
 
         @Override
         public String toString() {
-            return "MockedNodeConnection{" +
-                    " remoteEndpoint = " + getEndPoint() +
-                    ", localEndpoint = " + localEndpoint +
-                    ", connectionId = " + connectionId +
-                    '}';
+            return "MockedNodeConnection{"
+                    + " remoteEndpoint = " + getEndPoint()
+                    + ", localEndpoint = " + localEndpoint
+                    + ", connectionId = " + connectionId
+                    + '}';
         }
     }
 }
