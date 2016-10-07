@@ -19,32 +19,26 @@ package com.hazelcast.nio.tcp.spinning;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.ascii.TextWriteHandler;
-import com.hazelcast.nio.tcp.ClientWriteHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.SocketWriterInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.nio.IOService.KILO_BYTE;
-import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.StringUtil.stringToBytes;
 import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class SpinningSocketWriter extends AbstractHandler implements SocketWriter {
 
@@ -52,14 +46,15 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
-    public final Queue<OutboundFrame> writeQueue;
+    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
-    public final Queue<OutboundFrame> urgentWriteQueue;
+    public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
 
     private final ILogger logger;
     private final SocketChannelWrapper socketChannel;
+    private final SocketWriterInitializer initializer;
     private ByteBuffer outputBuffer;
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
@@ -71,12 +66,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private WriteHandler writeHandler;
     private volatile OutboundFrame currentFrame;
 
-    public SpinningSocketWriter(TcpIpConnection connection, ILogger logger) {
+    public SpinningSocketWriter(TcpIpConnection connection, ILogger logger, SocketWriterInitializer initializer) {
         super(connection, logger);
         this.logger = logger;
         this.socketChannel = connection.getSocketChannelWrapper();
-        this.writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-        this.urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+        this.initializer = initializer;
     }
 
     @Override
@@ -124,6 +118,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
+    public void initWriteHandler(WriteHandler writeHandler) {
+        this.writeHandler = writeHandler;
+    }
+
+    @Override
     public WriteHandler getWriteHandler() {
         return writeHandler;
     }
@@ -136,43 +135,23 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
             @Override
             public void run() {
                 logger.info("Setting protocol: " + protocol);
-                createWriter(protocol);
+                if (writeHandler == null) {
+                    initializer.init(connection, SpinningSocketWriter.this, protocol);
+                }
                 latch.countDown();
             }
         }));
 
         try {
-            latch.await(TIMEOUT, TimeUnit.SECONDS);
+            latch.await(TIMEOUT, SECONDS);
         } catch (InterruptedException e) {
             logger.finest("CountDownLatch::await interrupted", e);
         }
     }
 
-    private void createWriter(String protocol) {
-        if (writeHandler != null) {
-            return;
-        }
-
-        if (CLUSTER.equals(protocol)) {
-            configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
-            writeHandler = ioService.createWriteHandler(connection);
-            outputBuffer.put(stringToBytes(CLUSTER));
-        } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-            configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-            writeHandler = new ClientWriteHandler();
-        } else {
-            configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
-            writeHandler = new TextWriteHandler(connection);
-        }
-    }
-
-    private void configureBuffers(int size) {
-        outputBuffer = IOUtil.newByteBuffer(size, ioService.isSocketBufferDirect());
-        try {
-            connection.setSendBufferSize(size);
-        } catch (SocketException e) {
-            logger.finest("Failed to adjust TCP send buffer of " + connection + " to " + size + " B.", e);
-        }
+    @Override
+    public void initOutputBuffer(ByteBuffer outputBuffer) {
+        this.outputBuffer = outputBuffer;
     }
 
     private OutboundFrame poll() {
@@ -222,7 +201,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
 
         if (writeHandler == null) {
             logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
-            createWriter(CLUSTER);
+            initializer.init(connection, this, CLUSTER);
             return;
         }
 
@@ -329,7 +308,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
 
         void awaitCompletion() {
             try {
-                latch.await(TIMEOUT, TimeUnit.SECONDS);
+                latch.await(TIMEOUT, SECONDS);
             } catch (InterruptedException e) {
                 EmptyStatement.ignore(e);
             }
