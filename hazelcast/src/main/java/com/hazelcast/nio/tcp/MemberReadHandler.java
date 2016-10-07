@@ -22,6 +22,8 @@ import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.nio.Packet.FLAG_URGENT;
+
 /**
  * The {@link ReadHandler} for member to member communication.
  *
@@ -33,11 +35,19 @@ import java.nio.ByteBuffer;
 public class MemberReadHandler implements ReadHandler {
 
     protected final TcpIpConnection connection;
-    protected Packet packet;
 
     private final PacketDispatcher packetDispatcher;
     private final Counter normalPacketsRead;
     private final Counter priorityPacketsRead;
+
+    // These 2 fields are only used during read/write. Otherwise they have no meaning.
+    private int valueOffset;
+    private int size;
+    // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
+    private boolean headerComplete;
+    private byte[] payload;
+    private short flags;
+    private int partitionId;
 
     public MemberReadHandler(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
         this.connection = connection;
@@ -50,28 +60,76 @@ public class MemberReadHandler implements ReadHandler {
     @Override
     public void onRead(ByteBuffer src) throws Exception {
         while (src.hasRemaining()) {
-            if (packet == null) {
-                packet = new Packet();
+            if (!readPacket(src)) {
+                return;
             }
-            boolean complete = packet.readFrom(src);
-            if (complete) {
-                handlePacket(packet);
-                packet = null;
+
+            Packet packet = new Packet(flags, partitionId, payload).setConn(connection);
+
+            if (packet.isFlagSet(FLAG_URGENT)) {
+                priorityPacketsRead.inc();
             } else {
-                break;
+                normalPacketsRead.inc();
             }
+
+            packetDispatcher.dispatch(packet);
+
+            // null it to prevent retaining memory
+            payload = null;
+            headerComplete = false;
+            valueOffset = 0;
         }
     }
 
-    protected void handlePacket(Packet packet) {
-        if (packet.isFlagSet(Packet.FLAG_URGENT)) {
-            priorityPacketsRead.inc();
-        } else {
-            normalPacketsRead.inc();
+    /**
+     * Reads the content of a packet. If the packet is not fully read, false is returned.
+     */
+    private boolean readPacket(ByteBuffer src) {
+        if (!headerComplete) {
+            if (src.remaining() < Packet.HEADER_SIZE) {
+                return false;
+            }
+
+            byte version = src.get();
+            if (Packet.VERSION != version) {
+                throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
+                        + Packet.VERSION + ", Incoming -> " + version);
+            }
+
+            flags = src.getShort();
+            partitionId = src.getInt();
+            size = src.getInt();
+            headerComplete = true;
         }
 
-        packet.setConn(connection);
+        if (payload == null) {
+            payload = new byte[size];
+        }
 
-        packetDispatcher.dispatch(packet);
+        if (size > 0) {
+            int bytesReadable = src.remaining();
+
+            int bytesNeeded = size - valueOffset;
+
+            boolean done;
+            int bytesRead;
+            if (bytesReadable >= bytesNeeded) {
+                bytesRead = bytesNeeded;
+                done = true;
+            } else {
+                bytesRead = bytesReadable;
+                done = false;
+            }
+
+            // read the data from the byte-buffer into the payload
+            src.get(payload, valueOffset, bytesRead);
+            valueOffset += bytesRead;
+
+            if (!done) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
