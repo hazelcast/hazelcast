@@ -121,9 +121,4 @@ class QueryCacheConfigReadOnly extends QueryCacheConfig {
     public void setCoalesce(boolean coalesce) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
-
-    @Override
-    public String toString() {
-        return "QueryCacheConfigReadOnly{} " + super.toString();
-    }
 }
