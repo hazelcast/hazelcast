@@ -33,7 +33,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     }
 
     @Override
-    public TaskletResult drainTo(CollectionWithObserver dest) {
+    public TaskletResult drainAvailableItemsInto(CollectionWithObserver dest) {
         assert dest.isEmpty() : "Destination is not empty";
         boolean madeProgress = false;
         dest.setObserverOfAdd(exhaustedQueueCleaner);

@@ -26,7 +26,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
 
+import static com.hazelcast.jet2.impl.TaskletResult.DONE;
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
+import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
@@ -49,8 +51,6 @@ public class ProcessorTasklet implements Tasklet {
             Processor processor, List<InboundEdgeStream> inboundStreams, List<OutboundEdgeStream> outboundStreams
     ) {
         Preconditions.checkNotNull(processor, "processor");
-        Preconditions.checkFalse(inboundStreams.isEmpty(), "There must be at least one queue head");
-        Preconditions.checkFalse(outboundStreams.isEmpty(), "There must be at least one queue tail");
         this.processor = processor;
         this.prioritizedQueueHeads = inboundStreams
                 .stream()
@@ -91,7 +91,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private void tryFillInbox() {
         if (!inbox.isEmpty() || selectedInboundStream != null && selectedInboundStream.isDone()) {
-            progTracker.notDone();
+            progTracker.update(NO_PROGRESS);
             return;
         }
         if (queueHeadCursor == null) {
@@ -101,7 +101,7 @@ public class ProcessorTasklet implements Tasklet {
         TaskletResult result;
         do {
             selectedInboundStream = queueHeadCursor.value();
-            result = selectedInboundStream.drainTo(inbox);
+            result = selectedInboundStream.drainAvailableItemsInto(inbox);
             progTracker.update(result);
             if (result.isDone()) {
                 queueHeadCursor.remove();
@@ -119,16 +119,16 @@ public class ProcessorTasklet implements Tasklet {
                 ? new CircularCursor<>(prioritizedQueueHeads.remove(0)) : null;
     }
 
-    private boolean completeIfNeeded() {
+    private void completeIfNeeded() {
         if (processorCompleted) {
-            return true;
+            return;
         }
         if (processor.complete()) {
+            progTracker.update(DONE);
             processorCompleted = true;
         } else {
-            progTracker.notDone();
+            progTracker.update(MADE_PROGRESS);
         }
-        return processorCompleted;
     }
 
     private void offerPendingOutput() {

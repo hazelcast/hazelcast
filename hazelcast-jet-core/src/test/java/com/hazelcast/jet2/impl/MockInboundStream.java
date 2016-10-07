@@ -18,9 +18,7 @@ package com.hazelcast.jet2.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static com.hazelcast.jet2.impl.TaskletResult.DONE;
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
@@ -29,42 +27,49 @@ import static com.hazelcast.jet2.impl.TaskletResult.WAS_ALREADY_DONE;
 
 public class MockInboundStream implements InboundEdgeStream {
 
+    private static final Object DONE_ITEM = new Object();
+
     private final int chunkSize;
-    private final List<Object> input;
-    private int inputIndex;
+    private final List<Object> mockData;
+    private int dataIndex;
     private boolean paused;
     private boolean done;
 
-    public MockInboundStream(int chunkSize, List<?> input) {
+    public MockInboundStream(int chunkSize, List<?> mockData) {
         this.chunkSize = chunkSize;
-        this.input = new ArrayList<>(input);
-        this.inputIndex = 0;
+        this.mockData = new ArrayList<>(mockData);
+        this.dataIndex = 0;
     }
 
     public void push(Object... items) {
-        input.addAll(Arrays.asList(items));
+        mockData.addAll(Arrays.asList(items));
+    }
+
+    public void pushDoneItem() {
+        mockData.add(DONE_ITEM);
     }
 
     @Override
-    public TaskletResult drainTo(CollectionWithObserver dest) {
+    public TaskletResult drainAvailableItemsInto(CollectionWithObserver dest) {
+        if (done) {
+            return WAS_ALREADY_DONE;
+        }
         if (paused) {
             return NO_PROGRESS;
         }
-        final int limit = Math.min(input.size(), inputIndex + chunkSize);
-        if (limit == inputIndex) {
-            return WAS_ALREADY_DONE;
-        }
+        final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
         dest.setObserverOfAdd(x -> {});
-        for (; inputIndex < limit; inputIndex++) {
-            dest.add(input.get(inputIndex));
+        for (; dataIndex < limit; dataIndex++) {
+            final Object item = mockData.get(dataIndex);
+            if (item != DONE_ITEM) {
+                assert !done : "DONE_ITEM followed by more items";
+                dest.add(item);
+            } else {
+                done = true;
+            }
         }
         dest.setObserverOfAdd(null);
-        if (inputIndex == input.size()) {
-            done = true;
-            return DONE;
-        } else {
-            return MADE_PROGRESS;
-        }
+        return done ? DONE : MADE_PROGRESS;
     }
 
     @Override

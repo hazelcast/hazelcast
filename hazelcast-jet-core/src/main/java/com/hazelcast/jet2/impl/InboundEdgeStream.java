@@ -27,7 +27,7 @@ public interface InboundEdgeStream {
      * (the {@code isMadeProgress} property) and whether the stream is now completely exhausted
      * (the {@code isDone} property)
      */
-    TaskletResult drainTo(CollectionWithObserver dest);
+    TaskletResult drainAvailableItemsInto(CollectionWithObserver dest);
 
     boolean isDone();
 

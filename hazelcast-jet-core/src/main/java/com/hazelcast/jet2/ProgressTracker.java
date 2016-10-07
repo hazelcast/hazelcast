@@ -17,6 +17,7 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.jet2.impl.ProgressState;
+import com.hazelcast.jet2.impl.TaskletResult;
 
 /**
  * Javadoc pending.
@@ -35,6 +36,7 @@ public class ProgressTracker implements ProgressState {
         isDone &= prog.isDone();
     }
 
+    /** Equivalent to {@code update(NO_PROGRESS)}, but more descriptive in certain usages. */
     public void notDone() {
         isDone = false;
     }
@@ -47,5 +49,10 @@ public class ProgressTracker implements ProgressState {
     @Override
     public boolean isDone() {
         return isDone;
+    }
+
+    @Override
+    public String toString() {
+        return TaskletResult.valueOf(isMadeProgress, isDone).toString();
     }
 }
