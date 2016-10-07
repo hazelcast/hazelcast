@@ -25,7 +25,9 @@ import com.hazelcast.nio.Address;
 import java.util.Collection;
 
 /**
- * @author mdogan 5/16/13
+ * Cluster service for Hazelcast clients.
+ *
+ * Allows to retrieve Hazelcast members of the cluster, e.g. by their {@link Address} or uuid.
  */
 public interface ClientClusterService {
 
@@ -88,7 +90,6 @@ public interface ClientClusterService {
 
     /**
      * Returns the cluster-time.
-     * <p/>
      *
      * @return The cluster-time.
      */
@@ -113,5 +114,4 @@ public interface ClientClusterService {
      * @return The address of the owner connection.
      */
     Address getOwnerConnectionAddress();
-
 }

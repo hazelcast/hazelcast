@@ -15,7 +15,6 @@
  */
 
 /**
- * Contains classes/interfaces related to Service Provider Interface
- * such as ClientProxy , ClientClusterService
+ * Contains classes/interfaces related to the Hazelcast client Service Provider Interface.
  */
 package com.hazelcast.client.spi;

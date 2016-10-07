@@ -24,7 +24,7 @@ import javax.transaction.xa.Xid;
 
 /**
  * Manages the execution of client transactions and provides {@link TransactionContext}s.
- * <p/>
+ *
  * Client equivalent of {@link com.hazelcast.transaction.TransactionManagerService}.
  */
 public interface ClientTransactionManagerService {
@@ -38,15 +38,13 @@ public interface ClientTransactionManagerService {
     TransactionContext newTransactionContext(TransactionOptions options);
 
     /**
-     *
-     * @param xid branch qualifier
+     * @param xid              branch qualifier
      * @param timeoutInSeconds transaction timeout in seconds
-     * @return
+     * @return a {@link TransactionContext} for the supplied branch qualifier
      */
     TransactionContext newXATransactionContext(Xid xid, int timeoutInSeconds);
 
     void shutdown();
 
     String getGroupName();
-
 }

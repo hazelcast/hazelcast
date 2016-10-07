@@ -21,7 +21,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- * @author mdogan 5/16/13
+ * Partition service for Hazelcast clients.
+ *
+ * Allows to retrieve information about the partition count, the partition owner or the partitionId of a key.
  */
 public interface ClientPartitionService {
 

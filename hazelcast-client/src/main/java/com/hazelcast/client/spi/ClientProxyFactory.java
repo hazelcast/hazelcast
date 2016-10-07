@@ -17,8 +17,9 @@
 package com.hazelcast.client.spi;
 
 /**
- * Factory interface creating client proxies. Instances implementing this interface can be registered with the
- * {@link ProxyManager} for instantiation upon request.
+ * Factory interface creating client proxies.
+ *
+ * Instances implementing this interface can be registered with the {@link ProxyManager} for instantiation upon request.
  */
 public interface ClientProxyFactory {
 

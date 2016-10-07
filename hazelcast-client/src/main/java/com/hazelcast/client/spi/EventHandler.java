@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi;
 
 /**
- * Base interface for all client Event Handlers.
+ * Base interface for all client {@link EventHandler}s.
  *
  * @param <E> event type
  */

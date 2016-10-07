@@ -24,7 +24,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
- * Context holding all the required services, managers and the configuration for a Hazelcast Client
+ * Context holding all the required services, managers and the configuration for a Hazelcast client.
  */
 public final class ClientContext {
 

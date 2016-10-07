@@ -25,15 +25,18 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author mdogan 5/16/13
+ * Executor service for Hazelcast clients.
+ *
+ * Allows asynchronous execution and scheduling of {@link Runnable} and {@link Callable} commands.
  */
 public interface ClientExecutionService extends Executor {
 
     /**
-     * Execute alien(user code) on execution service
+     * Execute alien (user code) on execution service
      *
      * @param command to run
      */
+    @Override
     void execute(Runnable command);
 
     ICompletableFuture<?> submit(Runnable task);
@@ -45,8 +48,7 @@ public interface ClientExecutionService extends Executor {
     ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit);
 
     /**
-     * @return executorService that alien(user code) runs on
+     * @return executorService that alien (user code) runs on
      */
     ExecutorService getAsyncExecutor();
-
 }

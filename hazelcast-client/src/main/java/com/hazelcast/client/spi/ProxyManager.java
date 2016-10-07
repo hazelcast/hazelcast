@@ -104,11 +104,12 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
- * The ProxyManager handles client proxy instantiation and retrieval at start- and runtime by registering
+ * The ProxyManager handles client proxy instantiation and retrieval at start and runtime by registering
  * corresponding service manager names and their {@link com.hazelcast.client.spi.ClientProxyFactory}s.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ProxyManager {
+
     private static final String PROVIDER_ID = "com.hazelcast.client.spi.ClientProxyDescriptorProvider";
     private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
 

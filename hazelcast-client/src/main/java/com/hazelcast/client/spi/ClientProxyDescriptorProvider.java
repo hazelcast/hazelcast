@@ -16,18 +16,16 @@
 
 package com.hazelcast.client.spi;
 
-
 /**
- * It will be discovered from some external source (like META-INF/services)
- * and registered in the system.
- * <p/>
+ * It will be discovered from some external source (like META-INF/services) and registered in the system.
+ *
  * Examples:
  * <pre>
  *           JetClientProxyDescriptorProvider
  *           TreeClientProxyDescriptorProvider
  * </pre>
- * <p/>
- * Descriptor of Hazelcast proxy descriptors
+ *
+ * Descriptor of Hazelcast proxy descriptors.
  */
 public interface ClientProxyDescriptorProvider {
     /**
