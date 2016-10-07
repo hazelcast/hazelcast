@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.SocketReaderInitializerImpl;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.SocketWriterInitializerImpl;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -47,6 +48,7 @@ public class SpinningIOThreadingModel implements IOThreadingModel<TcpIpConnectio
     private final SpinningInputThread inputThread;
     private final SpinningOutputThread outThread;
     private final SocketWriterInitializerImpl socketWriterInitializer;
+    private final SocketReaderInitializerImpl socketReaderInitializer;
 
     public SpinningIOThreadingModel(LoggingService loggingService, HazelcastThreadGroup hazelcastThreadGroup) {
         this.logger = loggingService.getLogger(SpinningIOThreadingModel.class);
@@ -54,6 +56,7 @@ public class SpinningIOThreadingModel implements IOThreadingModel<TcpIpConnectio
         this.inputThread = new SpinningInputThread(hazelcastThreadGroup);
         this.outThread = new SpinningOutputThread(hazelcastThreadGroup);
         this.socketWriterInitializer = new SocketWriterInitializerImpl(logger);
+        this.socketReaderInitializer = new SocketReaderInitializerImpl(logger);
     }
 
     @Override
@@ -70,7 +73,7 @@ public class SpinningIOThreadingModel implements IOThreadingModel<TcpIpConnectio
     @Override
     public SocketReader newSocketReader(TcpIpConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningSocketReader.class);
-        return new SpinningSocketReader(connection, logger);
+        return new SpinningSocketReader(connection, logger, connection.getSocketChannelWrapper(), socketReaderInitializer);
     }
 
     @Override
