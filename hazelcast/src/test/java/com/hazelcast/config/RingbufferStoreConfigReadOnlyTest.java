@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -24,46 +25,46 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class RingbufferStoreConfigReadOnlyTest {
 
-    private RingbufferStoreConfig getRingbufferStoreConfigReadOnly() {
+    private RingbufferStoreConfig getReadOnlyConfig() {
         return new RingbufferStoreConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingStoreImplementationOfReadOnlyRingbufferStoreConfigShouldFail() {
-        getRingbufferStoreConfigReadOnly().setStoreImplementation(null);
+    public void setStoreImplementationOfReadOnlyRingbufferStoreConfigShouldFail() {
+        getReadOnlyConfig().setStoreImplementation(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEnabledOfReadOnlyRingbufferStoreConfigShouldFail() {
-        getRingbufferStoreConfigReadOnly().setEnabled(true);
+    public void setEnabledOfReadOnlyRingbufferStoreConfigShouldFail() {
+        getReadOnlyConfig().setEnabled(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingClassNameOfReadOnlyRingbufferStoreConfigShouldFail() {
-        getRingbufferStoreConfigReadOnly().setClassName("myRingbufferStore");
+    public void setClassNameOfReadOnlyRingbufferStoreConfigShouldFail() {
+        getReadOnlyConfig().setClassName("myRingbufferStore");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPropertiesOfReadOnlyRingbufferStoreConfigShouldFail() {
-        getRingbufferStoreConfigReadOnly().setProperties(new Properties());
+    public void setPropertiesOfReadOnlyRingbufferStoreConfigShouldFail() {
+        getReadOnlyConfig().setProperties(new Properties());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPropertyOfReadOnlyRingbufferStoreConfigShouldFail() {
-        getRingbufferStoreConfigReadOnly().setProperty("name", "value");
+    public void setPropertyOfReadOnlyRingbufferStoreConfigShouldFail() {
+        getReadOnlyConfig().setProperty("name", "value");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingFactoryClassNameOfReadOnlyRingbufferStoreConfigShouldFail() {
-        getRingbufferStoreConfigReadOnly().setFactoryClassName("myRingbufferStoreFactory");
+    public void setFactoryClassNameOfReadOnlyRingbufferStoreConfigShouldFail() {
+        getReadOnlyConfig().setFactoryClassName("myRingbufferStoreFactory");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingFactoryImplementationOfReadOnlyRingbufferStoreConfigShouldFail() {
-        getRingbufferStoreConfigReadOnly().setFactoryImplementation(null);
+    public void setFactoryImplementationOfReadOnlyRingbufferStoreConfigShouldFail() {
+        getReadOnlyConfig().setFactoryImplementation(null);
     }
 }

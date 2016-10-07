@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,16 +28,16 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class QueryCacheConfigReadOnlyTest {
 
-    private QueryCacheConfigReadOnly getMapStoreConfigReadOnly() {
+    private QueryCacheConfig getReadOnlyConfig() {
         return new QueryCacheConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingIndexConfigsOfReadOnlyQueryCacheConfigShouldReturnUnmodifiable() {
+    public void getIndexConfigsOfReadOnlyQueryCacheConfigShouldReturnUnmodifiable() {
         QueryCacheConfig config = new QueryCacheConfig()
                 .addIndexConfig(new MapIndexConfig())
                 .addIndexConfig(new MapIndexConfig());
@@ -46,7 +47,7 @@ public class QueryCacheConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingEntryListenerConfigsOfReadOnlyQueryCacheConfigShouldReturnUnmodifiable() {
+    public void getEntryListenerConfigsOfReadOnlyQueryCacheConfigShouldReturnUnmodifiable() {
         QueryCacheConfig config = new QueryCacheConfig()
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
@@ -56,72 +57,72 @@ public class QueryCacheConfigReadOnlyTest {
     }
 
     @Test
-    public void gettingEvictionConfigShouldReturnReadOnlyConfig() {
-        assertTrue(getMapStoreConfigReadOnly().getEvictionConfig() instanceof EvictionConfigReadOnly);
+    public void getEvictionConfigShouldReturnReadOnlyConfig() {
+        assertTrue(getReadOnlyConfig().getEvictionConfig() instanceof EvictionConfigReadOnly);
     }
 
     @Test
-    public void gettingPredicateConfigShouldReturnReadOnlyConfig() {
-        assertTrue(getMapStoreConfigReadOnly().getPredicateConfig() instanceof PredicateConfigReadOnly);
+    public void getPredicateConfigShouldReturnReadOnlyConfig() {
+        assertTrue(getReadOnlyConfig().getPredicateConfig() instanceof PredicateConfigReadOnly);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingBatchSizeOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setBatchSize(5);
+    public void setBatchSizeOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setBatchSize(5);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingBufferSizeOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setBufferSize(3);
+    public void setBufferSizeOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setBufferSize(3);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingDelaySecondsOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setDelaySeconds(3);
+    public void setDelaySecondsOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setDelaySeconds(3);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEntryListenerConfigsOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setEntryListenerConfigs(singletonList(new EntryListenerConfig()));
+    public void setEntryListenerConfigsOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setEntryListenerConfigs(singletonList(new EntryListenerConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEvictionConfigOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setEvictionConfig(new EvictionConfig());
+    public void setEvictionConfigOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setEvictionConfig(new EvictionConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingIncludeValueOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setIncludeValue(true);
+    public void setIncludeValueOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setIncludeValue(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingIndexConfigsOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setIndexConfigs(singletonList(new MapIndexConfig()));
+    public void setIndexConfigsOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setIndexConfigs(singletonList(new MapIndexConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingInMemoryFormatOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setInMemoryFormat(InMemoryFormat.OBJECT);
+    public void setInMemoryFormatOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setInMemoryFormat(InMemoryFormat.OBJECT);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingNameOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setName("myQueryCache");
+    public void setNameOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setName("myQueryCache");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPredicateConfigOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setPredicateConfig(new PredicateConfig());
+    public void setPredicateConfigOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setPredicateConfig(new PredicateConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPopulateOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setPopulate(true);
+    public void setPopulateOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setPopulate(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingCoalesceOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setCoalesce(true);
+    public void setCoalesceOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setCoalesce(true);
     }
 }

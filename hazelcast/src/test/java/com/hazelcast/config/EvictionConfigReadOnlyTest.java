@@ -26,32 +26,32 @@ import org.junit.runner.RunWith;
 @Category(QuickTest.class)
 public class EvictionConfigReadOnlyTest {
 
-    private EvictionConfig getEvictionConfigReadOnly() {
+    private EvictionConfig getReadOnlyConfig() {
         return new EvictionConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingSizeOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setSize(100);
+    public void setSizeOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setSize(100);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMaxSizePolicyOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setMaximumSizePolicy(null);
+    public void setMaxSizePolicyOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setMaximumSizePolicy(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEvictionPolicyOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setEvictionPolicy(null);
+    public void setEvictionPolicyOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setEvictionPolicy(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingComparatorClassNameOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setComparatorClassName("mycomparator");
+    public void setComparatorClassNameOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setComparatorClassName("myComparatorClassName");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingComparatorOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setComparator(null);
+    public void setComparatorOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setComparator(null);
     }
 }

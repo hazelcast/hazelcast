@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -24,66 +25,66 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MapStoreConfigReadOnlyTest {
 
-    private MapStoreConfigReadOnly getMapStoreConfigReadOnly() {
+    private MapStoreConfig getReadOnlyConfig() {
         return new MapStoreConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingClassNameOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setClassName("myClassName");
+    public void setClassNameOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setClassName("myClassName");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingFactoryClassNameOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setFactoryClassName("myFactoryClassName");
+    public void setFactoryClassNameOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setFactoryClassName("myFactoryClassName");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingWriteDelaySecondsOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setWriteDelaySeconds(5);
+    public void setWriteDelaySecondsOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setWriteDelaySeconds(5);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingWriteBatchSizeOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setWriteBatchSize(3);
+    public void setWriteBatchSizeOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setWriteBatchSize(3);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingsEnabledOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setEnabled(false);
+    public void setEnabledOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setEnabled(false);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingImplementationOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setImplementation(new Object());
+    public void setImplementationOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setImplementation(new Object());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingInitialLoadModeOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+    public void setInitialLoadModeOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingFactoryImplementationOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setFactoryImplementation(new Object());
+    public void setFactoryImplementationOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setFactoryImplementation(new Object());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPropertyOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setProperty("name", "value");
+    public void setPropertyOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setProperty("name", "value");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPropertiesOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setProperties(new Properties());
+    public void setPropertiesOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setProperties(new Properties());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingWriteCoalescingOfReadOnlyMapStoreConfigShouldFail() {
-        getMapStoreConfigReadOnly().setWriteCoalescing(true);
+    public void setWriteCoalescingOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setWriteCoalescing(true);
     }
 }

@@ -27,52 +27,52 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheConfigReadOnlyTest {
 
-    private NearCacheConfigReadOnly getNearCacheConfigReadOnly() {
+    private NearCacheConfig getReadOnlyConfig() {
         return new NearCacheConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setNameOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setName("anyName");
+    public void setNameOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setName("anyName");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setTimeToLiveSecondsOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setTimeToLiveSeconds(1512);
+    public void setTimeToLiveSecondsOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setTimeToLiveSeconds(1512);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMaxSizeOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setMaxSize(125124);
+    public void setMaxSizeOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setMaxSize(125124);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setEvictionPolicyOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setEvictionPolicy(EvictionPolicy.NONE.name());
+    public void setEvictionPolicyOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setEvictionPolicy(EvictionPolicy.NONE.name());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMaxIdleSecondsOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setMaxIdleSeconds(523);
+    public void setMaxIdleSecondsOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setMaxIdleSeconds(523);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setInvalidateOnChangeOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setInvalidateOnChange(true);
+    public void setInvalidateOnChangeOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setInvalidateOnChange(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setInMemoryFormatOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setInMemoryFormat(InMemoryFormat.OBJECT);
+    public void setInMemoryFormatOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setInMemoryFormat(InMemoryFormat.OBJECT);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setInMemoryFormatAsStringOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setInMemoryFormat(InMemoryFormat.OBJECT.name());
+    public void setInMemoryFormatAsStringOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setInMemoryFormat(InMemoryFormat.OBJECT.name());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setCacheLocalEntriesOnReadOnlyCacheConfigShouldFail() {
-        getNearCacheConfigReadOnly().setCacheLocalEntries(true);
+    public void setCacheLocalEntriesOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setCacheLocalEntries(true);
     }
 }

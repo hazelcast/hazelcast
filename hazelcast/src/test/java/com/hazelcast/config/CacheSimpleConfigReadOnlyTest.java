@@ -16,128 +16,133 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class CacheSimpleConfigReadOnlyTest {
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void settingNameOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setName("my-cache");
+    private CacheSimpleConfig getReadOnlyConfig() {
+        return new CacheSimpleConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingBackupCountOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setBackupCount(1);
+    public void setNameOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setName("my-cache");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingAsyncBackupCountOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setAsyncBackupCount(1);
+    public void setBackupCountOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setBackupCount(1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingReadThroughOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setReadThrough(true);
+    public void setAsyncBackupCountOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setAsyncBackupCount(1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingWriteThroughOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setWriteThrough(true);
+    public void setReadThroughOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setReadThrough(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingKeyTypeOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setKeyType("key-type");
+    public void setWriteThroughOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setWriteThrough(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingValueTypeOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setValueType("value-type");
+    public void setKeyTypeOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setKeyType("key-type");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingInMemoryFormatOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setInMemoryFormat(InMemoryFormat.BINARY);
+    public void setValueTypeOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setValueType("value-type");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingManagementOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setManagementEnabled(true);
+    public void setInMemoryFormatOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setInMemoryFormat(InMemoryFormat.BINARY);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingStatisticsEnabledOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setStatisticsEnabled(true);
+    public void setManagementOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setManagementEnabled(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingQuorumNameOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setQuorumName("my-quorum");
+    public void setStatisticsEnabledOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setStatisticsEnabled(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMergePolicyOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setMergePolicy("my-merge-policy");
+    public void setQuorumNameOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setQuorumName("my-quorum");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEvictionConfigOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setEvictionConfig(null);
+    public void setMergePolicyOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setMergePolicy("my-merge-policy");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingWanReplicationRefOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setWanReplicationRef(null);
+    public void setEvictionConfigOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setEvictionConfig(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingCacheEntryListenersOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setCacheEntryListeners(null);
+    public void setWanReplicationRefOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setWanReplicationRef(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void addingCacheEntryListenerToReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).addEntryListenerConfig(null);
+    public void setCacheEntryListenersOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setCacheEntryListeners(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingCacheLoaderFactoryOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setCacheLoaderFactory("cache-loader-factory");
+    public void addCacheEntryListenerToReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().addEntryListenerConfig(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingCacheWriterFactoryOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setCacheWriterFactory("cache-writer-factory");
+    public void setCacheLoaderFactoryOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setCacheLoaderFactory("cache-loader-factory");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingExpiryPolicyFactoryOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setExpiryPolicyFactory("my-expiry-policy-factory");
+    public void setCacheWriterFactoryOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setCacheWriterFactory("cache-writer-factory");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingExpiryPolicyFactoryConfigOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setExpiryPolicyFactoryConfig(null);
+    public void setExpiryPolicyFactoryOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setExpiryPolicyFactory("my-expiry-policy-factory");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPartitionLostListenerConfigsOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setPartitionLostListenerConfigs(null);
+    public void setExpiryPolicyFactoryConfigOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setExpiryPolicyFactoryConfig(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void addingPartitionLostListenerConfigToReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).addCachePartitionLostListenerConfig(null);
+    public void setPartitionLostListenerConfigsOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setPartitionLostListenerConfigs(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingDisablePerEntryInvalidationEventsOfReadOnlyCacheSimpleConfigShouldFail() {
-        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setDisablePerEntryInvalidationEvents(true);
+    public void addPartitionLostListenerConfigToReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().addCachePartitionLostListenerConfig(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setDisablePerEntryInvalidationEventsOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setDisablePerEntryInvalidationEvents(true);
     }
 }

@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -25,16 +26,16 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 import java.util.List;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MultiMapConfigReadOnlyTest {
 
-    private MultiMapConfigReadOnly getMultiMapConfigReadOnly() {
+    private MultiMapConfig getReadOnlyConfig() {
         return new MultiMapConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingEntryListenerConfigsOfReadOnlyMultiMapConfigShouldReturnUnmodifiable() {
+    public void getEntryListenerConfigsOfReadOnlyMultiMapConfigShouldReturnUnmodifiable() {
         MultiMapConfig config = new MultiMapConfig()
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
@@ -44,52 +45,52 @@ public class MultiMapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingNameOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setName("my-multimap");
+    public void setNameOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setName("my-multimap");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingValueCollectionTypeViaStringOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setValueCollectionType("SET");
+    public void setValueCollectionTypeViaStringOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setValueCollectionType("SET");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingValueCollectionTypeOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+    public void setValueCollectionTypeOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void addingEntryListenerConfigOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().addEntryListenerConfig(new EntryListenerConfig());
+    public void addEntryListenerConfigOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().addEntryListenerConfig(new EntryListenerConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingsEntryListenerConfigsOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setEntryListenerConfigs(Collections.singletonList(new EntryListenerConfig()));
+    public void setEntryListenerConfigsOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setEntryListenerConfigs(Collections.singletonList(new EntryListenerConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingBinaryOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setBinary(true);
+    public void setBinaryOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setBinary(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingSyncBackupCountOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setSyncBackupCount(1);
+    public void setSyncBackupCountOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setSyncBackupCount(1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingBackupCountOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setBackupCount(1);
+    public void setBackupCountOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setBackupCount(1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingAsyncBackupCountOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setAsyncBackupCount(1);
+    public void setAsyncBackupCountOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setAsyncBackupCount(1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingStatisticsEnabledOfReadOnlyMultiMapConfigShouldFail() {
-        getMultiMapConfigReadOnly().setStatisticsEnabled(true);
+    public void setStatisticsEnabledOfReadOnlyMultiMapConfigShouldFail() {
+        getReadOnlyConfig().setStatisticsEnabled(true);
     }
 }

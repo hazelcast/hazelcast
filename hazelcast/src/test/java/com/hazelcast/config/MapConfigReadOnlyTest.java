@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,16 +28,16 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertNull;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MapConfigReadOnlyTest {
 
-    private MapConfigReadOnly getMapConfigReadOnly() {
+    private MapConfig getReadOnlyConfig() {
         return new MapConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingMaxSizeConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getMaxSizeConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig();
 
         MaxSizeConfig maxSizeConfig = config.getAsReadOnly().getMaxSizeConfig();
@@ -44,7 +45,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test
-    public void gettingMaxSizeConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
+    public void getMaxSizeConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
         MapConfig config = new MapConfig()
                 .setMaxSizeConfig(null);
 
@@ -53,7 +54,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingWanReplicationRefOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getWanReplicationRefOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
                 .setWanReplicationRef(new WanReplicationRef());
 
@@ -62,7 +63,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test
-    public void gettingWanReplicationRefOfReadOnlyMapConfigShouldReturnNullIfWanReplicationRefIsNull() {
+    public void getWanReplicationRefOfReadOnlyMapConfigShouldReturnNullIfWanReplicationRefIsNull() {
         MapConfig config = new MapConfig()
                 .setWanReplicationRef(null);
 
@@ -71,7 +72,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingEntryListenerConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getEntryListenerConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
@@ -81,7 +82,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingPartitionLostListenerConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getPartitionLostListenerConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
                 .addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig())
                 .addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig());
@@ -91,7 +92,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingMapIndexConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getMapIndexConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
                 .addMapIndexConfig(new MapIndexConfig())
                 .addMapIndexConfig(new MapIndexConfig());
@@ -101,7 +102,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingPartitioningStrategyConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getPartitioningStrategyConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig());
 
@@ -110,7 +111,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test
-    public void gettingPartitioningStrategyConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
+    public void getPartitioningStrategyConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
         MapConfig config = new MapConfig()
                 .setPartitioningStrategyConfig(null);
 
@@ -119,7 +120,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingMapStoreConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getMapStoreConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
                 .setMapStoreConfig(new MapStoreConfig());
 
@@ -128,7 +129,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test
-    public void gettingMapStoreConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
+    public void getMapStoreConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
         MapConfig config = new MapConfig()
                 .setMapStoreConfig(null);
 
@@ -137,7 +138,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingNearCacheConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getNearCacheConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
                 .setNearCacheConfig(new NearCacheConfig());
 
@@ -146,7 +147,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test
-    public void gettingNearCacheConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
+    public void getNearCacheConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
         MapConfig config = new MapConfig()
                 .setNearCacheConfig(null);
 
@@ -155,7 +156,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void gettingQueryCacheConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getQueryCacheConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
                 .addQueryCacheConfig(new QueryCacheConfig("myQueryCache1"))
                 .addQueryCacheConfig(new QueryCacheConfig("myQueryCache2"));
@@ -165,147 +166,147 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingHotRestartConfigOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setHotRestartConfig(new HotRestartConfig());
+    public void setHotRestartConfigOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setHotRestartConfig(new HotRestartConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingNameOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setName("myMap");
+    public void setNameOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setName("myMap");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingInMemoryFormatOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setInMemoryFormat(InMemoryFormat.OBJECT);
+    public void setInMemoryFormatOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setInMemoryFormat(InMemoryFormat.OBJECT);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingBackupCountOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setBackupCount(1);
+    public void setBackupCountOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setBackupCount(1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingAsyncBackupCountOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setAsyncBackupCount(1);
+    public void setAsyncBackupCountOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setAsyncBackupCount(1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEvictionPercentageOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setEvictionPercentage(65);
+    public void setEvictionPercentageOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setEvictionPercentage(65);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMinEvictionCheckMillisOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setMinEvictionCheckMillis(23);
+    public void setMinEvictionCheckMillisOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setMinEvictionCheckMillis(23);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingTimeToLiveSecondsOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setTimeToLiveSeconds(42);
+    public void setTimeToLiveSecondsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setTimeToLiveSeconds(42);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMaxIdleSecondsOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setMaxIdleSeconds(23);
+    public void setMaxIdleSecondsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setMaxIdleSeconds(23);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMaxSizeConfigOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setMaxSizeConfig(new MaxSizeConfig());
+    public void setMaxSizeConfigOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setMaxSizeConfig(new MaxSizeConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEvictionPolicyOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setEvictionPolicy(EvictionPolicy.NONE);
+    public void setEvictionPolicyOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setEvictionPolicy(EvictionPolicy.NONE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMapEvictionPolicyOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setMapEvictionPolicy(null);
+    public void setMapEvictionPolicyOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setMapEvictionPolicy(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMapStoreConfigOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setMapStoreConfig(new MapStoreConfig());
+    public void setMapStoreConfigOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setMapStoreConfig(new MapStoreConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingNearCacheConfigOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setNearCacheConfig(new NearCacheConfig());
+    public void setNearCacheConfigOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setNearCacheConfig(new NearCacheConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMergePolicyOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setMergePolicy("myMergePolicy");
+    public void setMergePolicyOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setMergePolicy("myMergePolicy");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingStatisticsEnabledOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setStatisticsEnabled(true);
+    public void setStatisticsEnabledOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setStatisticsEnabled(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingReadBackupDataOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setReadBackupData(true);
+    public void setReadBackupDataOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setReadBackupData(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingWanReplicationRefOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setWanReplicationRef(new WanReplicationRef());
+    public void setWanReplicationRefOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setWanReplicationRef(new WanReplicationRef());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void addingEntryListenerConfigOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().addEntryListenerConfig(new EntryListenerConfig());
+    public void addEntryListenerConfigOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().addEntryListenerConfig(new EntryListenerConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEntryListenerConfigsOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setEntryListenerConfigs(singletonList(new EntryListenerConfig()));
+    public void setEntryListenerConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setEntryListenerConfigs(singletonList(new EntryListenerConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void addingMapIndexConfigOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().addMapIndexConfig(new MapIndexConfig());
+    public void addMapIndexConfigOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().addMapIndexConfig(new MapIndexConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMapIndexConfigsOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setMapIndexConfigs(singletonList(new MapIndexConfig()));
+    public void setMapIndexConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setMapIndexConfigs(singletonList(new MapIndexConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPartitioningStrategyConfigOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setPartitioningStrategyConfig(new PartitioningStrategyConfig());
+    public void setPartitioningStrategyConfigOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setPartitioningStrategyConfig(new PartitioningStrategyConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingOptimizeQueriesOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setOptimizeQueries(true);
+    public void setOptimizeQueriesOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setOptimizeQueries(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingPartitionLostListenerConfigsOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setPartitionLostListenerConfigs(singletonList(new MapPartitionLostListenerConfig()));
+    public void setPartitionLostListenerConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setPartitionLostListenerConfigs(singletonList(new MapPartitionLostListenerConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMapAttributeConfigsOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setMapAttributeConfigs(singletonList(new MapAttributeConfig()));
+    public void setMapAttributeConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setMapAttributeConfigs(singletonList(new MapAttributeConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingQueryCacheConfigsOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setQueryCacheConfigs(singletonList(new QueryCacheConfig()));
+    public void setQueryCacheConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setQueryCacheConfigs(singletonList(new QueryCacheConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingCacheDeserializedValuesOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
+    public void setCacheDeserializedValuesOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingQuorumNameOfReadOnlyMapConfigShouldFail() {
-        getMapConfigReadOnly().setQuorumName("myQuorum");
+    public void setQuorumNameOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setQuorumName("myQuorum");
     }
 }

@@ -16,42 +16,43 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class CacheEvictionConfigReadOnlyTest {
 
-    private EvictionConfig getEvictionConfigReadOnly() {
+    private EvictionConfig getReadOnlyConfig() {
         return new CacheEvictionConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingSizeOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setSize(100);
+    public void setSizeOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setSize(100);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingMaxSizePolicyOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setMaximumSizePolicy(null);
+    public void setMaxSizePolicyOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setMaximumSizePolicy(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingEvictionPolicyOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setEvictionPolicy(null);
+    public void setEvictionPolicyOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setEvictionPolicy(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingComparatorClassNameOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setComparatorClassName("mycomparator");
+    public void setComparatorClassNameOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setComparatorClassName("myComparatorClassName");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void settingComparatorOnReadOnlyCacheConfigShouldFail() {
-        getEvictionConfigReadOnly().setComparator(null);
+    public void setComparatorOnReadOnlyEvictionConfigShouldFail() {
+        getReadOnlyConfig().setComparator(null);
     }
 }
