@@ -40,9 +40,10 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     public static final HazelcastProperty INTERNAL_EXECUTOR_POOL_SIZE
             = new HazelcastProperty("hazelcast.client.internal.executor.pool.size", 3);
-    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
-    private final ILogger logger;
 
+    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
+
+    private final ILogger logger;
     private final ExecutorService userExecutor;
     private final ScheduledExecutorService internalExecutor;
 
@@ -66,7 +67,6 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
-
         userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
@@ -77,8 +77,6 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
-
-
     }
 
     public void executeInternal(Runnable runnable) {
@@ -111,12 +109,14 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     /**
-     * Utilized when given command needs to make a remote call. Response of remote call is not handled in runnable itself
-     * but rather in  execution callback so that executor is not blocked because of a remote operation
+     * Utilized when given command needs to make a remote call.
      *
-     * @param command
-     * @param delay
-     * @param unit
+     * The response of the remote call is not handled in the {@link Runnable} itself, but rather
+     * in the execution callback so that executor is not blocked because of a remote operation.
+     *
+     * @param command the {@link Runnable} to schedule
+     * @param delay   the delay for the scheduled execution
+     * @param unit    the {@link TimeUnit} of the delay
      * @return scheduledFuture
      */
     @Override

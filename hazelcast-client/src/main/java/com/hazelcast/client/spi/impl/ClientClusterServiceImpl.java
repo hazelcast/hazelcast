@@ -58,14 +58,13 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ClientClusterServiceImpl extends ClusterListenerSupport {
 
-    private final ILogger logger;
     private final AtomicReference<Map<Address, Member>> members = new AtomicReference<Map<Address, Member>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
     private final Object initialMembershipListenerMutex = new Object();
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         super(client, addressProviders);
-        logger = client.getLoggingService().getLogger(ClientClusterService.class);
+        ILogger logger = client.getLoggingService().getLogger(ClientClusterService.class);
         ClientConfig clientConfig = getClientConfig();
         List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         for (ListenerConfig listenerConfig : listenerConfigs) {
@@ -106,6 +105,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         return members.get().values();
     }
 
+    @Override
     public Collection<Member> getMembers(MemberSelector selector) {
         return new MemberSelectingCollection<Member>(getMemberList(), selector);
     }
@@ -129,7 +129,6 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
                 size++;
             }
         }
-
         return size;
     }
 
@@ -182,7 +181,6 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         if (registrationId == null) {
             throw new NullPointerException("registrationId can't be null");
         }
-
         return listeners.remove(registrationId) != null;
     }
 
@@ -247,6 +245,4 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
             listener.memberAttributeChanged(event);
         }
     }
-
-
 }

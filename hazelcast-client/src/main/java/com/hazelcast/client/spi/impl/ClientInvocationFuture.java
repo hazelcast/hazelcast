@@ -34,7 +34,6 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
                                   ClientMessage request, ILogger logger) {
-
         super(client.getClientExecutionService(), logger);
         this.request = request;
         this.invocation = invocation;

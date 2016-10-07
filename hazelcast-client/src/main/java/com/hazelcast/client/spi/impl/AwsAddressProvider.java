@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 /**
- * Aws Address Loader. Calls aws api to load ip addresses related to given credentials.
+ * Calls the AWS API to load ip addresses related to given credentials.
  */
 public class AwsAddressProvider implements AddressProvider {
 
@@ -54,7 +54,6 @@ public class AwsAddressProvider implements AddressProvider {
             addresses.addAll(AddressHelper.getSocketAddresses(privateAddress));
         }
         return addresses;
-
     }
 
     private Map<String, String> getLookupTable() {

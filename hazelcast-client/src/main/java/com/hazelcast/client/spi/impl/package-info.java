@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides util classes for com.hazelcast.client
+ * Provides util classes for the Hazelcast client SPI.
  */
 package com.hazelcast.client.spi.impl;

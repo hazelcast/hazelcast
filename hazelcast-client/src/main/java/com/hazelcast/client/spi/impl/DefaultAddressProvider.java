@@ -26,8 +26,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Default address provider of hazelcast
- * Loads addresses from hazelcast configuration
+ * Default address provider of Hazelcast.
+ *
+ * Loads addresses from the Hazelcast configuration.
  */
 public class DefaultAddressProvider implements AddressProvider {
 
@@ -35,7 +36,6 @@ public class DefaultAddressProvider implements AddressProvider {
 
     public DefaultAddressProvider(ClientNetworkConfig networkConfig) {
         this.networkConfig = networkConfig;
-
     }
 
     @Override

@@ -39,18 +39,20 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
- * ClientInvocation handles routing of a request from client
- * <p/>
- * 1) Where should request be send
- * 2) Should it be retried
- * 3) How many times it is retried
+ * Handles the routing of a request from a Hazelcast client.
+ *
+ * 1) Where should request be send?
+ * 2) Should it be retried?
+ * 3) How many times it is retried?
  */
 public class ClientInvocation implements Runnable {
 
     public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
+
     protected static final int UNASSIGNED_PARTITION = -1;
 
     protected final ClientInvocationFuture clientInvocationFuture;
+
     private final ILogger logger;
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
@@ -65,7 +67,6 @@ public class ClientInvocation implements Runnable {
     private boolean urgent;
     private long retryTimeoutPointInMillis;
     private EventHandler handler;
-
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage, int partitionId, Address address,
@@ -105,7 +106,6 @@ public class ClientInvocation implements Runnable {
                             Connection connection) {
         this(client, clientMessage, UNASSIGNED_PARTITION, null, connection);
     }
-
 
     public int getPartitionId() {
         return partitionId;
@@ -161,11 +161,9 @@ public class ClientInvocation implements Runnable {
             throw new IllegalArgumentException("response can't be null");
         }
         clientInvocationFuture.complete(clientMessage);
-
     }
 
     public void notifyException(Throwable exception) {
-
         if (!lifecycleService.isRunning()) {
             clientInvocationFuture.complete(new HazelcastClientNotActiveException(exception.getMessage(), exception));
             return;

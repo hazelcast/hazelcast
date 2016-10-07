@@ -36,6 +36,7 @@ import java.util.Set;
 public class ClientTransactionManagerServiceImpl implements ClientTransactionManagerService {
 
     private static final int RETRY_COUNT = 20;
+
     final HazelcastClientInstanceImpl client;
 
     private final LoadBalancer loadBalancer;
@@ -49,18 +50,22 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         return client;
     }
 
+    @Override
     public TransactionContext newTransactionContext() {
         return newTransactionContext(TransactionOptions.getDefault());
     }
 
+    @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
         return new TransactionContextProxy(this, options);
     }
 
+    @Override
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
         return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
+    @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         final TransactionContext context = newTransactionContext(options);
         context.beginTransaction();
@@ -83,13 +88,16 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         }
     }
 
+    @Override
     public TransactionContext newXATransactionContext(Xid xid, int timeoutInSeconds) {
         return new XATransactionContextProxy(this, xid, timeoutInSeconds);
     }
 
+    @Override
     public void shutdown() {
     }
 
+    @Override
     public String getGroupName() {
         final GroupConfig groupConfig = client.getClientConfig().getGroupConfig();
         if (groupConfig == null) {
@@ -126,9 +134,6 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
             }
             throw new IllegalStateException(msg);
         }
-
         return member.getAddress();
     }
-
-
 }

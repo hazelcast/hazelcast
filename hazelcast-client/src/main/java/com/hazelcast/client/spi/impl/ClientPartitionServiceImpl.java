@@ -45,31 +45,29 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * The {@link ClientPartitionService} implementation.
  */
-public final class ClientPartitionServiceImpl
-        implements ClientPartitionService {
+public final class ClientPartitionServiceImpl implements ClientPartitionService {
 
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
     private static final int PARTITION_WAIT_TIME = 1000;
-    private final ILogger logger;
+
     private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
+    private final ConcurrentHashMap<Integer, Address> partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
+    private final AtomicBoolean updating = new AtomicBoolean(false);
 
     private final HazelcastClientInstanceImpl client;
-
-    private final ConcurrentHashMap<Integer, Address> partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
-
-    private final AtomicBoolean updating = new AtomicBoolean(false);
+    private final ILogger logger;
 
     private volatile int partitionCount;
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        logger = client.getLoggingService().getLogger(ClientPartitionService.class);
+        this.logger = client.getLoggingService().getLogger(ClientPartitionService.class);
     }
 
     public void start() {
         ClientExecutionServiceImpl clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        // Use internal execution service for all partition refresh process (Do not use the user executor thread)
+        // use internal execution service for all partition refresh process (do not use the user executor thread)
         ExecutorService internalExecutor = clientExecutionService.getInternalExecutor();
         clientExecutionService.scheduleWithRepetition(new RefreshTask(internalExecutor), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
@@ -77,7 +75,7 @@ public final class ClientPartitionServiceImpl
     public void refreshPartitions() {
         ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         try {
-            // Use internal execution service for all partition refresh process (Do not use the user executor thread)
+            // use internal execution service for all partition refresh process (do not use the user executor thread)
             ExecutorService internalExecutor = executionService.getInternalExecutor();
             executionService.submitInternal(new RefreshTask(internalExecutor));
         } catch (RejectedExecutionException ignored) {
@@ -91,7 +89,6 @@ public final class ClientPartitionServiceImpl
                 throw new NoDataMemberInClusterException(
                         "Partitions can't be assigned since all nodes in the cluster are lite members");
             }
-
             try {
                 Thread.sleep(PARTITION_WAIT_TIME);
             } catch (InterruptedException e) {
@@ -199,8 +196,7 @@ public final class ClientPartitionServiceImpl
         return new PartitionImpl(partitionId);
     }
 
-    private final class PartitionImpl
-            implements Partition {
+    private final class PartitionImpl implements Partition {
 
         private final int partitionId;
 
@@ -208,10 +204,12 @@ public final class ClientPartitionServiceImpl
             this.partitionId = partitionId;
         }
 
+        @Override
         public int getPartitionId() {
             return partitionId;
         }
 
+        @Override
         public Member getOwner() {
             Address owner = getPartitionOwner(partitionId);
             if (owner != null) {
@@ -226,10 +224,11 @@ public final class ClientPartitionServiceImpl
         }
     }
 
-    private class RefreshTask implements Runnable {
-        private ExecutorService executionService;
+    private final class RefreshTask implements Runnable {
 
-        public RefreshTask(ExecutorService service) {
+        private final ExecutorService executionService;
+
+        private RefreshTask(ExecutorService service) {
             this.executionService = service;
         }
 
@@ -256,8 +255,9 @@ public final class ClientPartitionServiceImpl
             }
         }
     }
-    private class RefreshTaskCallback
-            implements ExecutionCallback<ClientMessage> {
+
+    private class RefreshTaskCallback implements ExecutionCallback<ClientMessage> {
+
         @Override
         public void onResponse(ClientMessage responseMessage) {
             try {

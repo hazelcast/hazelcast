@@ -23,12 +23,10 @@ import java.util.concurrent.atomic.AtomicLongArray;
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 
-
 public abstract class CallIdSequence {
 
     /**
      * Creates the next call-id.
-     * <p/>
      *
      * @return the generated callId.
      */
@@ -46,17 +44,17 @@ public abstract class CallIdSequence {
     /**
      * A {@link com.hazelcast.spi.impl.operationservice.impl.CallIdSequence} that provided backpressure by taking
      * the number in flight operations into account when a call-id needs to be determined.
-     * <p/>
+     *
      * It is possible to temporary exceed the capacity:
      * - due to system operations
      * - due to racy nature of checking if space is available and getting the next sequence.
-     * <p/>
      */
     public static final class CallIdSequenceFailFast extends CallIdSequence {
+
         private static final int INDEX_HEAD = 7;
         private static final int INDEX_TAIL = INDEX_HEAD + CACHE_LINE_LENGTH / LONG_SIZE_IN_BYTES;
 
-        // instead of using 2 AtomicLongs, we use an array if width of 3 cache lines to prevent any false sharing.
+        // instead of using two AtomicLongs, we use an array of width of 3 cache lines to prevent any false sharing
         private final AtomicLongArray longs = new AtomicLongArray(3 * CACHE_LINE_LENGTH / LONG_SIZE_IN_BYTES);
 
         private final int maxConcurrentInvocations;

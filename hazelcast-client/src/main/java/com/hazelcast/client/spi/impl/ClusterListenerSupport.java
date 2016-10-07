@@ -53,6 +53,7 @@ import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetD
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
+
     protected final HazelcastClientInstanceImpl client;
 
     private final Collection<AddressProvider> addressProviders;
@@ -62,6 +63,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     private ClientConnectionManager connectionManager;
     private ClientMembershipListener clientMembershipListener;
+
     private volatile Address ownerConnectionAddress;
     private volatile ClientPrincipal principal;
 
@@ -88,6 +90,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         connectionManager.addConnectionHeartbeatListener(this);
     }
 
+    @Override
     public Address getOwnerConnectionAddress() {
         return ownerConnectionAddress;
     }
@@ -172,8 +175,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config! "
-                + "The following addresses were tried:" + triedAddresses);
+        throw new IllegalStateException("Unable to connect to any address in the config!"
+                + " The following addresses were tried: " + triedAddresses);
     }
 
     private boolean connect(Set<InetSocketAddress> triedAddresses) throws Exception {

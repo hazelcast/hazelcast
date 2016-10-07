@@ -31,7 +31,5 @@ public class DefaultAddressTranslator implements AddressTranslator {
 
     @Override
     public void refresh() {
-
     }
-
 }

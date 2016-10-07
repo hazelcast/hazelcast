@@ -37,6 +37,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         this.loadBalancer = loadBalancer;
     }
 
+    @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
         final Address owner = partitionService.getPartitionOwner(partitionId);
         if (owner == null) {
@@ -111,5 +112,4 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         final Member member = client.getClientClusterService().getMember(target);
         return member != null;
     }
-
 }
