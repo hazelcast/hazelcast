@@ -19,78 +19,57 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.TaskScheduler;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.util.ConstructorFunction;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessors.createWriteBehindProcessor;
+import static com.hazelcast.map.impl.mapstore.MapDataStores.createWriteBehindStore;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+
 
 /**
  * Write behind map store manager.
  */
-public class WriteBehindManager implements MapStoreManager {
+public final class WriteBehindManager implements MapStoreManager {
 
-    private static final String EXECUTOR_NAME_PREFIX = "hz:scheduled:mapstore:";
+    private final ConstructorFunction<Integer, MapDataStore> mapDataStoreConstructor
+            = new ConstructorFunction<Integer, MapDataStore>() {
+        @Override
+        public MapDataStore createNew(Integer partitionId) {
+            return createWriteBehindStore(mapStoreContext, partitionId, writeBehindProcessor);
+        }
+    };
 
-    private static final int EXECUTOR_DEFAULT_QUEUE_CAPACITY = 10000;
-
-    private final TaskScheduler taskScheduler;
-
+    private final ConcurrentMap<Integer, MapDataStore> mapDataStores = new ConcurrentHashMap<Integer, MapDataStore>();
     private final WriteBehindProcessor writeBehindProcessor;
-
     private final StoreWorker storeWorker;
-
-    private final String executorName;
-
     private final MapStoreContext mapStoreContext;
 
     public WriteBehindManager(MapStoreContext mapStoreContext) {
         this.mapStoreContext = mapStoreContext;
-        this.writeBehindProcessor = newWriteBehindProcessor(mapStoreContext);
+        this.writeBehindProcessor = new WriteBehindProcessor(mapStoreContext);
+        this.writeBehindProcessor.addStoreListener(new InternalStoreListener(mapStoreContext));
         this.storeWorker = new StoreWorker(mapStoreContext, writeBehindProcessor);
-        this.executorName = EXECUTOR_NAME_PREFIX + mapStoreContext.getMapName();
-        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
-        this.taskScheduler = getTaskScheduler(mapServiceContext);
     }
 
     @Override
     public void start() {
-        taskScheduler.scheduleWithRepetition(storeWorker, 1, 1, TimeUnit.SECONDS);
+        storeWorker.start();
     }
 
     @Override
     public void stop() {
-        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        nodeEngine.getExecutionService().shutdownExecutor(executorName);
+        storeWorker.stop();
     }
 
-    //todo get this via constructor function.
     @Override
     public MapDataStore getMapDataStore(String mapName, int partitionId) {
-        return MapDataStores.createWriteBehindStore(mapStoreContext, partitionId, writeBehindProcessor);
-    }
-
-    private WriteBehindProcessor newWriteBehindProcessor(final MapStoreContext mapStoreContext) {
-        WriteBehindProcessor writeBehindProcessor = createWriteBehindProcessor(mapStoreContext);
-        StoreListener<DelayedEntry> storeListener = new InternalStoreListener(mapStoreContext);
-        writeBehindProcessor.addStoreListener(storeListener);
-        return writeBehindProcessor;
-    }
-
-    private TaskScheduler getTaskScheduler(MapServiceContext mapServiceContext) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.register(executorName, 1, EXECUTOR_DEFAULT_QUEUE_CAPACITY, ExecutorType.CACHED);
-        return executionService.getTaskScheduler(executorName);
+        return getOrPutIfAbsent(mapDataStores, partitionId, mapDataStoreConstructor);
     }
 
     /**
