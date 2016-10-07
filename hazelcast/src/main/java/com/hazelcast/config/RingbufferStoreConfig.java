@@ -131,7 +131,7 @@ public class RingbufferStoreConfig {
      */
     private static class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
 
-        public RingbufferStoreConfigReadOnly(RingbufferStoreConfig config) {
+        RingbufferStoreConfigReadOnly(RingbufferStoreConfig config) {
             super(config);
         }
 
