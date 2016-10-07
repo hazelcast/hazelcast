@@ -26,30 +26,38 @@ import com.hazelcast.nio.Address;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
 /**
- * AwsLookupTable loads ec2 ip addresses with given aws credentials.
- * Keeps a lookup table of private to public ip addresses.
+ * AwsAddressTranslator loads EC2 IP addresses with given AWS credentials.
+ *
+ * Keeps a lookup table of private to public IP addresses.
  */
 public class AwsAddressTranslator implements AddressTranslator {
 
     private final ILogger logger;
-    private volatile Map<String, String> privateToPublic = new HashMap<String, String>();
     private final AWSClient awsClient;
     private final boolean isInsideAws;
 
+    private volatile Map<String, String> privateToPublic = new HashMap<String, String>();
+
     public AwsAddressTranslator(ClientAwsConfig awsConfig, LoggingService loggingService) {
-        awsClient = new AWSClient(awsConfig);
-        isInsideAws = awsConfig.isInsideAws();
-        logger = loggingService.getLogger(AwsAddressTranslator.class);
+        this(new AWSClient(awsConfig), awsConfig, loggingService);
+    }
+
+    // just for testing
+    AwsAddressTranslator(AWSClient awsClient, ClientAwsConfig awsConfig, LoggingService loggingService) {
+        this.awsClient = awsClient;
+        this.isInsideAws = awsConfig.isInsideAws();
+        this.logger = loggingService.getLogger(AwsAddressTranslator.class);
     }
 
     /**
-     * @param address
-     * @return public address of network whose private address is given, if address
-     * not founds returns null.
+     * Translates an IP address from the private AWS network to the public network.
+     *
+     * @param address the private address to translate
+     * @return public address of network whose private address is given, if address not founds returns {@code null}.
      */
+    @Override
     public Address translate(Address address) {
         if (isInsideAws) {
             return address;
@@ -57,43 +65,44 @@ public class AwsAddressTranslator implements AddressTranslator {
         if (address == null) {
             return null;
         }
-        String publicAddress = getLookupTable().get(address.getHost());
+        String publicAddress = privateToPublic.get(address.getHost());
         if (publicAddress != null) {
-            return constructPrivateAddress(publicAddress, address);
+            return createAddressOrNull(publicAddress, address);
         }
 
-        // if it is already translated and cached, no need to refresh again.
+        // if it's already translated and cached, there is no need to refresh again
         if (privateToPublic.values().contains(address.getHost())) {
             return address;
         }
         refresh();
 
-        publicAddress = getLookupTable().get(address.getHost());
+        publicAddress = privateToPublic.get(address.getHost());
         if (publicAddress != null) {
-            return constructPrivateAddress(publicAddress, address);
+            return createAddressOrNull(publicAddress, address);
         }
 
         return null;
     }
 
-    private Address constructPrivateAddress(String privateAddress, Address address) {
-        try {
-            return new Address(privateAddress, address.getPort());
-        } catch (UnknownHostException e) {
-            return null;
-        }
-    }
-
-    private Map<String, String> getLookupTable() {
-        return privateToPublic;
-    }
-
+    @Override
     public void refresh() {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
+            logger.warning("AWS addresses failed to load: " + e.getMessage());
         }
     }
 
+    // just for testing
+    Map<String, String> getLookupTable() {
+        return privateToPublic;
+    }
+
+    private static Address createAddressOrNull(String hostAddress, Address portAddress) {
+        try {
+            return new Address(hostAddress, portAddress.getPort());
+        } catch (UnknownHostException e) {
+            return null;
+        }
+    }
 }
