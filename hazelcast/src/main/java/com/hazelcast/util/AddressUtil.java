@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 /**
- * AddressUtil contains Address helper methods
+ * AddressUtil contains Address helper methods.
  */
 public final class AddressUtil {
 
