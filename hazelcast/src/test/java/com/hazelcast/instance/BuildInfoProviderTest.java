@@ -74,6 +74,25 @@ public class BuildInfoProviderTest {
 
     }
 
+    @Test
+    public void testCalculateVersion() {
+        assertEquals(-1, BuildInfo.calculateVersion(null));
+        assertEquals(-1, BuildInfo.calculateVersion(""));
+        assertEquals(-1, BuildInfo.calculateVersion("a.3.7.5"));
+        assertEquals(-1, BuildInfo.calculateVersion("3.a.5"));
+        assertEquals(-1, BuildInfo.calculateVersion("3,7.5"));
+        assertEquals(-1, BuildInfo.calculateVersion("3.7,5"));
+        assertEquals(-1, BuildInfo.calculateVersion("10.99.RC1"));
+
+        assertEquals(30700, BuildInfo.calculateVersion("3.7-SNAPSHOT"));
+        assertEquals(30702, BuildInfo.calculateVersion("3.7.2"));
+        assertEquals(30702, BuildInfo.calculateVersion("3.7.2-SNAPSHOT"));
+        assertEquals(109902, BuildInfo.calculateVersion("10.99.2-SNAPSHOT"));
+        assertEquals(19930, BuildInfo.calculateVersion("1.99.30"));
+        assertEquals(109930, BuildInfo.calculateVersion("10.99.30-SNAPSHOT"));
+        assertEquals(109900, BuildInfo.calculateVersion("10.99-RC1"));
+    }
+
     @After
     public void cleanup() {
         System.clearProperty("hazelcast.build");

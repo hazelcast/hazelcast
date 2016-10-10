@@ -165,10 +165,7 @@ public class ReferenceObjects {
         if (!isEqual(stackTraceElement1.getFileName(), stackTraceElement2.getFileName())) {
             return false;
         }
-        if (!isEqual(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber())) {
-            return false;
-        }
-        return true;
+        return isEqual(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
 
     }
 
@@ -199,16 +196,20 @@ public class ReferenceObjects {
     }
 
     public static SimpleEntryView<Data, Data> anEntryView = new SimpleEntryView<Data, Data>(aData, aData);
-    public static Collection<JobPartitionState> jobPartitionStates = Collections.singletonList((JobPartitionState) new JobPartitionStateImpl(anAddress, JobPartitionState.State.MAPPING));
-    public static List<DistributedObjectInfo> distributedObjectInfos = Collections.singletonList(new DistributedObjectInfo(aString, aString));
+    public static Collection<JobPartitionState> jobPartitionStates = Collections
+            .singletonList((JobPartitionState) new JobPartitionStateImpl(anAddress, JobPartitionState.State.MAPPING));
+    public static List<DistributedObjectInfo> distributedObjectInfos = Collections
+            .singletonList(new DistributedObjectInfo(aString, aString));
     public static QueryCacheEventData aQueryCacheEventData = new DefaultQueryCacheEventData();
     public static Collection<QueryCacheEventData> queryCacheEventDatas = Collections.singletonList(aQueryCacheEventData);
-    public static Collection<CacheEventData> cacheEventDatas = Collections.singletonList((CacheEventData) new CacheEventDataImpl(aString, CacheEventType.COMPLETED, aData, aData, aData, true));
+    public static Collection<CacheEventData> cacheEventDatas = Collections
+            .singletonList((CacheEventData) new CacheEventDataImpl(aString, CacheEventType.COMPLETED, aData, aData, aData, true));
     public static Collection<Data> datas = Collections.singletonList(aData);
     public static Collection<Member> members = Collections.singletonList(aMember);
     public static Collection<String> strings = Collections.singletonList(aString);
     public static Xid anXid = new SerializableXID(1, aString.getBytes(), aString.getBytes());
-    public static List<Map.Entry<Data, Data>> aListOfEntry = Collections.<Map.Entry<Data, Data>>singletonList(new AbstractMap.SimpleEntry<Data, Data>(aData, aData));
+    public static List<Map.Entry<Data, Data>> aListOfEntry = Collections.<Map.Entry<Data, Data>>singletonList(
+            new AbstractMap.SimpleEntry<Data, Data>(aData, aData));
 
     public static Throwable[] throwables_1_0 = {new CacheException(aString),
             new CacheLoaderException(aString),

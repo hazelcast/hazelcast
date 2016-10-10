@@ -1,33 +1,43 @@
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.cache.impl.CacheEventData;
+import com.hazelcast.cache.impl.CacheEventDataImpl;
+import com.hazelcast.cache.impl.CacheEventType;
+import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.*;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
+import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
+
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aBoolean;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByte;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfEntry;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aLong;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMember;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPartitionTable;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aQueryCacheEventData;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aString;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anAddress;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anInt;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anXid;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.cacheEventDatas;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.datas;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.distributedObjectInfos;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.jobPartitionStates;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.members;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheEventDatas;
+import java.lang.reflect.Array;
+import java.net.UnknownHostException;
+import javax.transaction.xa.Xid;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+
 import static org.junit.Assert.assertTrue;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -37,7 +47,7 @@ public class EncodeDecodeCompatibilityNullTest {
     public void test() {
         {
             ClientMessage clientMessage = ClientAuthenticationCodec
-                    .encodeRequest(aString, aString, null, null, aBoolean, aString, aByte);
+                    .encodeRequest(aString, aString, null, null, aBoolean, aString, aByte, aString);
             ClientAuthenticationCodec.RequestParameters params = ClientAuthenticationCodec
                     .decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.username));
@@ -47,9 +57,10 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aBoolean, params.isOwnerConnection));
             assertTrue(isEqual(aString, params.clientType));
             assertTrue(isEqual(aByte, params.serializationVersion));
+            assertTrue(isEqual(aString, params.clientHazelcastVersion));
         }
         {
-            ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(aByte, null, null, null, aByte);
+            ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(aByte, null, null, null, aByte, aString);
             ClientAuthenticationCodec.ResponseParameters params = ClientAuthenticationCodec
                     .decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aByte, params.status));
@@ -57,10 +68,11 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(null, params.uuid));
             assertTrue(isEqual(null, params.ownerUuid));
             assertTrue(isEqual(aByte, params.serializationVersion));
+            assertTrue(isEqual(aString, params.serverHazelcastVersion));
         }
         {
             ClientMessage clientMessage = ClientAuthenticationCustomCodec
-                    .encodeRequest(aData, null, null, aBoolean, aString, aByte);
+                    .encodeRequest(aData, null, null, aBoolean, aString, aByte, aString);
             ClientAuthenticationCustomCodec.RequestParameters params = ClientAuthenticationCustomCodec
                     .decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aData, params.credentials));
@@ -69,9 +81,10 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aBoolean, params.isOwnerConnection));
             assertTrue(isEqual(aString, params.clientType));
             assertTrue(isEqual(aByte, params.serializationVersion));
+            assertTrue(isEqual(aString, params.clientHazelcastVersion));
         }
         {
-            ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, null, aByte);
+            ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, null, aByte, aString);
             ClientAuthenticationCustomCodec.ResponseParameters params = ClientAuthenticationCustomCodec
                     .decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aByte, params.status));
@@ -79,6 +92,7 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(null, params.uuid));
             assertTrue(isEqual(null, params.ownerUuid));
             assertTrue(isEqual(aByte, params.serializationVersion));
+            assertTrue(isEqual(aString, params.serverHazelcastVersion));
         }
         {
             ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(aBoolean);
@@ -4953,6 +4967,33 @@ public class EncodeDecodeCompatibilityNullTest {
                     .decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(null, params.response));
         }
+        {
+            ClientMessage clientMessage = CardinalityEstimatorAddCodec.encodeRequest(aString, aLong);
+            CardinalityEstimatorAddCodec.RequestParameters params = CardinalityEstimatorAddCodec
+                    .decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.hash));
+        }
+        {
+            ClientMessage clientMessage = CardinalityEstimatorAddCodec.encodeResponse();
+            CardinalityEstimatorAddCodec.ResponseParameters params = CardinalityEstimatorAddCodec
+                    .decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+        }
+        {
+            ClientMessage clientMessage = CardinalityEstimatorEstimateCodec.encodeRequest(aString);
+            CardinalityEstimatorEstimateCodec.RequestParameters params = CardinalityEstimatorEstimateCodec
+                    .decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+        }
+        {
+            ClientMessage clientMessage = CardinalityEstimatorEstimateCodec.encodeResponse(aLong);
+            CardinalityEstimatorEstimateCodec.ResponseParameters params = CardinalityEstimatorEstimateCodec
+                    .decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aLong, params.response));
+        }
     }
 }
+
+
+
 
