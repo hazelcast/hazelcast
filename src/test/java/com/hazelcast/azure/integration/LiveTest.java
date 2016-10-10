@@ -39,6 +39,7 @@ import com.microsoft.azure.management.resources.ResourceManagementClient;
 import com.microsoft.azure.management.resources.ResourceManagementService;
 import com.microsoft.azure.management.resources.ResourceGroupOperations;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,8 +55,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Ignore
+// This test will be used for manual integration test.
+// It deploys machine to azure then checks metadata using AzureDiscoveryStrategy
 public class LiveTest extends HazelcastTestSupport {
 
     public static final String CLIENT_ID   =  System.getProperty("test.azure.client-id");
