@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProgressTracker;
 import com.hazelcast.util.Preconditions;
@@ -25,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.RandomAccess;
 
 import static com.hazelcast.jet2.impl.TaskletResult.DONE;
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
@@ -37,10 +37,10 @@ import static java.util.stream.Collectors.toList;
 public class ProcessorTasklet implements Tasklet {
 
     private final Processor processor;
-    private final List<ArrayList<InboundEdgeStream>> prioritizedQueueHeads;
-    private CircularCursor<InboundEdgeStream> queueHeadCursor;
+    private final List<ArrayList<InboundEdgeStream>> prioritizedInboundStreams;
+    private CircularCursor<InboundEdgeStream> inboundStreamCursor;
     private final ArrayDequeWithObserver inbox;
-    private final Outbox outbox;
+    private final ArrayDequeOutbox outbox;
     private final OutboundEdgeStream[] outboundStreams;
     private final ProgressTracker progTracker = new ProgressTracker();
 
@@ -52,16 +52,16 @@ public class ProcessorTasklet implements Tasklet {
     ) {
         Preconditions.checkNotNull(processor, "processor");
         this.processor = processor;
-        this.prioritizedQueueHeads = inboundStreams
+        this.prioritizedInboundStreams = inboundStreams
                 .stream()
                 .collect(groupingBy(InboundEdgeStream::priority, toCollection(ArrayList::new)))
                 .entrySet().stream()
                 .sorted(comparingByKey())
                 .map(Entry::getValue).collect(toList());
         this.inbox = new ArrayDequeWithObserver();
-        this.outbox = new Outbox(outboundStreams.size());
+        this.outbox = new ArrayDequeOutbox(outboundStreams.size());
         this.outboundStreams = outboundStreams.toArray(new OutboundEdgeStream[inboundStreams.size()]);
-        popQueueHeadGroup();
+        popInboundStreamGroup();
     }
 
     @Override
@@ -71,14 +71,7 @@ public class ProcessorTasklet implements Tasklet {
         if (progTracker.isDone()) {
             completeIfNeeded();
         } else if (!inbox.isEmpty()) {
-            final int inboundOrdinal = selectedInboundStream.ordinal();
-            for (Object item; (item = inbox.peek()) != null && !outbox.isHighWater();) {
-                progTracker.update(MADE_PROGRESS);
-                if (!processor.process(inboundOrdinal, item)) {
-                    break;
-                }
-                inbox.remove();
-            }
+            tryProcess();
         } else if (selectedInboundStream.isDone()) {
             progTracker.update(MADE_PROGRESS);
             if (processor.complete(selectedInboundStream.ordinal())) {
@@ -94,29 +87,40 @@ public class ProcessorTasklet implements Tasklet {
             progTracker.update(NO_PROGRESS);
             return;
         }
-        if (queueHeadCursor == null) {
+        if (inboundStreamCursor == null) {
             return;
         }
-        final InboundEdgeStream first = queueHeadCursor.value();
+        final InboundEdgeStream first = inboundStreamCursor.value();
         TaskletResult result;
         do {
-            selectedInboundStream = queueHeadCursor.value();
+            selectedInboundStream = inboundStreamCursor.value();
             result = selectedInboundStream.drainAvailableItemsInto(inbox);
             progTracker.update(result);
             if (result.isDone()) {
-                queueHeadCursor.remove();
+                inboundStreamCursor.remove();
             }
-            if (!queueHeadCursor.advance()) {
-                popQueueHeadGroup();
+            if (!inboundStreamCursor.advance()) {
+                popInboundStreamGroup();
                 break;
             }
-        } while (!result.isMadeProgress() && queueHeadCursor.value() != first);
+        } while (!result.isMadeProgress() && inboundStreamCursor.value() != first);
         progTracker.notDone();
     }
 
-    private void popQueueHeadGroup() {
-        this.queueHeadCursor = !prioritizedQueueHeads.isEmpty()
-                ? new CircularCursor<>(prioritizedQueueHeads.remove(0)) : null;
+    private void tryProcess() {
+        final int inboundOrdinal = selectedInboundStream.ordinal();
+        for (Object item; (item = inbox.peek()) != null && !outbox.isHighWater();) {
+            progTracker.update(MADE_PROGRESS);
+            if (!processor.process(inboundOrdinal, item)) {
+                break;
+            }
+            inbox.remove();
+        }
+    }
+
+    private void popInboundStreamGroup() {
+        this.inboundStreamCursor = !prioritizedInboundStreams.isEmpty()
+                ? new CircularCursor<>(prioritizedInboundStreams.remove(0)) : null;
     }
 
     private void completeIfNeeded() {
@@ -132,13 +136,15 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private void offerPendingOutput() {
+        nextOutboundStream:
         for (int i = 0; i < outbox.queueCount(); i++) {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null; ) {
                 if (!outboundStreams[i].offer(item)) {
                     progTracker.notDone();
-                    return;
+                    continue nextOutboundStream;
                 }
+                q.remove();
                 progTracker.update(MADE_PROGRESS);
             }
         }

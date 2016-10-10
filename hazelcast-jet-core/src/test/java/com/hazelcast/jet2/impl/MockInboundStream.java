@@ -31,11 +31,17 @@ public class MockInboundStream implements InboundEdgeStream {
 
     private final int chunkSize;
     private final List<Object> mockData;
+    private final int ordinal;
     private int dataIndex;
     private boolean paused;
     private boolean done;
 
-    public MockInboundStream(int chunkSize, List<?> mockData) {
+    public MockInboundStream(List<?> mockData, int chunkSize) {
+        this(0, mockData, chunkSize);
+    }
+
+    public MockInboundStream(int ordinal, List<?> mockData, int chunkSize) {
+        this.ordinal = ordinal;
         this.chunkSize = chunkSize;
         this.mockData = new ArrayList<>(mockData);
         this.dataIndex = 0;
@@ -79,7 +85,7 @@ public class MockInboundStream implements InboundEdgeStream {
 
     @Override
     public int ordinal() {
-        return 0;
+        return ordinal;
     }
 
     @Override

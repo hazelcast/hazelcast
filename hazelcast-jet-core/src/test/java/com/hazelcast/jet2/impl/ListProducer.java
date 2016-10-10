@@ -66,7 +66,7 @@ public class ListProducer implements Processor {
         }
 
         for (int i = 0; i < batchSize && iterator.hasNext(); i++) {
-            outbox.queueWithOrdinal(0).add(iterator.next());
+            outbox.add(iterator.next());
         }
         completed = !iterator.hasNext();
         return completed;

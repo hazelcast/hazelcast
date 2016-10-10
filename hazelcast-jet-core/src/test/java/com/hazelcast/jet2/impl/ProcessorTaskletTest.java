@@ -27,7 +27,6 @@ import org.junit.experimental.categories.Category;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -53,7 +52,7 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testSingleChunk_when_singleOutput() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(10, list);
+        MockInboundStream input1 = new MockInboundStream(list, 10);
         MockOutboundStream output1 = new MockOutboundStream(10);
 
         inboundStreams.add(input1);
@@ -70,7 +69,7 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testSingleChunk_when_multipleOutputs() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(10, list);
+        MockInboundStream input1 = new MockInboundStream(list, 10);
         MockOutboundStream output1 = new MockOutboundStream(10);
         MockOutboundStream output2 = new MockOutboundStream(10);
 
@@ -90,7 +89,7 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testProgress_when_multipleChunks() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(4, list);
+        MockInboundStream input1 = new MockInboundStream(list, 4);
         MockOutboundStream output1 = new MockOutboundStream(10);
 
         inboundStreams.add(input1);
@@ -109,9 +108,9 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testProgress_when_multipleInputs() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(4, Arrays.asList(0, 1, 2, 3));
-        MockInboundStream input2 = new MockInboundStream(4, Arrays.asList(4, 5, 6, 7));
-        MockInboundStream input3 = new MockInboundStream(4, Arrays.asList(8, 9));
+        MockInboundStream input1 = new MockInboundStream(Arrays.asList(0, 1, 2, 3), 4);
+        MockInboundStream input2 = new MockInboundStream(Arrays.asList(4, 5, 6, 7), 4);
+        MockInboundStream input3 = new MockInboundStream(Arrays.asList(8, 9), 4);
         MockOutboundStream output1 = new MockOutboundStream(10);
 
         inboundStreams.add(input1);
@@ -132,7 +131,7 @@ public class ProcessorTaskletTest {
 
     @Test
     public void testProgress_when_pendingInputAndOutputEmpty() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(4, list);
+        MockInboundStream input1 = new MockInboundStream(list, 4);
         MockOutboundStream output1 = new MockOutboundStream(10);
 
         inboundStreams.add(input1);
@@ -154,7 +153,7 @@ public class ProcessorTaskletTest {
     }
 
     private void initProcessor() {
-        processor.init(new ProcessorContextImpl(), new Outbox(outboundStreams.size()));
+        processor.init(new ProcessorContextImpl(), new ArrayDequeOutbox(outboundStreams.size()));
     }
 
     private static class TestProcessor implements Processor {
@@ -172,7 +171,7 @@ public class ProcessorTaskletTest {
             if (paused) {
                 return false;
             }
-            outbox.queueWithOrdinal(ordinal).add(item);
+            outbox.add(ordinal, item);
             return true;
         }
 

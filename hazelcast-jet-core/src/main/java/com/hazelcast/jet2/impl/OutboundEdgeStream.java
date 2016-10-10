@@ -29,5 +29,5 @@ public interface OutboundEdgeStream {
      */
     boolean offer(Object item);
 
-    int getOrdinal();
+    int ordinal();
 }

@@ -16,41 +16,27 @@
 
 package com.hazelcast.jet2.impl;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
-public class MockOutboundStream implements OutboundEdgeStream {
+/**
+ * Javadoc pending.
+ */
+public class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
+    private final ConcurrentConveyor<Object> conveyor;
+    private final int queueIndex;
 
-    private final ArrayList<Object> buffer;
-    private final int capacity;
-
-    public MockOutboundStream(int capacity) {
-        this.capacity = capacity;
-        this.buffer = new ArrayList<>(capacity);
+    public ConcurrentOutboundEdgeStream(ConcurrentConveyor<Object> conveyor, int queueIndex) {
+        this.conveyor = conveyor;
+        this.queueIndex = queueIndex;
     }
 
     @Override
     public boolean offer(Object item) {
-        if (buffer.size() == capacity) {
-            return false;
-        }
-        buffer.add(item);
-        return true;
+        return conveyor.offer(queueIndex, item);
     }
 
     @Override
     public int ordinal() {
         return 0;
     }
-
-    public List<Object> drain() {
-        List<Object> copy = new ArrayList<>(this.buffer);
-        this.buffer.clear();
-        return copy;
-    }
-
-    public List<Object> getBuffer() {
-        return buffer;
-    }
-
 }

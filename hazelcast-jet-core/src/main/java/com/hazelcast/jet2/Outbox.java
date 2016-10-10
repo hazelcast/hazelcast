@@ -16,30 +16,10 @@
 
 package com.hazelcast.jet2;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Queue;
-
 /**
  * Javadoc pending.
  */
-public class Outbox {
-    private final ArrayDeque<Object>[] queues;
-
-    public Outbox(int length) {
-        this.queues = new ArrayDeque[length];
-        Arrays.setAll(queues, i -> new ArrayDeque());
-    }
-
-    public boolean isHighWater() {
-        return false;
-    }
-
-    public int queueCount() {
-        return queues.length;
-    }
-
-    public Queue<Object> queueWithOrdinal(int ordinal) {
-        return queues[ordinal];
-    }
+public interface Outbox {
+    void add(Object item);
+    void add(int ordinal, Object item);
 }

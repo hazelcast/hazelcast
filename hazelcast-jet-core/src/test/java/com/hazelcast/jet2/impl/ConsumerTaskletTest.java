@@ -29,11 +29,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.hazelcast.jet2.impl.TaskletResult.DONE;
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
-import static com.hazelcast.jet2.impl.TaskletResult.WAS_ALREADY_DONE;
+import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -58,7 +57,7 @@ public class ConsumerTaskletTest {
     @Test
     public void when_call_then_madeProgress() throws Exception {
         // Given
-        MockInboundStream stream1 = new MockInboundStream(4, mockInput);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, 4);
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
 
@@ -75,7 +74,7 @@ public class ConsumerTaskletTest {
     public void when_exhaustInputAndComplete_then_done() throws Exception {
         // Given
         final int chunkSize = 4;
-        MockInboundStream stream1 = new MockInboundStream(chunkSize, mockInput);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, chunkSize);
         stream1.pushDoneItem();
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
@@ -85,7 +84,7 @@ public class ConsumerTaskletTest {
         for (int i = 0; i < MOCK_INPUT_LENGTH; i += chunkSize) {
             assertEquals(MADE_PROGRESS, tasklet.call());
         }
-        // Completes the inbound stream processing
+        // Complete the inbound stream processing
         assertEquals(MADE_PROGRESS, tasklet.call());
 
         // Then
@@ -98,7 +97,7 @@ public class ConsumerTaskletTest {
     @Test
     public void when_moreInputAvailable_then_consumeIt() throws Exception {
         // Given
-        MockInboundStream stream1 = new MockInboundStream(2 * MOCK_INPUT_LENGTH, mockInput);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, 2 * MOCK_INPUT_LENGTH);
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
         assertEquals(MADE_PROGRESS, tasklet.call());
@@ -109,11 +108,11 @@ public class ConsumerTaskletTest {
 
         // Then
 
-        // Processes the new items
+        // Process the new items
         assertEquals(MADE_PROGRESS, tasklet.call());
-        // Completes the inbound stream processing
+        // Complete the inbound stream processing
         assertEquals(MADE_PROGRESS, tasklet.call());
-        // Completes overall processing
+        // Complete overall processing
         assertEquals(DONE, tasklet.call());
 
         assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), consumer.getList());
@@ -121,27 +120,41 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_when_singleInputNoProgress() throws Exception {
-        MockInboundStream stream1 = new MockInboundStream(mockInput.size(), mockInput);
+    public void when_dataNotAvailable_then_noProgress() throws Exception {
+        // Given
+        MockInboundStream stream1 = new MockInboundStream(mockInput, mockInput.size() / 2);
+        stream1.pushDoneItem();
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
-
         assertEquals(MADE_PROGRESS, tasklet.call());
+
+        // When
         stream1.pause();
-        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+
+        // Then
+        assertEquals(NO_PROGRESS, tasklet.call());
         assertFalse("isComplete", consumer.isComplete());
     }
 
     @Test
     public void testProgress_when_multipleInput() throws Exception {
-        MockInboundStream stream1 = new MockInboundStream(mockInput.size(), mockInput);
-        MockInboundStream stream2 = new MockInboundStream(mockInput.size(), mockInput);
+        // Given
+        MockInboundStream stream1 = new MockInboundStream(0, mockInput, mockInput.size());
+        MockInboundStream stream2 = new MockInboundStream(1, mockInput, mockInput.size());
+        stream1.pushDoneItem();
+        stream2.pushDoneItem();
         inboundStreams.add(stream1);
         inboundStreams.add(stream2);
         Tasklet tasklet = createTasklet();
 
-        assertEquals(MADE_PROGRESS, tasklet.call());
-        assertEquals(MADE_PROGRESS, tasklet.call());
+        // When
+        final TaskletResult result1 = tasklet.call();
+        final TaskletResult result2 = tasklet.call();
+
+        // Then
+        assertEquals(MADE_PROGRESS, result1);
+        assertEquals(MADE_PROGRESS, result2);
+        tasklet.call();
         assertTrue(tasklet.call().isDone());
 
         assertEquals(mockInput.size() * 2, consumer.getList().size());
@@ -150,8 +163,8 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_multipleInput_oneFinishedEarlier() throws Exception {
-        MockInboundStream stream1 = new MockInboundStream(2, Arrays.asList(1, 2));
-        MockInboundStream stream2 = new MockInboundStream(mockInput.size(), mockInput);
+        MockInboundStream stream1 = new MockInboundStream(Arrays.asList(1, 2), 2);
+        MockInboundStream stream2 = new MockInboundStream(mockInput, mockInput.size());
         inboundStreams.add(stream1);
         inboundStreams.add(stream2);
         Tasklet tasklet = createTasklet();
@@ -167,7 +180,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYields() throws Exception {
-        MockInboundStream stream1 = new MockInboundStream(10, mockInput);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, 10);
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
 
@@ -180,21 +193,21 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsOnSameItem() throws Exception {
-        MockInboundStream stream1 = new MockInboundStream(10, mockInput);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, 10);
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
 
         consumer.yieldOn(2);
         assertEquals(MADE_PROGRESS, tasklet.call());
         consumer.yieldOn(2);
-        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+        assertEquals(NO_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1), consumer.getList());
         assertFalse("isComplete", consumer.isComplete());
     }
 
     @Test
     public void testProgress_when_consumerYieldsAgain() throws Exception {
-        MockInboundStream stream1 = new MockInboundStream(10, mockInput);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, 10);
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
 
@@ -215,7 +228,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsAndThenRuns() throws Exception {
-        MockInboundStream stream1 = new MockInboundStream(10, mockInput);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, 10);
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
 
@@ -230,7 +243,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testProgress_when_consumerYieldsAndNoInput() throws Exception {
-        MockInboundStream stream1 = new MockInboundStream(3, mockInput);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, 3);
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
 
@@ -247,7 +260,7 @@ public class ConsumerTaskletTest {
 
     @Test
     public void testIsBlocking() {
-        inboundStreams.add(new MockInboundStream(10, mockInput));
+        inboundStreams.add(new MockInboundStream(mockInput, 10));
         ProcessorTasklet tasklet =
                 new ProcessorTasklet(new Processor() {
                     @Override
