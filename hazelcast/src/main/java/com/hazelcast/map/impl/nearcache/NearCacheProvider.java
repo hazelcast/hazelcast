@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper.wrapAsStaleReadPreventerNearCache;
 
 /**
  * Provides near cache specific functionality.
@@ -48,7 +49,9 @@ public class NearCacheProvider {
             SizeEstimator nearCacheSizeEstimator = mapContainer.getNearCacheSizeEstimator();
             NearCacheImpl nearCache = new NearCacheImpl(mapName, nodeEngine);
             nearCache.setNearCacheSizeEstimator(nearCacheSizeEstimator);
-            return nearCache;
+
+            int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
+            return wrapAsStaleReadPreventerNearCache(nearCache, partitionCount);
         }
     };
 

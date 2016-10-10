@@ -36,6 +36,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.EntryObject;
@@ -885,8 +886,14 @@ public class NearCacheTest extends HazelcastTestSupport {
         populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.SECONDS);
         pullEntriesToNearCache(map, mapSize);
 
+        int nearCacheSizeBeforeExpiration = ((NearCachedMapProxyImpl) map).getNearCache().size();
         waitUntilEvictionEventsReceived(latch);
-        assertNearCacheSize(mapSize, mapName, map);
+        // wait some extra time for possible events.
+        sleepSeconds(2);
+
+        int nearCacheSizeAfterExpiration = ((NearCachedMapProxyImpl) map).getNearCache().size();
+
+        assertEquals(nearCacheSizeBeforeExpiration, nearCacheSizeAfterExpiration);
     }
 
     protected void waitUntilEvictionEventsReceived(CountDownLatch latch) {

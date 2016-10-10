@@ -45,8 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @param <K>
  */
-public class ClientHeapNearCache<K>
-        implements NearCache<K, Object> {
+public class ClientHeapNearCache<K> implements NearCache<K, Object> {
 
     /**
      * Eviction factor
@@ -73,7 +72,6 @@ public class ClientHeapNearCache<K>
     private final Comparator<NearCacheRecord> selectedComparator;
 
     private volatile long lastCleanup;
-
 
     public ClientHeapNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;
@@ -250,7 +248,7 @@ public class ClientHeapNearCache<K>
 
     @Override
     public void destroy() {
-        cache.clear();
+        clear();
     }
 
     @Override
