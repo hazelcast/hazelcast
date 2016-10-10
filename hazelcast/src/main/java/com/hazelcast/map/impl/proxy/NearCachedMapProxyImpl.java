@@ -23,7 +23,9 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.ExecutionService;
@@ -39,6 +41,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * A server-side {@code IMap} implementation which is fronted by a near-cache.
@@ -49,6 +52,7 @@ import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected NearCache nearCache;
+    protected KeyStateMarker keyStateMarker;
     protected boolean cacheLocalEntries;
 
     public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
@@ -64,8 +68,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected void init() {
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        this.nearCache = nearCacheProvider.getOrCreateNearCache(name);
-        this.cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
+        nearCache = nearCacheProvider.getOrCreateNearCache(name);
+        keyStateMarker = getKeyStateMarker();
+        cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
     }
 
     // this operation returns the object in data format except
@@ -80,15 +85,29 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return value;
         }
 
+        boolean marked = keyStateMarker.tryMark(key);
+
         value = super.getInternal(key);
 
-        if (!isOwn(key) || cacheLocalEntries) {
-            nearCache.put(key, toData(value));
+        if (marked) {
+            tryToPutNearCache(key, value);
         }
 
         return value;
     }
 
+    private void tryToPutNearCache(Data key, Object value) {
+        try {
+            if (!isOwn(key) || cacheLocalEntries) {
+                nearCache.put(key, value);
+            }
+        } finally {
+            if (!keyStateMarker.tryUnmark(key)) {
+                invalidateCache(key);
+                keyStateMarker.forceUnmark(key);
+            }
+        }
+    }
 
     @Override
     protected ICompletableFuture<Data> getAsyncInternal(final Data key) {
@@ -103,13 +122,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                     getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
         }
 
+        final boolean marked = keyStateMarker.tryMark(key);
 
         ICompletableFuture<Data> future = super.getAsyncInternal(key);
         future.andThen(new ExecutionCallback<Data>() {
             @Override
             public void onResponse(Data response) {
-                if (!isOwn(key) || cacheLocalEntries) {
-                    nearCache.put(key, response);
+                if (marked) {
+                    tryToPutNearCache(key, response);
                 }
             }
 
@@ -126,100 +146,110 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        Data data = super.putInternal(key, value, ttl, timeunit);
         invalidateCache(key);
-        return super.putInternal(key, value, ttl, timeunit);
+        return data;
     }
 
     @Override
     protected boolean tryPutInternal(Data key, Data value, long timeout, TimeUnit timeunit) {
+        boolean putInternal = super.tryPutInternal(key, value, timeout, timeunit);
         invalidateCache(key);
-        return super.tryPutInternal(key, value, timeout, timeunit);
+        return putInternal;
     }
 
     @Override
     protected Data putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        Data data = super.putIfAbsentInternal(key, value, ttl, timeunit);
         invalidateCache(key);
-        return super.putIfAbsentInternal(key, value, ttl, timeunit);
+        return data;
     }
 
     @Override
     protected void putTransientInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        super.putTransientInternal(key, value, ttl, timeunit);
         invalidateCache(key);
+        super.putTransientInternal(key, value, ttl, timeunit);
     }
 
     @Override
     protected ICompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        ICompletableFuture<Data> future = super.putAsyncInternal(key, value, ttl, timeunit);
         invalidateCache(key);
-        return super.putAsyncInternal(key, value, ttl, timeunit);
+        return future;
     }
 
     @Override
     protected boolean replaceInternal(Data key, Data expect, Data update) {
+        boolean replaceInternal = super.replaceInternal(key, expect, update);
         invalidateCache(key);
-        return super.replaceInternal(key, expect, update);
+        return replaceInternal;
     }
 
     @Override
     protected Data replaceInternal(Data key, Data value) {
+        Data replaceInternal = super.replaceInternal(key, value);
         invalidateCache(key);
-        return super.replaceInternal(key, value);
+        return replaceInternal;
     }
 
     @Override
     protected void setInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        invalidateCache(key);
         super.setInternal(key, value, ttl, timeunit);
+        invalidateCache(key);
     }
 
     @Override
     protected boolean evictInternal(Data key) {
+        boolean evictInternal = super.evictInternal(key);
         invalidateCache(key);
-        return super.evictInternal(key);
+        return evictInternal;
     }
 
     @Override
     protected void evictAllInternal() {
-        nearCache.clear();
         super.evictAllInternal();
+        nearCache.clear();
     }
 
     @Override
     public void loadAllInternal(boolean replaceExistingValues) {
+        super.loadAllInternal(replaceExistingValues);
         if (replaceExistingValues) {
             nearCache.clear();
         }
-        super.loadAllInternal(replaceExistingValues);
     }
 
     @Override
     protected void loadInternal(Iterable keys, boolean replaceExistingValues) {
-        invalidateCache(keys);
         super.loadInternal(keys, replaceExistingValues);
+        invalidateCache(keys);
     }
 
     @Override
     protected Data removeInternal(Data key) {
+        Data data = super.removeInternal(key);
         invalidateCache(key);
-        return super.removeInternal(key);
+        return data;
     }
 
     @Override
     protected void deleteInternal(Data key) {
-        invalidateCache(key);
         super.deleteInternal(key);
+        invalidateCache(key);
     }
 
     @Override
     protected boolean removeInternal(Data key, Data value) {
+        boolean removeInternal = super.removeInternal(key, value);
         invalidateCache(key);
-        return super.removeInternal(key, value);
+        return removeInternal;
     }
 
     @Override
     protected boolean tryRemoveInternal(Data key, long timeout, TimeUnit timeunit) {
+        boolean removeInternal = super.tryRemoveInternal(key, timeout, timeunit);
         invalidateCache(key);
-        return super.tryRemoveInternal(key, timeout, timeunit);
+        return removeInternal;
     }
 
     @Override
@@ -242,6 +272,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     protected void getAllObjectInternal(List<Data> keys, List resultingKeyValuePairs) {
         getCachedValue(keys, resultingKeyValuePairs);
 
+        Map<Data, Boolean> keyStates = createHashMap(keys.size());
+        for (Data key : keys) {
+            keyStates.put(key, keyStateMarker.tryMark(key));
+        }
+
+
         int currentSize = resultingKeyValuePairs.size();
         super.getAllObjectInternal(keys, resultingKeyValuePairs);
 
@@ -250,8 +286,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             Data key = toData(resultingKeyValuePairs.get(i++));
             Data value = toData(resultingKeyValuePairs.get(i++));
 
-            if (!isOwn(key) || cacheLocalEntries) {
-                nearCache.put(key, value);
+            boolean marked = keyStates.get(key);
+            if (marked) {
+                tryToPutNearCache(key, value);
             }
         }
     }
@@ -267,20 +304,23 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     public Data executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
+        Data data = super.executeOnKeyInternal(key, entryProcessor);
         invalidateCache(key);
-        return super.executeOnKeyInternal(key, entryProcessor);
+        return data;
     }
 
     @Override
     public Map executeOnKeysInternal(Set<Data> keys, EntryProcessor entryProcessor) {
+        Map map = super.executeOnKeysInternal(keys, entryProcessor);
         invalidateCache(keys);
-        return super.executeOnKeysInternal(keys, entryProcessor);
+        return map;
     }
 
     @Override
     public ICompletableFuture executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+        ICompletableFuture future = super.executeOnKeyInternal(key, entryProcessor, callback);
         invalidateCache(key);
-        return super.executeOnKeyInternal(key, entryProcessor, callback);
+        return future;
     }
 
     @Override
@@ -344,5 +384,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     public NearCache getNearCache() {
         return nearCache;
+    }
+
+    public KeyStateMarker getKeyStateMarker() {
+        return ((StaleReadPreventerNearCacheWrapper) nearCache).getKeyStateMarker();
     }
 }
