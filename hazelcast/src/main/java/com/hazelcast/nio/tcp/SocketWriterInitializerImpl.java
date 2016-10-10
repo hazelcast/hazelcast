@@ -61,22 +61,22 @@ public class SocketWriterInitializerImpl implements SocketWriterInitializer<TcpI
 
     private void initOutputBuffer(TcpIpConnection connection, SocketWriter writer, String protocol) {
         IOService ioService = connection.getConnectionManager().getIoService();
-        int size = CLUSTER.equals(protocol)
+        int sizeKb = CLUSTER.equals(protocol)
                 ? ioService.getSocketSendBufferSize()
                 : ioService.getSocketClientReceiveBufferSize();
+        int size = KILO_BYTE * sizeKb;
 
-        ByteBuffer outputBuffer = newByteBuffer(size * KILO_BYTE, ioService.isSocketBufferDirect());
+        ByteBuffer outputBuffer = newByteBuffer(size, ioService.isSocketBufferDirect());
         if (CLUSTER.equals(protocol)) {
             outputBuffer.put(stringToBytes(CLUSTER));
-
         }
+
         writer.initOutputBuffer(outputBuffer);
 
         try {
             connection.setSendBufferSize(size);
         } catch (SocketException e) {
-            logger.finest("Failed to adjust TCP send buffer of " + connection + " to "
-                    + size + " B.", e);
+            logger.finest("Failed to adjust TCP send buffer of " + connection + " to " + size + " B.", e);
         }
     }
 }
