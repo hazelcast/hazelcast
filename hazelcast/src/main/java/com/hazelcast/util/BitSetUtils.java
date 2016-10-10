@@ -20,21 +20,19 @@ import java.util.BitSet;
 
 /**
  * Convenient method for BitSet manipulations
- *
  */
 public final class BitSetUtils {
 
     private BitSetUtils() {
-
     }
 
     /**
-     * Returns true if at least one bit on a given position is set
+     * Returns true if at least one bit on a given position is set.
      *
-     * @param bitSet
-     * @param indexes
-     * @return {@code true} is BitSet contains at least one bit at any position from index which is set, otherwise
-     *         return {@code false}
+     * @param bitSet  the {@link BitSet} to modify
+     * @param indexes the index positions to check
+     * @return {@code true} is {@link BitSet} contains at least one bit at any position from index which is set,
+     * otherwise return {@code false}
      */
     public static boolean hasAtLeastOneBitSet(BitSet bitSet, Iterable<Integer> indexes) {
         for (Integer index : indexes) {
@@ -46,16 +44,14 @@ public final class BitSetUtils {
     }
 
     /**
-     * Set all bits on a given positions
+     * Set all bits on a given positions.
      *
-     * @param bitSet
-     * @param indexes
+     * @param bitSet  the {@link BitSet} to modify
+     * @param indexes the index positions to set
      */
     public static void setBits(BitSet bitSet, Iterable<Integer> indexes) {
         for (Integer index : indexes) {
             bitSet.set(index);
         }
     }
-
-
 }

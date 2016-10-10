@@ -1,6 +1,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -17,7 +18,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class BitSetUtilsTest {
+public class BitSetUtilsTest extends HazelcastTestSupport {
+
     private static final int SIZE = 10;
 
     private BitSet bitSet;
@@ -31,6 +33,11 @@ public class BitSetUtilsTest {
         for (int i = 0; i < SIZE; i++) {
             indexes.add(i);
         }
+    }
+
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(BitSetUtils.class);
     }
 
     @Test
@@ -55,7 +62,7 @@ public class BitSetUtilsTest {
         assertBitsAtPositionsAreSet(bitSet, indexes);
     }
 
-    private void assertBitsAtPositionsAreSet(BitSet bitSet, List<Integer> indexes) {
+    private static void assertBitsAtPositionsAreSet(BitSet bitSet, List<Integer> indexes) {
         for (int index : indexes) {
             boolean isSet = bitSet.get(index);
             assertTrue(isSet);
