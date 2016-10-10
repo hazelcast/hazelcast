@@ -16,24 +16,28 @@
 
 package com.hazelcast.util;
 
-
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Utility class that provides reference-counted mutexes suitable for synchronization in the context of a supplied object.
- * Context objects and their associated mutexes are stored in a {@code Map}. Client code is responsible to invoke
- * {@link Mutex#close()} on the obtained {@code Mutex} after having synchronized on the mutex; failure to do so, will leave an
- * entry residing in the internal {@code Map} which may have adverse effects on the ability to garbage collect the context object
- * and the mutex. The returned {@link Mutex}es implement Closeable, so can be conveniently used in a try-with-resources statement.
- * Typical usage would allow, for example, synchronizing access to a non-thread-safe {@code Map} on a per-key basis,
- * to avoid blocking other threads who would perform updates on other entries of the {@code Map}.
+ * Provides reference-counted mutexes suitable for synchronization in the context of a supplied object.
+ *
+ * Context objects and their associated mutexes are stored in a {@link Map}. Client code is responsible to invoke
+ * {@link Mutex#close()} on the obtained {@link Mutex} after having synchronized on the mutex; failure to do so
+ * will leave an entry residing in the internal {@link Map} which may have adverse effects on the ability to garbage
+ * collect the context object and the mutex.
+ *
+ * The returned {@link Mutex}es implement {@link Closeable}, so can be conveniently used in a try-with-resources statement.
+ *
+ * Typical usage would allow, for example, synchronizing access to a non-thread-safe {@link Map} on a per-key basis,
+ * to avoid blocking other threads who would perform updates on other entries of the {@link Map}.
+ *
  * <pre>
  *     class Test {
  *
  *         private static final ContextMutexFactory mutexFactory = new ContextMutexFactory();
- *         private Map&lt;String, String&gt; mapToSync = new HashMap&lt;String, String&gt;();
+ *         private final Map&lt;String, String&gt; mapToSync = new HashMap&lt;String, String&gt;();
  *
  *         public void test(String key, String value) {
  *             // critical section
@@ -51,12 +55,13 @@ import java.util.Map;
  *         }
  *     }
  * </pre>
- *
  */
 public final class ContextMutexFactory {
-    Map<Object, Mutex> mutexMap = new HashMap<Object, Mutex>();
+
+    final Map<Object, Mutex> mutexMap = new HashMap<Object, Mutex>();
+
     // synchronizes access to mutexMap and Mutex.referenceCount
-    private Object mainMutex = new Object();
+    private final Object mainMutex = new Object();
 
     public Mutex mutexFor(Object mutexKey) {
         Mutex mutex;
@@ -75,7 +80,9 @@ public final class ContextMutexFactory {
      * Reference counted mutex, which will remove itself from the mutexMap when it is no longer referenced.
      */
     public final class Mutex implements Closeable {
+
         private final Object key;
+
         private int referenceCount;
 
         private Mutex(Object key) {

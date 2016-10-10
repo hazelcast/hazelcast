@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * Test basic lock operation of {@link ContextMutexFactory}
+ * Test basic lock operation of {@link ContextMutexFactory}.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -49,13 +49,13 @@ public class ContextMutexFactoryTest {
 
     @Test
     public void testConcurrentMutexOperation() {
-        final String[] keys = new String[] {"a", "b", "c"};
+        final String[] keys = new String[]{"a", "b", "c"};
         final Map<String, Integer> timesAcquired = new HashMap<String, Integer>();
 
-        int concurrency = Runtime.getRuntime().availableProcessors()*3;
-        final CyclicBarrier cyc = new CyclicBarrier(concurrency+1);
+        int concurrency = Runtime.getRuntime().availableProcessors() * 3;
+        final CyclicBarrier cyc = new CyclicBarrier(concurrency + 1);
 
-        for (int i=0; i<concurrency; i++) {
+        for (int i = 0; i < concurrency; i++) {
             new Thread(new Runnable() {
 
                 @Override
@@ -73,8 +73,7 @@ public class ContextMutexFactoryTest {
                                     timesAcquired.put(key, value + 1);
                                 }
                             }
-                        }
-                        finally {
+                        } finally {
                             mutex.close();
                         }
                     }
