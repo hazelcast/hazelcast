@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Executor;
@@ -24,6 +26,7 @@ class ScheduledTaskRunner implements Runnable {
 
     private final Executor executor;
     private final Runnable runnable;
+    private final ILogger logger = Logger.getLogger(getClass());
 
     public ScheduledTaskRunner(Runnable runnable, Executor executor) {
         this.executor = executor;
@@ -35,6 +38,7 @@ class ScheduledTaskRunner implements Runnable {
         try {
             executor.execute(runnable);
         } catch (Throwable t) {
+            logger.severe("Cannot execute " + runnable, t);
             ExceptionUtil.sneakyThrow(t);
         }
     }

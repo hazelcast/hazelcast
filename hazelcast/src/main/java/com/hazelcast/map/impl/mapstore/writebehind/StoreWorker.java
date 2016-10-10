@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 
@@ -49,18 +50,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class StoreWorker implements Runnable {
 
     private final String mapName;
-
     private final MapServiceContext mapServiceContext;
-
     private final WriteBehindProcessor writeBehindProcessor;
-
+    private final ExecutionService executionService;
     /**
      * Run on backup nodes after this interval.
      */
     private final long backupDelayMillis;
     private final long writeDelayMillis;
     private final int partitionCount;
-
     /**
      * Entries are fetched from write-behind-queues according to this highestStoreTime. If an entry
      * has a store-time which is smaller than or equal to this highestStoreTime, it will be processed.
@@ -71,6 +69,7 @@ public class StoreWorker implements Runnable {
      * @see #calculateHighestStoreTime
      */
     private long lastHighestStoreTime;
+    private volatile boolean running;
 
 
     public StoreWorker(MapStoreContext mapStoreContext, WriteBehindProcessor writeBehindProcessor) {
@@ -83,11 +82,39 @@ public class StoreWorker implements Runnable {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         this.partitionCount = partitionService.getPartitionCount();
+        this.executionService = nodeEngine.getExecutionService();
     }
 
 
+    public synchronized void start() {
+        if (running) {
+            return;
+        }
+
+        running = true;
+        schedule();
+    }
+
+    public synchronized void stop() {
+        running = false;
+    }
+
     @Override
     public void run() {
+        try {
+            runInternal();
+        } finally {
+            if (running) {
+                schedule();
+            }
+        }
+    }
+
+    private void schedule() {
+        executionService.schedule(this, 1, SECONDS);
+    }
+
+    private void runInternal() {
         final long now = Clock.currentTimeMillis();
         final long ownerHighestStoreTime = calculateHighestStoreTime(lastHighestStoreTime, now);
         final long backupHighestStoreTime = ownerHighestStoreTime - backupDelayMillis;
@@ -260,6 +287,11 @@ public class StoreWorker implements Runnable {
     private static int getNumberOfFlushedEntries(RecordStore recordStore) {
         AtomicInteger flushCounter = getFlushCounter(recordStore);
         return flushCounter.get();
+    }
+
+    @Override
+    public String toString() {
+        return "StoreWorker{" + "mapName='" + mapName + "'}";
     }
 }
 
