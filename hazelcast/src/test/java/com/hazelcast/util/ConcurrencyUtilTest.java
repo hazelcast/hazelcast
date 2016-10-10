@@ -1,28 +1,44 @@
 package com.hazelcast.util;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConcurrencyUtilTest {
+public class ConcurrencyUtilTest extends HazelcastTestSupport {
+
+    private final Object mutex = new Object();
+    private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
+
+    private final IntIntConstructorFunction constructorFunction = new IntIntConstructorFunction();
+
+    private ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
+
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(ConcurrencyUtil.class);
+    }
 
     @Test
     public void setMax() {
-        setMax(10, 9);
-        setMax(10, 10);
+        setMax(8, 7);
+        setMax(9, 9);
         setMax(10, 11);
     }
 
-    public void setMax(long current, long update) {
+    private void setMax(long current, long update) {
         LongValue longValue = new LongValue();
         longValue.value = current;
 
@@ -32,8 +48,65 @@ public class ConcurrencyUtilTest {
         assertEquals(max, longValue.value);
     }
 
+    @Test
+    public void testGetOrPutSynchronized() {
+        int result = ConcurrencyUtil.getOrPutSynchronized(map, 5, mutex, constructorFunction);
+        assertEquals(1005, result);
+
+        assertEquals(1, constructorFunction.getConstructions());
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Test(expected = NullPointerException.class)
+    public void testGetOrPutSynchronized_whenMutexIsNull_thenThrowException() {
+        ConcurrencyUtil.getOrPutSynchronized(map, 5, (Object) null, constructorFunction);
+    }
+
+    @Test
+    public void testGetOrPutSynchronized_withMutexFactory() {
+        int result = ConcurrencyUtil.getOrPutSynchronized(map, 5, mutexFactory, constructorFunction);
+        assertEquals(1005, result);
+
+        assertEquals(1, constructorFunction.getConstructions());
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Test(expected = NullPointerException.class)
+    public void testGetOrPutSynchronized_whenMutexFactoryIsNull_thenThrowException() {
+        ContextMutexFactory factory = null;
+        ConcurrencyUtil.getOrPutSynchronized(map, 5, factory, constructorFunction);
+    }
+
+    @Test
+    public void testGetOrPutIfAbsent() {
+        int result = ConcurrencyUtil.getOrPutIfAbsent(map, 5, constructorFunction);
+        assertEquals(1005, result);
+
+        result = ConcurrencyUtil.getOrPutIfAbsent(map, 5, constructorFunction);
+        assertEquals(1005, result);
+
+        assertEquals(1, constructorFunction.getConstructions());
+    }
+
     private final static class LongValue {
+
         final static AtomicLongFieldUpdater UPDATER = AtomicLongFieldUpdater.newUpdater(LongValue.class, "value");
+
         volatile long value;
+    }
+
+    private static class IntIntConstructorFunction implements ConstructorFunction<Integer, Integer> {
+
+        private AtomicInteger constructions = new AtomicInteger();
+
+        @Override
+        public Integer createNew(Integer key) {
+            constructions.incrementAndGet();
+            return key + 1000;
+        }
+
+        int getConstructions() {
+            return constructions.get();
+        }
     }
 }
