@@ -200,7 +200,7 @@
                 <configuration>
                     <finalName>hazelcast-${project.version}</finalName>
                     <descriptors>
-                        <handler>./src/main/assembly/assembly.xml</handler>
+                        <descriptor>./src/main/assembly/assembly.xml</descriptor>
                     </descriptors>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
