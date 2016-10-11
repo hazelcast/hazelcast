@@ -19,17 +19,16 @@ package com.hazelcast.jet2.impl;
 /**
  * Data stream of an inbound edge.
  */
-public interface InboundEdgeStream {
+interface InboundEdgeStream {
 
     /**
      * Drains all available items to the supplied destination collection.
+     *
      * @return a {@code TaskletResult} that says whether any items were drained
      * (the {@code isMadeProgress} property) and whether the stream is now completely exhausted
      * (the {@code isDone} property)
      */
     TaskletResult drainAvailableItemsInto(CollectionWithObserver dest);
-
-    boolean isDone();
 
     int ordinal();
 

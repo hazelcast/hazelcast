@@ -19,7 +19,7 @@ package com.hazelcast.jet2.impl;
 /**
  * The tail-end of a bounded, non-blocking queue.
  */
-public interface OutboundEdgeStream {
+interface OutboundEdgeStream {
 
     /**
      * Offers an item to this output. If the output cannot accept it now, the call

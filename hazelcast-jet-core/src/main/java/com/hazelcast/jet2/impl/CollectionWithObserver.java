@@ -22,6 +22,6 @@ import java.util.function.Consumer;
 /**
  * Javadoc pending.
  */
-public interface CollectionWithObserver extends Collection<Object> {
+interface CollectionWithObserver extends Collection<Object> {
     void setObserverOfAdd(Consumer<Object> observer);
 }

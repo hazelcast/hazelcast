@@ -20,11 +20,13 @@ import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProgressTracker;
 import com.hazelcast.util.Preconditions;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.RandomAccess;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet2.impl.TaskletResult.DONE;
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
@@ -32,19 +34,19 @@ import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
 
 public class ProcessorTasklet implements Tasklet {
 
     private final Processor processor;
-    private final List<ArrayList<InboundEdgeStream>> prioritizedInboundStreams;
+    private final Deque<ArrayList<InboundEdgeStream>> inboundStreamsQueue;
     private CircularCursor<InboundEdgeStream> inboundStreamCursor;
     private final ArrayDequeWithObserver inbox;
     private final ArrayDequeOutbox outbox;
     private final OutboundEdgeStream[] outboundStreams;
     private final ProgressTracker progTracker = new ProgressTracker();
 
-    private InboundEdgeStream selectedInboundStream;
+    private InboundEdgeStream currentInboundStream;
+    private boolean currentInboundStreamDone;
     private boolean processorCompleted;
 
     public ProcessorTasklet(
@@ -52,16 +54,16 @@ public class ProcessorTasklet implements Tasklet {
     ) {
         Preconditions.checkNotNull(processor, "processor");
         this.processor = processor;
-        this.prioritizedInboundStreams = inboundStreams
+        this.inboundStreamsQueue = inboundStreams
                 .stream()
                 .collect(groupingBy(InboundEdgeStream::priority, toCollection(ArrayList::new)))
                 .entrySet().stream()
                 .sorted(comparingByKey())
-                .map(Entry::getValue).collect(toList());
+                .map(Entry::getValue).collect(Collectors.toCollection(ArrayDeque::new));
         this.inbox = new ArrayDequeWithObserver();
         this.outbox = new ArrayDequeOutbox(outboundStreams.size());
         this.outboundStreams = outboundStreams.toArray(new OutboundEdgeStream[inboundStreams.size()]);
-        popInboundStreamGroup();
+        this.inboundStreamCursor = nextInboundStreamGroup();
     }
 
     @Override
@@ -72,10 +74,10 @@ public class ProcessorTasklet implements Tasklet {
             completeIfNeeded();
         } else if (!inbox.isEmpty()) {
             tryProcess();
-        } else if (selectedInboundStream.isDone()) {
+        } else if (currentInboundStreamDone) {
             progTracker.update(MADE_PROGRESS);
-            if (processor.complete(selectedInboundStream.ordinal())) {
-                selectedInboundStream = null;
+            if (processor.complete(currentInboundStream.ordinal())) {
+                currentInboundStream = null;
             }
         }
         offerPendingOutput();
@@ -83,7 +85,8 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private void tryFillInbox() {
-        if (!inbox.isEmpty() || selectedInboundStream != null && selectedInboundStream.isDone()) {
+        // we have more items to process, or current inbound stream is done but not yet completed
+        if (!inbox.isEmpty() || currentInboundStream != null && currentInboundStreamDone) {
             progTracker.update(NO_PROGRESS);
             return;
         }
@@ -93,14 +96,16 @@ public class ProcessorTasklet implements Tasklet {
         final InboundEdgeStream first = inboundStreamCursor.value();
         TaskletResult result;
         do {
-            selectedInboundStream = inboundStreamCursor.value();
-            result = selectedInboundStream.drainAvailableItemsInto(inbox);
+            currentInboundStream = inboundStreamCursor.value();
+            result = currentInboundStream.drainAvailableItemsInto(inbox);
+            currentInboundStreamDone = result.isDone();
             progTracker.update(result);
-            if (result.isDone()) {
+
+            if (currentInboundStreamDone) {
                 inboundStreamCursor.remove();
             }
             if (!inboundStreamCursor.advance()) {
-                popInboundStreamGroup();
+                inboundStreamCursor = nextInboundStreamGroup();
                 break;
             }
         } while (!result.isMadeProgress() && inboundStreamCursor.value() != first);
@@ -108,8 +113,8 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private void tryProcess() {
-        final int inboundOrdinal = selectedInboundStream.ordinal();
-        for (Object item; (item = inbox.peek()) != null && !outbox.isHighWater();) {
+        final int inboundOrdinal = currentInboundStream.ordinal();
+        for (Object item; (item = inbox.peek()) != null && !outbox.isHighWater(); ) {
             progTracker.update(MADE_PROGRESS);
             if (!processor.process(inboundOrdinal, item)) {
                 break;
@@ -118,9 +123,9 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    private void popInboundStreamGroup() {
-        this.inboundStreamCursor = !prioritizedInboundStreams.isEmpty()
-                ? new CircularCursor<>(prioritizedInboundStreams.remove(0)) : null;
+    private CircularCursor<InboundEdgeStream> nextInboundStreamGroup() {
+        ArrayList<InboundEdgeStream> head = inboundStreamsQueue.remove();
+        return head != null ? new CircularCursor<>(head) : null;
     }
 
     private void completeIfNeeded() {

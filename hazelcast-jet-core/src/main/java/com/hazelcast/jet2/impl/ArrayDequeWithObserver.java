@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 /**
  * Javadoc pending.
  */
-public class ArrayDequeWithObserver extends ArrayDeque<Object> implements CollectionWithObserver {
+class ArrayDequeWithObserver extends ArrayDeque<Object> implements CollectionWithObserver {
     private Consumer<Object> observer;
 
     @Override

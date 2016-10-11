@@ -17,8 +17,6 @@
 package com.hazelcast.jet2.impl;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
 
 class CircularCursor<E> extends ArrayListCursor<E> {
 

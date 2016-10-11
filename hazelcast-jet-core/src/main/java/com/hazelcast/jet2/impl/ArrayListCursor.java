@@ -28,7 +28,7 @@ import java.util.List;
  *
  * @param <T>
  */
-public class ArrayListCursor<T> implements Cursor<T> {
+class ArrayListCursor<T> implements Cursor<T> {
 
     protected int index;
     protected final ArrayList<T> list;

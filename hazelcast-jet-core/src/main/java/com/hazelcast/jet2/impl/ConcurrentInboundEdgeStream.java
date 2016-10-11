@@ -23,13 +23,17 @@ import java.util.function.Consumer;
 /**
  * Javadoc pending.
  */
-public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
+class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     private final ConcurrentConveyor<Object> conveyor;
+    private final int ordinal;
+    private final int priority;
     private final ExhaustedQueueCleaner exhaustedQueueCleaner = new ExhaustedQueueCleaner();
 
-    public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor) {
+    public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority) {
         this.conveyor = conveyor;
+        this.ordinal = ordinal;
+        this.priority = priority;
     }
 
     @Override
@@ -53,18 +57,13 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     }
 
     @Override
-    public boolean isDone() {
-        return false;
-    }
-
-    @Override
     public int ordinal() {
-        return 0;
+        return ordinal;
     }
 
     @Override
     public int priority() {
-        return 0;
+        return priority;
     }
 
     private final class ExhaustedQueueCleaner implements Consumer<Object> {

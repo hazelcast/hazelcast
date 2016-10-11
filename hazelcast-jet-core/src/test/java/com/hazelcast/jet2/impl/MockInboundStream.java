@@ -64,7 +64,8 @@ public class MockInboundStream implements InboundEdgeStream {
             return NO_PROGRESS;
         }
         final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
-        dest.setObserverOfAdd(x -> {});
+        dest.setObserverOfAdd(x -> {
+        });
         for (; dataIndex < limit; dataIndex++) {
             final Object item = mockData.get(dataIndex);
             if (item != DONE_ITEM) {
@@ -76,11 +77,6 @@ public class MockInboundStream implements InboundEdgeStream {
         }
         dest.setObserverOfAdd(null);
         return done ? DONE : MADE_PROGRESS;
-    }
-
-    @Override
-    public boolean isDone() {
-        return done;
     }
 
     @Override

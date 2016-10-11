@@ -21,13 +21,15 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 /**
  * Javadoc pending.
  */
-public class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
+class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
+    private final int ordinal;
 
-    public ConcurrentOutboundEdgeStream(ConcurrentConveyor<Object> conveyor, int queueIndex) {
+    public ConcurrentOutboundEdgeStream(ConcurrentConveyor<Object> conveyor, int queueIndex, int ordinal) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
+        this.ordinal = ordinal;
     }
 
     @Override
@@ -37,6 +39,6 @@ public class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
     @Override
     public int ordinal() {
-        return 0;
+        return ordinal;
     }
 }
