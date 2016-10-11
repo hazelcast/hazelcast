@@ -28,7 +28,7 @@ interface InboundEdgeStream {
      * (the {@code isMadeProgress} property) and whether the stream is now completely exhausted
      * (the {@code isDone} property)
      */
-    TaskletResult drainAvailableItemsInto(CollectionWithObserver dest);
+    TaskletResult drainAvailableItemsInto(CollectionWithPredicate dest);
 
     int ordinal();
 

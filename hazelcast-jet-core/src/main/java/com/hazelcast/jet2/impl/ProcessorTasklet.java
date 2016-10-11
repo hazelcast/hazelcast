@@ -27,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet2.impl.TaskletResult.DONE;
 import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
@@ -38,31 +37,31 @@ import static java.util.stream.Collectors.toCollection;
 public class ProcessorTasklet implements Tasklet {
 
     private final Processor processor;
-    private final Queue<ArrayList<InboundEdgeStream>> inboundStreamsQueue;
-    private CircularCursor<InboundEdgeStream> inboundStreamCursor;
-    private final ArrayDequeWithObserver inbox;
+    private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
+    private CircularCursor<InboundEdgeStream> instreamCursor;
+    private final ArrayDequeWithPredicate inbox;
     private final ArrayDequeOutbox outbox;
-    private final OutboundEdgeStream[] outboundStreams;
+    private final OutboundEdgeStream[] outStreams;
     private final ProgressTracker progTracker = new ProgressTracker();
 
-    private InboundEdgeStream currentInboundStream;
-    private boolean currentInboundStreamDone;
+    private InboundEdgeStream currInstream;
+    private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
     public ProcessorTasklet(
-            Processor processor, List<InboundEdgeStream> inboundStreams, List<OutboundEdgeStream> outboundStreams
+            Processor processor, List<InboundEdgeStream> instreams, List<OutboundEdgeStream> outstreams
     ) {
         Preconditions.checkNotNull(processor, "processor");
         this.processor = processor;
-        this.inboundStreamsQueue = inboundStreams
+        this.instreamGroupQueue = instreams
                 .stream()
                 .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new, toCollection(ArrayList::new)))
                 .entrySet().stream()
-                .map(Entry::getValue).collect(Collectors.toCollection(ArrayDeque::new));
-        this.inbox = new ArrayDequeWithObserver();
-        this.outbox = new ArrayDequeOutbox(outboundStreams.size());
-        this.outboundStreams = outboundStreams.toArray(new OutboundEdgeStream[inboundStreams.size()]);
-        this.inboundStreamCursor = popInboundStreamGroup();
+                .map(Entry::getValue).collect(toCollection(ArrayDeque::new));
+        this.inbox = new ArrayDequeWithPredicate();
+        this.outbox = new ArrayDequeOutbox(outstreams.size());
+        this.outStreams = outstreams.toArray(new OutboundEdgeStream[instreams.size()]);
+        this.instreamCursor = popInboundStreamGroup();
     }
 
     @Override
@@ -73,49 +72,49 @@ public class ProcessorTasklet implements Tasklet {
             completeIfNeeded();
         } else if (!inbox.isEmpty()) {
             tryProcess();
-        } else if (currentInboundStreamDone) {
+        } else if (currInstreamExhausted) {
             progTracker.update(MADE_PROGRESS);
-            if (processor.complete(currentInboundStream.ordinal())) {
-                currentInboundStream = null;
+            if (processor.complete(currInstream.ordinal())) {
+                currInstream = null;
             }
         }
-        trySendOutbox();
+        tryEmptyOutbox();
         return TaskletResult.valueOf(progTracker);
     }
 
     private CircularCursor<InboundEdgeStream> popInboundStreamGroup() {
-        return Optional.ofNullable(inboundStreamsQueue.poll()).map(CircularCursor::new).orElse(null);
+        return Optional.ofNullable(instreamGroupQueue.poll()).map(CircularCursor::new).orElse(null);
     }
 
     private void tryFillInbox() {
         // we have more items to process, or current inbound stream is done but not yet completed
-        if (!inbox.isEmpty() || currentInboundStream != null && currentInboundStreamDone) {
+        if (!inbox.isEmpty() || currInstream != null && currInstreamExhausted) {
             progTracker.update(NO_PROGRESS);
             return;
         }
-        if (inboundStreamCursor == null) {
+        if (instreamCursor == null) {
             return;
         }
-        final InboundEdgeStream first = inboundStreamCursor.value();
+        final InboundEdgeStream first = instreamCursor.value();
         TaskletResult result;
         do {
-            currentInboundStream = inboundStreamCursor.value();
-            result = currentInboundStream.drainAvailableItemsInto(inbox);
-            currentInboundStreamDone = result.isDone();
+            currInstream = instreamCursor.value();
+            result = currInstream.drainAvailableItemsInto(inbox);
+            currInstreamExhausted = result.isDone();
             progTracker.update(result);
-            if (currentInboundStreamDone) {
-                inboundStreamCursor.remove();
+            if (currInstreamExhausted) {
+                instreamCursor.remove();
             }
-            if (!inboundStreamCursor.advance()) {
-                inboundStreamCursor = popInboundStreamGroup();
+            if (!instreamCursor.advance()) {
+                instreamCursor = popInboundStreamGroup();
                 break;
             }
-        } while (!result.isMadeProgress() && inboundStreamCursor.value() != first);
+        } while (!result.isMadeProgress() && instreamCursor.value() != first);
         progTracker.notDone();
     }
 
     private void tryProcess() {
-        final int inboundOrdinal = currentInboundStream.ordinal();
+        final int inboundOrdinal = currInstream.ordinal();
         for (Object item; (item = inbox.peek()) != null && !outbox.isHighWater(); ) {
             progTracker.update(MADE_PROGRESS);
             if (!processor.process(inboundOrdinal, item)) {
@@ -137,12 +136,12 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    private void trySendOutbox() {
+    private void tryEmptyOutbox() {
         nextOutboundStream:
         for (int i = 0; i < outbox.queueCount(); i++) {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null; ) {
-                if (!outboundStreams[i].offer(item)) {
+                if (!outStreams[i].offer(item)) {
                     progTracker.notDone();
                     continue nextOutboundStream;
                 }

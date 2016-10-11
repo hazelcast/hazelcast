@@ -56,7 +56,7 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
-    public TaskletResult drainAvailableItemsInto(CollectionWithObserver dest) {
+    public TaskletResult drainAvailableItemsInto(CollectionWithPredicate dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }
@@ -64,7 +64,7 @@ public class MockInboundStream implements InboundEdgeStream {
             return NO_PROGRESS;
         }
         final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
-        dest.setObserverOfAdd(x -> {
+        dest.setPredicateOfAdd(x -> {
         });
         for (; dataIndex < limit; dataIndex++) {
             final Object item = mockData.get(dataIndex);
@@ -75,7 +75,7 @@ public class MockInboundStream implements InboundEdgeStream {
                 done = true;
             }
         }
-        dest.setObserverOfAdd(null);
+        dest.setPredicateOfAdd(null);
         return done ? DONE : MADE_PROGRESS;
     }
 

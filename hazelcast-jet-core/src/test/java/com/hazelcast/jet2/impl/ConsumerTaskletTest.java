@@ -56,7 +56,7 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void oneInboundStream() throws Exception {
+    public void when_oneInboundStream_then_consumeAllAndComplete() throws Exception {
         // Given
         MockInboundStream stream1 = new MockInboundStream(mockInput, 1 + mockInput.size());
         inboundStreams.add(stream1);
@@ -66,7 +66,8 @@ public class ConsumerTaskletTest {
         callUntilDone(tasklet);
 
         // Then
-        assertFalse("isComplete", consumer.isComplete());
+        assertTrue("isComplete", consumer.isComplete());
+        assertEquals(mockInput, consumer.getList());
     }
 
     @Test
@@ -302,7 +303,7 @@ public class ConsumerTaskletTest {
         for (TaskletResult r; !(r = tasklet.call()).isDone();) {
             assertTrue(r.isMadeProgress());
             assertTrue("tasklet.call() invoked " + CALL_COUNT_LIMIT + " times without reaching completion",
-                    +iterCount < CALL_COUNT_LIMIT);
+                    ++iterCount < CALL_COUNT_LIMIT);
         }
     }
 }
