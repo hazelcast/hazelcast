@@ -104,7 +104,7 @@ public abstract class DiagnosticsLogWriter {
     }
 
     protected DiagnosticsLogWriter write(String s) {
-        printWriter.write(s);
+        printWriter.write(s == null ? "null" : s);
         return this;
     }
 
