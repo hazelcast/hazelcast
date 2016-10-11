@@ -164,7 +164,11 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * @return the number of concurrent queues inside this conveyor
+     * Returns the size of the array holding the concurrent queues. Initially (when the conveyor is
+     * constructed) each array slot should point to a distinct concurrent queue; therefore the size
+     * of the array matches the number of queues. During the conveyor's lifecycle some array slots
+     * may be nulled out to remove the exhausted queues, but this method will keep reporting the
+     * same number.
      */
     public final int queueCount() {
         return queues.length;

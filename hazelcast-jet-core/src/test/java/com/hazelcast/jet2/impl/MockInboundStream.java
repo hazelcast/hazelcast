@@ -89,11 +89,11 @@ public class MockInboundStream implements InboundEdgeStream {
         return 0;
     }
 
-    public void pause() {
+    void pause() {
         paused = true;
     }
 
-    public void resume() {
-        paused = false;
+    boolean isDone() {
+        return done;
     }
 }

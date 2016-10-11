@@ -43,6 +43,7 @@ import static org.junit.Assert.assertTrue;
 public class ConsumerTaskletTest {
 
     private static final int MOCK_INPUT_LENGTH = 10;
+    private static final int CALL_COUNT_LIMIT = 10;
     private List<Object> mockInput;
     private List<InboundEdgeStream> inboundStreams;
     private ListConsumer consumer;
@@ -55,18 +56,16 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void when_call_then_madeProgress() throws Exception {
+    public void oneInboundStream() throws Exception {
         // Given
-        MockInboundStream stream1 = new MockInboundStream(mockInput, 4);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, 1 + mockInput.size());
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
 
         // When
-        final TaskletResult r = tasklet.call();
+        callUntilDone(tasklet);
 
         // Then
-        assertEquals(MADE_PROGRESS, r);
-        assertEquals(Arrays.asList(0, 1, 2, 3), consumer.getList());
         assertFalse("isComplete", consumer.isComplete());
     }
 
@@ -137,27 +136,33 @@ public class ConsumerTaskletTest {
     }
 
     @Test
-    public void testProgress_when_multipleInput() throws Exception {
+    public void when_twoInboundEdges_then_consumeBoth() throws Exception {
         // Given
-        MockInboundStream stream1 = new MockInboundStream(0, mockInput, mockInput.size());
-        MockInboundStream stream2 = new MockInboundStream(1, mockInput, mockInput.size());
+        MockInboundStream stream1 = new MockInboundStream(0, mockInput, 1 + mockInput.size());
+        MockInboundStream stream2 = new MockInboundStream(1, mockInput, 1 + mockInput.size());
         stream1.pushDoneItem();
         stream2.pushDoneItem();
         inboundStreams.add(stream1);
         inboundStreams.add(stream2);
         Tasklet tasklet = createTasklet();
 
-        // When
-        final TaskletResult result1 = tasklet.call();
-        final TaskletResult result2 = tasklet.call();
+        // When - Then
 
-        // Then
-        assertEquals(MADE_PROGRESS, result1);
-        assertEquals(MADE_PROGRESS, result2);
+        // Exhaust edge stream 0
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertTrue(stream1.isDone());
+        // Complete edge stream 0
         tasklet.call();
-        assertTrue(tasklet.call().isDone());
 
-        assertEquals(mockInput.size() * 2, consumer.getList().size());
+        // Exhaust edge stream 1
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertTrue(stream2.isDone());
+        // Complete edge stream 1
+        tasklet.call();
+
+        assertEquals(2 * mockInput.size(), consumer.getList().size());
+        // Complete overall processing
+        assertTrue(tasklet.call().isDone());
         assertTrue("isComplete", consumer.isComplete());
     }
 
@@ -290,5 +295,14 @@ public class ConsumerTaskletTest {
 
     private Tasklet createTasklet() {
         return new ProcessorTasklet(consumer, inboundStreams, emptyList());
+    }
+
+    private static void callUntilDone(Tasklet tasklet) throws Exception {
+        int iterCount = 0;
+        for (TaskletResult r; !(r = tasklet.call()).isDone();) {
+            assertTrue(r.isMadeProgress());
+            assertTrue("tasklet.call() invoked " + CALL_COUNT_LIMIT + " times without reaching completion",
+                    +iterCount < CALL_COUNT_LIMIT);
+        }
     }
 }

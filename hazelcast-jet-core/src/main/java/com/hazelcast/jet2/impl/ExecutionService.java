@@ -83,19 +83,19 @@ public class ExecutionService {
             long idleCount = 0;
             while (true) {
                 boolean madeProgress = false;
-                for (Iterator<TaskletTracker> it = trackers.iterator(); it.hasNext(); ) {
-                    final TaskletTracker t = it.next();
+                for (TaskletTracker t : trackers) {
                     final Worker stealingWorker = t.stealingWorker.get();
                     if (stealingWorker != null) {
                         t.stealingWorker.set(null);
-                        it.remove();
+                        trackers.remove(t);
                         stealingWorker.trackers.add(t);
+                        continue;
                     }
                     try {
                         final TaskletResult result = t.tasklet.call();
                         if (result.isDone()) {
                             t.completionLatch.countDown();
-                            it.remove();
+                            trackers.remove(t);
                             stealWork();
                         } else {
                             madeProgress |= result.isMadeProgress();
@@ -103,7 +103,7 @@ public class ExecutionService {
                     } catch (Throwable e) {
                         t.troubleSetter.setTrouble(e);
                         t.completionLatch.countDown();
-                        it.remove();
+                        trackers.remove(t);
                         stealWork();
                     }
                 }
