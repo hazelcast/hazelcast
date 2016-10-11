@@ -28,11 +28,28 @@ public class MultiLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
         writer.init(new PrintWriter(out));
     }
 
+    // test for https://github.com/hazelcast/hazelcast/issues/9085
+    @Test
+    public void writeKeyValueEntry_nullValue() {
+        writer.startSection("SomeSection");
+        writer.writeKeyValueEntry("s", null);
+        writer.endSection();
+
+        String actual = out.toString();
+
+        // we need to get rid of the time/date prefix
+        actual = actual.substring(actual.indexOf("SomeSection"));
+
+        assertEquals("" +
+                "SomeSection[" + LINE_SEPARATOR +
+                "                          s=null]" + LINE_SEPARATOR, actual);
+    }
+
     @Test
     public void test() {
         writer.startSection("SomeSection");
         writer.writeKeyValueEntry("boolean", true);
-        writer.writeKeyValueEntry("long", 10l);
+        writer.writeKeyValueEntry("long", 10L);
         writer.startSection("SubSection");
         writer.writeKeyValueEntry("integer", 10);
         writer.endSection();
