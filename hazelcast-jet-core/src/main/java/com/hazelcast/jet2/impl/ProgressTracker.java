@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
-
-import com.hazelcast.jet2.impl.ProgressState;
-import com.hazelcast.jet2.impl.TaskletResult;
+package com.hazelcast.jet2.impl;
 
 /**
  * Javadoc pending.
  */
-public class ProgressTracker implements ProgressState {
+public class ProgressTracker {
     private boolean isMadeProgress;
     private boolean isDone = true;
 
@@ -31,28 +28,32 @@ public class ProgressTracker implements ProgressState {
         isDone = true;
     }
 
-    public void update(ProgressState prog) {
-        isMadeProgress |= prog.isMadeProgress();
-        isDone &= prog.isDone();
+    public void update(ProgressState result) {
+        isMadeProgress |= result.isMadeProgress();
+        isDone &= result.isDone();
     }
 
-    /** Equivalent to {@code update(NO_PROGRESS)}, but more descriptive in certain usages. */
+    /**
+     * Equivalent to {@code update(NO_PROGRESS)}, but more descriptive in certain usages.
+     */
     public void notDone() {
         isDone = false;
     }
 
-    @Override
     public boolean isMadeProgress() {
         return isMadeProgress;
     }
 
-    @Override
     public boolean isDone() {
         return isDone;
     }
 
+    public ProgressState toProgressState() {
+        return ProgressState.valueOf(isDone, isMadeProgress);
+    }
+
     @Override
     public String toString() {
-        return TaskletResult.valueOf(isMadeProgress, isDone).toString();
+        return toProgressState().toString();
     }
 }

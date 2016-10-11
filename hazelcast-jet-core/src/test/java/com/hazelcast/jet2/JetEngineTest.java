@@ -17,20 +17,24 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet2.impl.ListConsumer;
+import com.hazelcast.jet2.impl.ListProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-@Ignore
 public class JetEngineTest extends HazelcastTestSupport {
 
     private static TestHazelcastInstanceFactory factory;
@@ -48,13 +52,26 @@ public class JetEngineTest extends HazelcastTestSupport {
     @Test
     public void test() {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
+        List<Integer> source = IntStream.range(0, 1000).boxed().collect(Collectors.toList());
         DAG dag = new DAG();
+        Vertex producer = new Vertex("producer", () -> new ListProducer(source, 1024))
+                .parallelism(1);
+
+        ListConsumer listConsumer = new ListConsumer();
+        Vertex consumer = new Vertex("consumer", () -> listConsumer)
+                .parallelism(1);
+
+        dag.addVertex(producer);
+        dag.addVertex(consumer);
+
+        dag.addEdge(new Edge(producer, consumer));
         Job job = jetEngine.newJob(dag);
 
         job.execute();
+
+        System.out.println(listConsumer.getList());
     }
 
 }

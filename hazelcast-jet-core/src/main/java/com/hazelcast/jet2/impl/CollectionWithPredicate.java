@@ -17,7 +17,6 @@
 package com.hazelcast.jet2.impl;
 
 import java.util.Collection;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**

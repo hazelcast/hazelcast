@@ -18,7 +18,6 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -38,7 +37,7 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     }
 
     @Override
-    public TaskletResult drainAvailableItemsInto(CollectionWithPredicate dest) {
+    public ProgressState drainAvailableItemsInto(CollectionWithPredicate dest) {
         assert dest.isEmpty() : "Destination is not empty";
         boolean madeProgress = false;
         dest.setPredicateOfAdd(exhaustedQueueCleaner);
@@ -54,7 +53,7 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         } finally {
             dest.setPredicateOfAdd(null);
         }
-        return TaskletResult.valueOf(madeProgress, exhaustedQueueCleaner.cleanedCount == conveyor.queueCount());
+        return ProgressState.valueOf(madeProgress, exhaustedQueueCleaner.cleanedCount == conveyor.queueCount());
     }
 
     @Override

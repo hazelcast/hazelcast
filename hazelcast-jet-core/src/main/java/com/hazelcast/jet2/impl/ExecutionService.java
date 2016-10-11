@@ -22,7 +22,6 @@ import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -92,7 +91,7 @@ public class ExecutionService {
                         continue;
                     }
                     try {
-                        final TaskletResult result = t.tasklet.call();
+                        final ProgressState result = t.tasklet.call();
                         if (result.isDone()) {
                             t.completionLatch.countDown();
                             trackers.remove(t);

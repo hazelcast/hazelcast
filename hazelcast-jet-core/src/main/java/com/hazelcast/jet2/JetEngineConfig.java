@@ -21,6 +21,6 @@ package com.hazelcast.jet2;
  */
 public class JetEngineConfig {
     public int parallelism() {
-        return 1;
+        return 2;
     }
 }

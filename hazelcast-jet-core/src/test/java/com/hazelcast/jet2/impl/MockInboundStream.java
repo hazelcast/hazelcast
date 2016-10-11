@@ -19,11 +19,12 @@ package com.hazelcast.jet2.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 
-import static com.hazelcast.jet2.impl.TaskletResult.DONE;
-import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
-import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
-import static com.hazelcast.jet2.impl.TaskletResult.WAS_ALREADY_DONE;
+import static com.hazelcast.jet2.impl.ProgressState.DONE;
+import static com.hazelcast.jet2.impl.ProgressState.MADE_PROGRESS;
+import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
+import static com.hazelcast.jet2.impl.ProgressState.WAS_ALREADY_DONE;
 
 public class MockInboundStream implements InboundEdgeStream {
 
@@ -56,7 +57,7 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
-    public TaskletResult drainAvailableItemsInto(CollectionWithPredicate dest) {
+    public ProgressState drainAvailableItemsInto(CollectionWithPredicate dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }
@@ -64,8 +65,7 @@ public class MockInboundStream implements InboundEdgeStream {
             return NO_PROGRESS;
         }
         final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
-        dest.setPredicateOfAdd(x -> {
-        });
+        dest.setPredicateOfAdd(x -> true);
         for (; dataIndex < limit; dataIndex++) {
             final Object item = mockData.get(dataIndex);
             if (item != DONE_ITEM) {

@@ -33,8 +33,9 @@ public class ListProducer implements Processor {
     private boolean completed;
     private Outbox outbox;
 
-    public ListProducer(List<?> list) {
+    public ListProducer(List<?> list, int batchSize) {
         this.iterator = list.iterator();
+        this.batchSize = batchSize;
     }
 
     @Override

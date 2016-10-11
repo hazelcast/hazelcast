@@ -68,7 +68,7 @@ public class Edge implements IdentifiedDataSerializable {
 
 
     public Vertex getSource() {
-        return destination;
+        return source;
     }
 
     public int getSourceOrdinal() {
@@ -76,7 +76,7 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     public Vertex getDestination() {
-        return source;
+        return destination;
     }
 
     public int getDestinationOrdinal() {
@@ -89,6 +89,10 @@ public class Edge implements IdentifiedDataSerializable {
     public Edge priority(int priority) {
         this.priority = priority;
         return this;
+    }
+
+    public int getPriority() {
+        return priority;
     }
 
     @Override

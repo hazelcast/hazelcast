@@ -61,7 +61,7 @@ public class ProcessorTaskletTest {
 
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertTrue(tasklet.call().isDone());
 
         assertEquals(list, output1.getBuffer());
@@ -80,7 +80,7 @@ public class ProcessorTaskletTest {
 
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertTrue(tasklet.call().isDone());
 
         assertEquals(list, output1.getBuffer());
@@ -98,9 +98,9 @@ public class ProcessorTaskletTest {
 
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertTrue(tasklet.call().isDone());
 
         assertEquals(list, output1.getBuffer());
@@ -121,9 +121,9 @@ public class ProcessorTaskletTest {
 
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertTrue(tasklet.call().isDone());
 
         assertEquals(new HashSet<>(list), new HashSet<>(output1.getBuffer()));
@@ -142,8 +142,8 @@ public class ProcessorTaskletTest {
 
         processor.paused = true;
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
 
         assertTrue("isEmpty", output1.getBuffer().isEmpty());
     }
