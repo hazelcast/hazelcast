@@ -114,6 +114,7 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
                 store.close(true);
             }
         }
+        recordStores.clear();
     }
 
     void clearHavingLesserBackupCountThan(int backupCount) {
