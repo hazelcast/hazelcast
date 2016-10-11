@@ -50,6 +50,7 @@ public class ClientMessageReadHandler implements ReadHandler {
             final boolean complete = message.readFrom(src);
             if (!complete) {
                 messageCounter.inc(messagesCreated);
+                return;
             }
 
             //MESSAGE IS COMPLETE HERE
