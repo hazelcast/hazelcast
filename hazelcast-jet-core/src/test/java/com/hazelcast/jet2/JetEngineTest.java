@@ -17,6 +17,8 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet2.impl.ListConsumer;
+import com.hazelcast.jet2.impl.ListProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -28,9 +30,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-@Ignore
 public class JetEngineTest extends HazelcastTestSupport {
 
     private static TestHazelcastInstanceFactory factory;
@@ -48,10 +52,20 @@ public class JetEngineTest extends HazelcastTestSupport {
     @Test
     public void test() {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
+//        factory.newHazelcastInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
+        List<Integer> source = Arrays.asList(1, 2, 3);
         DAG dag = new DAG();
+        Vertex producer = new Vertex("producer", () -> new ListProducer(source, 1024))
+                .parallelism(1);
+        Vertex consumer = new Vertex("consumer", () -> new ListConsumer())
+                .parallelism(1);
+
+        dag.addVertex(producer);
+        dag.addVertex(consumer);
+
+        dag.addEdge(new Edge(producer, consumer));
         Job job = jetEngine.newJob(dag);
 
         job.execute();

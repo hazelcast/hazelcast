@@ -63,6 +63,8 @@ public class ProcessorTasklet implements Tasklet {
         this.outbox = new ArrayDequeOutbox(outboundStreams.size());
         this.outboundStreams = outboundStreams.toArray(new OutboundEdgeStream[inboundStreams.size()]);
         this.inboundStreamCursor = popInboundStreamGroup();
+
+        processor.init(new ProcessorContextImpl(), outbox);
     }
 
     @Override
@@ -150,6 +152,13 @@ public class ProcessorTasklet implements Tasklet {
                 progTracker.update(MADE_PROGRESS);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "ProcessorTasklet{" +
+                "processor=" + processor +
+                '}';
     }
 }
 

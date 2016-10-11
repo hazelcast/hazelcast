@@ -19,9 +19,15 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
+import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
+import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngine;
+import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Job;
+import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -30,20 +36,30 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
+    public static final int QUEUE_SIZE = 1024;
     private final String name;
     private final ILogger logger;
+    private final ExecutionService executionService;
+    private final JetEngineConfig config;
 
     protected JetEngineImpl(String name, NodeEngine nodeEngine, JetService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(JetEngine.class);
+        this.config = new JetEngineConfig();
+        this.executionService = new ExecutionService(config);
     }
 
     @Override
@@ -65,17 +81,48 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         executeOperation(new ExecuteJobOperation(getName(), job.getDag()));
     }
 
-    public void executeLocal(DAG dag) {
-        for (Vertex vertex : dag) {
-            for (int i = 0; i < vertex.getParallelism(); i++) {
-                dag.getInputEdges(vertex);
-                // 1 tasklet per parallelism of vertex
-                // n*m boundedqueues (1-1) where n producers, m consumers - overall storage can be fixed as
-                // implemented in hot restart
-                // in a cluster , only one queue per node
+    public Future<Void> executeLocal(DAG dag) {
 
+        Map<Edge, ConcurrentConveyor<Object>[]> conveyorMap = new HashMap<>();
+        List<Tasklet> tasks = new ArrayList<>();
+
+        for (Vertex vertex : dag) {
+            List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
+            List<Edge> inboundEdges = dag.getInboundEdges(vertex);
+            int parallelism = getParallelism(vertex);
+            for (int taskletIndex = 0; taskletIndex < parallelism; taskletIndex++) {
+                List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
+                List<InboundEdgeStream> inboundStreams = new ArrayList<>();
+                for (Edge outboundEdge : outboundEdges) {
+                    // each edge has an array of conveyors
+                    // 1 conveyor per consumer - each consumer has number of producer queues.
+                    ConcurrentConveyor<Object>[] conveyorArray = conveyorMap.computeIfAbsent(outboundEdge, e ->
+                            createConveyorArray(getParallelism(outboundEdge.getDestination()),
+                                    parallelism, QUEUE_SIZE));
+                    outboundStreams.add(new ConcurrentOutboundEdgeStream(conveyorArray, taskletIndex,
+                            outboundEdge.getDestinationOrdinal()));
+                }
+
+                for (Edge inboundEdge : inboundEdges) {
+                    ConcurrentConveyor<Object>[] conveyors = conveyorMap.get(inboundEdge);
+                    ConcurrentInboundEdgeStream inboundStream =
+                            new ConcurrentInboundEdgeStream(conveyors[taskletIndex],
+                            inboundEdge.getSourceOrdinal(),
+                            inboundEdge.getPriority());
+                    inboundStreams.add(inboundStream);
+                }
+
+                Processor processor = vertex.getProcessorSupplier().get();
+                tasks.add(new ProcessorTasklet(processor, inboundStreams, outboundStreams));
             }
         }
+
+        return executionService.execute(tasks);
+    }
+
+    private int getParallelism(Vertex vertex) {
+        int parallelism = vertex.getParallelism();
+        return parallelism != -1 ? parallelism : config.parallelism();
     }
 
     private <T> List<T> executeOperation(Operation operation) {
@@ -98,5 +145,18 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
             throw unchecked(e);
         }
     }
+
+    @SuppressWarnings("unchecked")
+    private ConcurrentConveyor<Object>[] createConveyorArray(int count, int queueCount, int queueSize) {
+        ConcurrentConveyor<Object>[] concurrentConveyors = new ConcurrentConveyor[count];
+        Arrays.setAll(concurrentConveyors, i -> {
+            QueuedPipe<Object>[] queues = new QueuedPipe[queueCount];
+            Arrays.setAll(queues, j -> new OneToOneConcurrentArrayQueue<>(queueSize));
+            return concurrentConveyor(new Object(), queues);
+        });
+        return concurrentConveyors;
+    }
+
+
 }
 

@@ -20,7 +20,7 @@ public enum TaskletResult implements ProgressState {
     NO_PROGRESS(false, false),
     MADE_PROGRESS(true, false),
     DONE(true, true),
-    WAS_ALREADY_DONE(true, false);
+    WAS_ALREADY_DONE(false, true);
 
     private final boolean madeProgress;
     private final boolean isDone;

@@ -40,7 +40,7 @@ public class ExecuteJobOperation extends Operation {
     public void run() throws Exception {
         JetService service = getService();
         JetEngineImpl engine = service.getEngine(engineName);
-        engine.executeLocal(dag);
+        engine.executeLocal(dag).get();
         System.out.println("Running job with DAG " + dag);
     }
 

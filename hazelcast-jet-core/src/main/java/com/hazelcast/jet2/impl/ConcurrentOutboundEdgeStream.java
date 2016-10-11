@@ -17,24 +17,35 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
+import com.hazelcast.util.Preconditions;
 
 /**
  * Javadoc pending.
  */
 class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
-    private final ConcurrentConveyor<Object> conveyor;
+    private final ConcurrentConveyor<Object>[] conveyors;
     private final int queueIndex;
     private final int ordinal;
 
-    public ConcurrentOutboundEdgeStream(ConcurrentConveyor<Object> conveyor, int queueIndex, int ordinal) {
-        this.conveyor = conveyor;
+    private int nextIndex = -1;
+
+    public ConcurrentOutboundEdgeStream(ConcurrentConveyor<Object>[] conveyors, int queueIndex, int ordinal) {
+        Preconditions.checkTrue(conveyors.length > 0, "There must be at least one conveyor in the array");
+        Preconditions.checkTrue(queueIndex >= 0, "queue index must be positive");
+        Preconditions.checkTrue(queueIndex < conveyors[0].queueCount(),
+                "Queue index must be less than number of queues in each conveyor");
+
         this.queueIndex = queueIndex;
         this.ordinal = ordinal;
+        this.conveyors = conveyors;
     }
 
     @Override
     public boolean offer(Object item) {
-        return conveyor.offer(queueIndex, item);
+        if (++nextIndex >= conveyors.length) {
+            nextIndex = 0;
+        }
+        return conveyors[nextIndex].offer(queueIndex, item);
     }
 
     @Override
