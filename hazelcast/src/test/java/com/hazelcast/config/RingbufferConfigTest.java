@@ -12,7 +12,9 @@ import static com.hazelcast.config.RingbufferConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.RingbufferConfig.DEFAULT_SYNC_BACKUP_COUNT;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
@@ -20,7 +22,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class RingbufferConfigTest {
 
-    public static final String NAME = "someringbuffer";
+    private static final String NAME = "someRingbuffer";
 
     @Test
     public void testDefaultSetting() {
@@ -158,8 +160,7 @@ public class RingbufferConfigTest {
         assertEquals(10, config.getTimeToLiveSeconds());
     }
 
-    // ================== inmemoryformat =================================
-
+    // ================== inMemoryFormat =================================
 
     @Test(expected = NullPointerException.class)
     public void setInMemoryFormat_whenNull() {
@@ -185,6 +186,30 @@ public class RingbufferConfigTest {
         assertEquals(InMemoryFormat.OBJECT, config.getInMemoryFormat());
     }
 
+    // ==================== RingbufferStoreConfig ================================
+
+    @Test
+    public void getRingbufferStoreConfig() {
+        RingbufferConfig config = new RingbufferConfig(NAME);
+
+        RingbufferStoreConfig ringbufferConfig = config.getRingbufferStoreConfig();
+
+        assertNull(ringbufferConfig);
+    }
+
+    @Test
+    public void setRingbufferStoreConfig() {
+        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
+                .setEnabled(true)
+                .setClassName("myClassName");
+
+
+        RingbufferConfig config = new RingbufferConfig(NAME);
+        config.setRingbufferStoreConfig(ringbufferStoreConfig);
+
+        assertEquals(ringbufferStoreConfig, config.getRingbufferStoreConfig());
+    }
+
     // ==================== toString ================================
 
     @Test
@@ -193,16 +218,22 @@ public class RingbufferConfigTest {
 
         String s = config.toString();
 
-        assertEquals("RingbufferConfig{name='someringbuffer', capacity=10000, backupCount=1, " +
-                "asyncBackupCount=0, timeToLiveSeconds=0, inMemoryFormat=BINARY}", s);
+        assertEquals("RingbufferConfig{name='someRingbuffer', capacity=10000, backupCount=1,"
+                + " asyncBackupCount=0, timeToLiveSeconds=0, inMemoryFormat=BINARY}", s);
     }
 
     // =================== getAsReadOnly ============================
 
     @Test
     public void getAsReadOnly() {
-        RingbufferConfig original = new RingbufferConfig(NAME);
-        original.setBackupCount(2).setAsyncBackupCount(1).setCapacity(10).setTimeToLiveSeconds(400);
+        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig();
+
+        RingbufferConfig original = new RingbufferConfig(NAME)
+                .setBackupCount(2)
+                .setAsyncBackupCount(1)
+                .setCapacity(10)
+                .setTimeToLiveSeconds(400)
+                .setRingbufferStoreConfig(ringbufferStoreConfig);
 
         RingbufferConfig readonly = original.getAsReadOnly();
         assertNotNull(readonly);
@@ -213,6 +244,7 @@ public class RingbufferConfigTest {
         assertEquals(original.getCapacity(), readonly.getCapacity());
         assertEquals(original.getTimeToLiveSeconds(), readonly.getTimeToLiveSeconds());
         assertEquals(original.getInMemoryFormat(), readonly.getInMemoryFormat());
+        assertNotEquals(original.getRingbufferStoreConfig(), readonly.getRingbufferStoreConfig());
 
         try {
             readonly.setCapacity(10);
@@ -243,5 +275,22 @@ public class RingbufferConfigTest {
             fail();
         } catch (UnsupportedOperationException expected) {
         }
+
+        try {
+            readonly.setRingbufferStoreConfig(null);
+            fail();
+        } catch (UnsupportedOperationException expected) {
+        }
+
+        try {
+            readonly.getRingbufferStoreConfig().setEnabled(true);
+            fail();
+        } catch (UnsupportedOperationException expected) {
+        }
+
+        original.setRingbufferStoreConfig(null);
+        readonly = original.getAsReadOnly();
+
+        assertNull(readonly.getRingbufferStoreConfig());
     }
 }
