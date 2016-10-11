@@ -34,6 +34,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
         super(nearCacheConfig, nearCacheContext);
     }
 
+    @Override
     protected MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
                                                            NearCacheConfig nearCacheConfig,
                                                            NearCacheContext nearCacheContext) {
