@@ -24,11 +24,11 @@ interface InboundEdgeStream {
     /**
      * Drains all available items to the supplied destination collection.
      *
-     * @return a {@code TaskletResult} that says whether any items were drained
+     * @return a {@link ProgressState} that says whether any items were drained
      * (the {@code isMadeProgress} property) and whether the stream is now completely exhausted
      * (the {@code isDone} property)
      */
-    TaskletResult drainAvailableItemsInto(CollectionWithObserver dest);
+    ProgressState drainAvailableItemsInto(CollectionWithPredicate dest);
 
     int ordinal();
 

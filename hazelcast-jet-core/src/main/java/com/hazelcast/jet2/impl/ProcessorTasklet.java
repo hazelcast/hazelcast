@@ -17,7 +17,6 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProgressTracker;
 import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayDeque;
@@ -29,9 +28,9 @@ import java.util.Queue;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet2.impl.TaskletResult.DONE;
-import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
-import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
+import static com.hazelcast.jet2.impl.ProgressState.DONE;
+import static com.hazelcast.jet2.impl.ProgressState.MADE_PROGRESS;
+import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
 
@@ -40,7 +39,7 @@ public class ProcessorTasklet implements Tasklet {
     private final Processor processor;
     private final Queue<ArrayList<InboundEdgeStream>> inboundStreamsQueue;
     private CircularCursor<InboundEdgeStream> inboundStreamCursor;
-    private final ArrayDequeWithObserver inbox;
+    private final ArrayDequeWithPredicate inbox;
     private final ArrayDequeOutbox outbox;
     private final OutboundEdgeStream[] outboundStreams;
     private final ProgressTracker progTracker = new ProgressTracker();
@@ -59,16 +58,16 @@ public class ProcessorTasklet implements Tasklet {
                 .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new, toCollection(ArrayList::new)))
                 .entrySet().stream()
                 .map(Entry::getValue).collect(Collectors.toCollection(ArrayDeque::new));
-        this.inbox = new ArrayDequeWithObserver();
+        this.inbox = new ArrayDequeWithPredicate();
         this.outbox = new ArrayDequeOutbox(outboundStreams.size());
-        this.outboundStreams = outboundStreams.toArray(new OutboundEdgeStream[inboundStreams.size()]);
+        this.outboundStreams = outboundStreams.toArray(new OutboundEdgeStream[outboundStreams.size()]);
         this.inboundStreamCursor = popInboundStreamGroup();
 
         processor.init(new ProcessorContextImpl(), outbox);
     }
 
     @Override
-    public TaskletResult call() throws Exception {
+    public ProgressState call() throws Exception {
         progTracker.reset();
         tryFillInbox();
         if (progTracker.isDone()) {
@@ -82,7 +81,7 @@ public class ProcessorTasklet implements Tasklet {
             }
         }
         trySendOutbox();
-        return TaskletResult.valueOf(progTracker);
+        return progTracker.toProgressState();
     }
 
     private CircularCursor<InboundEdgeStream> popInboundStreamGroup() {
@@ -99,7 +98,7 @@ public class ProcessorTasklet implements Tasklet {
             return;
         }
         final InboundEdgeStream first = inboundStreamCursor.value();
-        TaskletResult result;
+        ProgressState result;
         do {
             currentInboundStream = inboundStreamCursor.value();
             result = currentInboundStream.drainAvailableItemsInto(inbox);
@@ -132,6 +131,9 @@ public class ProcessorTasklet implements Tasklet {
             return;
         }
         if (processor.complete()) {
+            for (OutboundEdgeStream outboundStream : outboundStreams) {
+                outbox.add(outboundStream.ordinal(), outboundStream.goneItem());
+            }
             progTracker.update(DONE);
             processorCompleted = true;
         } else {
@@ -144,8 +146,8 @@ public class ProcessorTasklet implements Tasklet {
         for (int i = 0; i < outbox.queueCount(); i++) {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null; ) {
-                if (!outboundStreams[i].offer(item)) {
-                    progTracker.notDone();
+                ProgressState offered = outboundStreams[i].offer(item);
+                if (!offered.isDone()) {
                     continue nextOutboundStream;
                 }
                 q.remove();

@@ -16,10 +16,33 @@
 
 package com.hazelcast.jet2.impl;
 
-/**
- * Javadoc pending.
- */
-public interface ProgressState {
-    boolean isMadeProgress();
-    boolean isDone();
+public enum ProgressState {
+    NO_PROGRESS(false, false),
+    MADE_PROGRESS(true, false),
+    DONE(true, true),
+    WAS_ALREADY_DONE(false, true);
+
+    private final boolean madeProgress;
+    private final boolean isDone;
+
+    ProgressState(boolean madeProgress, boolean isDone) {
+        this.madeProgress = madeProgress;
+        this.isDone = isDone;
+    }
+
+    public boolean isMadeProgress() {
+        return madeProgress;
+    }
+
+    public boolean isDone() {
+        return isDone;
+    }
+
+    public static ProgressState valueOf(boolean isDone, boolean isMadeProgress) {
+        return isDone
+                ? isMadeProgress ? ProgressState.DONE : ProgressState.WAS_ALREADY_DONE
+                : isMadeProgress ? ProgressState.MADE_PROGRESS : ProgressState.NO_PROGRESS;
+
+    }
+
 }

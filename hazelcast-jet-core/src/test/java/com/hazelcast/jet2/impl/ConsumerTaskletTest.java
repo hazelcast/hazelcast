@@ -30,9 +30,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet2.impl.TaskletResult.DONE;
-import static com.hazelcast.jet2.impl.TaskletResult.MADE_PROGRESS;
-import static com.hazelcast.jet2.impl.TaskletResult.NO_PROGRESS;
+import static com.hazelcast.jet2.impl.ProgressState.DONE;
+import static com.hazelcast.jet2.impl.ProgressState.MADE_PROGRESS;
+import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -299,7 +299,7 @@ public class ConsumerTaskletTest {
 
     private static void callUntilDone(Tasklet tasklet) throws Exception {
         int iterCount = 0;
-        for (TaskletResult r; !(r = tasklet.call()).isDone();) {
+        for (ProgressState r; !(r = tasklet.call()).isDone();) {
             assertTrue(r.isMadeProgress());
             assertTrue("tasklet.call() invoked " + CALL_COUNT_LIMIT + " times without reaching completion",
                     +iterCount < CALL_COUNT_LIMIT);

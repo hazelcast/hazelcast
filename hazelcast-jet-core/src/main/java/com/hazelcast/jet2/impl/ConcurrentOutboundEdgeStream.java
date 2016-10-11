@@ -19,15 +19,19 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.util.Preconditions;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /**
  * Javadoc pending.
  */
 class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
-    private final ConcurrentConveyor<Object>[] conveyors;
     private final int queueIndex;
     private final int ordinal;
 
-    private int nextIndex = -1;
+    private final ProgressTracker tracker = new ProgressTracker();
+    private final CircularCursor<ConcurrentConveyor<Object>> cursor;
+    private final Object goneItem;
 
     public ConcurrentOutboundEdgeStream(ConcurrentConveyor<Object>[] conveyors, int queueIndex, int ordinal) {
         Preconditions.checkTrue(conveyors.length > 0, "There must be at least one conveyor in the array");
@@ -37,15 +41,50 @@ class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
         this.queueIndex = queueIndex;
         this.ordinal = ordinal;
-        this.conveyors = conveyors;
+        this.cursor = new CircularCursor<>(new ArrayList<>(Arrays.asList(conveyors)));
+
+        this.goneItem = new Object();
     }
 
     @Override
-    public boolean offer(Object item) {
-        if (++nextIndex >= conveyors.length) {
-            nextIndex = 0;
+    public ProgressState offer(Object item) {
+        if (item == goneItem) {
+            return complete();
         }
-        return conveyors[nextIndex].offer(queueIndex, item);
+
+        // use round robin to find a queue to put items to
+        ConcurrentConveyor<Object> first = cursor.value();
+        do {
+            boolean offered = cursor.value().offer(queueIndex, item);
+            cursor.advance();
+            if (offered) {
+                return ProgressState.DONE;
+            }
+        } while (cursor.value() != first);
+        return ProgressState.NO_PROGRESS;
+    }
+
+    @Override
+    public Object goneItem() {
+        return goneItem;
+    }
+
+    /**
+     * Signal all conveyors with the gone item
+     */
+    private ProgressState complete() {
+        tracker.reset();
+        ConcurrentConveyor<Object> first = cursor.value();
+        do {
+            ConcurrentConveyor<Object> conveyor = cursor.value();
+            if (conveyor.offer(queueIndex, conveyor.submitterGoneItem())) {
+                tracker.update(ProgressState.DONE);
+                cursor.remove();
+            } else {
+                tracker.notDone();
+            }
+        } while (cursor.advance() && cursor.value() != first);
+        return tracker.toProgressState();
     }
 
     @Override

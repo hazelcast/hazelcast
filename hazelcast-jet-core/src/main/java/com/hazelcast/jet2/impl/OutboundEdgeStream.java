@@ -24,10 +24,13 @@ interface OutboundEdgeStream {
     /**
      * Offers an item to this output. If the output cannot accept it now, the call
      * should be retried later.
-     *
-     * @return <code>true</code> means "item was accepted", <code>false</code> means "try again later".
      */
-    boolean offer(Object item);
+    ProgressState offer(Object item);
+
+    /**
+     * @return the item used to mark the end of the stream
+     */
+    Object goneItem();
 
     int ordinal();
 }

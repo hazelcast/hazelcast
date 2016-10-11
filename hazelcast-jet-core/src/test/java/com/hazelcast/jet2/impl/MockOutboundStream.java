@@ -23,19 +23,26 @@ public class MockOutboundStream implements OutboundEdgeStream {
 
     private final ArrayList<Object> buffer;
     private final int capacity;
+    private final Object goneItem;
 
     public MockOutboundStream(int capacity) {
         this.capacity = capacity;
         this.buffer = new ArrayList<>(capacity);
+        this.goneItem = new Object();
     }
 
     @Override
-    public boolean offer(Object item) {
+    public ProgressState offer(Object item) {
         if (buffer.size() == capacity) {
-            return false;
+            return ProgressState.NO_PROGRESS;
         }
         buffer.add(item);
-        return true;
+        return ProgressState.DONE;
+    }
+
+    @Override
+    public Object goneItem() {
+        return goneItem;
     }
 
     @Override

@@ -54,7 +54,7 @@ public class ProducerTaskletTest {
         MockOutboundStream output1 = new MockOutboundStream(10);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1, 2, 3), output1.getBuffer());
     }
 
@@ -67,7 +67,7 @@ public class ProducerTaskletTest {
 
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1, 2, 3), output1.getBuffer());
         assertEquals(Arrays.asList(0, 1, 2, 3), output2.getBuffer());
     }
@@ -79,9 +79,9 @@ public class ProducerTaskletTest {
 
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.DONE, tasklet.call());
 
         assertEquals(list, output1.getBuffer());
     }
@@ -95,9 +95,9 @@ public class ProducerTaskletTest {
 
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.DONE, tasklet.call());
 
         assertEquals(list, output1.getBuffer());
         assertEquals(list, output2.getBuffer());
@@ -109,18 +109,18 @@ public class ProducerTaskletTest {
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.NO_PROGRESS, tasklet.call());
 
         assertEquals(Arrays.asList(0, 1, 2, 3), output1.drain());
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.NO_PROGRESS, tasklet.call());
 
         assertEquals(Arrays.asList(4, 5, 6, 7), output1.drain());
 
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertEquals(ProgressState.DONE, tasklet.call());
 
         assertEquals(Arrays.asList(8, 9), output1.drain());
     }
@@ -131,12 +131,12 @@ public class ProducerTaskletTest {
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.NO_PROGRESS, tasklet.call());
         assertEquals(singletonList(0), output1.drain());
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.NO_PROGRESS, tasklet.call());
 
         assertEquals(singletonList(1), output1.getBuffer());
     }
@@ -150,8 +150,8 @@ public class ProducerTaskletTest {
         Tasklet tasklet = createTasklet();
 
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
-        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.NO_PROGRESS, tasklet.call());
 
         assertEquals(Arrays.asList(0, 1), output1.getBuffer());
         assertEquals(Arrays.asList(0, 1), output2.getBuffer());
@@ -162,16 +162,16 @@ public class ProducerTaskletTest {
         MockOutboundStream output1 = new MockOutboundStream(10);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1, 2, 3), output1.drain());
 
         producer.pause();
 
-        assertEquals(TaskletResult.NO_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.NO_PROGRESS, tasklet.call());
 
         producer.resume();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(4, 5, 6, 7), output1.drain());
     }
 
@@ -180,12 +180,12 @@ public class ProducerTaskletTest {
         MockOutboundStream output1 = new MockOutboundStream(10);
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1, 2, 3), output1.drain());
 
         producer.completeEarly();
 
-        assertEquals(TaskletResult.DONE, tasklet.call());
+        assertEquals(ProgressState.DONE, tasklet.call());
 
         assertTrue(output1.drain().isEmpty());
     }
@@ -196,11 +196,11 @@ public class ProducerTaskletTest {
         outboundStreams.add(output1);
         Tasklet tasklet = createTasklet();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(0, 1), output1.drain());
         producer.pause();
 
-        assertEquals(TaskletResult.MADE_PROGRESS, tasklet.call());
+        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertEquals(Arrays.asList(2, 3), output1.drain());
 
     }

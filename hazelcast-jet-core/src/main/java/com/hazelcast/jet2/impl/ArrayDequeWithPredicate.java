@@ -17,22 +17,21 @@
 package com.hazelcast.jet2.impl;
 
 import java.util.ArrayDeque;
-import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Javadoc pending.
  */
-class ArrayDequeWithObserver extends ArrayDeque<Object> implements CollectionWithObserver {
-    private Consumer<Object> observer;
+class ArrayDequeWithPredicate extends ArrayDeque<Object> implements CollectionWithPredicate {
+    private Predicate<Object> observer;
 
     @Override
-    public void setObserverOfAdd(Consumer<? super Object> observer) {
+    public void setPredicateOfAdd(Predicate<? super Object> observer) {
         this.observer = observer;
     }
 
     @Override
     public boolean add(Object o) {
-        observer.accept(o);
-        return super.add(o);
+        return observer.test(o) && super.add(o);
     }
 }

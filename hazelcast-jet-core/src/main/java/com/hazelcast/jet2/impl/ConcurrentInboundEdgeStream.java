@@ -18,7 +18,7 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
-import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Javadoc pending.
@@ -37,10 +37,10 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     }
 
     @Override
-    public TaskletResult drainAvailableItemsInto(CollectionWithObserver dest) {
+    public ProgressState drainAvailableItemsInto(CollectionWithPredicate dest) {
         assert dest.isEmpty() : "Destination is not empty";
         boolean madeProgress = false;
-        dest.setObserverOfAdd(exhaustedQueueCleaner);
+        dest.setPredicateOfAdd(exhaustedQueueCleaner);
         try {
             exhaustedQueueCleaner.doneItem = conveyor.submitterGoneItem();
             for (int i = 0; i < conveyor.queueCount(); i++) {
@@ -51,9 +51,9 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 madeProgress |= conveyor.drainTo(i, dest) > 0;
             }
         } finally {
-            dest.setObserverOfAdd(null);
+            dest.setPredicateOfAdd(null);
         }
-        return TaskletResult.valueOf(madeProgress, exhaustedQueueCleaner.cleanedCount == conveyor.queueCount());
+        return ProgressState.valueOf(madeProgress, exhaustedQueueCleaner.cleanedCount == conveyor.queueCount());
     }
 
     @Override
@@ -66,18 +66,20 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         return priority;
     }
 
-    private final class ExhaustedQueueCleaner implements Consumer<Object> {
+    private final class ExhaustedQueueCleaner implements Predicate<Object> {
         Object doneItem;
         int index;
         int cleanedCount;
 
         @Override
-        public void accept(Object o) {
+        public boolean test(Object o) {
             if (o == doneItem) {
                 assert conveyor.queue(index) != null : "Repeated 'submitterGoneItem' in queue at index " + index;
                 conveyor.removeQueue(index);
                 cleanedCount++;
+                return false;
             }
+            return true;
         }
     }
 }
