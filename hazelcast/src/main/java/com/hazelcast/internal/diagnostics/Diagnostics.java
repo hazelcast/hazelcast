@@ -180,7 +180,7 @@ public class Diagnostics {
 
     public void start() {
         if (!enabled) {
-            logger.finest("Diagnostics is enabled");
+            logger.finest("Diagnostics is disabled");
             return;
         }
 
