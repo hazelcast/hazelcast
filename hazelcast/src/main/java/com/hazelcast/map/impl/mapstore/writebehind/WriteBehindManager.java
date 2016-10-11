@@ -24,12 +24,6 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.TaskScheduler;
-import com.hazelcast.util.executor.ExecutorType;
-
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessors.createWriteBehindProcessor;
 
@@ -38,39 +32,24 @@ import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessors.
  */
 public class WriteBehindManager implements MapStoreManager {
 
-    private static final String EXECUTOR_NAME_PREFIX = "hz:scheduled:mapstore:";
-
-    private static final int EXECUTOR_DEFAULT_QUEUE_CAPACITY = 10000;
-
-    private final TaskScheduler taskScheduler;
-
     private final WriteBehindProcessor writeBehindProcessor;
-
     private final StoreWorker storeWorker;
-
-    private final String executorName;
-
     private final MapStoreContext mapStoreContext;
 
     public WriteBehindManager(MapStoreContext mapStoreContext) {
         this.mapStoreContext = mapStoreContext;
         this.writeBehindProcessor = newWriteBehindProcessor(mapStoreContext);
         this.storeWorker = new StoreWorker(mapStoreContext, writeBehindProcessor);
-        this.executorName = EXECUTOR_NAME_PREFIX + mapStoreContext.getMapName();
-        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
-        this.taskScheduler = getTaskScheduler(mapServiceContext);
     }
 
     @Override
     public void start() {
-        taskScheduler.scheduleWithRepetition(storeWorker, 1, 1, TimeUnit.SECONDS);
+        storeWorker.start();
     }
 
     @Override
     public void stop() {
-        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        nodeEngine.getExecutionService().shutdownExecutor(executorName);
+        storeWorker.stop();
     }
 
     //todo get this via constructor function.
@@ -84,13 +63,6 @@ public class WriteBehindManager implements MapStoreManager {
         StoreListener<DelayedEntry> storeListener = new InternalStoreListener(mapStoreContext);
         writeBehindProcessor.addStoreListener(storeListener);
         return writeBehindProcessor;
-    }
-
-    private TaskScheduler getTaskScheduler(MapServiceContext mapServiceContext) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.register(executorName, 1, EXECUTOR_DEFAULT_QUEUE_CAPACITY, ExecutorType.CACHED);
-        return executionService.getTaskScheduler(executorName);
     }
 
     /**
