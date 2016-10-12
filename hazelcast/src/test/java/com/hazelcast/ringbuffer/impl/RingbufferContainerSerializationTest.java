@@ -1,6 +1,5 @@
 package com.hazelcast.ringbuffer.impl;
 
-
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -55,10 +54,6 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
         this.serializationService = getSerializationService(hz);
     }
 
-    private Data toData(Object item) {
-        return serializationService.toData(item);
-    }
-
     @Test
     public void whenObjectInMemoryFormat_andTTLEnabled() {
         test(OBJECT, 100);
@@ -111,36 +106,39 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
     }
 
     private void testSerialization(RingbufferContainer original) {
-        RingbufferContainer clone = clone(original);
+        final RingbufferContainer clone = clone(original);
+
+        final RingbufferExpirationPolicy originalExpirationPolicy = original.getExpirationPolicy();
+        final RingbufferExpirationPolicy cloneExpirationPolicy = clone.getExpirationPolicy();
 
         assertEquals(original.headSequence(), clone.headSequence());
         assertEquals(original.tailSequence(), clone.tailSequence());
         assertEquals(original.getCapacity(), clone.getCapacity());
-        if (original.getExpirationPolicy() != null) {
-            assertNotNull(clone.getExpirationPolicy());
-            assertEquals(original.getExpirationPolicy().getTtlMs(), clone.getExpirationPolicy().getTtlMs());
+        if (originalExpirationPolicy != null) {
+            assertNotNull(cloneExpirationPolicy);
+            assertEquals(originalExpirationPolicy.getTtlMs(), cloneExpirationPolicy.getTtlMs());
         }
         final ArrayRingbuffer originalRingbuffer = (ArrayRingbuffer) original.getRingbuffer();
         final ArrayRingbuffer cloneRingbuffer = (ArrayRingbuffer) original.getRingbuffer();
         assertArrayEquals(originalRingbuffer.ringItems, cloneRingbuffer.ringItems);
 
-
-        // the most complicated part is the expiration.
+        // the most complicated part is the expiration
         if (original.getConfig().getTimeToLiveSeconds() == 0) {
-            assertNull(clone.getExpirationPolicy());
+            assertNull(cloneExpirationPolicy);
             return;
         }
+        assertNotNull(originalExpirationPolicy);
+        assertNotNull(cloneExpirationPolicy);
 
-        assertNotNull(clone.getExpirationPolicy());
-        assertEquals(original.getExpirationPolicy().ringExpirationMs.length, clone.getExpirationPolicy().ringExpirationMs.length);
+        assertEquals(originalExpirationPolicy.ringExpirationMs.length, cloneExpirationPolicy.ringExpirationMs.length);
 
         for (long seq = original.headSequence(); seq <= original.tailSequence(); seq++) {
-            int index = original.getExpirationPolicy().toIndex(seq);
-            long originalExpiration = original.getExpirationPolicy().ringExpirationMs[index];
-            long actualExpiration = clone.getExpirationPolicy().ringExpirationMs[index];
+            int index = originalExpirationPolicy.toIndex(seq);
+            long originalExpiration = originalExpirationPolicy.ringExpirationMs[index];
+            long actualExpiration = cloneExpirationPolicy.ringExpirationMs[index];
             double difference = actualExpiration - originalExpiration;
-            assertTrue("difference was:" + difference, difference > 0.50 * CLOCK_DIFFERENCE_MS);
-            assertTrue("difference was:" + difference, difference < 1.50 * CLOCK_DIFFERENCE_MS);
+            assertTrue("difference was: " + difference, difference > 0.50 * CLOCK_DIFFERENCE_MS);
+            assertTrue("difference was: " + difference, difference < 1.50 * CLOCK_DIFFERENCE_MS);
         }
     }
 
@@ -161,5 +159,10 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
             closeResource(out);
             closeResource(in);
         }
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private Data toData(Object item) {
+        return serializationService.toData(item);
     }
 }

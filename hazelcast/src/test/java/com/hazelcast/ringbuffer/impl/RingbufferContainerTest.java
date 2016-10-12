@@ -16,9 +16,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -42,7 +44,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         return serializationService.toObject(item);
     }
 
-    // =============== construction =======================
+    // ======================= construction =======================
 
     @Test
     public void constructionNoTTL() {
@@ -102,7 +104,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         assertEquals(config.getCapacity() - 2, ringbuffer.remainingCapacity());
     }
 
-    // ===================================================
+    // ======================= size =======================
 
     @Test
     public void size_whenEmpty() {
@@ -111,6 +113,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
                 nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
 
         assertEquals(0, ringbuffer.size());
+        assertTrue(ringbuffer.isEmpty());
     }
 
     @Test
@@ -123,8 +126,9 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
             ringbuffer.add(toData(""));
             assertEquals(k + 1, ringbuffer.size());
         }
+        assertFalse(ringbuffer.isEmpty());
 
-        // at this point the ringbuffer is full. So if we add more items, the oldest item is overwritte
+        // at this point the ringbuffer is full. So if we add more items, the oldest item is overwritten
         // and therefor the size remains the same
         for (int k = 0; k < config.getCapacity(); k++) {
             ringbuffer.add(toData(""));
@@ -132,7 +136,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         }
     }
 
-    // ===================================================
+    // ======================= add =======================
 
     @Test
     public void add() {
@@ -194,7 +198,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         ringbuffer.add(toData("1"));
         ringbuffer.add(toData("2"));
         ringbuffer.add(toData("3"));
-        // this one will overwrite the first item.
+        // this one will overwrite the first item
         ringbuffer.add(toData("4"));
 
         ringbuffer.read(0);
@@ -220,12 +224,5 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
 
         rbContainer.add(toData("foo"));
         assertInstanceOf(String.class, ringbuffer.ringItems[0]);
-    }
-
-    // ===================================================
-
-    @Test
-    public void readMany() {
-
     }
 }

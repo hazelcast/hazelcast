@@ -18,7 +18,6 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
 
-
 /**
  * The RingbufferContainer is responsible for storing the actual content of a ringbuffer.
  * <p/>
@@ -90,7 +89,6 @@ public class ArrayRingbuffer implements Ringbuffer {
         return tailSequence;
     }
 
-
     @Override
     public Object read(long sequence) {
         checkReadSequence(sequence);
@@ -110,7 +108,6 @@ public class ArrayRingbuffer implements Ringbuffer {
                     + " tailSequence is:" + tailSequence, headSequence);
         }
     }
-
 
     @Override
     public void checkReadSequence(long sequence) {
@@ -135,4 +132,3 @@ public class ArrayRingbuffer implements Ringbuffer {
         ringItems[toIndex(seq)] = data;
     }
 }
-

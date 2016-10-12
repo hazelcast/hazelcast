@@ -252,7 +252,7 @@ public class RingbufferContainer implements DataSerializable {
      *
      * @param sequence The sequence of the item to be read
      * @return The item read
-     * @throws StaleSequenceException if the sequence is :
+     * @throws StaleSequenceException if the sequence is:
      *                                1. larger than the tailSequence or
      *                                2. smaller than the headSequence and the data store is disabled
      */
@@ -266,7 +266,7 @@ public class RingbufferContainer implements DataSerializable {
      * @param beginSequence the sequence of the first item to read.
      * @param result        the List where the result are stored in.
      * @return returns the sequenceId of the next item to read. This is needed if not all required items are found.
-     * @throws StaleSequenceException if the sequence is :
+     * @throws StaleSequenceException if the sequence is:
      *                                1. larger than the tailSequence or
      *                                2. smaller than the headSequence and the data store is disabled
      */
@@ -299,7 +299,7 @@ public class RingbufferContainer implements DataSerializable {
      * read.  Also, the requested sequence can be smaller than the head sequence if the data store is enabled.
      *
      * @param readSequence the sequence wanting to be read
-     * @throws StaleSequenceException if the requested sequence is
+     * @throws StaleSequenceException if the requested sequence is:
      *                                1. greater than the tail sequence + 1 or
      *                                2. smaller than the head sequence and the data store is not enabled
      */
@@ -324,7 +324,7 @@ public class RingbufferContainer implements DataSerializable {
      * Check if the sequence can be read from the ring buffer.
      *
      * @param sequence the sequence wanting to be read
-     * @throws StaleSequenceException if the requested sequence is
+     * @throws StaleSequenceException if the requested sequence is:
      *                                1. greater than the tail sequence or
      *                                2. smaller than the head sequence and the data store is not enabled
      */
