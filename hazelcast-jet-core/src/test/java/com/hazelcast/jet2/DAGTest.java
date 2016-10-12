@@ -17,8 +17,10 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -30,19 +32,22 @@ public class DAGTest {
 
     private static final ProcessorSupplier PROCESSOR_SUPPLIER = TestProcessor::new;
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Test
-    public void testIterator() {
+    public void test_iterator() {
         DAG dag = new DAG();
 
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
         dag.addVertex(c)
-           .addVertex(b)
-           .addVertex(a)
-           .addEdge(new Edge(a, b))
-           .addEdge(new Edge(b, c))
-           .addEdge(new Edge(a, c));
+                .addVertex(b)
+                .addVertex(a)
+                .addEdge(new Edge(a, 0, b, 0))
+                .addEdge(new Edge(b, 0, c, 0))
+                .addEdge(new Edge(a, 1, c, 1));
 
         Iterator<Vertex> iterator = dag.iterator();
         assertEquals(a, iterator.next());
@@ -52,18 +57,18 @@ public class DAGTest {
     }
 
     @Test
-    public void testReverseIterator() {
+    public void test_reverseIterator() {
         DAG dag = new DAG();
 
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
         dag.addVertex(c)
-           .addVertex(b)
-           .addVertex(a)
-           .addEdge(new Edge(a, b))
-           .addEdge(new Edge(b, c))
-           .addEdge(new Edge(a, c));
+                .addVertex(b)
+                .addVertex(a)
+                .addEdge(new Edge(a, 0, b, 0))
+                .addEdge(new Edge(b, 0, c, 0))
+                .addEdge(new Edge(a, 1, c, 1));
 
         Iterator<Vertex> iterator = dag.reverseIterator();
         assertEquals(c, iterator.next());
@@ -72,18 +77,107 @@ public class DAGTest {
         assertEquals(false, iterator.hasNext());
     }
 
+    @Test
+    public void test_cycleDetection() {
+        DAG dag = new DAG();
+
+        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+
+        dag.addVertex(a)
+                .addVertex(b)
+                .addEdge(new Edge(a, b))
+                .addEdge(new Edge(b, a));
+
+        expectedException.expect(IllegalArgumentException.class);
+        dag.verify();
+    }
+
+    @Test
+    public void test_duplicateOutputOrdinal() {
+        DAG dag = new DAG();
+
+        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
+
+        dag.addVertex(a)
+                .addVertex(b)
+                .addVertex(c)
+                .addEdge(new Edge(a, 0, b, 0));
+
+        expectedException.expect(IllegalArgumentException.class);
+        dag.addEdge(new Edge(a, 0, c, 0));
+    }
+
+    @Test
+    public void test_gapInOutputOrdinal() {
+        DAG dag = new DAG();
+
+        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
+
+        dag.addVertex(a)
+                .addVertex(b)
+                .addVertex(c)
+                .addEdge(new Edge(a, 0, b, 0))
+                .addEdge(new Edge(a, 2, c, 0));
+
+        expectedException.expect(IllegalArgumentException.class);
+        dag.verify();
+    }
+
+    @Test
+    public void test_duplicateInputOrdinal() {
+        DAG dag = new DAG();
+
+        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
+
+        dag.addVertex(a)
+                .addVertex(b)
+                .addVertex(c)
+                .addEdge(new Edge(a, 0, c, 0));
+
+        expectedException.expect(IllegalArgumentException.class);
+        dag.addEdge(new Edge(b, 0, c, 0));
+    }
+
+    @Test
+    public void test_gapInputOrdinal() {
+        DAG dag = new DAG();
+
+        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
+
+        dag.addVertex(a)
+                .addVertex(b)
+                .addVertex(c)
+                .addEdge(new Edge(a, 0, c, 0))
+                .addEdge(new Edge(b, 0, c, 2));
+
+        expectedException.expect(IllegalArgumentException.class);
+        dag.verify();
+    }
+
     private static class TestProcessor implements Processor {
         @Override
         public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
         }
+
         @Override
         public boolean process(int ordinal, Object item) {
             return true;
         }
+
         @Override
         public boolean complete(int ordinal) {
             return true;
         }
+
         @Override
         public boolean complete() {
             return true;

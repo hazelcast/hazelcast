@@ -23,13 +23,16 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -54,24 +57,84 @@ public class JetEngineTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
-        List<Integer> source = IntStream.range(0, 1000).boxed().collect(Collectors.toList());
+        List<Integer> evens = IntStream.range(0, 10).filter(f -> f % 2 == 0).
+                boxed().collect(Collectors.toList());
+        List<Integer> odds = IntStream.range(0, 10).filter(f -> f % 2 != 0)
+                .boxed().collect(Collectors.toList());
+
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(source, 1024))
+        Vertex evensVertex = new Vertex("evens", () -> new ListProducer(evens, 4))
                 .parallelism(1);
 
-        ListConsumer listConsumer = new ListConsumer();
-        Vertex consumer = new Vertex("consumer", () -> listConsumer)
+        Vertex oddsVertex = new Vertex("odds", () -> new ListProducer(odds, 4))
                 .parallelism(1);
 
-        dag.addVertex(producer);
-        dag.addVertex(consumer);
 
-        dag.addEdge(new Edge(producer, consumer));
+        Vertex processor = new Vertex("processor",
+                () -> new SplittingMapper(o -> (int) o * (int) o, o -> (int) o * (int) o * (int) o))
+                .parallelism(4);
+
+        ListConsumer lhsConsumer = new ListConsumer();
+        ListConsumer rhsConsumer = new ListConsumer();
+
+        Vertex lhs = new Vertex("lhs", () -> lhsConsumer)
+                .parallelism(1);
+
+        Vertex rhs = new Vertex("rhs", () -> rhsConsumer)
+                .parallelism(1);
+
+        dag
+                .addVertex(evensVertex)
+                .addVertex(oddsVertex)
+                .addVertex(processor)
+                .addVertex(lhs)
+                .addVertex(rhs)
+                .addEdge(new Edge(evensVertex, 0, processor, 0))
+                .addEdge(new Edge(oddsVertex, 0, processor, 1))
+                .addEdge(new Edge(processor, 0, lhs, 0))
+                .addEdge(new Edge(processor, 1, rhs, 0));
+
         Job job = jetEngine.newJob(dag);
 
         job.execute();
 
-        System.out.println(listConsumer.getList());
+        System.out.println(lhsConsumer.getList());
+        System.out.println(rhsConsumer.getList());
     }
 
+    private static class SplittingMapper implements Processor {
+
+        private final Function<Object, Object> left;
+        private final Function<Object, Object> right;
+
+        public SplittingMapper(Function<Object, Object> left,
+                               Function<Object, Object> right) {
+            this.left = left;
+            this.right = right;
+        }
+
+        private Outbox outbox;
+
+        @Override
+        public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
+            this.outbox = outbox;
+        }
+
+        @Override
+        public boolean process(int ordinal, Object item) {
+            outbox.add(0, left.apply(item));
+            outbox.add(1, right.apply(item));
+            return true;
+        }
+
+        @Override
+        public boolean complete(int ordinal) {
+            return true;
+        }
+
+        @Override
+        public boolean complete() {
+            return true;
+        }
+    }
 }

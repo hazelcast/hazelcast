@@ -50,14 +50,18 @@ public interface Processor {
      *
      * @return <code>true</code> if completing this input is now done, <code>false</code> otherwise.
      */
-    boolean complete(int ordinal);
+    default boolean complete(int ordinal) {
+        return true;
+    }
 
     /**
      * Called after all the inputs are exhausted.
      *
      * @return <code>true</code> if the completing is now done, <code>false</code> otherwise.
      */
-    boolean complete();
+    default boolean complete() {
+        return true;
+    }
 
     /**
      * Tells whether this processor performs any blocking operations

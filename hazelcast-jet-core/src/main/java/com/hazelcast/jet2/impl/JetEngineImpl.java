@@ -59,7 +59,7 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         this.name = name;
         this.logger = nodeEngine.getLogger(JetEngine.class);
         this.config = new JetEngineConfig()
-                .setParallelism(2);
+                .setParallelism(4);
         this.executionService = new ExecutionService(config);
     }
 
@@ -101,14 +101,14 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
                             createConveyorArray(getParallelism(outboundEdge.getDestination()),
                                     parallelism, QUEUE_SIZE));
                     outboundStreams.add(new ConcurrentOutboundEdgeStream(conveyorArray, taskletIndex,
-                            outboundEdge.getDestinationOrdinal()));
+                            outboundEdge.getOutputOrdinal()));
                 }
 
                 for (Edge inboundEdge : inboundEdges) {
                     ConcurrentConveyor<Object>[] conveyors = conveyorMap.get(inboundEdge);
                     ConcurrentInboundEdgeStream inboundStream =
                             new ConcurrentInboundEdgeStream(conveyors[taskletIndex],
-                                    inboundEdge.getSourceOrdinal(),
+                                    inboundEdge.getInputOrdinal(),
                                     inboundEdge.getPriority());
                     inboundStreams.add(inboundStream);
                 }

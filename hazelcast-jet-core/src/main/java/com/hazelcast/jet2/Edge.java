@@ -28,9 +28,9 @@ import java.io.IOException;
 public class Edge implements IdentifiedDataSerializable {
 
     private Vertex source;
-    private int sourceOrdinal;
+    private int outputOrdinal;
     private Vertex destination;
-    private int destinationOrdinal;
+    private int inputOrdinal;
 
     private int priority;
 
@@ -53,17 +53,17 @@ public class Edge implements IdentifiedDataSerializable {
      * Creates an edge between two vertices.
      *
      * @param source             the source vertex
-     * @param sourceOrdinal      ordinal at the source
+     * @param outputOrdinal      ordinal at the source
      * @param destination        the destination vertex
-     * @param destinationOrdinal ordinal at the destination
+     * @param inputOrdinal ordinal at the destination
      */
-    public Edge(Vertex source, int sourceOrdinal,
-                Vertex destination, int destinationOrdinal) {
+    public Edge(Vertex source, int outputOrdinal,
+                Vertex destination, int inputOrdinal) {
         this.source = source;
-        this.sourceOrdinal = sourceOrdinal;
+        this.outputOrdinal = outputOrdinal;
 
         this.destination = destination;
-        this.destinationOrdinal = destinationOrdinal;
+        this.inputOrdinal = inputOrdinal;
     }
 
 
@@ -71,16 +71,16 @@ public class Edge implements IdentifiedDataSerializable {
         return source;
     }
 
-    public int getSourceOrdinal() {
-        return sourceOrdinal;
+    public int getOutputOrdinal() {
+        return outputOrdinal;
     }
 
     public Vertex getDestination() {
         return destination;
     }
 
-    public int getDestinationOrdinal() {
-        return destinationOrdinal;
+    public int getInputOrdinal() {
+        return inputOrdinal;
     }
 
     /**
@@ -106,10 +106,10 @@ public class Edge implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(source);
-        out.writeInt(sourceOrdinal);
+        out.writeInt(outputOrdinal);
 
         out.writeObject(destination);
-        out.writeInt(destinationOrdinal);
+        out.writeInt(inputOrdinal);
 
         out.writeInt(priority);
 
@@ -118,10 +118,10 @@ public class Edge implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         source = in.readObject();
-        sourceOrdinal = in.readInt();
+        outputOrdinal = in.readInt();
 
         destination = in.readObject();
-        destinationOrdinal = in.readInt();
+        inputOrdinal = in.readInt();
 
         priority = in.readInt();
     }
