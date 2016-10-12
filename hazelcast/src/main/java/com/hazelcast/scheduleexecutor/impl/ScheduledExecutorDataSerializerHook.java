@@ -42,6 +42,7 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
             SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
 
     public static final int TASK_DESCRIPTOR = 0;
+    public static final int BACKUP_DESCRIPTOR = 3;
     public static final int RUNNABLE_DEFINITION = 19;
 
     public static final int SCHEDULE_OP = 1;
@@ -77,6 +78,8 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
                 switch (typeId) {
                     case TASK_DESCRIPTOR:
                         return new ScheduledTaskDescriptor();
+                    case BACKUP_DESCRIPTOR:
+                        return new BackupTaskDescriptor();
                     case RUNNABLE_DEFINITION:
                         return new RunnableDefinition();
                     case SCHEDULED_FUTURE:

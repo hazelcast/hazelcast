@@ -28,10 +28,8 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.partition.IPartition;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ScheduledFuture;
@@ -188,7 +186,7 @@ public class ScheduledExecutorContainer {
         return name;
     }
 
-    void scheduleAllPerndingAndBackup() {
+    void promoteStash() {
         Iterator<Map.Entry<String, BackupTaskDescriptor>> backupEntries =
                 backups.entrySet().iterator();
 
@@ -201,9 +199,30 @@ public class ScheduledExecutorContainer {
 
     }
 
-    List<BackupTaskDescriptor> prepareReplicationOperation() {
-        List<BackupTaskDescriptor> replicas = new ArrayList<BackupTaskDescriptor>();
-        //TODO tkountis - stop active and prepare a BackupTaskDescriptor instead.
+    Map<String, BackupTaskDescriptor> prepareForReplication() {
+        Map<String, BackupTaskDescriptor> replicas = new HashMap<String, BackupTaskDescriptor>();
+
+        Iterator<Map.Entry<String, ScheduledTaskDescriptor>> taskEntries =
+                tasks.entrySet().iterator();
+
+        while (taskEntries.hasNext()) {
+            Map.Entry<String, ScheduledTaskDescriptor> entry = taskEntries.next();
+            ScheduledTaskDescriptor descriptor = entry.getValue();
+            ScheduledFuture<?> future = descriptor.getScheduledFuture();
+
+            // Stop primary one, so we can safely capture latest state.
+            // However, may be incorrect state due to interruption.
+            while (!future.isCancelled() && !future.isDone()) {
+                future.cancel(true);
+            }
+
+            BackupTaskDescriptor replica = new BackupTaskDescriptor(descriptor.getDefinition());
+            replica.setMasterState(descriptor.getState());
+            replica.setMasterStats(descriptor.getStats());
+
+            replicas.put(entry.getKey(), replica);
+        }
+
         return replicas;
     }
 
@@ -222,6 +241,8 @@ public class ScheduledExecutorContainer {
 
     class RunnableTaskAdapter implements Runnable {
 
+        private final String taskName;
+
         private final Runnable original;
 
         private final Map state;
@@ -230,6 +251,7 @@ public class ScheduledExecutorContainer {
 
         RunnableTaskAdapter(RunnableDefinition definition, Map state, AmendableScheduledTaskStatistics stats) {
             this.original = definition.getRunnable();
+            this.taskName = definition.getName();
             this.stats = stats;
             this.state = state;
         }
@@ -247,6 +269,7 @@ public class ScheduledExecutorContainer {
         private void beforeRun() {
             stats.onBeforeRun();
             if (original instanceof StatefulRunnable) {
+                //TODO tkountis - This needs to be done only for slave -> master promoted tasks, not all
                 ((StatefulRunnable) original).loadState(state);
             }
         }
@@ -264,7 +287,7 @@ public class ScheduledExecutorContainer {
             IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
             for (int i = 1; i < getDurability() + 1; i++ ) {
                 Address address = partition.getReplicaAddress(i);
-                Operation op = new SyncStateOperation(getName(), name, state);
+                Operation op = new SyncStateOperation(getName(), taskName, state);
                 op.setPartitionId(partitionId);
                 op.setReplicaIndex(i);
 
