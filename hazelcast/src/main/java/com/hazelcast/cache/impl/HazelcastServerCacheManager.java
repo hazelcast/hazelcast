@@ -216,6 +216,11 @@ public class HazelcastServerCacheManager
         }
     }
 
+    @Override
+    protected void onShuttingDown() {
+        close();
+    }
+
     public ICacheService getCacheService() {
         return cacheService;
     }

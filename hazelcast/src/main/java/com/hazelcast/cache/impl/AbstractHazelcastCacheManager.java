@@ -309,7 +309,7 @@ public abstract class AbstractHazelcastCacheManager
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
-                    close();
+                    onShuttingDown();
                 }
             }
         });
@@ -455,5 +455,7 @@ public abstract class AbstractHazelcastCacheManager
                                                                String simpleCacheName);
 
     protected abstract void postClose();
+
+    protected abstract void onShuttingDown();
 
 }
