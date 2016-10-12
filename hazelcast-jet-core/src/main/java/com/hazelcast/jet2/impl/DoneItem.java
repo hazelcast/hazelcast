@@ -17,15 +17,14 @@
 package com.hazelcast.jet2.impl;
 
 /**
- * The tail-end of a bounded, non-blocking queue.
+ * Javadoc pending.
  */
-interface OutboundEdgeStream {
+class DoneItem {
 
-    /**
-     * Offers an item to this output. If the output cannot accept it now, the call
-     * should be retried later.
-     */
-    ProgressState offer(Object item);
+    static final DoneItem DONE_ITEM = new DoneItem();
 
-    int ordinal();
+    @Override
+    public String toString() {
+        return "DONE_ITEM";
+    }
 }

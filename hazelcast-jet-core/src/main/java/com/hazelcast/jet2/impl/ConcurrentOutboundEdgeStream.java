@@ -22,6 +22,9 @@ import com.hazelcast.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet2.impl.ProgressState.DONE;
+
 /**
  * Javadoc pending.
  */
@@ -31,7 +34,6 @@ class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
     private final ProgressTracker tracker = new ProgressTracker();
     private final CircularCursor<ConcurrentConveyor<Object>> cursor;
-    private final Object goneItem;
 
     public ConcurrentOutboundEdgeStream(ConcurrentConveyor<Object>[] conveyors, int queueIndex, int ordinal) {
         Preconditions.checkTrue(conveyors.length > 0, "There must be at least one conveyor in the array");
@@ -42,13 +44,11 @@ class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         this.queueIndex = queueIndex;
         this.ordinal = ordinal;
         this.cursor = new CircularCursor<>(new ArrayList<>(Arrays.asList(conveyors)));
-
-        this.goneItem = new Object();
     }
 
     @Override
     public ProgressState offer(Object item) {
-        if (item == goneItem) {
+        if (item == DONE_ITEM) {
             return complete();
         }
 
@@ -58,15 +58,10 @@ class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
             boolean offered = cursor.value().offer(queueIndex, item);
             cursor.advance();
             if (offered) {
-                return ProgressState.DONE;
+                return DONE;
             }
         } while (cursor.value() != first);
         return ProgressState.NO_PROGRESS;
-    }
-
-    @Override
-    public Object goneItem() {
-        return goneItem;
     }
 
     /**
@@ -78,7 +73,7 @@ class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         do {
             ConcurrentConveyor<Object> conveyor = cursor.value();
             if (conveyor.offer(queueIndex, conveyor.submitterGoneItem())) {
-                tracker.update(ProgressState.DONE);
+                tracker.update(DONE);
                 cursor.remove();
             } else {
                 tracker.notDone();
@@ -91,4 +86,5 @@ class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
     public int ordinal() {
         return ordinal;
     }
+
 }

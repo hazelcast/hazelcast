@@ -29,53 +29,60 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet2.impl.ProgressState.DONE;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.concat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 public class ProcessorTaskletTest {
 
-    private List<Integer> list;
-    private List<InboundEdgeStream> inboundStreams;
-    private List<OutboundEdgeStream> outboundStreams;
-    private TestProcessor processor;
+    private static final int MOCK_INPUT_LENGTH = 10;
+    private static final int CALL_COUNT_LIMIT = 10;
+    private List<Object> mockInput;
+    private List<InboundEdgeStream> instreams;
+    private List<OutboundEdgeStream> outstreams;
+    private MockProcessor processor;
 
 
     @Before
     public void setUp() throws Exception {
-        this.list = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-        this.processor = new TestProcessor();
-        this.inboundStreams = new ArrayList<>();
-        this.outboundStreams = new ArrayList<>();
+        this.mockInput = IntStream.range(0, MOCK_INPUT_LENGTH).boxed().collect(toList());
+        this.processor = new MockProcessor();
+        this.instreams = new ArrayList<>();
+        this.outstreams = new ArrayList<>();
     }
 
     @Test
-    public void testSingleChunk_when_singleOutput() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(list, 10);
-        MockOutboundStream output1 = new MockOutboundStream(10);
+    public void when_singleInstreamAndOutstream_then_processAll() throws Exception {
+        MockInboundStream instream1 = new MockInboundStream(mockInput, mockInput.size());
+        instream1.push(DONE_ITEM);
+        MockOutboundStream outstream1 = new MockOutboundStream(1 + mockInput.size());
 
-        inboundStreams.add(input1);
-        outboundStreams.add(output1);
+        instreams.add(instream1);
+        outstreams.add(outstream1);
         initProcessor();
 
         Tasklet tasklet = createTasklet();
 
-        assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
-        assertTrue(tasklet.call().isDone());
-
-        assertEquals(list, output1.getBuffer());
+        callUntil(tasklet, DONE);
+        assertEquals(concat(mockInput.stream(), Stream.of(DONE_ITEM)).collect(toList()), outstream1.getBuffer());
     }
 
     @Test
     public void testSingleChunk_when_multipleOutputs() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(list, 10);
+        MockInboundStream input1 = new MockInboundStream(mockInput, 10);
         MockOutboundStream output1 = new MockOutboundStream(10);
         MockOutboundStream output2 = new MockOutboundStream(10);
 
-        inboundStreams.add(input1);
-        outboundStreams.add(output1);
-        outboundStreams.add(output2);
+        instreams.add(input1);
+        outstreams.add(output1);
+        outstreams.add(output2);
         initProcessor();
 
         Tasklet tasklet = createTasklet();
@@ -83,17 +90,17 @@ public class ProcessorTaskletTest {
         assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertTrue(tasklet.call().isDone());
 
-        assertEquals(list, output1.getBuffer());
-        assertEquals(list, output2.getBuffer());
+        assertEquals(mockInput, output1.getBuffer());
+        assertEquals(mockInput, output2.getBuffer());
     }
 
     @Test
     public void testProgress_when_multipleChunks() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(list, 4);
+        MockInboundStream input1 = new MockInboundStream(mockInput, 4);
         MockOutboundStream output1 = new MockOutboundStream(10);
 
-        inboundStreams.add(input1);
-        outboundStreams.add(output1);
+        instreams.add(input1);
+        outstreams.add(output1);
         initProcessor();
 
         Tasklet tasklet = createTasklet();
@@ -103,7 +110,7 @@ public class ProcessorTaskletTest {
         assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertTrue(tasklet.call().isDone());
 
-        assertEquals(list, output1.getBuffer());
+        assertEquals(mockInput, output1.getBuffer());
     }
 
     @Test
@@ -113,10 +120,10 @@ public class ProcessorTaskletTest {
         MockInboundStream input3 = new MockInboundStream(Arrays.asList(8, 9), 4);
         MockOutboundStream output1 = new MockOutboundStream(10);
 
-        inboundStreams.add(input1);
-        inboundStreams.add(input2);
-        inboundStreams.add(input3);
-        outboundStreams.add(output1);
+        instreams.add(input1);
+        instreams.add(input2);
+        instreams.add(input3);
+        outstreams.add(output1);
         initProcessor();
 
         Tasklet tasklet = createTasklet();
@@ -126,16 +133,16 @@ public class ProcessorTaskletTest {
         assertEquals(ProgressState.MADE_PROGRESS, tasklet.call());
         assertTrue(tasklet.call().isDone());
 
-        assertEquals(new HashSet<>(list), new HashSet<>(output1.getBuffer()));
+        assertEquals(new HashSet<>(mockInput), new HashSet<>(output1.getBuffer()));
     }
 
     @Test
     public void testProgress_when_pendingInputAndOutputEmpty() throws Exception {
-        MockInboundStream input1 = new MockInboundStream(list, 4);
+        MockInboundStream input1 = new MockInboundStream(mockInput, 4);
         MockOutboundStream output1 = new MockOutboundStream(10);
 
-        inboundStreams.add(input1);
-        outboundStreams.add(output1);
+        instreams.add(input1);
+        outstreams.add(output1);
         initProcessor();
 
         Tasklet tasklet = createTasklet();
@@ -149,15 +156,14 @@ public class ProcessorTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        return  new ProcessorTasklet(processor, inboundStreams, outboundStreams);
+        return new ProcessorTasklet(processor, instreams, outstreams);
     }
 
     private void initProcessor() {
-        processor.init(new ProcessorContextImpl(), new ArrayDequeOutbox(outboundStreams.size()));
+        processor.init(new ProcessorContextImpl(), new ArrayDequeOutbox(outstreams.size()));
     }
 
-    private static class TestProcessor implements Processor {
-
+    private static class MockProcessor implements Processor {
         private boolean paused;
         private Outbox outbox;
 
@@ -183,6 +189,16 @@ public class ProcessorTaskletTest {
         @Override
         public boolean complete(int ordinal) {
             return true;
+        }
+    }
+
+    private static void callUntil(Tasklet tasklet, ProgressState state) throws Exception {
+        int iterCount = 0;
+        for (ProgressState r; (r = tasklet.call()) != state;) {
+            assertTrue("Failed to make progress", r.isMadeProgress());
+            assertTrue("tasklet.call() invoked " + CALL_COUNT_LIMIT + " times without reaching " + state
+                            + ". Last state was " + r,
+                    ++iterCount < CALL_COUNT_LIMIT);
         }
     }
 }

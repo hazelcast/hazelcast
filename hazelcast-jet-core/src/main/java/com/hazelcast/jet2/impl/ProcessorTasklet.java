@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
 
+import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
 
@@ -56,8 +58,9 @@ public class ProcessorTasklet implements Tasklet {
                 .map(Entry::getValue).collect(toCollection(ArrayDeque::new));
         this.inbox = new ArrayDequeWithObserver();
         this.outbox = new ArrayDequeOutbox(outstreams.size());
-        this.outstreams = outstreams.toArray(new OutboundEdgeStream[outstreams.size()]);
-        this.instreamCursor = popIntreamGroup();
+        this.outstreams = outstreams.stream().sorted(comparing(OutboundEdgeStream::ordinal))
+                                    .toArray(OutboundEdgeStream[]::new);
+        this.instreamCursor = popInstreamGroup();
         processor.init(new ProcessorContextImpl(), outbox);
     }
 
@@ -79,7 +82,7 @@ public class ProcessorTasklet implements Tasklet {
         return progTracker.toProgressState();
     }
 
-    private CircularCursor<InboundEdgeStream> popIntreamGroup() {
+    private CircularCursor<InboundEdgeStream> popInstreamGroup() {
         return Optional.ofNullable(instreamGroupQueue.poll()).map(CircularCursor::new).orElse(null);
     }
 
@@ -104,7 +107,7 @@ public class ProcessorTasklet implements Tasklet {
                 instreamCursor.remove();
             }
             if (!instreamCursor.advance()) {
-                instreamCursor = popIntreamGroup();
+                instreamCursor = popInstreamGroup();
                 return;
             }
         } while (!result.isMadeProgress() && instreamCursor.value() != first);
@@ -137,7 +140,7 @@ public class ProcessorTasklet implements Tasklet {
         }
         processorCompleted = true;
         for (OutboundEdgeStream outstream : outstreams) {
-            outbox.add(outstream.ordinal(), outstream.goneItem());
+            outbox.add(outstream.ordinal(), DONE_ITEM);
         }
     }
 
