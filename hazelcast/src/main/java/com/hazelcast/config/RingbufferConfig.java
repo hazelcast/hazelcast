@@ -283,6 +283,7 @@ public class RingbufferConfig {
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", inMemoryFormat=" + inMemoryFormat
+                + ", ringbufferStoreConfig=" + ringbufferStoreConfig
                 + '}';
     }
 

@@ -215,11 +215,13 @@ public class RingbufferConfigTest {
     @Test
     public void test_toString() {
         RingbufferConfig config = new RingbufferConfig(NAME);
+        config.setRingbufferStoreConfig(new RingbufferStoreConfig());
 
         String s = config.toString();
 
         assertEquals("RingbufferConfig{name='someRingbuffer', capacity=10000, backupCount=1,"
-                + " asyncBackupCount=0, timeToLiveSeconds=0, inMemoryFormat=BINARY}", s);
+                + " asyncBackupCount=0, timeToLiveSeconds=0, inMemoryFormat=BINARY,"
+                + " ringbufferStoreConfig=RingbufferStoreConfig{enabled=true, className='null', properties={}}}", s);
     }
 
     // =================== getAsReadOnly ============================
