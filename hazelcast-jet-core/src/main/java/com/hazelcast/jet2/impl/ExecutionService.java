@@ -48,7 +48,7 @@ public class ExecutionService {
         ensureThreadsStarted();
         final List<TaskletTracker>[] trackersByThread = new List[workers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
-        final CountDownLatch completionLatch = new CountDownLatch(workers.length);
+        final CountDownLatch completionLatch = new CountDownLatch(tasklets.size());
         final JobFuture jobFuture = new JobFuture(completionLatch);
         int i = 0;
         for (Tasklet t : tasklets) {
