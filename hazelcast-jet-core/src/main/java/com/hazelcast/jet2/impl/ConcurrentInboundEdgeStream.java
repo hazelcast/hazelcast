@@ -37,10 +37,10 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     }
 
     @Override
-    public ProgressState drainAvailableItemsInto(CollectionWithPredicate dest) {
+    public ProgressState drainAvailableItemsInto(CollectionWithObserver dest) {
         assert dest.isEmpty() : "Destination is not empty";
         boolean madeProgress = false;
-        dest.setPredicateOfAdd(exhaustedQueueCleaner);
+        dest.setVetoingObserverOfAdd(exhaustedQueueCleaner);
         try {
             exhaustedQueueCleaner.doneItem = conveyor.submitterGoneItem();
             for (int i = 0; i < conveyor.queueCount(); i++) {
@@ -51,9 +51,9 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 madeProgress |= conveyor.drainTo(i, dest) > 0;
             }
         } finally {
-            dest.setPredicateOfAdd(null);
+            dest.setVetoingObserverOfAdd(null);
         }
-        return ProgressState.valueOf(exhaustedQueueCleaner.cleanedCount == conveyor.queueCount(), madeProgress);
+        return ProgressState.valueOf(madeProgress, exhaustedQueueCleaner.cleanedCount == conveyor.queueCount());
     }
 
     @Override

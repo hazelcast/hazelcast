@@ -19,7 +19,6 @@ package com.hazelcast.jet2.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Predicate;
 
 import static com.hazelcast.jet2.impl.ProgressState.DONE;
 import static com.hazelcast.jet2.impl.ProgressState.MADE_PROGRESS;
@@ -34,7 +33,6 @@ public class MockInboundStream implements InboundEdgeStream {
     private final List<Object> mockData;
     private final int ordinal;
     private int dataIndex;
-    private boolean paused;
     private boolean done;
 
     public MockInboundStream(List<?> mockData, int chunkSize) {
@@ -57,15 +55,15 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
-    public ProgressState drainAvailableItemsInto(CollectionWithPredicate dest) {
+    public ProgressState drainAvailableItemsInto(CollectionWithObserver dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }
-        if (paused) {
+        final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
+        if (limit == dataIndex) {
             return NO_PROGRESS;
         }
-        final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
-        dest.setPredicateOfAdd(x -> true);
+        dest.setVetoingObserverOfAdd(x -> true);
         for (; dataIndex < limit; dataIndex++) {
             final Object item = mockData.get(dataIndex);
             if (item != DONE_ITEM) {
@@ -75,7 +73,7 @@ public class MockInboundStream implements InboundEdgeStream {
                 done = true;
             }
         }
-        dest.setPredicateOfAdd(null);
+        dest.setVetoingObserverOfAdd(null);
         return done ? DONE : MADE_PROGRESS;
     }
 
@@ -87,10 +85,6 @@ public class MockInboundStream implements InboundEdgeStream {
     @Override
     public int priority() {
         return 0;
-    }
-
-    void pause() {
-        paused = true;
     }
 
     boolean isDone() {

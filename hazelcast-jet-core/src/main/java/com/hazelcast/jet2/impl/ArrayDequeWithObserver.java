@@ -16,12 +16,22 @@
 
 package com.hazelcast.jet2.impl;
 
-import java.util.Collection;
+import java.util.ArrayDeque;
 import java.util.function.Predicate;
 
 /**
  * Javadoc pending.
  */
-interface CollectionWithPredicate extends Collection<Object> {
-    void setPredicateOfAdd(Predicate<Object> predicate);
+class ArrayDequeWithObserver extends ArrayDeque<Object> implements CollectionWithObserver {
+    private Predicate<Object> observer;
+
+    @Override
+    public void setVetoingObserverOfAdd(Predicate<? super Object> observer) {
+        this.observer = observer;
+    }
+
+    @Override
+    public boolean add(Object o) {
+        return observer.test(o) && super.add(o);
+    }
 }

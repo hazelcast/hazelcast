@@ -33,6 +33,10 @@ public class ProgressTracker {
         isDone &= result.isDone();
     }
 
+    public void madeProgress(boolean isMadeProgress) {
+        this.isMadeProgress |= isMadeProgress;
+    }
+
     /**
      * Equivalent to {@code update(NO_PROGRESS)}, but more descriptive in certain usages.
      */
@@ -40,16 +44,12 @@ public class ProgressTracker {
         isDone = false;
     }
 
-    public boolean isMadeProgress() {
-        return isMadeProgress;
-    }
-
     public boolean isDone() {
         return isDone;
     }
 
     public ProgressState toProgressState() {
-        return ProgressState.valueOf(isDone, isMadeProgress);
+        return ProgressState.valueOf(isMadeProgress, isDone);
     }
 
     @Override

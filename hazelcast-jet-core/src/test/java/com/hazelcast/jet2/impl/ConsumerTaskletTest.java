@@ -58,40 +58,17 @@ public class ConsumerTaskletTest {
     @Test
     public void when_oneInboundStream_then_consumeAllAndComplete() throws Exception {
         // Given
-        MockInboundStream stream1 = new MockInboundStream(mockInput, 1 + mockInput.size());
-        inboundStreams.add(stream1);
-        Tasklet tasklet = createTasklet();
-
-        // When
-        callUntilDone(tasklet);
-
-        // Then
-        assertTrue("isComplete", consumer.isComplete());
-        assertEquals(mockInput, consumer.getList());
-    }
-
-    @Test
-    public void when_exhaustInputAndComplete_then_done() throws Exception {
-        // Given
-        final int chunkSize = 4;
-        MockInboundStream stream1 = new MockInboundStream(mockInput, chunkSize);
+        MockInboundStream stream1 = new MockInboundStream(mockInput, mockInput.size() / 2);
         stream1.pushDoneItem();
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
 
         // When
-
-        for (int i = 0; i < MOCK_INPUT_LENGTH; i += chunkSize) {
-            assertEquals(MADE_PROGRESS, tasklet.call());
-        }
-        // Complete the inbound stream processing
-        assertEquals(MADE_PROGRESS, tasklet.call());
+        callUntil(tasklet, DONE);
 
         // Then
-
-        assertEquals(DONE, tasklet.call());
-        assertEquals(mockInput, consumer.getList());
         assertTrue("isComplete", consumer.isComplete());
+        assertEquals(mockInput, consumer.getList());
     }
 
     @Test
@@ -100,40 +77,16 @@ public class ConsumerTaskletTest {
         MockInboundStream stream1 = new MockInboundStream(mockInput, 2 * MOCK_INPUT_LENGTH);
         inboundStreams.add(stream1);
         Tasklet tasklet = createTasklet();
-        assertEquals(MADE_PROGRESS, tasklet.call());
+        callUntil(tasklet, NO_PROGRESS);
 
         // When
         stream1.push(10, 11);
         stream1.pushDoneItem();
 
         // Then
-
-        // Process the new items
-        assertEquals(MADE_PROGRESS, tasklet.call());
-        // Complete the inbound stream processing
-        assertEquals(MADE_PROGRESS, tasklet.call());
-        // Complete overall processing
-        assertEquals(DONE, tasklet.call());
-
-        assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), consumer.getList());
+        callUntil(tasklet, DONE);
+        assertEquals(IntStream.range(0, 12).boxed().collect(toList()), consumer.getList());
         assertTrue("isComplete", consumer.isComplete());
-    }
-
-    @Test
-    public void when_dataNotAvailable_then_noProgress() throws Exception {
-        // Given
-        MockInboundStream stream1 = new MockInboundStream(mockInput, mockInput.size() / 2);
-        stream1.pushDoneItem();
-        inboundStreams.add(stream1);
-        Tasklet tasklet = createTasklet();
-        assertEquals(MADE_PROGRESS, tasklet.call());
-
-        // When
-        stream1.pause();
-
-        // Then
-        assertEquals(NO_PROGRESS, tasklet.call());
-        assertFalse("isComplete", consumer.isComplete());
     }
 
     @Test
@@ -256,8 +209,6 @@ public class ConsumerTaskletTest {
         consumer.yieldOn(2);
         assertEquals(MADE_PROGRESS, tasklet.call());
 
-        stream1.pause();
-
         assertEquals(MADE_PROGRESS, tasklet.call());
 
         assertEquals(Arrays.asList(0, 1, 2), consumer.getList());
@@ -298,11 +249,12 @@ public class ConsumerTaskletTest {
         return new ProcessorTasklet(consumer, inboundStreams, emptyList());
     }
 
-    private static void callUntilDone(Tasklet tasklet) throws Exception {
+    private static void callUntil(Tasklet tasklet, ProgressState state) throws Exception {
         int iterCount = 0;
-        for (ProgressState r; !(r = tasklet.call()).isDone();) {
+        for (ProgressState r; (r = tasklet.call()) != state;) {
             assertTrue(r.isMadeProgress());
-            assertTrue("tasklet.call() invoked " + CALL_COUNT_LIMIT + " times without reaching completion",
+            assertTrue("tasklet.call() invoked " + CALL_COUNT_LIMIT + " times without reaching " + state
+                    + ". Last state was " + r,
                     ++iterCount < CALL_COUNT_LIMIT);
         }
     }

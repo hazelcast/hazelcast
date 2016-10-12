@@ -27,9 +27,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
 
-import static com.hazelcast.jet2.impl.ProgressState.DONE;
-import static com.hazelcast.jet2.impl.ProgressState.MADE_PROGRESS;
-import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
 
@@ -38,7 +35,7 @@ public class ProcessorTasklet implements Tasklet {
     private final Processor processor;
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
     private CircularCursor<InboundEdgeStream> instreamCursor;
-    private final ArrayDequeWithPredicate inbox;
+    private final ArrayDequeWithObserver inbox;
     private final ArrayDequeOutbox outbox;
     private final OutboundEdgeStream[] outstreams;
     private final ProgressTracker progTracker = new ProgressTracker();
@@ -57,10 +54,10 @@ public class ProcessorTasklet implements Tasklet {
                 .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new, toCollection(ArrayList::new)))
                 .entrySet().stream()
                 .map(Entry::getValue).collect(toCollection(ArrayDeque::new));
-        this.inbox = new ArrayDequeWithPredicate();
+        this.inbox = new ArrayDequeWithObserver();
         this.outbox = new ArrayDequeOutbox(outstreams.size());
         this.outstreams = outstreams.toArray(new OutboundEdgeStream[outstreams.size()]);
-        this.instreamCursor = popInboundStreamGroup();
+        this.instreamCursor = popIntreamGroup();
         processor.init(new ProcessorContextImpl(), outbox);
     }
 
@@ -71,56 +68,61 @@ public class ProcessorTasklet implements Tasklet {
         if (progTracker.isDone()) {
             completeIfNeeded();
         } else if (!inbox.isEmpty()) {
-            tryProcess();
+            tryProcessInbox();
         } else if (currInstreamExhausted) {
-            progTracker.update(MADE_PROGRESS);
+            progTracker.madeProgress(true);
             if (processor.complete(currInstream.ordinal())) {
                 currInstream = null;
             }
         }
-        tryEmptyOutbox();
+        tryFlushOutbox();
         return progTracker.toProgressState();
     }
 
-    private CircularCursor<InboundEdgeStream> popInboundStreamGroup() {
+    private CircularCursor<InboundEdgeStream> popIntreamGroup() {
         return Optional.ofNullable(instreamGroupQueue.poll()).map(CircularCursor::new).orElse(null);
     }
 
     private void tryFillInbox() {
         // we have more items to process, or current inbound stream is done but not yet completed
         if (!inbox.isEmpty() || currInstream != null && currInstreamExhausted) {
-            progTracker.update(NO_PROGRESS);
+            progTracker.notDone();
             return;
         }
         if (instreamCursor == null) {
             return;
         }
+        progTracker.notDone();
         final InboundEdgeStream first = instreamCursor.value();
         ProgressState result;
         do {
             currInstream = instreamCursor.value();
             result = currInstream.drainAvailableItemsInto(inbox);
+            progTracker.madeProgress(result.isMadeProgress());
             currInstreamExhausted = result.isDone();
-            progTracker.update(result);
             if (currInstreamExhausted) {
                 instreamCursor.remove();
             }
             if (!instreamCursor.advance()) {
-                instreamCursor = popInboundStreamGroup();
-                break;
+                instreamCursor = popIntreamGroup();
+                return;
             }
         } while (!result.isMadeProgress() && instreamCursor.value() != first);
-        progTracker.notDone();
     }
 
-    private void tryProcess() {
+    private void tryProcessInbox() {
         final int inboundOrdinal = currInstream.ordinal();
-        for (Object item; (item = inbox.peek()) != null && !outbox.isHighWater(); ) {
-            progTracker.update(MADE_PROGRESS);
+        for (Object item; (item = inbox.peek()) != null;) {
+            progTracker.madeProgress(true);
             if (!processor.process(inboundOrdinal, item)) {
-                break;
+                progTracker.notDone();
+                return;
             }
             inbox.remove();
+            if (outbox.isHighWater()) {
+                progTracker.notDone();
+                return;
+            }
         }
     }
 
@@ -128,38 +130,35 @@ public class ProcessorTasklet implements Tasklet {
         if (processorCompleted) {
             return;
         }
-        if (processor.complete()) {
-            for (OutboundEdgeStream outboundStream : outstreams) {
-                outbox.add(outboundStream.ordinal(), outboundStream.goneItem());
-            }
-            progTracker.update(DONE);
-            processorCompleted = true;
-        } else {
-            progTracker.update(MADE_PROGRESS);
+        progTracker.madeProgress(true);
+        if (!processor.complete()) {
+            progTracker.notDone();
+            return;
+        }
+        processorCompleted = true;
+        for (OutboundEdgeStream outstream : outstreams) {
+            outbox.add(outstream.ordinal(), outstream.goneItem());
         }
     }
 
-    private void tryEmptyOutbox() {
-        nextOutboundStream:
+    private void tryFlushOutbox() {
+        nextOutstream:
         for (int i = 0; i < outbox.queueCount(); i++) {
             final Queue q = outbox.queueWithOrdinal(i);
-            for (Object item; (item = q.peek()) != null; ) {
+            for (Object item; (item = q.peek()) != null;) {
                 final ProgressState state = outstreams[i].offer(item);
+                progTracker.update(state);
                 if (!state.isDone()) {
-                    progTracker.notDone();
-                    continue nextOutboundStream;
+                    continue nextOutstream;
                 }
                 q.remove();
-                progTracker.update(MADE_PROGRESS);
             }
         }
     }
 
     @Override
     public String toString() {
-        return "ProcessorTasklet{" +
-                "processor=" + processor +
-                '}';
+        return "ProcessorTasklet{processor=" + processor + '}';
     }
 }
 
