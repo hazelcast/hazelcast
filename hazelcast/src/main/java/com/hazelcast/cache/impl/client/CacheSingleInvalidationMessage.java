@@ -26,7 +26,7 @@ import java.io.IOException;
 public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
 
     private Data key;
-    private String sourceUuid;
+    private String sourceUuid="";
 
     public CacheSingleInvalidationMessage() {
 
