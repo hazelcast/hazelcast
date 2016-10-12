@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -208,14 +207,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     }
 
     private void fireConnectionEvent(final LifecycleEvent.LifecycleState state) {
-        ClientExecutionService executionService = client.getClientExecutionService();
-        executionService.execute(new Runnable() {
-            @Override
-            public void run() {
-                final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
-                lifecycleService.fireLifecycleEvent(state);
-            }
-        });
+        final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
+        lifecycleService.fireLifecycleEvent(state);
     }
 
     @Override
@@ -226,11 +219,12 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     public void connectionRemoved(Connection connection) {
         if (connection.getEndPoint().equals(ownerConnectionAddress)) {
             if (client.getLifecycleService().isRunning()) {
+                fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+
                 clusterExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
                             connectToCluster();
                         } catch (Exception e) {
                             logger.warning("Could not re-connect to cluster shutting down the client", e);
