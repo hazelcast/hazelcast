@@ -19,7 +19,6 @@ package com.hazelcast.scheduleexecutor.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.scheduleexecutor.ScheduledTaskStatistics;
 
 import java.io.IOException;
 import java.util.Map;
@@ -35,7 +34,7 @@ public class ScheduledTaskDescriptor
 
     private ScheduledFuture<?> scheduledFuture;
 
-    private ScheduledTaskStatistics stats;
+    private AmendableScheduledTaskStatistics stats;
 
     private Map state;
 
@@ -54,11 +53,15 @@ public class ScheduledTaskDescriptor
         this.scheduledFuture = scheduledFuture;
     }
 
+    public RunnableDefinition getDefinition() {
+        return definition;
+    }
+
     public ScheduledFuture<?> getScheduledFuture() {
         return scheduledFuture;
     }
 
-    public ScheduledTaskStatistics getStats() {
+    public AmendableScheduledTaskStatistics getStats() {
         return stats;
     }
 

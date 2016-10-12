@@ -16,13 +16,18 @@
 
 package com.hazelcast.scheduleexecutor.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by Thomas Kountis.
  */
-public class BackupTaskDescriptor {
+public class BackupTaskDescriptor implements IdentifiedDataSerializable {
 
     private RunnableDefinition definition;
 
@@ -53,5 +58,35 @@ public class BackupTaskDescriptor {
 
     public void setMasterState(Map masterState) {
         this.masterState = masterState;
+    }
+
+    public void setMasterStats(AmendableScheduledTaskStatistics masterStats) {
+        this.masterStats = masterStats;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ScheduledExecutorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ScheduledExecutorDataSerializerHook.BACKUP_DESCRIPTOR;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+        out.writeObject(definition);
+        out.writeObject(masterState);
+        out.writeObject(masterStats);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
+        definition = in.readObject();
+        masterState = in.readObject();
+        masterStats = in.readObject();
     }
 }

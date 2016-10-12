@@ -23,7 +23,6 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -74,12 +73,14 @@ public class ScheduledExecutorPartition {
     }
 
     public Operation prepareReplicationOperation(int replicaIndex) {
-        Map<String, List<BackupTaskDescriptor>> map = new HashMap<String, List<BackupTaskDescriptor>>();
+        Map<String, Map<String, BackupTaskDescriptor>> map =
+                new HashMap<String, Map<String, BackupTaskDescriptor>>();
+
         for (ScheduledExecutorContainer container : containers.values()) {
             if (replicaIndex > container.getDurability()) {
                 continue;
             }
-            map.put(container.getName(), container.prepareReplicationOperation());
+            map.put(container.getName(), container.prepareForReplication());
         }
 
         return new ReplicationOperation(map);
@@ -99,9 +100,9 @@ public class ScheduledExecutorPartition {
         }
     }
 
-    void scheduleAllPendingAndBackups() {
+    void promoteStash() {
         for (ScheduledExecutorContainer container : containers.values()) {
-            container.scheduleAllPerndingAndBackup();
+            container.promoteStash();
         }
     }
 }

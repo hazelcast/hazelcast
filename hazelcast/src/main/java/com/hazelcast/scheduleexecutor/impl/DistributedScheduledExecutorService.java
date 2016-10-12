@@ -114,7 +114,7 @@ public class DistributedScheduledExecutorService
             discardStash(partitionId, event.getNewReplicaIndex());
         } else if (event.getNewReplicaIndex() == 0) {
             ScheduledExecutorPartition partition = partitions[partitionId];
-            partition.scheduleAllPendingAndBackups();
+            partition.promoteStash();
         }
     }
 
