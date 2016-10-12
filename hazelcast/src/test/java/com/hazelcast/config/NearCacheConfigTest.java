@@ -61,6 +61,11 @@ public class NearCacheConfigTest {
         config.setMaxSize(-1);
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testSetEvictionConfig_whenNull_thenThrowException() {
+        config.setEvictionConfig(null);
+    }
+
     @Test
     public void testEvictionConversion_whenMaxSizeAndEvictionPolicyIsSet_thenEvictionIsConfigured() {
         config.setMaxSize(123);
