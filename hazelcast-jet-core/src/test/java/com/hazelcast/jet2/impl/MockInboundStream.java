@@ -19,29 +19,19 @@ package com.hazelcast.jet2.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Predicate;
 
+import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet2.impl.ProgressState.DONE;
 import static com.hazelcast.jet2.impl.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
 import static com.hazelcast.jet2.impl.ProgressState.WAS_ALREADY_DONE;
-import static java.util.function.Predicate.isEqual;
 
 public class MockInboundStream implements InboundEdgeStream {
-
-    private static final Object DONE_ITEM = new Object() {
-        @Override public String toString() { return "DONE_ITEM"; }
-    };
-
     private final int chunkSize;
     private final List<Object> mockData;
     private final int ordinal;
     private int dataIndex;
     private boolean done;
-
-    public MockInboundStream(List<?> mockData, int chunkSize) {
-        this(0, mockData, chunkSize);
-    }
 
     public MockInboundStream(int ordinal, List<?> mockData, int chunkSize) {
         this.ordinal = ordinal;
@@ -66,7 +56,7 @@ public class MockInboundStream implements InboundEdgeStream {
         dest.setVetoingObserverOfAdd(o -> o != DONE_ITEM);
         for (; dataIndex < limit; dataIndex++) {
             final Object item = mockData.get(dataIndex);
-            if (!dest.add(item)) {
+            if (dest.add(item)) {
                 assert !done : "DONE_ITEM followed by more items";
             } else {
                 done = true;

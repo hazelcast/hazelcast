@@ -74,6 +74,7 @@ public class ProcessorTasklet implements Tasklet {
             tryProcessInbox();
         } else if (currInstreamExhausted) {
             progTracker.madeProgress(true);
+            System.out.println("Completing " + currInstream.ordinal());
             if (processor.complete(currInstream.ordinal())) {
                 currInstream = null;
             }
@@ -149,9 +150,11 @@ public class ProcessorTasklet implements Tasklet {
         for (int i = 0; i < outbox.queueCount(); i++) {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null;) {
+                System.out.format("Flushing %s into %d%n", item, i);
                 final ProgressState state = outstreams[i].offer(item);
-                progTracker.update(state);
+                progTracker.madeProgress(state.isMadeProgress());
                 if (!state.isDone()) {
+                    progTracker.notDone();
                     continue nextOutstream;
                 }
                 q.remove();

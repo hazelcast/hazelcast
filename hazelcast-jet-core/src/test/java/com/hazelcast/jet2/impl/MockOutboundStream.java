@@ -22,9 +22,11 @@ import java.util.List;
 public class MockOutboundStream implements OutboundEdgeStream {
 
     private final ArrayList<Object> buffer;
+    private final int ordinal;
     private final int capacity;
 
-    public MockOutboundStream(int capacity) {
+    public MockOutboundStream(int ordinal, int capacity) {
+        this.ordinal = ordinal;
         this.capacity = capacity;
         this.buffer = new ArrayList<>(capacity);
     }
@@ -40,7 +42,7 @@ public class MockOutboundStream implements OutboundEdgeStream {
 
     @Override
     public int ordinal() {
-        return 0;
+        return ordinal;
     }
 
     public List<Object> drain() {
