@@ -41,7 +41,6 @@ public class ExecuteJobOperation extends Operation {
         JetService service = getService();
         JetEngineImpl engine = service.getEngine(engineName);
         engine.executeLocal(dag).get();
-        System.out.println("Running job with DAG " + dag);
     }
 
     @Override

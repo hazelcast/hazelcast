@@ -33,6 +33,7 @@ public class Edge implements IdentifiedDataSerializable {
     private int inputOrdinal;
 
     private int priority;
+    private Partitioner partitioner;
 
     Edge() {
 
@@ -91,6 +92,17 @@ public class Edge implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Partition the edge with the given {@link Partitioner}
+     */
+    public void partitioned(Partitioner partitioner) {
+        this.partitioner = partitioner;
+    }
+
+    public Partitioner partitioned() {
+        return partitioner;
+    }
+
     public int getPriority() {
         return priority;
     }
@@ -113,6 +125,7 @@ public class Edge implements IdentifiedDataSerializable {
 
         out.writeInt(priority);
 
+        out.writeObject(partitioner);
     }
 
     @Override
@@ -124,6 +137,8 @@ public class Edge implements IdentifiedDataSerializable {
         inputOrdinal = in.readInt();
 
         priority = in.readInt();
+
+        partitioner = in.readObject();
     }
 
     @Override

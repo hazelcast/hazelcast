@@ -16,25 +16,13 @@
 
 package com.hazelcast.jet2;
 
-/**
- * Javadoc pending.
- */
-public class JetEngineConfig {
+import java.io.Serializable;
 
-    private int parallelism;
+@FunctionalInterface
+public interface Partitioner extends Serializable {
 
     /**
-     * Sets the number of execution threads per node
+     * @return the partition for the given object
      */
-    public JetEngineConfig setParallelism(int parallelism) {
-        this.parallelism = parallelism;
-        return this;
-    }
-
-    /**
-     * @return the number of execution threads per node
-     */
-    public int getParallelism() {
-        return parallelism;
-    }
+    int getPartition(Object item, int numPartitions);
 }

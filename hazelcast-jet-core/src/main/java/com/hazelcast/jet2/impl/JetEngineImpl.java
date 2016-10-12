@@ -45,6 +45,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
@@ -153,7 +154,7 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         Arrays.setAll(concurrentConveyors, i -> {
             QueuedPipe<Object>[] queues = new QueuedPipe[queueCount];
             Arrays.setAll(queues, j -> new OneToOneConcurrentArrayQueue<>(queueSize));
-            return concurrentConveyor(new Object(), queues);
+            return concurrentConveyor(DONE_ITEM, queues);
         });
         return concurrentConveyors;
     }

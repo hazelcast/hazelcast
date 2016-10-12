@@ -17,20 +17,19 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.jet2.impl.ListConsumer;
 import com.hazelcast.jet2.impl.ListProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -102,7 +101,7 @@ public class JetEngineTest extends HazelcastTestSupport {
         System.out.println(rhsConsumer.getList());
     }
 
-    private static class SplittingMapper implements Processor {
+    private static class SplittingMapper extends AbstractProcessor {
 
         private final Function<Object, Object> left;
         private final Function<Object, Object> right;
@@ -113,27 +112,14 @@ public class JetEngineTest extends HazelcastTestSupport {
             this.right = right;
         }
 
-        private Outbox outbox;
-
-        @Override
-        public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
-            this.outbox = outbox;
-        }
-
         @Override
         public boolean process(int ordinal, Object item) {
-            outbox.add(0, left.apply(item));
-            outbox.add(1, right.apply(item));
-            return true;
-        }
-
-        @Override
-        public boolean complete(int ordinal) {
-            return true;
-        }
-
-        @Override
-        public boolean complete() {
+            if (ordinal == 0) {
+                emit(0, left.apply(item));
+            }
+            else if (ordinal == 1) {
+                emit(1, right.apply(item));
+            }
             return true;
         }
     }
