@@ -296,6 +296,15 @@ public class TextCommandServiceImpl implements TextCommandService {
     public Object delete(String mapName, String key) {
         return hazelcast.getMap(mapName).remove(key);
     }
+        
+    @Override
+    public Object entries(String mapName){
+        StringBuilder res = new StringBuilder("");
+        for(IMap.Entry<Object, Object> entry:hazelcast.getMap(mapName).entrySet()){                    
+            res.append(entry.getKey()).append(":").append(entry.getValue()).append("\n");            
+        }
+        return res;        
+    }
 
     @Override
     public boolean offer(String queueName, Object value) {

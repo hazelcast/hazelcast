@@ -27,6 +27,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
 
     public static final String QUEUE_SIZE_COMMAND = "size";
+    public static final String MAP_ENTRIES_COMMAND = "entries";
 
     public HttpGetCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
@@ -78,7 +79,12 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         String key = uri.substring(indexEnd + 1);
-        Object value = textCommandService.get(mapName, key);
+        Object value;
+        if(MAP_ENTRIES_COMMAND.equalsIgnoreCase(key)){
+            value = textCommandService.entries(mapName);
+        }else{
+            value = textCommandService.get(mapName, key);
+        }
         prepareResponse(command, value);
     }
 
