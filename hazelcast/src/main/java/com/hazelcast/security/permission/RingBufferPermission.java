@@ -17,6 +17,7 @@
 package com.hazelcast.security.permission;
 
 public class RingBufferPermission extends InstancePermission {
+
     private static final int PUT = 4;
     private static final int READ = 8;
     private static final int ALL = PUT | READ;
@@ -45,5 +46,4 @@ public class RingBufferPermission extends InstancePermission {
         }
         return mask;
     }
-
 }

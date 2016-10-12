@@ -16,7 +16,6 @@
 
 package com.hazelcast.security.permission;
 
-
 public class SemaphorePermission extends InstancePermission {
 
    private static final int ACQUIRE = 4;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.security.permission;
 
-
 public class DurableExecutorServicePermission extends InstancePermission {
 
     private static final int ALL = CREATE | DESTROY;

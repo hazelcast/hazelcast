@@ -21,7 +21,7 @@ import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
 import java.security.Permission;
 
 /**
- * @TODO Object Permission
+ * TODO: Object Permission
  */
 public abstract class InstancePermission extends ClusterPermission {
 

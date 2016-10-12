@@ -16,7 +16,6 @@
 
 package com.hazelcast.security.permission;
 
-
 public class LockPermission extends InstancePermission {
 
     private static final  int LOCK = 4;

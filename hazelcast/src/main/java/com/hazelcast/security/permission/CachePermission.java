@@ -52,5 +52,4 @@ public class CachePermission extends InstancePermission {
         }
         return mask;
     }
-
 }

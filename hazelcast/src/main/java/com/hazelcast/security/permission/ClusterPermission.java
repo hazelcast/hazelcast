@@ -27,6 +27,7 @@ public abstract class ClusterPermission extends Permission {
         super(name);
     }
 
+    @Override
     public PermissionCollection newPermissionCollection() {
         return new ClusterPermissionCollection(getClass());
     }

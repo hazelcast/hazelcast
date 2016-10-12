@@ -16,8 +16,7 @@
 
 package com.hazelcast.security.permission;
 
-public class ReplicatedMapPermission
-        extends InstancePermission {
+public class ReplicatedMapPermission extends InstancePermission {
 
     private static final int PUT = 4;
     private static final int REMOVE = 8;

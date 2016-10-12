@@ -37,6 +37,7 @@ public class ClusterPermissionCollection extends PermissionCollection {
         this.permClass = permClass;
     }
 
+    @Override
     public void add(Permission permission) {
         if (isReadOnly()) {
             throw new SecurityException("ClusterPermissionCollection is read-only!");
@@ -60,6 +61,7 @@ public class ClusterPermissionCollection extends PermissionCollection {
         }
     }
 
+    @Override
     public boolean implies(Permission permission) {
         for (Permission p : perms) {
             if (p.implies(permission)) {
@@ -90,6 +92,7 @@ public class ClusterPermissionCollection extends PermissionCollection {
         setReadOnly();
     }
 
+    @Override
     public Enumeration<Permission> elements() {
         return Collections.enumeration(perms);
     }

@@ -16,9 +16,7 @@
 
 package com.hazelcast.security.permission;
 
-
-public class CardinalityEstimatorPermission
-        extends InstancePermission {
+public class CardinalityEstimatorPermission extends InstancePermission {
 
     private static final int READ = 4;
     private static final int MODIFY = 8;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.security.permission;
 
-
 public class AtomicLongPermission extends InstancePermission {
 
     private static final int READ = 4;

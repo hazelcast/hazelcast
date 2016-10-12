@@ -16,7 +16,6 @@
 
 package com.hazelcast.security.permission;
 
-
 public class QueuePermission extends InstancePermission {
 
     private static final int ADD = 4;
