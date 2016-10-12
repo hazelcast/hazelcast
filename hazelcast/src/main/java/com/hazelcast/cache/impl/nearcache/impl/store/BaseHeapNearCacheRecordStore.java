@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.cache.impl.nearcache.impl.maxsize.EntryCountNearCacheMaxSizeChecker;
 import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 
 import java.util.Map;
@@ -38,16 +39,16 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     protected MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
                                                            NearCacheConfig nearCacheConfig,
                                                            NearCacheContext nearCacheContext) {
-        EvictionConfig.MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
+        MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
-        if (maxSizePolicy == EvictionConfig.MaxSizePolicy.ENTRY_COUNT) {
+        if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
             return new EntryCountNearCacheMaxSizeChecker(evictionConfig.getSize(), records);
         }
         throw new IllegalArgumentException("Invalid max-size policy "
                 + '(' + maxSizePolicy + ") for " + getClass().getName() + "! Only "
-                + EvictionConfig.MaxSizePolicy.ENTRY_COUNT + " is supported.");
+                + MaxSizePolicy.ENTRY_COUNT + " is supported.");
     }
 
     @Override
