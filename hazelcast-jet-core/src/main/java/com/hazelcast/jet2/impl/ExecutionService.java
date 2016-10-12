@@ -40,8 +40,8 @@ public class ExecutionService {
     private final Thread[] threads;
 
     public ExecutionService(JetEngineConfig cfg) {
-        this.workers = new Worker[cfg.parallelism()];
-        this.threads = new Thread[cfg.parallelism()];
+        this.workers = new Worker[cfg.getParallelism()];
+        this.threads = new Thread[cfg.getParallelism()];
     }
 
     public Future<Void> execute(List<Tasklet> tasklets) {

@@ -53,7 +53,7 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         } finally {
             dest.setPredicateOfAdd(null);
         }
-        return ProgressState.valueOf(madeProgress, exhaustedQueueCleaner.cleanedCount == conveyor.queueCount());
+        return ProgressState.valueOf(exhaustedQueueCleaner.cleanedCount == conveyor.queueCount(), madeProgress);
     }
 
     @Override

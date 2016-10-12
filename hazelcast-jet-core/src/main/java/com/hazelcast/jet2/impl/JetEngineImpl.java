@@ -58,7 +58,8 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(JetEngine.class);
-        this.config = new JetEngineConfig();
+        this.config = new JetEngineConfig()
+                .setParallelism(2);
         this.executionService = new ExecutionService(config);
     }
 
@@ -82,7 +83,6 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
     }
 
     public Future<Void> executeLocal(DAG dag) {
-
         Map<Edge, ConcurrentConveyor<Object>[]> conveyorMap = new HashMap<>();
         List<Tasklet> tasks = new ArrayList<>();
 
@@ -95,7 +95,8 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
                 List<InboundEdgeStream> inboundStreams = new ArrayList<>();
                 for (Edge outboundEdge : outboundEdges) {
                     // each edge has an array of conveyors
-                    // 1 conveyor per consumer - each consumer has number of producer queues.
+                    // one conveyor per consumer - each conveyor has one queue per producer
+                    // giving a total of number of producers * number of consumers queues
                     ConcurrentConveyor<Object>[] conveyorArray = conveyorMap.computeIfAbsent(outboundEdge, e ->
                             createConveyorArray(getParallelism(outboundEdge.getDestination()),
                                     parallelism, QUEUE_SIZE));
@@ -107,8 +108,8 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
                     ConcurrentConveyor<Object>[] conveyors = conveyorMap.get(inboundEdge);
                     ConcurrentInboundEdgeStream inboundStream =
                             new ConcurrentInboundEdgeStream(conveyors[taskletIndex],
-                            inboundEdge.getSourceOrdinal(),
-                            inboundEdge.getPriority());
+                                    inboundEdge.getSourceOrdinal(),
+                                    inboundEdge.getPriority());
                     inboundStreams.add(inboundStream);
                 }
 
@@ -122,7 +123,7 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
 
     private int getParallelism(Vertex vertex) {
         int parallelism = vertex.getParallelism();
-        return parallelism != -1 ? parallelism : config.parallelism();
+        return parallelism != -1 ? parallelism : config.getParallelism();
     }
 
     private <T> List<T> executeOperation(Operation operation) {

@@ -20,7 +20,15 @@ package com.hazelcast.jet2;
  * Javadoc pending.
  */
 public class JetEngineConfig {
-    public int parallelism() {
-        return 2;
+
+    private int parallelism;
+
+    public JetEngineConfig setParallelism(int parallelism) {
+        this.parallelism = parallelism;
+        return this;
+    }
+
+    public int getParallelism() {
+        return parallelism;
     }
 }
