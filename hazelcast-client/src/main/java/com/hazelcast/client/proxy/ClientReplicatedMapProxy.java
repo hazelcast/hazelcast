@@ -18,7 +18,6 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCache;
 import com.hazelcast.client.cache.impl.ClientNearCacheExecutor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCodec;
@@ -39,6 +38,7 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -104,7 +104,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     protected void onDestroy() {
         if (nearCache != null) {
             removeNearCacheInvalidationListener();
-            nearCache.destroy();
+            getContext().getNearCacheManager().destroyNearCache(name);
         }
     }
 
@@ -402,15 +402,16 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private void initNearCache() {
         if (nearCacheInitialized.compareAndSet(false, true)) {
-            NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
+            ClientContext context = getContext();
+            NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
             if (nearCacheConfig == null) {
                 return;
             }
             NearCacheContext nearCacheContext = new NearCacheContext(
-                    getContext().getSerializationService(),
-                    new ClientNearCacheExecutor(getContext().getExecutionService()));
+                    context.getSerializationService(),
+                    new ClientNearCacheExecutor(context.getExecutionService()));
 
-            this.nearCache = new DefaultNearCache<Data, Object>(name, nearCacheConfig, nearCacheContext);
+            nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig, nearCacheContext);
             if (nearCache.isInvalidatedOnChange()) {
                 addNearCacheInvalidateListener();
             }

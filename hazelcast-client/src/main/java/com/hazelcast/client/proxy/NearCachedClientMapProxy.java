@@ -18,7 +18,6 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCache;
 import com.hazelcast.client.cache.impl.ClientNearCacheExecutor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
@@ -92,7 +91,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                 context.getSerializationService(),
                 new ClientNearCacheExecutor(context.getExecutionService()));
 
-        NearCache<Data, Object> clientNearCache = new DefaultNearCache<Data, Object>(name, nearCacheConfig, nearCacheContext);
+        NearCache<Data, Object> clientNearCache = context.getNearCacheManager()
+                .getOrCreateNearCache(name, nearCacheConfig, nearCacheContext);
 
         int partitionCount = context.getPartitionService().getPartitionCount();
         nearCache = wrapAsStaleReadPreventerNearCache(clientNearCache, partitionCount);
@@ -393,7 +393,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     protected void onDestroy() {
         removeNearCacheInvalidationListener();
-        nearCache.destroy();
+        getContext().getNearCacheManager().destroyNearCache(name);
 
         super.onDestroy();
     }
@@ -401,7 +401,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     protected void onShutdown() {
         removeNearCacheInvalidationListener();
-        nearCache.destroy();
+        getContext().getNearCacheManager().destroyNearCache(name);
 
         super.onShutdown();
     }
