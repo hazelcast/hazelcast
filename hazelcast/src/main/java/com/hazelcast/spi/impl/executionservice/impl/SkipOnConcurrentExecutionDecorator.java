@@ -43,4 +43,12 @@ public class SkipOnConcurrentExecutionDecorator implements Runnable {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "SkipOnConcurrentExecutionDecorator{"
+                + "isAlreadyRunning=" + isAlreadyRunning
+                + ", runnable=" + runnable
+                + '}';
+    }
 }
