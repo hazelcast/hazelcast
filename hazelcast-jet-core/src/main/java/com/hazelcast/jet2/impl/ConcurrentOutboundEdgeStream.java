@@ -36,7 +36,7 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
     protected final int queueIndex;
     protected final int ordinal;
 
-    protected final ProgressTracker tracker = new ProgressTracker();
+    protected final ProgressTracker progTracker = new ProgressTracker();
 
     protected ConcurrentOutboundEdgeStream(int queueIndex, int ordinal) {
         Preconditions.checkTrue(queueIndex >= 0, "queue index must be positive");
@@ -81,68 +81,56 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
         @Override
         public ProgressState close() {
-            tracker.reset();
+            progTracker.reset();
             final ConcurrentConveyor<Object> first = cursor.value();
             do {
                 final ConcurrentConveyor<Object> c = cursor.value();
                 if (c.offer(queueIndex, DONE_ITEM)) {
-                    tracker.madeProgress();
+                    progTracker.madeProgress();
                     cursor.remove();
                 } else {
-                    tracker.notDone();
+                    progTracker.notDone();
                 }
             } while (cursor.advance() && cursor.value() != first);
-            return tracker.toProgressState();
+            return progTracker.toProgressState();
         }
     }
 
     private static class Broadcast extends ConcurrentOutboundEdgeStream {
 
         protected final ConcurrentConveyor<Object>[] conveyors;
-        private final BitSet isItemBroadcast;
+        private final BitSet isItemSentTo;
 
         public Broadcast(ConcurrentConveyor<Object>[] conveyors, int queueIndex, int ordinal) {
             super(queueIndex, ordinal);
             validateConveyors(conveyors, queueIndex);
             this.conveyors = conveyors.clone();
-            this.isItemBroadcast = new BitSet(conveyors.length);
-        }
-
-        @Override
-        public ProgressState close() {
-            tracker.reset();
-            for (int i = 0; i < conveyors.length; i++) {
-                if (isItemBroadcast.get(i)) {
-                    continue;
-                }
-                if (conveyors[i].offer(queueIndex, DONE_ITEM)) {
-                    tracker.madeProgress();
-                    conveyors[i] = null;
-                    isItemBroadcast.set(i);
-                } else {
-                    tracker.notDone();
-                }
-            }
-            return tracker.toProgressState();
+            this.isItemSentTo = new BitSet(conveyors.length);
         }
 
         @Override
         public ProgressState offer(Object item) {
-            tracker.reset();
+            progTracker.reset();
             for (int i = 0; i < conveyors.length; i++) {
-                if (!isItemBroadcast.get(i)) {
-                    if (conveyors[i].offer(queueIndex, item)) {
-                        tracker.madeProgress();
-                        isItemBroadcast.set(i);
-                    } else {
-                        tracker.notDone();
-                    }
+                if (isItemSentTo.get(i)) {
+                    continue;
+                }
+                if (conveyors[i].offer(queueIndex, item)) {
+                    progTracker.madeProgress();
+                    isItemSentTo.set(i);
+                } else {
+                    progTracker.notDone();
                 }
             }
-            if (tracker.isDone()) {
-                isItemBroadcast.clear();
+            if (progTracker.isDone()) {
+                isItemSentTo.clear();
             }
-            return tracker.toProgressState();
+            return progTracker.toProgressState();
+        }
+
+        @Override
+        public ProgressState close() {
+            return offer(DONE_ITEM);
         }
     }
 
