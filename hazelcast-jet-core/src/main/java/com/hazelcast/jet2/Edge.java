@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Represents an edge between two vertices in a DAG
@@ -33,6 +34,8 @@ public class Edge implements IdentifiedDataSerializable {
     private int inputOrdinal;
 
     private int priority;
+
+    private ForwardingPattern forwardingPattern = ForwardingPattern.SINGLE;
     private Partitioner partitioner;
 
     Edge() {
@@ -53,10 +56,10 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Creates an edge between two vertices.
      *
-     * @param source             the source vertex
-     * @param outputOrdinal      ordinal at the source
-     * @param destination        the destination vertex
-     * @param inputOrdinal ordinal at the destination
+     * @param source        the source vertex
+     * @param outputOrdinal ordinal at the source
+     * @param destination   the destination vertex
+     * @param inputOrdinal  ordinal at the destination
      */
     public Edge(Vertex source, int outputOrdinal,
                 Vertex destination, int inputOrdinal) {
@@ -95,12 +98,23 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Partition the edge with the given {@link Partitioner}
      */
-    public void partitioned(Partitioner partitioner) {
+    public Edge partitioned(Partitioner partitioner) {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
         this.partitioner = partitioner;
+        return this;
     }
 
-    public Partitioner partitioned() {
+    public Edge broadcast() {
+        forwardingPattern = ForwardingPattern.BROADCAST;
+        return this;
+    }
+
+    public Partitioner getPartitioner() {
         return partitioner;
+    }
+
+    public ForwardingPattern getForwardingPattern() {
+        return forwardingPattern;
     }
 
     public int getPriority() {
@@ -138,6 +152,7 @@ public class Edge implements IdentifiedDataSerializable {
 
         priority = in.readInt();
 
+        forwardingPattern = in.readObject();
         partitioner = in.readObject();
     }
 
@@ -152,4 +167,23 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
 
+    public enum ForwardingPattern implements Serializable {
+
+        /**
+         * Output of the source tasklet is only available to a single destination tasklet,
+         * but not necessarily always the same one
+         */
+        SINGLE,
+
+        /**
+         * Output of the source tasklet is only available to the destination tasklet with the partition id
+         * given by the {@link Partitioner}
+         */
+        PARTITIONED,
+
+        /**
+         * Output of the source tasklet is available to all destination tasklets.
+         */
+        BROADCAST
+    }
 }

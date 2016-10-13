@@ -45,6 +45,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.jet2.impl.ConcurrentOutboundEdgeStream.newStream;
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
@@ -101,8 +102,7 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
                     ConcurrentConveyor<Object>[] conveyorArray = conveyorMap.computeIfAbsent(outboundEdge, e ->
                             createConveyorArray(getParallelism(outboundEdge.getDestination()),
                                     parallelism, QUEUE_SIZE));
-                    outboundStreams.add(new ConcurrentOutboundEdgeStream(conveyorArray, taskletIndex,
-                            outboundEdge.getOutputOrdinal()));
+                    outboundStreams.add(newStream(conveyorArray, outboundEdge, taskletIndex));
                 }
 
                 for (Edge inboundEdge : inboundEdges) {

@@ -25,6 +25,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,26 +36,65 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertEquals;
+
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class JetEngineTest extends HazelcastTestSupport {
 
     private static TestHazelcastInstanceFactory factory;
+    private JetEngine jetEngine;
 
     @BeforeClass
-    public static void before() {
+    public static void setupFactory() {
         factory = new TestHazelcastInstanceFactory();
     }
 
     @AfterClass
-    public static void after() {
+    public static void shutdownFactory() {
         factory.shutdownAll();
+    }
+
+    @Before
+    public void setupEngine() {
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        jetEngine = JetEngine.get(instance, "jetEngine");
+    }
+
+    @Test
+    public void when_broadcast() {
+        List<Integer> numbers = IntStream.range(0, 10).
+                boxed().collect(Collectors.toList());
+        DAG dag = new DAG();
+        Vertex producer = new Vertex("producer", () -> new ListProducer(numbers, 4)).parallelism(1);
+
+        ListConsumer listConsumer = new ListConsumer();
+        Vertex consumer = new Vertex("consumer", () -> listConsumer)
+                .parallelism(1);
+
+        int parallelism = 4;
+        Vertex processor = new Vertex("processor", Identity::new)
+                .parallelism(parallelism);
+
+        dag.addVertex(producer)
+                .addVertex(consumer)
+                .addVertex(processor)
+                .addEdge(new Edge(producer, processor).broadcast())
+                .addEdge(new Edge(processor, consumer));
+
+        execute(dag);
+
+        List<Object> output = listConsumer.getList();
+        assertEquals(numbers.size()*parallelism, output.size());
+    }
+
+    private void execute(DAG dag) {
+        Job job = jetEngine.newJob(dag);
+        job.execute();
     }
 
     @Test
     public void test() {
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
         List<Integer> evens = IntStream.range(0, 10).filter(f -> f % 2 == 0).
                 boxed().collect(Collectors.toList());
@@ -93,14 +133,20 @@ public class JetEngineTest extends HazelcastTestSupport {
                 .addEdge(new Edge(processor, 0, lhs, 0))
                 .addEdge(new Edge(processor, 1, rhs, 0));
 
-        Job job = jetEngine.newJob(dag);
-
-        job.execute();
+        execute(dag);
 
         System.out.println(lhsConsumer.getList());
         System.out.println(rhsConsumer.getList());
     }
 
+    private static class Identity extends AbstractProcessor {
+
+        @Override
+        public boolean process(int ordinal, Object item) {
+            emit(item);
+            return true;
+        }
+    }
     private static class SplittingMapper extends AbstractProcessor {
 
         private final Function<Object, Object> left;
@@ -116,8 +162,7 @@ public class JetEngineTest extends HazelcastTestSupport {
         public boolean process(int ordinal, Object item) {
             if (ordinal == 0) {
                 emit(0, left.apply(item));
-            }
-            else if (ordinal == 1) {
+            } else if (ordinal == 1) {
                 emit(1, right.apply(item));
             }
             return true;
