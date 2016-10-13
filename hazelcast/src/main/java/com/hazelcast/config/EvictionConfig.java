@@ -119,7 +119,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         /**
          * ===== NOTE =====
          *
-         * Do not use setters, because they are overriden in readonly version of this config and
+         * Do not use setters, because they are overridden in readonly version of this config and
          * cause "UnsupportedOperationException". So just set directly if value is valid.
          */
 

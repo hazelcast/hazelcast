@@ -58,7 +58,7 @@ public class ClientCachePutAllTest extends CachePutAllTest {
     protected void onTearDown() {
         super.onTearDown();
         // Client factory is already shutdown at this test's super class (`CachePutAllTest`)
-        // because it is returned instance factory from overriden `getInstanceFactory` method.
+        // because it is returned instance factory from overridden `getInstanceFactory` method.
         client = null;
     }
 
