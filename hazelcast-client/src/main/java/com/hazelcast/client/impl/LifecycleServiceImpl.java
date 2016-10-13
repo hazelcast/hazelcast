@@ -128,22 +128,26 @@ public final class LifecycleServiceImpl implements LifecycleService {
         client.doShutdown();
         fireLifecycleEvent(SHUTDOWN);
 
-        executor.shutdown();
-        try {
-            boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!success) {
-                getLogger().warning("Lifecycle service executor awaitTermination could not completed gracefully in "
-                        + TERMINATE_TIMEOUT_SECONDS + " seconds. Terminating forcefully.");
-                executor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            getLogger().warning("LifecycleService executor await termination is interrupted. Terminating forcefully.", e);
-            executor.shutdownNow();
-        }
+        shutdownExecutor();
     }
 
     @Override
     public void terminate() {
         shutdown();
+    }
+
+    private void shutdownExecutor() {
+        executor.shutdown();
+        try {
+            boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!success) {
+                getLogger().warning("LifecycleService executor awaitTermination could not completed gracefully in "
+                        + TERMINATE_TIMEOUT_SECONDS + " seconds. Terminating forcefully.");
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            getLogger().warning("LifecycleService executor awaitTermination is interrupted. Terminating forcefully.", e);
+            executor.shutdownNow();
+        }
     }
 }

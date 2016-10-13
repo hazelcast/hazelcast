@@ -696,13 +696,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         transactionManager.shutdown();
         invocationService.shutdown();
         listenerService.shutdown();
-        ((InternalSerializationService) serializationService).dispose();
         nearCacheManager.destroyAllNearCaches();
         if (discoveryService != null) {
             discoveryService.destroy();
         }
         metricsRegistry.shutdown();
         diagnostics.shutdown();
+        ((InternalSerializationService) serializationService).dispose();
     }
 
     public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {

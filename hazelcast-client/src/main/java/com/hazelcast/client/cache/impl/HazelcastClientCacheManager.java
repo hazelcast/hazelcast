@@ -169,6 +169,10 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         }
     }
 
+    @Override
+    protected void onShuttingDown() {
+    }
+
     /**
      * Gets the related {@link NearCacheManager} with the underlying client instance.
      *
