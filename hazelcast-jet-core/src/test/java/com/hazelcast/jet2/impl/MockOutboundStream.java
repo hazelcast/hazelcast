@@ -19,6 +19,8 @@ package com.hazelcast.jet2.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
+
 public class MockOutboundStream implements OutboundEdgeStream {
 
     private final ArrayList<Object> buffer;
@@ -37,6 +39,12 @@ public class MockOutboundStream implements OutboundEdgeStream {
             return ProgressState.NO_PROGRESS;
         }
         buffer.add(item);
+        return ProgressState.DONE;
+    }
+
+    @Override
+    public ProgressState close() {
+        buffer.add(DONE_ITEM);
         return ProgressState.DONE;
     }
 

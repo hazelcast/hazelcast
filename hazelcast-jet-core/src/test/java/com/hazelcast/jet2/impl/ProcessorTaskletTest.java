@@ -154,11 +154,12 @@ public class ProcessorTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        return new ProcessorTasklet(processor, instreams, outstreams);
+        return new ProcessorTasklet(new ProcessorContextImpl(null),
+                processor, instreams, outstreams);
     }
 
     private void initProcessor() {
-        processor.init(new ProcessorContextImpl(), new ArrayDequeOutbox(outstreams.size()));
+        processor.init(new ProcessorContextImpl(null), new ArrayDequeOutbox(outstreams.size()));
     }
 
     private static class MockProcessor implements Processor {

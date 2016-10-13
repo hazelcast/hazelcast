@@ -16,41 +16,20 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
-
-import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
 
-public class ListProducer implements Processor {
+public class ListProducer extends AbstractProducer {
 
     private Iterator<?> iterator;
     private int batchSize;
     private boolean paused;
     private boolean completeEarly;
     private boolean completed;
-    private Outbox outbox;
 
     public ListProducer(List<?> list, int batchSize) {
         this.iterator = list.iterator();
         this.batchSize = batchSize;
-    }
-
-    @Override
-    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
-        this.outbox = outbox;
-    }
-
-    @Override
-    public boolean process(int ordinal, Object item) {
-        throw new UnsupportedOperationException("process");
-    }
-
-    @Override
-    public boolean complete(int ordinal) {
-        return false;
     }
 
     @Override
@@ -67,7 +46,7 @@ public class ListProducer implements Processor {
         }
 
         for (int i = 0; i < batchSize && iterator.hasNext(); i++) {
-            outbox.add(iterator.next());
+            emit(iterator.next());
         }
         completed = !iterator.hasNext();
         return completed;

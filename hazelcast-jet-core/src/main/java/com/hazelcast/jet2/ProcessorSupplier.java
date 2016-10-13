@@ -20,5 +20,9 @@ import java.io.Serializable;
 
 @FunctionalInterface
 public interface ProcessorSupplier extends Serializable {
+
+    default void init(int parallelism) {
+    }
+
     Processor get();
 }

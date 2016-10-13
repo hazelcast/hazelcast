@@ -16,15 +16,10 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
-
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListConsumer implements Processor {
+public class ListConsumer extends AbstractProcessor {
 
     private final List<Object> list;
     private boolean isComplete;
@@ -32,11 +27,6 @@ public class ListConsumer implements Processor {
 
     public ListConsumer() {
         list = new ArrayList<>();
-    }
-
-    @Override
-    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
-
     }
 
     @Override

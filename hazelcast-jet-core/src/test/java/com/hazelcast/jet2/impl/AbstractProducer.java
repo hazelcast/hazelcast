@@ -16,19 +16,17 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.ProcessorContext;
+public abstract class AbstractProducer extends AbstractProcessor {
 
-public class ProcessorContextImpl implements ProcessorContext {
-
-    private final HazelcastInstance instance;
-
-    public ProcessorContextImpl(HazelcastInstance instance) {
-        this.instance = instance;
+    @Override
+    public boolean process(int ordinal, Object item) {
+        throw new UnsupportedOperationException("process");
     }
 
     @Override
-    public HazelcastInstance getHazelcastInstance() {
-        return instance;
+    public boolean complete(int ordinal) {
+        throw new UnsupportedOperationException("complete(int)");
     }
+
+
 }

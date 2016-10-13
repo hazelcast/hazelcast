@@ -28,6 +28,7 @@ import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Job;
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -92,6 +93,8 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
             List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
             List<Edge> inboundEdges = dag.getInboundEdges(vertex);
             int parallelism = getParallelism(vertex);
+            ProcessorSupplier supplier = vertex.getProcessorSupplier();
+            supplier.init(parallelism);
             for (int taskletIndex = 0; taskletIndex < parallelism; taskletIndex++) {
                 List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
                 List<InboundEdgeStream> inboundStreams = new ArrayList<>();
@@ -114,8 +117,9 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
                     inboundStreams.add(inboundStream);
                 }
 
-                Processor processor = vertex.getProcessorSupplier().get();
-                tasks.add(new ProcessorTasklet(processor, inboundStreams, outboundStreams));
+                ProcessorContextImpl context = new ProcessorContextImpl(getNodeEngine().getHazelcastInstance());
+                Processor processor = supplier.get();
+                tasks.add(new ProcessorTasklet(context, processor, inboundStreams, outboundStreams));
             }
         }
 

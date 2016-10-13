@@ -123,9 +123,6 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
                     tracker.notDone();
                 }
             }
-            if (tracker.isDone()) {
-                isItemBroadcast.clear();
-            }
             return tracker.toProgressState();
         }
 

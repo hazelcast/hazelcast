@@ -17,6 +17,7 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayDeque;
@@ -46,8 +47,10 @@ public class ProcessorTasklet implements Tasklet {
     private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(
-            Processor processor, List<InboundEdgeStream> instreams, List<OutboundEdgeStream> outstreams
+    public ProcessorTasklet(ProcessorContext context,
+                            Processor processor,
+                            List<InboundEdgeStream> instreams,
+                            List<OutboundEdgeStream> outstreams
     ) {
         Preconditions.checkNotNull(processor, "processor");
         this.processor = processor;
@@ -59,9 +62,10 @@ public class ProcessorTasklet implements Tasklet {
         this.inbox = new ArrayDequeWithObserver();
         this.outbox = new ArrayDequeOutbox(outstreams.size());
         this.outstreams = outstreams.stream().sorted(comparing(OutboundEdgeStream::ordinal))
-                                    .toArray(OutboundEdgeStream[]::new);
+                .toArray(OutboundEdgeStream[]::new);
         this.instreamCursor = popInstreamGroup();
-        processor.init(new ProcessorContextImpl(), outbox);
+
+        processor.init(context, outbox);
     }
 
     @Override
@@ -116,7 +120,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private void tryProcessInbox() {
         final int inboundOrdinal = currInstream.ordinal();
-        for (Object item; (item = inbox.peek()) != null;) {
+        for (Object item; (item = inbox.peek()) != null; ) {
             progTracker.madeProgress(true);
             if (!processor.process(inboundOrdinal, item)) {
                 progTracker.notDone();
@@ -149,7 +153,7 @@ public class ProcessorTasklet implements Tasklet {
         nextOutstream:
         for (int i = 0; i < outbox.queueCount(); i++) {
             final Queue q = outbox.queueWithOrdinal(i);
-            for (Object item; (item = q.peek()) != null;) {
+            for (Object item; (item = q.peek()) != null; ) {
                 System.out.format("Flushing %s into %d%n", item, i);
                 final ProgressState state =
                         item != DONE_ITEM ? outstreams[i].offer(item) : outstreams[i].close();

@@ -16,8 +16,11 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.core.HazelcastInstance;
+
 public interface ProcessorContext {
 
+    HazelcastInstance getHazelcastInstance();
 
 }
 

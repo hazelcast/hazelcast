@@ -70,7 +70,7 @@ public class ForwardingTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         int parallelism = 4;
-        MultiListSupplier multiListSupplier = new MultiListSupplier(parallelism);
+        MultiListSupplier multiListSupplier = new MultiListSupplier();
         Vertex consumer = new Vertex("consumer", multiListSupplier)
                 .parallelism(parallelism);
 
@@ -94,7 +94,7 @@ public class ForwardingTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         int parallelism = 4;
-        MultiListSupplier multiListSupplier = new MultiListSupplier(parallelism);
+        MultiListSupplier multiListSupplier = new MultiListSupplier();
         Vertex consumer = new Vertex("consumer", multiListSupplier)
                 .parallelism(parallelism);
 
@@ -116,7 +116,7 @@ public class ForwardingTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         int parallelism = 2;
-        MultiListSupplier multiListSupplier = new MultiListSupplier(parallelism);
+        MultiListSupplier multiListSupplier = new MultiListSupplier();
         Vertex consumer = new Vertex("consumer", multiListSupplier)
                 .parallelism(parallelism);
 
@@ -140,20 +140,20 @@ public class ForwardingTest extends HazelcastTestSupport {
 
     private static class MultiListSupplier implements ProcessorSupplier {
 
-        private final int maximum;
         private int index;
         private ListConsumer[] consumers;
 
-        public MultiListSupplier(int maximum) {
-            this.maximum = maximum;
+        public MultiListSupplier() {
+        }
+
+        @Override
+        public void init(int parallelism) {
+            consumers = new ListConsumer[parallelism];
+            Arrays.setAll(consumers, i -> new ListConsumer());
         }
 
         @Override
         public Processor get() {
-            if (consumers == null) {
-                consumers = new ListConsumer[maximum];
-                Arrays.setAll(consumers, i -> new ListConsumer());
-            }
             return consumers[index++];
         }
 
