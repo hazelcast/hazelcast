@@ -83,11 +83,11 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
     @Override
     public void start() {
         try {
-          Configuration config = AzureAuthHelper.getAzureConfiguration(this.properties);
-          this.computeManagement = ComputeManagementService.create(config);
-          this.networkManagement = NetworkResourceProviderService.create(config);
+            Configuration config = AzureAuthHelper.getAzureConfiguration(this.properties);
+            this.computeManagement = ComputeManagementService.create(config);
+            this.networkManagement = NetworkResourceProviderService.create(config);
         } catch (Exception e) {
-          LOGGER.finest("Failed to start Azure SPI", e);
+            LOGGER.finest("Failed to start Azure SPI", e);
         }
     }
 
@@ -124,7 +124,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
                 }
 
                 int port = Integer.parseInt(tags.get(clusterId));
-                final String  faultDomainId = vm.getInstanceView().getPlatformFaultDomain().toString();
+                final String faultDomainId = getFaultDomain(vmOps, vm, resourceGroup);
                 DiscoveryNode node = buildDiscoveredNode(faultDomainId, netProfile, port);
 
                 if (node != null) {
@@ -134,11 +134,21 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
             LOGGER.info("Azure Discovery SPI Discovered " + nodes.size() + " nodes");
             return nodes;
         } catch (Exception e) {
-            e.printStackTrace();
             LOGGER.finest("Failed to discover nodes with Azure SPI", e);
             return null;
         }
 
+    }
+
+    private String getFaultDomain(VirtualMachineOperations vmOps, VirtualMachine vm, String resourceGroup) {
+        try {
+            return vmOps.getWithInstanceView(resourceGroup, vm.getName())
+                    .getVirtualMachine()
+                    .getInstanceView()
+                    .getPlatformFaultDomain().toString();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
@@ -154,11 +164,11 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
     * @return boolean true if VirtualMachine is on
     */
     private boolean isVirtualMachineOn(VirtualMachineOperations vmOps, VirtualMachine vm)
-        throws IOException, ServiceException, URISyntaxException {
+            throws IOException, ServiceException, URISyntaxException {
 
         String rgName = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);
         VirtualMachine vmWithInstanceView = vmOps.getWithInstanceView(rgName,
-            vm.getName()).getVirtualMachine();
+                vm.getName()).getVirtualMachine();
         VirtualMachineInstanceView vmInstanceView = vmWithInstanceView.getInstanceView();
 
         for (InstanceViewStatus status : vmInstanceView.getStatuses()) {
@@ -207,7 +217,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
             String uri = nir.getReferenceUri();
             String nicName = getResourceNameFromUri(uri);
             NetworkInterface nic = nicOps.get(rgName, nicName).getNetworkInterface();
-            ArrayList<NetworkInterfaceIpConfiguration> ips =  nic.getIpConfigurations();
+            ArrayList<NetworkInterfaceIpConfiguration> ips = nic.getIpConfigurations();
 
             // TODO is it possilbe for NIC to have > 1
             // IP address configuration?
@@ -244,7 +254,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
         return null;
     }
 
-    private void fetchVirtualMachineMetaData (String faultDomain, String dnsDomainName) {
+    private void fetchVirtualMachineMetaData(String faultDomain, String dnsDomainName) {
 
         if (faultDomain != null) {
             memberMetaData.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, faultDomain);
@@ -255,7 +265,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
         }
     }
 
-    public  String getLocalHostAddress() {
+    public String getLocalHostAddress() {
         try {
             InetAddress candidateAddress = null;
             // Iterate all NICs (network interface cards)...
