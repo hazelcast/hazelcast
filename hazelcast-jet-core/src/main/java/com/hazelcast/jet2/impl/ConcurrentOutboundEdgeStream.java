@@ -27,6 +27,7 @@ import java.util.BitSet;
 
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet2.impl.ProgressState.DONE;
+import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
 
 /**
  * Javadoc pending.
@@ -37,7 +38,7 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
     protected final ProgressTracker tracker = new ProgressTracker();
 
-    public ConcurrentOutboundEdgeStream(int queueIndex, int ordinal) {
+    protected ConcurrentOutboundEdgeStream(int queueIndex, int ordinal) {
         Preconditions.checkTrue(queueIndex >= 0, "queue index must be positive");
 
         this.queueIndex = queueIndex;
@@ -45,21 +46,15 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
     }
 
     @Override
-    public ProgressState offer(Object item) {
-        if (item == DONE_ITEM) {
-            return complete();
-        }
-        return tryOffer(item);
-    }
-
-    @Override
     public int ordinal() {
         return ordinal;
     }
 
-    protected abstract ProgressState complete();
-
-    protected abstract ProgressState tryOffer(Object item);
+    private static void validateConveyors(ConcurrentConveyor<Object>[] conveyors, int queueIndex) {
+        Preconditions.checkTrue(conveyors.length > 0, "Conveyor array is empty");
+        Preconditions.checkTrue(queueIndex >= 0 && queueIndex < conveyors[0].queueCount(),
+                "The given queue index is out of range for the given conveyor array");
+    }
 
     private static class RoundRobin extends ConcurrentOutboundEdgeStream {
 
@@ -68,31 +63,30 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         public RoundRobin(ConcurrentConveyor<Object>[] conveyors, int queueIndex, int ordinal) {
             super(queueIndex, ordinal);
             validateConveyors(conveyors, queueIndex);
-
             this.cursor = new CircularCursor<>(new ArrayList<>(Arrays.asList(conveyors)));
         }
 
         @Override
-        protected ProgressState tryOffer(Object item) {
-            ConcurrentConveyor<Object> first = cursor.value();
+        public ProgressState offer(Object item) {
+            final ConcurrentConveyor<Object> first = cursor.value();
             do {
-                boolean offered = cursor.value().offer(queueIndex, item);
+                boolean accepted = cursor.value().offer(queueIndex, item);
                 cursor.advance();
-                if (offered) {
+                if (accepted) {
                     return DONE;
                 }
             } while (cursor.value() != first);
-            return ProgressState.NO_PROGRESS;
+            return NO_PROGRESS;
         }
 
         @Override
-        protected ProgressState complete() {
+        public ProgressState close() {
             tracker.reset();
-            ConcurrentConveyor<Object> first = cursor.value();
+            final ConcurrentConveyor<Object> first = cursor.value();
             do {
-                ConcurrentConveyor<Object> conveyor = cursor.value();
-                if (conveyor.offer(queueIndex, DONE_ITEM)) {
-                    tracker.update(DONE);
+                final ConcurrentConveyor<Object> c = cursor.value();
+                if (c.offer(queueIndex, DONE_ITEM)) {
+                    tracker.madeProgress();
                     cursor.remove();
                 } else {
                     tracker.notDone();
@@ -100,12 +94,6 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
             } while (cursor.advance() && cursor.value() != first);
             return tracker.toProgressState();
         }
-    }
-
-    private static void validateConveyors(ConcurrentConveyor<Object>[] conveyors, int queueIndex) {
-        Preconditions.checkTrue(conveyors.length > 0, "There must be at least one conveyor in the array");
-        Preconditions.checkTrue(queueIndex < conveyors[0].queueCount(),
-                "Queue index must be less than number of queues in each conveyor");
     }
 
     private static class Broadcast extends ConcurrentOutboundEdgeStream {
@@ -116,24 +104,23 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         public Broadcast(ConcurrentConveyor<Object>[] conveyors, int queueIndex, int ordinal) {
             super(queueIndex, ordinal);
             validateConveyors(conveyors, queueIndex);
-
-
             this.conveyors = conveyors.clone();
             this.isItemBroadcast = new BitSet(conveyors.length);
         }
 
         @Override
-        protected ProgressState complete() {
+        public ProgressState close() {
             tracker.reset();
             for (int i = 0; i < conveyors.length; i++) {
-                if (!isItemBroadcast.get(i)) {
-                    if (conveyors[i].offer(queueIndex, DONE_ITEM)) {
-                        tracker.update(DONE);
-                        conveyors[i] = null;
-                        isItemBroadcast.set(i);
-                    } else {
-                        tracker.notDone();
-                    }
+                if (isItemBroadcast.get(i)) {
+                    continue;
+                }
+                if (conveyors[i].offer(queueIndex, DONE_ITEM)) {
+                    tracker.madeProgress();
+                    conveyors[i] = null;
+                    isItemBroadcast.set(i);
+                } else {
+                    tracker.notDone();
                 }
             }
             if (tracker.isDone()) {
@@ -143,12 +130,12 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         }
 
         @Override
-        protected ProgressState tryOffer(Object item) {
+        public ProgressState offer(Object item) {
             tracker.reset();
             for (int i = 0; i < conveyors.length; i++) {
                 if (!isItemBroadcast.get(i)) {
                     if (conveyors[i].offer(queueIndex, item)) {
-                        tracker.update(DONE);
+                        tracker.madeProgress();
                         isItemBroadcast.set(i);
                     } else {
                         tracker.notDone();
@@ -175,19 +162,15 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         }
 
         @Override
-        protected ProgressState tryOffer(Object item) {
+        public ProgressState offer(Object item) {
             int partition = partitioner.getPartition(item, conveyors.length);
             assert partition >= 0 && partition < conveyors.length;
-            if (conveyors[partition].offer(queueIndex, item)) {
-                return ProgressState.DONE;
-            } else {
-                return ProgressState.NO_PROGRESS;
-            }
+            return conveyors[partition].offer(queueIndex, item) ? DONE : NO_PROGRESS;
         }
     }
 
-    public static OutboundEdgeStream newStream(ConcurrentConveyor<Object>[] conveyors, Edge edge,
-                                               int taskletIndex) {
+    public static OutboundEdgeStream newStream(
+            ConcurrentConveyor<Object>[] conveyors, Edge edge, int taskletIndex) {
         int ordinal = edge.getOutputOrdinal();
         switch (edge.getForwardingPattern()) {
             case SINGLE:
@@ -197,7 +180,7 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
             case BROADCAST:
                 return new Broadcast(conveyors, taskletIndex, ordinal);
             default:
-                throw new IllegalArgumentException("impossible");
+                throw new AssertionError("Missing case label for " + edge.getForwardingPattern());
         }
     }
 }

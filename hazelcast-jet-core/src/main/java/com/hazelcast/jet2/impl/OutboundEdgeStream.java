@@ -21,11 +21,11 @@ package com.hazelcast.jet2.impl;
  */
 interface OutboundEdgeStream {
 
-    /**
-     * Offers an item to this output. If the output cannot accept it now, the call
-     * should be retried later.
-     */
+    /** Offers an item to this output. If the output cannot accept it now, the call should be retried later. */
     ProgressState offer(Object item);
+
+    /** Tries to close this outbound edge stream. */
+    ProgressState close();
 
     int ordinal();
 }

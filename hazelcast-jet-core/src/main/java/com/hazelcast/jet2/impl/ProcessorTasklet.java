@@ -88,7 +88,7 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private void tryFillInbox() {
-        // we have more items to process, or current inbound stream is done but not yet completed
+        // we have more items in inbox, or current inbound stream is exhausted but its processing hasn't completed
         if (!inbox.isEmpty() || currInstream != null && currInstreamExhausted) {
             progTracker.notDone();
             return;
@@ -151,7 +151,8 @@ public class ProcessorTasklet implements Tasklet {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null;) {
                 System.out.format("Flushing %s into %d%n", item, i);
-                final ProgressState state = outstreams[i].offer(item);
+                final ProgressState state =
+                        item != DONE_ITEM ? outstreams[i].offer(item) : outstreams[i].close();
                 progTracker.madeProgress(state.isMadeProgress());
                 if (!state.isDone()) {
                     progTracker.notDone();
