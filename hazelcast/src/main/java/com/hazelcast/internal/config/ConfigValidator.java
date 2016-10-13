@@ -57,7 +57,10 @@ public final class ConfigValidator {
     public static void checkNearCacheConfig(NearCacheConfig nearCacheConfig, boolean isClient) {
         checkNotNative(nearCacheConfig.getInMemoryFormat());
 
-        checkNoCacheLocalEntriesOnClients(nearCacheConfig, isClient);
+        if (isClient && nearCacheConfig.isCacheLocalEntries()) {
+            throw new IllegalArgumentException(
+                    "The Near Cache option `cache-local-entries` is not supported in client configurations!");
+        }
     }
 
     /**
@@ -69,20 +72,6 @@ public final class ConfigValidator {
         if (inMemoryFormat == NATIVE && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
-        }
-    }
-
-    /**
-     * Throws {@link IllegalArgumentException} if the supplied {@link NearCacheConfig} has
-     * {@link NearCacheConfig#isCacheLocalEntries} set.
-     *
-     * @param nearCacheConfig supplied NearCacheConfig
-     * @param isClient        if the supplied NearCacheConfig is from a client
-     */
-    private static void checkNoCacheLocalEntriesOnClients(NearCacheConfig nearCacheConfig, boolean isClient) {
-        if (isClient && nearCacheConfig.isCacheLocalEntries()) {
-            throw new IllegalArgumentException(
-                    "The Near Cache option `cache-local-entries` is not supported in client configurations!");
         }
     }
 
