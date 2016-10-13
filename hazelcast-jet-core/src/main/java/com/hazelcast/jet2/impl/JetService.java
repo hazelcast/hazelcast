@@ -28,7 +28,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-class JetService implements ManagedService, RemoteService {
+public class JetService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:jet2Service";
 
