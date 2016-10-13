@@ -19,7 +19,7 @@ package com.hazelcast.jet2.impl;
 /**
  * Javadoc pending.
  */
-public class ProgressTracker {
+class ProgressTracker {
     private boolean isMadeProgress;
     private boolean isDone = true;
 

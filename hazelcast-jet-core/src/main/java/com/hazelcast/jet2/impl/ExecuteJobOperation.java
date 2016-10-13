@@ -23,7 +23,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class ExecuteJobOperation extends Operation {
+class ExecuteJobOperation extends Operation {
 
     private String engineName;
     private DAG dag;

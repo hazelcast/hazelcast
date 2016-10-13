@@ -19,6 +19,6 @@ package com.hazelcast.jet2.impl;
 /**
  * Javadoc pending.
  */
-public interface TroubleSetter {
+interface TroubleSetter {
     void setTrouble(Throwable t);
 }

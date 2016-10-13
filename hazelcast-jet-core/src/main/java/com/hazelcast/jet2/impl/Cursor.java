@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
-public interface Cursor<T> {
+interface Cursor<T> {
 
     boolean advance();
 

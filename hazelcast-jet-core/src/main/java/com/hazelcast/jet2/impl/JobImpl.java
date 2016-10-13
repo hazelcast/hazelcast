@@ -20,7 +20,7 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Job;
 
-public class JobImpl implements Job {
+class JobImpl implements Job {
 
     private final JetEngineImpl jetEngine;
     private final DAG dag;

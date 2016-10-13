@@ -19,12 +19,14 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet2.ProcessorContext;
 
-public class ProcessorContextImpl implements ProcessorContext {
+class ProcessorContextImpl implements ProcessorContext {
 
     private final HazelcastInstance instance;
+    private final int parallelism;
 
     public ProcessorContextImpl(HazelcastInstance instance, int parallelism) {
         this.instance = instance;
+        this.parallelism = parallelism;
     }
 
     @Override
@@ -34,6 +36,6 @@ public class ProcessorContextImpl implements ProcessorContext {
 
     @Override
     public int parallelism() {
-        return 0;
+        return parallelism;
     }
 }

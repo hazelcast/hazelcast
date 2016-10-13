@@ -49,7 +49,7 @@ import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.jet2.impl.ConcurrentOutboundEdgeStream.newStream;
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
-public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
+class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
     public static final int QUEUE_SIZE = 1024;
     public static final int PARALLELISM = 4;

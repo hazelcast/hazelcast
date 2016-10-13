@@ -18,7 +18,7 @@ package com.hazelcast.jet2.impl;
 
 import java.util.concurrent.Callable;
 
-public interface Tasklet extends Callable<ProgressState> {
+interface Tasklet extends Callable<ProgressState> {
 
     default boolean isBlocking() {
         return false;

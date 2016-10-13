@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
-public enum ProgressState {
+enum ProgressState {
     NO_PROGRESS(false, false),
     MADE_PROGRESS(true, false),
     DONE(true, true),
