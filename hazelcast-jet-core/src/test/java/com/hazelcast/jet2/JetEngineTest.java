@@ -62,38 +62,6 @@ public class JetEngineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_broadcast() {
-        List<Integer> numbers = IntStream.range(0, 10).
-                boxed().collect(Collectors.toList());
-        DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(numbers, 4)).parallelism(1);
-
-        ListConsumer listConsumer = new ListConsumer();
-        Vertex consumer = new Vertex("consumer", () -> listConsumer)
-                .parallelism(1);
-
-        int parallelism = 4;
-        Vertex processor = new Vertex("processor", Identity::new)
-                .parallelism(parallelism);
-
-        dag.addVertex(producer)
-                .addVertex(consumer)
-                .addVertex(processor)
-                .addEdge(new Edge(producer, processor).broadcast())
-                .addEdge(new Edge(processor, consumer));
-
-        execute(dag);
-
-        List<Object> output = listConsumer.getList();
-        assertEquals(numbers.size()*parallelism, output.size());
-    }
-
-    private void execute(DAG dag) {
-        Job job = jetEngine.newJob(dag);
-        job.execute();
-    }
-
-    @Test
     public void test() {
 
         List<Integer> evens = IntStream.range(0, 10).filter(f -> f % 2 == 0).
@@ -133,7 +101,7 @@ public class JetEngineTest extends HazelcastTestSupport {
                 .addEdge(new Edge(processor, 0, lhs, 0))
                 .addEdge(new Edge(processor, 1, rhs, 0));
 
-        execute(dag);
+        jetEngine.newJob(dag).execute();
 
         System.out.println(lhsConsumer.getList());
         System.out.println(rhsConsumer.getList());
