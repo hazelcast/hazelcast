@@ -41,6 +41,7 @@ import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -498,13 +499,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ClientMessage clientMessage;
         if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-            clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(), cr.getPassword(),
-                    uuid, ownerUuid, asOwner, ClientTypes.JAVA, serializationVersion);
+            clientMessage = ClientAuthenticationCodec
+                    .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
+                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
         } else {
             Data data = ss.toData(credentials);
             clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
-                    asOwner, ClientTypes.JAVA, serializationVersion);
-
+                    asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
         }
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
         ClientInvocationFuture future = clientInvocation.invokeUrgent();

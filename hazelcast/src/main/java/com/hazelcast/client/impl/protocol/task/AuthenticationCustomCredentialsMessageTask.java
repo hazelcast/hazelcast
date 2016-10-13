@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -66,7 +67,8 @@ public class AuthenticationCustomCredentialsMessageTask
 
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version) {
-        return ClientAuthenticationCustomCodec.encodeResponse(status, thisAddress, uuid, ownerUuid, version);
+        return ClientAuthenticationCustomCodec
+                .encodeResponse(status, thisAddress, uuid, ownerUuid, version, BuildInfoProvider.getBuildInfo().getVersion());
     }
 
     @Override

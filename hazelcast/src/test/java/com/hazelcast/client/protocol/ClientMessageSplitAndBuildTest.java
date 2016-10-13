@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageSplitter;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,7 +44,8 @@ public class ClientMessageSplitAndBuildTest {
     public void splitAndBuild() {
         int FRAME_SIZE = 50;
         String s = UUID.randomUUID().toString();
-        final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1);
+        final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
+                BuildInfoProvider.getBuildInfo().getVersion());
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, expectedClientMessage);
         ClientMessageBuilder clientMessageBuilder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
@@ -62,7 +64,8 @@ public class ClientMessageSplitAndBuildTest {
     public void splitTest_checkSize() {
         int FRAME_SIZE = 50;
         String s = UUID.randomUUID().toString();
-        ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1);
+        ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
+                BuildInfoProvider.getBuildInfo().getVersion());
         clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, clientMessage);
 
@@ -82,7 +85,8 @@ public class ClientMessageSplitAndBuildTest {
 
         for (int id = 0; id < NUMBER_OF_MESSAGES; id++) {
             String s = UUID.randomUUID().toString();
-            ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1);
+            ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
+                    BuildInfoProvider.getBuildInfo().getVersion());
             expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
             expectedClientMessage.setCorrelationId(id);
 
@@ -118,7 +122,8 @@ public class ClientMessageSplitAndBuildTest {
     @Test
     public void splitAndBuild_whenMessageIsAlreadySmallerThanFrameSize() {
         String s = UUID.randomUUID().toString();
-        final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1);
+        final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
+                BuildInfoProvider.getBuildInfo().getVersion());
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
         ClientMessageBuilder clientMessageBuilder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
