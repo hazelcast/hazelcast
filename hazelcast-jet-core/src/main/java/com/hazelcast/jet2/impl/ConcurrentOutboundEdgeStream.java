@@ -110,6 +110,15 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
         @Override
         public ProgressState offer(Object item) {
+            return broadcast(item);
+        }
+
+        @Override
+        public ProgressState close() {
+            return broadcast(DONE_ITEM);
+        }
+
+        protected final ProgressState broadcast(Object item) {
             progTracker.reset();
             for (int i = 0; i < conveyors.length; i++) {
                 if (isItemSentTo.get(i)) {
@@ -126,11 +135,6 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
                 isItemSentTo.clear();
             }
             return progTracker.toProgressState();
-        }
-
-        @Override
-        public ProgressState close() {
-            return offer(DONE_ITEM);
         }
     }
 
