@@ -170,6 +170,10 @@ public final class HazelcastClientCacheManager
         }
     }
 
+    @Override
+    protected void onShuttingDown() {
+    }
+
     /**
      * Gets the related {@link NearCacheManager} with the underlying client instance.
      *
