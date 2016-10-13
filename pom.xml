@@ -96,7 +96,7 @@
         <!-- we want to remain java 1.6 compatible -->
         <java.version>1.6</java.version>
 
-        <hazelcast.version>3.7</hazelcast.version>
+        <hazelcast.version>3.7.2</hazelcast.version>
 
         <maven.findbugs.plugin.version>3.0.0</maven.findbugs.plugin.version>
         <maven.checkstyle.plugin.version>2.12</maven.checkstyle.plugin.version>
