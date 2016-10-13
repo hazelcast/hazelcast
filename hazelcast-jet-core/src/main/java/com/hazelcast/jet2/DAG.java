@@ -37,6 +37,9 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.util.Preconditions.checkTrue;
 
+/**
+ * Javadoc pending
+ */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     private Set<Edge> edges = new HashSet<>();
@@ -44,6 +47,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     private Deque<Vertex> topologicalVertexStack = new ArrayDeque<>();
 
+    /**
+     * Adds the given vertex
+     */
     public DAG addVertex(Vertex vertex) {
         if (vertices.containsKey(vertex.getName())) {
             throw new IllegalArgumentException("Vertex " + vertex.getName() + " is already defined.");
@@ -53,6 +59,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         return this;
     }
 
+    /**
+     * Adds the given edge
+     */
     public DAG addEdge(Edge edge) {
         if (!vertices.containsValue(edge.getSource())) {
             throw new IllegalArgumentException(
@@ -159,9 +168,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             int[] ordinals = entry.getValue().stream().mapToInt(Edge::getOutputOrdinal).sorted().toArray();
             for (int i = 0; i < ordinals.length; i++) {
                 if (ordinals[i] != i) {
-                    throw new IllegalArgumentException("Output ordinals for vertex " + vertex + " are not ordered. " +
-                            "Actual: " + Arrays.toString(ordinals) + " Expected: " +
-                            Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
+                    throw new IllegalArgumentException("Output ordinals for vertex " + vertex + " are not ordered. "
+                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
+                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
                 }
             }
         }
@@ -171,9 +180,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             int[] ordinals = entry.getValue().stream().mapToInt(Edge::getInputOrdinal).sorted().toArray();
             for (int i = 0; i < ordinals.length; i++) {
                 if (ordinals[i] != i) {
-                    throw new IllegalArgumentException("Input ordinals for vertex " + vertex + " are not ordered. " +
-                            "Actual: " + Arrays.toString(ordinals) + " Expected: " +
-                            Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
+                    throw new IllegalArgumentException("Input ordinals for vertex " + vertex + " are not ordered. "
+                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
+                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
                 }
             }
         }

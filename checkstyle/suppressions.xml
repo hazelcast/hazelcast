@@ -10,15 +10,17 @@
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
     <!-- Exclude implementation packages from JavaDoc checks -->
-    <suppress checks="JavadocPackage" files="/impl"/>
-    <suppress checks="JavadocMethod" files="/impl"/>
-    <suppress checks="JavadocType" files="/impl"/>
-    <suppress checks="JavadocVariable" files="/impl"/>
+    <suppress checks="JavadocPackage" files="(/impl|/internal)"/>
+    <suppress checks="JavadocMethod" files="(/impl|/internal)"/>
+    <suppress checks="JavadocType" files="(/impl|/internal)"/>
+    <suppress checks="JavadocVariable" files="(/impl|/internal)"/>
 
     <!-- Serializer Hook -->
-    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="com/hazelcast/jet/JetDataSerializerHook"/>
+    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
 
-
+    <!-- Temp, remove when merged into main Hazelcast repo -->
+    <suppress checks="OuterTypeNumber"
+              files="java/com/hazelcast/internal/util/concurrent/AbstractConcurrentArrayQueue"/>
 
     <!-- Client Protocol (auto-generated) -->
     <suppress checks="VisibilityModifier|HideUtilityClassConstructor|LocalVariableName|WhitespaceAround"

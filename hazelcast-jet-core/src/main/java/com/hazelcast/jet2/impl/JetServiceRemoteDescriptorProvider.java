@@ -35,7 +35,7 @@ public class JetServiceRemoteDescriptorProvider implements RemoteServiceDescript
                     public RemoteService getService(NodeEngine nodeEngine) {
                         return new JetService(nodeEngine);
                     }
-                }
+                },
         };
     }
 }

@@ -52,6 +52,7 @@ import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
     public static final int QUEUE_SIZE = 1024;
+    public static final int PARALLELISM = 4;
     private final String name;
     private final ILogger logger;
     private final ExecutionService executionService;
@@ -62,7 +63,7 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         this.name = name;
         this.logger = nodeEngine.getLogger(JetEngine.class);
         this.config = new JetEngineConfig()
-                .setParallelism(4);
+                .setParallelism(PARALLELISM);
         this.executionService = new ExecutionService(config);
     }
 
@@ -93,8 +94,10 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
             List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
             List<Edge> inboundEdges = dag.getInboundEdges(vertex);
             int parallelism = getParallelism(vertex);
+            ProcessorContextImpl context = new ProcessorContextImpl(getNodeEngine().getHazelcastInstance()
+                    , parallelism);
             ProcessorSupplier supplier = vertex.getProcessorSupplier();
-            supplier.init(parallelism);
+            supplier.init(context);
             for (int taskletIndex = 0; taskletIndex < parallelism; taskletIndex++) {
                 List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
                 List<InboundEdgeStream> inboundStreams = new ArrayList<>();
@@ -117,7 +120,6 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
                     inboundStreams.add(inboundStream);
                 }
 
-                ProcessorContextImpl context = new ProcessorContextImpl(getNodeEngine().getHazelcastInstance());
                 Processor processor = supplier.get();
                 tasks.add(new ProcessorTasklet(context, processor, inboundStreams, outboundStreams));
             }

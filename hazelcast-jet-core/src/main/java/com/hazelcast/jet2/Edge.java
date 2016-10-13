@@ -70,19 +70,30 @@ public class Edge implements IdentifiedDataSerializable {
         this.inputOrdinal = inputOrdinal;
     }
 
-
+    /**
+     * @return Javadoc pending
+     */
     public Vertex getSource() {
         return source;
     }
 
+    /**
+     * @return Javadoc pending
+     */
     public int getOutputOrdinal() {
         return outputOrdinal;
     }
 
+    /**
+     * @return Javadoc pending
+     */
     public Vertex getDestination() {
         return destination;
     }
 
+    /**
+     * @return Javadoc pending
+     */
     public int getInputOrdinal() {
         return inputOrdinal;
     }
@@ -104,19 +115,31 @@ public class Edge implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Javadoc pending
+     */
     public Edge broadcast() {
         forwardingPattern = ForwardingPattern.BROADCAST;
         return this;
     }
 
+    /**
+     * @return the partitioned for the edge
+     */
     public Partitioner getPartitioner() {
         return partitioner;
     }
 
+    /**
+     * @return the {@link ForwardingPattern} for the edge
+     */
     public ForwardingPattern getForwardingPattern() {
         return forwardingPattern;
     }
 
+    /**
+     * @return the priority for the edge
+     */
     public int getPriority() {
         return priority;
     }
@@ -167,6 +190,9 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
 
+    /**
+     * Javadoc pending
+     */
     public enum ForwardingPattern implements Serializable {
 
         /**

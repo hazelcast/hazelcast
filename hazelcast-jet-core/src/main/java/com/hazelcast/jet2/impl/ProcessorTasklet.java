@@ -65,7 +65,7 @@ public class ProcessorTasklet implements Tasklet {
                 .toArray(OutboundEdgeStream[]::new);
         this.instreamCursor = popInstreamGroup();
 
-        processor.init(context, outbox);
+        processor.init(outbox);
     }
 
     @Override
@@ -118,6 +118,7 @@ public class ProcessorTasklet implements Tasklet {
         } while (!result.isMadeProgress() && instreamCursor.value() != first);
     }
 
+    @SuppressWarnings("checkstyle:innerassignment")
     private void tryProcessInbox() {
         final int inboundOrdinal = currInstream.ordinal();
         for (Object item; (item = inbox.peek()) != null; ) {
@@ -149,6 +150,7 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
+    @SuppressWarnings("checkstyle:innerassignment")
     private void tryFlushOutbox() {
         nextOutstream:
         for (int i = 0; i < outbox.queueCount(); i++) {

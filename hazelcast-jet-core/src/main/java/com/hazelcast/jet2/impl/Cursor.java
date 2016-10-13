@@ -16,24 +16,11 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.ProcessorContext;
+public interface Cursor<T> {
 
-public class ProcessorContextImpl implements ProcessorContext {
+    boolean advance();
 
-    private final HazelcastInstance instance;
+    T value();
 
-    public ProcessorContextImpl(HazelcastInstance instance, int parallelism) {
-        this.instance = instance;
-    }
-
-    @Override
-    public HazelcastInstance getHazelcastInstance() {
-        return instance;
-    }
-
-    @Override
-    public int parallelism() {
-        return 0;
-    }
+    void reset();
 }

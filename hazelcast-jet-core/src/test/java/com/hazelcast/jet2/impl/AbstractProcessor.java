@@ -24,17 +24,11 @@ import javax.annotation.Nonnull;
 
 public abstract class AbstractProcessor implements Processor {
 
-    private ProcessorContext context;
     private Outbox outbox;
 
     @Override
-    public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
-        this.context = context;
+    public void init(@Nonnull Outbox outbox) {
         this.outbox = outbox;
-    }
-
-    protected ProcessorContext getContext() {
-        return context;
     }
 
     protected  Outbox getOutbox() {

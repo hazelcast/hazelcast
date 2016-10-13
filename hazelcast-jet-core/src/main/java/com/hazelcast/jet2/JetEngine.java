@@ -20,10 +20,19 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet2.impl.JetService;
 
+/**
+ * Javadoc pending
+ */
 public interface JetEngine extends DistributedObject {
 
+    /**
+     * @return a new {@link Job} with the given DAG
+     */
     Job newJob(DAG dag);
 
+    /**
+     * @return the {@code JetEngine} with the given name
+     */
     static JetEngine get(HazelcastInstance instance, String name) {
         return instance.getDistributedObject(JetService.SERVICE_NAME, name);
     }

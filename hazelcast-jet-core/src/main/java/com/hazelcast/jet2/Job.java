@@ -16,8 +16,14 @@
 
 package com.hazelcast.jet2;
 
+/**
+ * Javadoc pending
+ */
 public interface Job {
 
+    /**
+     * Executes the job
+     */
     void execute();
 
 }

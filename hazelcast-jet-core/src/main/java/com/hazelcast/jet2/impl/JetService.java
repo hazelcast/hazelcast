@@ -18,7 +18,6 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet2.JetEngine;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;

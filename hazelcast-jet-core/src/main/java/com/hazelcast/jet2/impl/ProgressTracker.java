@@ -28,11 +28,6 @@ public class ProgressTracker {
         isDone = true;
     }
 
-    public void mergeWith(ProgressState other) {
-        isMadeProgress |= other.isMadeProgress();
-        isDone &= other.isDone();
-    }
-
     public void madeProgress(boolean isMadeProgress) {
         this.isMadeProgress |= isMadeProgress;
     }

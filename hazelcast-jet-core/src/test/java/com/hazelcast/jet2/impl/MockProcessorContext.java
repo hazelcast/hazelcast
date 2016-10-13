@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl;
 
-public interface Cursor<T> {
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet2.ProcessorContext;
 
-    boolean advance();
+public class MockProcessorContext implements ProcessorContext {
+    @Override
+    public HazelcastInstance getHazelcastInstance() {
+        return null;
+    }
 
-    T value();
-
-    void reset();
+    @Override
+    public int parallelism() {
+        return 0;
+    }
 }

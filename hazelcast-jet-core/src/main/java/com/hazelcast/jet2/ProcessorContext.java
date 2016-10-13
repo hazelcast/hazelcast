@@ -18,9 +18,20 @@ package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
 
+/**
+ * Javadoc pending
+ */
 public interface ProcessorContext {
 
+    /**
+     * @return
+     */
     HazelcastInstance getHazelcastInstance();
+
+    /**
+     * @return
+     */
+    int parallelism();
 
 }
 

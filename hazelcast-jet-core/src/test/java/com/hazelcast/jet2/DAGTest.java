@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import javax.annotation.Nonnull;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
@@ -163,10 +163,7 @@ public class DAGTest {
         dag.verify();
     }
 
-    private static class TestProcessor implements Processor {
-        @Override
-        public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
-        }
+    private static class TestProcessor extends AbstractProcessor {
 
         @Override
         public boolean process(int ordinal, Object item) {

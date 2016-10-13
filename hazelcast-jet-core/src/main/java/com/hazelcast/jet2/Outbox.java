@@ -20,6 +20,15 @@ package com.hazelcast.jet2;
  * Javadoc pending.
  */
 public interface Outbox {
+    /**
+     *
+     */
     void add(Object item);
+
+    /**
+     *
+     * @param ordinal
+     * @param item
+     */
     void add(int ordinal, Object item);
 }

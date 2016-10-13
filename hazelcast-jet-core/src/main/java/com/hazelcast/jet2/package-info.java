@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Javadoc pending
+ */
 package com.hazelcast.jet2;
-
-public interface Chunk<T> {
-
-    Cursor<T> cursor();
-
-    boolean isEmpty();
-
-}

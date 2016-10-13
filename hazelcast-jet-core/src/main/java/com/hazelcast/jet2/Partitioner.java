@@ -18,6 +18,9 @@ package com.hazelcast.jet2;
 
 import java.io.Serializable;
 
+/**
+ * Javadoc pending
+ */
 @FunctionalInterface
 public interface Partitioner extends Serializable {
 

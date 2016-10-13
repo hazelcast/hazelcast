@@ -64,7 +64,6 @@ public class ProcessorTaskletTest {
         MockOutboundStream outstream1 = new MockOutboundStream(0, mockInput.size());
         instreams.add(instream1);
         outstreams.add(outstream1);
-        initProcessor();
         Tasklet tasklet = createTasklet();
 
         // When
@@ -84,7 +83,6 @@ public class ProcessorTaskletTest {
         instreams.add(instream1);
         outstreams.add(outstream1);
         outstreams.add(outstream2);
-        initProcessor();
         Tasklet tasklet = createTasklet();
 
         // When
@@ -103,7 +101,6 @@ public class ProcessorTaskletTest {
         MockOutboundStream outstream1 = new MockOutboundStream(0, mockInput.size());
         instreams.add(instream1);
         outstreams.add(outstream1);
-        initProcessor();
         Tasklet tasklet = createTasklet();
 
         // When
@@ -127,7 +124,6 @@ public class ProcessorTaskletTest {
         instreams.add(instream2);
         instreams.add(instream3);
         outstreams.add(outstream1);
-        initProcessor();
         Tasklet tasklet = createTasklet();
 
         // When
@@ -145,7 +141,6 @@ public class ProcessorTaskletTest {
         MockOutboundStream outstream1 = new MockOutboundStream(0, 4);
         instreams.add(instream1);
         outstreams.add(outstream1);
-        initProcessor();
         Tasklet tasklet = createTasklet();
 
         callUntil(tasklet, NO_PROGRESS);
@@ -154,19 +149,15 @@ public class ProcessorTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        return new ProcessorTasklet(new ProcessorContextImpl(null),
+        return new ProcessorTasklet(new MockProcessorContext(),
                 processor, instreams, outstreams);
-    }
-
-    private void initProcessor() {
-        processor.init(new ProcessorContextImpl(null), new ArrayDequeOutbox(outstreams.size()));
     }
 
     private static class MockProcessor implements Processor {
         private ArrayDequeOutbox outbox;
 
         @Override
-        public void init(@Nonnull ProcessorContext context, @Nonnull Outbox outbox) {
+        public void init(@Nonnull Outbox outbox) {
             this.outbox = (ArrayDequeOutbox) outbox;
         }
 

@@ -18,11 +18,20 @@ package com.hazelcast.jet2;
 
 import java.io.Serializable;
 
+/**
+ *
+ */
 @FunctionalInterface
 public interface ProcessorSupplier extends Serializable {
 
-    default void init(int parallelism) {
+    /**
+     * Javadoc pending
+     */
+    default void init(ProcessorContext context) {
     }
 
+    /**
+     * Javadoc pending
+     */
     Processor get();
 }

@@ -16,11 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Cursor;
-import com.hazelcast.util.Preconditions;
-
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Cursor over a {@code java.util.List}. A new cursor is positioned at the first
@@ -28,7 +24,7 @@ import java.util.List;
  *
  * @param <T>
  */
-class ArrayListCursor<T> implements Cursor<T> {
+class ArrayListCursor<T> implements Cursor<T>  {
 
     protected int index;
     protected final ArrayList<T> list;

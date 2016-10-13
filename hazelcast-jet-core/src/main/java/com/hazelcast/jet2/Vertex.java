@@ -24,6 +24,9 @@ import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
+/**
+ * Javadoc pending
+ */
 public class Vertex implements IdentifiedDataSerializable {
 
     private ProcessorSupplier processorSupplier;
@@ -33,6 +36,11 @@ public class Vertex implements IdentifiedDataSerializable {
     Vertex() {
     }
 
+    /**
+     * Javadoc pending
+     * @param name
+     * @param processorSupplier
+     */
     public Vertex(String name, ProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
         checkNotNull(processorSupplier, "processorSupplier");
@@ -66,6 +74,9 @@ public class Vertex implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * @return the processor supplier
+     */
     public ProcessorSupplier getProcessorSupplier() {
         return processorSupplier;
     }
