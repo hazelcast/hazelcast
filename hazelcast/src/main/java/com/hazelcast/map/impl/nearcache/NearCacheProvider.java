@@ -40,17 +40,23 @@ import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAG
  */
 public class NearCacheProvider {
 
+    protected final NearCacheContext nearCacheContext;
     protected final NearCacheManager nearCacheManager;
     protected final MapServiceContext mapServiceContext;
     protected final NodeEngine nodeEngine;
     protected final NearCacheInvalidator nearCacheInvalidator;
 
     public NearCacheProvider(MapServiceContext mapServiceContext) {
-        this(mapServiceContext, new DefaultNearCacheManager());
+        this(new NearCacheContext(
+                mapServiceContext.getNodeEngine().getSerializationService(),
+                mapServiceContext.getNodeEngine().getExecutionService(),
+                new DefaultNearCacheManager()
+        ), mapServiceContext);
     }
 
-    protected NearCacheProvider(MapServiceContext mapServiceContext, NearCacheManager nearCacheManager) {
-        this.nearCacheManager = nearCacheManager;
+    protected NearCacheProvider(NearCacheContext nearCacheContext, MapServiceContext mapServiceContext) {
+        this.nearCacheContext = nearCacheContext;
+        this.nearCacheManager = nearCacheContext.getNearCacheManager();
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.nearCacheInvalidator = isBatchingEnabled() ? new BatchInvalidator(nodeEngine) : new NonStopInvalidator(nodeEngine);
@@ -64,15 +70,9 @@ public class NearCacheProvider {
 
     public <K, V> NearCache<K, V> getOrCreateNearCache(String mapName) {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
-        NearCacheContext nearCacheContext = new NearCacheContext(
-                nodeEngine.getSerializationService(),
-                new MemberNearCacheExecutor(nodeEngine.getExecutionService()),
-                nearCacheManager
-        );
-
         NearCache<K, V> nearCache = nearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig, nearCacheContext);
 
-        int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return wrapAsStaleReadPreventerNearCache(nearCache, partitionCount);
     }
 
@@ -102,7 +102,7 @@ public class NearCacheProvider {
     public void destroyNearCache(String mapName) {
         nearCacheManager.destroyNearCache(mapName);
 
-        String uuid = mapServiceContext.getNodeEngine().getLocalMember().getUuid();
+        String uuid = nodeEngine.getLocalMember().getUuid();
         nearCacheInvalidator.destroy(mapName, uuid);
     }
 
