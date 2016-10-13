@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet2.impl;
 
-import java.util.ArrayList;
+import java.util.List;
 
-class CircularCursor<E> extends ArrayListCursor<E> {
+class CircularCursor<E> extends ListCursor<E> {
 
-    CircularCursor(ArrayList<E> list) {
+    CircularCursor(List<E> list) {
         super(list);
     }
 

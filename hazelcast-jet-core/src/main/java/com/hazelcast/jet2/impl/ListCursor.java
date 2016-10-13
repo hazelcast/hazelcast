@@ -17,6 +17,8 @@
 package com.hazelcast.jet2.impl;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.RandomAccess;
 
 /**
  * Cursor over a {@code java.util.List}. A new cursor is positioned at the first
@@ -24,12 +26,13 @@ import java.util.ArrayList;
  *
  * @param <T>
  */
-class ArrayListCursor<T> implements Cursor<T>  {
+class ListCursor<T> implements Cursor<T>  {
 
     protected int index;
-    protected final ArrayList<T> list;
+    protected final List<T> list;
 
-    public ArrayListCursor(ArrayList<T> list) {
+    public ListCursor(List<T> list) {
+        assert list instanceof RandomAccess : "Attempt to create ListCursor with non-RandomAccess list";
         this.list = list;
     }
 
