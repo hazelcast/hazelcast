@@ -17,7 +17,9 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.impl.AbstractProcessor;
+import com.hazelcast.jet2.impl.IMapProducer;
 import com.hazelcast.jet2.impl.ListConsumer;
 import com.hazelcast.jet2.impl.ListProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -36,14 +38,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
-
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class JetEngineTest extends HazelcastTestSupport {
 
     private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
+    private HazelcastInstance instance;
 
     @BeforeClass
     public static void setupFactory() {
@@ -57,7 +58,7 @@ public class JetEngineTest extends HazelcastTestSupport {
 
     @Before
     public void setupEngine() {
-        HazelcastInstance instance = factory.newHazelcastInstance();
+        instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
     }
 
@@ -107,6 +108,31 @@ public class JetEngineTest extends HazelcastTestSupport {
         System.out.println(rhsConsumer.getList());
     }
 
+    @Test
+    public void testMap() {
+        IMap<Object, Object> map = instance.getMap("numbers");
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+
+        DAG dag = new DAG();
+        Vertex producer = new Vertex("numbers", IMapProducer.supplier("numbers"))
+                .parallelism(4);
+
+        ListConsumer listConsumer = new ListConsumer();
+        Vertex consumer = new Vertex("odds", () -> listConsumer)
+                .parallelism(1);
+
+        dag.addVertex(producer)
+                .addVertex(consumer)
+                .addEdge(new Edge(producer, consumer));
+
+        jetEngine.newJob(dag).execute();
+
+        System.out.println(listConsumer.getList());
+
+    }
+
     private static class Identity extends AbstractProcessor {
 
         @Override
@@ -115,6 +141,7 @@ public class JetEngineTest extends HazelcastTestSupport {
             return true;
         }
     }
+
     private static class SplittingMapper extends AbstractProcessor {
 
         private final Function<Object, Object> left;
