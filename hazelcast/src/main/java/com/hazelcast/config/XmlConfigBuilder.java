@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -995,7 +996,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 multiMapConfig.setStatisticsEnabled(getBooleanValue(value));
-            }  else if ("binary".equals(nodeName)) {
+            } else if ("binary".equals(nodeName)) {
                 multiMapConfig.setBinary(getBooleanValue(value));
             }
         }
@@ -1054,7 +1055,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("eviction-policy".equals(nodeName)) {
-                if(mapConfig.getMapEvictionPolicy() == null) {
+                if (mapConfig.getMapEvictionPolicy() == null) {
                     mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
                 }
             } else if ("max-size".equals(nodeName)) {
@@ -1302,15 +1303,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             evictionConfig.setSize(parseInt(getTextContent(size)));
         }
         if (maxSizePolicy != null) {
-            evictionConfig.setMaximumSizePolicy(
-                    EvictionConfig.MaxSizePolicy.valueOf(
-                            upperCaseInternal(getTextContent(maxSizePolicy)))
+            evictionConfig.setMaximumSizePolicy(MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy)))
             );
         }
         if (evictionPolicy != null) {
-            evictionConfig.setEvictionPolicy(
-                    EvictionPolicy.valueOf(
-                            upperCaseInternal(getTextContent(evictionPolicy)))
+            evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy)))
             );
         }
         if (comparatorClassName != null) {
@@ -1463,8 +1460,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                                         getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
                                 boolean local = getBooleanValue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
                                 String listenerClass = getTextContent(listenerNode);
-                                queryCacheConfig.addEntryListenerConfig(
-                                        new EntryListenerConfig(listenerClass, local, incValue));
+                                queryCacheConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
                             }
                         }
                     } else {
@@ -1473,16 +1469,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                             boolean includeValue = getBooleanValue(textContent);
                             queryCacheConfig.setIncludeValue(includeValue);
                         } else if ("batch-size".equals(nodeName)) {
-                            int batchSize = getIntegerValue("batch-size", textContent.trim()
-                            );
+                            int batchSize = getIntegerValue("batch-size", textContent.trim());
                             queryCacheConfig.setBatchSize(batchSize);
                         } else if ("buffer-size".equals(nodeName)) {
-                            int bufferSize = getIntegerValue("buffer-size", textContent.trim()
-                            );
+                            int bufferSize = getIntegerValue("buffer-size", textContent.trim());
                             queryCacheConfig.setBufferSize(bufferSize);
                         } else if ("delay-seconds".equals(nodeName)) {
-                            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
-                            );
+                            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim());
                             queryCacheConfig.setDelaySeconds(delaySeconds);
                         } else if ("in-memory-format".equals(nodeName)) {
                             String value = textContent.trim();
@@ -1519,7 +1512,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
         queryCacheConfig.setPredicateConfig(predicateConfig);
     }
-
 
     private int sizeParser(String value) {
         int size;
@@ -1576,7 +1568,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 } else {
                     mapStoreConfig.setWriteCoalescing(getBooleanValue(writeCoalescing));
                 }
-
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }
@@ -1662,8 +1653,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             String nodeName = cleanNodeName(n);
             if ("read-batch-size".equals(nodeName)) {
                 String batchSize = getTextContent(n);
-                topicConfig.setReadBatchSize(
-                        getIntegerValue("read-batch-size", batchSize));
+                topicConfig.setReadBatchSize(getIntegerValue("read-batch-size", batchSize));
             } else if ("statistics-enabled".equals(nodeName)) {
                 topicConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if ("topic-overload-policy".equals(nodeName)) {

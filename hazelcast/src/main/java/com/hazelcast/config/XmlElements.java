@@ -71,5 +71,4 @@ enum XmlElements {
     public boolean isEqual(String name) {
         return this.name.equals(name);
     }
-
 }
