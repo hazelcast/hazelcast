@@ -19,6 +19,8 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
+import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
+import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
 import com.hazelcast.cache.impl.operation.CacheBackupEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheClearBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperation;
@@ -51,8 +53,12 @@ import com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheRemoveBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
+import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
+import com.hazelcast.cache.impl.operation.PostJoinCacheOperation;
+import com.hazelcast.cache.impl.record.CacheDataRecord;
+import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -115,8 +121,14 @@ public final class CacheDataSerializerHook
     public static final short BATCH_INVALIDATION_MESSAGE = 40;
     public static final short ENTRY_ITERATOR = 41;
     public static final short ENTRY_ITERATION_RESULT = 42;
+    public static final short CACHE_PARTITION_LOST_EVENT_FILTER = 43;
+    public static final short DEFAULT_CACHE_ENTRY_VIEW = 44;
+    public static final short CACHE_REPLICATION = 45;
+    public static final short CACHE_POST_JOIN = 46;
+    public static final short CACHE_DATA_RECORD = 47;
+    public static final short CACHE_OBJECT_RECORD = 48;
 
-    private static final int LEN = 43;
+    private static final int LEN = 49;
 
     public int getFactoryId() {
         return F_ID;
@@ -335,6 +347,36 @@ public final class CacheDataSerializerHook
         constructors[ENTRY_ITERATION_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheEntryIterationResult();
+            }
+        };
+        constructors[CACHE_PARTITION_LOST_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachePartitionLostEventFilter();
+            }
+        };
+        constructors[DEFAULT_CACHE_ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new DefaultCacheEntryView();
+            }
+        };
+        constructors[CACHE_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheReplicationOperation();
+            }
+        };
+        constructors[CACHE_POST_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PostJoinCacheOperation();
+            }
+        };
+        constructors[CACHE_DATA_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheDataRecord();
+            }
+        };
+        constructors[CACHE_OBJECT_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheObjectRecord();
             }
         };
         return new ArrayDataSerializableFactory(constructors);
