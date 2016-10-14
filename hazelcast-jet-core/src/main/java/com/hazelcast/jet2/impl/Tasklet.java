@@ -20,6 +20,8 @@ import java.util.concurrent.Callable;
 
 interface Tasklet extends Callable<ProgressState> {
 
+    void init();
+
     default boolean isBlocking() {
         return false;
     }

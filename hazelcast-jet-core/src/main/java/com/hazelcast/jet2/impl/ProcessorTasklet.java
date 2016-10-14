@@ -64,7 +64,10 @@ public class ProcessorTasklet implements Tasklet {
         this.outstreams = outstreams.stream().sorted(comparing(OutboundEdgeStream::ordinal))
                 .toArray(OutboundEdgeStream[]::new);
         this.instreamCursor = popInstreamGroup();
+    }
 
+    @Override
+    public void init() {
         processor.init(outbox);
     }
 
