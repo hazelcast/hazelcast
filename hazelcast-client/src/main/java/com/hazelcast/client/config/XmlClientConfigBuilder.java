@@ -244,7 +244,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleNearCache(Node node) {
         String name = getAttribute(node, "name");
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
@@ -265,13 +265,12 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             } else if ("cache-local-entries".equals(nodeName)) {
                 nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
             } else if ("local-update-policy".equals(nodeName)) {
-                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
-                nearCacheConfig.setLocalUpdatePolicy(policy);
+                nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.valueOf(value));
             } else if ("eviction".equals(nodeName)) {
                 nearCacheConfig.setEvictionConfig(getEvictionConfig(child));
             }
         }
-        clientConfig.addNearCacheConfig(name, nearCacheConfig);
+        clientConfig.addNearCacheConfig(nearCacheConfig);
     }
 
     private EvictionConfig getEvictionConfig(Node node) {
