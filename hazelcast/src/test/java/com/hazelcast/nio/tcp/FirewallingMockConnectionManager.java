@@ -78,24 +78,24 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
         this.packetFilter = packetFilter;
     }
 
-    private boolean isAllowed(Packet packet, Address target) {
+    private boolean isAllowed(byte[] packet, boolean urgent, Address target) {
         boolean allowed = true;
         PacketFilter filter = packetFilter;
         if (filter != null) {
-            allowed = filter.allow(packet, target);
+            allowed = filter.allow(packet, urgent, target);
         }
         return allowed;
     }
 
     @Override
-    public boolean transmit(Packet packet, Connection connection) {
+    public boolean transmit(byte[] packet, boolean urgent, Connection connection) {
         return connection != null
-                && isAllowed(packet, connection.getEndPoint())
-                && super.transmit(packet, connection);
+                && isAllowed(packet, urgent, connection.getEndPoint())
+                && super.transmit(packet, urgent, connection);
     }
 
     @Override
-    public boolean transmit(Packet packet, Address target) {
-        return isAllowed(packet, target) && super.transmit(packet, target);
+    public boolean transmit(byte[] packet, boolean urgent, Address target) {
+        return isAllowed(packet, urgent, target) && super.transmit(packet, urgent, target);
     }
 }

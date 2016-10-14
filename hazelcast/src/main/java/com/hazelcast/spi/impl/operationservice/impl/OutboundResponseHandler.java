@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
@@ -32,6 +31,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.nio.PacketUtil.toBytePacket;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -86,16 +86,14 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
         }
 
-        byte[] bytes = serializationService.toBytes(response);
-        Packet packet = new Packet(bytes, -1)
-                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
-
+        int flags = FLAG_OP | FLAG_RESPONSE;
         if (response.isUrgent()) {
-            packet.setFlag(FLAG_URGENT);
+            flags = flags | FLAG_URGENT;
         }
 
+        byte[] packet = toBytePacket(serializationService, response, flags, -1);
         ConnectionManager connectionManager = node.getConnectionManager();
         Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
+        return connectionManager.transmit(packet, response.isUrgent(), connection);
     }
 }

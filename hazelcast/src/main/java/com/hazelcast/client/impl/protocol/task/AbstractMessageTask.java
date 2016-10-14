@@ -205,7 +205,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         resultClientMessage.setVersion(ClientMessage.VERSION);
         final Connection connection = endpoint.getConnection();
         // TODO: framing not implemented yet, should be split into frames before writing to connection
-        connection.write(resultClientMessage);
+        //connection.write(resultClientMessage);
     }
 
     protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {

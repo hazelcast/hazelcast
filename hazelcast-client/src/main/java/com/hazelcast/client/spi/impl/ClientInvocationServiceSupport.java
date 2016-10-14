@@ -134,7 +134,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {
         clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-        return connection.write(clientMessage);
+       // return connection.write(clientMessage);
+        return true;
     }
 
     private boolean isAllowedToSendRequest(ClientConnection connection, ClientInvocation invocation) {

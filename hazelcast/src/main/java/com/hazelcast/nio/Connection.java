@@ -115,10 +115,11 @@ public interface Connection {
      * does not need to be a synchronous call.
      *
      * @param frame the frame to write.
+     * @param  urgent if the frame has priority or not.
      * @return false if the frame was not accepted to be written, e.g. because the Connection was not alive.
      * @throws NullPointerException if frame is null.
      */
-    boolean write(OutboundFrame frame);
+    boolean write(byte[] frame, boolean urgent);
 
     /**
      * Closes this connection.

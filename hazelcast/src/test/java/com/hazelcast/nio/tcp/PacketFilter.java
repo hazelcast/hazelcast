@@ -25,6 +25,6 @@ import com.hazelcast.nio.Packet;
  */
 public interface PacketFilter {
 
-    boolean allow(Packet packet, Address endpoint);
+    boolean allow(byte[] packet, boolean urgent, Address endpoint);
 
 }

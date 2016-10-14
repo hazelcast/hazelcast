@@ -38,10 +38,10 @@ public class TextWriteHandler implements WriteHandler<TextCommand> {
     public void enqueue(TextCommand response) {
         long requestId = response.getRequestId();
         if (requestId == -1) {
-            connection.write(response);
+            connection.write(response.toBytes(), false);
         } else {
             if (currentRequestId == requestId) {
-                connection.write(response);
+                connection.write(response.toBytes(), false);
                 currentRequestId++;
                 processWaitingResponses();
             } else {
@@ -53,7 +53,7 @@ public class TextWriteHandler implements WriteHandler<TextCommand> {
     private void processWaitingResponses() {
         TextCommand response = responses.remove(currentRequestId);
         while (response != null) {
-            connection.write(response);
+            connection.write(response.toBytes(), false);
             currentRequestId++;
             response = responses.remove(currentRequestId);
         }
@@ -61,6 +61,7 @@ public class TextWriteHandler implements WriteHandler<TextCommand> {
 
     @Override
     public boolean onWrite(TextCommand textCommand, ByteBuffer dst) throws Exception {
-        return textCommand.writeTo(dst);
+        //return textCommand.writeTo(dst);
+        throw new UnsupportedOperationException();
     }
 }

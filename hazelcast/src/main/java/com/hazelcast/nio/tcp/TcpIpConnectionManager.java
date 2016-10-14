@@ -30,6 +30,7 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketUtil;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -324,10 +325,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             logger.finest("Sending bind packet to " + remoteEndPoint);
         }
         BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
-        byte[] bytes = ioService.getSerializationService().toBytes(bind);
-        Packet packet = new Packet(bytes);
-        packet.setFlag(Packet.FLAG_BIND);
-        connection.write(packet);
+        byte[] packet = PacketUtil.toBytePacket(ioService.getSerializationService(), bind, Packet.FLAG_BIND, -1);
+        connection.write(packet, false);
         //now you can send anything...
     }
 
@@ -590,35 +589,35 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
 
     @Override
-    public boolean transmit(Packet packet, Connection connection) {
+    public boolean transmit(byte[] packet, boolean urgent, Connection connection) {
         checkNotNull(packet, "Packet can't be null");
 
         if (connection == null) {
             return false;
         }
 
-        return connection.write(packet);
+        return connection.write(packet, urgent);
     }
 
     /**
      * Retries sending packet maximum 5 times until connection to target becomes available.
      */
     @Override
-    public boolean transmit(Packet packet, Address target) {
+    public boolean transmit(byte[] packet, boolean urgent, Address target) {
         checkNotNull(packet, "Packet can't be null");
         checkNotNull(target, "target can't be null");
 
-        return send(packet, target, null);
+        return send(packet, urgent, target, null);
     }
 
-    private boolean send(Packet packet, Address target, SendTask sendTask) {
+    private boolean send(byte[] packet, boolean urgent, Address target, SendTask sendTask) {
         Connection connection = getConnection(target);
         if (connection != null) {
-            return connection.write(packet);
+            return connection.write(packet, urgent);
         }
 
         if (sendTask == null) {
-            sendTask = new SendTask(packet, target);
+            sendTask = new SendTask(packet, urgent, target);
         }
 
         int retries = sendTask.retries;
@@ -632,12 +631,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     private final class SendTask implements Runnable {
-        private final Packet packet;
+        private final byte[] packet;
         private final Address target;
+        private final boolean urgent;
         private volatile int retries;
 
-        private SendTask(Packet packet, Address target) {
+        private SendTask(byte[] packet, boolean urgent, Address target) {
             this.packet = packet;
+            this.urgent = urgent;
             this.target = target;
         }
 
@@ -648,7 +649,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             if (logger.isFinestEnabled()) {
                 logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
             }
-            send(packet, target, this);
+            send(packet, urgent, target, this);
         }
     }
 

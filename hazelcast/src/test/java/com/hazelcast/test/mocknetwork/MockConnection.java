@@ -24,6 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -63,7 +64,8 @@ public class MockConnection implements Connection {
         return remoteEndpoint;
     }
 
-    public boolean write(OutboundFrame frame) {
+    @Override
+    public boolean write(byte[] frame, boolean urgent) {
         if (!live) {
             return false;
         }
@@ -72,8 +74,10 @@ public class MockConnection implements Connection {
             return false;
         }
 
-        Packet packet = (Packet) frame;
+        //Packet newPacket = PacketUtil.toPacket(frame);
+        Packet packet = PacketUtil.toPacket(frame);
         Packet newPacket = readFromPacket(packet);
+        newPacket.setConn(localConnection);
         nodeEngine.getPacketDispatcher().dispatch(newPacket);
         return true;
     }

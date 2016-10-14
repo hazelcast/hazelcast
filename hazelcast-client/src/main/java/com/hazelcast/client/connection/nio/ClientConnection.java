@@ -28,7 +28,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
@@ -109,6 +108,11 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     }
 
     @Override
+    public boolean write(byte[] frame, boolean urgent) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void provideMetrics(MetricsRegistry registry) {
         Socket socket = socketChannel.socket();
         String connectionName = "tcp.connection["
@@ -151,18 +155,18 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     public int getPendingPacketCount() {
         return pendingPacketCount.get();
     }
-
-    @Override
-    public boolean write(OutboundFrame frame) {
-        if (!alive.get()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, dropping frame -> " + frame);
-            }
-            return false;
-        }
-        writer.write(frame);
-        return true;
-    }
+//
+//    @Override
+//    public boolean write(OutboundFrame frame) {
+//        if (!alive.get()) {
+//            if (logger.isFinestEnabled()) {
+//                logger.finest("Connection is closed, dropping frame -> " + frame);
+//            }
+//            return false;
+//        }
+//        writer.write(frame);
+//        return true;
+//    }
 
     public void start() throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(3);

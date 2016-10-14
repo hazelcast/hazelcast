@@ -3,6 +3,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketUtil;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.nio.PacketUtil.toBytePacket;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -48,14 +50,14 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
         connManagerB.start();
 
         TcpIpConnection connection = connect(connManagerA, addressB);
-        connManagerA.transmit(null, connection);
+        connManagerA.transmit(null, false, connection);
     }
 
     @Test
     public void withConnection_whenNullConnection() {
-        Packet packet = new Packet(serializationService.toBytes("foo"));
+        byte[] packet = toBytePacket(serializationService, "foo", 0, 0);
 
-        boolean result = connManagerA.transmit(packet, (Connection) null);
+        boolean result = connManagerA.transmit(packet, false, (Connection) null);
 
         assertFalse(result);
     }
@@ -63,10 +65,10 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
     @Test
     public void withConnection_whenConnectionWriteFails() {
         Connection connection = mock(Connection.class);
-        Packet packet = new Packet(serializationService.toBytes("foo"));
-        when(connection.write(packet)).thenReturn(false);
+        byte[] packet = toBytePacket(serializationService, "foo", 0, 0);
+        when(connection.write(packet, false)).thenReturn(false);
 
-        boolean result = connManagerA.transmit(packet, connection);
+        boolean result = connManagerA.transmit(packet, false, connection);
 
         assertFalse(result);
     }
@@ -74,10 +76,10 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
     @Test
     public void withConnection_whenConnectionWriteSucceeds() {
         Connection connection = mock(Connection.class);
-        Packet packet = new Packet(serializationService.toBytes("foo"));
-        when(connection.write(packet)).thenReturn(true);
+        byte[] packet = toBytePacket(serializationService, "foo", 0, 0);
+        when(connection.write(packet, false)).thenReturn(true);
 
-        boolean result = connManagerA.transmit(packet, connection);
+        boolean result = connManagerA.transmit(packet, false, connection);
 
         assertTrue(result);
     }
@@ -88,30 +90,30 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
     public void withAddress_whenNullPacket() {
         connManagerB.start();
 
-        connManagerA.transmit(null, addressB);
+        connManagerA.transmit(null, false, addressB);
     }
 
     @Test(expected = NullPointerException.class)
     public void withAddress_whenNullAddress() {
-        Packet packet = new Packet(serializationService.toBytes("foo"));
+        byte[] packet = toBytePacket(serializationService, "foo", 0, 0);
 
-        connManagerA.transmit(packet, (Address) null);
+        connManagerA.transmit(packet, false, (Address) null);
     }
 
     @Test
     public void withAddress_whenConnectionExists() {
         connManagerB.start();
 
-        final Packet packet = new Packet(serializationService.toBytes("foo"));
+        final byte[] packet = toBytePacket(serializationService, "foo", 0, 0);
         connect(connManagerA, addressB);
 
-        boolean result = connManagerA.transmit(packet, addressB);
+        boolean result = connManagerA.transmit(packet, false, addressB);
 
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(packetsB.contains(packet));
+                assertTrue(packetsB.contains(PacketUtil.toPacket(packet)));
             }
         });
     }
@@ -120,15 +122,15 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
     public void withAddress_whenConnectionNotExists_thenCreated() {
         connManagerB.start();
 
-        final Packet packet = new Packet(serializationService.toBytes("foo"));
+        final byte[] packet = toBytePacket(serializationService, "foo", 0, 0);
 
-        boolean result = connManagerA.transmit(packet, addressB);
+        boolean result = connManagerA.transmit(packet, false, addressB);
 
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(packetsB.contains(packet));
+                assertTrue(packetsB.contains(PacketUtil.toPacket(packet)));
             }
         });
         assertNotNull(connManagerA.getConnection(addressB));
@@ -136,9 +138,9 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
 
     @Test
     public void withAddress_whenConnectionCantBeEstablished() throws UnknownHostException {
-        final Packet packet = new Packet(serializationService.toBytes("foo"));
+        byte[] packet = toBytePacket(serializationService, "foo", 0, 0);
 
-        boolean result = connManagerA.transmit(packet, new Address(addressA.getHost(), 6701));
+        boolean result = connManagerA.transmit(packet, false, new Address(addressA.getHost(), 6701));
 
         // true is being returned because there is no synchronization on the connection being
         // established.

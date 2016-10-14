@@ -415,6 +415,16 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     @Override
+    public byte[] toByteArray(int padding) {
+        if (buffer == null || pos == 0) {
+            return new byte[padding];
+        }
+        final byte[] newBuffer = new byte[padding + pos];
+        System.arraycopy(buffer, 0, newBuffer, padding, pos);
+        return newBuffer;
+    }
+
+    @Override
     public void clear() {
         pos = 0;
         if (buffer != null && buffer.length > initialSize * 8) {

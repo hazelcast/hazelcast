@@ -57,8 +57,9 @@ public interface SocketWriter {
      * No guarantees are made that the frame is going to be written or received by the other side.
      *
      * @param frame the Frame to write.
+     * @param urgent if the frame has priority
      */
-    void write(OutboundFrame frame);
+    void write(byte[] frame, boolean urgent);
 
     /**
      * Gets the {@link WriteHandler} that belongs to this SocketWriter.

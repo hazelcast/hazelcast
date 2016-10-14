@@ -82,6 +82,18 @@ public class AbstractSerializationServiceTest {
         assertEquals(original.value, found.value);
     }
 
+    @Test
+    public void testPortable() {
+        ExternalizableValue original = new ExternalizableValue(100);
+
+        Data data = abstractSerializationService.toData(original);
+        ExternalizableValue found = abstractSerializationService.toObject(data);
+
+        assertNotNull(found);
+        assertEquals(original.value, found.value);
+    }
+
+
     static class ExternalizableValue implements Externalizable {
         int value;
 
