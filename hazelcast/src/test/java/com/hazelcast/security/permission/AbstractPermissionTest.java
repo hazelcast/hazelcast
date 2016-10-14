@@ -1,5 +1,3 @@
-package com.hazelcast.security.permission;
-
 /*
  * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
@@ -15,6 +13,9 @@ package com.hazelcast.security.permission;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.hazelcast.security.permission;
+
 import org.junit.Test;
 
 import java.security.Permission;
@@ -23,8 +24,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * Abstract Permission Tests. A small selection of combinations are used here, use an array permutation algorithm.
- * <p/>
+ * Abstract Permission Tests.
+ *
+ * A small selection of combinations are used here, using an array permutation algorithm.
+ *
  * Could use <a href="http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/collect/Collections2.html#permutations(java.util.Collection)">Google Guava Permutations</a>
  */
 public abstract class AbstractPermissionTest {
@@ -73,7 +76,7 @@ public abstract class AbstractPermissionTest {
                 .expect(false).run();
     }
 
-    protected class CheckPermission {
+    class CheckPermission {
 
         private static final String DEFAULT_ALLOWED_NAME = "someMapsPermission";
         private static final String DEFAULT_REQUESTED_NAME = "someMapsPermission";
@@ -117,11 +120,10 @@ public abstract class AbstractPermissionTest {
                 boolean actualResult = allowedPermissions.implies(requestedPermission);
 
                 assertEquals("Access applied incorrectly for requested action of " + requestedPermission
-                        + " on permitted permissions of " + allowedPermissions, expectedResult.booleanValue(), actualResult);
+                        + " on permitted permissions of " + allowedPermissions, expectedResult, actualResult);
             } else {
-                fail("requested and/or allowed and/or expect not set");
+                fail("Requested and/or allowed and/or expect not set");
             }
         }
     }
-
 }
