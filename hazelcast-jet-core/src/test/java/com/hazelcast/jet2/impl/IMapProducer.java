@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 public class IMapProducer extends AbstractProducer {
 
-    private final static int BATCH_SIZE = 16;
+    private final static int BATCH_SIZE = 128;
     private final static int FETCH_SIZE = 128;
 
     private final MapProxyImpl map;
@@ -44,7 +44,8 @@ public class IMapProducer extends AbstractProducer {
 
     private CircularCursor<Iterator> iteratorCursor;
 
-    protected IMapProducer(MapProxyImpl map, List<Integer> partitions) {
+    protected IMapProducer(MapProxyImpl map,
+                           List<Integer> partitions) {
         this.map = map;
         this.partitions = partitions;
         this.iterators = new ArrayList<>();
@@ -100,10 +101,11 @@ public class IMapProducer extends AbstractProducer {
             // distribute local partitions
             Member localMember = context.getHazelcastInstance().getCluster().getLocalMember();
             Set<Partition> partitions = context.getHazelcastInstance().getPartitionService().getPartitions();
-            partitionGroups = partitions.stream().filter(p -> p.getOwner().equals(localMember)).
-                    map(Partition::getPartitionId)
+            partitionGroups = partitions.stream()
+                    .filter(p -> p.getOwner().equals(localMember))
+                    .map(Partition::getPartitionId)
                     .collect(Collectors.groupingBy(p -> p % context.parallelism()));
-            this.map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
+            map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
         }
 
         @Override
