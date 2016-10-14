@@ -23,19 +23,25 @@ import com.hazelcast.util.concurrent.IdleStrategy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.partitioningBy;
 
 class ExecutionService {
 
     private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
+    private final ExecutorService blockingTaskletExecutor = Executors.newCachedThreadPool();
     private final Worker[] workers;
     private final Thread[] threads;
 
@@ -50,9 +56,13 @@ class ExecutionService {
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         final CountDownLatch completionLatch = new CountDownLatch(tasklets.size());
         final JobFuture jobFuture = new JobFuture(completionLatch);
+        final Map<Boolean, List<Tasklet>> byBlocking = tasklets.stream().collect(partitioningBy(Tasklet::isBlocking));
         int i = 0;
-        for (Tasklet t : tasklets) {
+        for (Tasklet t : byBlocking.get(false)) {
             trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, completionLatch, jobFuture));
+        }
+        for (Tasklet t : byBlocking.get(true)) {
+            blockingTaskletExecutor.execute(new Worker(new TaskletTracker(t, completionLatch, jobFuture)));
         }
         for (i = 0; i < trackersByThread.length; i++) {
             workers[i].trackers.addAll(trackersByThread[i]);
@@ -65,16 +75,24 @@ class ExecutionService {
         if (workers[0] != null) {
             return;
         }
-        Arrays.setAll(workers, i -> new Worker());
+        Arrays.setAll(workers, i -> new Worker(workers));
         Arrays.setAll(threads, i -> new Thread(workers[i]));
         Arrays.stream(threads).forEach(Thread::start);
     }
 
-    private class Worker implements Runnable {
+    private static class Worker implements Runnable {
+        private static final Worker[] EMPTY_WORKERS = new Worker[0];
         private final List<TaskletTracker> trackers;
+        private final Worker[] colleagues;
 
-        public Worker() {
+        Worker(Worker[] colleagues) {
+            this.colleagues = colleagues;
             this.trackers = new CopyOnWriteArrayList<>();
+        }
+
+        Worker(TaskletTracker tracker) {
+            this.colleagues = EMPTY_WORKERS;
+            this.trackers = singletonList(tracker);
         }
 
         @Override
@@ -118,7 +136,7 @@ class ExecutionService {
             while (true) {
                 // start with own tasklet list, try to find a longer one
                 List<TaskletTracker> toStealFrom = trackers;
-                for (Worker w : workers) {
+                for (Worker w : colleagues) {
                     if (w.trackers.size() > toStealFrom.size()) {
                         toStealFrom = w.trackers;
                     }
@@ -143,7 +161,7 @@ class ExecutionService {
         final CountDownLatch completionLatch;
         final AtomicReference<Worker> stealingWorker = new AtomicReference<>();
 
-        public TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, TroubleSetter troubleSetter) {
+        TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, TroubleSetter troubleSetter) {
             this.completionLatch = completionLatch;
             this.tasklet = tasklet;
             this.troubleSetter = troubleSetter;
