@@ -38,10 +38,9 @@ import java.security.Permission;
 import java.util.logging.Level;
 
 /**
- * Base Message task
+ * Base Message task.
  */
-public abstract class AbstractMessageTask<P>
-        implements MessageTask, SecureRequest {
+public abstract class AbstractMessageTask<P> implements MessageTask, SecureRequest {
 
     protected final ClientMessage clientMessage;
 
@@ -98,7 +97,6 @@ public abstract class AbstractMessageTask<P>
             } else {
                 initializeAndProcessMessage();
             }
-
         } catch (Throwable e) {
             handleProcessingFailure(e);
         }
@@ -202,7 +200,7 @@ public abstract class AbstractMessageTask<P>
         resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
         final Connection connection = endpoint.getConnection();
-        //TODO framing not implemented yet, should be split into frames before writing to connection
+        // TODO: framing not implemented yet, should be split into frames before writing to connection
         connection.write(resultClientMessage);
     }
 
@@ -220,6 +218,7 @@ public abstract class AbstractMessageTask<P>
 
     public abstract String getServiceName();
 
+    @Override
     public String getDistributedObjectType() {
         return getServiceName();
     }
