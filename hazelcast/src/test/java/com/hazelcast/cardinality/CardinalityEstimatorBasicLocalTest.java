@@ -28,12 +28,10 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CardinalityEstimatorBasicLocalTest
-        extends CardinalityEstimatorAbstractTest {
+public class CardinalityEstimatorBasicLocalTest extends CardinalityEstimatorAbstractTest {
 
     @Override
     protected HazelcastInstance[] newInstances(Config config) {
         return createHazelcastInstanceFactory(1).newInstances(config);
     }
-
 }

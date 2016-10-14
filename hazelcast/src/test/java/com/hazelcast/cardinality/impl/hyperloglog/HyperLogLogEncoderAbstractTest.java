@@ -57,7 +57,6 @@ public abstract class HyperLogLogEncoderAbstractTest {
         assertEquals(1L, encoder.estimate());
     }
 
-
     /**
      * - Add up-to runLength() random numbers on both a Set and a HyperLogLog encoder.
      * - Sample the actual count, and the estimate respectively every 100 operations.
@@ -98,8 +97,8 @@ public abstract class HyperLogLogEncoderAbstractTest {
 
         double errorPerc99 = histogram.getValueAtPercentile(99) / 100.0;
         if (errorPerc99 > maxError) {
-            fail("For P=" + precision() + ", max error=" + maxError + "% expected. " +
-                    "Error: " + errorPerc99 + "%.");
+            fail("For P=" + precision() + ", max error=" + maxError + "% expected."
+                    + " Error: " + errorPerc99 + "%.");
         }
     }
 }

@@ -37,8 +37,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CardinalityEstimatorBackupTest
-        extends HazelcastTestSupport {
+public class CardinalityEstimatorBackupTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance1;
 
@@ -120,5 +119,4 @@ public class CardinalityEstimatorBackupTest
             latch.countDown();
         }
     }
-
 }

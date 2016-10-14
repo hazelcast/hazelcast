@@ -113,8 +113,8 @@ public class HyperLogLogImplTest {
 
         double errorPerc99 = histogram.getValueAtPercentile(99) / 100.0;
         if (errorPerc99 > maxError) {
-            fail("For P=" + precision + ", Expected max error=" + maxError + "%. " +
-                    "Actual error: " + errorPerc99 + "%.");
+            fail("For P=" + precision + ", Expected max error=" + maxError + "%."
+                    + " Actual error: " + errorPerc99 + "%.");
         }
     }
 }
