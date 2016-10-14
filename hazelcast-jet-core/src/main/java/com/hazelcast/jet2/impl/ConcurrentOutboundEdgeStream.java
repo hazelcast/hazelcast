@@ -31,15 +31,17 @@ import static com.hazelcast.jet2.impl.ProgressState.DONE;
 import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
 
 /**
- * Javadoc pending.
+ * {@code OutboundEdgeStream} implemented in terms of an array of {@code ConcurrentConveyor}s,
+ * one per downstream tasklet. An instance of this class is associated with a unique queue index
+ * and writes only to that index of all the {@code ConcurrentConveyor}s.
  */
 abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
     protected final ConcurrentConveyor<Object>[] conveyors;
-    protected final BitSet isItemSentTo;
     protected final int queueIndex;
     protected final int ordinal;
 
-    protected final ProgressTracker progTracker = new ProgressTracker();
+    private final ProgressTracker progTracker = new ProgressTracker();
+    private final BitSet isItemSentTo;
 
     protected ConcurrentOutboundEdgeStream(ConcurrentConveyor<Object>[] conveyors, int queueIndex, int ordinal) {
         Preconditions.checkTrue(queueIndex >= 0, "queue index must be positive");
@@ -143,7 +145,7 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         @Override
         public ProgressState offer(Object item) {
             int partition = partitioner.getPartition(item, conveyors.length);
-            assert partition >= 0 && partition < conveyors.length;
+            assert partition >= 0 && partition < conveyors.length : "Partition number out of range";
             return conveyors[partition].offer(queueIndex, item) ? DONE : NO_PROGRESS;
         }
     }

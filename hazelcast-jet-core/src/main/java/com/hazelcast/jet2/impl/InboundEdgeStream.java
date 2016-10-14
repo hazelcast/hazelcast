@@ -17,16 +17,18 @@
 package com.hazelcast.jet2.impl;
 
 /**
- * Data stream of an inbound edge.
+ * The inbound side of a data stream corresponding to a single DAG edge identified by its ordinal.
  */
 interface InboundEdgeStream {
 
     /**
-     * Drains all available items to the supplied destination collection.
-     *
-     * @return a {@link ProgressState} that says whether any items were drained
-     * (the {@code isMadeProgress} property) and whether the stream is now completely exhausted
-     * (the {@code isDone} property)
+     * Drains all currently available items to the supplied destination collection.
+     * The two {@code boolean} components of the return value have the following meaning:
+     * <ul><li>
+     *   {@code isMadeProgress}: whether any items were drained from the stream.
+     * </li><li>
+     *   {@code isDone}: whether the stream is exhausted and no more items will arrive.
+     * </li></ul>
      */
     ProgressState drainAvailableItemsInto(CollectionWithObserver dest);
 

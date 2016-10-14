@@ -21,7 +21,8 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import java.util.function.Predicate;
 
 /**
- * Javadoc pending.
+ * {@code InboundEdgeStream} implemented in terms of a {@code ConcurrentConveyor}. The conveyor has as many
+ * 1-to-1 concurrent queues as there are upstream tasklets contributing to it.
  */
 class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
