@@ -31,5 +31,4 @@ enum HyperLogLogEncoding {
      * range cardinalities.
      */
     DENSE
-
 }
