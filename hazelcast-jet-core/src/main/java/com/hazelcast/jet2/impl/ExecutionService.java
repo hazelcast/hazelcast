@@ -57,12 +57,12 @@ class ExecutionService {
         final CountDownLatch completionLatch = new CountDownLatch(tasklets.size());
         final JobFuture jobFuture = new JobFuture(completionLatch);
         final Map<Boolean, List<Tasklet>> byBlocking = tasklets.stream().collect(partitioningBy(Tasklet::isBlocking));
+        for (Tasklet t : byBlocking.get(true)) {
+            blockingTaskletExecutor.execute(new Worker(new TaskletTracker(t, completionLatch, jobFuture)));
+        }
         int i = 0;
         for (Tasklet t : byBlocking.get(false)) {
             trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, completionLatch, jobFuture));
-        }
-        for (Tasklet t : byBlocking.get(true)) {
-            blockingTaskletExecutor.execute(new Worker(new TaskletTracker(t, completionLatch, jobFuture)));
         }
         for (i = 0; i < trackersByThread.length; i++) {
             workers[i].trackers.addAll(trackersByThread[i]);
@@ -101,6 +101,7 @@ class ExecutionService {
             while (true) {
                 boolean madeProgress = false;
                 for (TaskletTracker t : trackers) {
+                    t.ensureInitialized();
                     final Worker stealingWorker = t.stealingWorker.get();
                     if (stealingWorker != null) {
                         t.stealingWorker.set(null);
@@ -160,11 +161,19 @@ class ExecutionService {
         final TroubleSetter troubleSetter;
         final CountDownLatch completionLatch;
         final AtomicReference<Worker> stealingWorker = new AtomicReference<>();
+        private boolean isInitialized;
 
         TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, TroubleSetter troubleSetter) {
             this.completionLatch = completionLatch;
             this.tasklet = tasklet;
             this.troubleSetter = troubleSetter;
+        }
+
+        void ensureInitialized() {
+            if (!isInitialized) {
+                tasklet.init();
+                isInitialized = true;
+            }
         }
     }
 }

@@ -149,8 +149,10 @@ public class ProcessorTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        return new ProcessorTasklet(new MockProcessorContext(),
+        final ProcessorTasklet t = new ProcessorTasklet(new MockProcessorContext(),
                 processor, instreams, outstreams);
+        t.init();
+        return t;
     }
 
     private static class MockProcessor implements Processor {
