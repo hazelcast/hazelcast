@@ -33,6 +33,7 @@ class MultiLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
             LINE_SEPARATOR + "                                  ",
             LINE_SEPARATOR + "                                          ",
             LINE_SEPARATOR + "                                                  ",
+            LINE_SEPARATOR + "                                                            ",
     };
 
     private final StringBuffer tmpSb = new StringBuffer();

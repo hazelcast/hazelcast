@@ -165,8 +165,12 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
         }
 
         RingbufferConfig ringbufferConfig = getRingbufferConfig(name);
-        ringbuffer = new RingbufferContainer(name, ringbufferConfig,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        ringbuffer = new RingbufferContainer(
+                name,
+                ringbufferConfig,
+                nodeEngine.getSerializationService(),
+                nodeEngine.getConfigClassLoader());
+        ringbuffer.getStore().instrument(nodeEngine);
         containers.put(name, ringbuffer);
         return ringbuffer;
     }
@@ -181,7 +185,12 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
         checkNotNull(ringbuffer, "ringbuffer can't be null");
         final RingbufferConfig config = nodeEngine.getConfig().getRingbufferConfig(name);
         final SerializationService serializationService = nodeEngine.getSerializationService();
-        ringbuffer.init(name, config, serializationService, nodeEngine.getConfigClassLoader());
+        ringbuffer.init(
+                name,
+                config,
+                serializationService,
+                nodeEngine.getConfigClassLoader());
+        ringbuffer.getStore().instrument(nodeEngine);
         containers.put(name, ringbuffer);
     }
 }

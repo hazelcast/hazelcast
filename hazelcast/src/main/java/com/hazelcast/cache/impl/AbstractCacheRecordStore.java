@@ -26,6 +26,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
@@ -37,6 +38,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -155,6 +157,21 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         registerResourceIfItIsClosable(cacheLoader);
         registerResourceIfItIsClosable(defaultExpiryPolicy);
         init();
+    }
+
+    public void instrument(NodeEngine nodeEngine) {
+        StoreLatencyPlugin plugin = ((NodeEngineImpl) nodeEngine).getDiagnostics().getPlugin(StoreLatencyPlugin.class);
+        if (plugin == null) {
+            return;
+        }
+
+        if (cacheLoader != null) {
+            cacheLoader = new LatencyTrackingCacheLoader(cacheLoader, plugin, cacheConfig.getName());
+        }
+
+        if (cacheWriter != null) {
+            cacheWriter = new LatencyTrackingCacheWriter(cacheWriter, plugin, cacheConfig.getName());
+        }
     }
 
     private boolean isPrimary() {
