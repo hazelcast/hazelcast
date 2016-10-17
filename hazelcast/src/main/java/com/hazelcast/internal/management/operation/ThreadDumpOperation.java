@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.ThreadDumpGenerator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 /**
  *  Operation for generating thread dumps.
  */
-public class ThreadDumpOperation extends Operation {
+public class ThreadDumpOperation extends AbstractManagementOperation {
 
     private boolean dumpDeadlocks;
     private String result;
@@ -55,5 +55,10 @@ public class ThreadDumpOperation extends Operation {
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         dumpDeadlocks = in.readBoolean();
+    }
+
+    @Override
+    public int getId() {
+        return ManagementDataSerializerHook.THREAD_DUMP;
     }
 }
