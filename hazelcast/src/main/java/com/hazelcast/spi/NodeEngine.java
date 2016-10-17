@@ -214,6 +214,21 @@ public interface NodeEngine {
     <T> T toObject(Object object);
 
     /**
+     * Deserializes an object.
+     * <p/>
+     * This method can safely be called on an object that is already deserialized. In that case, that instance
+     * is returned.
+     * <p/>
+     * If this method is called with null, null is returned.
+     *
+     * @param object the object to deserialize.
+     * @param klazz The class to instantiate when deserializing the object.
+     * @return the deserialized object.
+     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when deserialization fails.
+     */
+    <T> T toObject(Object object, Class klazz);
+
+    /**
      * Checks if the HazelcastInstance that this {@link NodeEngine} belongs to is still active.
      * <p/>
      * A HazelcastInstance is not active when it is shutting down or already shut down.

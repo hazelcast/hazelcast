@@ -68,6 +68,21 @@ public interface SerializationService {
     <T> T toObject(Object data);
 
     /**
+     * Deserializes an object.
+     * <p/>
+     * This method can safely be called on an object that is already deserialized. In that case, that instance
+     * is returned.
+     * <p/>
+     * If this method is called with null, null is returned.
+     *
+     * @param data the data to deserialize.
+     * @param klazz The class to instantiate when deserializing the object.
+     * @return the deserialized object.
+     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when deserialization fails.
+     */
+    <T> T toObject(Object data, Class klazz);
+
+    /**
      * see {@link com.hazelcast.config.Config#setManagedContext(ManagedContext)}
      *
      * @return ManagedContext that is set by user in Config

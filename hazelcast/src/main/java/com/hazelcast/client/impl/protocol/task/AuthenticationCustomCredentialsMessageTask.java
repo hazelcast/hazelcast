@@ -57,6 +57,9 @@ public class AuthenticationCustomCredentialsMessageTask
         }
         credentials = serializationService.toObject(parameters.credentials);
         clientSerializationVersion = parameters.serializationVersion;
+        if (parameters.clientHazelcastVersionExist) {
+            clientVersion = parameters.clientHazelcastVersion;
+        }
         return parameters;
     }
 

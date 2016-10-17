@@ -89,6 +89,14 @@ public interface ObjectDataInput extends DataInput {
     <T> T readObject() throws IOException;
 
     /**
+     * @param <T> type of the object in array to be read
+     * @param aClass The type of the class to use when reading
+     * @return object array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    <T> T readObject(Class aClass) throws IOException;
+
+    /**
      * @return data read
      * @throws IOException if it reaches end of file before finish reading
      */

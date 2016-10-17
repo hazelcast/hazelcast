@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl;
-
+package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Serializer;
 
 import java.io.IOException;
 
-interface SerializerAdapter {
-
-    void write(ObjectDataOutput out, Object object) throws IOException;
-
-    Object read(ObjectDataInput in) throws IOException;
-
-    int getTypeId();
-
-    void destroy();
-
-    Serializer getImpl();
-
-    Object read(ObjectDataInput in, Class aClass) throws IOException;
+/**
+ * This interface allows deserialization of a binary data with a provided class type.
+ */
+public interface TypedStreamDeserializer<T>  {
+    /**
+     * Reads object from objectDataInputStream
+     *
+     * @param in ObjectDataInput stream that object will read from
+     * @param aClass The class to use for de-serialization
+     * @return read object
+     * @throws IOException in case of failure to read
+     */
+    T read(ObjectDataInput in, Class aClass) throws IOException;
 }

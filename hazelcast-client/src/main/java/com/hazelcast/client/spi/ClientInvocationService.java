@@ -45,4 +45,5 @@ public interface ClientInvocationService {
 
     void handleClientMessage(ClientMessage message, Connection connection);
 
+    ClientConnection getConnection(int partitionId) throws IOException;
 }

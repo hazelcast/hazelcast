@@ -43,7 +43,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
             throw new IOException("Partition does not have owner. partitionId : " + partitionId);
         }
         invocation.getClientMessage().setPartitionId(partitionId);
-        Connection connection = getConnection(owner);
+        Connection connection = getOrTriggerConnect(owner);
         send(invocation, (ClientConnection) connection);
     }
 
@@ -53,8 +53,18 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         if (randomAddress == null) {
             throw new IOException("Not address found to invoke ");
         }
-        final Connection connection = getConnection(randomAddress);
+        final Connection connection = getOrTriggerConnect(randomAddress);
         send(invocation, (ClientConnection) connection);
+    }
+
+    @Override
+    public ClientConnection getConnection(int partitionId)
+            throws IOException {
+        final Address owner = partitionService.getPartitionOwner(partitionId);
+        if (owner == null) {
+            throw new IOException("Partition does not have owner. partitionId : " + partitionId);
+        }
+        return (ClientConnection) getOrConnect(owner);
     }
 
     @Override
@@ -66,13 +76,22 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         if (!isMember(target)) {
             throw new TargetNotMemberException("Target :  " + target + " is not member. ");
         }
-        final Connection connection = getConnection(target);
+        final Connection connection = getOrTriggerConnect(target);
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
-    private Connection getConnection(Address target) throws IOException {
+    private Connection getOrTriggerConnect(Address target) throws IOException {
         ensureOwnerConnectionAvailable();
         Connection connection = connectionManager.getOrTriggerConnect(target, false);
+        if (connection == null) {
+            throw new IOException("No available connection to address " + target);
+        }
+        return connection;
+    }
+
+    private Connection getOrConnect(Address target) throws IOException {
+        ensureOwnerConnectionAvailable();
+        Connection connection = connectionManager.getOrConnect(target, false);
         if (connection == null) {
             throw new IOException("No available connection to address " + target);
         }

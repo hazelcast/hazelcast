@@ -335,6 +335,11 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     @Override
+    public Object readObject(Class aClass) throws IOException {
+        return serializationService.readObject(this, aClass);
+    }
+
+    @Override
     public Data readData() throws IOException {
         byte[] bytes = readByteArray();
         Data data = bytes != null ? new HeapData(bytes) : null;
