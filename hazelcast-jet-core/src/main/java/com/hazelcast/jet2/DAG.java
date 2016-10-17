@@ -155,6 +155,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     void verify() throws IllegalArgumentException {
+        topologicalVertexStack.clear();
         checkTrue(!vertices.isEmpty(), "DAG must contain at least one vertex");
 
         //prepare for cycle detection

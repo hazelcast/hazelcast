@@ -52,7 +52,7 @@ import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
     public static final int QUEUE_SIZE = 1024;
-    public static final int PARALLELISM = 4;
+    public static final int PARALLELISM = Runtime.getRuntime().availableProcessors();
     private final String name;
     private final ILogger logger;
     private final ExecutionService executionService;

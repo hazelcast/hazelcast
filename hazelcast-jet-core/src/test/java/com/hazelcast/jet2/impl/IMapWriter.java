@@ -25,11 +25,11 @@ import com.hazelcast.jet2.ProcessorSupplier;
 import javax.annotation.Nonnull;
 import java.util.Map;
 
-public class IMapConsumer extends AbstractProcessor {
+public class IMapWriter extends AbstractProcessor {
 
     private final IMap<Object, Object> map;
 
-    public IMapConsumer(IMap<Object, Object> map) {
+    public IMapWriter(IMap<Object, Object> map) {
         this.map = map;
     }
 
@@ -70,7 +70,7 @@ public class IMapConsumer extends AbstractProcessor {
 
         @Override
         public Processor get() {
-            return new IMapConsumer(map);
+            return new IMapWriter(map);
         }
     }
 }

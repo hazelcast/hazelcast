@@ -19,7 +19,8 @@ package com.hazelcast.jet2;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.impl.AbstractProcessor;
-import com.hazelcast.jet2.impl.IMapProducer;
+import com.hazelcast.jet2.impl.IMapWriter;
+import com.hazelcast.jet2.impl.IMapReader;
 import com.hazelcast.jet2.impl.ListConsumer;
 import com.hazelcast.jet2.impl.ListProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,6 +38,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -109,18 +112,17 @@ public class JetEngineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMap() {
+    public void testMapProducerConsumer() {
         IMap<Object, Object> map = instance.getMap("numbers");
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             map.put(i, i);
         }
 
         DAG dag = new DAG();
-        Vertex producer = new Vertex("numbers", IMapProducer.supplier("numbers"))
-                .parallelism(4);
+        Vertex producer = new Vertex("producer", IMapReader.supplier("numbers"))
+                .parallelism(1);
 
-        ListConsumer listConsumer = new ListConsumer();
-        Vertex consumer = new Vertex("odds", () -> listConsumer)
+        Vertex consumer = new Vertex("consumer", IMapWriter.supplier("consumer"))
                 .parallelism(1);
 
         dag.addVertex(producer)
@@ -128,19 +130,12 @@ public class JetEngineTest extends HazelcastTestSupport {
                 .addEdge(new Edge(producer, consumer));
 
         jetEngine.newJob(dag).execute();
+        jetEngine.newJob(dag).execute();
 
-        System.out.println(listConsumer.getList());
-
+        IMap<Object, Object> consumerMap = instance.getMap("consumer");
+        assertEquals(map.entrySet(), consumerMap.entrySet());
     }
 
-    private static class Identity extends AbstractProcessor {
-
-        @Override
-        public boolean process(int ordinal, Object item) {
-            emit(item);
-            return true;
-        }
-    }
 
     private static class SplittingMapper extends AbstractProcessor {
 

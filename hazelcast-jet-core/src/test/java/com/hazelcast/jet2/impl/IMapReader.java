@@ -32,10 +32,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class IMapProducer extends AbstractProducer {
+public class IMapReader extends AbstractProducer {
 
-    private final static int BATCH_SIZE = 128;
-    private final static int FETCH_SIZE = 128;
+    private final static int BATCH_SIZE = 2048;
+    private final static int FETCH_SIZE = 2048;
 
     private final MapProxyImpl map;
     private final List<Integer> partitions;
@@ -44,8 +44,8 @@ public class IMapProducer extends AbstractProducer {
 
     private CircularCursor<Iterator> iteratorCursor;
 
-    protected IMapProducer(MapProxyImpl map,
-                           List<Integer> partitions) {
+    protected IMapReader(MapProxyImpl map,
+                         List<Integer> partitions) {
         this.map = map;
         this.partitions = partitions;
         this.iterators = new ArrayList<>();
@@ -88,8 +88,8 @@ public class IMapProducer extends AbstractProducer {
     private static class Supplier implements ProcessorSupplier {
 
         private final String name;
+        private int index;
         private MapProxyImpl map;
-        private int index = 0;
         private Map<Integer, List<Integer>> partitionGroups;
 
         public Supplier(String name) {
@@ -99,6 +99,7 @@ public class IMapProducer extends AbstractProducer {
         @Override
         public void init(ProcessorContext context) {
             // distribute local partitions
+            index = 0;
             Member localMember = context.getHazelcastInstance().getCluster().getLocalMember();
             Set<Partition> partitions = context.getHazelcastInstance().getPartitionService().getPartitions();
             partitionGroups = partitions.stream()
@@ -110,7 +111,7 @@ public class IMapProducer extends AbstractProducer {
 
         @Override
         public Processor get() {
-            return new IMapProducer(map, partitionGroups.get(index++));
+            return new IMapReader(map, partitionGroups.get(index++));
         }
     }
 }
