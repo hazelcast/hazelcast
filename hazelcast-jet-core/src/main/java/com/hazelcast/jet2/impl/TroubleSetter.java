@@ -20,5 +20,8 @@ package com.hazelcast.jet2.impl;
  * Javadoc pending.
  */
 interface TroubleSetter {
+
     void setTrouble(Throwable t);
+
+    boolean hasTrouble();
 }

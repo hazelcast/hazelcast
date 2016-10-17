@@ -75,6 +75,11 @@ class JobFuture implements Future<Void>, TroubleSetter {
 
 
     @Override
+    public boolean hasTrouble() {
+        return trouble.get() != null;
+    }
+
+    @Override
     public void setTrouble(Throwable t) {
         trouble.compareAndSet(null, t);
     }

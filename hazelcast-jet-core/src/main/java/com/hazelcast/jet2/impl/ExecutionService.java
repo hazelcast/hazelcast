@@ -51,24 +51,49 @@ class ExecutionService {
     }
 
     public Future<Void> execute(List<Tasklet> tasklets) {
-        ensureThreadsStarted();
-        final List<TaskletTracker>[] trackersByThread = new List[workers.length];
-        Arrays.setAll(trackersByThread, i -> new ArrayList());
         final CountDownLatch completionLatch = new CountDownLatch(tasklets.size());
         final JobFuture jobFuture = new JobFuture(completionLatch);
         final Map<Boolean, List<Tasklet>> byBlocking = tasklets.stream().collect(partitioningBy(Tasklet::isBlocking));
-        for (Tasklet t : byBlocking.get(true)) {
-            blockingTaskletExecutor.execute(new Worker(new TaskletTracker(t, completionLatch, jobFuture)));
+        submitBlockingTasklets(completionLatch, jobFuture, byBlocking.get(true));
+        submitNonblockingTasklets(completionLatch, jobFuture, byBlocking.get(false));
+        return jobFuture;
+    }
+
+    private void submitBlockingTasklets(CountDownLatch completionLatch, JobFuture jobFuture, List<Tasklet> tasklets) {
+        for (Tasklet t : tasklets) {
+            blockingTaskletExecutor.execute(() -> {
+                if (initPropagatingFailure(t, jobFuture, completionLatch)) {
+                    blockingTaskletExecutor.execute(new Worker(new TaskletTracker(t, completionLatch, jobFuture)));
+                }
+            });
         }
+    }
+
+    private void submitNonblockingTasklets(CountDownLatch completionLatch, JobFuture jobFuture, List<Tasklet> tasklets) {
+        ensureThreadsStarted();
+        final List<TaskletTracker>[] trackersByThread = new List[workers.length];
+        Arrays.setAll(trackersByThread, i -> new ArrayList());
         int i = 0;
-        for (Tasklet t : byBlocking.get(false)) {
-            trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, completionLatch, jobFuture));
+        for (Tasklet t : tasklets) {
+            if (initPropagatingFailure(t, jobFuture, completionLatch)) {
+                trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, completionLatch, jobFuture));
+            }
         }
         for (i = 0; i < trackersByThread.length; i++) {
             workers[i].trackers.addAll(trackersByThread[i]);
         }
         Arrays.stream(threads).forEach(LockSupport::unpark);
-        return jobFuture;
+    }
+
+    private boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture, CountDownLatch completionLatch) {
+        try {
+            t.init();
+            return true;
+        } catch (Throwable e) {
+            jobFuture.setTrouble(e);
+            completionLatch.countDown();
+            return false;
+        }
     }
 
     private void ensureThreadsStarted() {
@@ -101,7 +126,6 @@ class ExecutionService {
             while (true) {
                 boolean madeProgress = false;
                 for (TaskletTracker t : trackers) {
-                    t.ensureInitialized();
                     final Worker stealingWorker = t.stealingWorker.get();
                     if (stealingWorker != null) {
                         t.stealingWorker.set(null);
@@ -112,17 +136,15 @@ class ExecutionService {
                     try {
                         final ProgressState result = t.tasklet.call();
                         if (result.isDone()) {
-                            t.completionLatch.countDown();
-                            trackers.remove(t);
-                            stealWork();
+                            dismissTasklet(t);
                         } else {
                             madeProgress |= result.isMadeProgress();
                         }
                     } catch (Throwable e) {
                         t.troubleSetter.setTrouble(e);
-                        t.completionLatch.countDown();
-                        trackers.remove(t);
-                        stealWork();
+                    }
+                    if (t.troubleSetter.hasTrouble()) {
+                        dismissTasklet(t);
                     }
                 }
                 if (madeProgress) {
@@ -131,6 +153,12 @@ class ExecutionService {
                     IDLER.idle(++idleCount);
                 }
             }
+        }
+
+        private void dismissTasklet(TaskletTracker t) {
+            t.completionLatch.countDown();
+            trackers.remove(t);
+            stealWork();
         }
 
         private void stealWork() {
@@ -161,19 +189,11 @@ class ExecutionService {
         final TroubleSetter troubleSetter;
         final CountDownLatch completionLatch;
         final AtomicReference<Worker> stealingWorker = new AtomicReference<>();
-        private boolean isInitialized;
 
         TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, TroubleSetter troubleSetter) {
             this.completionLatch = completionLatch;
             this.tasklet = tasklet;
             this.troubleSetter = troubleSetter;
-        }
-
-        void ensureInitialized() {
-            if (!isInitialized) {
-                tasklet.init();
-                isInitialized = true;
-            }
         }
     }
 }
