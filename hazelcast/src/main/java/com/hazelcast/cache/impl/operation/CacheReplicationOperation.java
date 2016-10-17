@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
@@ -24,6 +25,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
@@ -49,7 +51,7 @@ import java.util.Map;
  * </p>
  * <p><b>Note:</b> This operation is a per partition operation.</p>
  */
-public class CacheReplicationOperation extends Operation {
+public class CacheReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
     protected Map<String, Map<Data, CacheRecord>> data;
 
@@ -178,4 +180,13 @@ public class CacheReplicationOperation extends Operation {
         return (configs == null || configs.isEmpty()) && (data == null || data.isEmpty());
     }
 
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.CACHE_REPLICATION;
+    }
 }

@@ -16,9 +16,10 @@
 
 package com.hazelcast.cache.impl.record;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.io.IOException;
  *
  * @param <V> the type of the value stored by this {@link AbstractCacheRecord}
  */
-public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSerializable {
+public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, IdentifiedDataSerializable {
 
     protected long creationTime = TIME_NOT_AVAILABLE;
     protected volatile long expirationTime = TIME_NOT_AVAILABLE;
@@ -115,5 +116,10 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
         expirationTime = in.readLong();
         accessTime = in.readLong();
         accessHit = in.readInt();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
     }
 }

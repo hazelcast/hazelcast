@@ -16,17 +16,19 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PostJoinCacheOperation extends Operation {
+public class PostJoinCacheOperation extends Operation implements IdentifiedDataSerializable {
 
     private List<CacheConfig> configs = new ArrayList<CacheConfig>();
 
@@ -66,4 +68,13 @@ public class PostJoinCacheOperation extends Operation {
         }
     }
 
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.CACHE_POST_JOIN;
+    }
 }

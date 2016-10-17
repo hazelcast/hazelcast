@@ -17,10 +17,11 @@
 package com.hazelcast.cache.impl.merge.entry;
 
 import com.hazelcast.cache.CacheEntryView;
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
@@ -28,7 +29,7 @@ import java.io.IOException;
  * Default heap based implementation of {@link com.hazelcast.cache.CacheEntryView}.
  */
 public class DefaultCacheEntryView
-        implements CacheEntryView<Data, Data>, DataSerializable {
+        implements CacheEntryView<Data, Data>, IdentifiedDataSerializable {
 
     private Data key;
     private Data value;
@@ -100,4 +101,13 @@ public class DefaultCacheEntryView
         value = in.readData();
     }
 
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.DEFAULT_CACHE_ENTRY_VIEW;
+    }
 }
