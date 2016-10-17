@@ -30,7 +30,7 @@
     <description>An Azure DiscoveryStrategy for Hazelcast</description>
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-azure</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
     <url>http://www.hazelcast.com/</url>
     <packaging>jar</packaging>
 
