@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.config.NearCacheConfig;
@@ -29,12 +28,8 @@ import com.hazelcast.map.impl.nearcache.invalidation.BatchInvalidator;
 import com.hazelcast.map.impl.nearcache.invalidation.NearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.invalidation.NonStopInvalidator;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
-
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper.wrapAsStaleReadPreventerNearCache;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
@@ -122,19 +117,5 @@ public class NearCacheProvider {
 
     public NearCacheInvalidator getNearCacheInvalidator() {
         return nearCacheInvalidator;
-    }
-
-    private static final class MemberNearCacheExecutor implements NearCacheExecutor {
-
-        private ExecutionService executionService;
-
-        private MemberNearCacheExecutor(ExecutionService executionService) {
-            this.executionService = executionService;
-        }
-
-        @Override
-        public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-            return executionService.scheduleWithRepetition(command, initialDelay, delay, unit);
-        }
     }
 }
