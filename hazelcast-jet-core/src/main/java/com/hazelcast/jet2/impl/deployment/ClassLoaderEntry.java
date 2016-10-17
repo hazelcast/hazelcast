@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.core.HazelcastInstance;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-/**
- * Javadoc pending
- */
-public interface ProcessorContext {
+class ClassLoaderEntry {
+    private final byte[] resourceBytes;
+    private final String baseUrl;
 
-    /**
-     * @return
-     */
-    HazelcastInstance getHazelcastInstance();
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    ClassLoaderEntry(byte[] resourceBytes, String baseUrl) {
+        this.resourceBytes = resourceBytes;
+        this.baseUrl = baseUrl;
+    }
 
-    /**
-     * @return
-     */
-    int parallelism();
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    byte[] getResourceBytes() {
+        return resourceBytes;
+    }
 
-    /**
-     * @return
-     */
-    ClassLoader getClassLoader();
+    String getBaseUrl() {
+        return baseUrl;
+    }
 }
-
-
 

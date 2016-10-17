@@ -17,10 +17,11 @@
 package com.hazelcast.jet.impl.job.deployment;
 
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.job.JobContext;
+import com.hazelcast.jet.impl.job.deployment.classloader.JobClassLoader;
 import com.hazelcast.jet.impl.job.deployment.classloader.ResourceStream;
 import com.hazelcast.logging.ILogger;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,18 +31,27 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
-public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
+public class DiskDeploymentStorage implements DeploymentStorage {
 
+    private final Map<DeploymentDescriptor, File> resources = new ConcurrentHashMap<>();
+    private final JobConfig config;
     private final File jobDirectory;
     private final ILogger logger;
 
     private long fileNameCounter = 1;
+    private ClassLoader classLoader;
+    private volatile boolean finalized;
 
     public DiskDeploymentStorage(JobContext jobContext, String jobName) {
-        super(jobContext.getJobConfig());
+        this.config = jobContext.getJobConfig();
         this.logger = jobContext.getNodeEngine().getLogger(getClass());
         this.jobDirectory = createJobDirectory(jobName, getDeploymentDirectory());
     }
@@ -82,8 +92,7 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
         return deploymentDirectory;
     }
 
-    @Override
-    public ResourceStream asResourceStream(File resource) throws IOException {
+    private ResourceStream asResourceStream(File resource) throws IOException {
         InputStream fileInputStream = new FileInputStream(resource);
         try {
             return new ResourceStream(fileInputStream, resource.toURI().toURL().toString());
@@ -93,8 +102,7 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
         }
     }
 
-    @Override
-    protected void setChunk(File file, Chunk chunk) {
+    private void setChunk(File file, Chunk chunk) {
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rws")) {
             int offset = (chunk.getSequence() - 1) * chunk.getChunkSize();
             randomAccessFile.seek(offset);
@@ -104,8 +112,7 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
         }
     }
 
-    @Override
-    protected File createResource(DeploymentDescriptor descriptor) {
+    private File createResource(DeploymentDescriptor descriptor) {
         String path = getPath();
         File file = new File(path);
         if (!file.exists()) {
@@ -148,5 +155,40 @@ public class DiskDeploymentStorage extends AbstractDeploymentStorage<File> {
         if (!file.delete()) {
             logger.info("Can't delete file " + file.getName());
         }
+    }
+
+    public ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    public Map<DeploymentDescriptor, ResourceStream> getResources() throws IOException {
+        Map<DeploymentDescriptor, ResourceStream> resourceStreams = new LinkedHashMap<>(resources.size());
+
+        for (Map.Entry<DeploymentDescriptor, File> entry : this.resources.entrySet()) {
+            resourceStreams.put(entry.getKey(), asResourceStream(entry.getValue()));
+        }
+
+        return resourceStreams;
+    }
+
+    public synchronized void receiveChunk(Chunk chunk) {
+        DeploymentDescriptor descriptor = chunk.getDescriptor();
+        if (!resources.containsKey(descriptor)) {
+            createResource(descriptor);
+        }
+        File resource = resources.get(descriptor);
+        setChunk(resource, chunk);
+    }
+
+    public void finish() {
+        if (finalized) {
+            return;
+        }
+
+        finalized = true;
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            classLoader = new JobClassLoader(this);
+            return null;
+        });
     }
 }

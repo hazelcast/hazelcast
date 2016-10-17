@@ -14,47 +14,48 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
+package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.impl.ExecutionContext;
+import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
-class ExecuteJobOperation extends Operation {
-
+public class UpdateDeploymentCatalogOperation extends Operation {
     private String name;
-    private DAG dag;
+    private DeploymentDescriptor descriptor;
 
-    public ExecuteJobOperation() {
+    @SuppressWarnings("unused")
+    public UpdateDeploymentCatalogOperation() {
+
     }
 
-    public ExecuteJobOperation(String name, DAG dag) {
+    public UpdateDeploymentCatalogOperation(String name, DeploymentDescriptor descriptor) {
         this.name = name;
-        this.dag = dag;
+        this.descriptor = descriptor;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
         ExecutionContext executionContext = service.getExecutionContext(name);
-        executionContext.execute(dag).get();
+        DeploymentStore deploymentStore = executionContext.getDeploymentStore();
+        deploymentStore.updateCatalog(descriptor);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
         out.writeUTF(name);
-        out.writeObject(dag);
+        out.writeObject(descriptor);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
         name = in.readUTF();
-        dag = in.readObject();
+        descriptor = in.readObject();
     }
 }

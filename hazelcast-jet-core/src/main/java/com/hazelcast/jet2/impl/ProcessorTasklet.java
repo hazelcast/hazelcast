@@ -17,8 +17,8 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.util.Preconditions;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +36,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private final Processor processor;
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
+    private final ProcessorContext context;
     private CircularCursor<InboundEdgeStream> instreamCursor;
     private final ArrayDequeWithObserver inbox;
     private final ArrayDequeOutbox outbox;
@@ -46,11 +47,12 @@ public class ProcessorTasklet implements Tasklet {
     private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(Processor processor,
+    public ProcessorTasklet(ProcessorContext context, Processor processor,
                             List<InboundEdgeStream> instreams,
                             List<OutboundEdgeStream> outstreams
     ) {
         Preconditions.checkNotNull(processor, "processor");
+        this.context = context;
         this.processor = processor;
         this.instreamGroupQueue = instreams
                 .stream()
@@ -76,21 +78,37 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public ProgressState call() throws Exception {
-        progTracker.reset();
-        tryFillInbox();
-        if (progTracker.isDone()) {
-            completeIfNeeded();
-        } else if (!inbox.isEmpty()) {
-            progTracker.madeProgress(true);
-            tryProcessInbox();
-        } else if (currInstreamExhausted) {
-            progTracker.madeProgress(true);
-            if (processor.complete(currInstream.ordinal())) {
-                currInstream = null;
+        ClassLoader classLoader = null;
+        boolean classLoaderChanged = false;
+        ClassLoader contextClassLoader = context.getClassLoader();
+        if (contextClassLoader != null) {
+            classLoader = Thread.currentThread().getContextClassLoader();
+            if (contextClassLoader != classLoader) {
+                Thread.currentThread().setContextClassLoader(contextClassLoader);
+                classLoaderChanged = true;
             }
         }
-        tryFlushOutbox();
-        return progTracker.toProgressState();
+        try {
+            progTracker.reset();
+            tryFillInbox();
+            if (progTracker.isDone()) {
+                completeIfNeeded();
+            } else if (!inbox.isEmpty()) {
+                progTracker.madeProgress(true);
+                tryProcessInbox();
+            } else if (currInstreamExhausted) {
+                progTracker.madeProgress(true);
+                if (processor.complete(currInstream.ordinal())) {
+                    currInstream = null;
+                }
+            }
+            tryFlushOutbox();
+            return progTracker.toProgressState();
+        } finally {
+            if (classLoaderChanged) {
+                Thread.currentThread().setContextClassLoader(classLoader);
+            }
+        }
     }
 
     private CircularCursor<InboundEdgeStream> popInstreamGroup() {

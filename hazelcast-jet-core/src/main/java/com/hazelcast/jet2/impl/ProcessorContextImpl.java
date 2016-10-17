@@ -23,10 +23,12 @@ class ProcessorContextImpl implements ProcessorContext {
 
     private final HazelcastInstance instance;
     private final int parallelism;
+    private final ClassLoader classLoader;
 
-    public ProcessorContextImpl(HazelcastInstance instance, int parallelism) {
+    public ProcessorContextImpl(HazelcastInstance instance, int parallelism, ClassLoader classLoader) {
         this.instance = instance;
         this.parallelism = parallelism;
+        this.classLoader = classLoader;
     }
 
     @Override
@@ -37,5 +39,10 @@ class ProcessorContextImpl implements ProcessorContext {
     @Override
     public int parallelism() {
         return parallelism;
+    }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return classLoader;
     }
 }

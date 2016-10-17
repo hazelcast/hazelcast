@@ -16,12 +16,28 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.jet2.impl.deployment.DeploymentConfig;
+import com.hazelcast.jet2.impl.deployment.DeploymentType;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Javadoc pending.
  */
-public class JetEngineConfig {
+public class JetEngineConfig implements Serializable {
 
-    private int parallelism;
+    private int parallelism = 1;
+    private String deploymentDirectory;
+    private Set<DeploymentConfig> deploymentConfigs = new HashSet<>();
+
 
     /**
      * Sets the number of execution threads per node
@@ -37,4 +53,210 @@ public class JetEngineConfig {
     public int getParallelism() {
         return parallelism;
     }
+
+    /**
+     * @return the deployment directory used for storing deployed resources
+     */
+    public String getDeploymentDirectory() {
+        return deploymentDirectory;
+    }
+
+    /**
+     * Sets the deployment directory used for storing deployed resources
+     */
+    public void setDeploymentDirectory(String deploymentDirectory) {
+        this.deploymentDirectory = deploymentDirectory;
+    }
+
+    /**
+     * Add class to the job classLoader
+     *
+     * @param classes classes, which will be used during calculation
+     */
+    public void addClass(Class... classes) {
+        checkNotNull(classes, "Classes can not be null");
+
+        for (Class clazz : classes) {
+            try {
+                deploymentConfigs.add(new DeploymentConfig(clazz));
+            } catch (IOException e) {
+                throw unchecked(e);
+            }
+        }
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param url location of the JAR file
+     */
+    public void addJar(URL url) {
+        addJar(url, getFileName(url));
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param url location of the JAR file
+     * @param id  identifier for the JAR file
+     */
+    public void addJar(URL url, String id) {
+        add(url, id, DeploymentType.JAR);
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param file the JAR file
+     */
+    public void addJar(File file) {
+        try {
+            addJar(file.toURI().toURL(), file.getName());
+        } catch (MalformedURLException e) {
+            throw unchecked(e);
+        }
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param file the JAR file
+     * @param id   identifier for the JAR file
+     */
+    public void addJar(File file, String id) {
+        try {
+            addJar(file.toURI().toURL(), id);
+        } catch (MalformedURLException e) {
+            throw unchecked(e);
+        }
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param path path the JAR file
+     */
+    public void addJar(String path) {
+        try {
+            File file = new File(path);
+            addJar(file.toURI().toURL(), file.getName());
+        } catch (MalformedURLException e) {
+            throw unchecked(e);
+        }
+    }
+
+    /**
+     * Add JAR to the job classLoader
+     *
+     * @param path path the JAR file
+     * @param id   identifier for the JAR file
+     */
+    public void addJar(String path, String id) {
+        try {
+            addJar(new File(path).toURI().toURL(), id);
+        } catch (MalformedURLException e) {
+            throw unchecked(e);
+        }
+    }
+
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param url source url with classes
+     */
+    public void addResource(URL url) {
+        addResource(url, getFileName(url));
+
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param url source url with classes
+     * @param id  identifier for the resource
+     */
+    public void addResource(URL url, String id) {
+        add(url, id, DeploymentType.DATA);
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param file resource file
+     */
+    public void addResource(File file) {
+        try {
+            addResource(file.toURI().toURL(), file.getName());
+        } catch (MalformedURLException e) {
+            throw unchecked(e);
+        }
+
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param file resource file
+     * @param id   identifier for the resource
+     */
+    public void addResource(File file, String id) {
+        try {
+            add(file.toURI().toURL(), id, DeploymentType.DATA);
+        } catch (MalformedURLException e) {
+            throw unchecked(e);
+        }
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param path path of the resource
+     */
+    public void addResource(String path) {
+        File file = new File(path);
+        try {
+            addResource(file.toURI().toURL(), file.getName());
+        } catch (MalformedURLException e) {
+            throw unchecked(e);
+        }
+    }
+
+    /**
+     * Add resource to the job classLoader
+     *
+     * @param path path of the resource
+     * @param id   identifier for the resource
+     */
+    public void addResource(String path, String id) {
+        File file = new File(path);
+        try {
+            addResource(file.toURI().toURL(), id);
+        } catch (MalformedURLException e) {
+            throw unchecked(e);
+        }
+    }
+
+    /**
+     * Returns all the deployment configurations
+     *
+     * @return deployment configuration set
+     */
+    public Set<DeploymentConfig> getDeploymentConfigs() {
+        return deploymentConfigs;
+    }
+
+    private void add(URL url, String id, DeploymentType type) {
+        try {
+            deploymentConfigs.add(new DeploymentConfig(url, id, type));
+        } catch (IOException e) {
+            throw unchecked(e);
+        }
+    }
+
+    private String getFileName(URL url) {
+        String urlFile = url.getFile();
+        return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
+    }
+
 }

@@ -19,7 +19,6 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -108,6 +107,7 @@ class ExecutionService {
             this.tracker = tracker;
         }
 
+        //CHECKSTYLE:OFF
         @Override
         @SuppressWarnings("checkstyle:innerassignment")
         public void run() {
@@ -128,6 +128,7 @@ class ExecutionService {
                 tracker.completionLatch.countDown();
             }
         }
+        //CHECKSTYLE:ON
     }
 
     private static class NonBlockingWorker implements Runnable {
