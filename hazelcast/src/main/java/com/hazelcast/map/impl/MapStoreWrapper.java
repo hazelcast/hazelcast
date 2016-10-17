@@ -77,10 +77,6 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         return (mapStore != null);
     }
 
-    public boolean isMapLoader() {
-        return (mapLoader != null);
-    }
-
     @Override
     public void delete(Object key) {
         if (isMapStore()) {
@@ -113,25 +109,17 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     @Override
     public Iterable<Object> loadAllKeys() {
-        if (isMapLoader()) {
-            Iterable<Object> allKeys;
-            try {
-                allKeys = mapLoader.loadAllKeys();
-            } catch (AbstractMethodError e) {
-                // Invoke reflectively to preserve backwards binary compatibility. Removable in v4.x
-                allKeys = ReflectionHelper.invokeMethod(mapLoader, "loadAllKeys");
-            }
-            return allKeys;
+        try {
+            return mapLoader.loadAllKeys();
+        } catch (AbstractMethodError e) {
+            // Invoke reflectively to preserve backwards binary compatibility. Removable in v4.x
+            return ReflectionHelper.invokeMethod(mapLoader, "loadAllKeys");
         }
-        return null;
     }
 
     @Override
     public Object load(Object key) {
-        if (isMapLoader()) {
-            return mapLoader.load(key);
-        }
-        return null;
+        return mapLoader.load(key);
     }
 
     @Override
@@ -139,10 +127,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         if (keys == null || keys.isEmpty()) {
             return Collections.EMPTY_MAP;
         }
-        if (isMapLoader()) {
-            return mapLoader.loadAll(keys);
-        }
-        return null;
+        return mapLoader.loadAll(keys);
     }
 
     public Object getImpl() {
