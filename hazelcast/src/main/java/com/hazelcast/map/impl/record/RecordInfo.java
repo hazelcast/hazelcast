@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
@@ -27,7 +28,7 @@ import static com.hazelcast.map.impl.record.Record.NOT_AVAILABLE;
 /**
  * Record info.
  */
-public class RecordInfo implements DataSerializable {
+public class RecordInfo implements IdentifiedDataSerializable {
     protected long version;
     protected long ttl;
     protected long creationTime;
@@ -164,5 +165,15 @@ public class RecordInfo implements DataSerializable {
                 + ", lastStoredTime=" + lastStoredTime
                 + ", expirationTime=" + expirationTime
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.RECORD_INFO;
     }
 }

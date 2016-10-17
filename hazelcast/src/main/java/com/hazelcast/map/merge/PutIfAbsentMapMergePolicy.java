@@ -17,9 +17,10 @@
 package com.hazelcast.map.merge;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
@@ -28,7 +29,7 @@ import java.io.IOException;
  * PutIfAbsentMapMergePolicy causes the merging entry to be merged from source to destination map
  * if it does not exist in the destination map.
  */
-public class PutIfAbsentMapMergePolicy implements MapMergePolicy, DataSerializable {
+public class PutIfAbsentMapMergePolicy implements MapMergePolicy, IdentifiedDataSerializable {
 
     @Override
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
@@ -44,5 +45,15 @@ public class PutIfAbsentMapMergePolicy implements MapMergePolicy, DataSerializab
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_IF_ABSENT_MERGE_POLICY;
     }
 }

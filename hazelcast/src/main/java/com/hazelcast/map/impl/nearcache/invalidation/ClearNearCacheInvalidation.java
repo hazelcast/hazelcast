@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -69,5 +70,10 @@ public class ClearNearCacheInvalidation extends Invalidation {
                 + "mapName='" + mapName + '\''
                 + ", sourceUuid='" + sourceUuid + '\''
                 + '}';
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CLEAR_NEAR_CACHE_INVALIDATION;
     }
 }

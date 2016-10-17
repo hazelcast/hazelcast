@@ -18,12 +18,12 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
-public class MapPartitionLostEventFilter implements EventFilter, DataSerializable {
+public class MapPartitionLostEventFilter implements EventFilter, IdentifiedDataSerializable {
 
     @Override
     public boolean eval(Object arg) {
@@ -51,5 +51,15 @@ public class MapPartitionLostEventFilter implements EventFilter, DataSerializabl
     @Override
     public String toString() {
         return "MapPartitionLostEventFilter{}";
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PARTITION_LOST_EVENT_FILTER;
     }
 }

@@ -18,16 +18,18 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class AddInterceptorOperation extends Operation implements MutatingOperation, NamedOperation {
+public class AddInterceptorOperation extends Operation implements MutatingOperation, NamedOperation, IdentifiedDataSerializable {
 
     private MapService mapService;
     private String id;
@@ -86,5 +88,15 @@ public class AddInterceptorOperation extends Operation implements MutatingOperat
     @Override
     public String getName() {
         return mapName;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.ADD_INTERCEPTOR;
     }
 }
