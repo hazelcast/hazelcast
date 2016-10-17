@@ -23,4 +23,5 @@ com.hazelcast.wan.impl.WanDataSerializerHook
 com.hazelcast.query.impl.predicates.PredicateDataSerializerHook
 com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook
 com.hazelcast.client.impl.ClientDataSerializerHook
+com.hazelcast.internal.management.ManagementDataSerializerHook
 

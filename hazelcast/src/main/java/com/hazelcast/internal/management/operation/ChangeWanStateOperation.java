@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.wan.WanReplicationService;
 
 /**
  * Enables/Disable publishing events to target cluster in WAN Replication {@link com.hazelcast.wan.WanReplicationService}
  * on a node. This operation does not block adding new events to event queue.
  */
-public class ChangeWanStateOperation extends Operation {
+public class ChangeWanStateOperation extends AbstractManagementOperation {
 
     private String schemeName;
     private String publisherName;
@@ -49,5 +49,10 @@ public class ChangeWanStateOperation extends Operation {
         } else {
             wanReplicationService.pause(schemeName, publisherName);
         }
+    }
+
+    @Override
+    public int getId() {
+        return ManagementDataSerializerHook.CHANGE_WAN;
     }
 }

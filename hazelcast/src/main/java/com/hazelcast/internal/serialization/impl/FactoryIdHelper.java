@@ -109,6 +109,9 @@ public final class FactoryIdHelper {
 
     public static final String ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY = "hazelcast.serialization.ds.spi.hotrestart.cluster";
     public static final int ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY_ID = -35;
+
+    public static final String MANAGEMENT_DS_FACTORY = "hazelcast.serialization.ds.management";
+    public static final int MANAGEMENT_DS_FACTORY_ID = -36;
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
