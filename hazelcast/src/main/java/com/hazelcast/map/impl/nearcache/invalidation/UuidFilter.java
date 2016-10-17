@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ import java.io.IOException;
  * Compares supplied uuid with this filters' uuid to prevent unneeded delivery of an invalidation event to operation caller.
  * Operation caller invalidates its own local near-cache, no need to send an extra invalidation from remote.
  */
-public class UuidFilter implements EventFilter, DataSerializable {
+public class UuidFilter implements EventFilter, IdentifiedDataSerializable {
 
     private String uuid;
 
@@ -60,5 +61,15 @@ public class UuidFilter implements EventFilter, DataSerializable {
         return "UuidFilter{"
                 + "uuid='" + uuid + '\''
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.UUID_FILTER;
     }
 }

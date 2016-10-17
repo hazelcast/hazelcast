@@ -19,11 +19,12 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.Operation;
@@ -35,7 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class PostJoinMapOperation extends Operation {
+public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable {
 
     private List<MapIndexInfo> indexInfoList = new LinkedList<MapIndexInfo>();
     private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();
@@ -71,7 +72,7 @@ public class PostJoinMapOperation extends Operation {
         interceptorInfoList.add(interceptorInfo);
     }
 
-    static class InterceptorInfo implements DataSerializable {
+    public static class InterceptorInfo implements IdentifiedDataSerializable {
 
         private String mapName;
         private final List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
@@ -80,7 +81,7 @@ public class PostJoinMapOperation extends Operation {
             this.mapName = mapName;
         }
 
-        InterceptorInfo() {
+        public InterceptorInfo() {
         }
 
         void addInterceptor(String id, MapInterceptor interceptor) {
@@ -106,6 +107,16 @@ public class PostJoinMapOperation extends Operation {
                 MapInterceptor interceptor = in.readObject();
                 interceptors.add(new AbstractMap.SimpleImmutableEntry<String, MapInterceptor>(id, interceptor));
             }
+        }
+
+        @Override
+        public int getFactoryId() {
+            return MapDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getId() {
+            return MapDataSerializerHook.INTERCEPTOR_INFO;
         }
     }
 
@@ -163,7 +174,7 @@ public class PostJoinMapOperation extends Operation {
         }
     }
 
-    static class MapIndexInfo implements DataSerializable {
+    public static class MapIndexInfo implements IdentifiedDataSerializable {
         private String mapName;
         private List<MapIndexInfo.IndexInfo> lsIndexes = new LinkedList<MapIndexInfo.IndexInfo>();
 
@@ -174,11 +185,11 @@ public class PostJoinMapOperation extends Operation {
         public MapIndexInfo() {
         }
 
-        static class IndexInfo implements DataSerializable {
+        public static class IndexInfo implements IdentifiedDataSerializable {
             private String attributeName;
             private boolean ordered;
 
-            IndexInfo() {
+            public IndexInfo() {
             }
 
             IndexInfo(String attributeName, boolean ordered) {
@@ -196,6 +207,16 @@ public class PostJoinMapOperation extends Operation {
             public void readData(ObjectDataInput in) throws IOException {
                 attributeName = in.readUTF();
                 ordered = in.readBoolean();
+            }
+
+            @Override
+            public int getFactoryId() {
+                return MapDataSerializerHook.F_ID;
+            }
+
+            @Override
+            public int getId() {
+                return MapDataSerializerHook.INDEX_INFO;
             }
         }
 
@@ -222,5 +243,25 @@ public class PostJoinMapOperation extends Operation {
                 lsIndexes.add(indexInfo);
             }
         }
+
+        @Override
+        public int getFactoryId() {
+            return MapDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getId() {
+            return MapDataSerializerHook.MAP_INDEX_INFO;
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.POST_JOIN_MAP_OPERATION;
     }
 }

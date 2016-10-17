@@ -21,8 +21,13 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.ClearNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
+import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperationFactory;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.ClearBackupOperation;
@@ -55,6 +60,7 @@ import com.hazelcast.map.impl.operation.MapFlushOperationFactory;
 import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
 import com.hazelcast.map.impl.operation.MapIsEmptyOperation;
 import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
+import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.operation.MapSizeOperation;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryBackupOperation;
@@ -70,6 +76,7 @@ import com.hazelcast.map.impl.operation.PartitionWideEntryOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
 import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateBackupOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperation;
+import com.hazelcast.map.impl.operation.PostJoinMapOperation;
 import com.hazelcast.map.impl.operation.PutAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutAllOperation;
 import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
@@ -81,6 +88,7 @@ import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.PutTransientOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
+import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperationFactory;
 import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
@@ -89,10 +97,13 @@ import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
+import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.map.impl.record.RecordInfo;
+import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
 import com.hazelcast.map.impl.tx.TxnLockAndGetOperation;
 import com.hazelcast.map.impl.tx.TxnPrepareBackupOperation;
@@ -102,6 +113,10 @@ import com.hazelcast.map.impl.tx.TxnRollbackOperation;
 import com.hazelcast.map.impl.tx.TxnSetOperation;
 import com.hazelcast.map.impl.tx.TxnUnlockBackupOperation;
 import com.hazelcast.map.impl.tx.TxnUnlockOperation;
+import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
+import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
+import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
@@ -205,8 +220,28 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_INTERCEPTOR_FACTORY = 88;
     public static final int SIZE_FACTORY = 89;
     public static final int MULTIPLE_ENTRY_FACTORY = 90;
+    public static final int ENTRY_EVENT_FILTER = 91;
+    public static final int EVENT_LISTENER_FILTER = 92;
+    public static final int PARTITION_LOST_EVENT_FILTER = 93;
+    public static final int NEAR_CACHE_CLEAR_INVALIDATION = 94;
+    public static final int ADD_INTERCEPTOR = 95;
+    public static final int MAP_REPLICATION = 96;
+    public static final int POST_JOIN_MAP_OPERATION = 97;
+    public static final int INDEX_INFO = 98;
+    public static final int MAP_INDEX_INFO = 99;
+    public static final int INTERCEPTOR_INFO = 100;
+    public static final int REMOVE_INTERCEPTOR = 101;
+    public static final int QUERY_EVENT_FILTER = 102;
+    public static final int RECORD_INFO = 103;
+    public static final int RECORD_REPLICATION_INFO = 104;
+    public static final int HIGHER_HITS_MERGE_POLICY = 105;
+    public static final int LATEST_UPDATE_MERGE_POLICY = 106;
+    public static final int PASS_THROUGH_MERGE_POLICY = 107;
+    public static final int PUT_IF_ABSENT_MERGE_POLICY = 108;
+    public static final int UUID_FILTER = 109;
+    public static final int CLEAR_NEAR_CACHE_INVALIDATION = 110;
 
-    private static final int LEN = MULTIPLE_ENTRY_FACTORY + 1;
+    private static final int LEN = CLEAR_NEAR_CACHE_INVALIDATION + 1;
 
     @Override
     public int getFactoryId() {
@@ -655,6 +690,116 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MULTIPLE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MultipleEntryOperationFactory();
+            }
+        };
+        constructors[ENTRY_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EntryEventFilter();
+            }
+        };
+        constructors[EVENT_LISTENER_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EventListenerFilter();
+            }
+        };
+        constructors[PARTITION_LOST_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapPartitionLostEventFilter();
+            }
+        };
+        constructors[NEAR_CACHE_SINGLE_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SingleNearCacheInvalidation();
+            }
+        };
+        constructors[NEAR_CACHE_BATCH_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new BatchNearCacheInvalidation();
+            }
+        };
+        constructors[NEAR_CACHE_CLEAR_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearNearCacheInvalidation();
+            }
+        };
+        constructors[ADD_INTERCEPTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AddInterceptorOperation();
+            }
+        };
+        constructors[MAP_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapReplicationOperation();
+            }
+        };
+        constructors[POST_JOIN_MAP_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PostJoinMapOperation();
+            }
+        };
+        constructors[INDEX_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PostJoinMapOperation.MapIndexInfo.IndexInfo();
+            }
+        };
+        constructors[MAP_INDEX_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PostJoinMapOperation.MapIndexInfo();
+            }
+        };
+        constructors[INTERCEPTOR_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PostJoinMapOperation.InterceptorInfo();
+            }
+        };
+        constructors[REMOVE_INTERCEPTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveInterceptorOperation();
+            }
+        };
+        constructors[QUERY_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new QueryEventFilter();
+            }
+        };
+        constructors[RECORD_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RecordInfo();
+            }
+        };
+        constructors[RECORD_REPLICATION_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RecordReplicationInfo();
+            }
+        };
+        constructors[HIGHER_HITS_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new HigherHitsMapMergePolicy();
+            }
+        };
+        constructors[LATEST_UPDATE_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LatestUpdateMapMergePolicy();
+            }
+        };
+        constructors[PASS_THROUGH_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PassThroughMergePolicy();
+            }
+        };
+        constructors[PUT_IF_ABSENT_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PutIfAbsentMapMergePolicy();
+            }
+        };
+        constructors[UUID_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new UuidFilter();
+            }
+        };
+        constructors[CLEAR_NEAR_CACHE_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearNearCacheInvalidation();
             }
         };
 
