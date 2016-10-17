@@ -17,7 +17,9 @@
 package com.hazelcast.executor.impl;
 
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
+import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
+import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -32,7 +34,9 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
 
     public static final int CALLABLE_TASK = 0;
     public static final int MEMBER_CALLABLE_TASK = 1;
-    static final int RUNNABLE_ADAPTER = 2;
+    public static final int RUNNABLE_ADAPTER = 2;
+    public static final int CANCELLATION = 3;
+    public static final int SHUTDOWN = 4;
 
     @Override
     public int getFactoryId() {
@@ -51,6 +55,10 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
                         return new MemberCallableTaskOperation();
                     case RUNNABLE_ADAPTER:
                         return new RunnableAdapter();
+                    case CANCELLATION:
+                        return new CancellationOperation();
+                    case SHUTDOWN:
+                        return new ShutdownOperation();
                     default:
                         return null;
                 }
