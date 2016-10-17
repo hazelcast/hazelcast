@@ -24,14 +24,14 @@ import java.util.concurrent.TimeUnit;
 
 public final class ClientNearCacheExecutor implements NearCacheExecutor {
 
-    private ClientExecutionService clientExecutionService;
+    private ClientExecutionService executionService;
 
-    public ClientNearCacheExecutor(ClientExecutionService clientExecutionService) {
-        this.clientExecutionService = clientExecutionService;
+    public ClientNearCacheExecutor(ClientExecutionService executionService) {
+        this.executionService = executionService;
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return clientExecutionService.scheduleWithRepetition(command, initialDelay, delay, unit);
+        return executionService.scheduleWithRepetition(command, initialDelay, delay, unit);
     }
 }
