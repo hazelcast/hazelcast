@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -34,7 +35,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation {
+class ParkedOperation extends Operation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
     final Queue<ParkedOperation> queue;
     final Operation op;
     final BlockingOperation blockingOperation;
@@ -198,5 +199,15 @@ class ParkedOperation extends Operation implements Delayed, PartitionAwareOperat
         sb.append(", op=").append(op);
         sb.append(", expirationTime=").append(expirationTime);
         sb.append(", valid=").append(valid);
+    }
+
+    @Override
+    public int getFactoryId() {
+        throw new UnsupportedOperationException("local operation only");
+    }
+
+    @Override
+    public int getId() {
+        throw new UnsupportedOperationException("local operation only");
     }
 }
