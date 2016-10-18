@@ -49,24 +49,19 @@ class ArrayDequeOutbox implements Outbox {
     }
 
     @Override
-    public int itemsUntilHighWater() {
-        if (queues.length == 0) {
-            return 0;
-        }
-        int max = 0;
+    public boolean isHighWater() {
         for (ArrayDeque<Object> queue : queues) {
-            if (queue.size() > max) {
-                max = queue.size();
+            if (queue.size() >= highWaterMark) {
+                return true;
             }
         }
-        return Math.max(0, highWaterMark - max);
+        return false;
     }
 
     @Override
-    public int itemsUntilHighWater(int ordinal) {
-        return Math.max(0, highWaterMark - queues[ordinal].size());
+    public boolean isHighWater(int ordinal) {
+        return queues[ordinal].size() >= highWaterMark;
     }
-
 
     int queueCount() {
         return queues.length;

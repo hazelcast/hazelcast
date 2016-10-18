@@ -20,7 +20,6 @@ package com.hazelcast.jet2;
  * Javadoc pending.
  */
 public interface Outbox {
-
     /**
      * Javadoc pending
      */
@@ -31,8 +30,13 @@ public interface Outbox {
      */
     void add(int ordinal, Object item);
 
-    int itemsUntilHighWater();
+    /**
+     * Javadoc pending
+     */
+    boolean isHighWater();
 
-    int itemsUntilHighWater(int ordinal);
-
+    /**
+     * Javadoc pending
+     */
+    boolean isHighWater(int ordinal);
 }

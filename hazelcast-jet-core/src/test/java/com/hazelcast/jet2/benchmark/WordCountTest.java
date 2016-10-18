@@ -91,7 +91,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     }
 
 
-    @Test @Ignore
+    @Test
     public void test() {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
@@ -170,9 +170,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 iterator = counts.entrySet().iterator();
             }
 
-            int count = getOutbox().itemsUntilHighWater();
-
-            while(iterator.hasNext() && count-- > 0) {
+            while(iterator.hasNext() && !getOutbox().isHighWater()) {
                 emit(iterator.next());
             }
             return !iterator.hasNext();
