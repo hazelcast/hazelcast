@@ -23,26 +23,50 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
+    private TestLogger logger = new TestLogger();
+    private TestThreadFactory factory = new TestThreadFactory();
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Test
-    public void logs_task_execution_exception() throws Exception {
-        final TestLogger logger = new TestLogger();
-        ScheduledExecutorService executor = new LoggingScheduledExecutor(logger, 1, new TestThreadFactory());
-        executor.execute(new FailedRunnable());
+    public void testConstructor_withRejectedExecutionHandler() {
+        RejectedExecutionHandler handler = new RejectedExecutionHandler() {
+            @Override
+            public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
+            }
+        };
+
+        new LoggingScheduledExecutor(logger, 1, factory, handler);
+    }
+
+    @Test
+    public void logsExecutionException_withRunnable() {
+        ScheduledExecutorService executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor.submit(new FailedRunnable());
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -54,7 +78,32 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         });
     }
 
-    class FailedRunnable implements Runnable {
+    @Test
+    public void throwsExecutionException_withCallable() throws Exception {
+        ScheduledExecutorService executor = new LoggingScheduledExecutor(logger, 1, factory);
+        Future<Integer> future = executor.submit(new FailedCallable());
+
+        expectedException.expect(new RootCauseMatcher(RuntimeException.class));
+        future.get();
+
+        assertNull(logger.getThrowable());
+    }
+
+    private class FailedCallable implements Callable<Integer> {
+
+        @Override
+        public Integer call() throws Exception {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public String toString() {
+            return "FailedCallable{}";
+        }
+    }
+
+    private class FailedRunnable implements Runnable {
+
         @Override
         public void run() {
             throw new RuntimeException();
@@ -66,13 +115,15 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         }
     }
 
-    class TestThreadFactory implements ThreadFactory {
+    private class TestThreadFactory implements ThreadFactory {
+
+        @Override
         public Thread newThread(Runnable r) {
             return new Thread(r);
         }
     }
 
-    class TestLogger extends AbstractLogger {
+    private class TestLogger extends AbstractLogger {
 
         private final AtomicReference<Throwable> throwableHolder = new AtomicReference<Throwable>();
         private final AtomicReference<String> messageHolder = new AtomicReference<String>();

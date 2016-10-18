@@ -35,14 +35,14 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
 
 /**
- * Reasoning is given tasks to {@link ScheduledThreadPoolExecutor} stops silently if there is an execution exception.
- * <p>
- * This class logs execution exceptions by overriding {@link ScheduledThreadPoolExecutor#afterExecute}
+ * Logs execution exceptions by overriding {@link ScheduledThreadPoolExecutor#afterExecute}
  * and {@link ScheduledThreadPoolExecutor#decorateTask} methods.
- * <p>
+ *
+ * Reasoning is given tasks to {@link ScheduledThreadPoolExecutor} stops silently if there is an execution exception.
+ *
  * Note: Task decoration is only needed to call given tasks {@code toString} methods.
  *
- * @see {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay}
+ * {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay}
  */
 public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
@@ -70,24 +70,24 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
     }
 
     @Override
-    protected void afterExecute(Runnable r, Throwable t) {
-        super.afterExecute(r, t);
+    protected void afterExecute(Runnable runnable, Throwable throwable) {
+        super.afterExecute(runnable, throwable);
 
-        if (t == null && r instanceof ScheduledFuture && ((ScheduledFuture) r).isDone()) {
+        if (throwable == null && runnable instanceof ScheduledFuture && ((ScheduledFuture) runnable).isDone()) {
             try {
-                ((Future) r).get();
+                ((Future) runnable).get();
             } catch (CancellationException ce) {
-                t = ce;
+                throwable = ce;
             } catch (ExecutionException e) {
-                t = e.getCause();
+                throwable = e.getCause();
             } catch (InterruptedException i) {
-                t = i;
+                throwable = i;
                 currentThread().interrupt();
             }
         }
 
-        if (t != null) {
-            logger.severe("Failed to execute " + r, t);
+        if (throwable != null) {
+            logger.severe("Failed to execute " + runnable, throwable);
         }
     }
 
@@ -96,14 +96,14 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
      * there is no straightforward way to reach it due to the internal wrapping done by
      * {@link ScheduledThreadPoolExecutor}
      *
-     * @see {@link ScheduledThreadPoolExecutor#scheduleWithFixedDelay}
+     * {@link ScheduledThreadPoolExecutor#scheduleWithFixedDelay}
      */
     private static class LoggingDelegatingFuture<V> implements RunnableScheduledFuture<V> {
 
         private final Object task;
         private final RunnableScheduledFuture<V> delegate;
 
-        public LoggingDelegatingFuture(Object task, RunnableScheduledFuture delegate) {
+        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate) {
             this.task = task;
             this.delegate = delegate;
         }
@@ -126,6 +126,23 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
         @Override
         public int compareTo(Delayed o) {
             return delegate.compareTo(o);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof LoggingDelegatingFuture)) {
+                return false;
+            }
+            LoggingDelegatingFuture<?> that = (LoggingDelegatingFuture<?>) o;
+            return delegate.equals(that.delegate);
+        }
+
+        @Override
+        public int hashCode() {
+            return delegate.hashCode();
         }
 
         @Override
