@@ -19,6 +19,7 @@ package com.hazelcast.util.executor;
 import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -75,6 +76,8 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
         if (t == null && r instanceof ScheduledFuture && ((ScheduledFuture) r).isDone()) {
             try {
                 ((Future) r).get();
+            } catch (CancellationException ce) {
+                t = ce;
             } catch (ExecutionException e) {
                 t = e.getCause();
             } catch (InterruptedException i) {
