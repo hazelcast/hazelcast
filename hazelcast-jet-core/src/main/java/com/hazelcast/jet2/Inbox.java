@@ -14,26 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
-
-import com.hazelcast.jet2.Inbox;
-
-import java.util.ArrayDeque;
-import java.util.function.Predicate;
+package com.hazelcast.jet2;
 
 /**
  * Javadoc pending.
  */
-class ArrayDequeWithObserver extends ArrayDeque<Object> implements CollectionWithObserver, Inbox {
-    private Predicate<Object> observer;
+public interface Inbox {
 
-    @Override
-    public void setVetoingObserverOfAdd(Predicate<? super Object> observer) {
-        this.observer = observer;
-    }
+    Object peek();
 
-    @Override
-    public boolean add(Object o) {
-        return observer.test(o) && super.add(o);
-    }
+    Object poll();
+
+    Object remove();
 }

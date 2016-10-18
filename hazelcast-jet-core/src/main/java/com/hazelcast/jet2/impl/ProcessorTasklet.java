@@ -81,6 +81,7 @@ public class ProcessorTasklet implements Tasklet {
         if (progTracker.isDone()) {
             completeIfNeeded();
         } else if (!inbox.isEmpty()) {
+            progTracker.madeProgress(true);
             tryProcessInbox();
         } else if (currInstreamExhausted) {
             progTracker.madeProgress(true);
@@ -126,17 +127,9 @@ public class ProcessorTasklet implements Tasklet {
     @SuppressWarnings("checkstyle:innerassignment")
     private void tryProcessInbox() {
         final int inboundOrdinal = currInstream.ordinal();
-        for (Object item; (item = inbox.peek()) != null; ) {
-            progTracker.madeProgress(true);
-            if (!processor.process(inboundOrdinal, item)) {
-                progTracker.notDone();
-                return;
-            }
-            inbox.remove();
-            if (outbox.isHighWater()) {
-                progTracker.notDone();
-                return;
-            }
+        processor.process(inboundOrdinal, inbox);
+        if (!inbox.isEmpty()) {
+            progTracker.notDone();
         }
     }
 
