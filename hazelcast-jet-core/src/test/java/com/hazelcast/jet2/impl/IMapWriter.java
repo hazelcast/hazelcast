@@ -35,8 +35,6 @@ import java.util.Set;
 
 public class IMapWriter extends AbstractProcessor {
 
-    private static final int FLUSH_THRESHOLD = 2048;
-
     private final IMap<Object, Object> map;
     private final ArrayMap<Object, Object> buffer = new ArrayMap<>();
 
@@ -54,9 +52,7 @@ public class IMapWriter extends AbstractProcessor {
         for (Map.Entry<Object, Object> e; (e = (Entry<Object, Object>) inbox.poll()) != null;) {
             buffer.add(e);
         }
-        if (buffer.size() >= FLUSH_THRESHOLD) {
-            flush();
-        }
+        flush();
     }
 
     @Override

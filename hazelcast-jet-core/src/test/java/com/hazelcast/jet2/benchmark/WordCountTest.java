@@ -28,17 +28,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -111,11 +108,14 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addEdge(new Edge(combiner, consumer));
 
         List<Long> times = new ArrayList<>();
+        final int warmupCount = 10;
         for (int i = 0; i < 50; i++) {
             long start = System.currentTimeMillis();
             jetEngine.newJob(dag).execute();
             long time = System.currentTimeMillis() - start;
-            times.add(time);
+            if (i > warmupCount) {
+                times.add(time);
+            }
             System.out.println("jet2: totalTime=" + time);
         }
         System.out.println(times.stream().mapToLong(l -> l).summaryStatistics());

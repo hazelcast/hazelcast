@@ -34,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class JetEngineConfig implements Serializable {
 
-    private int parallelism = 1;
+    private int parallelism = Runtime.getRuntime().availableProcessors();
     private String deploymentDirectory;
     private Set<DeploymentConfig> deploymentConfigs = new HashSet<>();
 

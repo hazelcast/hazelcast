@@ -107,7 +107,6 @@ class ExecutionService {
             this.tracker = tracker;
         }
 
-        //CHECKSTYLE:OFF
         @Override
         @SuppressWarnings("checkstyle:innerassignment")
         public void run() {
@@ -128,7 +127,6 @@ class ExecutionService {
                 tracker.completionLatch.countDown();
             }
         }
-        //CHECKSTYLE:ON
     }
 
     private static class NonBlockingWorker implements Runnable {
