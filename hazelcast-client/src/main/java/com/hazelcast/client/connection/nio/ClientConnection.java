@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -77,6 +78,8 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
 
     private volatile Throwable closeCause;
     private volatile String closeReason;
+    private int connectedServerVersion = BuildInfo.getUnknownHazelcastVersion();
+    private String connectedServerVersionString;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -357,10 +360,24 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
                 + ", closedTime=" + timeToStringFriendly(closedTime)
                 + ", lastHeartbeatRequested=" + timeToStringFriendly(lastHeartbeatRequestedMillis)
                 + ", lastHeartbeatReceived=" + timeToStringFriendly(lastHeartbeatReceivedMillis)
+                + ", connected server version=" + connectedServerVersionString
                 + '}';
     }
 
     public long getClosedTime() {
         return closedTime;
+    }
+
+    public void setConnectedServerVersion(String connectedServerVersion) {
+        this.connectedServerVersionString = connectedServerVersion;
+        this.connectedServerVersion = BuildInfo.calculateVersion(connectedServerVersion);
+    }
+
+    public int getConnectedServerVersion() {
+        return connectedServerVersion;
+    }
+
+    public String getConnectedServerVersionString() {
+        return connectedServerVersionString;
     }
 }

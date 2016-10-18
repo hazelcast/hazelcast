@@ -499,6 +499,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                             connection.setIsAuthenticatedAsOwner();
                             clusterService.setPrincipal(new ClientPrincipal(result.uuid, result.ownerUuid));
                         }
+                        connection.setConnectedServerVersion(result.serverHazelcastVersion);
                         authenticated(target, connection);
                         callback.onSuccess(connection, asOwner);
                         break;
@@ -567,6 +568,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         assert oldConnection == null || connection.equals(oldConnection);
         connectionsInProgress.remove(target);
+        logger.info("Authenticated with server " + connection.getRemoteEndpoint() + ", server version:" + connection
+                .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());
     }
 
     private void failed(Address target, ClientConnection connection, Throwable cause) {
