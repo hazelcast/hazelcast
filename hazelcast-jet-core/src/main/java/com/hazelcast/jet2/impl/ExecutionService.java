@@ -42,11 +42,11 @@ class ExecutionService {
     private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
     private final ExecutorService blockingTaskletExecutor = Executors.newCachedThreadPool();
-    private final Worker[] workers;
+    private final NonBlockingWorker[] workers;
     private final Thread[] threads;
 
     public ExecutionService(JetEngineConfig cfg) {
-        this.workers = new Worker[cfg.getParallelism()];
+        this.workers = new NonBlockingWorker[cfg.getParallelism()];
         this.threads = new Thread[cfg.getParallelism()];
     }
 
@@ -61,11 +61,7 @@ class ExecutionService {
 
     private void submitBlockingTasklets(CountDownLatch completionLatch, JobFuture jobFuture, List<Tasklet> tasklets) {
         for (Tasklet t : tasklets) {
-            blockingTaskletExecutor.execute(() -> {
-                if (initPropagatingFailure(t, jobFuture, completionLatch)) {
-                    blockingTaskletExecutor.execute(new Worker(new TaskletTracker(t, completionLatch, jobFuture)));
-                }
-            });
+            blockingTaskletExecutor.execute(new BlockingWorker(new TaskletTracker(t, completionLatch, jobFuture)));
         }
     }
 
@@ -85,7 +81,16 @@ class ExecutionService {
         Arrays.stream(threads).forEach(LockSupport::unpark);
     }
 
-    private boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture, CountDownLatch completionLatch) {
+    private void ensureThreadsStarted() {
+        if (workers[0] != null) {
+            return;
+        }
+        Arrays.setAll(workers, i -> new NonBlockingWorker(workers));
+        Arrays.setAll(threads, i -> new Thread(workers[i]));
+        Arrays.stream(threads).forEach(Thread::start);
+    }
+
+    private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture, CountDownLatch completionLatch) {
         try {
             t.init();
             return true;
@@ -96,26 +101,39 @@ class ExecutionService {
         }
     }
 
-    private void ensureThreadsStarted() {
-        if (workers[0] != null) {
-            return;
+    private static class BlockingWorker implements Runnable {
+        private final TaskletTracker tracker;
+
+        private BlockingWorker(TaskletTracker tracker) {
+            this.tracker = tracker;
         }
-        Arrays.setAll(workers, i -> new Worker(workers));
-        Arrays.setAll(threads, i -> new Thread(workers[i]));
-        Arrays.stream(threads).forEach(Thread::start);
+
+        @Override
+        public void run() {
+            final Tasklet t = tracker.tasklet;
+            try {
+                t.init();
+                while (!t.call().isDone()) {
+                }
+            } catch (Throwable e) {
+                tracker.troubleSetter.setTrouble(e);
+            } finally {
+                tracker.completionLatch.countDown();
+            }
+        }
     }
 
-    private static class Worker implements Runnable {
-        private static final Worker[] EMPTY_WORKERS = new Worker[0];
+    private static class NonBlockingWorker implements Runnable {
+        private static final NonBlockingWorker[] EMPTY_WORKERS = new NonBlockingWorker[0];
         private final List<TaskletTracker> trackers;
-        private final Worker[] colleagues;
+        private final NonBlockingWorker[] colleagues;
 
-        Worker(Worker[] colleagues) {
+        NonBlockingWorker(NonBlockingWorker[] colleagues) {
             this.colleagues = colleagues;
             this.trackers = new CopyOnWriteArrayList<>();
         }
 
-        Worker(TaskletTracker tracker) {
+        NonBlockingWorker(TaskletTracker tracker) {
             this.colleagues = EMPTY_WORKERS;
             this.trackers = singletonList(tracker);
         }
@@ -126,7 +144,7 @@ class ExecutionService {
             while (true) {
                 boolean madeProgress = false;
                 for (TaskletTracker t : trackers) {
-                    final Worker stealingWorker = t.stealingWorker.get();
+                    final NonBlockingWorker stealingWorker = t.stealingWorker.get();
                     if (stealingWorker != null) {
                         t.stealingWorker.set(null);
                         trackers.remove(t);
@@ -165,7 +183,7 @@ class ExecutionService {
             while (true) {
                 // start with own tasklet list, try to find a longer one
                 List<TaskletTracker> toStealFrom = trackers;
-                for (Worker w : colleagues) {
+                for (NonBlockingWorker w : colleagues) {
                     if (w.trackers.size() > toStealFrom.size()) {
                         toStealFrom = w.trackers;
                     }
@@ -188,7 +206,7 @@ class ExecutionService {
         final Tasklet tasklet;
         final TroubleSetter troubleSetter;
         final CountDownLatch completionLatch;
-        final AtomicReference<Worker> stealingWorker = new AtomicReference<>();
+        final AtomicReference<NonBlockingWorker> stealingWorker = new AtomicReference<>();
 
         TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, TroubleSetter troubleSetter) {
             this.completionLatch = completionLatch;
