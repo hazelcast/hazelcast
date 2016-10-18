@@ -17,6 +17,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.JetPair;
@@ -36,8 +37,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
@@ -49,7 +52,7 @@ import static org.junit.Assert.assertEquals;
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int COUNT = 1_000_000;
-    private static final int DISTINCT = 1_000_000;
+    private static final int DISTINCT = 100_000;
 
     private static IMap<Integer, String> map;
 
@@ -99,12 +102,19 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addVertex(combiner)
                 .addEdge(new Edge("edge", generator, combiner).partitioned());
 
-        for (int i = 0; i < 10; i++) {
+        List<Long> times = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
             long start = System.currentTimeMillis();
+            JobConfig jobConfig = new JobConfig();
+            jobConfig.setChunkSize(256);
             Job job = JetEngine.getJob(instance, "word count", dag);
             job.execute().get();
+            long time = System.currentTimeMillis() - start;
+            times.add(time);
             System.out.println("jet: totalTime=" + (System.currentTimeMillis() - start));
         }
+        System.out.println(times.stream().mapToLong(l -> l).summaryStatistics());
+
         IMap<String, Long> consumerMap = instance.getMap("counts");
         assertCounts(consumerMap);
 

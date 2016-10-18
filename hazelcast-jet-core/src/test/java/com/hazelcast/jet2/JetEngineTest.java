@@ -19,14 +19,15 @@ package com.hazelcast.jet2;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.impl.AbstractProcessor;
-import com.hazelcast.jet2.impl.IMapWriter;
 import com.hazelcast.jet2.impl.IMapReader;
+import com.hazelcast.jet2.impl.IMapWriter;
 import com.hazelcast.jet2.impl.ListConsumer;
 import com.hazelcast.jet2.impl.ListProducer;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -42,7 +43,7 @@ import java.util.stream.IntStream;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class JetEngineTest extends HazelcastTestSupport {
 
     private static TestHazelcastInstanceFactory factory;
@@ -63,6 +64,11 @@ public class JetEngineTest extends HazelcastTestSupport {
     public void setupEngine() {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
+    }
+
+    @After
+    public void shutdown() {
+        instance.shutdown();
     }
 
     @Test

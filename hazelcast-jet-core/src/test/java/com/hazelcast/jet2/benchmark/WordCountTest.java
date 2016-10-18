@@ -27,10 +27,12 @@ import com.hazelcast.jet2.impl.IMapWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +48,7 @@ import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
@@ -87,7 +89,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     }
 
 
-    @Test
+    @Test @Ignore
     public void test() {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));

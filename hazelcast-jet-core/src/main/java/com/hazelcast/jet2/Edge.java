@@ -162,6 +162,7 @@ public class Edge implements IdentifiedDataSerializable {
 
         out.writeInt(priority);
 
+        out.writeObject(forwardingPattern);
         out.writeObject(partitioner);
     }
 

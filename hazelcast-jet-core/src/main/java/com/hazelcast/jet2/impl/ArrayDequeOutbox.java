@@ -35,7 +35,9 @@ class ArrayDequeOutbox implements Outbox {
 
     @Override
     public void add(Object item) {
-        add(0, item);
+        for (ArrayDeque<Object> queue : queues) {
+            queue.add(item);
+        }
     }
 
     @Override

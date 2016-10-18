@@ -81,7 +81,7 @@ public class IMapWriter extends AbstractProcessor {
     private static class Supplier implements ProcessorSupplier {
 
         private final String name;
-        private IMap<Object, Object> map;
+        private transient IMap<Object, Object> map;
 
         public Supplier(String name) {
             this.name = name;
