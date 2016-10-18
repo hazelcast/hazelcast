@@ -32,7 +32,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
@@ -101,7 +100,7 @@ class ExecutionService {
         }
     }
 
-    private static class BlockingWorker implements Runnable {
+    private static final class BlockingWorker implements Runnable {
         private final TaskletTracker tracker;
 
         private BlockingWorker(TaskletTracker tracker) {
@@ -109,12 +108,13 @@ class ExecutionService {
         }
 
         @Override
+        @SuppressWarnings("checkstyle:innerassignment")
         public void run() {
             final Tasklet t = tracker.tasklet;
             try {
                 t.init();
                 long idleCount = 0;
-                for (ProgressState result; !(result = t.call()).isDone();) {
+                for (ProgressState result; !(result = t.call()).isDone(); ) {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {

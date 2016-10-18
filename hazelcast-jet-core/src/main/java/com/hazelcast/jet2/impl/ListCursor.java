@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet2.impl;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.RandomAccess;
 
@@ -26,7 +25,7 @@ import java.util.RandomAccess;
  *
  * @param <T>
  */
-class ListCursor<T> implements Cursor<T>  {
+class ListCursor<T> implements Cursor<T> {
 
     protected int index;
     protected final List<T> list;

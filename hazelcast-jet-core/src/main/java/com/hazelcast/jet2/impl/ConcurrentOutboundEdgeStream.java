@@ -21,10 +21,8 @@ import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Partitioner;
 import com.hazelcast.util.Preconditions;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.List;
 
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet2.impl.ProgressState.DONE;
