@@ -54,6 +54,17 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
         sendToOwner(invocation);
     }
 
+    @Override
+    public ClientConnection getConnection(int partitionId)
+            throws IOException {
+        ClientClusterService clusterService = client.getClientClusterService();
+        Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
+        if (ownerConnectionAddress == null) {
+            throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
+        }
+        return (ClientConnection) connectionManager.getConnection(ownerConnectionAddress);
+    }
+
     private void sendToOwner(ClientInvocation invocation) throws IOException {
         ClientClusterService clusterService = client.getClientClusterService();
         Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();

@@ -31,7 +31,6 @@ import com.hazelcast.spi.Operation;
  */
 public class CacheGetConfigMessageTask
         extends AbstractCacheMessageTask<CacheGetConfigCodec.RequestParameters> {
-
     public CacheGetConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -48,7 +47,8 @@ public class CacheGetConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        final Data responseData = nodeEngine.toData(response);
+        Data responseData = serializeCacheConfig(response);
+
         return CacheGetConfigCodec.encodeResponse(responseData);
     }
 

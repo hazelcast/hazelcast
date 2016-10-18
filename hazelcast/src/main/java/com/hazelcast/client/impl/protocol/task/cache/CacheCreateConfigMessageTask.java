@@ -20,12 +20,14 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.LegacyCacheConfig;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.security.Permission;
 
@@ -35,7 +37,7 @@ import java.security.Permission;
  * @see CacheCreateConfigOperation
  */
 public class CacheCreateConfigMessageTask
-        extends AbstractPartitionMessageTask<CacheCreateConfigCodec.RequestParameters> {
+        extends AbstractCacheMessageTask<CacheCreateConfigCodec.RequestParameters> {
 
     public CacheCreateConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,8 +45,26 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        CacheConfig cacheConfig = (CacheConfig) nodeEngine.toObject(parameters.cacheConfig);
+        CacheConfig cacheConfig = extractCacheConfigFromMessage();
+
         return new CacheCreateConfigOperation(cacheConfig, parameters.createAlsoOnOthers);
+    }
+
+    private CacheConfig extractCacheConfigFromMessage() {
+        int clientVersion = getClientVersion();
+        CacheConfig cacheConfig = null;
+        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == clientVersion) {
+            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
+            if (compatibilityEnabled) {
+                LegacyCacheConfig legacyCacheConfig = nodeEngine.toObject(parameters.cacheConfig, LegacyCacheConfig.class);
+                if (null == legacyCacheConfig) {
+                    return null;
+                }
+                return legacyCacheConfig.getConfigAndReset();
+            }
+        }
+
+        return (CacheConfig) nodeEngine.toObject(parameters.cacheConfig);
     }
 
     @Override
@@ -54,9 +74,8 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        CacheService service = getService(getServiceName());
-        final Data responseData = service.toData(response);
-        return CacheCreateConfigCodec.encodeResponse(serializationService.toData(responseData));
+        Data responseData = serializeCacheConfig(response);
+        return CacheCreateConfigCodec.encodeResponse(responseData);
     }
 
     @Override

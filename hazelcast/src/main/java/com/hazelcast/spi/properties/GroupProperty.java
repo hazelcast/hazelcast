@@ -611,6 +611,13 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.discovery.public.ip.enabled", false);
 
     /**
+     * When this property is true, if the server can not determine the connected client version, it shall assume that it is of
+     * 3.6.x version client. This property is especially needed if you are using ICache (or JCache).
+     */
+    public static final HazelcastProperty COMPATIBILITY_3_6_CLIENT_ENABLED
+            = new HazelcastProperty("hazelcast.compatibility.3.6.client", false);
+
+    /**
      * Hazelcast serialization version. This is single byte value between 1 and Max supported serialization version.
      *
      * @see BuildInfo#getSerializationVersion()
