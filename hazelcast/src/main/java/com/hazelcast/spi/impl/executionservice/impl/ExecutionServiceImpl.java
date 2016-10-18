@@ -31,6 +31,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.CachedExecutorServiceDelegate;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.NamedThreadPoolExecutor;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
@@ -47,7 +48,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -119,7 +119,8 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         }
         );
 
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new SingleExecutorThreadFactory(threadGroup, "scheduled"));
+        ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(threadGroup, "scheduled");
+        scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
         enableRemoveOnCancelIfAvailable();
 
         final int coreSize = Runtime.getRuntime().availableProcessors();
