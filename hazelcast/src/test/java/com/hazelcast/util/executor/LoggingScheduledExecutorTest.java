@@ -156,9 +156,6 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
         assertEquals(future1.hashCode(), future1.hashCode());
         assertNotEquals(future1.hashCode(), future2.hashCode());
-
-        future1.cancel(true);
-        future2.cancel(true);
     }
 
     private static class FailedRunnable implements Runnable {
