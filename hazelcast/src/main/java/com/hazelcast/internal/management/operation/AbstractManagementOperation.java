@@ -26,5 +26,4 @@ public abstract class AbstractManagementOperation extends Operation implements I
     public int getFactoryId() {
         return ManagementDataSerializerHook.F_ID;
     }
-
 }

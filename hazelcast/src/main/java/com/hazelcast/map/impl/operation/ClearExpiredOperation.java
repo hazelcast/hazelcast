@@ -21,23 +21,20 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.AbstractLocalOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
-import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Clear expired records.
+ * Clears expired records.
  */
-public class ClearExpiredOperation extends Operation implements PartitionAwareOperation, MutatingOperation,
-                                                                IdentifiedDataSerializable {
+public class ClearExpiredOperation extends AbstractLocalOperation implements PartitionAwareOperation, MutatingOperation,
+        IdentifiedDataSerializable {
 
     private int expirationPercentage;
 
@@ -86,29 +83,9 @@ public class ClearExpiredOperation extends Operation implements PartitionAwareOp
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        throw new UnsupportedOperationException("ClearExpiredOperation is only used locally.");
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        throw new UnsupportedOperationException("ClearExpiredOperation is only used locally.");
-    }
-
-    @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
         sb.append(", expirationPercentage=").append(expirationPercentage);
-    }
-
-    @Override
-    public int getFactoryId() {
-        throw new UnsupportedOperationException("ClearExpiredOperation is only used locally.");
-    }
-
-    @Override
-    public int getId() {
-        throw new UnsupportedOperationException("ClearExpiredOperation is only used locally.");
     }
 }

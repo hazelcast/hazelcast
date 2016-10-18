@@ -17,24 +17,16 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
+import com.hazelcast.spi.AbstractLocalOperation;
 
 /**
  *  Operation to fetch Map configuration.
  */
-public class GetMapConfigOperation extends AbstractManagementOperation {
+public class GetMapConfigOperation extends AbstractLocalOperation {
 
     private String mapName;
     private MapConfig mapConfig;
-
-    @SuppressWarnings("unused")
-    public GetMapConfigOperation() {
-    }
 
     public GetMapConfigOperation(String mapName) {
         this.mapName = mapName;
@@ -49,20 +41,5 @@ public class GetMapConfigOperation extends AbstractManagementOperation {
     @Override
     public Object getResponse() {
         return mapConfig;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
-    }
-
-    @Override
-    public int getId() {
-        return ManagementDataSerializerHook.GET_MAP_CONFIG;
     }
 }

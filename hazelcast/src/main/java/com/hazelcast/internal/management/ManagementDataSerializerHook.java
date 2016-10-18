@@ -16,10 +16,7 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
-import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
-import com.hazelcast.internal.management.operation.ThreadDumpOperation;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
@@ -36,41 +33,26 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(MANAGEMENT_DS_FACTORY, MANAGEMENT_DS_FACTORY_ID);
 
-    public static final int CHANGE_WAN = 0;
-    public static final int GET_MAP_CONFIG = 1;
-    public static final int SCRIPT_EXECUTOR = 2;
-    public static final int THREAD_DUMP = 3;
-    public static final int UPDATE_MANAGEMENT_CENTER_URL = 4;
-    public static final int UPDATE_MAP_CONFIG = 5;
+    public static final int SCRIPT_EXECUTOR = 0;
+    public static final int UPDATE_MANAGEMENT_CENTER_URL = 1;
+    public static final int UPDATE_MAP_CONFIG = 2;
 
     private static final int LEN = UPDATE_MAP_CONFIG + 1;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
                 = new ConstructorFunction[LEN];
 
-        constructors[CHANGE_WAN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ChangeWanStateOperation();
-            }
-        };
-        constructors[GET_MAP_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GetMapConfigOperation();
-            }
-        };
         constructors[SCRIPT_EXECUTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ScriptExecutorOperation();
-            }
-        };
-        constructors[THREAD_DUMP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ThreadDumpOperation();
             }
         };
         constructors[UPDATE_MANAGEMENT_CENTER_URL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

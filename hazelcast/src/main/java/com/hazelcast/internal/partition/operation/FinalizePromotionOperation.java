@@ -134,9 +134,4 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
         final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(getPartitionId());
         partition.setMigrating(false);
     }
-
-    @Override
-    public int getId() {
-        throw new UnsupportedOperationException();
-    }
 }
