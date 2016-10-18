@@ -37,8 +37,10 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -103,11 +105,15 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                         .partitioned((o, n) -> ((Map.Entry<String, Integer>) o).getKey().hashCode() % n))
                 .addEdge(new Edge(combiner, consumer));
 
-        for (int i = 0; i < 10; i++) {
+        List<Long> times = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
             long start = System.currentTimeMillis();
             jetEngine.newJob(dag).execute();
-            System.out.println("jet2: totalTime=" + (System.currentTimeMillis() - start));
+            long time = System.currentTimeMillis() - start;
+            times.add(time);
+            System.out.println("jet2: totalTime=" + time);
         }
+        System.out.println(times.stream().mapToLong(l -> l).summaryStatistics());
         IMap<String, Long> consumerMap = instance.getMap("counts");
         assertCounts(consumerMap);
 

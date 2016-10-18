@@ -23,11 +23,21 @@ import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.jet2.ProcessorSupplier;
 
 import javax.annotation.Nonnull;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class IMapWriter extends AbstractProcessor {
 
+    private final static int BATCH_SIZE = 2048;
+
     private final IMap<Object, Object> map;
+    private final ArrayMap<Object, Object> buffer = new ArrayMap<>(BATCH_SIZE);
 
     public IMapWriter(IMap<Object, Object> map) {
         this.map = map;
@@ -41,7 +51,21 @@ public class IMapWriter extends AbstractProcessor {
     @Override
     public boolean process(int ordinal, Object item) {
         Map.Entry<Object, Object> entry = (Map.Entry<Object, Object>) item;
-        map.set(entry.getKey(), entry.getValue());
+        buffer.add(entry);
+        if (buffer.size() == BATCH_SIZE) {
+            flush();
+        }
+        return true;
+    }
+
+    private void flush() {
+        map.putAll(buffer);
+        buffer.clear();
+    }
+
+    @Override
+    public boolean complete() {
+        flush();
         return true;
     }
 
@@ -73,4 +97,37 @@ public class IMapWriter extends AbstractProcessor {
             return new IMapWriter(map);
         }
     }
+
+    private static class ArrayMap<K, V> extends AbstractMap<K, V> {
+
+        private List<Entry<K, V>> entries;
+        private ArraySet set = new ArraySet();
+
+        public ArrayMap(int size) {
+            entries = new ArrayList<>(size);
+        }
+
+        @Override
+        public Set<Entry<K, V>> entrySet() {
+            return set;
+        }
+
+        public void add(Map.Entry<K, V> entry) {
+            entries.add(entry);
+        }
+
+        private class ArraySet extends AbstractSet<Map.Entry<K, V>> {
+
+            @Override
+            public Iterator<Entry<K, V>> iterator() {
+                return entries.iterator();
+            }
+
+            @Override
+            public int size() {
+                return entries.size();
+            }
+        }
+    }
+
 }
