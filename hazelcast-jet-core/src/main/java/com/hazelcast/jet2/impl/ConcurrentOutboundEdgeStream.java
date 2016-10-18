@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Partitioner;
 import com.hazelcast.util.Preconditions;
-
 import java.util.Arrays;
 import java.util.BitSet;
 

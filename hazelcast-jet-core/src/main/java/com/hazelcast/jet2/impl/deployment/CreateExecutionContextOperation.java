@@ -14,47 +14,43 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
+package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
-class ExecuteJobOperation extends Operation {
+public class CreateExecutionContextOperation extends Operation {
 
     private String name;
-    private DAG dag;
+    private JetEngineConfig config;
 
-    public ExecuteJobOperation() {
+    public CreateExecutionContextOperation() {
     }
 
-    public ExecuteJobOperation(String name, DAG dag) {
+    public CreateExecutionContextOperation(String name, JetEngineConfig config) {
         this.name = name;
-        this.dag = dag;
+        this.config = config;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(name);
-        executionContext.execute(dag).get();
+        service.createContext(name, config);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-
         out.writeUTF(name);
-        out.writeObject(dag);
+        out.writeObject(config);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-
         name = in.readUTF();
-        dag = in.readObject();
+        config = in.readObject();
     }
 }

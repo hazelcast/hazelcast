@@ -14,47 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
+package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.impl.ExecutionContext;
+import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
-class ExecuteJobOperation extends Operation {
+public class DeployChunkOperation extends Operation {
+    private String engineName;
+    private ResourceChunk chunk;
 
-    private String name;
-    private DAG dag;
+    @SuppressWarnings("unused")
+    public DeployChunkOperation() {
 
-    public ExecuteJobOperation() {
     }
 
-    public ExecuteJobOperation(String name, DAG dag) {
-        this.name = name;
-        this.dag = dag;
+    public DeployChunkOperation(String name, ResourceChunk chunk) {
+        this.engineName = name;
+        this.chunk = chunk;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(name);
-        executionContext.execute(dag).get();
+        ExecutionContext executionContext = service.getExecutionContext(engineName);
+        executionContext.getDeploymentStore().receiveChunk(chunk);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
-        out.writeUTF(name);
-        out.writeObject(dag);
+        out.writeUTF(engineName);
+        out.writeObject(chunk);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
-        name = in.readUTF();
-        dag = in.readObject();
+        engineName = in.readUTF();
+        chunk = in.readObject();
     }
 }

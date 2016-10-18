@@ -29,4 +29,9 @@ public class MockProcessorContext implements ProcessorContext {
     public int parallelism() {
         return 0;
     }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return null;
+    }
 }

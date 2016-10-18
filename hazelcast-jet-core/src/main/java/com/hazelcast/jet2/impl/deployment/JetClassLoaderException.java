@@ -14,30 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.core.HazelcastInstance;
+import java.io.IOException;
 
-/**
- * Javadoc pending
- */
-public interface ProcessorContext {
+public class JetClassLoaderException extends RuntimeException {
+    public JetClassLoaderException(String message) {
+        super(message);
+    }
 
-    /**
-     * @return
-     */
-    HazelcastInstance getHazelcastInstance();
-
-    /**
-     * @return
-     */
-    int parallelism();
-
-    /**
-     * @return
-     */
-    ClassLoader getClassLoader();
+    public JetClassLoaderException(IOException e) {
+        super(e);
+    }
 }
-
-
 

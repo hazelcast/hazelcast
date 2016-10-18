@@ -14,30 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2;
+package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.core.HazelcastInstance;
+import java.io.Serializable;
 
-/**
- * Javadoc pending
- */
-public interface ProcessorContext {
-
-    /**
-     * @return
-     */
-    HazelcastInstance getHazelcastInstance();
-
-    /**
-     * @return
-     */
-    int parallelism();
-
-    /**
-     * @return
-     */
-    ClassLoader getClassLoader();
+public enum DeploymentType implements Serializable {
+    JAR,
+    CLASS,
+    DATA
 }
-
-
-

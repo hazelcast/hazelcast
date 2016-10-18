@@ -17,13 +17,11 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.jet2.JetEngine;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -34,9 +32,7 @@ public class JetService implements ManagedService, RemoteService {
 
     private NodeEngine nodeEngine;
 
-    private ConcurrentMap<String, JetEngineImpl> engines = new ConcurrentHashMap<>();
-    private ConstructorFunction<String, JetEngineImpl> constructor = (name) ->
-            new JetEngineImpl(name, nodeEngine, this);
+    private ConcurrentMap<String, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
 
 
     public JetService(NodeEngine nodeEngine) {
@@ -60,19 +56,25 @@ public class JetService implements ManagedService, RemoteService {
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        return ConcurrencyUtil.getOrPutSynchronized(engines, objectName, engines, constructor);
+        return new JetEngineImpl(objectName, nodeEngine, this);
 
     }
 
     @Override
     public void destroyDistributedObject(String objectName) {
-        JetEngine engine = engines.remove(objectName);
-        if (engine != null) {
-            engine.destroy();
-        }
     }
 
-    public JetEngineImpl getEngine(String engineName) {
-        return engines.get(engineName);
+    public void createContext(String name, JetEngineConfig config) {
+        DeploymentStore deploymentStore = new DeploymentStore(config.getDeploymentDirectory());
+        ExecutionService executionService = new ExecutionService(config);
+        ExecutionContext executionContext = new ExecutionContext(nodeEngine, executionService,
+                deploymentStore, config);
+        executionContexts.put(name, executionContext);
     }
+
+    public ExecutionContext getExecutionContext(String name) {
+        return executionContexts.get(name);
+    }
+
+
 }

@@ -18,6 +18,7 @@ package com.hazelcast.jet2;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet2.impl.deployment.ResourceChunk;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -29,6 +30,7 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int DAG = 0;
     public static final int VERTEX = 1;
     public static final int EDGE = 2;
+    public static final int RESOURCE_CHUNK = 3;
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
 
 
@@ -52,6 +54,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new Edge();
                 case VERTEX:
                     return new Vertex();
+                case RESOURCE_CHUNK:
+                    return new ResourceChunk();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
