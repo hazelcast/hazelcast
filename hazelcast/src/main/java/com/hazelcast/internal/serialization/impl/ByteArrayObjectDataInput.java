@@ -601,6 +601,12 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     }
 
     @Override
+    public <T> T readObject(Class aClass)
+            throws IOException {
+        return service.readObject(this, aClass);
+    }
+
+    @Override
     public final Data readData() throws IOException {
         byte[] bytes = readByteArray();
         Data data = bytes == null ? null : new HeapData(bytes);

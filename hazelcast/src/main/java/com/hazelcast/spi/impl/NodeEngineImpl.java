@@ -308,6 +308,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
+    public <T> T toObject(Object object, Class klazz) {
+        return serializationService.toObject(object, klazz);
+    }
+
+    @Override
     public boolean isActive() {
         return isRunning();
     }

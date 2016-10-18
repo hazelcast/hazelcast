@@ -27,6 +27,8 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.nio.serialization.TypedDataSerializable;
+import com.hazelcast.nio.serialization.TypedStreamDeserializer;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
@@ -49,7 +51,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
  * com.hazelcast.internal.serialization.InternalSerializationService)}.
  * If the way the DataSerializer serializes values is changed the extract method needs to be changed too!
  */
-final class DataSerializableSerializer implements StreamSerializer<DataSerializable> {
+final class DataSerializableSerializer implements StreamSerializer<DataSerializable>, TypedStreamDeserializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
@@ -99,7 +101,26 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
 
     @Override
     public DataSerializable read(ObjectDataInput in) throws IOException {
-        final DataSerializable ds;
+        return readInternal(in, null);
+    }
+
+    @Override
+    public DataSerializable read(ObjectDataInput in, Class aClass)
+            throws IOException {
+        return readInternal(in, aClass);
+    }
+
+    private DataSerializable readInternal(ObjectDataInput in, Class aClass)
+            throws IOException {
+        DataSerializable ds = null;
+        if (null != aClass) {
+            try {
+                ds = (DataSerializable) aClass.newInstance();
+            } catch (Exception e) {
+                throw new HazelcastSerializationException("Requested class " + aClass + " could not be instantiated.", e);
+            }
+        }
+
         final boolean identified = in.readBoolean();
         int id = 0;
         int factoryId = 0;
@@ -114,15 +135,18 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                     throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
                 }
                 id = in.readInt();
-                ds = dsf.create(id);
-                if (ds == null) {
-                    throw new HazelcastSerializationException(dsf
-                            + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
+                if (null == aClass) {
+                    ds = dsf.create(id);
+                    if (ds == null) {
+                        throw new HazelcastSerializationException(dsf
+                                + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
+                    }
                 }
-                // TODO: @mm - we can check if DS class is final.
             } else {
                 className = in.readUTF();
-                ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
+                if (null == aClass) {
+                    ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
+                }
             }
             ds.readData(in);
             return ds;
@@ -156,7 +180,11 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             out.writeInt(ds.getFactoryId());
             out.writeInt(ds.getId());
         } else {
-            out.writeUTF(obj.getClass().getName());
+            if (obj instanceof TypedDataSerializable) {
+                out.writeUTF(((TypedDataSerializable) obj).getClassType().getName());
+            } else {
+                out.writeUTF(obj.getClass().getName());
+            }
         }
         obj.writeData(out);
     }
