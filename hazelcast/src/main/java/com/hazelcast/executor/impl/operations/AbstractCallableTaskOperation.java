@@ -18,12 +18,14 @@ package com.hazelcast.executor.impl.operations;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -31,7 +33,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-abstract class AbstractCallableTaskOperation extends Operation  {
+abstract class AbstractCallableTaskOperation extends Operation implements IdentifiedDataSerializable {
 
     protected String name;
     protected String uuid;
@@ -125,5 +127,10 @@ abstract class AbstractCallableTaskOperation extends Operation  {
         super.toString(sb);
 
         sb.append(", name=").append(name);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ExecutorDataSerializerHook.F_ID;
     }
 }
