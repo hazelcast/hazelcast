@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet2.impl.deployment.DeploymentConfig;
 import com.hazelcast.jet2.impl.deployment.DeploymentType;
 import java.io.File;
 import java.io.IOException;

@@ -28,11 +28,11 @@ public class DeploymentDescriptor implements Serializable {
     }
 
     public DeploymentType getDeploymentType() {
-        return this.deploymentType;
+        return deploymentType;
     }
 
     public String getId() {
-        return this.id;
+        return id;
     }
 
     @Override

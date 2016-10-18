@@ -1,23 +1,12 @@
 package com.hazelcast.jet2.impl.deployment.processors;
 
-import com.hazelcast.jet2.Inbox;
-import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.Processor;
-import javax.annotation.Nonnull;
+import com.hazelcast.jet2.impl.AbstractProcessor;
 
 import static org.junit.Assert.fail;
 
-public class LoadCarIsolated implements Processor {
+public class LoadCarIsolated extends AbstractProcessor {
 
-    @Override
-    public void init(@Nonnull Outbox outbox) {
-
-    }
-
-    @Override
-    public void process(int ordinal, Inbox inbox) {
-        while (inbox.poll() != null) {
-        }
+    public LoadCarIsolated() {
     }
 
     @Override
@@ -33,5 +22,6 @@ public class LoadCarIsolated implements Processor {
             fail();
         } catch (ClassNotFoundException ignored) {
         }
-        return true;    }
+        return true;
+    }
 }

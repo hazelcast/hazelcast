@@ -24,7 +24,7 @@ import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.Job;
 import com.hazelcast.jet2.impl.deployment.ChunkIterator;
 import com.hazelcast.jet2.impl.deployment.DeployChunkOperation;
-import com.hazelcast.jet2.impl.deployment.DeploymentConfig;
+import com.hazelcast.jet2.DeploymentConfig;
 import com.hazelcast.jet2.impl.deployment.ResourceChunk;
 import com.hazelcast.jet2.impl.deployment.UpdateDeploymentCatalogOperation;
 import com.hazelcast.logging.ILogger;

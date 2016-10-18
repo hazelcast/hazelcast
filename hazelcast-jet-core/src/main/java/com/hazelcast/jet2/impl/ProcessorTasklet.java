@@ -19,6 +19,7 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.util.Preconditions;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,8 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
 
 public class ProcessorTasklet implements Tasklet {
+
+    private static final int DEFAULT_HIGH_WATER_MARK = 2048;
 
     private final Processor processor;
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
@@ -60,7 +63,7 @@ public class ProcessorTasklet implements Tasklet {
                 .entrySet().stream()
                 .map(Entry::getValue).collect(toCollection(ArrayDeque::new));
         this.inbox = new ArrayDequeWithObserver();
-        this.outbox = new ArrayDequeOutbox(outstreams.size());
+        this.outbox = new ArrayDequeOutbox(outstreams.size(), DEFAULT_HIGH_WATER_MARK);
         this.outstreams = outstreams.stream().sorted(comparing(OutboundEdgeStream::ordinal))
                 .toArray(OutboundEdgeStream[]::new);
         this.instreamCursor = popInstreamGroup();

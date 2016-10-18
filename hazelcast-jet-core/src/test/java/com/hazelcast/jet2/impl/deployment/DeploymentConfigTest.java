@@ -1,7 +1,7 @@
 package com.hazelcast.jet2.impl.deployment;
 
 import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.jet2.impl.deployment.DeploymentConfig;
+import com.hazelcast.jet2.DeploymentConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.File;

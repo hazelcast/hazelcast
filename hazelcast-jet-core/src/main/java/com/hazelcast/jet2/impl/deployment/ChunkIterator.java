@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet2.impl.deployment;
 
+import com.hazelcast.jet2.DeploymentConfig;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

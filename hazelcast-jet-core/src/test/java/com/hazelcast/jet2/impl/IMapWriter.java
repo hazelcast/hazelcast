@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 public class IMapWriter extends AbstractProcessor {
@@ -49,9 +48,7 @@ public class IMapWriter extends AbstractProcessor {
 
     @Override
     public void process(int ordinal, Inbox inbox) {
-        for (Map.Entry e; (e = (Entry) inbox.poll()) != null;) {
-            buffer.add(e);
-        }
+        inbox.drainTo(buffer.entries);
         flush();
     }
 
@@ -67,6 +64,7 @@ public class IMapWriter extends AbstractProcessor {
     }
 
     private void flush() {
+        //noinspection unchecked
         map.putAll(buffer);
         buffer.clear();
     }
@@ -105,6 +103,7 @@ public class IMapWriter extends AbstractProcessor {
         }
 
         @Override
+        @Nonnull
         public Set<Entry> entrySet() {
             return set;
         }
@@ -115,6 +114,7 @@ public class IMapWriter extends AbstractProcessor {
 
         private class ArraySet extends AbstractSet<Map.Entry> {
             @Override
+            @Nonnull
             public Iterator<Entry> iterator() {
                 return entries.iterator();
             }

@@ -155,7 +155,7 @@ public class ProcessorTaskletTest {
         return t;
     }
 
-    private static class MockProcessor implements Processor {
+    private static class MockProcessor extends AbstractProcessor {
         private ArrayDequeOutbox outbox;
 
         @Override

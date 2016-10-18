@@ -16,14 +16,52 @@
 
 package com.hazelcast.jet2;
 
+import java.util.Collection;
+import java.util.function.Consumer;
+
 /**
  * Javadoc pending.
  */
 public interface Inbox {
 
+    /**
+     * Javadoc pending
+     */
     Object peek();
 
+    /**
+     * Javadoc pending
+     */
     Object poll();
 
+    /**
+     * Javadoc pending
+     */
     Object remove();
+
+    /**
+     * Javadoc pending
+     */
+    @SuppressWarnings("checkstyle:innerassignment")
+    default <E> int drainTo(Collection<E> collection) {
+        int drained = 0;
+        //noinspection unchecked
+        for (E o; (o = (E) poll()) != null; drained++) {
+            collection.add(o);
+        }
+        return drained;
+    }
+
+    /**
+     * Javadoc pending
+     */
+    @SuppressWarnings("checkstyle:innerassignment")
+    default <E> int drain(Consumer<E> consumer) {
+        int consumed = 0;
+        //noinspection unchecked
+        for (E o; (o = (E) poll()) != null; consumed++) {
+            consumer.accept(o);
+        }
+        return consumed;
+    }
 }

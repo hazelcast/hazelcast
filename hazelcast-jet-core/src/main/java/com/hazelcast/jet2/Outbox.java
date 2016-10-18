@@ -29,4 +29,14 @@ public interface Outbox {
      * Javadoc pending
      */
     void add(int ordinal, Object item);
+
+    /**
+     * Javadoc pending
+     */
+    boolean isHighWater();
+
+    /**
+     * Javadoc pending
+     */
+    boolean isHighWater(int ordinal);
 }

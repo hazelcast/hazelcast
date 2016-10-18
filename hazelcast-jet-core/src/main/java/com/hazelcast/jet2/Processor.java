@@ -32,7 +32,7 @@ public interface Processor {
     /**
      * Initialize the processor with an {@link Outbox} that
      * can accept processing results. This method will be called exactly once and strictly before any
-     * calls to {@link #process(int, Object)} or {@link #complete(int)}.
+     * calls to {@link #process(int, Inbox)} or {@link #complete(int)}.
      */
     void init(@Nonnull Outbox outbox);
 

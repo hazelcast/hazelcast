@@ -32,6 +32,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -114,12 +115,11 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
             long start = System.currentTimeMillis();
             jetEngine.newJob(dag).execute();
             long time = System.currentTimeMillis() - start;
-            if (i > warmupCount) {
-                times.add(time);
-            }
+            times.add(time);
             System.out.println("jet2: totalTime=" + time);
         }
-        System.out.println(times.stream().mapToLong(l -> l).summaryStatistics());
+        System.out.println(times.stream()
+                .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
         IMap<String, Long> consumerMap = instance.getMap("counts");
         assertCounts(consumerMap);
 
@@ -170,7 +170,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 iterator = counts.entrySet().iterator();
             }
 
-            for (int i = 0; i < 1024 && iterator.hasNext(); i++) {
+            while(iterator.hasNext() && !getOutbox().isHighWater()) {
                 emit(iterator.next());
             }
             return !iterator.hasNext();

@@ -34,24 +34,21 @@ import java.util.stream.Collectors;
 
 public class IMapReader extends AbstractProducer {
 
-    public final static int DEFAULT_BATCH_SIZE = 256;
     public final static int DEFAULT_FETCH_SIZE = 16384;
 
     private final MapProxyImpl map;
     private final List<Integer> partitions;
     private final int fetchSize;
-    private final int batchSize;
 
     private List<Iterator> iterators;
 
     private CircularCursor<Iterator> iteratorCursor;
 
     protected IMapReader(MapProxyImpl map,
-                         List<Integer> partitions, int fetchSize, int batchSize) {
+                         List<Integer> partitions, int fetchSize) {
         this.map = map;
         this.partitions = partitions;
         this.fetchSize = fetchSize;
-        this.batchSize = batchSize;
         this.iterators = new ArrayList<>();
     }
 
@@ -65,7 +62,6 @@ public class IMapReader extends AbstractProducer {
 
     @Override
     public boolean complete() {
-        int count = 0;
         do {
             Iterator currIterator = iteratorCursor.value();
             if (!currIterator.hasNext()) {
@@ -73,7 +69,7 @@ public class IMapReader extends AbstractProducer {
                 continue;
             }
             emit(currIterator.next());
-            if (count++ > batchSize) {
+            if (getOutbox().isHighWater()) {
                 return false;
             }
         } while (iteratorCursor.advance());
@@ -86,26 +82,24 @@ public class IMapReader extends AbstractProducer {
     }
 
     public static ProcessorSupplier supplier(String mapName) {
-        return new Supplier(mapName, DEFAULT_FETCH_SIZE, DEFAULT_BATCH_SIZE);
+        return new Supplier(mapName, DEFAULT_FETCH_SIZE);
     }
 
-    public static ProcessorSupplier supplier(String mapName, int batchSize, int fetchSize) {
-        return new Supplier(mapName, fetchSize, batchSize);
+    public static ProcessorSupplier supplier(String mapName, int fetchSize) {
+        return new Supplier(mapName, fetchSize);
     }
 
     private static class Supplier implements ProcessorSupplier {
 
         private final String name;
         private final int fetchSize;
-        private final int batchSize;
         private int index;
         private transient MapProxyImpl map;
         private transient Map<Integer, List<Integer>> partitionGroups;
 
-        public Supplier(String name, int fetchSize, int batchSize) {
+        public Supplier(String name, int fetchSize) {
             this.name = name;
             this.fetchSize = fetchSize;
-            this.batchSize = batchSize;
         }
 
         @Override
@@ -123,7 +117,7 @@ public class IMapReader extends AbstractProducer {
 
         @Override
         public Processor get() {
-            return new IMapReader(map, partitionGroups.get(index++), batchSize, fetchSize);
+            return new IMapReader(map, partitionGroups.get(index++), fetchSize);
         }
     }
 }

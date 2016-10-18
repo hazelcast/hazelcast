@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl.deployment;
+package com.hazelcast.jet2;
+
+import com.hazelcast.jet2.impl.deployment.DeploymentDescriptor;
+import com.hazelcast.jet2.impl.deployment.DeploymentType;
 
 import java.io.IOException;
 import java.io.Serializable;
