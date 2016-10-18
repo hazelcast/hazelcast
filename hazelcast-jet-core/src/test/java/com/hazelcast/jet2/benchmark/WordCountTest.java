@@ -48,10 +48,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
-    private static final int COUNT = 100_000;
-    private static final int DISTINCT = 100_000;
-
-    private static IMap<Integer, String> map;
+    private static final int COUNT = 1_000_000;
+    private static final int DISTINCT = 1_000_000;
 
     private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
@@ -71,7 +69,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     public void setUp() {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
-        map = instance.getMap("words");
+        IMap<Integer, String> map = instance.getMap("words");
         int row = 0;
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < COUNT; i++) {

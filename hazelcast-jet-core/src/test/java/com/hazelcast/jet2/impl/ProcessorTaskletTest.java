@@ -18,7 +18,6 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -149,7 +148,7 @@ public class ProcessorTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        final ProcessorTasklet t = new ProcessorTasklet(new MockProcessorContext(),
+        final ProcessorTasklet t = new ProcessorTasklet(
                 processor, instreams, outstreams);
         t.init();
         return t;

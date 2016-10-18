@@ -121,7 +121,7 @@ class JetEngineImpl extends AbstractDistributedObject<JetService> implements Jet
                 }
 
                 Processor processor = supplier.get();
-                tasks.add(new ProcessorTasklet(context, processor, inboundStreams, outboundStreams));
+                tasks.add(new ProcessorTasklet(processor, inboundStreams, outboundStreams));
             }
         }
 

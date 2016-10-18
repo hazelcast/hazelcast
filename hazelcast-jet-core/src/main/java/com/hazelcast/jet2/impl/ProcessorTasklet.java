@@ -47,8 +47,7 @@ public class ProcessorTasklet implements Tasklet {
     private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(ProcessorContext context,
-                            Processor processor,
+    public ProcessorTasklet(Processor processor,
                             List<InboundEdgeStream> instreams,
                             List<OutboundEdgeStream> outstreams
     ) {
@@ -69,6 +68,11 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void init() {
         processor.init(outbox);
+    }
+
+    @Override
+    public boolean isBlocking() {
+        return processor.isBlocking();
     }
 
     @Override
