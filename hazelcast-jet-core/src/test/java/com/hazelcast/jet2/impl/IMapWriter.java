@@ -35,10 +35,10 @@ import java.util.Set;
 
 public class IMapWriter extends AbstractProcessor {
 
-    private final IMap<Object, Object> map;
-    private final ArrayMap<Object, Object> buffer = new ArrayMap<>();
+    private final IMap map;
+    private final ArrayMap buffer = new ArrayMap();
 
-    public IMapWriter(IMap<Object, Object> map) {
+    public IMapWriter(IMap map) {
         this.map = map;
     }
 
@@ -49,7 +49,7 @@ public class IMapWriter extends AbstractProcessor {
 
     @Override
     public void process(int ordinal, Inbox inbox) {
-        for (Map.Entry<Object, Object> e; (e = (Entry<Object, Object>) inbox.poll()) != null;) {
+        for (Map.Entry e; (e = (Entry) inbox.poll()) != null;) {
             buffer.add(e);
         }
         flush();
@@ -78,7 +78,7 @@ public class IMapWriter extends AbstractProcessor {
     private static class Supplier implements ProcessorSupplier {
 
         private final String name;
-        private transient IMap<Object, Object> map;
+        private transient IMap map;
 
         public Supplier(String name) {
             this.name = name;
@@ -95,27 +95,27 @@ public class IMapWriter extends AbstractProcessor {
         }
     }
 
-    private static class ArrayMap<K, V> extends AbstractMap<K, V> {
+    private static class ArrayMap extends AbstractMap {
 
-        private List<Entry<K, V>> entries;
-        private ArraySet set = new ArraySet();
+        private final List<Entry> entries;
+        private final ArraySet set = new ArraySet();
 
         public ArrayMap() {
             entries = new ArrayList<>();
         }
 
         @Override
-        public Set<Entry<K, V>> entrySet() {
+        public Set<Entry> entrySet() {
             return set;
         }
 
-        public void add(Map.Entry<K, V> entry) {
+        public void add(Map.Entry entry) {
             entries.add(entry);
         }
 
-        private class ArraySet extends AbstractSet<Map.Entry<K, V>> {
+        private class ArraySet extends AbstractSet<Map.Entry> {
             @Override
-            public Iterator<Entry<K, V>> iterator() {
+            public Iterator<Entry> iterator() {
                 return entries.iterator();
             }
 

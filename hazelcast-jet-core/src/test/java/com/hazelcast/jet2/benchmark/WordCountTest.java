@@ -20,6 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngine;
+import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.jet2.impl.IMapReader;
@@ -53,7 +54,7 @@ import static org.junit.Assert.assertEquals;
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int COUNT = 1_000_000;
-    private static final int DISTINCT = 1_000_000;
+    private static final int DISTINCT = 100_000;
 
     private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;

@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
@@ -103,6 +104,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addEdge(new Edge("edge", generator, combiner).partitioned());
 
         List<Long> times = new ArrayList<>();
+        final int warmupCount = 10;
         for (int i = 0; i < 50; i++) {
             long start = System.currentTimeMillis();
             JobConfig jobConfig = new JobConfig();
@@ -110,7 +112,9 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
             Job job = JetEngine.getJob(instance, "word count", dag);
             job.execute().get();
             long time = System.currentTimeMillis() - start;
-            times.add(time);
+            if (i > warmupCount) {
+                times.add(time);
+            }
             System.out.println("jet: totalTime=" + (System.currentTimeMillis() - start));
         }
         System.out.println(times.stream().mapToLong(l -> l).summaryStatistics());
@@ -129,7 +133,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     public static class Generator implements Processor<Pair<Long, String>, Pair<String, Long>> {
 
-        static final Pattern PATTERN = Pattern.compile("\\W+");
+        static final Pattern PATTERN = Pattern.compile("\\w+");
 
         @Override
         public boolean process(InputChunk<Pair<Long, String>> input,
@@ -138,11 +142,10 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
             for (Pair<Long, String> pair : input) {
 
                 // split each line into lowercase words
-                String[] split = PATTERN.split(pair.getValue().toLowerCase());
-
-                for (String word : split) {
+                Matcher m = PATTERN.matcher(pair.getValue().toLowerCase());
+                while (m.find()) {
                     // emit each word with count of 1
-                    output.collect(new JetPair<>(word, 1L));
+                    output.collect(new JetPair<>(m.group(), 1L));
                 }
             }
             return true;
