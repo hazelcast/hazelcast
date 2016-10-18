@@ -85,4 +85,9 @@ class CompletableFutureTask implements Runnable {
         }
         return copy;
     }
+
+    @Override
+    public String toString() {
+        return "CompletableFutureTask{}";
+    }
 }

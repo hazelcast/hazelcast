@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.util.executor;
+
+import com.hazelcast.logging.ILogger;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.RunnableScheduledFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Thread.currentThread;
+
+/**
+ * Reasoning is given tasks to {@link ScheduledThreadPoolExecutor} stops silently if there is an execution exception.
+ * <p>
+ * This class logs execution exceptions by overriding {@link ScheduledThreadPoolExecutor#afterExecute}
+ * and {@link ScheduledThreadPoolExecutor#decorateTask} methods.
+ * <p>
+ * Note: Task decoration is only needed to call given tasks {@code toString} methods.
+ *
+ * @see {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay}
+ */
+public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
+
+    private final ILogger logger;
+
+    public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory) {
+        super(corePoolSize, threadFactory);
+        this.logger = checkNotNull(logger, "logger cannot be null");
+    }
+
+    public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory,
+                                    RejectedExecutionHandler handler) {
+        super(corePoolSize, threadFactory, handler);
+        this.logger = checkNotNull(logger, "logger cannot be null");
+    }
+
+    @Override
+    protected <V> RunnableScheduledFuture<V> decorateTask(Runnable runnable, RunnableScheduledFuture<V> task) {
+        return new LoggingDelegatingFuture<V>(runnable, task);
+    }
+
+    @Override
+    protected <V> RunnableScheduledFuture<V> decorateTask(Callable<V> callable, RunnableScheduledFuture<V> task) {
+        return new LoggingDelegatingFuture<V>(callable, task);
+    }
+
+    @Override
+    protected void afterExecute(Runnable r, Throwable t) {
+        super.afterExecute(r, t);
+
+        if (t == null && r instanceof ScheduledFuture && ((ScheduledFuture) r).isDone()) {
+            try {
+                ((Future) r).get();
+            } catch (ExecutionException e) {
+                t = e.getCause();
+            } catch (InterruptedException i) {
+                t = i;
+                currentThread().interrupt();
+            }
+        }
+
+        if (t != null) {
+            logger.severe("Failed to execute " + r, t);
+        }
+    }
+
+    /**
+     * Only goal of this wrapping is to call given tasks {@code toString} method. Because
+     * there is no straightforward way to reach it due to the internal wrapping done by
+     * {@link ScheduledThreadPoolExecutor}
+     *
+     * @see {@link ScheduledThreadPoolExecutor#scheduleWithFixedDelay}
+     */
+    private static class LoggingDelegatingFuture<V> implements RunnableScheduledFuture<V> {
+
+        private final Object task;
+        private final RunnableScheduledFuture<V> delegate;
+
+        public LoggingDelegatingFuture(Object task, RunnableScheduledFuture delegate) {
+            this.task = task;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public boolean isPeriodic() {
+            return delegate.isPeriodic();
+        }
+
+        @Override
+        public long getDelay(TimeUnit unit) {
+            return delegate.getDelay(unit);
+        }
+
+        @Override
+        public void run() {
+            delegate.run();
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            return delegate.compareTo(o);
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return delegate.cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return delegate.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return delegate.isDone();
+        }
+
+        @Override
+        public V get() throws InterruptedException, ExecutionException {
+            return delegate.get();
+        }
+
+        @Override
+        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return delegate.get(timeout, unit);
+        }
+
+        @Override
+        public String toString() {
+            return "LoggingDelegatingFuture{task=" + task + '}';
+        }
+    }
+}
