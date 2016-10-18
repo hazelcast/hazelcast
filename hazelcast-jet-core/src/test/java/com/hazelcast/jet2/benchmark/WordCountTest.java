@@ -39,11 +39,14 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
@@ -130,16 +133,14 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     private static class Generator extends AbstractProcessor {
 
-        private static final Pattern PATTERN = Pattern.compile("\\W+");
+        private static final Pattern PATTERN = Pattern.compile("\\w+");
 
         @Override
         public boolean process(int ordinal, Object item) {
-            Map.Entry<Integer, String> entry = (Map.Entry<Integer, String>) item;
-            String[] split = PATTERN.split(entry.getValue().toLowerCase());
-
-            for (String word : split) {
-                // emit each word with count of 1
-                emit(new AbstractMap.SimpleImmutableEntry<>(word, 1L));
+            String text = ((Entry<Integer, String>) item).getValue().toLowerCase();
+            Matcher m = PATTERN.matcher(text);
+            while (m.find()) {
+                emit(new SimpleImmutableEntry<>(m.group(), 1L));
             }
             return true;
         }

@@ -17,6 +17,7 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorContext;
@@ -26,18 +27,18 @@ import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 public class IMapWriter extends AbstractProcessor {
 
-    private final static int BATCH_SIZE = 2048;
+    private static final int FLUSH_THRESHOLD = 2048;
 
     private final IMap<Object, Object> map;
-    private final ArrayMap<Object, Object> buffer = new ArrayMap<>(BATCH_SIZE);
+    private final ArrayMap<Object, Object> buffer = new ArrayMap<>();
 
     public IMapWriter(IMap<Object, Object> map) {
         this.map = map;
@@ -49,18 +50,13 @@ public class IMapWriter extends AbstractProcessor {
     }
 
     @Override
-    public boolean process(int ordinal, Object item) {
-        Map.Entry<Object, Object> entry = (Map.Entry<Object, Object>) item;
-        buffer.add(entry);
-        if (buffer.size() == BATCH_SIZE) {
+    public void process(int ordinal, Inbox inbox) {
+        for (Map.Entry<Object, Object> e; (e = (Entry<Object, Object>) inbox.poll()) != null;) {
+            buffer.add(e);
+        }
+        if (buffer.size() >= FLUSH_THRESHOLD) {
             flush();
         }
-        return true;
-    }
-
-    private void flush() {
-        map.putAll(buffer);
-        buffer.clear();
     }
 
     @Override
@@ -72,6 +68,11 @@ public class IMapWriter extends AbstractProcessor {
     @Override
     public boolean isBlocking() {
         return true;
+    }
+
+    private void flush() {
+        map.putAll(buffer);
+        buffer.clear();
     }
 
     public static ProcessorSupplier supplier(String mapName) {
@@ -103,8 +104,8 @@ public class IMapWriter extends AbstractProcessor {
         private List<Entry<K, V>> entries;
         private ArraySet set = new ArraySet();
 
-        public ArrayMap(int size) {
-            entries = new ArrayList<>(size);
+        public ArrayMap() {
+            entries = new ArrayList<>();
         }
 
         @Override
@@ -117,7 +118,6 @@ public class IMapWriter extends AbstractProcessor {
         }
 
         private class ArraySet extends AbstractSet<Map.Entry<K, V>> {
-
             @Override
             public Iterator<Entry<K, V>> iterator() {
                 return entries.iterator();
@@ -129,5 +129,4 @@ public class IMapWriter extends AbstractProcessor {
             }
         }
     }
-
 }

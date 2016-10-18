@@ -1,5 +1,6 @@
 package com.hazelcast.jet2.impl.deployment.processors;
 
+import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import java.io.BufferedReader;
@@ -17,18 +18,14 @@ import static org.junit.Assert.fail;
 
 public class ApacheV1Isolated implements Processor {
 
-
-    public ApacheV1Isolated() {
-    }
-
-
     @Override
     public void init(@Nonnull Outbox outbox) {
     }
 
     @Override
-    public boolean process(int ordinal, Object item) {
-        return true;
+    public void process(int ordinal, Inbox inbox) {
+        while (inbox.poll() != null) {
+        }
     }
 
     @Override

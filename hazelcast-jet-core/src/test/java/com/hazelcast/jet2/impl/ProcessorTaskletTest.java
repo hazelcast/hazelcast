@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.test.annotation.QuickTest;
@@ -163,12 +164,13 @@ public class ProcessorTaskletTest {
         }
 
         @Override
-        public boolean process(int ordinal, Object item) {
-            System.out.println("Processing " + item);
-            for (int i = 0; i < outbox.queueCount(); i++) {
-                outbox.add(i, item);
+        public void process(int ordinal, Inbox inbox) {
+            for (Object item; (item = inbox.poll()) != null;) {
+                System.out.println("Processing " + item);
+                for (int i = 0; i < outbox.queueCount(); i++) {
+                    outbox.add(i, item);
+                }
             }
-            return true;
         }
     }
 

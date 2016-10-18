@@ -37,28 +37,12 @@ public interface Processor {
     void init(@Nonnull Outbox outbox);
 
     /**
-     * Processes the supplied input item.
-     *
-     * @param ordinal ordinal of the input where the item originates from
-     * @param item    item to be processed
-     * @return <code>true</code> if this item has now been processed, <code>false</code> otherwise.
-     */
-    boolean process(int ordinal, Object item);
-
-    /**
      * Processes some items in the supplied inbox. Removes the items it's done with.
      *
      * @param ordinal ordinal of the input where the item originates from
      * @param inbox   the inbox containing the pendignc  items
      */
-    default void process(int ordinal, Inbox inbox) {
-        for (Object item; (item = inbox.peek()) != null;) {
-            if (!process(ordinal, item)) {
-                return;
-            }
-            inbox.remove();
-        }
-    }
+    void process(int ordinal, Inbox inbox);
 
     /**
      * Called after the input with the supplied <code>ordinal</code> is exhausted.
