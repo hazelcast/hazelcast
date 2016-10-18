@@ -98,7 +98,7 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
      *
      * {@link ScheduledThreadPoolExecutor#scheduleWithFixedDelay}
      */
-    private static class LoggingDelegatingFuture<V> implements RunnableScheduledFuture<V> {
+    static class LoggingDelegatingFuture<V> implements RunnableScheduledFuture<V> {
 
         private final Object task;
         private final RunnableScheduledFuture<V> delegate;
