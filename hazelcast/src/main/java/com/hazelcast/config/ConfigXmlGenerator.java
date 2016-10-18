@@ -450,10 +450,9 @@ public class ConfigXmlGenerator {
             appendHotRestartConfig(xml, c.getHotRestartConfig());
             xml.append("<read-through>").append(c.isReadThrough()).append("</read-through>");
             xml.append("<write-through>").append(c.isWriteThrough()).append("</write-through>");
-            xml.append("<cache-loader-factory class-name=\"").append(c.getCacheLoaderFactory()).append("\"/>");
-            xml.append("<cache-writer-factory class-name=\"").append(c.getCacheWriterFactory()).append("\"/>");
-            ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig = c.getExpiryPolicyFactoryConfig();
-            cacheExpiryPolicyFactoryConfigXmlGenerator(xml, expiryPolicyFactoryConfig);
+            checkAndFillCacheLoaderFactoryConfigXml(xml, c.getCacheLoaderFactory());
+            checkAndFillCacheWriterFactoryConfigXml(xml, c.getCacheWriterFactory());
+            cacheExpiryPolicyFactoryConfigXmlGenerator(xml, c.getExpiryPolicyFactoryConfig());
             xml.append("<cache-entry-listeners>");
             for (CacheSimpleEntryListenerConfig el : c.getCacheEntryListeners()) {
                 xml.append("<cache-entry-listener")
@@ -482,10 +481,23 @@ public class ConfigXmlGenerator {
         }
     }
 
+    private void checkAndFillCacheWriterFactoryConfigXml(StringBuilder xml, String cacheWriter) {
+        if (!StringUtil.isNullOrEmpty(cacheWriter)) {
+            xml.append("<cache-writer-factory class-name=\"").append(cacheWriter).append("\"/>");
+        }
+    }
+
+    private void checkAndFillCacheLoaderFactoryConfigXml(StringBuilder xml, String cacheLoader) {
+        if (!StringUtil.isNullOrEmpty(cacheLoader)) {
+            xml.append("<cache-loader-factory class-name=\"").append(cacheLoader).append("\"/>");
+        }
+
+    }
+
     private void cacheExpiryPolicyFactoryConfigXmlGenerator(StringBuilder xml,
-            ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig) {
+                                                            ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig) {
         if (expiryPolicyFactoryConfig != null) {
-            if (StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
+            if (!StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
                 xml.append("<expiry-policy-factory class-name=\"")
                         .append(expiryPolicyFactoryConfig.getClassName()).append("\"/>");
             } else {
@@ -498,8 +510,8 @@ public class ConfigXmlGenerator {
                     DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
                     xml.append("<expiry-policy-factory>");
                     xml.append("<timed-expiry-policy-factory")
-                            .append(" expiry-policy-type=\"").append(expiryPolicyType.name()).append("\"/>")
-                            .append(" duration-amount=\"").append(durationConfig.getDurationAmount()).append("\"/>")
+                            .append(" expiry-policy-type=\"").append(expiryPolicyType.name()).append("\"")
+                            .append(" duration-amount=\"").append(durationConfig.getDurationAmount()).append("\"")
                             .append(" time-unit=\"").append(durationConfig.getTimeUnit().name()).append("\"/>");
                     xml.append("</expiry-policy-factory>");
                 }
