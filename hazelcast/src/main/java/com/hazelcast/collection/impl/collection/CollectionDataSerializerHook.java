@@ -29,6 +29,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOper
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveBackupOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperation;
+import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.operations.ListAddAllOperation;
 import com.hazelcast.collection.impl.list.operations.ListAddOperation;
 import com.hazelcast.collection.impl.list.operations.ListGetOperation;
@@ -38,6 +39,7 @@ import com.hazelcast.collection.impl.list.operations.ListReplicationOperation;
 import com.hazelcast.collection.impl.list.operations.ListSetBackupOperation;
 import com.hazelcast.collection.impl.list.operations.ListSetOperation;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
+import com.hazelcast.collection.impl.set.SetContainer;
 import com.hazelcast.collection.impl.set.operations.SetReplicationOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitOperation;
@@ -113,6 +115,9 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int TXN_COMMIT = 39;
     public static final int TXN_COMMIT_BACKUP = 40;
 
+    public static final int SET_CONTAINER = 41;
+    public static final int LIST_CONTAINER = 42;
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -121,7 +126,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[TXN_COMMIT_BACKUP + 1];
+                = new ConstructorFunction[LIST_CONTAINER + 1];
 
         constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -323,6 +328,16 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[TXN_COMMIT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionCommitBackupOperation();
+            }
+        };
+        constructors[SET_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetContainer();
+            }
+        };
+        constructors[LIST_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ListContainer();
             }
         };
 

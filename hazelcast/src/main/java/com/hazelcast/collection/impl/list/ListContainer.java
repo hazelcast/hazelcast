@@ -17,6 +17,7 @@
 package com.hazelcast.collection.impl.list;
 
 import com.hazelcast.collection.impl.collection.CollectionContainer;
+import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.collection.TxCollectionItem;
 import com.hazelcast.config.ListConfig;
@@ -198,5 +199,10 @@ public class ListContainer extends CollectionContainer {
         if (itemMap != null) {
             itemMap.clear();
         }
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.LIST_CONTAINER;
     }
 }
