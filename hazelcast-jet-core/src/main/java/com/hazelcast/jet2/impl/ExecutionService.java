@@ -113,7 +113,13 @@ class ExecutionService {
             final Tasklet t = tracker.tasklet;
             try {
                 t.init();
-                while (!t.call().isDone()) {
+                long idleCount = 0;
+                for (ProgressState result; !(result = t.call()).isDone();) {
+                    if (result.isMadeProgress()) {
+                        idleCount = 0;
+                    } else {
+                        IDLER.idle(++idleCount);
+                    }
                 }
             } catch (Throwable e) {
                 tracker.troubleSetter.setTrouble(e);
@@ -131,11 +137,6 @@ class ExecutionService {
         NonBlockingWorker(NonBlockingWorker[] colleagues) {
             this.colleagues = colleagues;
             this.trackers = new CopyOnWriteArrayList<>();
-        }
-
-        NonBlockingWorker(TaskletTracker tracker) {
-            this.colleagues = EMPTY_WORKERS;
-            this.trackers = singletonList(tracker);
         }
 
         @Override
