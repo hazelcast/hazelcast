@@ -26,5 +26,4 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     public final int getFactoryId() {
         return PartitionDataSerializerHook.F_ID;
     }
-
 }
