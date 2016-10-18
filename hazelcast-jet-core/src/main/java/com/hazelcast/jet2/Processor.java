@@ -21,7 +21,7 @@ import javax.annotation.Nonnull;
 /**
  * Does the computation needed to transform zero or more named input data streams into one
  * output stream.
- * <p/>
+ * <p>
  * The processing methods should limit the amount of processing time and data they output per
  * one invocation. A method should return <code>false</code> to signal it's not done with the
  * current step/item. When the caller is ready to invoke the method again, it will invoke it with
@@ -40,7 +40,7 @@ public interface Processor {
      * Processes some items in the supplied inbox. Removes the items it's done with.
      *
      * @param ordinal ordinal of the input where the item originates from
-     * @param inbox   the inbox containing the pendignc  items
+     * @param inbox   the inbox containing the pending items
      */
     void process(int ordinal, Inbox inbox);
 

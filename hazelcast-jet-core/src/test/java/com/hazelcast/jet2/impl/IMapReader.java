@@ -62,6 +62,10 @@ public class IMapReader extends AbstractProducer {
 
     @Override
     public boolean complete() {
+        int count = getOutbox().itemsUntilHighWater();
+        if (count == 0) {
+            return false;
+        }
         do {
             Iterator currIterator = iteratorCursor.value();
             if (!currIterator.hasNext()) {
@@ -69,7 +73,7 @@ public class IMapReader extends AbstractProducer {
                 continue;
             }
             emit(currIterator.next());
-            if (getOutbox().isHighWater()) {
+            if (--count == 0) {
                 return false;
             }
         } while (iteratorCursor.advance());

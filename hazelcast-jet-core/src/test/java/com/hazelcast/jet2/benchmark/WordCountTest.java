@@ -55,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int COUNT = 1_000_000;
-    private static final int DISTINCT = 100_000;
+    private static final int DISTINCT = 1_000_000;
 
     private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
@@ -170,7 +170,9 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 iterator = counts.entrySet().iterator();
             }
 
-            while(iterator.hasNext() && !getOutbox().isHighWater()) {
+            int count = getOutbox().itemsUntilHighWater();
+
+            while(iterator.hasNext() && count-- > 0) {
                 emit(iterator.next());
             }
             return !iterator.hasNext();
