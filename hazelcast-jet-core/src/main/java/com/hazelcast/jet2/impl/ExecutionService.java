@@ -27,11 +27,12 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
@@ -40,7 +41,7 @@ class ExecutionService {
 
     private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
-    private final ExecutorService blockingTaskletExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
     private final NonBlockingWorker[] workers;
     private final Thread[] threads;
 
@@ -85,7 +86,7 @@ class ExecutionService {
             return;
         }
         Arrays.setAll(workers, i -> new NonBlockingWorker(workers));
-        Arrays.setAll(threads, i -> new Thread(workers[i]));
+        Arrays.setAll(threads, i -> new Thread(workers[i], "Non-blocking tasklet thread #" + i));
         Arrays.stream(threads).forEach(Thread::start);
     }
 
@@ -213,6 +214,15 @@ class ExecutionService {
             this.completionLatch = completionLatch;
             this.tasklet = tasklet;
             this.troubleSetter = troubleSetter;
+        }
+    }
+
+    private static final class BlockingTaskThreadFactory implements ThreadFactory {
+        private int seq;
+
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(r, "Blocking tasklet thread #" + seq++);
         }
     }
 }
