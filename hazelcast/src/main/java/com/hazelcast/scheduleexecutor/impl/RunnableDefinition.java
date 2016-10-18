@@ -32,9 +32,7 @@ public class RunnableDefinition implements IdentifiedDataSerializable {
 
         SINGLE_RUN,
 
-        FIXED_DELAY,
-
-        PERIODIC
+        WITH_REPETITION
 
     }
 

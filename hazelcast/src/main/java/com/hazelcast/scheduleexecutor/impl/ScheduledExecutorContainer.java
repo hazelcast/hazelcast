@@ -28,6 +28,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.partition.IPartition;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -94,11 +95,7 @@ public class ScheduledExecutorContainer {
                 future = executionService.schedule(getName(),
                         taskAdapter, definition.getInitialDelay(), definition.getUnit());
                 break;
-            case FIXED_DELAY:
-                //TODO tkountis - Not supported by ExecutionService
-                break;
-            case PERIODIC:
-                //TODO tkountis - 'WithRepetition' doesn't have the same exactly semantics as 'AtFixedRate'
+            case WITH_REPETITION:
                 future = executionService.scheduleWithRepetition(getName(),
                         taskAdapter, definition.getInitialDelay(), definition.getPeriod(),
                         definition.getUnit());
@@ -172,6 +169,10 @@ public class ScheduledExecutorContainer {
 
     public void unstash(String taskName) {
         backups.remove(taskName);
+    }
+
+    public Collection<ScheduledTaskDescriptor> getTasks() {
+        return tasks.values();
     }
 
     public void syncState(String taskName, Map newState) {

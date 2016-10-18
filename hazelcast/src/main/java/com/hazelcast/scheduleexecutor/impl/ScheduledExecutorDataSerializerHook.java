@@ -24,6 +24,7 @@ import com.hazelcast.scheduleexecutor.impl.operations.CancelTaskBackupOperation;
 import com.hazelcast.scheduleexecutor.impl.operations.CancelTaskOperation;
 import com.hazelcast.scheduleexecutor.impl.operations.CompareToOperation;
 import com.hazelcast.scheduleexecutor.impl.operations.DestroyTaskOperation;
+import com.hazelcast.scheduleexecutor.impl.operations.GetAllScheduledOperation;
 import com.hazelcast.scheduleexecutor.impl.operations.GetDelayOperation;
 import com.hazelcast.scheduleexecutor.impl.operations.GetStatisticsOperation;
 import com.hazelcast.scheduleexecutor.impl.operations.IsCanceledOperation;
@@ -64,6 +65,8 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
     public static final int REPLICATION = 17;
 
     public static final int DESTROY_TASK_OP = 18;
+
+    public static final int GET_ALL_SCHEDULED = 20;
 
     @Override
     public int getFactoryId() {
@@ -110,6 +113,8 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
                         return new SyncStateOperation();
                     case REPLICATION:
                         return new ReplicationOperation();
+                    case GET_ALL_SCHEDULED:
+                        return new GetAllScheduledOperation();
                     default:
                         return null;
                 }

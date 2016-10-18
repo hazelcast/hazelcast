@@ -17,26 +17,41 @@
 package com.hazelcast.scheduleexecutor.impl;
 
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.mapreduce.impl.HashMapAdapter;
+import com.hazelcast.nio.Address;
 import com.hazelcast.scheduleexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduleexecutor.IScheduledFuture;
 import com.hazelcast.scheduleexecutor.IdentifiedRunnable;
 import com.hazelcast.scheduleexecutor.ScheduledTaskHandler;
+import com.hazelcast.scheduleexecutor.impl.operations.GetAllScheduledOperation;
 import com.hazelcast.scheduleexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 
 public class ScheduledExecutorServiceProxy
         extends AbstractDistributedObject<DistributedScheduledExecutorService>
         implements IScheduledExecutorService {
+
+    public static final int GET_ALL_SCHEDULED_TIMEOUT = 10;
 
     private final String name;
 
@@ -66,38 +81,27 @@ public class ScheduledExecutorServiceProxy
         return schedule(UuidUtil.newUnsecureUuidString(), command, delay, unit);
     }
 
+    //TODO tkountis - Clean up async / sync ops
+
     @Override
     public IScheduledFuture schedule(String name, Runnable command, long delay, TimeUnit unit) {
         RunnableDefinition definition = new RunnableDefinition(
                 RunnableDefinition.Type.SINGLE_RUN, name, command, delay, unit);
 
-        return invokeAsync(name, new ScheduleTaskOperation(getName(), definition));
+        return submitAsync(name, new ScheduleTaskOperation(getName(), definition));
     }
 
     @Override
-    public IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduleAtFixedRate(UuidUtil.newUnsecureUuidString(), command, initialDelay, period, unit);
+    public IScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return scheduleWithRepetition(UuidUtil.newUnsecureUuidString(), command, initialDelay, period, unit);
     }
 
     @Override
-    public IScheduledFuture<?> scheduleAtFixedRate(String name, Runnable command, long initialDelay, long period, TimeUnit unit) {
+    public IScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay, long period, TimeUnit unit) {
         RunnableDefinition definition = new RunnableDefinition(
-                RunnableDefinition.Type.PERIODIC, name, command, initialDelay, 0, period, unit);
+                RunnableDefinition.Type.WITH_REPETITION, name, command, initialDelay, 0, period, unit);
 
-        return invokeAsync(name, new ScheduleTaskOperation(getName(), definition));
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return scheduleWithFixedDelay(UuidUtil.newUnsecureUuidString(), command, initialDelay, delay, unit);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleWithFixedDelay(String name, Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        RunnableDefinition definition = new RunnableDefinition(
-                RunnableDefinition.Type.FIXED_DELAY, name, command, initialDelay, delay, unit);
-
-        return invokeAsync(name, new ScheduleTaskOperation(getName(), definition));
+        return submitAsync(name, new ScheduleTaskOperation(getName(), definition));
     }
 
     @Override
@@ -111,26 +115,14 @@ public class ScheduledExecutorServiceProxy
     }
 
     @Override
-    public IScheduledFuture<?> scheduleOnMemberAtFixedRate(Runnable command, Member member, long initialDelay, long period,
-                                                           TimeUnit unit) {
-        return scheduleOnMemberAtFixedRate(UuidUtil.newUnsecureUuidString(), command, member, initialDelay, period, unit);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleOnMemberAtFixedRate(String name, Runnable command, Member member, long initialDelay,
-                                                           long period, TimeUnit unit) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleOnMemberWithFixedDelay(Runnable command, Member member, long initialDelay, long delay,
+    public IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member, long initialDelay, long period,
                                                               TimeUnit unit) {
-        return scheduleOnMemberWithFixedDelay(UuidUtil.newUnsecureUuidString(), command, member, initialDelay, delay, unit);
+        return scheduleOnMemberWithRepetition(UuidUtil.newUnsecureUuidString(), command, member, initialDelay, period, unit);
     }
 
     @Override
-    public IScheduledFuture<?> scheduleOnMemberWithFixedDelay(String name, Runnable command, Member member, long initialDelay,
-                                                              long delay, TimeUnit unit) {
+    public IScheduledFuture<?> scheduleOnMemberWithRepetition(String name, Runnable command, Member member, long initialDelay,
+                                                              long period, TimeUnit unit) {
         throw new UnsupportedOperationException();
     }
 
@@ -141,31 +133,28 @@ public class ScheduledExecutorServiceProxy
 
     @Override
     public IScheduledFuture<?> scheduleOnKeyOwner(String name, Runnable command, Object key, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        int partitionId = getKeyPartitionId(key);
+
+        RunnableDefinition definition = new RunnableDefinition(
+                RunnableDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+
+        return submitOnPartitionAsync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
 
     @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(Runnable command, Object key, long initialDelay, long period,
-                                                             TimeUnit unit) {
-        return scheduleOnKeyOwnerAtFixedRate(UuidUtil.newUnsecureUuidString(), command, key, initialDelay, period, unit);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(String name, Runnable command, Object key, long initialDelay,
-                                                             long period, TimeUnit unit) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerWithFixedDelay(Runnable command, Object key, long initialDelay, long delay,
+    public IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(Runnable command, Object key, long initialDelay, long period,
                                                                 TimeUnit unit) {
-        return scheduleOnKeyOwnerWithFixedDelay(UuidUtil.newUnsecureUuidString(), command, key, initialDelay, delay, unit);
+        return scheduleOnKeyOwnerWithRepetition(UuidUtil.newUnsecureUuidString(), command, key, initialDelay, period, unit);
     }
 
     @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerWithFixedDelay(String name, Runnable command, Object key, long initialDelay,
-                                                                long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+    public IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(String name, Runnable command, Object key, long initialDelay,
+                                                                long period, TimeUnit unit) {
+        int partitionId = getKeyPartitionId(key);
+        RunnableDefinition definition = new RunnableDefinition(
+                RunnableDefinition.Type.WITH_REPETITION, name, command, initialDelay, 0, period, unit);
+
+        return submitOnPartitionAsync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
 
     @Override
@@ -175,31 +164,35 @@ public class ScheduledExecutorServiceProxy
 
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(String name, Runnable command, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        Map<Member, IScheduledFuture<?>> futures = new HashMapAdapter<Member, IScheduledFuture<?>>();
+        for (Member member : getNodeEngine().getClusterService().getMembers()) {
+            RunnableDefinition definition = new RunnableDefinition(
+                    RunnableDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+
+            futures.put(member, submitOnMemberAsync(name, new ScheduleTaskOperation(getName(), definition), member));
+        }
+
+        return futures;
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersAtFixedRate(Runnable command, long initialDelay, long period,
-                                                                           TimeUnit unit) {
-        return scheduleOnAllMembersAtFixedRate(UuidUtil.newUnsecureUuidString(), command, initialDelay, period, unit);
+    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay, long period,
+                                                                               TimeUnit unit) {
+        return scheduleOnAllMembersWithRepetition(UuidUtil.newUnsecureUuidString(), command, initialDelay, period, unit);
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersAtFixedRate(String name, Runnable command, long initialDelay, long period,
-                                                               TimeUnit unit) {
-        throw new UnsupportedOperationException();
-    }
+    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(String name, Runnable command, long initialDelay, long period,
+                                                                               TimeUnit unit) {
+        Map<Member, IScheduledFuture<?>> futures = new HashMapAdapter<Member, IScheduledFuture<?>>();
+        for (Member member : getNodeEngine().getClusterService().getMembers()) {
+            RunnableDefinition definition = new RunnableDefinition(
+                    RunnableDefinition.Type.WITH_REPETITION, name, command, initialDelay, 0, period, unit);
 
-    @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithFixedDelay(Runnable command, long initialDelay, long delay,
-                                                                              TimeUnit unit) {
-        return scheduleOnAllMembersWithFixedDelay(UuidUtil.newUnsecureUuidString(), command, initialDelay, delay, unit);
-    }
+            futures.put(member, submitOnMemberAsync(name, new ScheduleTaskOperation(getName(), definition), member));
+        }
 
-    @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithFixedDelay(String name, Runnable command, long initialDelay, long delay,
-                                                                  TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        return futures;
     }
 
     @Override
@@ -211,41 +204,86 @@ public class ScheduledExecutorServiceProxy
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnMembers(String name, Runnable command, Collection<Member> members, long delay,
                                                  TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        Map<Member, IScheduledFuture<?>> futures = new HashMapAdapter<Member, IScheduledFuture<?>>();
+        for (Member member : members) {
+            RunnableDefinition definition = new RunnableDefinition(
+                    RunnableDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+
+            futures.put(member, submitOnMemberAsync(name, new ScheduleTaskOperation(getName(), definition), member));
+        }
+
+        return futures;
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnMembersAtFixedRate(Runnable command, Collection<Member> members,
-                                                                        long initialDelay, long period, TimeUnit unit) {
-        return scheduleOnMembersAtFixedRate(UuidUtil.newUnsecureUuidString(), command, members, initialDelay, period, unit);
+    public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(Runnable command, Collection<Member> members,
+                                                                            long initialDelay, long period, TimeUnit unit) {
+        return scheduleOnMembersWithRepetition(UuidUtil.newUnsecureUuidString(), command, members, initialDelay, period, unit);
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnMembersAtFixedRate(String name, Runnable command, Collection<Member> members,
-                                                            long initialDelay, long period, TimeUnit unit) {
-        throw new UnsupportedOperationException();
-    }
+    public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(String name, Runnable command, Collection<Member> members,
+                                                                            long initialDelay, long period, TimeUnit unit) {
+        Map<Member, IScheduledFuture<?>> futures = new HashMapAdapter<Member, IScheduledFuture<?>>();
+        for (Member member : members) {
+            RunnableDefinition definition = new RunnableDefinition(
+                    RunnableDefinition.Type.WITH_REPETITION, name, command, initialDelay, 0, period, unit);
 
-    @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithFixedDelay(Runnable command, Collection<Member> members,
-                                                                           long initialDelay, long delay, TimeUnit unit) {
-        return scheduleOnMembersWithFixedDelay(UuidUtil.newUnsecureUuidString(), command, members, initialDelay, delay, unit);
-    }
+            futures.put(member, submitOnMemberAsync(name, new ScheduleTaskOperation(getName(), definition), member));
+        }
 
-    @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithFixedDelay(String name, Runnable command, Collection<Member> members,
-                                                               long initialDelay, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+        return futures;
     }
 
     @Override
     public IScheduledFuture<?> getScheduled(ScheduledTaskHandler handler) {
-        throw new UnsupportedOperationException();
+        return attachHazelcastInstanceIfNeeded(new ScheduledFutureProxy(handler));
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> getAllScheduled() {
-        return null;
+    public ICompletableFuture<Map<Member, IScheduledFuture<?>>> getAllScheduled() {
+        //TODO tkountis - Consider extra flavour with Executor provided as arg
+        ExecutionService service = getNodeEngine().getExecutionService();
+        ManagedExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR);
+
+        //TODO tkountis - Consider extra flavour with timeout as arg
+        final long timeout = GET_ALL_SCHEDULED_TIMEOUT;
+
+        return service.asCompletableFuture(executor.submit(new Callable<Map<Member, IScheduledFuture<?>>>() {
+            @Override
+            public Map<Member, IScheduledFuture<?>> call()
+                    throws Exception {
+
+                Map<Member, IScheduledFuture<?>> tasks =
+                        new LinkedHashMap<Member, IScheduledFuture<?>>();
+
+                List<Member> members = new ArrayList<Member>(getNodeEngine().getClusterService().getMembers());
+                List<Future<ScheduledTaskHandler>> futures = new ArrayList<Future<ScheduledTaskHandler>>();
+                for (Member member : members) {
+                    Address address = member.getAddress();
+
+                    ICompletableFuture<ScheduledTaskHandler> future =
+                            getOperationService().invokeOnTarget(getServiceName(), new GetAllScheduledOperation(), address);
+
+                    futures.add(future);
+                }
+
+                // TODO unit test - to make sure order returned is the expected one otherwise fail.
+                List<ScheduledTaskHandler> resolvedFutures = new ArrayList<ScheduledTaskHandler>(
+                        returnWithDeadline(futures, timeout, TimeUnit.SECONDS));
+
+                for (int i = 0; i < members.size(); i++) {
+                    Member member = members.get(i);
+                    ScheduledTaskHandler handler = resolvedFutures.get(i);
+
+                    tasks.put(member, attachHazelcastInstanceIfNeeded(
+                            new ScheduledFutureProxy<ScheduledTaskHandler>(handler)));
+                }
+
+                return tasks;
+
+            }
+        }));
     }
 
     @Override
@@ -273,14 +311,30 @@ public class ScheduledExecutorServiceProxy
         return false;
     }
 
-    private IScheduledFuture<?> invokeAsync(String taskName, Operation op) {
-        int partitionId = partitionRandom.nextInt(partitionCount);
+    private int getKeyPartitionId(Object key) {
+        return getNodeEngine().getPartitionService().getPartitionId(key);
+    }
 
+    private IScheduledFuture<?> submitAsync(String taskName, Operation op) {
+        int partitionId = partitionRandom.nextInt(partitionCount);
+        return submitOnPartitionAsync(taskName, op, partitionId);
+    }
+
+    private IScheduledFuture<?> submitOnPartitionAsync(String taskName, Operation op, int partitionId) {
         op.setPartitionId(partitionId);
         invokeOnPartition(op);
         return attachHazelcastInstanceIfNeeded(
                 new ScheduledFutureProxy(
                         ScheduledTaskHandler.of(partitionId, getName(), taskName)));
+    }
+
+    private IScheduledFuture<?> submitOnMemberAsync(String taskName, Operation op, Member member) {
+        Address address = member.getAddress();
+
+        getOperationService().invokeOnTarget(getServiceName(), op, address);
+        return attachHazelcastInstanceIfNeeded(
+                new ScheduledFutureProxy(
+                        ScheduledTaskHandler.of(address, getName(), taskName)));
     }
 
     private <V> V attachHazelcastInstanceIfNeeded(V response) {

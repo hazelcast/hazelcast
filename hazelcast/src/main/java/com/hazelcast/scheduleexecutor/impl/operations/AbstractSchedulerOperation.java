@@ -42,6 +42,10 @@ public abstract class AbstractSchedulerOperation
         this.schedulerName = schedulerName;
     }
 
+    public String getSchedulerName() {
+        return schedulerName;
+    }
+
     @Override
     public String getServiceName() {
         return DistributedScheduledExecutorService.SERVICE_NAME;

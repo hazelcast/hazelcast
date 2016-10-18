@@ -50,7 +50,7 @@ import java.util.concurrent.TimeoutException;
 public class ScheduledFutureProxy<V>
         implements IScheduledFuture<V>,
                    IdentifiedDataSerializable, HazelcastInstanceAware,
-                   PartitionLostListener {
+                   PartitionLostListener/*, MembershipListener*/ {
 
     private transient HazelcastInstance instance;
 

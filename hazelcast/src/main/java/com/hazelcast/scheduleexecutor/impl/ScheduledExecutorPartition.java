@@ -21,6 +21,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -64,6 +66,10 @@ public class ScheduledExecutorPartition {
         ScheduledExecutorContainer container =
                 new ScheduledExecutorContainer(name, partitionId, nodeEngine, DURABILITY, backup);
         containers.put(name, container);
+    }
+
+    public Collection<ScheduledExecutorContainer> getContainers() {
+        return Collections.unmodifiableCollection(containers.values());
     }
 
     public ScheduledExecutorContainer getOrCreateContainer(String name) {

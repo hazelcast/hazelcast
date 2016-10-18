@@ -17,6 +17,7 @@
 package com.hazelcast.scheduleexecutor;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -32,69 +33,47 @@ public interface IScheduledExecutorService extends DistributedObject {
 
     IScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit);
 
-    IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay,
-                                            long period, TimeUnit unit);
+    IScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay,
+                                               long period, TimeUnit unit);
 
-    IScheduledFuture<?> scheduleAtFixedRate(String name, Runnable command, long initialDelay,
-                                            long period, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
-                                               long delay, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleWithFixedDelay(String name, Runnable command, long initialDelay,
-                                               long delay, TimeUnit unit);
+    IScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay,
+                                               long period, TimeUnit unit);
 
     IScheduledFuture<?> scheduleOnMember(Runnable command, Member member, long delay, TimeUnit unit);
 
     IScheduledFuture<?> scheduleOnMember(String name, Runnable command, Member member, long delay, TimeUnit unit);
 
-    IScheduledFuture<?> scheduleOnMemberAtFixedRate(Runnable command, Member member, long initialDelay, long period, TimeUnit unit);
+    IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member, long initialDelay, long period, TimeUnit unit);
 
-    IScheduledFuture<?> scheduleOnMemberAtFixedRate(String name, Runnable command, Member member, long initialDelay, long period, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleOnMemberWithFixedDelay(Runnable command, Member member, long initialDelay, long delay, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleOnMemberWithFixedDelay(String name, Runnable command, Member member, long initialDelay, long delay, TimeUnit unit);
+    IScheduledFuture<?> scheduleOnMemberWithRepetition(String name, Runnable command, Member member, long initialDelay, long period, TimeUnit unit);
 
     IScheduledFuture<?> scheduleOnKeyOwner(Runnable command, Object Key,long delay, TimeUnit unit);
 
     IScheduledFuture<?> scheduleOnKeyOwner(String name, Runnable command, Object Key,long delay, TimeUnit unit);
 
-    IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(Runnable command, Object key, long initialDelay, long period, TimeUnit unit);
+    IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(Runnable command, Object key, long initialDelay, long period, TimeUnit unit);
 
-    IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(String name, Runnable command, Object key, long initialDelay, long period, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleOnKeyOwnerWithFixedDelay(Runnable command, Object key, long initialDelay, long delay, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleOnKeyOwnerWithFixedDelay(String name, Runnable command, Object key, long initialDelay, long delay, TimeUnit unit);
+    IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(String name, Runnable command, Object key, long initialDelay, long period, TimeUnit unit);
 
     Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(Runnable command, long delay, TimeUnit unit);
 
     Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(String name, Runnable command, long delay, TimeUnit unit);
 
-    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
+    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit);
 
-    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersAtFixedRate(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
-
-    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);
-
-    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithFixedDelay(String name, Runnable command, long initialDelay, long delay, TimeUnit unit);
+    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
 
     Map<Member, IScheduledFuture<?>> scheduleOnMembers(Runnable command, Collection<Member> members, long delay, TimeUnit unit);
 
     Map<Member, IScheduledFuture<?>> scheduleOnMembers(String name, Runnable command, Collection<Member> members, long delay, TimeUnit unit);
 
-    Map<Member, IScheduledFuture<?>> scheduleOnMembersAtFixedRate(Runnable command, Collection<Member> members, long initialDelay, long period, TimeUnit unit);
+    Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(Runnable command, Collection<Member> members, long initialDelay, long period, TimeUnit unit);
 
-    Map<Member, IScheduledFuture<?>> scheduleOnMembersAtFixedRate(String name, Runnable command, Collection<Member> members, long initialDelay, long period, TimeUnit unit);
-
-    Map<Member, IScheduledFuture<?>> scheduleOnMembersWithFixedDelay(Runnable command, Collection<Member> members, long initialDelay, long delay, TimeUnit unit);
-
-    Map<Member, IScheduledFuture<?>> scheduleOnMembersWithFixedDelay(String name, Runnable command, Collection<Member> members, long initialDelay, long delay, TimeUnit unit);
+    Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(String name, Runnable command, Collection<Member> members, long initialDelay, long period, TimeUnit unit);
 
     IScheduledFuture<?> getScheduled(ScheduledTaskHandler handler);
 
-    Map<Member, IScheduledFuture<?>> getAllScheduled();
+    ICompletableFuture<Map<Member, IScheduledFuture<?>>> getAllScheduled();
 
     void shutdown();
 
