@@ -167,10 +167,10 @@ public class DAGTest {
         dag.addVertex(v3);
 
         Edge e1 = new Edge("e1", v1, v2);
-//        Edge e2 = new Edge("e2", v2, v3);
+        Edge e2 = new Edge("e2", v2, v3);
 
         dag.addEdge(e1);
-//        dag.addEdge(e2);
+        dag.addEdge(e2);
 
         dag.validate();
 
