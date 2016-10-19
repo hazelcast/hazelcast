@@ -156,6 +156,7 @@ public class RingbufferContainer implements DataSerializable {
         return ringbuffer.size();
     }
 
+    // not used in the codebase, here just for API completion
     public boolean isEmpty() {
         return ringbuffer.isEmpty();
     }
@@ -196,9 +197,10 @@ public class RingbufferContainer implements DataSerializable {
     }
 
     /**
-     * Adds one item to the ring buffer. Also attempts to store the item in the data store if one is configured.
+     * Adds one item to the ring buffer. Sets the expiration time if TTL is configured and also attempts to store the item
+     * in the data store if one is configured.
      *
-     * @param item items to be stored in the ring buffer and data store
+     * @param item item to be stored in the ring buffer and data store
      * @return the sequence id of the item stored in the ring buffer
      * @throws HazelcastException                                              if there was any exception thrown by the data store
      * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
@@ -218,7 +220,8 @@ public class RingbufferContainer implements DataSerializable {
     }
 
     /**
-     * Adds all items to the ring buffer. Also attempts to store the items in the data store if one is configured.
+     * Adds all items to the ring buffer. Sets the expiration time if TTL is configured and also attempts to store the items
+     * in the data store if one is configured.
      *
      * @param items items to be stored in the ring buffer and data store
      * @return the sequence id of the last item stored in the ring buffer
@@ -248,11 +251,43 @@ public class RingbufferContainer implements DataSerializable {
     }
 
     /**
+     * Sets the item at the given sequence ID and updates the expiration time if TTL is configured.  Unlike other methods
+     * for adding items into the ring buffer, does not attempt to store the item in the data store. This method expand the
+     * ring buffer tail and head sequence to accommodate for the sequence. This means that it will move the head or tail
+     * sequence to the target sequence if the target sequence is less than the head sequence or greater than the tail sequence.
+     *
+     * @param sequenceId the sequence ID under which the item is stored
+     * @param dataItem   item to be stored in the ring buffer and data store
+     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
+     *                                                                         in object format and the item could not be
+     *                                                                         deserialized
+     */
+    @SuppressWarnings("unchecked")
+    public void set(long sequenceId, Data dataItem) {
+        final Object item = getRingbufferFormat(dataItem);
+
+        // first we write the dataItem in the ring.
+        ringbuffer.set(sequenceId, item);
+
+        if (sequenceId > tailSequence()) {
+            ringbuffer.setTailSequence(sequenceId);
+        }
+        if (sequenceId < headSequence()) {
+            ringbuffer.setHeadSequence(sequenceId);
+        }
+
+        // and then we optionally write the expiration.
+        if (expirationPolicy != null) {
+            expirationPolicy.setExpirationAt(sequenceId);
+        }
+    }
+
+    /**
      * Reads one item from the ring buffer.
      *
      * @param sequence The sequence of the item to be read
      * @return The item read
-     * @throws StaleSequenceException if the sequence is:
+     * @throws StaleSequenceException if the sequence is :
      *                                1. larger than the tailSequence or
      *                                2. smaller than the headSequence and the data store is disabled
      */
@@ -266,7 +301,7 @@ public class RingbufferContainer implements DataSerializable {
      * @param beginSequence the sequence of the first item to read.
      * @param result        the List where the result are stored in.
      * @return returns the sequenceId of the next item to read. This is needed if not all required items are found.
-     * @throws StaleSequenceException if the sequence is:
+     * @throws StaleSequenceException if the sequence is :
      *                                1. larger than the tailSequence or
      *                                2. smaller than the headSequence and the data store is disabled
      */
@@ -299,9 +334,9 @@ public class RingbufferContainer implements DataSerializable {
      * read.  Also, the requested sequence can be smaller than the head sequence if the data store is enabled.
      *
      * @param readSequence the sequence wanting to be read
-     * @throws StaleSequenceException if the requested sequence is:
-     *                                1. greater than the tail sequence + 1 or
-     *                                2. smaller than the head sequence and the data store is not enabled
+     * @throws StaleSequenceException   if the requested sequence is smaller than the head sequence and the data store is
+     *                                  not enabled
+     * @throws IllegalArgumentException if the requested sequence is greater than the tail sequence + 1 or
      */
     public void checkBlockableReadSequence(long readSequence) {
         final long tailSequence = ringbuffer.tailSequence();
@@ -324,9 +359,9 @@ public class RingbufferContainer implements DataSerializable {
      * Check if the sequence can be read from the ring buffer.
      *
      * @param sequence the sequence wanting to be read
-     * @throws StaleSequenceException if the requested sequence is:
-     *                                1. greater than the tail sequence or
-     *                                2. smaller than the head sequence and the data store is not enabled
+     * @throws StaleSequenceException   if the requested sequence is smaller than the head sequence and the data store is not
+     *                                  enabled
+     * @throws IllegalArgumentException if the requested sequence is greater than the tail sequence
      */
     private void checkReadSequence(long sequence) {
         final long tailSequence = ringbuffer.tailSequence();
@@ -356,10 +391,7 @@ public class RingbufferContainer implements DataSerializable {
 
     @SuppressWarnings("unchecked")
     private long addInternal(Data dataItem) {
-        Object item = dataItem;
-        if (inMemoryFormat == OBJECT) {
-            item = serializationService.toObject(dataItem);
-        }
+        final Object item = getRingbufferFormat(dataItem);
 
         // first we write the dataItem in the ring.
         final long tailSequence = ringbuffer.add(item);
@@ -369,6 +401,19 @@ public class RingbufferContainer implements DataSerializable {
             expirationPolicy.setExpirationAt(tailSequence);
         }
         return tailSequence;
+    }
+
+    /**
+     * Deserializes the dataItem if the ring buffer configured {@code inMemoryFormat} is set to {@code OBJECT}.
+     *
+     * @param dataItem the item in binary format
+     * @return the binary or deserialized format, depending on the {@link RingbufferContainer#inMemoryFormat}
+     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
+     *                                                                         in object format and the item could not be
+     *                                                                         deserialized
+     */
+    private Object getRingbufferFormat(Data dataItem) {
+        return inMemoryFormat == OBJECT ? serializationService.toObject(dataItem) : dataItem;
     }
 
     @Override

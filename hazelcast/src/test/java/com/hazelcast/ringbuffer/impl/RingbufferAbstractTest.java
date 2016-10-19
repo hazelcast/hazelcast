@@ -85,6 +85,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         config.addRingBufferConfig(new RingbufferConfig("remainingCapacity*")
                 .setCapacity(300)
                 .setTimeToLiveSeconds(10));
+        config.addRingBufferConfig(new RingbufferConfig("readOne_staleSequence*").setCapacity(5));
+        config.addRingBufferConfig(new RingbufferConfig("readOne_futureSequence*").setCapacity(5));
 
         instances = newInstances(config);
         local = instances[0];
@@ -347,6 +349,22 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void addAllAsync_whenEmpty() throws Exception {
         ringbuffer.addAllAsync(new LinkedList<String>(), OVERWRITE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void readOne_futureSequence() throws Exception {
+        for (int i = 0; i < 2 * ringbuffer.capacity(); i++) {
+            ringbuffer.add(String.valueOf(i));
+        }
+        ringbuffer.readOne(ringbuffer.tailSequence() + 2);
+    }
+
+    @Test(expected = StaleSequenceException.class)
+    public void readOne_staleSequence() throws Exception {
+        for (int i = 0; i < 2 * ringbuffer.capacity(); i++) {
+            ringbuffer.add(String.valueOf(i));
+        }
+        ringbuffer.readOne(ringbuffer.headSequence() - 1);
     }
 
     @Test

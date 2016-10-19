@@ -24,6 +24,10 @@ import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.GENERIC_OPERATION;
 
+/**
+ * Ring buffer operations which don't need to send any parameters and which can be determined by only sending the operation
+ * type which is a byte of information. Typically these are read operations and/or getters.
+ */
 public class GenericOperation extends AbstractRingBufferOperation {
 
     public static final byte OPERATION_SIZE = 0;
