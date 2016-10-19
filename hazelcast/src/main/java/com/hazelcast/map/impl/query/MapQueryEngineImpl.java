@@ -38,6 +38,7 @@ import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -190,12 +191,13 @@ public class MapQueryEngineImpl implements MapQueryEngine {
      * Wraps {@link #queryUsingFullTableScan(String, Predicate, Collection, IterationType)} to avoid returning potentially
      * flawed results.
      * <ul>
-     *     <li>if owner partition migrations are executing before running the query, then return immediately {@code null}, as
-     *     results cannot be reliably obtained</li>
-     *     <li>execute the query using full table scan</li>
-     *     <li>if after the query has been executed migrations are in-flight or partition state version has changed, then
-     *     results are not considered reliable</li>
+     * <li>if owner partition migrations are executing before running the query, then return immediately {@code null}, as
+     * results cannot be reliably obtained</li>
+     * <li>execute the query using full table scan</li>
+     * <li>if after the query has been executed migrations are in-flight or partition state version has changed, then
+     * results are not considered reliable</li>
      * </ul>
+     *
      * @param name
      * @param predicate
      * @param partitions
@@ -477,6 +479,17 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     @Override
+    public QueryResult invokeQuerySinglePartition(
+            String mapName, Predicate predicate, IterationType iterationType, int partitionId) {
+        checkNotPagingPredicate(predicate);
+
+        Operation op = new QueryPartitionOperation(mapName, predicate, iterationType)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<QueryResult> future = operationService.invokeOnPartition(op);
+        return future.join();
+    }
+
+    @Override
     public QueryResult invokeQueryAllPartitions(String mapName, Predicate predicate, IterationType iterationType) {
         checkNotPagingPredicate(predicate);
         if (predicate == TruePredicate.INSTANCE) {
@@ -672,6 +685,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
      * beforeMigration has been executed but commit/rollback is not yet executed).
      * This check is a temporary fix for 3.7, the actual issue will be addressed with an additional migration hook in 3.8.
      * see https://github.com/hazelcast/hazelcast/issues/6471 & https://github.com/hazelcast/hazelcast/issues/8046
+     *
      * @return {@code true} if owner partition migrations are currently being executed, otherwise false.
      * @see com.hazelcast.spi.impl.CountingMigrationAwareService
      */
@@ -681,6 +695,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
     /**
      * Check whether partition state version has changed since {@code initialPartitionStateVersion}.
+     *
      * @param initialPartitionStateVersion the initial partition state version to compare against
      * @return {@code true} if current partition state version is not equal to {@code initialPartitionStateVersion}
      */
@@ -692,10 +707,11 @@ public class MapQueryEngineImpl implements MapQueryEngine {
      * Check whether results obtained since partition state version was at {@code initialPartitionStateVersion} are safe to be
      * returned to the caller. Effectively this method checks:
      * <ul>
-     *     <li>whether owner migrations are currently in flight; if there are any, then results are considered flawed</li>
-     *     <li>whether current partition state version has changed, implying that some migrations were executed in the
-     *     meanwhile, so results are again considered flawed</li>
+     * <li>whether owner migrations are currently in flight; if there are any, then results are considered flawed</li>
+     * <li>whether current partition state version has changed, implying that some migrations were executed in the
+     * meanwhile, so results are again considered flawed</li>
      * </ul>
+     *
      * @param initialPartitionStateVersion
      * @return {@code true} if no owner migrations are currently executing and {@code initialPartitionStateVersion} is the same
      * as the current partition state version, otherwise {@code false}.

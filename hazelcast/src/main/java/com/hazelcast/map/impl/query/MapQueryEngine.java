@@ -92,6 +92,17 @@ public interface MapQueryEngine {
     QueryResult invokeQueryAllPartitions(String mapName, Predicate predicate, IterationType iterationType);
 
     /**
+     * Queries a single partition. Paging predicates are not allowed.
+     *
+     * @param mapName mape name
+     * @param predicate except paging predicate
+     * @param iterationType the IterationType
+     * @param partitionId the id of the partition
+     * @return the result
+     */
+    QueryResult invokeQuerySinglePartition(String mapName, Predicate predicate, IterationType iterationType, int partitionId);
+
+    /**
      * Query all local partitions with a paging predicate.
      * <p>
      * - Query executed in an Operation on this member (or other members if some partitions are not local)

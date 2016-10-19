@@ -47,6 +47,7 @@ import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.InitializingObject;
@@ -607,16 +608,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-
-        MapQueryEngine queryEngine = getMapQueryEngine();
-        if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
-        } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
-            return new QueryResultCollection<K>(
-                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
-        }
+        return executePredicate(predicate, IterationType.KEY, true);
     }
 
     @Override
@@ -626,16 +618,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Set entrySet(Predicate predicate) {
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-
-        MapQueryEngine queryEngine = getMapQueryEngine();
-        if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.ENTRY);
-        } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
-            return new QueryResultCollection<Map.Entry<K, V>>(
-                    getNodeEngine().getSerializationService(), IterationType.ENTRY, false, true, result);
-        }
+        return executePredicate(predicate, IterationType.ENTRY, true);
     }
 
     @Override
@@ -646,16 +629,31 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values(Predicate predicate) {
+        return executePredicate(predicate, IterationType.VALUE, false);
+    }
+
+    // todo: this logic should be moved to the query engine because interpreting the query is not a task
+    // of the MapProxy.
+    private Set executePredicate(Predicate predicate, IterationType iterationType, boolean unique) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
         if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.VALUE);
-        } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.VALUE);
-            return new QueryResultCollection<V>(
-                    getNodeEngine().getSerializationService(), IterationType.VALUE, false, false, result);
+            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
         }
+
+        QueryResult result;
+        if (predicate instanceof PartitionPredicate) {
+            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            Data key = toData(partitionPredicate.getPartitionKey());
+            int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
+            result = queryEngine.invokeQuerySinglePartition(
+                    name, partitionPredicate.getTarget(), iterationType, partitionId);
+        } else {
+            result = queryEngine.invokeQueryAllPartitions(name, predicate, iterationType);
+        }
+        return new QueryResultCollection<Map.Entry<K, V>>(
+                getNodeEngine().getSerializationService(), iterationType, false, unique, result);
     }
 
     @Override
