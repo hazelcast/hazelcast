@@ -312,7 +312,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
-        QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
+        QueryResult result = queryEngine.runQueryOnAllPartitions(name, predicate, IterationType.KEY);
         Set<Object> queryResult = new QueryResultCollection(serializationService, IterationType.KEY, false, true, result);
 
         // TODO: Can't we just use the original set?
@@ -356,7 +356,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
-        QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
+        QueryResult result = queryEngine.runQueryOnAllPartitions(name, predicate, IterationType.ENTRY);
         QueryResultCollection<Map.Entry> queryResult
                 = new QueryResultCollection<Map.Entry>(serializationService, IterationType.ENTRY, false, true, result);
 

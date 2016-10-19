@@ -639,7 +639,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
         MapQueryEngine queryEngine = getMapQueryEngine();
         if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
+            return queryEngine.runQueryOnAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
         }
 
         QueryResult result;
@@ -647,10 +647,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
-            result = queryEngine.invokeQuerySinglePartition(
+            result = queryEngine.runQueryOnSinglePartition(
                     name, partitionPredicate.getTarget(), iterationType, partitionId);
         } else {
-            result = queryEngine.invokeQueryAllPartitions(name, predicate, iterationType);
+            result = queryEngine.runQueryOnAllPartitions(name, predicate, iterationType);
         }
         return new QueryResultCollection<Map.Entry<K, V>>(
                 getNodeEngine().getSerializationService(), iterationType, false, unique, result);
@@ -668,9 +668,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
         MapQueryEngine queryEngine = getMapQueryEngine();
         if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryLocalPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
+            return queryEngine.runQueryOnLocalPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
         } else {
-            QueryResult result = queryEngine.invokeQueryLocalPartitions(name, predicate, IterationType.KEY);
+            QueryResult result = queryEngine.runQueryOnLocalPartitions(name, predicate, IterationType.KEY);
             // TODO: unique is not needed since map keys are unique by nature
             return new QueryResultCollection<K>(
                     getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);

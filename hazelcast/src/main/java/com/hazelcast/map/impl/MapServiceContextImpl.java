@@ -34,6 +34,8 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperationProviders;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyTask;
+import com.hazelcast.map.impl.query.MapLocalParallerQueryRunner;
+import com.hazelcast.map.impl.query.MapLocalQueryRunner;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
@@ -56,6 +58,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -74,6 +77,8 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
+import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 
 /**
  * Default implementation of map service context.
@@ -104,6 +109,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final LocalMapStatsProvider localMapStatsProvider;
     protected final MergePolicyProvider mergePolicyProvider;
     protected final MapQueryEngine mapQueryEngine;
+    protected final MapLocalQueryRunner mapQueryRunner;
     protected final QueryOptimizer queryOptimizer;
     protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     protected final PartitioningStrategyFactory partitioningStrategyFactory;
@@ -123,7 +129,8 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.queryOptimizer = newOptimizer(nodeEngine.getProperties());
-        this.mapQueryEngine = createMapQueryEngine(queryOptimizer);
+        this.mapQueryEngine = createMapQueryEngine();
+        this.mapQueryRunner = createMapQueryRunner(nodeEngine, queryOptimizer);
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
@@ -139,8 +146,19 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     // this method is overridden in another context.
-    MapQueryEngineImpl createMapQueryEngine(QueryOptimizer queryOptimizer) {
-        return new MapQueryEngineImpl(this, queryOptimizer);
+    MapQueryEngineImpl createMapQueryEngine() {
+        return new MapQueryEngineImpl(this);
+    }
+
+    // this method is overridden in another context.
+    MapLocalQueryRunner createMapQueryRunner(NodeEngine nodeEngine, QueryOptimizer queryOptimizer) {
+        boolean parallelEvaluation = nodeEngine.getProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
+        if (parallelEvaluation) {
+            ManagedExecutorService queryExecutorService = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
+            return new MapLocalParallerQueryRunner(this, queryOptimizer, queryExecutorService);
+        } else {
+            return new MapLocalQueryRunner(this, queryOptimizer);
+        }
     }
 
     // this method is overridden in another context.
@@ -365,6 +383,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MapQueryEngine getMapQueryEngine(String mapName) {
         return mapQueryEngine;
+    }
+
+    @Override
+    public MapLocalQueryRunner getMapQueryRunner() {
+        return mapQueryRunner;
     }
 
     @Override
