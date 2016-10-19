@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -155,4 +156,13 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
                 + '}';
     }
 
+    @Override
+    public int getFactoryId() {
+        return MultiMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MultiMapDataSerializerHook.MULTIMAP_TRANSACTION_LOG_RECORD;
+    }
 }

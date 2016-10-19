@@ -1,5 +1,6 @@
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
@@ -41,7 +42,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
     @Before
     public void setup() {
         setLoggingLog4j();
-        cluster = createHazelcastInstanceFactory(2).newInstances();
+        cluster = createHazelcastInstanceFactory(2).newInstances(getConfig());
         localNodeEngine = getNodeEngineImpl(cluster[0]);
         localTxService = getTransactionManagerService(cluster[0]);
         remoteTxService = getTransactionManagerService(cluster[1]);
@@ -321,4 +322,12 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
         });
     }
 
+    @Override
+    protected Config getConfig() {
+        Config config = new Config();
+        config.getSerializationConfig().addDataSerializableFactory(
+                MockTransactionLogRecord.MockTransactionLogRecordSerializerHook.F_ID,
+                new MockTransactionLogRecord.MockTransactionLogRecordSerializerHook().createFactory());
+        return config;
+    }
 }

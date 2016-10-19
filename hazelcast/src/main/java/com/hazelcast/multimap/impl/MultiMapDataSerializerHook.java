@@ -35,6 +35,7 @@ import com.hazelcast.multimap.impl.operations.RemoveBackupOperation;
 import com.hazelcast.multimap.impl.operations.RemoveOperation;
 import com.hazelcast.multimap.impl.operations.SizeOperation;
 import com.hazelcast.multimap.impl.operations.ValuesOperation;
+import com.hazelcast.multimap.impl.txn.MultiMapTransactionLogRecord;
 import com.hazelcast.multimap.impl.txn.TxnCommitBackupOperation;
 import com.hazelcast.multimap.impl.txn.TxnCommitOperation;
 import com.hazelcast.multimap.impl.txn.TxnGenerateRecordIdOperation;
@@ -103,6 +104,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
     public static final int TXN_ROLLBACK = 39;
     public static final int TXN_ROLLBACK_BACKUP = 40;
     public static final int MULTIMAP_OP_FACTORY = 41;
+    public static final int MULTIMAP_TRANSACTION_LOG_RECORD = 42;
 
 
     public int getFactoryId() {
@@ -111,7 +113,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[MULTIMAP_OP_FACTORY + 1];
+                = new ConstructorFunction[MULTIMAP_TRANSACTION_LOG_RECORD + 1];
         constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearBackupOperation();
@@ -262,6 +264,11 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
         constructors[MULTIMAP_OP_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MultiMapOperationFactory();
+            }
+        };
+        constructors[MULTIMAP_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MultiMapTransactionLogRecord();
             }
         };
 

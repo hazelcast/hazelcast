@@ -114,4 +114,14 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         partitionStateVersion = in.readInt();
         isTransient = in.readBoolean();
     }
+
+    @Override
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.CLUSTER_STATE_TRANSACTION_LOG_RECORD;
+    }
 }

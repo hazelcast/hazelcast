@@ -1,5 +1,6 @@
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -221,5 +222,15 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
 
         tx.rollback();
         assertEquals(ROLLED_BACK, tx.getState());
+    }
+
+
+    @Override
+    protected Config getConfig() {
+        Config config = new Config();
+        config.getSerializationConfig().addDataSerializableFactory(
+                MockTransactionLogRecord.MockTransactionLogRecordSerializerHook.F_ID,
+                new MockTransactionLogRecord.MockTransactionLogRecordSerializerHook().createFactory());
+        return config;
     }
 }

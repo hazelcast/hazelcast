@@ -1,9 +1,14 @@
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
 
@@ -11,8 +16,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class MockTransactionLogRecord implements TransactionLogRecord {
-
-    //public final static ConcurrentMap<String, AtomicInteger> prepare
 
     private boolean failPrepare;
     private boolean failCommit;
@@ -137,6 +140,40 @@ public class MockTransactionLogRecord implements TransactionLogRecord {
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             fail = in.readBoolean();
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MockTransactionLogRecordSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MockTransactionLogRecordSerializerHook.MOCK_TRANSACTION_LOG_RECORD;
+    }
+
+    public static class MockTransactionLogRecordSerializerHook implements DataSerializerHook {
+        public static final int F_ID = 1;
+        public static final int MOCK_TRANSACTION_LOG_RECORD = 0;
+        public static final int LEN = MOCK_TRANSACTION_LOG_RECORD + 1;
+
+        @Override
+        public int getFactoryId() {
+            return F_ID;
+        }
+
+        @Override
+        public DataSerializableFactory createFactory() {
+            ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+
+            constructors[MOCK_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                public IdentifiedDataSerializable createNew(Integer arg) {
+                    return new MockTransactionLogRecord();
+                }
+            };
+
+            return new ArrayDataSerializableFactory(constructors);
         }
     }
 }
