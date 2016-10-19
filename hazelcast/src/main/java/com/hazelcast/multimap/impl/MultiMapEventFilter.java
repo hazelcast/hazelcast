@@ -19,12 +19,12 @@ package com.hazelcast.multimap.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
-public class MultiMapEventFilter implements EventFilter, DataSerializable {
+public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializable {
 
     boolean includeValue;
 
@@ -89,5 +89,15 @@ public class MultiMapEventFilter implements EventFilter, DataSerializable {
         int result = (includeValue ? 1 : 0);
         result = 31 * result + (key != null ? key.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MultiMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MultiMapDataSerializerHook.MULTIMAP_EVENT_FILTER;
     }
 }

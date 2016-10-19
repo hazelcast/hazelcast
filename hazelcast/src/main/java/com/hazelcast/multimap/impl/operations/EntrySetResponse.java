@@ -16,11 +16,12 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class EntrySetResponse implements DataSerializable {
+public class EntrySetResponse implements IdentifiedDataSerializable {
 
     private Map<Data, Collection<Data>> map;
 
@@ -102,5 +103,15 @@ public class EntrySetResponse implements DataSerializable {
             }
             map.put(key, coll);
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MultiMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MultiMapDataSerializerHook.ENTRY_SET_RESPONSE;
     }
 }
