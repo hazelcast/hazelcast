@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
@@ -256,10 +257,12 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
     /**
      * Clears internal partition data.
      *
-     * @param onShutdown true if {@code close} is called during MapService shutdown,
-     *                   false otherwise.
+     * @param onShutdown   true if {@code clearPartition} is called during
+     *                     {@link com.hazelcast.map.impl.MapService#shutdown(boolean)}, false otherwise.
+     * @param onMapDestroy true if {@code clearPartition} is called during {@link IMap#destroy()},
+     *                     false otherwise.
      */
-    void clearPartition(boolean onShutdown);
+    void clearPartition(boolean onShutdown, boolean onMapDestroy);
 
     /**
      * Resets the record store to it's initial state.

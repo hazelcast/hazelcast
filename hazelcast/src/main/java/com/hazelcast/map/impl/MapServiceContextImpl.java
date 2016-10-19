@@ -66,7 +66,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -74,6 +73,7 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Default implementation of map service context.
@@ -190,7 +190,7 @@ class MapServiceContextImpl implements MapServiceContext {
             while (iter.hasNext()) {
                 RecordStore recordStore = iter.next();
                 if (backupCount > recordStore.getMapContainer().getTotalBackupCount()) {
-                    recordStore.clearPartition(false);
+                    recordStore.clearPartition(false, false);
                     iter.remove();
                 }
             }
@@ -202,7 +202,7 @@ class MapServiceContextImpl implements MapServiceContext {
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clearPartition(false);
+                mapPartition.clearPartition(false, false);
             }
             container.getMaps().clear();
         }
@@ -278,7 +278,7 @@ class MapServiceContextImpl implements MapServiceContext {
         }
 
         try {
-            semaphore.tryAcquire(partitionContainers.length, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            semaphore.tryAcquire(partitionContainers.length, DESTROY_TIMEOUT_SECONDS, SECONDS);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
