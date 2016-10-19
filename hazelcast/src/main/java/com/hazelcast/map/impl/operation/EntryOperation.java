@@ -106,7 +106,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         mapServiceContext.interceptAfterPut(name, dataValue);
         if (isPostProcessing(recordStore)) {
             Record record = recordStore.getRecord(dataKey);
-            dataValue = record.getValue();
+            dataValue = record == null ? null : record.getValue();
         }
         invalidateNearCache(dataKey);
         publishEntryEvent();

@@ -26,6 +26,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -1493,6 +1495,67 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         };
 
         assertTrueEventually(task);
+    }
+
+
+    @Test
+    public void receivesEntryRemovedEvent_onPostProcessingMapStore_after_executeOnKey() throws Exception {
+        Config config = getConfig();
+        config.getMapConfig("default")
+                .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap("test");
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryRemovedListener() {
+            @Override
+            public void entryRemoved(EntryEvent event) {
+                latch.countDown();
+            }
+        }, true);
+
+        map.put(1, 1);
+
+        map.executeOnKey(1, new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                entry.setValue(null);
+                return null;
+            }
+        });
+
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void receivesEntryRemovedEvent_onPostProcessingMapStore_after_executeOnEntries() throws Exception {
+        Config config = getConfig();
+        config.getMapConfig("default")
+                .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap("test");
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryRemovedListener() {
+            @Override
+            public void entryRemoved(EntryEvent event) {
+                latch.countDown();
+            }
+        }, true);
+
+        map.put(1, 1);
+
+        map.executeOnEntries(new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                entry.setValue(null);
+                return null;
+            }
+        });
+
+        assertOpenEventually(latch);
+    }
+
+    private static class TestPostProcessingMapStore extends MapStoreAdapter implements PostProcessingMapStore {
+
     }
 
     private static long getTotalOwnedAndBackupEntryCount(IMap map) {
