@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
+import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.txncollection.CollectionTransactionLogRecord;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitOperation;
@@ -50,5 +51,10 @@ public class QueueTransactionLogRecord extends CollectionTransactionLogRecord {
     public Operation newRollbackOperation() {
         long[] itemIds = createItemIdArray();
         return new TxnRollbackOperation(partitionId, name, itemIds);
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.QUEUE_TRANSACTION_LOG_RECORD;
     }
 }

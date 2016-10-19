@@ -368,6 +368,16 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         public String toString() {
             return "SleepyTransactionLogRecord{}";
         }
+
+        @Override
+        public int getFactoryId() {
+            return 0;
+        }
+
+        @Override
+        public int getId() {
+            return 0;
+        }
     }
 
     static class TxnIncrementor implements Runnable {

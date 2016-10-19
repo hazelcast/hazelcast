@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapRecordKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -116,5 +117,15 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
                 + ", ownerUuid='" + ownerUuid + '\''
                 + ", op=" + op
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.MAP_TRANSACTION_LOG_RECORD;
     }
 }

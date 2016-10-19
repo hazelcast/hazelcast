@@ -79,8 +79,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int SET_MASTER = 24;
     public static final int SHUTDOWN_NODE = 25;
     public static final int TRIGGER_MEMBER_LIST_PUBLISH = 26;
+    public static final int CLUSTER_STATE_TRANSACTION_LOG_RECORD = 27;
 
-    private static final int LEN = TRIGGER_MEMBER_LIST_PUBLISH + 1;
+    private static final int LEN = CLUSTER_STATE_TRANSACTION_LOG_RECORD + 1;
 
     @Override
     public int getFactoryId() {
@@ -224,6 +225,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[TRIGGER_MEMBER_LIST_PUBLISH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new TriggerMemberListPublishOperation();
+            }
+        };
+        constructors[CLUSTER_STATE_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClusterStateTransactionLogRecord();
             }
         };
 

@@ -41,6 +41,7 @@ import com.hazelcast.collection.impl.list.operations.ListSetOperation;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.collection.impl.set.SetContainer;
 import com.hazelcast.collection.impl.set.operations.SetReplicationOperation;
+import com.hazelcast.collection.impl.txncollection.CollectionTransactionLogRecord;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareBackupOperation;
@@ -54,6 +55,7 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddBa
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
+import com.hazelcast.collection.impl.txnqueue.QueueTransactionLogRecord;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -117,6 +119,8 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int SET_CONTAINER = 41;
     public static final int LIST_CONTAINER = 42;
+    public static final int COLLECTION_TRANSACTION_LOG_RECORD = 43;
+    public static final int QUEUE_TRANSACTION_LOG_RECORD = 43;
 
     @Override
     public int getFactoryId() {
@@ -126,7 +130,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[LIST_CONTAINER + 1];
+                = new ConstructorFunction[QUEUE_TRANSACTION_LOG_RECORD + 1];
 
         constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -338,6 +342,16 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[LIST_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ListContainer();
+            }
+        };
+        constructors[COLLECTION_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionTransactionLogRecord();
+            }
+        };
+        constructors[QUEUE_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new QueueTransactionLogRecord();
             }
         };
 

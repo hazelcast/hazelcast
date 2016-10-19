@@ -104,6 +104,7 @@ import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
+import com.hazelcast.map.impl.tx.MapTransactionLogRecord;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
 import com.hazelcast.map.impl.tx.TxnLockAndGetOperation;
 import com.hazelcast.map.impl.tx.TxnPrepareBackupOperation;
@@ -240,8 +241,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int PUT_IF_ABSENT_MERGE_POLICY = 108;
     public static final int UUID_FILTER = 109;
     public static final int CLEAR_NEAR_CACHE_INVALIDATION = 110;
+    public static final int MAP_TRANSACTION_LOG_RECORD = 111;
 
-    private static final int LEN = CLEAR_NEAR_CACHE_INVALIDATION + 1;
+    private static final int LEN = MAP_TRANSACTION_LOG_RECORD + 1;
 
     @Override
     public int getFactoryId() {
@@ -800,6 +802,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[CLEAR_NEAR_CACHE_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearNearCacheInvalidation();
+            }
+        };
+        constructors[MAP_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapTransactionLogRecord();
             }
         };
 
