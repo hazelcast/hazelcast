@@ -93,6 +93,9 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     @Override
     public Map<String, Object> discoverLocalMetadata() {
+        if (memberMetaData.size() == 0) {
+            discoverNodes();
+        }
         return memberMetaData;
     }
 
@@ -125,6 +128,9 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
                 int port = Integer.parseInt(tags.get(clusterId));
                 final String faultDomainId = getFaultDomain(vmOps, vm, resourceGroup);
+                if (faultDomainId != null) {
+                    memberMetaData.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, faultDomainId);
+                }
                 DiscoveryNode node = buildDiscoveredNode(faultDomainId, netProfile, port);
 
                 if (node != null) {
