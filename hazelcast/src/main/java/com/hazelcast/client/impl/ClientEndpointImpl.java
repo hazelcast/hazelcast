@@ -68,7 +68,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         } else {
             socketAddress = null;
         }
-        this.clientVersion = BuildInfo.getUnknownHazelcastVersion();
+        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
         this.clientVersionString = "Unknown";
     }
 

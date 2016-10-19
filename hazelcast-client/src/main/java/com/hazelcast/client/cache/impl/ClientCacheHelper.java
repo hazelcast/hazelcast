@@ -83,7 +83,7 @@ final class ClientCacheHelper {
                                                                    ClientInvocation clientInvocation) {
         Data responseData = CacheGetConfigCodec.decodeResponse(responseMessage).response;
         ClientConnection sendConnection = clientInvocation.getSendConnection();
-        if (null != sendConnection && BuildInfo.getUnknownHazelcastVersion() == sendConnection.getConnectedServerVersion()) {
+        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
             boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
             if (compatibilityEnabled) {
                 LegacyCacheConfig<K, V> legacyConfig = serializationService.toObject(responseData, LegacyCacheConfig.class);
@@ -142,7 +142,7 @@ final class ClientCacheHelper {
     private static <K, V> CacheConfig<K, V> resolveCacheConfig(HazelcastClientInstanceImpl client,
                                                                ClientInvocation clientInvocation, Data configData) {
         ClientConnection sendConnection = clientInvocation.getSendConnection();
-        if (null != sendConnection && BuildInfo.getUnknownHazelcastVersion() == sendConnection.getConnectedServerVersion()) {
+        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
             boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
             if (compatibilityEnabled) {
                 LegacyCacheConfig legacyConfig = client.getSerializationService().toObject(configData, LegacyCacheConfig.class);
@@ -159,7 +159,7 @@ final class ClientCacheHelper {
                                                          int partitionId)
             throws IOException {
         ClientConnection sendConnection = client.getInvocationService().getConnection(partitionId);
-        if (null != sendConnection && BuildInfo.getUnknownHazelcastVersion() == sendConnection.getConnectedServerVersion()) {
+        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
             boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
             if (compatibilityEnabled) {
                 return new LegacyCacheConfig<K, V>(newCacheConfig);

@@ -77,7 +77,7 @@ public class ClientConnection implements Connection {
 
     private volatile Throwable closeCause;
     private volatile String closeReason;
-    private int connectedServerVersion = BuildInfo.getUnknownHazelcastVersion();
+    private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
