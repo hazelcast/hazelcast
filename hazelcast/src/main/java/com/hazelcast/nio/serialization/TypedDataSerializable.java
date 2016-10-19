@@ -14,26 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl;
+package com.hazelcast.nio.serialization;
 
-
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Serializer;
-
-import java.io.IOException;
-
-interface SerializerAdapter {
-
-    void write(ObjectDataOutput out, Object object) throws IOException;
-
-    Object read(ObjectDataInput in) throws IOException;
-
-    int getTypeId();
-
-    void destroy();
-
-    Serializer getImpl();
-
-    Object read(ObjectDataInput in, Class aClass) throws IOException;
+/**
+ * This interface adds the possibility for the class to act as if it is another class when being deserialized using
+ * DataSerializable
+ */
+public interface TypedDataSerializable extends DataSerializable {
+    /**
+     *
+     * @return The class type that this serializable wants to act as.
+     */
+    Class getClassType();
 }

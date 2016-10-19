@@ -85,7 +85,7 @@ public interface ClientEndpoint extends Client {
 
     void setLoginContext(LoginContext lc);
 
-    void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection);
+    void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection, String clientVersion);
 
     void authenticated(ClientPrincipal principal);
 
@@ -95,4 +95,16 @@ public interface ClientEndpoint extends Client {
      * @return true if endpoint is authenticated with valid security credentials, returns false otherwise
      */
     boolean isAuthenticated();
+
+    /**
+     *
+     * @return The client version as calculated by {@link com.hazelcast.instance.BuildInfo}
+     */
+    int getClientVersion();
+
+    /**
+     *
+     * @param version The version string as obtained from the environment
+     */
+    void setClientVersion(String version);
 }

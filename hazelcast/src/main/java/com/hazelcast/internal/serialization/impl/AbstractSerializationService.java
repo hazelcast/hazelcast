@@ -181,6 +181,41 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
     }
 
+    @Override
+    public final <T> T toObject(final Object object, Class aClass) {
+        if (!(object instanceof Data)) {
+            return (T) object;
+        }
+
+        Data data = (Data) object;
+        if (isNullData(data)) {
+            return null;
+        }
+
+        BufferPool pool = bufferPoolThreadLocal.get();
+        BufferObjectDataInput in = pool.takeInputBuffer(data);
+        try {
+            final int typeId = data.getType();
+            final SerializerAdapter serializer = serializerFor(typeId);
+            if (serializer == null) {
+                if (active) {
+                    throw newHazelcastSerializationException(typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
+            }
+
+            Object obj = serializer.read(in, aClass);
+            if (managedContext != null) {
+                obj = managedContext.initialize(obj);
+            }
+            return (T) obj;
+        } catch (Throwable e) {
+            throw handleException(e);
+        } finally {
+            pool.returnInputBuffer(in);
+        }
+    }
+
     private static HazelcastSerializationException newHazelcastSerializationException(int typeId) {
         return new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId + ". "
                 + "This exception is likely to be caused by differences in the serialization configuration between members "
@@ -214,6 +249,27 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 throw new HazelcastInstanceNotActiveException();
             }
             Object obj = serializer.read(in);
+            if (managedContext != null) {
+                obj = managedContext.initialize(obj);
+            }
+            return (T) obj;
+        } catch (Throwable e) {
+            throw handleException(e);
+        }
+    }
+
+    @Override
+    public final <T> T readObject(final ObjectDataInput in, Class aClass) {
+        try {
+            final int typeId = in.readInt();
+            final SerializerAdapter serializer = serializerFor(typeId);
+            if (serializer == null) {
+                if (active) {
+                    throw newHazelcastSerializationException(typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
+            }
+            Object obj = serializer.read(in, aClass);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
             }

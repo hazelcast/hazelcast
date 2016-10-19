@@ -24,8 +24,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.LegacyCacheConfig;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.security.Permission;
 
@@ -70,4 +74,23 @@ public abstract class AbstractCacheMessageTask<P>
         return null;
     }
 
+    protected Data serializeCacheConfig(Object response) {
+        if (null == response) {
+            return nodeEngine.toData(response);
+        }
+
+        Data responseData = null;
+        int clientVersion = getClientVersion();
+        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == clientVersion) {
+            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
+            if (compatibilityEnabled) {
+                responseData = nodeEngine.toData(new LegacyCacheConfig((CacheConfig) response));
+            }
+        }
+
+        if (null == responseData) {
+            responseData = nodeEngine.toData(response);
+        }
+        return responseData;
+    }
 }

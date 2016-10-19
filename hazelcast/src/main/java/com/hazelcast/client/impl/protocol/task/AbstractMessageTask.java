@@ -76,6 +76,10 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         return endpointManager.getEndpoint(connection);
     }
 
+    protected int getClientVersion() {
+        return getEndpoint().getClientVersion();
+    }
+
     protected abstract P decodeClientMessage(ClientMessage clientMessage);
 
     protected abstract ClientMessage encodeResponse(Object response);

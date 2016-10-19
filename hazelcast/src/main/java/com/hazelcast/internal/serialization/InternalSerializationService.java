@@ -41,6 +41,8 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     <T> T readObject(ObjectDataInput in);
 
+    <T> T readObject(ObjectDataInput in, Class aClass);
+
     void disposeData(Data data);
 
     BufferObjectDataInput createObjectDataInput(byte[] data);
