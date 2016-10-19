@@ -75,13 +75,8 @@ public abstract class AbstractCacheMessageTask<P>
     }
 
     protected Data serializeCacheConfig(Object response) {
-        if (null == response) {
-            return nodeEngine.toData(response);
-        }
-
         Data responseData = null;
-        int clientVersion = getClientVersion();
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == clientVersion) {
+        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == getClientVersion()) {
             boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
             if (compatibilityEnabled) {
                 responseData = nodeEngine.toData(new LegacyCacheConfig((CacheConfig) response));
