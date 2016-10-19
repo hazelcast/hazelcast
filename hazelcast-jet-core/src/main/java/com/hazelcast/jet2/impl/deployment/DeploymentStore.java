@@ -17,6 +17,8 @@
 package com.hazelcast.jet2.impl.deployment;
 
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -39,6 +41,7 @@ import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class DeploymentStore {
 
+    private static final ILogger LOGGER = Logger.getLogger(DeploymentStore.class);
     private final String storagePath;
     private final File storageDirectory;
     private long fileNameCounter = 1;
@@ -51,7 +54,7 @@ public class DeploymentStore {
 
     public DeploymentStore(String storagePath) {
         this.storagePath = getStoragePathOrDefault(storagePath);
-        this.storageDirectory = createDeploymentDirectory();
+        this.storageDirectory = createStorageDirectory();
     }
 
     Map<String, ClassLoaderEntry> getJarEntries() {
@@ -66,7 +69,7 @@ public class DeploymentStore {
         return classEntries;
     }
 
-    private File createDeploymentDirectory() {
+    private File createStorageDirectory() {
         Path storageDirectoryPath = Paths.get(this.storagePath);
         int directoryNameCounter = 0;
         do {
@@ -80,6 +83,25 @@ public class DeploymentStore {
 
         } while (!storageDirectoryPath.toFile().exists());
         return storageDirectoryPath.toFile();
+    }
+
+    public void cleanup() {
+        delete(storageDirectory);
+    }
+
+    private void delete(File file) {
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File c : files) {
+                    delete(c);
+                }
+            }
+        }
+
+        if (!file.delete()) {
+            LOGGER.info("Can't delete file " + file.getName());
+        }
     }
 
 
