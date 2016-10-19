@@ -18,7 +18,6 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.client.cache.impl.ClientNearCacheExecutor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyCodec;
@@ -409,7 +408,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
             NearCacheContext nearCacheContext = new NearCacheContext(
                     context.getSerializationService(),
-                    new ClientNearCacheExecutor(context.getExecutionService()));
+                    context.getExecutionService());
 
             nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig, nearCacheContext);
             if (nearCache.isInvalidatedOnChange()) {

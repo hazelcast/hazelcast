@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.nearcache;
 
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
@@ -25,28 +26,28 @@ import com.hazelcast.spi.serialization.SerializationService;
 public class NearCacheContext {
 
     private final SerializationService serializationService;
-    private final NearCacheExecutor nearCacheExecutor;
+    private final ExecutionService executionService;
     private final ClassLoader classLoader;
 
     private NearCacheManager nearCacheManager;
 
     public NearCacheContext(SerializationService serializationService,
-                            NearCacheExecutor nearCacheExecutor) {
-        this(serializationService, nearCacheExecutor, null, null);
+                            ExecutionService executionService) {
+        this(serializationService, executionService, null, null);
     }
 
     public NearCacheContext(SerializationService serializationService,
-                            NearCacheExecutor nearCacheExecutor,
+                            ExecutionService executionService,
                             NearCacheManager nearCacheManager) {
-        this(serializationService, nearCacheExecutor, nearCacheManager, null);
+        this(serializationService, executionService, nearCacheManager, null);
     }
 
     public NearCacheContext(SerializationService serializationService,
-                            NearCacheExecutor nearCacheExecutor,
+                            ExecutionService executionService,
                             NearCacheManager nearCacheManager,
                             ClassLoader classLoader) {
         this.serializationService = serializationService;
-        this.nearCacheExecutor = nearCacheExecutor;
+        this.executionService = executionService;
         this.classLoader = classLoader;
 
         this.nearCacheManager = nearCacheManager;
@@ -64,8 +65,8 @@ public class NearCacheContext {
         return serializationService;
     }
 
-    public NearCacheExecutor getNearCacheExecutor() {
-        return nearCacheExecutor;
+    public ExecutionService getExecutionService() {
+        return executionService;
     }
 
     public ClassLoader getClassLoader() {

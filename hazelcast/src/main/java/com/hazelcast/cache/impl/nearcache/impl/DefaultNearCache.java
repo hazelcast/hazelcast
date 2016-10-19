@@ -18,13 +18,13 @@ package com.hazelcast.cache.impl.nearcache.impl;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledFuture;
@@ -80,7 +80,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     private ScheduledFuture createAndScheduleExpirationTask() {
         if (nearCacheConfig.getMaxIdleSeconds() > 0L || nearCacheConfig.getTimeToLiveSeconds() > 0L) {
             ExpirationTask expirationTask = new ExpirationTask();
-            return expirationTask.schedule(nearCacheContext.getNearCacheExecutor());
+            return expirationTask.schedule(nearCacheContext.getExecutionService());
         }
         return null;
     }
@@ -166,8 +166,8 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
             }
         }
 
-        private ScheduledFuture schedule(NearCacheExecutor nearCacheExecutor) {
-            return nearCacheExecutor.scheduleWithRepetition(this,
+        private ScheduledFuture schedule(ExecutionService executionService) {
+            return executionService.scheduleWithRepetition(this,
                     DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS,
                     DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS,
                     TimeUnit.SECONDS);
