@@ -62,7 +62,7 @@ public class RingbufferConfig {
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-    private RingbufferStoreConfig ringbufferStoreConfig;
+    private RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig().setEnabled(false);
 
     /**
      * Creates a RingbufferConfig with the provided name.
@@ -88,9 +88,9 @@ public class RingbufferConfig {
         this.asyncBackupCount = config.asyncBackupCount;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.inMemoryFormat = config.inMemoryFormat;
-        this.ringbufferStoreConfig = config.ringbufferStoreConfig == null
-                ? null
-                : new RingbufferStoreConfig(config.ringbufferStoreConfig);
+        if (config.ringbufferStoreConfig != null) {
+            this.ringbufferStoreConfig = new RingbufferStoreConfig(config.ringbufferStoreConfig);
+        }
     }
 
     /**

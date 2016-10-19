@@ -125,8 +125,8 @@ public interface Ringbuffer<T> {
      * oportunity to block until the item is added into the ring buffer.
      *
      * @param readSequence the sequence wanting to be read
-     * @throws StaleSequenceException if the requested sequence is greater than the {@link #tailSequence()} + 1 or smaller
-     *                                than the {@link #headSequence()}
+     * @throws StaleSequenceException   if the requested sequence is smaller than the {@link #headSequence()}
+     * @throws IllegalArgumentException if the requested sequence is greater than the {@link #tailSequence()} + 1
      */
     void checkBlockableReadSequence(long readSequence);
 
@@ -134,8 +134,8 @@ public interface Ringbuffer<T> {
      * Check if the sequence can be read from the ring buffer.
      *
      * @param sequence the sequence wanting to be read
-     * @throws StaleSequenceException if the requested sequence is greater than the {@link #tailSequence()} or smaller than the
-     *                                {@link #headSequence()}
+     * @throws StaleSequenceException   if the requested sequence is smaller than the {@link #headSequence()}
+     * @throws IllegalArgumentException if the requested sequence is greater than the {@link #tailSequence()}
      */
     void checkReadSequence(long sequence);
 

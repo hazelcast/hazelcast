@@ -31,6 +31,11 @@ import java.io.IOException;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_OPERATION;
 
+/**
+ * Adds a new ring buffer item. The master node will add the item into the ring buffer, generating a new sequence id while
+ * the backup operation will put the item under the sequence ID that the master generated. This is to avoid differences
+ * in ring buffer data structures.
+ */
 public class AddOperation extends AbstractRingBufferOperation
         implements Notifier, BackupAwareOperation {
 
@@ -92,7 +97,7 @@ public class AddOperation extends AbstractRingBufferOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new AddBackupOperation(name, item);
+        return new AddBackupOperation(name, resultSequence, item);
     }
 
     @Override

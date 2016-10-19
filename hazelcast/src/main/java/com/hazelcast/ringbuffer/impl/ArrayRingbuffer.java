@@ -70,6 +70,7 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
+    // not used in the codebase, here just for future API usage
     public boolean isEmpty() {
         return size() == 0;
     }
@@ -96,6 +97,8 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
+    // This method is not used since the RingbufferContainer also checks if the ring buffer store is enabled before
+    // throwing a StaleSequenceException
     public void checkBlockableReadSequence(long readSequence) {
         if (readSequence > tailSequence + 1) {
             throw new IllegalArgumentException("sequence:" + readSequence
@@ -110,6 +113,7 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
+    // the sequence is usually in the right range since the RingbufferContainer checks it too
     public void checkReadSequence(long sequence) {
         if (sequence > tailSequence) {
             throw new IllegalArgumentException("sequence:" + sequence
