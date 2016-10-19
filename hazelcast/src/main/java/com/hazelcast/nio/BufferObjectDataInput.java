@@ -74,4 +74,6 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
     void clear();
 
     void init(byte[] data, int offset);
+
+    int available();
 }
