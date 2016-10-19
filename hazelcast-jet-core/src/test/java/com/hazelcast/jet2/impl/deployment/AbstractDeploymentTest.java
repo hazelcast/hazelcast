@@ -7,17 +7,23 @@ import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Job;
 import com.hazelcast.jet2.Vertex;
-import com.hazelcast.jet2.impl.deployment.processors.ApacheV1Isolated;
-import com.hazelcast.jet2.impl.deployment.processors.ApacheV1andV2;
-import com.hazelcast.jet2.impl.deployment.processors.ApacheV2;
-import com.hazelcast.jet2.impl.deployment.processors.LoadCarIsolated;
-import com.hazelcast.jet2.impl.deployment.processors.LoadPersonAndCar;
-import com.hazelcast.jet2.impl.deployment.processors.LoadPersonIsolated;
+import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.junit.Test;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import org.junit.Test;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
@@ -238,4 +244,126 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
     }
 
 
+    private static class ApacheV1andV2 extends AbstractProcessor {
+
+        @Override
+        public boolean complete() {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            URL resource = contextClassLoader.getResource("apachev1");
+            assertNotNull(resource);
+            BufferedReader reader = null;
+            try {
+                reader = Files.newBufferedReader(Paths.get(resource.toURI()));
+                String firstLine = reader.readLine();
+                String secondLine = reader.readLine();
+                assertTrue(secondLine.contains("Version 1.1"));
+                assertNotNull(contextClassLoader.getResourceAsStream("apachev2"));
+
+            } catch (IOException | URISyntaxException e) {
+                fail();
+            }
+            return true;
+
+        }
+    }
+
+    private static class ApacheV1Isolated extends AbstractProcessor {
+
+        @Override
+        public boolean complete() {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            URL resource = contextClassLoader.getResource("apachev1");
+            assertNotNull(resource);
+            BufferedReader reader = null;
+            try {
+                reader = Files.newBufferedReader(Paths.get(resource.toURI()));
+                String firstLine = reader.readLine();
+                String secondLine = reader.readLine();
+                assertTrue(secondLine.contains("Version 1.1"));
+                assertNull(contextClassLoader.getResourceAsStream("apachev2"));
+
+            } catch (IOException | URISyntaxException e) {
+                fail();
+            }
+            return true;
+
+        }
+    }
+
+    private static class LoadCarIsolated extends AbstractProcessor {
+
+        @Override
+        public boolean complete() {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            try {
+                contextClassLoader.loadClass("com.sample.pojo.car.Car");
+            } catch (ClassNotFoundException e) {
+                fail();
+            }
+            try {
+                contextClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+                fail();
+            } catch (ClassNotFoundException ignored) {
+            }
+            return true;
+        }
+    }
+
+    private static class ApacheV2 extends AbstractProcessor {
+
+        @Override
+        public boolean complete() {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            URL resource = contextClassLoader.getResource("apachev2");
+            BufferedReader reader = null;
+            try {
+                reader = Files.newBufferedReader(Paths.get(resource.toURI()));
+                String firstLine = reader.readLine();
+                String secondLine = reader.readLine();
+                assertTrue(secondLine.contains("Apache"));
+                assertNull(contextClassLoader.getResourceAsStream("apachev1"));
+            } catch (IOException | URISyntaxException e) {
+                fail();
+            }
+            return true;
+        }
+    }
+
+    private static class LoadPersonAndCar extends AbstractProcessor {
+
+        @Override
+        public boolean complete() {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            try {
+                contextClassLoader.loadClass("com.sample.pojo.car.Car");
+            } catch (ClassNotFoundException e) {
+                fail();
+            }
+            try {
+                contextClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+            } catch (ClassNotFoundException ignored) {
+                fail();
+            }
+            return true;
+        }
+    }
+
+    private static class LoadPersonIsolated extends AbstractProcessor {
+
+        @Override
+        public boolean complete() {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            try {
+                contextClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+            } catch (ClassNotFoundException e) {
+                fail(e.getMessage());
+            }
+            try {
+                contextClassLoader.loadClass("com.sample.pojo.car.Car");
+                fail();
+            } catch (ClassNotFoundException ignored) {
+            }
+            return true;
+        }
+    }
 }
