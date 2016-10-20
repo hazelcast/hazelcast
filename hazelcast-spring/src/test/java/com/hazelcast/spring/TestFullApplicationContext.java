@@ -49,9 +49,14 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.ServiceConfig;
@@ -84,7 +89,11 @@ import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.QueueStore;
+import com.hazelcast.core.QueueStoreFactory;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.core.RingbufferStore;
+import com.hazelcast.core.RingbufferStoreFactory;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -96,6 +105,7 @@ import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -187,6 +197,16 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Autowired
     private MapStoreFactory dummyMapStoreFactory;
+
+    @Resource(name = "dummyQueueStore")
+    private QueueStore dummyQueueStore;
+    @Autowired
+    private QueueStoreFactory dummyQueueStoreFactory;
+
+    @Resource(name = "dummyRingbufferStore")
+    private RingbufferStore dummyRingbufferStore;
+    @Autowired
+    private RingbufferStoreFactory dummyRingbufferStoreFactory;
 
     @Autowired
     private WanReplicationEndpoint wanReplication;
@@ -362,7 +382,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         List<MapPartitionLostListenerConfig> partitionLostListenerConfigs = testMapWithPartitionLostListenerConfig.getPartitionLostListenerConfigs();
         assertEquals(1, partitionLostListenerConfigs.size());
         assertEquals("DummyMapPartitionLostListenerImpl", partitionLostListenerConfigs.get(0).getClassName());
-        
+
         MapConfig testMapWithPartitionStrategyConfig = config.getMapConfig("mapWithPartitionStrategy");
         assertEquals("com.hazelcast.spring.DummyPartitionStrategy", testMapWithPartitionStrategyConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
     }
@@ -384,6 +404,86 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2500, qConfig.getMaxSize());
         assertFalse(qConfig.isStatisticsEnabled());
         assertEquals(100, qConfig.getEmptyQueueTtl());
+
+        final QueueConfig queueWithStore1 = config.getQueueConfig("queueWithStore1");
+        assertNotNull(queueWithStore1);
+        final QueueStoreConfig storeConfig1 = queueWithStore1.getQueueStoreConfig();
+        assertNotNull(storeConfig1);
+        assertEquals(DummyQueueStore.class.getName(), storeConfig1.getClassName());
+
+        final QueueConfig queueWithStore2 = config.getQueueConfig("queueWithStore2");
+        assertNotNull(queueWithStore2);
+        final QueueStoreConfig storeConfig2 = queueWithStore2.getQueueStoreConfig();
+        assertNotNull(storeConfig2);
+        assertEquals(DummyQueueStoreFactory.class.getName(), storeConfig2.getFactoryClassName());
+
+        final QueueConfig queueWithStore3 = config.getQueueConfig("queueWithStore3");
+        assertNotNull(queueWithStore3);
+        final QueueStoreConfig storeConfig3 = queueWithStore3.getQueueStoreConfig();
+        assertNotNull(storeConfig3);
+        assertEquals(dummyQueueStore, storeConfig3.getStoreImplementation());
+
+        final QueueConfig queueWithStore4 = config.getQueueConfig("queueWithStore4");
+        assertNotNull(queueWithStore4);
+        final QueueStoreConfig storeConfig4 = queueWithStore4.getQueueStoreConfig();
+        assertNotNull(storeConfig4);
+        assertEquals(dummyQueueStoreFactory, storeConfig4.getFactoryImplementation());
+    }
+
+    @Test
+    public void testRingbufferConfig() {
+        final RingbufferConfig testRingbuffer = config.getRingbufferConfig("testRingbuffer");
+        assertNotNull(testRingbuffer);
+        assertEquals("testRingbuffer", testRingbuffer.getName());
+        assertEquals(InMemoryFormat.OBJECT, testRingbuffer.getInMemoryFormat());
+        assertEquals(100, testRingbuffer.getCapacity());
+        assertEquals(1, testRingbuffer.getBackupCount());
+        assertEquals(1, testRingbuffer.getAsyncBackupCount());
+        assertEquals(20, testRingbuffer.getTimeToLiveSeconds());
+        final RingbufferStoreConfig store1 = testRingbuffer.getRingbufferStoreConfig();
+        assertNotNull(store1);
+        assertEquals(DummyRingbufferStore.class.getName(), store1.getClassName());
+
+        final RingbufferConfig testRingbuffer2 = config.getRingbufferConfig("testRingbuffer2");
+        assertNotNull(testRingbuffer2);
+        final RingbufferStoreConfig store2 = testRingbuffer2.getRingbufferStoreConfig();
+        assertNotNull(store2);
+        assertEquals(DummyRingbufferStoreFactory.class.getName(), store2.getFactoryClassName());
+
+        final RingbufferConfig testRingbuffer3 = config.getRingbufferConfig("testRingbuffer3");
+        assertNotNull(testRingbuffer3);
+        final RingbufferStoreConfig store3 = testRingbuffer3.getRingbufferStoreConfig();
+        assertNotNull(store3);
+        assertEquals(dummyRingbufferStore, store3.getStoreImplementation());
+
+        final RingbufferConfig testRingbuffer4 = config.getRingbufferConfig("testRingbuffer4");
+        assertNotNull(testRingbuffer4);
+        final RingbufferStoreConfig store4 = testRingbuffer4.getRingbufferStoreConfig();
+        assertNotNull(store4);
+        assertEquals(dummyRingbufferStoreFactory, store4.getFactoryImplementation());
+    }
+
+    @Test
+    public void testSemaphoreConfig() {
+        final SemaphoreConfig testSemaphore = config.getSemaphoreConfig("testSemaphore");
+        assertNotNull(testSemaphore);
+        assertEquals("testSemaphore", testSemaphore.getName());
+        assertEquals(1, testSemaphore.getBackupCount());
+        assertEquals(1, testSemaphore.getAsyncBackupCount());
+        assertEquals(10, testSemaphore.getInitialPermits());
+    }
+
+    @Test
+    public void testReliableTopicConfig() {
+        final ReliableTopicConfig testReliableTopic = config.getReliableTopicConfig("testReliableTopic");
+        assertNotNull(testReliableTopic);
+        assertEquals("testReliableTopic", testReliableTopic.getName());
+        assertEquals(1, testReliableTopic.getMessageListenerConfigs().size());
+        assertEquals(false, testReliableTopic.isStatisticsEnabled());
+        final ListenerConfig listenerConfig = testReliableTopic.getMessageListenerConfigs().get(0);
+        assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
+        assertEquals(10, testReliableTopic.getReadBatchSize());
+        assertEquals(TopicOverloadPolicy.BLOCK, testReliableTopic.getTopicOverloadPolicy());
     }
 
     @Test
@@ -417,7 +517,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, testListConfig.getAsyncBackupCount());
         assertFalse(testListConfig.isStatisticsEnabled());
     }
-    
+
     @Test
     public void testSetConfig() {
         SetConfig testSetConfig = config.getSetConfig("testSet");
@@ -428,7 +528,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testSetConfig.getAsyncBackupCount());
         assertFalse(testSetConfig.isStatisticsEnabled());
     }
-    
+
     @Test
     public void testTopicConfig() {
         TopicConfig testTopicConfig = config.getTopicConfig("testTopic");

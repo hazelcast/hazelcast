@@ -164,8 +164,51 @@
                       backup-count="1"
                       async-backup-count="1"
                       statistics-enabled="false"
-                      empty-queue-ttl="100"
-            />
+                      empty-queue-ttl="100"/>
+
+            <hz:queue name="queueWithStore1">
+                <hz:queue-store enabled="true" class-name="com.hazelcast.spring.DummyQueueStore"/>
+            </hz:queue>
+            <hz:queue name="queueWithStore2">
+                <hz:queue-store enabled="true" factory-class-name="com.hazelcast.spring.DummyQueueStoreFactory"/>
+            </hz:queue>
+            <hz:queue name="queueWithStore3">
+                <hz:queue-store enabled="true" store-implementation="dummyQueueStore"/>
+            </hz:queue>
+            <hz:queue name="queueWithStore4">
+                <hz:queue-store enabled="true" factory-implementation="dummyQueueStoreFactory"/>
+            </hz:queue>
+
+            <hz:ringbuffer name="testRingbuffer"
+                           in-memory-format="OBJECT"
+                           capacity="100"
+                           backup-count="1"
+                           async-backup-count="1"
+                           time-to-live-seconds="20">
+                <hz:ringbuffer-store enabled="true" class-name="com.hazelcast.spring.DummyRingbufferStore"/>
+            </hz:ringbuffer>
+
+            <hz:ringbuffer name="testRingbuffer2">
+                <hz:ringbuffer-store enabled="true" factory-class-name="com.hazelcast.spring.DummyRingbufferStoreFactory"/>
+            </hz:ringbuffer>
+
+            <hz:ringbuffer name="testRingbuffer3">
+                <hz:ringbuffer-store enabled="true" implementation="dummyRingbufferStore"/>
+            </hz:ringbuffer>
+
+            <hz:ringbuffer name="testRingbuffer4">
+                <hz:ringbuffer-store enabled="true" factory-implementation="dummyRingbufferStoreFactory"/>
+            </hz:ringbuffer>
+
+            <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10" />
+
+            <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"
+                               statistics-enabled="false">
+                <hz:message-listeners>
+                    <hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener"/>
+                </hz:message-listeners>
+            </hz:reliable-topic>
+
             <hz:map name="testMap"
                     backup-count="2"
                     max-size="0"
@@ -447,6 +490,10 @@
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>
+    <bean id="dummyQueueStore" class="com.hazelcast.spring.DummyQueueStore"/>
+    <bean id="dummyQueueStoreFactory" class="com.hazelcast.spring.DummyQueueStoreFactory"/>
+    <bean id="dummyRingbufferStore" class="com.hazelcast.spring.DummyRingbufferStore"/>
+    <bean id="dummyRingbufferStoreFactory" class="com.hazelcast.spring.DummyRingbufferStoreFactory"/>
     <bean id="dummyMapEvictionPolicy" class="com.hazelcast.spring.DummyMapEvictionPolicy"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
