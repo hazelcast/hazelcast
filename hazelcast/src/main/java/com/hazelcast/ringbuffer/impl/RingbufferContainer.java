@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -42,14 +42,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * The expirationPolicy contains the expiration policy of the items. If a time to live is set, the policy is created, otherwise
  * it is null to save space.
  */
-public class RingbufferContainer implements DataSerializable {
+public class RingbufferContainer implements IdentifiedDataSerializable {
 
     private static final long TTL_DISABLED = 0;
+    private static final String EMPTY = "empty";
 
-    private final String name;
+    private String name;
 
     // a cached version of the wait notify key needed to wait for a change if the ringbuffer is empty
-    private final RingbufferWaitNotifyKey emptyRingWaitNotifyKey;
+    private RingbufferWaitNotifyKey emptyRingWaitNotifyKey;
     private RingbufferExpirationPolicy expirationPolicy;
     private InMemoryFormat inMemoryFormat;
     private RingbufferConfig config;
@@ -57,6 +58,13 @@ public class RingbufferContainer implements DataSerializable {
     private SerializationService serializationService;
 
     private Ringbuffer ringbuffer;
+
+    /**
+     * This constructor only supports IdentifiedDataSerializable instance creation. For any other purpose, use other
+     * constructors in this class.
+     */
+    public RingbufferContainer() {
+    }
 
     /**
      * Constructs the ring buffer container with only the name and the key for blocking operations. This does not fully
@@ -68,7 +76,7 @@ public class RingbufferContainer implements DataSerializable {
      */
     public RingbufferContainer(String name) {
         this.name = name;
-        this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(name, "empty");
+        this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(name, EMPTY);
     }
 
     public RingbufferContainer(String name, RingbufferConfig config,
@@ -419,6 +427,7 @@ public class RingbufferContainer implements DataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         boolean ttlEnabled = expirationPolicy != null;
+        out.writeUTF(name);
         out.writeLong(ringbuffer.tailSequence());
         out.writeLong(ringbuffer.headSequence());
         out.writeInt((int) ringbuffer.getCapacity());
@@ -450,6 +459,8 @@ public class RingbufferContainer implements DataSerializable {
     @Override
     @SuppressWarnings("unchecked")
     public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(name, EMPTY);
         final long tailSequence = in.readLong();
         final long headSequence = in.readLong();
         final int capacity = in.readInt();
@@ -490,5 +501,15 @@ public class RingbufferContainer implements DataSerializable {
 
     RingbufferExpirationPolicy getExpirationPolicy() {
         return expirationPolicy;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return RingbufferDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return RingbufferDataSerializerHook.RINGBUFFER_CONTAINER;
     }
 }

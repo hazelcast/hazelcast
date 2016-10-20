@@ -16,17 +16,18 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
 /**
  * Wrapper for {@link com.hazelcast.nio.serialization.Data} value objects with version information.
  */
-public class VersionedValue implements DataSerializable {
+public class VersionedValue implements IdentifiedDataSerializable {
 
     long version;
     Data value;
@@ -56,5 +57,15 @@ public class VersionedValue implements DataSerializable {
         if (!isNull) {
             value = in.readData();
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.VERSIONED_VALUE;
     }
 }

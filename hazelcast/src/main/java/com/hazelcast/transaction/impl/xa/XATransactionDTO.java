@@ -18,14 +18,15 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class XATransactionDTO implements DataSerializable {
+public class XATransactionDTO implements IdentifiedDataSerializable {
     private String txnId;
     private SerializableXID xid;
     private String ownerUuid;
@@ -108,5 +109,15 @@ public class XATransactionDTO implements DataSerializable {
             TransactionLogRecord record = in.readObject();
             records.add(record);
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return TransactionDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return TransactionDataSerializerHook.XA_TRANSACTION_DTO;
     }
 }

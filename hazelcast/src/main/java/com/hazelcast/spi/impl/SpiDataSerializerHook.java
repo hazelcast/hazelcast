@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
@@ -60,6 +61,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int DIST_OBJECT_INIT = 14;
     public static final int DIST_OBJECT_DESTROY = 15;
     public static final int POST_JOIN_PROXY = 16;
+    public static final int TRUE_EVENT_FILTER = 17;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -101,6 +103,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new DistributedObjectDestroyOperation();
                     case POST_JOIN_PROXY:
                         return new PostJoinProxyOperation();
+                    case TRUE_EVENT_FILTER:
+                        return new TrueEventFilter();
                     default:
                         return null;
                 }

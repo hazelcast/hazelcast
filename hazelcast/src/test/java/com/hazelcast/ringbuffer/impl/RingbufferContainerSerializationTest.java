@@ -146,12 +146,11 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
         BufferObjectDataOutput out = serializationService.createObjectDataOutput(100000);
         BufferObjectDataInput in = null;
         try {
-            original.writeData(out);
+            out.writeObject(original);
             byte[] bytes = out.toByteArray();
             sleepMillis(CLOCK_DIFFERENCE_MS);
-            RingbufferContainer clone = new RingbufferContainer(original.getName());
             in = serializationService.createObjectDataInput(bytes);
-            clone.readData(in);
+            RingbufferContainer clone = in.readObject();
             return clone;
         } catch (IOException e) {
             throw new RuntimeException(e);

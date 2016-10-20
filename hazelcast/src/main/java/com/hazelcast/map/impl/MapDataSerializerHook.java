@@ -114,6 +114,7 @@ import com.hazelcast.map.impl.tx.TxnRollbackOperation;
 import com.hazelcast.map.impl.tx.TxnSetOperation;
 import com.hazelcast.map.impl.tx.TxnUnlockBackupOperation;
 import com.hazelcast.map.impl.tx.TxnUnlockOperation;
+import com.hazelcast.map.impl.tx.VersionedValue;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
@@ -242,8 +243,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int UUID_FILTER = 109;
     public static final int CLEAR_NEAR_CACHE_INVALIDATION = 110;
     public static final int MAP_TRANSACTION_LOG_RECORD = 111;
+    public static final int VERSIONED_VALUE = 112;
 
-    private static final int LEN = MAP_TRANSACTION_LOG_RECORD + 1;
+    private static final int LEN = VERSIONED_VALUE + 1;
 
     @Override
     public int getFactoryId() {
@@ -807,6 +809,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MAP_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapTransactionLogRecord();
+            }
+        };
+        constructors[VERSIONED_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new VersionedValue();
             }
         };
 

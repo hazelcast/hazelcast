@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -60,8 +61,9 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int VALUES = 22;
     public static final int CLEAR_OP_FACTORY = 23;
     public static final int PUT_ALL_OP_FACTORY = 24;
+    public static final int RECORD_MIGRATION_INFO = 25;
 
-    private static final int LEN = PUT_ALL_OP_FACTORY + 1;
+    private static final int LEN = RECORD_MIGRATION_INFO + 1;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -219,6 +221,12 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutAllOperationFactory();
+            }
+        };
+        constructors[RECORD_MIGRATION_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RecordMigrationInfo();
             }
         };
 
