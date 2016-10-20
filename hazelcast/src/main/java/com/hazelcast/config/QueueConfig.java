@@ -55,6 +55,7 @@ public class QueueConfig {
     private int emptyQueueTtl = DEFAULT_EMPTY_QUEUE_TTL;
     private QueueStoreConfig queueStoreConfig;
     private boolean statisticsEnabled = true;
+    private String quorumName;
     private QueueConfigReadOnly readOnly;
 
     public QueueConfig() {
@@ -72,6 +73,7 @@ public class QueueConfig {
         this.maxSize = config.maxSize;
         this.emptyQueueTtl = config.emptyQueueTtl;
         this.statisticsEnabled = config.statisticsEnabled;
+        this.quorumName = config.quorumName;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
     }
@@ -278,6 +280,26 @@ public class QueueConfig {
      */
     public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
+    }
+
+    /**
+     * Returns the quorum name for queue operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for queue operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated queue configuration
+     */
+    public QueueConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
         return this;
     }
 

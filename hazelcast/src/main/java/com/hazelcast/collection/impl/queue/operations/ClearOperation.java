@@ -24,13 +24,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.util.Map;
 
 /**
  * Clears items stored by Queue.
  */
-public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
+public class ClearOperation extends QueueBackupAwareOperation implements Notifier, MutatingOperation {
 
     private Map<Long, Data> dataMap;
 

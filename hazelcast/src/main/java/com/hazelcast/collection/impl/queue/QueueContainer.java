@@ -55,13 +55,15 @@ import java.util.concurrent.TimeUnit;
 /**
  * The {@code QueueContainer} contains the actual queue and provides functionalities such as :
  * <ul>
- *     <li>queue functionalities</li>
- *     <li>transactional operation functionalities</li>
- *     <li>schedules queue destruction if it is configured to be destroyed once empty</li>
+ * <li>queue functionalities</li>
+ * <li>transactional operation functionalities</li>
+ * <li>schedules queue destruction if it is configured to be destroyed once empty</li>
  * </ul>
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class QueueContainer implements IdentifiedDataSerializable {
     private static final int ID_PROMOTION_OFFSET = 100000;
+    /** Contains item ID to queue item mappings for current transactions */
     private final Map<Long, TxQueueItem> txMap = new HashMap<Long, TxQueueItem>();
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
     private final QueueWaitNotifyKey pollWaitNotifyKey;
@@ -73,6 +75,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private NodeEngine nodeEngine;
     private QueueService service;
     private ILogger logger;
+    /** The ID of the last item, used for generating unique IDs for queue items */
     private long idGenerator;
     private String name;
 
@@ -123,6 +126,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     //TX Methods
 
+    /**
+     * Checks if there is a reserved item (within a transaction) with the given {@code itemId}.
+     *
+     * @param itemId the ID which is to be checked
+     * @return true if there is an item reserved with this ID
+     * @throws TransactionException if there is no reserved item with the ID
+     */
     public boolean txnCheckReserve(long itemId) {
         if (txMap.get(itemId) == null) {
             throw new TransactionException("No reserve for itemId: " + itemId);
@@ -141,6 +151,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     //TX Poll
+
+    /**
+     * Retrieves and removes the head of the queue and loads the data from the queue store if the data is not stored in-memory
+     * and the queue store is configured and enabled. If the queue is empty returns an item which was previously reserved with
+     * the {@code reservedOfferId} by invoking {@code {@link #txnOfferReserve(String)}}.
+     *
+     * @param reservedOfferId the ID of the reserved item to be returned if the queue is empty
+     * @param transactionId   the transaction ID for which this poll is invoked
+     * @return the head of the queue or a reserved item with the {@code reservedOfferId} if there is any
+     */
     public QueueItem txnPollReserve(long reservedOfferId, String transactionId) {
         QueueItem item = getItemQueue().peek();
         if (item == null) {
@@ -178,6 +198,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return result;
     }
 
+    /**
+     * Commits the effects of the {@link #txnPollReserve(long, String)}}. Also deletes the item data from the queue
+     * data store if it is configured and enabled.
+     *
+     * @param itemId the ID of the item which was polled inside a transaction
+     * @return the data of the polled item
+     * @throws HazelcastException if there was any exception while removing the item from the queue data store
+     */
     public Data txnCommitPollBackup(long itemId) {
         TxQueueItem item = txMap.remove(itemId);
         if (item == null) {
@@ -194,6 +222,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return item.getData();
     }
 
+    /**
+     * Rolls back the effects of the {@link #txnPollReserve(long, String)}. The {@code backup} parameter defines whether
+     * this item was stored on a backup queue or a primary queue. Also adds a queue item with the {@code itemId} to the backup
+     * map if the {@code backup} parameter is true or the queue.
+     * Cancels the queue eviction if one is scheduled.
+     *
+     * @param itemId the ID of the item which was polled in a transaction
+     * @param backup if this item was
+     * @return if there was any polled item with the {@code itemId} inside a transaction
+     */
     public boolean txnRollbackPoll(long itemId, boolean backup) {
         TxQueueItem item = txMap.remove(itemId);
         if (item == null) {
@@ -223,12 +261,27 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     //TX Offer
+
+    /**
+     * Reserves an ID for a future queue item and associates it with the given {@code transactionId}.
+     * The item is not yet visible in the queue, it is just reserved for future insertion.
+     *
+     * @param transactionId the ID of the transaction offering this item
+     * @return the ID of the reserved item
+     */
     public long txnOfferReserve(String transactionId) {
         TxQueueItem item = new TxQueueItem(this, nextId(), null).setTransactionId(transactionId).setPollOperation(false);
         txMap.put(item.getItemId(), item);
         return item.getItemId();
     }
 
+    /**
+     * Reserves an ID for a future queue item and associates it with the given {@code transactionId}.
+     * The item is not yet visible in the queue, it is just reserved for future insertion.
+     *
+     * @param transactionId the ID of the transaction offering this item
+     * @param itemId        the ID of the item being reserved
+     */
     public void txnOfferBackupReserve(long itemId, String transactionId) {
         QueueItem item = new QueueItem(this, itemId, null);
         Object o = txMap.put(itemId, new TxQueueItem(item).setPollOperation(false).setTransactionId(transactionId));
@@ -237,6 +290,18 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * Sets the data of a reserved item and commits the change so it can be visible outside a transaction. The commit means
+     * that the item is offered to the queue if {@code backup} is false or saved into a backup map if {@code backup} is true.
+     * This is because a node can hold backups for queues on other nodes.
+     * Cancels the queue eviction if one is scheduled.
+     *
+     * @param itemId the ID of the reserved item
+     * @param data   the data to be associated with the reserved item
+     * @param backup if the item is to be offered to the underlying queue or stored as a backup
+     * @return true if the commit succeeded
+     * @throws TransactionException if there is no reserved item with the {@code itemId}
+     */
     public boolean txnCommitOffer(long itemId, Data data, boolean backup) {
         QueueItem item = txMap.remove(itemId);
         if (item == null && !backup) {
@@ -261,12 +326,25 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return true;
     }
 
+    /**
+     * Removes a reserved item with the given {@code itemId}. Also schedules the queue for destruction if it is empty or
+     * destroys it immediately if it is empty and {@link QueueConfig#getEmptyQueueTtl()} is 0.
+     *
+     * @param itemId the ID of the reserved item to be removed
+     * @return if an item was reserved with the given {@code itemId}
+     */
     public boolean txnRollbackOffer(long itemId) {
         final boolean result = txnRollbackOfferBackup(itemId);
         scheduleEvictionIfEmpty();
         return result;
     }
 
+    /**
+     * Removes a reserved item with the given {@code itemId}.
+     *
+     * @param itemId the ID of the reserved item to be removed
+     * @return if an item was reserved with the given {@code itemId}
+     */
     public boolean txnRollbackOfferBackup(long itemId) {
         QueueItem item = txMap.remove(itemId);
         if (item == null) {
@@ -276,6 +354,17 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return true;
     }
 
+    /**
+     * Retrieves, but does not remove, the head of the queue. If the queue is empty checks if there is a reserved item with
+     * the associated {@code offerId} and returns it.
+     * If the item was retrieved from the queue but does not contain any data and the queue store is enabled, this method will
+     * try load the data from the data store.
+     *
+     * @param offerId       the ID of the reserved item to be returned if the queue is empty
+     * @param transactionId currently ignored
+     * @return the head of the queue or a reserved item associated with the {@code offerId} if the queue is empty
+     * @throws HazelcastException if there is an exception while loading the data from the queue store
+     */
     public QueueItem txnPeek(long offerId, String transactionId) {
         QueueItem item = getItemQueue().peek();
         if (item == null) {

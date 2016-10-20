@@ -901,6 +901,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("queue-store".equals(nodeName)) {
                 QueueStoreConfig queueStoreConfig = createQueueStoreConfig(n);
                 qConfig.setQueueStoreConfig(queueStoreConfig);
+            } else if ("quorum-ref".equals(nodeName)) {
+                qConfig.setQuorumName(value);
             } else if ("empty-queue-ttl".equals(nodeName)) {
                 qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value));
             }

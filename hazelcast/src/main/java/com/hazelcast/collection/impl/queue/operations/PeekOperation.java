@@ -21,11 +21,12 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ReadonlyOperation;
 
 /**
  * Peek operation for Queue.
  */
-public final class PeekOperation extends QueueOperation implements IdentifiedDataSerializable {
+public final class PeekOperation extends QueueOperation implements IdentifiedDataSerializable, ReadonlyOperation {
 
     public PeekOperation() {
     }

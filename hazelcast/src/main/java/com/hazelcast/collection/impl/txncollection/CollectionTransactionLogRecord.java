@@ -98,6 +98,12 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
         return operationList.size();
     }
 
+    /**
+     * Creates an array of IDs for all operations in this transaction log. The ID is negative if the operation is a remove
+     * operation.
+     *
+     * @return an array of IDs for all operations in this transaction log
+     */
     protected long[] createItemIdArray() {
         int size = operationList.size();
         long[] itemIds = new long[size];

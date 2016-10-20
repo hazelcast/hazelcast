@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.impl.SerializableList;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ import java.util.Map;
 /**
  * This class drain items according to drain condition.
  */
-public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
+public class DrainOperation extends QueueBackupAwareOperation implements Notifier, MutatingOperation {
 
     private int maxSize;
     private Map<Long, Data> dataMap;

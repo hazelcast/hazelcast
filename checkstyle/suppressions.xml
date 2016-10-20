@@ -82,7 +82,6 @@
     <suppress checks="JavadocVariable" files="com/hazelcast/concurrent/"/>
     <suppress checks="MethodCount" files="com/hazelcast/concurrent/atomiclong/AtomicLongProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/concurrent/atomicreference/AtomicReferenceProxy"/>
-    <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockServiceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockResourceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockStoreImpl"/>
 
@@ -199,9 +198,6 @@
 
     <!-- Executor -->
     <suppress checks="ClassFanOutComplexity|MethodCount" files="com/hazelcast/executor/impl/ExecutorServiceProxy"/>
-
-    <!-- Queue -->
-    <suppress checks="MethodCount" files="com/hazelcast/collection/impl/queue/QueueContainer"/>
 
     <!-- Multimap -->
     <suppress checks="JavadocMethod" files="com/hazelcast/multimap/"/>

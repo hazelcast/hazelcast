@@ -25,13 +25,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 /**
  * Reserve poll operation for the transactional queue.
  */
-public class TxnReservePollOperation extends QueueBackupAwareOperation implements BlockingOperation {
+public class TxnReservePollOperation extends QueueBackupAwareOperation implements BlockingOperation, MutatingOperation {
 
     private long reservedOfferId;
     private String transactionId;

@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,7 +31,7 @@ import java.util.Map;
 /**
  * Provides backup functionality for {@link AddAllOperation}
  */
-public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
+public class AddAllBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
 
     private Map<Long, Data> dataMap;
 

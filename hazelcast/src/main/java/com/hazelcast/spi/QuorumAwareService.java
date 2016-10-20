@@ -22,5 +22,11 @@ package com.hazelcast.spi;
  */
 public interface QuorumAwareService {
 
+    /**
+     * Gets the name of the quorum associated with specified operation name.
+     *
+     * @param operationName the operation name for which the quorum name is retured
+     * @return name of the associated quorum, null if there is no associated quorum
+     */
     String getQuorumName(String operationName);
 }

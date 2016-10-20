@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import java.util.Map;
 /**
  * Add collection items to the Queue.
  */
-public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
+public class AddAllOperation extends QueueBackupAwareOperation implements Notifier, MutatingOperation {
 
     private Collection<Data> dataList;
     private Map<Long, Data> dataMap;
