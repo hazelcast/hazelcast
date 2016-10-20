@@ -16,11 +16,12 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.TypedByteArrayDeserializer;
 
 import java.io.IOException;
 
@@ -46,6 +47,23 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
             return null;
         }
         return serializer.read(bytes);
+    }
+
+    @Override
+    public Object read(ObjectDataInput in, Class aClass) throws IOException {
+        byte[] bytes = in.readByteArray();
+        if (bytes == null) {
+            return null;
+        }
+
+        if (!(serializer instanceof TypedByteArrayDeserializer)) {
+            throw new HazelcastSerializationException(
+                    serializer + " is not implementing the " + TypedByteArrayDeserializer.class
+                            + " interface. Please implement this interface to deserialize for class " + aClass);
+        }
+
+        TypedByteArrayDeserializer deserializer = (TypedByteArrayDeserializer) serializer;
+        return deserializer.read(bytes, aClass);
     }
 
     @Override

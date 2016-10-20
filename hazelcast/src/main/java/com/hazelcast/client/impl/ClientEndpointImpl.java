@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -55,6 +56,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private boolean firstConnection;
     private Credentials credentials;
     private volatile boolean authenticated;
+    private int clientVersion;
+    private String clientVersionString;
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
         this.clientEngine = clientEngine;
@@ -65,6 +68,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         } else {
             socketAddress = null;
         }
+        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
+        this.clientVersionString = "Unknown";
     }
 
     @Override
@@ -97,11 +102,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection) {
+    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection, String clientVersion) {
         this.principal = principal;
         this.firstConnection = firstConnection;
         this.credentials = credentials;
         this.authenticated = true;
+        this.setClientVersion(clientVersion);
     }
 
     @Override
@@ -113,6 +119,17 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    @Override
+    public int getClientVersion() {
+        return clientVersion;
+    }
+
+    @Override
+    public void setClientVersion(String version) {
+        clientVersionString = version;
+        clientVersion = BuildInfo.calculateVersion(version);
     }
 
     public ClientPrincipal getPrincipal() {
@@ -245,6 +262,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", principal='" + principal + '\''
                 + ", firstConnection=" + firstConnection
                 + ", authenticated=" + authenticated
+                + ", clientVersion=" + clientVersionString
                 + '}';
     }
 }

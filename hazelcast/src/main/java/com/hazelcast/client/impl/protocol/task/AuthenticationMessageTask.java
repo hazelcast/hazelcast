@@ -44,6 +44,9 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
         }
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
         clientSerializationVersion = parameters.serializationVersion;
+        if (parameters.clientHazelcastVersionExist) {
+            clientVersion = parameters.clientHazelcastVersion;
+        }
         return parameters;
     }
 

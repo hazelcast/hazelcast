@@ -50,6 +50,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
     protected transient ClientPrincipal principal;
     protected transient Credentials credentials;
     protected transient byte clientSerializationVersion;
+    protected transient String clientVersion;
 
     public AuthenticationBaseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -178,10 +179,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
 
-        endpoint.authenticated(principal, credentials, isOwnerConnection());
+        endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion);
         setConnectionType();
         logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated" + ", principal : " + principal
-                + ", owner connection : " + isOwnerConnection());
+                + ", owner connection : " + isOwnerConnection() + ", client version : " + clientVersion);
         endpointManager.registerEndpoint(endpoint);
         clientEngine.bind(endpoint);
 
