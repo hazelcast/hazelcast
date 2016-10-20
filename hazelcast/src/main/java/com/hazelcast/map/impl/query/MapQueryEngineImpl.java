@@ -32,19 +32,20 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.map.impl.query.MapQueryEngineUtils.addResultsOfPagingPredicate;
-import static com.hazelcast.map.impl.query.MapQueryEngineUtils.addResultsOfPredicate;
+import static com.hazelcast.map.impl.query.MapQueryDispatcher.DispatchTarget;
+import static com.hazelcast.map.impl.query.MapQueryDispatcher.DispatchTarget.ALL_MEMBERS;
+import static com.hazelcast.map.impl.query.MapQueryDispatcher.DispatchTarget.LOCAL_MEMBER;
+import static com.hazelcast.map.impl.query.MapQueryEngineUtils.createSetWithPopulatedPartitionIds;
 import static com.hazelcast.map.impl.query.MapQueryEngineUtils.newQueryResult;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
-import static java.util.Collections.singletonList;
 
 /**
  * Invokes query logic using the QueryDispatcher.
@@ -80,201 +81,147 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     // invoked from proxy layer
-    // query thread
-    // partition thread
+    // query thread first, fallback to partition thread
     @Override
-    public QueryResult runQueryOnLocalPartitions(String mapName, Predicate predicate, IterationType iterationType) {
-        checkNotPagingPredicate(predicate);
+    public Set runQueryOnLocalPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean uniqueResult) {
+        Collection<Integer> mutablePartitionIds = getLocalPartitionIds();
 
-        List<Integer> partitionIds = getLocalPartitionIds();
-        QueryResult result = newQueryResult(partitionIds.size(), iterationType, queryResultSizeLimiter);
-
-        try {
-            Future<QueryResult> future = queryDispatcher
-                    .dispatchFullQueryOnLocalMemberOnQueryThread(mapName, predicate, iterationType);
-            List<Future<QueryResult>> futures = singletonList(future);
-            addResultsOfPredicate(futures, result, partitionIds);
-            if (partitionIds.isEmpty()) {
-                return result;
-            }
-        } catch (Throwable t) {
-            if (t.getCause() instanceof QueryResultSizeExceededException) {
-                throw rethrow(t);
-            }
-            logger.warning("Could not get results", t);
+        QueryResult result = doRunQueryOnQueryThreads(mapName, predicate, iterationType, mutablePartitionIds, LOCAL_MEMBER);
+        if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
+            doRunQueryOnPartitionThreads(mapName, predicate, iterationType, mutablePartitionIds, result);
         }
 
-        try {
-            List<Future<QueryResult>> futures = queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-                    mapName, predicate, partitionIds, iterationType);
-            addResultsOfPredicate(futures, result, partitionIds);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-
-        return result;
+        return transformResult(predicate, result, iterationType, uniqueResult);
     }
 
     // invoked from proxy layer
-    // query thread
-    // partition thread
+    // query thread first, fallback to partition thread
     @Override
-    public Set runQueryOnLocalPartitionsWithPagingPredicate(
-            String mapName, PagingPredicate predicate, IterationType iterationType) {
-        predicate.setIterationType(iterationType);
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        List<Integer> partitionIds = getLocalPartitionIds();
+    public Set runQueryOnAllPartitions(
+            String mapName, Predicate predicate, IterationType iterationType, boolean uniqueResult) {
+        Collection<Integer> mutablePartitionIds = getAllPartitionIds();
 
-        // in case of value, we also need to get the keys for sorting.
-        IterationType retrievalIterationType = iterationType == IterationType.VALUE ? IterationType.ENTRY : iterationType;
-
-        // query the local partitions
-        try {
-            Future<QueryResult> future = queryDispatcher
-                    .dispatchFullQueryOnLocalMemberOnQueryThread(mapName, predicate, retrievalIterationType);
-            List<Future<QueryResult>> futures = singletonList(future);
-            // modifies partitionIds list!
-            addResultsOfPagingPredicate(serializationService, futures, resultList, partitionIds);
-            if (partitionIds.isEmpty()) {
-                return getSortedQueryResultSet(resultList, predicate, iterationType);
-            }
-        } catch (Throwable t) {
-            if (t.getCause() instanceof QueryResultSizeExceededException) {
-                throw rethrow(t);
-            }
-            logger.warning("Could not get results", t);
+        QueryResult result = doRunQueryOnQueryThreads(
+                mapName, predicate, iterationType, mutablePartitionIds, ALL_MEMBERS);
+        if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
+            doRunQueryOnPartitionThreads(mapName, predicate, iterationType, mutablePartitionIds, result);
         }
 
-        // query the remaining partitions that are not local to the member
-        try {
-            List<Future<QueryResult>> futures = queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-                    mapName, predicate, partitionIds, retrievalIterationType);
-            addResultsOfPagingPredicate(serializationService, futures, resultList, partitionIds);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-        return getSortedQueryResultSet(resultList, predicate, iterationType);
+        return transformResult(predicate, result, iterationType, uniqueResult);
     }
 
     // invoked from proxy layer
-    // query thread
-    // partition thread
+    // partition thread ONLY (for now)
     @Override
-    public QueryResult runQueryOnAllPartitions(String mapName, Predicate predicate, IterationType iterationType) {
-        checkNotPagingPredicate(predicate);
-        if (predicate == TruePredicate.INSTANCE) {
-            queryResultSizeLimiter.checkMaxResultLimitOnLocalPartitions(mapName);
-        }
-
-        Set<Integer> partitionIds = getAllPartitionIds();
-        QueryResult result = newQueryResult(partitionIds.size(), iterationType, queryResultSizeLimiter);
-
-        // query the local partitions
-        try {
-            List<Future<QueryResult>> futures = queryDispatcher.dispatchFullQueryOnAllMembersOnQueryThread(
-                    mapName, predicate, iterationType);
-            // modifies partitionIds list!
-            addResultsOfPredicate(futures, result, partitionIds);
-            if (partitionIds.isEmpty()) {
-                return result;
-            }
-        } catch (Throwable t) {
-            if (t.getCause() instanceof QueryResultSizeExceededException) {
-                throw rethrow(t);
-            }
-            logger.warning("Could not get results", t);
-        }
-
-        // query the remaining partitions that are not local to the member
-        try {
-            List<Future<QueryResult>> futures = queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-                    mapName, predicate, partitionIds, iterationType);
-            addResultsOfPredicate(futures, result, partitionIds);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-
-        return result;
-    }
-
-    // invoked from proxy layer
-    // query thread
-    // partition thread
-    @Override
-    public Set runQueryOnAllPartitionsWithPagingPredicate(
-            String mapName, PagingPredicate predicate, IterationType iterationType) {
-        predicate.setIterationType(iterationType);
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        Set<Integer> partitionIds = getAllPartitionIds();
-
-        // in case of value, we also need to get the keys for sorting.
-        IterationType retrievalIterationType = iterationType == IterationType.VALUE ? IterationType.ENTRY : iterationType;
-
-        // query the local partitions
-        try {
-            List<Future<QueryResult>> futures = queryDispatcher
-                    .dispatchFullQueryOnAllMembersOnQueryThread(mapName, predicate, retrievalIterationType);
-            // modifies partitionIds list!
-            addResultsOfPagingPredicate(serializationService, futures, resultList, partitionIds);
-            if (partitionIds.isEmpty()) {
-                return getSortedQueryResultSet(resultList, predicate, iterationType);
-            }
-        } catch (Throwable t) {
-            if (t.getCause() instanceof QueryResultSizeExceededException) {
-                throw rethrow(t);
-            }
-            logger.warning("Could not get results", t);
-        }
-
-        // query the remaining partitions that are not local to the member
-        try {
-            List<Future<QueryResult>> futures = queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-                    mapName, predicate, partitionIds, retrievalIterationType);
-            addResultsOfPagingPredicate(serializationService, futures, resultList, partitionIds);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-
-        return getSortedQueryResultSet(resultList, predicate, iterationType);
-    }
-
-    // invoked from proxy layer
-    // partition thread ONLY
-    @Override
-    public QueryResult runQueryOnSinglePartition(
-            String mapName, Predicate predicate, IterationType iterationType, int partitionId) {
-        checkNotPagingPredicate(predicate);
-
+    public Set runQueryOnGivenPartition(
+            String mapName, Predicate predicate, IterationType iterationType, boolean uniqueResult, int partitionId) {
         try {
             Future<QueryResult> result = queryDispatcher
                     .dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(mapName, predicate, partitionId, iterationType);
-            return result.get();
+            return transformResult(predicate, result.get(), iterationType, uniqueResult);
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    protected void checkNotPagingPredicate(Predicate predicate) {
+    private QueryResult doRunQueryOnQueryThreads(String mapName, Predicate predicate, IterationType iterationType,
+                                                 Collection<Integer> partitionIds, DispatchTarget target) {
+        IterationType retrievalIterationType = getRetrievalIterationType(predicate, iterationType);
         if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("Predicate should not be a paging predicate");
+            ((PagingPredicate) predicate).setIterationType(iterationType);
+        } else {
+            checkQueryResultLimiter(mapName, predicate);
+        }
+        QueryResult result = newQueryResult(partitionIds.size(), retrievalIterationType, queryResultSizeLimiter);
+        dispatchQueryOnQueryThreads(mapName, predicate, partitionIds, target, retrievalIterationType, result);
+        return result;
+    }
+
+    private void dispatchQueryOnQueryThreads(String mapName, Predicate predicate, Collection<Integer> partitionIds,
+                                             DispatchTarget target, IterationType retrievalIterationType, QueryResult result) {
+        try {
+            List<Future<QueryResult>> futures = queryDispatcher
+                    .dispatchFullQueryOnQueryThread(mapName, predicate, retrievalIterationType, target);
+
+            addResultsOfPredicate(futures, result, partitionIds);
+        } catch (Throwable t) {
+            if (t.getCause() instanceof QueryResultSizeExceededException) {
+                throw rethrow(t);
+            }
+            logger.warning("Could not get results", t);
         }
     }
 
-    protected List<Integer> getLocalPartitionIds() {
+    private void doRunQueryOnPartitionThreads(String mapName, Predicate predicate, IterationType iterationType,
+                                              Collection<Integer> partitionIds, QueryResult result) {
+        try {
+            IterationType retrievalIterationType = getRetrievalIterationType(predicate, iterationType);
+            List<Future<QueryResult>> futures = queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+                    mapName, predicate, partitionIds, retrievalIterationType);
+            addResultsOfPredicate(futures, result, partitionIds);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    // modifies partitionIds list! Optimization not to allocate an extra collection with collected partitionIds
+    private void addResultsOfPredicate(List<Future<QueryResult>> futures, QueryResult result,
+                                       Collection<Integer> partitionIds) throws ExecutionException, InterruptedException {
+        for (Future<QueryResult> future : futures) {
+            QueryResult queryResult = future.get();
+            if (queryResult == null) {
+                continue;
+            }
+            Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
+            if (queriedPartitionIds != null) {
+                if (!partitionIds.containsAll(queriedPartitionIds)) {
+                    // do not take into account results that contain partition IDs already removed from partitionIds
+                    // collection as this means that we will count results from a single partition twice
+                    // see also https://github.com/hazelcast/hazelcast/issues/6471
+                    continue;
+                }
+                partitionIds.removeAll(queriedPartitionIds);
+                result.addAllRows(queryResult.getRows());
+            }
+        }
+    }
+
+    private Set transformResult(Predicate predicate, QueryResult queryResult, IterationType iterationType, boolean unique) {
+        if (predicate instanceof PagingPredicate) {
+            Set result = new QueryResultCollection(serializationService, IterationType.ENTRY, false, unique, queryResult);
+            return getSortedQueryResultSet(new ArrayList(result), (PagingPredicate) predicate, iterationType);
+        } else {
+            return new QueryResultCollection(serializationService, iterationType, false, unique, queryResult);
+        }
+    }
+
+    private IterationType getRetrievalIterationType(Predicate predicate, IterationType iterationType) {
+        IterationType retrievalIterationType = iterationType;
+        if (predicate instanceof PagingPredicate) {
+            // in case of value, we also need to get the keys for sorting.
+            retrievalIterationType = (iterationType == IterationType.VALUE) ? IterationType.ENTRY : iterationType;
+        }
+        return retrievalIterationType;
+    }
+
+    private List<Integer> getLocalPartitionIds() {
         return partitionService.getMemberPartitions(nodeEngine.getThisAddress());
     }
 
-    protected Set<Integer> getAllPartitionIds() {
+    private Set<Integer> getAllPartitionIds() {
         int partitionCount = partitionService.getPartitionCount();
         return createSetWithPopulatedPartitionIds(partitionCount);
     }
 
-    protected Set<Integer> createSetWithPopulatedPartitionIds(int partitionCount) {
-        Set<Integer> partitionIds = new HashSet<Integer>(partitionCount);
-        for (int i = 0; i < partitionCount; i++) {
-            partitionIds.add(i);
+    private boolean isResultFromAnyPartitionMissing(Collection<Integer> partitionIds) {
+        return !partitionIds.isEmpty();
+    }
+
+    private void checkQueryResultLimiter(String mapName, Predicate predicate) {
+        if (predicate == TruePredicate.INSTANCE) {
+            queryResultSizeLimiter.checkMaxResultLimitOnLocalPartitions(mapName);
         }
-        return partitionIds;
     }
 
     protected QueryResultSizeLimiter getQueryResultSizeLimiter() {

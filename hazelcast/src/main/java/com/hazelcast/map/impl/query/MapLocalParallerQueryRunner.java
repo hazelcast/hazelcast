@@ -70,9 +70,9 @@ public class MapLocalParallerQueryRunner extends MapLocalQueryRunner {
             String mapName, Predicate predicate, Collection<Integer> partitions) {
         try {
             if (predicate instanceof PagingPredicate) {
-                return runParallelFullPartitionScanQueryWithPaging(mapName, (PagingPredicate) predicate, partitions);
+                return runFullPartitionScanQueryWithPaging(mapName, (PagingPredicate) predicate, partitions);
             } else {
-                return runParallelFullPartitionScanQueryWithoutPaging(mapName, predicate, partitions);
+                return runFullPartitionScanQueryWithoutPaging(mapName, predicate, partitions);
             }
         } catch (InterruptedException e) {
             throw new HazelcastException(e.getMessage(), e);
@@ -81,16 +81,16 @@ public class MapLocalParallerQueryRunner extends MapLocalQueryRunner {
         }
     }
 
-    private List<QueryableEntry> runParallelFullPartitionScanQueryWithPaging(
+    private List<QueryableEntry> runFullPartitionScanQueryWithPaging(
             String name, PagingPredicate predicate, Collection<Integer> partitions)
             throws InterruptedException, ExecutionException {
 
-        List<QueryableEntry> result = runParallelFullPartitionScanQueryWithoutPaging(name, predicate, partitions);
+        List<QueryableEntry> result = runFullPartitionScanQueryWithoutPaging(name, predicate, partitions);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(predicate);
         return getSortedSubList(result, predicate, nearestAnchorEntry);
     }
 
-    private List<QueryableEntry> runParallelFullPartitionScanQueryWithoutPaging(
+    private List<QueryableEntry> runFullPartitionScanQueryWithoutPaging(
             String name, Predicate predicate, Collection<Integer> partitions)
             throws InterruptedException, ExecutionException {
 

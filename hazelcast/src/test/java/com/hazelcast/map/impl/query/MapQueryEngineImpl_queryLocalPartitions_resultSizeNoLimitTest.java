@@ -13,6 +13,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
+
 import static com.hazelcast.util.IterationType.ENTRY;
 import static org.junit.Assert.assertEquals;
 
@@ -33,19 +35,12 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest exten
     }
 
     @Test
-    public void checkResultLimit() throws Exception {
-        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
-
-        assertEquals(Long.MAX_VALUE, result.getResultLimit());
-    }
-
-    @Test
     public void checkResultSize() throws Exception {
         fillMap(10000);
 
-        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
+        Set result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY, false);
 
-        assertEquals(10000, result.getRows().size());
+        assertEquals(10000, result.size());
     }
 
     private void fillMap(long count) {

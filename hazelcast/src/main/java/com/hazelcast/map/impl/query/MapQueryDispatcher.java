@@ -41,6 +41,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.map.impl.query.MapQueryEngineUtils.shouldSkipPartitionsQuery;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.Collections.singletonList;
 
 /**
  * Dispatches query operations.
@@ -71,10 +72,24 @@ final class MapQueryDispatcher {
         this.executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
     }
 
-    protected Future<QueryResult> dispatchFullQueryOnLocalMemberOnQueryThread(
+    protected List<Future<QueryResult>> dispatchFullQueryOnQueryThread(
+            String mapName, Predicate predicate, IterationType iterationType, DispatchTarget target) {
+        switch (target) {
+            case LOCAL_MEMBER:
+                return dispatchFullQueryOnLocalMemberOnQueryThread(mapName, predicate, iterationType);
+            case ALL_MEMBERS:
+                return dispatchFullQueryOnAllMembersOnQueryThread(mapName, predicate, iterationType);
+            default:
+                throw new RuntimeException("Illegal dispatch target " + target);
+        }
+    }
+
+    protected List<Future<QueryResult>> dispatchFullQueryOnLocalMemberOnQueryThread(
             String mapName, Predicate predicate, IterationType iterationType) {
         Operation operation = new QueryOperation(mapName, predicate, iterationType);
-        return operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
+        Future<QueryResult> result = operationService.invokeOnTarget(
+                MapService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
+        return singletonList(result);
     }
 
     protected List<Future<QueryResult>> dispatchFullQueryOnAllMembersOnQueryThread(
@@ -83,7 +98,8 @@ final class MapQueryDispatcher {
         List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
         for (Member member : members) {
             Operation operation = new QueryOperation(mapName, predicate, iterationType);
-            Future<QueryResult> future = operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, member.getAddress());
+            Future<QueryResult> future = operationService.invokeOnTarget(
+                    MapService.SERVICE_NAME, operation, member.getAddress());
             futures.add(future);
         }
         return futures;
@@ -111,6 +127,11 @@ final class MapQueryDispatcher {
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    enum DispatchTarget {
+        LOCAL_MEMBER,
+        ALL_MEMBERS
     }
 
 }

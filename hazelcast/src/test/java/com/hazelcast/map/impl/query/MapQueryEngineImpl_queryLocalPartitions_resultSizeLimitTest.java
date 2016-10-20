@@ -16,6 +16,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
+
 import static com.hazelcast.util.IterationType.ENTRY;
 import static org.junit.Assert.assertEquals;
 
@@ -48,35 +50,28 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     }
 
     @Test
-    public void checkResultLimit() throws Exception {
-        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
-
-        assertEquals(limit, result.getResultLimit());
-    }
-
-    @Test
     public void checkResultSize_limitNotExceeded() throws Exception {
         fillMap(limit - 1);
 
-        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
+        Set result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY, false);
 
-        assertEquals(limit - 1, result.getRows().size());
+        assertEquals(limit - 1, result.size());
     }
 
     @Test
     public void checkResultSize_limitEquals() throws Exception {
         fillMap(limit);
 
-        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
+        Set result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY, false);
 
-        assertEquals(limit, result.getRows().size());
+        assertEquals(limit, result.size());
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void checkResultSize_limitExceeded() throws Exception {
         fillMap(limit + 1);
 
-        queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
+        queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY, false);
     }
 
     private void fillMap(long count) {
