@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOperation;
 import com.hazelcast.internal.cluster.impl.operations.AuthorizationOperation;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOperation;
@@ -40,6 +41,7 @@ import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOperat
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOperation;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOperation;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.Address;
@@ -66,7 +68,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int CONFIG_MISMATCH = 11;
     public static final int GROUP_MISMATCH = 12;
     public static final int JOIN_CHECK = 13;
-    public static final int JOIN_REQUEST = 14;
+    public static final int JOIN_REQUEST_OP = 14;
     public static final int LOCK_CLUSTER_STATE = 15;
     public static final int MASTER_CLAIM = 16;
     public static final int MASTER_CONFIRM = 17;
@@ -80,8 +82,12 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int SHUTDOWN_NODE = 25;
     public static final int TRIGGER_MEMBER_LIST_PUBLISH = 26;
     public static final int CLUSTER_STATE_TRANSACTION_LOG_RECORD = 27;
+    public static final int MEMBER_INFO = 28;
+    public static final int JOIN_MESSAGE = 29;
+    public static final int JOIN_REQUEST = 30;
+    public static final int MIGRATION_INFO = 31;
 
-    private static final int LEN = CLUSTER_STATE_TRANSACTION_LOG_RECORD + 1;
+    private static final int LEN = MIGRATION_INFO + 1;
 
     @Override
     public int getFactoryId() {
@@ -162,7 +168,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new JoinCheckOperation();
             }
         };
-        constructors[JOIN_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[JOIN_REQUEST_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new JoinRequestOperation();
             }
@@ -230,6 +236,26 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[CLUSTER_STATE_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClusterStateTransactionLogRecord();
+            }
+        };
+        constructors[MEMBER_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MemberInfo();
+            }
+        };
+        constructors[JOIN_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new JoinMessage();
+            }
+        };
+        constructors[JOIN_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new JoinRequest();
+            }
+        };
+        constructors[MIGRATION_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MigrationInfo();
             }
         };
 

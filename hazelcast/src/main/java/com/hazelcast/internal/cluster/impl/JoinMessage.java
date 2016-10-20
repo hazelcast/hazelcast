@@ -19,14 +19,14 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class JoinMessage implements DataSerializable {
+public class JoinMessage implements IdentifiedDataSerializable {
 
     protected byte packetVersion;
     protected int buildNumber;
@@ -146,4 +146,13 @@ public class JoinMessage implements DataSerializable {
                 + '}';
     }
 
+    @Override
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.JOIN_MESSAGE;
+    }
 }

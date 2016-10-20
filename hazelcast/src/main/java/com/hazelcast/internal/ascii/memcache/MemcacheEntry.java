@@ -17,9 +17,10 @@
 package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.TextCommandConstants;
+import com.hazelcast.internal.ascii.TextProtocolsDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class MemcacheEntry implements DataSerializable {
+public class MemcacheEntry implements IdentifiedDataSerializable {
     private byte[] bytes;
     private byte[] value;
     private int flag;
@@ -147,5 +148,15 @@ public class MemcacheEntry implements DataSerializable {
                 + ", flag="
                 + flag
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return TextProtocolsDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return TextProtocolsDataSerializerHook.MEMCACHE_ENTRY;
     }
 }
