@@ -120,7 +120,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int SET_CONTAINER = 41;
     public static final int LIST_CONTAINER = 42;
     public static final int COLLECTION_TRANSACTION_LOG_RECORD = 43;
-    public static final int QUEUE_TRANSACTION_LOG_RECORD = 43;
+    public static final int QUEUE_TRANSACTION_LOG_RECORD = 44;
 
     @Override
     public int getFactoryId() {
