@@ -25,7 +25,6 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
@@ -91,6 +90,7 @@ import static com.hazelcast.config.XmlElements.SET;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
+import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
@@ -1154,7 +1154,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             } else if ("eviction".equals(nodeName)) {
-                nearCacheConfig.setEvictionConfig(getEvictionConfig(child));
+                nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true));
             }
         }
         return nearCacheConfig;
@@ -1213,13 +1213,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("wan-replication-ref".equals(nodeName)) {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
-                EvictionConfig evictionConfig = getEvictionConfig(n);
-                try {
-                    EvictionConfigHelper.checkEvictionConfig(evictionConfig);
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidConfigurationException(e.getMessage());
-                }
-                cacheConfig.setEvictionConfig(evictionConfig);
+                cacheConfig.setEvictionConfig(getEvictionConfig(n, false));
             } else if ("quorum-ref".equals(nodeName)) {
                 cacheConfig.setQuorumName(value);
             } else if ("partition-lost-listeners".equals(nodeName)) {
@@ -1293,7 +1287,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         return new TimedExpiryPolicyFactoryConfig(expiryPolicyType, durationConfig);
     }
 
-    private EvictionConfig getEvictionConfig(Node node) {
+    private EvictionConfig getEvictionConfig(Node node, boolean isNearCache) {
         EvictionConfig evictionConfig = new EvictionConfig();
         Node size = node.getAttributes().getNamedItem("size");
         Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
@@ -1312,6 +1306,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
         if (comparatorClassName != null) {
             evictionConfig.setComparatorClassName(getTextContent(comparatorClassName));
+        }
+
+        try {
+            checkEvictionConfig(evictionConfig, isNearCache);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException(e.getMessage());
         }
         return evictionConfig;
     }
@@ -1491,7 +1491,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                         } else if ("predicate".equals(nodeName)) {
                             queryCachePredicateHandler(childNode, queryCacheConfig);
                         } else if ("eviction".equals(nodeName)) {
-                            queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode));
+                            queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false));
                         }
                     }
                 }
