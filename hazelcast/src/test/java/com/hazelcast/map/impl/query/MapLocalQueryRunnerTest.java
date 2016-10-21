@@ -61,7 +61,7 @@ public class MapLocalQueryRunnerTest extends HazelcastTestSupport {
     @Test
     public void runFullQuery() throws ExecutionException, InterruptedException {
         Predicate predicate = Predicates.equal("this", value);
-        QueryResult result = queryRunner.runFullQuery(map.getName(), predicate, IterationType.ENTRY);
+        QueryResult result = queryRunner.run(map.getName(), predicate, IterationType.ENTRY);
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
@@ -70,7 +70,7 @@ public class MapLocalQueryRunnerTest extends HazelcastTestSupport {
     @Test
     public void runPartitionScanQueryOnSinglePartition() throws ExecutionException, InterruptedException {
         Predicate predicate = Predicates.equal("this", value);
-        QueryResult result = queryRunner.runPartitionScanQueryOnSinglePartition(map.getName(), predicate, partitionId, IterationType.ENTRY);
+        QueryResult result = queryRunner.runUsingPartitionScanOnSinglePartition(map.getName(), predicate, partitionId, IterationType.ENTRY);
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));

@@ -45,7 +45,7 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     @Override
     public void run() {
         MapLocalQueryRunner queryRunner = mapServiceContext.getMapQueryRunner();
-        result = queryRunner.runPartitionScanQueryOnSinglePartition(name, predicate, getPartitionId(), iterationType);
+        result = queryRunner.runUsingPartitionScanOnSinglePartition(name, predicate, getPartitionId(), iterationType);
     }
 
     @Override

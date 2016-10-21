@@ -40,7 +40,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +52,6 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.map.impl.query.MapQueryEngineUtils.newQueryResult;
 import static com.hazelcast.map.impl.query.MapQueryEngineUtils.newQueryResultForSinglePartition;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
-import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.util.SortingUtil.compareAnchor;
 import static com.hazelcast.util.SortingUtil.getSortedSubList;
 
@@ -76,7 +74,6 @@ public class MapLocalQueryRunner {
     protected final OperationService operationService;
     protected final ClusterService clusterService;
     protected final LocalMapStatsProvider localMapStatsProvider;
-    protected final ManagedExecutorService executor;
 
     public MapLocalQueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer) {
         this.mapServiceContext = mapServiceContext;
@@ -89,11 +86,10 @@ public class MapLocalQueryRunner {
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
         this.localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        this.executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
     }
 
     // full query = index query (if possible), then partition-scan query
-    public QueryResult runFullQuery(String mapName, Predicate predicate, IterationType iterationType)
+    public QueryResult run(String mapName, Predicate predicate, IterationType iterationType)
             throws ExecutionException, InterruptedException {
 
         int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
@@ -106,9 +102,9 @@ public class MapLocalQueryRunner {
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
         // This would be the point where a query-plan should be added. It should determine if a full table scan
         // or an index should be used.
-        Collection<QueryableEntry> entries = runIndexQuerySafely(predicate, mapContainer, initialPartitionStateVersion);
+        Collection<QueryableEntry> entries = runUsingIndexSafely(predicate, mapContainer, initialPartitionStateVersion);
         if (entries == null) {
-            entries = runPartitionScanQuerySafely(mapName, predicate, initialPartitions, initialPartitionStateVersion);
+            entries = runUsingPartitionScanSafely(mapName, predicate, initialPartitions, initialPartitionStateVersion);
         }
 
         QueryResult result = newQueryResult(initialPartitions.size(), iterationType, queryResultSizeLimiter);
@@ -128,7 +124,7 @@ public class MapLocalQueryRunner {
         return result;
     }
 
-    protected Collection<QueryableEntry> runIndexQuerySafely(
+    protected Collection<QueryableEntry> runUsingIndexSafely(
             Predicate predicate, MapContainer mapContainer, int initialPartitionStateVersion) {
         // if a migration is in progress, do not attempt to use an index as they may have not been created yet.
         // MapService.getMigrationsInFlight() returns the number of currently executing migrations (for which
@@ -139,7 +135,7 @@ public class MapLocalQueryRunner {
             return null;
         }
 
-        Collection<QueryableEntry> entries = runIndexQuery(predicate, mapContainer);
+        Collection<QueryableEntry> entries = runUsingIndex(predicate, mapContainer);
         if (entries == null) {
             return null;
         }
@@ -155,11 +151,11 @@ public class MapLocalQueryRunner {
         }
     }
 
-    protected Collection<QueryableEntry> runIndexQuery(Predicate predicate, MapContainer mapContainer) {
+    protected Collection<QueryableEntry> runUsingIndex(Predicate predicate, MapContainer mapContainer) {
         return mapContainer.getIndexes().query(predicate);
     }
 
-    protected Collection<QueryableEntry> runPartitionScanQuerySafely(
+    protected Collection<QueryableEntry> runUsingPartitionScanSafely(
             String name, Predicate predicate, Collection<Integer> partitions, int initialPartitionStateVersion)
             throws InterruptedException, ExecutionException {
 
@@ -168,7 +164,7 @@ public class MapLocalQueryRunner {
             return null;
         }
 
-        entries = runPartitionScanQuery(name, predicate, partitions);
+        entries = runUsingPartitionScan(name, predicate, partitions);
 
         // If partition state version has changed in the meanwhile, this means migrations were executed and we may
         // return stale data, so we should rather return null.
@@ -181,13 +177,13 @@ public class MapLocalQueryRunner {
         }
     }
 
-    protected Collection<QueryableEntry> runPartitionScanQuery(
+    protected Collection<QueryableEntry> runUsingPartitionScan(
             String mapName, Predicate predicate, Collection<Integer> partitions) {
         RetryableHazelcastException storedException = null;
         Collection<QueryableEntry> result = new ArrayList<QueryableEntry>();
         for (Integer partitionId : partitions) {
             try {
-                result.addAll(runPartitionScanQueryOnSinglePartition(mapName, predicate, partitionId));
+                result.addAll(runUsingPartitionScanOnSinglePartition(mapName, predicate, partitionId));
             } catch (RetryableHazelcastException e) {
                 // RetryableHazelcastException are stored and re-thrown later. this is to ensure all partitions
                 // are touched as when the parallel execution was used.
@@ -203,16 +199,16 @@ public class MapLocalQueryRunner {
         return result;
     }
 
-    public QueryResult runPartitionScanQueryOnSinglePartition(
+    public QueryResult runUsingPartitionScanOnSinglePartition(
             String mapName, Predicate predicate, int partitionId, IterationType iterationType) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         predicate = queryOptimizer.optimize(predicate, mapContainer.getIndexes());
-        Collection<QueryableEntry> entries = runPartitionScanQueryOnSinglePartition(mapName, predicate, partitionId);
+        Collection<QueryableEntry> entries = runUsingPartitionScanOnSinglePartition(mapName, predicate, partitionId);
         return newQueryResultForSinglePartition(entries, partitionId, iterationType, queryResultSizeLimiter);
     }
 
     @SuppressWarnings("unchecked")
-    protected Collection<QueryableEntry> runPartitionScanQueryOnSinglePartition(
+    protected Collection<QueryableEntry> runUsingPartitionScanOnSinglePartition(
             String mapName, Predicate predicate, int partitionId) {
         PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();

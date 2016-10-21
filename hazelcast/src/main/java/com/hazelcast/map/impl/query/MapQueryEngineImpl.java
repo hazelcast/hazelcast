@@ -20,7 +20,6 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -29,7 +28,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,28 +41,28 @@ import static com.hazelcast.map.impl.query.MapQueryDispatcher.DispatchTarget.ALL
 import static com.hazelcast.map.impl.query.MapQueryDispatcher.DispatchTarget.LOCAL_MEMBER;
 import static com.hazelcast.map.impl.query.MapQueryEngineUtils.createSetWithPopulatedPartitionIds;
 import static com.hazelcast.map.impl.query.MapQueryEngineUtils.newQueryResult;
-import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 
 /**
- * Invokes query logic using the QueryDispatcher.
- * Knows nothing about query logic or how to dispatch query operations. It relies on query dispatcher only.
- * It never dispatches query operations directly.
+ * Invokes and orchestrates the query logic returning the final result.
+ * <p>
+ * Knows nothing about query logic or how to dispatch query operations. It relies on QueryDispatcher only.
+ * Should never invoke any query operations directly.
+ * <p>
+ * Should be used from top-level proxy-layer only (e.g. MapProxy, etc.).
  */
 public class MapQueryEngineImpl implements MapQueryEngine {
 
-    protected MapServiceContext mapServiceContext;
-    protected NodeEngine nodeEngine;
-    protected ILogger logger;
-    protected QueryResultSizeLimiter queryResultSizeLimiter;
-    protected InternalSerializationService serializationService;
-    protected IPartitionService partitionService;
-    protected OperationService operationService;
-    protected ClusterService clusterService;
-    protected LocalMapStatsProvider localMapStatsProvider;
-    protected ManagedExecutorService executor;
-    protected MapQueryDispatcher queryDispatcher;
+    protected final MapServiceContext mapServiceContext;
+    protected final NodeEngine nodeEngine;
+    protected final ILogger logger;
+    protected final QueryResultSizeLimiter queryResultSizeLimiter;
+    protected final InternalSerializationService serializationService;
+    protected final IPartitionService partitionService;
+    protected final OperationService operationService;
+    protected final ClusterService clusterService;
+    protected final MapQueryDispatcher queryDispatcher;
 
     public MapQueryEngineImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -75,12 +73,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         this.queryResultSizeLimiter = new QueryResultSizeLimiter(mapServiceContext, logger);
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
-        this.localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        this.executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
         this.queryDispatcher = new MapQueryDispatcher(mapServiceContext);
     }
 
-    // invoked from proxy layer
     // query thread first, fallback to partition thread
     @Override
     public Set runQueryOnLocalPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean uniqueResult) {
@@ -94,7 +89,6 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         return transformResult(predicate, result, iterationType, uniqueResult);
     }
 
-    // invoked from proxy layer
     // query thread first, fallback to partition thread
     @Override
     public Set runQueryOnAllPartitions(
@@ -110,7 +104,6 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         return transformResult(predicate, result, iterationType, uniqueResult);
     }
 
-    // invoked from proxy layer
     // partition thread ONLY (for now)
     @Override
     public Set runQueryOnGivenPartition(

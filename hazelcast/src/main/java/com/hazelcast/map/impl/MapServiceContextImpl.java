@@ -34,7 +34,7 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperationProviders;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyTask;
-import com.hazelcast.map.impl.query.MapLocalParallerQueryRunner;
+import com.hazelcast.map.impl.query.MapLocalParallelQueryRunner;
 import com.hazelcast.map.impl.query.MapLocalQueryRunner;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
@@ -155,7 +155,7 @@ class MapServiceContextImpl implements MapServiceContext {
         boolean parallelEvaluation = nodeEngine.getProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
         if (parallelEvaluation) {
             ManagedExecutorService queryExecutorService = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
-            return new MapLocalParallerQueryRunner(this, queryOptimizer, queryExecutorService);
+            return new MapLocalParallelQueryRunner(this, queryOptimizer, queryExecutorService);
         } else {
             return new MapLocalQueryRunner(this, queryOptimizer);
         }

@@ -39,40 +39,40 @@ import static com.hazelcast.util.SortingUtil.getSortedSubList;
 /**
  * Specialization of the {@link MapLocalQueryRunner} - the only difference is that
  * the query evaluation per partition is run in a PARALLEL fashion.
- *
+ * <p>
  * Runs query operations in the calling thread (thus blucking it)
  * Query evaluation per partition is run in a PARALLEL fashion.
  * <p>
  * Used by query operations only: QueryOperation & QueryPartitionOperation
  * Should not be used by proxies or any other query related objects.
  */
-public class MapLocalParallerQueryRunner extends MapLocalQueryRunner {
+public class MapLocalParallelQueryRunner extends MapLocalQueryRunner {
 
-    protected static final int QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
+    private static final int QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
 
     private final ManagedExecutorService executor;
     private final int timeoutInMinutes;
 
-    public MapLocalParallerQueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer,
+    public MapLocalParallelQueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer,
                                        ManagedExecutorService executor, int timeoutInMinutes) {
         super(mapServiceContext, optimizer);
         this.executor = executor;
         this.timeoutInMinutes = timeoutInMinutes;
     }
 
-    public MapLocalParallerQueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer,
+    public MapLocalParallelQueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer,
                                        ManagedExecutorService executor) {
         this(mapServiceContext, optimizer, executor, QUERY_EXECUTION_TIMEOUT_MINUTES);
     }
 
     @Override
-    protected Collection<QueryableEntry> runPartitionScanQuery(
+    protected Collection<QueryableEntry> runUsingPartitionScan(
             String mapName, Predicate predicate, Collection<Integer> partitions) {
         try {
             if (predicate instanceof PagingPredicate) {
-                return runFullPartitionScanQueryWithPaging(mapName, (PagingPredicate) predicate, partitions);
+                return runUsingPartitionScanWithPaging(mapName, (PagingPredicate) predicate, partitions);
             } else {
-                return runFullPartitionScanQueryWithoutPaging(mapName, predicate, partitions);
+                return runUsingPartitionScanWithoutPaging(mapName, predicate, partitions);
             }
         } catch (InterruptedException e) {
             throw new HazelcastException(e.getMessage(), e);
@@ -81,16 +81,16 @@ public class MapLocalParallerQueryRunner extends MapLocalQueryRunner {
         }
     }
 
-    private List<QueryableEntry> runFullPartitionScanQueryWithPaging(
+    private List<QueryableEntry> runUsingPartitionScanWithPaging(
             String name, PagingPredicate predicate, Collection<Integer> partitions)
             throws InterruptedException, ExecutionException {
 
-        List<QueryableEntry> result = runFullPartitionScanQueryWithoutPaging(name, predicate, partitions);
+        List<QueryableEntry> result = runUsingPartitionScanWithoutPaging(name, predicate, partitions);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(predicate);
         return getSortedSubList(result, predicate, nearestAnchorEntry);
     }
 
-    private List<QueryableEntry> runFullPartitionScanQueryWithoutPaging(
+    private List<QueryableEntry> runUsingPartitionScanWithoutPaging(
             String name, Predicate predicate, Collection<Integer> partitions)
             throws InterruptedException, ExecutionException {
 
@@ -123,7 +123,7 @@ public class MapLocalParallerQueryRunner extends MapLocalQueryRunner {
 
         @Override
         public Collection<QueryableEntry> call() throws Exception {
-            return runPartitionScanQueryOnSinglePartition(name, predicate, partition);
+            return runUsingPartitionScanOnSinglePartition(name, predicate, partition);
         }
     }
 
