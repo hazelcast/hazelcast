@@ -136,22 +136,30 @@ class MapServiceContextImpl implements MapServiceContext {
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
     }
 
+    // this method is overridden in another context.
     MapOperationProviders createOperationProviders() {
         return new MapOperationProviders(this);
     }
 
     // this method is overridden in another context.
-    LocalMapStatsProvider createLocalMapStatsProvider() {
+    NearCacheProvider createNearCacheProvider() {
+        return new NearCacheProvider(this);
+    }
+
+    // this method is overridden in another context.
+    MapEventPublisherImpl createMapEventPublisherSupport() {
+        return new MapEventPublisherImpl(this);
+    }
+
+    private LocalMapStatsProvider createLocalMapStatsProvider() {
         return new LocalMapStatsProvider(this);
     }
 
-    // this method is overridden in another context.
-    MapQueryEngineImpl createMapQueryEngine() {
+    private MapQueryEngineImpl createMapQueryEngine() {
         return new MapQueryEngineImpl(this);
     }
 
-    // this method is overridden in another context.
-    MapLocalQueryRunner createMapQueryRunner(NodeEngine nodeEngine, QueryOptimizer queryOptimizer) {
+    private MapLocalQueryRunner createMapQueryRunner(NodeEngine nodeEngine, QueryOptimizer queryOptimizer) {
         boolean parallelEvaluation = nodeEngine.getProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
         if (parallelEvaluation) {
             ManagedExecutorService queryExecutorService = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
@@ -161,19 +169,9 @@ class MapServiceContextImpl implements MapServiceContext {
         }
     }
 
-    // this method is overridden in another context.
-    NearCacheProvider createNearCacheProvider() {
-        return new NearCacheProvider(this);
-    }
-
-    PartitionContainer[] createPartitionContainers() {
+    private PartitionContainer[] createPartitionContainers() {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new PartitionContainer[partitionCount];
-    }
-
-    // this method is overridden.
-    MapEventPublisherImpl createMapEventPublisherSupport() {
-        return new MapEventPublisherImpl(this);
     }
 
     @Override
@@ -386,7 +384,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public MapLocalQueryRunner getMapQueryRunner() {
+    public MapLocalQueryRunner getMapQueryRunner(String name) {
         return mapQueryRunner;
     }
 

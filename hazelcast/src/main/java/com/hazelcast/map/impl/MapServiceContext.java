@@ -133,7 +133,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapQueryEngine getMapQueryEngine(String name);
 
-    MapLocalQueryRunner getMapQueryRunner();
+    MapLocalQueryRunner getMapQueryRunner(String name);
 
     QueryOptimizer getQueryOptimizer();
 

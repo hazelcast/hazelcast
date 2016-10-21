@@ -221,11 +221,12 @@ public class MapLocalQueryRunner {
         Extractors extractors = mapServiceContext.getExtractors(mapName);
         while (iterator.hasNext()) {
             Record record = iterator.next();
-            Object value = useCachedValues ? Records.getValueOrCachedValue(record, serializationService) : record.getValue();
+            Data key = (Data) toData(record.getKey());
+            Object value = toData(
+                    useCachedValues ? Records.getValueOrCachedValue(record, serializationService) : record.getValue());
             if (value == null) {
                 continue;
             }
-            Data key = record.getKey();
             //we want to always use CachedQueryEntry as these are short-living objects anyway
             QueryableEntry queryEntry = new CachedQueryEntry(serializationService, key, value, extractors);
 
@@ -234,6 +235,10 @@ public class MapLocalQueryRunner {
             }
         }
         return getSortedSubList(resultList, pagingPredicate, nearestAnchorEntry);
+    }
+
+    protected <T> Object toData(T input) {
+        return input;
     }
 
     protected boolean isUseCachedDeserializedValuesEnabled(MapContainer mapContainer) {

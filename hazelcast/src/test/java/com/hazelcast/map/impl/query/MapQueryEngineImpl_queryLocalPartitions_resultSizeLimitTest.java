@@ -16,8 +16,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Set;
-
 import static com.hazelcast.util.IterationType.ENTRY;
 import static org.junit.Assert.assertEquals;
 
@@ -53,7 +51,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     public void checkResultSize_limitNotExceeded() throws Exception {
         fillMap(limit - 1);
 
-        Set result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY, false);
+        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
 
         assertEquals(limit - 1, result.size());
     }
@@ -62,7 +60,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     public void checkResultSize_limitEquals() throws Exception {
         fillMap(limit);
 
-        Set result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY, false);
+        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
 
         assertEquals(limit, result.size());
     }
@@ -71,7 +69,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     public void checkResultSize_limitExceeded() throws Exception {
         fillMap(limit + 1);
 
-        queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY, false);
+        queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
     }
 
     private void fillMap(long count) {

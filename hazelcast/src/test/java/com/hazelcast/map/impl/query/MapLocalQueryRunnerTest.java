@@ -78,7 +78,7 @@ public class MapLocalQueryRunnerTest extends HazelcastTestSupport {
 
     private MapLocalQueryRunner getQueryRunner() {
         MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
-        return mapService.getMapServiceContext().getMapQueryRunner();
+        return mapService.getMapServiceContext().getMapQueryRunner("");
     }
 
     private Object toObject(Data data) {

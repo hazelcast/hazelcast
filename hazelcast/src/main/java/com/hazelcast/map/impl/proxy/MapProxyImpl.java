@@ -30,6 +30,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.QueryResult;
+import com.hazelcast.map.impl.query.QueryResultUtils;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
@@ -632,15 +634,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         MapQueryEngine queryEngine = getMapQueryEngine();
+        QueryResult result;
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
-            return queryEngine.runQueryOnGivenPartition(name, partitionPredicate.getTarget(), iterationType,
-                    uniqueResult, partitionId);
+            result = queryEngine.runQueryOnGivenPartition(name, partitionPredicate.getTarget(), iterationType, partitionId);
         } else {
-            return queryEngine.runQueryOnAllPartitions(name, predicate, iterationType, uniqueResult);
+            result = queryEngine.runQueryOnAllPartitions(name, predicate, iterationType);
         }
+        return QueryResultUtils.transformToSet(serializationService, result, predicate, iterationType, uniqueResult);
     }
 
     @Override
@@ -654,7 +657,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
-        return queryEngine.runQueryOnLocalPartitions(name, predicate, IterationType.KEY, false);
+        QueryResult result = queryEngine.runQueryOnLocalPartitions(name, predicate, IterationType.KEY);
+        return QueryResultUtils.transformToSet(serializationService, result, predicate, IterationType.KEY, false);
     }
 
     @Override

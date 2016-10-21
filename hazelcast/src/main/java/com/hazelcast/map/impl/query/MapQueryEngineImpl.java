@@ -29,7 +29,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -42,7 +41,6 @@ import static com.hazelcast.map.impl.query.MapQueryDispatcher.DispatchTarget.LOC
 import static com.hazelcast.map.impl.query.MapQueryEngineUtils.createSetWithPopulatedPartitionIds;
 import static com.hazelcast.map.impl.query.MapQueryEngineUtils.newQueryResult;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 
 /**
  * Invokes and orchestrates the query logic returning the final result.
@@ -78,7 +76,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
     // query thread first, fallback to partition thread
     @Override
-    public Set runQueryOnLocalPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean uniqueResult) {
+    public QueryResult runQueryOnLocalPartitions(String mapName, Predicate predicate, IterationType iterationType) {
         Collection<Integer> mutablePartitionIds = getLocalPartitionIds();
 
         QueryResult result = doRunQueryOnQueryThreads(mapName, predicate, iterationType, mutablePartitionIds, LOCAL_MEMBER);
@@ -86,13 +84,13 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             doRunQueryOnPartitionThreads(mapName, predicate, iterationType, mutablePartitionIds, result);
         }
 
-        return transformResult(predicate, result, iterationType, uniqueResult);
+        return result;
     }
 
     // query thread first, fallback to partition thread
     @Override
-    public Set runQueryOnAllPartitions(
-            String mapName, Predicate predicate, IterationType iterationType, boolean uniqueResult) {
+    public QueryResult runQueryOnAllPartitions(
+            String mapName, Predicate predicate, IterationType iterationType) {
         Collection<Integer> mutablePartitionIds = getAllPartitionIds();
 
         QueryResult result = doRunQueryOnQueryThreads(
@@ -101,17 +99,16 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             doRunQueryOnPartitionThreads(mapName, predicate, iterationType, mutablePartitionIds, result);
         }
 
-        return transformResult(predicate, result, iterationType, uniqueResult);
+        return result;
     }
 
     // partition thread ONLY (for now)
     @Override
-    public Set runQueryOnGivenPartition(
-            String mapName, Predicate predicate, IterationType iterationType, boolean uniqueResult, int partitionId) {
+    public QueryResult runQueryOnGivenPartition(
+            String mapName, Predicate predicate, IterationType iterationType, int partitionId) {
         try {
-            Future<QueryResult> result = queryDispatcher
-                    .dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(mapName, predicate, partitionId, iterationType);
-            return transformResult(predicate, result.get(), iterationType, uniqueResult);
+            return queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+                    mapName, predicate, partitionId, iterationType).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -177,15 +174,6 @@ public class MapQueryEngineImpl implements MapQueryEngine {
                 partitionIds.removeAll(queriedPartitionIds);
                 result.addAllRows(queryResult.getRows());
             }
-        }
-    }
-
-    private Set transformResult(Predicate predicate, QueryResult queryResult, IterationType iterationType, boolean unique) {
-        if (predicate instanceof PagingPredicate) {
-            Set result = new QueryResultCollection(serializationService, IterationType.ENTRY, false, unique, queryResult);
-            return getSortedQueryResultSet(new ArrayList(result), (PagingPredicate) predicate, iterationType);
-        } else {
-            return new QueryResultCollection(serializationService, iterationType, false, unique, queryResult);
         }
     }
 

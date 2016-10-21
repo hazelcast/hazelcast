@@ -48,7 +48,7 @@ import static com.hazelcast.util.SortingUtil.getSortedSubList;
  */
 public class MapLocalParallelQueryRunner extends MapLocalQueryRunner {
 
-    private static final int QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
+    protected static final int QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
 
     private final ManagedExecutorService executor;
     private final int timeoutInMinutes;
@@ -81,7 +81,7 @@ public class MapLocalParallelQueryRunner extends MapLocalQueryRunner {
         }
     }
 
-    private List<QueryableEntry> runUsingPartitionScanWithPaging(
+    protected List<QueryableEntry> runUsingPartitionScanWithPaging(
             String name, PagingPredicate predicate, Collection<Integer> partitions)
             throws InterruptedException, ExecutionException {
 
@@ -90,7 +90,7 @@ public class MapLocalParallelQueryRunner extends MapLocalQueryRunner {
         return getSortedSubList(result, predicate, nearestAnchorEntry);
     }
 
-    private List<QueryableEntry> runUsingPartitionScanWithoutPaging(
+    protected List<QueryableEntry> runUsingPartitionScanWithoutPaging(
             String name, Predicate predicate, Collection<Integer> partitions)
             throws InterruptedException, ExecutionException {
 

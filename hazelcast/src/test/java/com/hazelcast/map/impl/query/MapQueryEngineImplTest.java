@@ -15,7 +15,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -55,47 +54,52 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
 
     @Test
     public void runQueryOnAllPartitions() throws ExecutionException, InterruptedException {
-        Set result = queryEngine
-                .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY, false);
+        QueryResult result = queryEngine
+                .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY);
 
         assertEquals(1, result.size());
-        assertEquals(key, result.iterator().next());
+        assertEquals(key, toObject(result.iterator().next().getKey()));
     }
 
     @Test
     public void runQueryOnLocalPartitions() throws ExecutionException, InterruptedException {
-        Set result = queryEngine
-                .runQueryOnAllPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY, false);
+        QueryResult result = queryEngine
+                .runQueryOnAllPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY);
 
         assertEquals(1, result.size());
-        assertEquals(key, result.iterator().next());
+        assertEquals(key, toObject(result.iterator().next().getKey()));
     }
 
     @Test
     public void runQueryOnAllPartitions_key() throws ExecutionException, InterruptedException {
-        Set result = queryEngine
-                .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY, false);
+        QueryResult result = queryEngine
+                .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY);
 
         assertEquals(1, result.size());
-        assertEquals(key, result.iterator().next());
+        assertEquals(key, toObject(result.iterator().next().getKey()));
     }
 
     @Test
     public void runQueryOnAllPartitions_value() throws ExecutionException, InterruptedException {
-        Set result = queryEngine
-                .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.VALUE, false);
+        QueryResult result = queryEngine
+                .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.VALUE);
 
         assertEquals(1, result.size());
-        assertEquals(value, result.iterator().next());
+        assertEquals(value, toObject(result.iterator().next().getValue()));
     }
 
     @Test
     public void runQueryOnGivenPartition() throws ExecutionException, InterruptedException {
-        Set result = queryEngine
-                .runQueryOnGivenPartition(map.getName(), Predicates.equal("this", value), IterationType.ENTRY, false, partitionId);
+        QueryResult result = queryEngine
+                .runQueryOnGivenPartition(map.getName(), Predicates.equal("this", value), IterationType.ENTRY, partitionId);
 
         assertEquals(1, result.size());
-        assertEquals(map.get(key), ((Map.Entry) result.iterator().next()).getValue());
+        assertEquals(key, toObject(((Map.Entry) result.iterator().next()).getKey()));
+        assertEquals(map.get(key), toObject(((Map.Entry) result.iterator().next()).getValue()));
+    }
+
+    private Object toObject(Object data) {
+        return getSerializationService(instance).toObject(data);
     }
 
 }
