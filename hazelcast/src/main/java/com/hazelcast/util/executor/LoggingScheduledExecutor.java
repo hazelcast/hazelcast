@@ -30,9 +30,12 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.SEVERE;
 
 /**
  * Logs execution exceptions by overriding {@link ScheduledThreadPoolExecutor#afterExecute}
@@ -73,21 +76,23 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
     protected void afterExecute(Runnable runnable, Throwable throwable) {
         super.afterExecute(runnable, throwable);
 
+        Level level = FINE;
         if (throwable == null && runnable instanceof ScheduledFuture && ((ScheduledFuture) runnable).isDone()) {
             try {
                 ((Future) runnable).get();
             } catch (CancellationException ce) {
                 throwable = ce;
-            } catch (ExecutionException e) {
-                throwable = e.getCause();
-            } catch (InterruptedException i) {
-                throwable = i;
+            } catch (ExecutionException ee) {
+                level = SEVERE;
+                throwable = ee.getCause();
+            } catch (InterruptedException ie) {
+                throwable = ie;
                 currentThread().interrupt();
             }
         }
 
         if (throwable != null) {
-            logger.severe("Failed to execute " + runnable, throwable);
+            logger.log(level, "Failed to execute " + runnable, throwable);
         }
     }
 
