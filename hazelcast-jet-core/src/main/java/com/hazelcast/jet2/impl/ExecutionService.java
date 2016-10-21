@@ -19,6 +19,7 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -114,7 +115,7 @@ class ExecutionService {
             try {
                 t.init();
                 long idleCount = 0;
-                for (ProgressState result; !(result = t.call()).isDone(); ) {
+                for (ProgressState result; !(result = t.call()).isDone() && !tracker.troubleSetter.hasTrouble(); ) {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
