@@ -19,9 +19,13 @@ package com.hazelcast.collection.impl.queue;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
 
@@ -48,6 +52,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
     private static final String STORE_MEMORY_LIMIT = "memory-limit";
 
     private static final String STORE_BULK_LOAD = "bulk-load";
+    private final String name;
 
     private int memoryLimit = DEFAULT_MEMORY_LIMIT;
 
@@ -61,7 +66,8 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
 
     private SerializationService serializationService;
 
-    private QueueStoreWrapper() {
+    private QueueStoreWrapper(String name) {
+        this.name = name;
     }
 
     /**
@@ -77,7 +83,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         checkNotNull(name, "name should not be null");
         checkNotNull(serializationService, "serializationService should not be null");
 
-        final QueueStoreWrapper storeWrapper = new QueueStoreWrapper();
+        final QueueStoreWrapper storeWrapper = new QueueStoreWrapper(name);
         storeWrapper.setSerializationService(serializationService);
         if (storeConfig == null || !storeConfig.isEnabled()) {
             return storeWrapper;
@@ -135,6 +141,16 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
             }
         }
         return factory == null ? null : factory.newQueueStore(name, storeConfig.getProperties());
+    }
+
+    void instrument(NodeEngine nodeEngine) {
+        Diagnostics diagnostics = ((NodeEngineImpl) nodeEngine).getDiagnostics();
+        StoreLatencyPlugin storeLatencyPlugin = diagnostics.getPlugin(StoreLatencyPlugin.class);
+        if (!enabled || storeLatencyPlugin == null) {
+            return;
+        }
+
+        this.store = new LatencyTrackingQueueStore(store, storeLatencyPlugin, name);
     }
 
     @Override

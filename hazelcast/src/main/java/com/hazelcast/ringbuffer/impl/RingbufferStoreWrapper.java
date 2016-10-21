@@ -20,9 +20,13 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
+import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
 
@@ -39,6 +43,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
 
+    private final String name;
     private boolean enabled;
 
     /**
@@ -48,7 +53,8 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
     private RingbufferStore store;
     private SerializationService serializationService;
 
-    private RingbufferStoreWrapper() {
+    private RingbufferStoreWrapper(String name) {
+        this.name = name;
     }
 
     /**
@@ -75,7 +81,7 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
         checkNotNull(name, "name should not be null");
         checkNotNull(serializationService, "serializationService should not be null");
 
-        final RingbufferStoreWrapper storeWrapper = new RingbufferStoreWrapper();
+        final RingbufferStoreWrapper storeWrapper = new RingbufferStoreWrapper(name);
         storeWrapper.serializationService = serializationService;
         if (storeConfig == null || !storeConfig.isEnabled()) {
             return storeWrapper;
@@ -140,6 +146,16 @@ public final class RingbufferStoreWrapper implements RingbufferStore<Data> {
      */
     public boolean isEnabled() {
         return enabled;
+    }
+
+    void instrument(NodeEngine nodeEngine) {
+        Diagnostics diagnostics = ((NodeEngineImpl) nodeEngine).getDiagnostics();
+        StoreLatencyPlugin storeLatencyPlugin = diagnostics.getPlugin(StoreLatencyPlugin.class);
+        if (!enabled || storeLatencyPlugin == null) {
+            return;
+        }
+
+        this.store = new LatencyTrackingRingbufferStore(store, storeLatencyPlugin, name);
     }
 
     @Override

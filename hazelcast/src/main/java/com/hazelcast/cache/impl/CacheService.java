@@ -56,7 +56,9 @@ public class CacheService extends AbstractCacheService {
 
     @Override
     protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
-        return new CacheRecordStore(name, partitionId, nodeEngine, this);
+        CacheRecordStore recordStore = new CacheRecordStore(name, partitionId, nodeEngine, this);
+        recordStore.instrument(nodeEngine);
+        return recordStore;
     }
 
     @Override

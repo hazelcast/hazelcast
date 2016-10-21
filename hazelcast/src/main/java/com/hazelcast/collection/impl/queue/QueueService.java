@@ -134,6 +134,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             container = existing;
         } else {
             container.init(fromBackup);
+            container.getStore().instrument(nodeEngine);
         }
         return container;
     }

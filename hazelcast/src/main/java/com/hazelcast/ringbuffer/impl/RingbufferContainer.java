@@ -122,6 +122,10 @@ public class RingbufferContainer implements DataSerializable {
         }
     }
 
+    public RingbufferStoreWrapper getStore() {
+        return store;
+    }
+
     /**
      * Gets the wait/notify key for the blocking operations of reading from the ring buffer.
      *

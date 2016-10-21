@@ -21,7 +21,11 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,9 +35,9 @@ import java.util.Properties;
 @SuppressWarnings("unchecked")
 public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
-    private final MapLoader mapLoader;
+    private MapLoader mapLoader;
 
-    private final MapStore mapStore;
+    private MapStore mapStore;
 
     private final String mapName;
 
@@ -79,6 +83,22 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     public boolean isMapLoader() {
         return (mapLoader != null);
+    }
+
+    public void instrument(NodeEngine nodeEngine) {
+        Diagnostics diagnostics = ((NodeEngineImpl) nodeEngine).getDiagnostics();
+        StoreLatencyPlugin storeLatencyPlugin = diagnostics.getPlugin(StoreLatencyPlugin.class);
+        if (storeLatencyPlugin == null) {
+            return;
+        }
+
+        if (mapLoader != null) {
+            this.mapLoader = new LatencyTrackingMapLoader(mapLoader, storeLatencyPlugin, mapName);
+        }
+
+        if (mapStore != null) {
+            this.mapStore = new LatencyTrackingMapStore(mapStore, storeLatencyPlugin, mapName);
+        }
     }
 
     @Override
