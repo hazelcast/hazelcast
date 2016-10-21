@@ -19,7 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 
 /**
- * The RingbufferContainer is responsible for storing the actual content of a ringbuffer.
+ * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.
  * <p/>
  * Currently the Ringbuffer is not a partitioned data-structure. So all data of a ringbuffer is stored in a single partition
  * and replicated to the replica's. No thread-safety is needed since a partition can only be accessed by a single thread at

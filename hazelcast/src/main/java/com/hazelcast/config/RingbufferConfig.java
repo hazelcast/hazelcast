@@ -22,6 +22,7 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -64,6 +65,9 @@ public class RingbufferConfig {
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig().setEnabled(false);
 
+    public RingbufferConfig() {
+    }
+
     /**
      * Creates a RingbufferConfig with the provided name.
      *
@@ -103,6 +107,18 @@ public class RingbufferConfig {
     public RingbufferConfig(String name, RingbufferConfig config) {
         this(config);
         this.name = checkNotNull(name, "name can't be null");
+    }
+
+    /**
+     * Sets the name of the ringbuffer.
+     *
+     * @param name the name of the ringbuffer
+     * @return the updated {@link RingbufferConfig}
+     * @throws IllegalArgumentException if name is null or an empty string.
+     */
+    public RingbufferConfig setName(String name) {
+        this.name = checkHasText(name, "name must contain text");
+        return this;
     }
 
     /**

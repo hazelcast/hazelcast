@@ -87,7 +87,7 @@ public class TopicConfig {
      * Sets the name of the topic.
      *
      * @param name the topic name to set.
-     * @return the updated TopicConfig
+     * @return the updated {@link TopicConfig}
      * @throws IllegalArgumentException if name is null or an empty string.
      */
     public TopicConfig setName(String name) {

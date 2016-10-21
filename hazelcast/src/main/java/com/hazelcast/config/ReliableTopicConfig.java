@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
+import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
@@ -66,6 +67,9 @@ public class ReliableTopicConfig {
     private List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
     private TopicOverloadPolicy topicOverloadPolicy = DEFAULT_TOPIC_OVERLOAD_POLICY;
 
+    public ReliableTopicConfig() {
+    }
+
     /**
      * Creates a new ReliableTopicConfig with default settings.
      */
@@ -90,6 +94,18 @@ public class ReliableTopicConfig {
     ReliableTopicConfig(ReliableTopicConfig config, String name) {
         this(config);
         this.name = name;
+    }
+
+    /**
+     * Sets the name of  the reliable topic.
+     *
+     * @param name the name of the reliable topic
+     * @return the updated ReliableTopicConfig
+     * @throws IllegalArgumentException if name is null or an empty string.
+     */
+    public ReliableTopicConfig setName(String name) {
+        this.name = checkHasText(name, "name must contain text");
+        return this;
     }
 
     /**
@@ -210,6 +226,17 @@ public class ReliableTopicConfig {
      */
     public ReliableTopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
+    }
+
+    /**
+     * Sets the list of message listeners (listens for when messages are added or removed) for this topic.
+     *
+     * @param listenerConfigs The list of message listeners for this topic.
+     * @return This updated topic configuration.
+     */
+    public ReliableTopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
+        this.listenerConfigs = listenerConfigs != null ? listenerConfigs : new LinkedList<ListenerConfig>();
         return this;
     }
 

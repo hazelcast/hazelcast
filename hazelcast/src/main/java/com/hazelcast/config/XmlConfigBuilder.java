@@ -1575,6 +1575,27 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         return mapStoreConfig;
     }
 
+    private RingbufferStoreConfig createRingbufferStoreConfig(Node node) {
+        final RingbufferStoreConfig config = new RingbufferStoreConfig();
+        final NamedNodeMap atts = node.getAttributes();
+        for (int a = 0; a < atts.getLength(); a++) {
+            Node att = atts.item(a);
+            String value = getTextContent(att).trim();
+            if (att.getNodeName().equals("enabled")) {
+                config.setEnabled(getBooleanValue(value));
+            }
+        }
+        for (Node n : childElements(node)) {
+            final String nodeName = cleanNodeName(n);
+            if ("class-name".equals(nodeName)) {
+                config.setClassName(getTextContent(n).trim());
+            } else if ("factory-class-name".equals(nodeName)) {
+                config.setFactoryClassName(getTextContent(n).trim());
+            }
+        }
+        return config;
+    }
+
     private QueueStoreConfig createQueueStoreConfig(Node node) {
         QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         NamedNodeMap atts = node.getAttributes();
@@ -1745,6 +1766,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("in-memory-format".equals(nodeName)) {
                 InMemoryFormat inMemoryFormat = InMemoryFormat.valueOf(upperCaseInternal(value));
                 rbConfig.setInMemoryFormat(inMemoryFormat);
+            } else if ("ringbuffer-store".equals(nodeName)) {
+                final RingbufferStoreConfig ringbufferStoreConfig = createRingbufferStoreConfig(n);
+                rbConfig.setRingbufferStoreConfig(ringbufferStoreConfig);
             }
         }
         config.addRingBufferConfig(rbConfig);

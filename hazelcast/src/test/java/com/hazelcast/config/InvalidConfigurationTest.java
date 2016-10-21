@@ -520,6 +520,17 @@ public class InvalidConfigurationTest {
                 "<async-backup-count>${semaphore-async-backup-count}</async-backup-count>\n" +
                 "</semaphore>\n" +
 
+                "    <ringbuffer name=\"default\">\n" +
+                "        <capacity>10000</capacity>\n" +
+                "        <time-to-live-seconds>30</time-to-live-seconds>\n" +
+                "        <backup-count>1</backup-count>\n" +
+                "        <async-backup-count>0</async-backup-count>\n" +
+                "        <in-memory-format>BINARY</in-memory-format>\n" +
+                "        <ringbuffer-store enabled=\"true\">\n" +
+                "            <class-name>com.hazelcast.RingbufferStoreImpl</class-name>\n" +
+                "        </ringbuffer-store>\n" +
+                "    </ringbuffer>" +
+
                 "</hazelcast>\n";
     }
 }
