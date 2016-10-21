@@ -6,7 +6,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.predicates.RuleBasedQueryOptimizer;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -44,7 +43,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
         map = hz.getMap(randomName());
 
         MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
-        queryEngine = new MapQueryEngineImpl(mapService.getMapServiceContext(), new RuleBasedQueryOptimizer());
+        queryEngine = new MapQueryEngineImpl(mapService.getMapServiceContext());
 
         // we just fill a single partition, so we get the NodeResultLimit for a single partition as well
         QueryResultSizeLimiter resultSizeLimiter = queryEngine.getQueryResultSizeLimiter();
@@ -52,35 +51,28 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     }
 
     @Test
-    public void checkResultLimit() throws Exception {
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
-
-        assertEquals(limit * PARTITION_COUNT, result.getResultLimit());
-    }
-
-    @Test
     public void checkResultSize_limitNotExceeded() throws Exception {
         fillPartition(limit - 1);
 
-        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, ENTRY);
+        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
 
-        assertEquals(limit - 1, result.getRows().size());
+        assertEquals(limit - 1, result.size());
     }
 
     @Test
     public void checkResultSize_limitNotEquals() throws Exception {
         fillPartition(limit);
 
-        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, ENTRY);
+        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
 
-        assertEquals(limit, result.getRows().size());
+        assertEquals(limit, result.size());
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void checkResultSize_limitExceeded() throws Exception {
         fillPartition(limit + 1);
 
-        queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, ENTRY);
+        queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
     }
 
     private void fillPartition(int count) {

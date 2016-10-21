@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
-import com.hazelcast.map.impl.query.QueryResultCollection;
+import com.hazelcast.map.impl.query.QueryResultUtils;
 import com.hazelcast.map.impl.tx.TxnValueWrapper.Type;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
@@ -312,11 +312,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
-        QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
-        Set<Object> queryResult = new QueryResultCollection(serializationService, IterationType.KEY, false, true, result);
+        QueryResult queryResult = queryEngine.runQueryOnAllPartitions(name, predicate, IterationType.KEY);
+        Set result = QueryResultUtils.transformToSet(serializationService, queryResult, predicate, IterationType.KEY, true);
 
         // TODO: Can't we just use the original set?
-        Set<Object> keySet = new HashSet<Object>(queryResult);
+        Set<Object> keySet = new HashSet<Object>(result);
         Extractors extractors = mapServiceContext.getExtractors(name);
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
             Data keyData = entry.getKey();
@@ -356,9 +356,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
-        QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
-        QueryResultCollection<Map.Entry> queryResult
-                = new QueryResultCollection<Map.Entry>(serializationService, IterationType.ENTRY, false, true, result);
+        QueryResult queryResylt = queryEngine.runQueryOnAllPartitions(name, predicate, IterationType.ENTRY);
+        Set result = QueryResultUtils.transformToSet(serializationService, queryResylt, predicate, IterationType.ENTRY, true);
 
         // TODO: Can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
@@ -385,7 +384,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 }
             }
         }
-        removeFromResultSet(queryResult, valueSet, keyWontBeIncluded);
+        removeFromResultSet(result, valueSet, keyWontBeIncluded);
         return valueSet;
     }
 
@@ -399,7 +398,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         return wrapper == null || wrapper.type == Type.REMOVED ? null : wrapper.value;
     }
 
-    private void removeFromResultSet(QueryResultCollection<Map.Entry> queryResultSet, List<Object> valueSet,
+    private void removeFromResultSet(Set<Map.Entry> queryResultSet, List<Object> valueSet,
                                      Set<Object> keyWontBeIncluded) {
         for (Map.Entry entry : queryResultSet) {
             if (keyWontBeIncluded.contains(entry.getKey())) {
