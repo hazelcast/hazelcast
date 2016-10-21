@@ -9,7 +9,6 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.IterationType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,16 +17,15 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.query.MapQueryDispatcher.DispatchTarget.ALL_MEMBERS;
 import static com.hazelcast.map.impl.query.MapQueryDispatcher.DispatchTarget.LOCAL_MEMBER;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static java.util.Arrays.asList;
+import static com.hazelcast.util.IterationType.ENTRY;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -64,18 +62,18 @@ public class MapQueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchFullQueryOnQueryThread_localMembers() throws ExecutionException, InterruptedException {
+    public void dispatchFullQueryOnQueryThread_localMembers() {
         dispatchFullQueryOnQueryThread(LOCAL_MEMBER);
     }
 
     @Test
-    public void dispatchFullQueryOnQueryThread_allMembers() throws ExecutionException, InterruptedException {
+    public void dispatchFullQueryOnQueryThread_allMembers() {
         dispatchFullQueryOnQueryThread(ALL_MEMBERS);
     }
 
     private void dispatchFullQueryOnQueryThread(MapQueryDispatcher.DispatchTarget target) {
         List<Future<QueryResult>> futures = queryDispatcher
-                .dispatchFullQueryOnQueryThread(map.getName(), Predicates.equal("this", value), IterationType.ENTRY, target);
+                .dispatchFullQueryOnQueryThread(map.getName(), Predicates.equal("this", value), ENTRY, target);
         Collection<QueryResult> results = returnWithDeadline(futures, 1, TimeUnit.MINUTES);
         QueryResult result = results.iterator().next();
 
@@ -85,11 +83,11 @@ public class MapQueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() throws ExecutionException, InterruptedException {
+    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() {
         Predicate predicate = Predicates.equal("this", value);
         Future<QueryResult> future = queryDispatcher
-                .dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(map.getName(), predicate, partitionId, IterationType.ENTRY);
-        Collection<QueryResult> results = returnWithDeadline(Collections.singletonList(future), 1, TimeUnit.MINUTES);
+                .dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(map.getName(), predicate, partitionId, ENTRY);
+        Collection<QueryResult> results = returnWithDeadline(singletonList(future), 1, TimeUnit.MINUTES);
         QueryResult result = results.iterator().next();
 
         assertEquals(1, results.size());
@@ -98,10 +96,10 @@ public class MapQueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_multiplePartitions() throws ExecutionException, InterruptedException {
+    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_multiplePartitions() {
         Predicate predicate = Predicates.equal("this", value);
-        List<Future<QueryResult>> futures = queryDispatcher
-                .dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(map.getName(), predicate, asList(partitionId), IterationType.ENTRY);
+        List<Future<QueryResult>> futures = queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+                map.getName(), predicate, singletonList(partitionId), ENTRY);
         ArrayList<QueryResult> results = new ArrayList<QueryResult>(returnWithDeadline(futures, 1, TimeUnit.MINUTES));
         QueryResult result = results.iterator().next();
 
@@ -113,5 +111,4 @@ public class MapQueryDispatcherTest extends HazelcastTestSupport {
     private Object toObject(Data data) {
         return getSerializationService(instance).toObject(data);
     }
-
 }

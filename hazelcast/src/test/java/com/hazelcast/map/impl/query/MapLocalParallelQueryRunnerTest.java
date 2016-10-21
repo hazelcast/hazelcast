@@ -9,15 +9,13 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.IterationType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ExecutionException;
-
+import static com.hazelcast.util.IterationType.ENTRY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -31,7 +29,6 @@ public class MapLocalParallelQueryRunnerTest extends HazelcastTestSupport {
     private int partitionId;
     private String key;
     private String value;
-
 
     @Before
     public void before() {
@@ -54,18 +51,18 @@ public class MapLocalParallelQueryRunnerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runFullQuery() throws ExecutionException, InterruptedException {
+    public void runFullQuery() throws Exception {
         Predicate predicate = Predicates.equal("this", value);
-        QueryResult result = queryRunner.run(map.getName(), predicate, IterationType.ENTRY);
+        QueryResult result = queryRunner.run(map.getName(), predicate, ENTRY);
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
     }
 
     @Test
-    public void runPartitionScanQueryOnSinglePartition() throws ExecutionException, InterruptedException {
+    public void runPartitionScanQueryOnSinglePartition() {
         Predicate predicate = Predicates.equal("this", value);
-        QueryResult result = queryRunner.runUsingPartitionScanOnSinglePartition(map.getName(), predicate, partitionId, IterationType.ENTRY);
+        QueryResult result = queryRunner.runUsingPartitionScanOnSinglePartition(map.getName(), predicate, partitionId, ENTRY);
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
@@ -80,5 +77,4 @@ public class MapLocalParallelQueryRunnerTest extends HazelcastTestSupport {
     private Object toObject(Data data) {
         return getSerializationService(instance).toObject(data);
     }
-
 }

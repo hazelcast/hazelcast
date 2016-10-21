@@ -33,7 +33,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest exten
     }
 
     @Test
-    public void checkResultSize() throws Exception {
+    public void checkResultSize() {
         fillMap(10000);
 
         QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);

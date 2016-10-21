@@ -15,7 +15,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -53,7 +52,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions() {
         QueryResult result = queryEngine
                 .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY);
 
@@ -62,7 +61,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnLocalPartitions() throws ExecutionException, InterruptedException {
+    public void runQueryOnLocalPartitions() {
         QueryResult result = queryEngine
                 .runQueryOnAllPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY);
 
@@ -71,7 +70,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions_key() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions_key() {
         QueryResult result = queryEngine
                 .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.KEY);
 
@@ -80,7 +79,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions_value() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions_value() {
         QueryResult result = queryEngine
                 .runQueryOnLocalPartitions(map.getName(), Predicates.equal("this", value), IterationType.VALUE);
 
@@ -89,7 +88,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnGivenPartition() throws ExecutionException, InterruptedException {
+    public void runQueryOnGivenPartition() {
         QueryResult result = queryEngine
                 .runQueryOnGivenPartition(map.getName(), Predicates.equal("this", value), IterationType.ENTRY, partitionId);
 
@@ -101,5 +100,4 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     private Object toObject(Object data) {
         return getSerializationService(instance).toObject(data);
     }
-
 }
