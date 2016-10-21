@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.logging.Level.SEVERE;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -91,8 +92,12 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertInstanceOf(RuntimeException.class, logger.getThrowable());
+
                 String message = logger.getMessage();
                 assertTrue("Found message: '" + message + "'", message.contains("FailedRunnable"));
+
+                Level level = logger.getLevel();
+                assertEquals(SEVERE, level);
             }
         });
     }
@@ -211,6 +216,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
         private final AtomicReference<Throwable> throwableHolder = new AtomicReference<Throwable>();
         private final AtomicReference<String> messageHolder = new AtomicReference<String>();
+        private final AtomicReference<Level> logLevelHolder = new AtomicReference<Level>();
 
         @Override
         public void log(Level level, String message) {
@@ -221,6 +227,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         public void log(Level level, String message, Throwable thrown) {
             throwableHolder.set(thrown);
             messageHolder.set(message);
+            logLevelHolder.set(level);
         }
 
         @Override
@@ -230,7 +237,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
         @Override
         public Level getLevel() {
-            return null;
+            return logLevelHolder.get();
         }
 
         @Override
