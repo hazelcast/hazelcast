@@ -40,7 +40,7 @@ import static com.hazelcast.util.SortingUtil.getSortedSubList;
  * Specialization of the {@link MapLocalQueryRunner} - the only difference is that
  * the query evaluation per partition is run in a PARALLEL fashion.
  * <p>
- * Runs query operations in the calling thread (thus blucking it)
+ * Runs query operations in the calling thread (thus blocking it)
  * Query evaluation per partition is run in a PARALLEL fashion.
  * <p>
  * Used by query operations only: QueryOperation & QueryPartitionOperation

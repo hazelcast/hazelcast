@@ -49,6 +49,11 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * Should never invoke any query operations directly.
  * <p>
  * Should be used from top-level proxy-layer only (e.g. MapProxy, etc.).
+ * <p>
+ * Top level-query actors:
+ * - QueryEngine orchestrates the queries by dispatching query operations using QueryDispatcher and merging the result
+ * - QueryDispatcher invokes query operations on the given members and partitions
+ * - QueryRunner -> runs the query logic in the calling thread (so like evaluates the predicates and asks the index)
  */
 public class MapQueryEngineImpl implements MapQueryEngine {
 
