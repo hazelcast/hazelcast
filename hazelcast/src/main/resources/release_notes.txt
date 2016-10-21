@@ -77,6 +77,14 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
+*3.7.2 Fixes*
+
+- The container WaitingOperation (which wraps BlockingOperation) is asked for call ID/caller address. But this container object does not have any sensible information, so the heartbeat is not constructed correctly for a blocked operation. [8979]
+- JCache backup operation does not propagate the exception CacheNotExists. [8955]
+- The log message "unsafe unavailable" is at WARNING level and it also displays the full stack trace. [8852]
+- When a predicate for distributed query is executed on a lite member it throws the exception ClassNotFound. [8849]
+- While running under non-HotSpot JVM, the exception NoSuchField is thrown. [8835]
+
 *3.7.1 Fixes*
 
 - Aggressive SQL predicate flattening may result in wrong parsing of SQL. [8799]
