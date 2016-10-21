@@ -64,5 +64,4 @@ final class MapQueryEngineUtils {
         }
         return partitionIds;
     }
-
 }
