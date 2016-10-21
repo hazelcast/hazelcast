@@ -132,6 +132,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     }
 
     private final class ServiceProbes {
+
         private final String serviceName;
 
         // the InstanceProbes are stored in a weak reference. So that if the store/loader is gc'ed, the probes are gc'ed
@@ -159,11 +160,14 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         }
     }
 
-    // contains all probe for given instance, e.g. for a IMap 'employees' instance.
-    private final class InstanceProbes {
-        private final String dataStructureName;
-        // key is the name of the probe, e.g. load.
+    /**
+     * Contains all probes for a given instance, e.g. for an {@link com.hazelcast.core.IMap} instance {@code employees}.
+     */
+    private static final class InstanceProbes {
+
+        // key is the name of the probe, e.g. load
         private final ConcurrentMap<String, LatencyProbeImpl> probes = new ConcurrentHashMap<String, LatencyProbeImpl>();
+        private final String dataStructureName;
 
         InstanceProbes(String dataStructureName) {
             this.dataStructureName = dataStructureName;
@@ -188,7 +192,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         }
     }
 
-    // public for testing.
+    // package private for testing
     static final class LatencyProbeImpl implements LatencyProbe {
 
         private static final AtomicLongFieldUpdater<LatencyProbeImpl> COUNT
@@ -198,14 +202,14 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         private static final AtomicLongFieldUpdater<LatencyProbeImpl> MAX_MICROS
                 = newUpdater(LatencyProbeImpl.class, "maxMicros");
 
-
         volatile long count;
         volatile long maxMicros;
         volatile long totalMicros;
 
         private final AtomicLongArray latencyDistribution = new AtomicLongArray(LATENCY_BUCKET_COUNT);
 
-        // a strong reference to prevent garbage collection.
+        // a strong reference to prevent garbage collection
+        @SuppressWarnings("unused")
         private final InstanceProbes instanceProbes;
 
         private final String methodName;
