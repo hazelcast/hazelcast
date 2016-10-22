@@ -28,6 +28,7 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class RestValue implements IdentifiedDataSerializable {
+
     private byte[] value;
     private byte[] contentType;
 
