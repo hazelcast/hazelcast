@@ -49,7 +49,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_OP_CONTROL = 1 << 6;
 
-    private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
+    public static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 
     private short flags;
     private int partitionId;
@@ -73,6 +73,12 @@ public final class Packet extends HeapData implements OutboundFrame {
         this.partitionId = partitionId;
     }
 
+    public Packet(short flags, int partitionId, byte[] payload) {
+        super(payload);
+        this.flags = flags;
+        this.partitionId = partitionId;
+    }
+
     /**
      * Gets the Connection this Packet was send with.
      *
@@ -90,8 +96,9 @@ public final class Packet extends HeapData implements OutboundFrame {
      *
      * @param conn the connection.
      */
-    public void setConn(Connection conn) {
+    public Packet setConn(Connection conn) {
         this.conn = conn;
+        return this;
     }
 
     /**
