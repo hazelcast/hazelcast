@@ -35,8 +35,9 @@ public class Edge implements IdentifiedDataSerializable {
 
     private int priority;
 
-    private ForwardingPattern forwardingPattern = ForwardingPattern.SINGLE;
+    private ForwardingPattern forwardingPattern = ForwardingPattern.ALTERNATING_SINGLE;
     private Partitioner partitioner;
+    private boolean distributed;
 
     Edge() {
 
@@ -124,6 +125,14 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Javadoc pending
+     */
+    public Edge distributed() {
+        distributed = true;
+        return this;
+    }
+
+    /**
      * @return the partitioned for the edge
      */
     public Partitioner getPartitioner() {
@@ -161,6 +170,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeInt(inputOrdinal);
 
         out.writeInt(priority);
+        out.writeBoolean(distributed);
 
         out.writeObject(forwardingPattern);
         out.writeObject(partitioner);
@@ -175,6 +185,7 @@ public class Edge implements IdentifiedDataSerializable {
         inputOrdinal = in.readInt();
 
         priority = in.readInt();
+        distributed = in.readBoolean();
 
         forwardingPattern = in.readObject();
         partitioner = in.readObject();
@@ -197,10 +208,15 @@ public class Edge implements IdentifiedDataSerializable {
     public enum ForwardingPattern implements Serializable {
 
         /**
+         * Output of all source tasklets is forwarded to a single destination tasklet
+         */
+        ALL_TO_ONE,
+
+        /**
          * Output of the source tasklet is only available to a single destination tasklet,
          * but not necessarily always the same one
          */
-        SINGLE,
+        ALTERNATING_SINGLE,
 
         /**
          * Output of the source tasklet is only available to the destination tasklet with the partition id

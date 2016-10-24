@@ -75,6 +75,8 @@ public class IMapWriter extends AbstractProcessor {
 
     private static class Supplier implements ProcessorSupplier {
 
+        static final long serialVersionUID = 1L;
+
         private final String name;
         private transient IMap map;
 

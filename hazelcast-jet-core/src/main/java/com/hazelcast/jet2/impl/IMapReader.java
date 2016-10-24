@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 public class IMapReader extends AbstractProducer {
 
-    public final static int DEFAULT_FETCH_SIZE = 16384;
+    public static final int DEFAULT_FETCH_SIZE = 16384;
 
     private final MapProxyImpl map;
     private final List<Integer> partitions;
@@ -90,6 +90,8 @@ public class IMapReader extends AbstractProducer {
     }
 
     private static class Supplier implements ProcessorSupplier {
+
+        static final long serialVersionUID = 1L;
 
         private final String name;
         private final int fetchSize;

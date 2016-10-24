@@ -55,7 +55,7 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
             ConcurrentConveyor<Object>[] conveyors, Edge edge, int taskletIndex) {
         int ordinal = edge.getOutputOrdinal();
         switch (edge.getForwardingPattern()) {
-            case SINGLE:
+            case ALTERNATING_SINGLE:
                 return new RoundRobin(conveyors, taskletIndex, ordinal);
             case PARTITIONED:
                 return new Partitioned(conveyors, edge.getPartitioner(), taskletIndex, ordinal);
