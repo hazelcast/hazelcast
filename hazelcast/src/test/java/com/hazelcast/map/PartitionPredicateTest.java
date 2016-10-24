@@ -6,16 +6,23 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class PartitionPredicateTest extends HazelcastTestSupport {
 
     private static final int PARTITIONS = 10;
