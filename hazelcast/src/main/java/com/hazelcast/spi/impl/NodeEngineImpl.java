@@ -98,6 +98,8 @@ import static java.lang.System.currentTimeMillis;
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class NodeEngineImpl implements NodeEngine {
 
+    private static final String JET_SERVICE_NAME = "hz:impl:jetService";
+
     private final Node node;
     private final ILogger logger;
     private final EventServiceImpl eventService;
@@ -135,12 +137,33 @@ public class NodeEngineImpl implements NodeEngine {
                 operationService.getAsyncResponseHandler(),
                 operationService.getInvocationMonitor(),
                 eventService,
-                new ConnectionManagerPacketHandler());
+                new ConnectionManagerPacketHandler(),
+                newJetPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
         this.diagnostics = newDiagnostics();
 
         serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
         serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
+    }
+
+    private PacketHandler newJetPacketHandler() {
+        // currently service registration is done after the creation of the packet dispatcher, hence
+        // we need to lazily initialize the jet packet handler
+        return new PacketHandler() {
+
+            private volatile PacketHandler handler;
+
+            @Override
+            public void handle(Packet packet) throws Exception {
+                if (handler == null) {
+                    handler = serviceManager.getService(JET_SERVICE_NAME);
+                    if (handler == null) {
+                        throw new UnsupportedOperationException("Jet is not registered on this node");
+                    }
+                }
+                handler.handle(packet);
+            }
+        };
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
