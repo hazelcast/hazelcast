@@ -65,7 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -84,7 +83,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private volatile NearCache nearCache;
     private volatile String invalidationListenerId;
-    private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
     private int targetPartitionId;
 
@@ -96,6 +94,20 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     protected void onInitialize() {
         int partitionCount = getContext().getPartitionService().getPartitionCount();
         targetPartitionId = ThreadLocalRandom.current().nextInt(partitionCount);
+
+        initNearCache();
+    }
+
+    private void initNearCache() {
+        ClientContext context = getContext();
+        NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
+        if (nearCacheConfig == null) {
+            return;
+        }
+        nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
+        if (nearCache.isInvalidatedOnChange()) {
+            addNearCacheInvalidateListener();
+        }
     }
 
     @Override
@@ -158,7 +170,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public V get(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        initNearCache();
         if (nearCache != null) {
             Object cached = nearCache.get(key);
             if (cached != null) {
@@ -396,20 +407,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private EventHandler<ClientMessage> createHandler(final EntryListener<K, V> listener) {
         return new ReplicatedMapEventHandler(listener);
-    }
-
-    private void initNearCache() {
-        if (nearCacheInitialized.compareAndSet(false, true)) {
-            ClientContext context = getContext();
-            NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
-            if (nearCacheConfig == null) {
-                return;
-            }
-            nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
-            if (nearCache.isInvalidatedOnChange()) {
-                addNearCacheInvalidateListener();
-            }
-        }
     }
 
     private void addNearCacheInvalidateListener() {
