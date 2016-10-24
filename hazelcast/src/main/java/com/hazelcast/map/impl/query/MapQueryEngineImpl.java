@@ -206,7 +206,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
     private void checkQueryResultLimiter(String mapName, Predicate predicate) {
         if (predicate == TruePredicate.INSTANCE) {
-            queryResultSizeLimiter.checkMaxResultLimitOnLocalPartitions(mapName);
+            queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(mapName);
         }
     }
 
