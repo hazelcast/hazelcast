@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.Packet.FLAG_BIND;
 import static com.hazelcast.nio.Packet.FLAG_EVENT;
+import static com.hazelcast.nio.Packet.FLAG_JET;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
@@ -36,6 +37,7 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
     private final ILogger logger;
     private final PacketHandler eventService;
     private final PacketHandler operationExecutor;
+    private final PacketHandler jetService;
     private final PacketHandler connectionManager;
     private final PacketHandler responseHandler;
     private final PacketHandler invocationMonitor;
@@ -45,13 +47,15 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
                                 PacketHandler responseHandler,
                                 PacketHandler invocationMonitor,
                                 PacketHandler eventService,
-                                PacketHandler connectionManager) {
+                                PacketHandler connectionManager,
+                                PacketHandler jetService) {
         this.logger = logger;
         this.responseHandler = responseHandler;
         this.eventService = eventService;
         this.invocationMonitor = invocationMonitor;
         this.connectionManager = connectionManager;
         this.operationExecutor = operationExecutor;
+        this.jetService = jetService;
     }
 
     @Override
@@ -69,6 +73,8 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
                 eventService.handle(packet);
             } else if (packet.isFlagSet(FLAG_BIND)) {
                 connectionManager.handle(packet);
+            } else if (packet.isFlagSet(FLAG_JET)) {
+                jetService.handle(packet);
             } else {
                 logger.severe("Unknown packet type! Header: " + packet.getFlags());
             }
