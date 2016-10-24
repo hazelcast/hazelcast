@@ -28,9 +28,9 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.INTERRUPTED;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.StringUtil.timeToString;
-import static java.lang.System.currentTimeMillis;
 
 /**
  * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
