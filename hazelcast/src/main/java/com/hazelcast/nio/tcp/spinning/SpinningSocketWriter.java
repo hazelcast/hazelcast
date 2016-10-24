@@ -74,7 +74,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
 
     @Override
     public void write(byte[] bytes, boolean urgent) {
-        throw new UnsupportedOperationException();
+        if (urgent) {
+            urgentWriteQueue.add(bytes);
+        } else {
+            writeQueue.add(bytes);
+        }
     }
 
     @Probe(name = "writeQueuePendingBytes")
