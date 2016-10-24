@@ -19,16 +19,19 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.PacketHandler;
+
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class JetService implements ManagedService, RemoteService {
+public class JetService implements ManagedService, RemoteService, PacketHandler {
 
-    public static final String SERVICE_NAME = "hz:impl:jet2Service";
+    public static final String SERVICE_NAME = "hz:impl:jetService";
 
     private NodeEngine nodeEngine;
 
@@ -82,4 +85,7 @@ public class JetService implements ManagedService, RemoteService {
     }
 
 
+    @Override
+    public void handle(Packet packet) throws Exception {
+    }
 }

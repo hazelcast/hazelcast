@@ -79,6 +79,11 @@ public final class MemoryDataInput implements ObjectDataInput {
     }
 
     @Override
+    public <T> T readObject(Class aClass) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean readBoolean() throws IOException {
         final int ch = read();
         if (ch < 0) {

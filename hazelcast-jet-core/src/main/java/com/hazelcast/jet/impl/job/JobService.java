@@ -51,7 +51,7 @@ import static com.hazelcast.jet.impl.util.JetUtil.uncheckedGet;
 public class JobService implements RemoteService {
 
     public static final int MAX_PORT = 0xFFFF;
-    public static final String SERVICE_NAME = "hz:impl:jetService";
+    public static final String SERVICE_NAME = "hz:impl:jobService";
 
     private final Address localJetAddress;
     private final ServerSocketChannel serverSocketChannel;
