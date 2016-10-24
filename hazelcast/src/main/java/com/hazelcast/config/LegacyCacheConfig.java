@@ -30,15 +30,18 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * Contains all the configuration for the {@link com.hazelcast.cache.ICache}. This class does not support
- * disablePerEntryInvalidationEvents and eviction policy comparator support.
+ * Contains all the configuration for the {@link com.hazelcast.cache.ICache} (used for backward compatibility).
+ *
+ * This class does not support disablePerEntryInvalidationEvents and has no eviction policy comparator support.
  *
  * @param <K> the key type.
  * @param <V> the value type.
  */
 public class LegacyCacheConfig<K, V> implements DataSerializable, TypedDataSerializable {
+
     private CacheConfig<K, V> config;
 
+    @SuppressWarnings("unused")
     public LegacyCacheConfig() {
         config = new CacheConfig<K, V>();
     }
@@ -48,8 +51,7 @@ public class LegacyCacheConfig<K, V> implements DataSerializable, TypedDataSeria
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(config.getName());
         out.writeUTF(config.getManagerPrefix());
         out.writeUTF(config.getUriString());
@@ -60,7 +62,8 @@ public class LegacyCacheConfig<K, V> implements DataSerializable, TypedDataSeria
         out.writeObject(new LegacyCacheEvictionConfig(config.getEvictionConfig()));
 
         out.writeObject(config.getWanReplicationRef());
-        //SUPER
+
+        // SUPER
         out.writeObject(config.getKeyType());
         out.writeObject(config.getValueType());
         out.writeObject(config.getCacheLoaderFactory());
@@ -79,8 +82,7 @@ public class LegacyCacheConfig<K, V> implements DataSerializable, TypedDataSeria
 
         Set<CacheEntryListenerConfiguration<K, V>> cacheEntryListenerConfigurations =
                 (Set<CacheEntryListenerConfiguration<K, V>>) config.getCacheEntryListenerConfigurations();
-        final boolean listNotEmpty =
-                cacheEntryListenerConfigurations != null && !cacheEntryListenerConfigurations.isEmpty();
+        boolean listNotEmpty = cacheEntryListenerConfigurations != null && !cacheEntryListenerConfigurations.isEmpty();
         out.writeBoolean(listNotEmpty);
         if (listNotEmpty) {
             out.writeInt(cacheEntryListenerConfigurations.size());
@@ -93,8 +95,8 @@ public class LegacyCacheConfig<K, V> implements DataSerializable, TypedDataSeria
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    @SuppressWarnings("unchecked")
+    public void readData(ObjectDataInput in) throws IOException {
         config.setName(in.readUTF());
         config.setManagerPrefix(in.readUTF());
         config.setUriString(in.readUTF());
@@ -108,7 +110,7 @@ public class LegacyCacheConfig<K, V> implements DataSerializable, TypedDataSeria
 
         config.setWanReplicationRef((WanReplicationRef) in.readObject());
 
-        //SUPER
+        // SUPER
         config.setKeyType((Class<K>) in.readObject());
         config.setValueType((Class<V>) in.readObject());
         config.setCacheLoaderFactory((Factory<? extends CacheLoader<K, V>>) in.readObject());

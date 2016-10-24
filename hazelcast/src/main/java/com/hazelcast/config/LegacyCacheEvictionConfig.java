@@ -24,11 +24,15 @@ import com.hazelcast.nio.serialization.TypedDataSerializable;
 import java.io.IOException;
 
 /**
- * This class is used for backward compatibility. Comparator support is not provided for compatibility.
+ * Configuration for cache eviction (used for backward compatibility).
+ *
+ * Comparator support is not provided for compatibility.
  */
 public class LegacyCacheEvictionConfig implements DataSerializable, TypedDataSerializable {
+
     final CacheEvictionConfig config;
 
+    @SuppressWarnings("unused")
     public LegacyCacheEvictionConfig() {
         config = new CacheEvictionConfig();
     }
@@ -38,16 +42,14 @@ public class LegacyCacheEvictionConfig implements DataSerializable, TypedDataSer
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(config.getSize());
         out.writeUTF(config.getMaxSizePolicy().toString());
         out.writeUTF(config.getEvictionPolicy().toString());
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         config.setSize(in.readInt());
         config.setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.valueOf(in.readUTF()));
         config.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
