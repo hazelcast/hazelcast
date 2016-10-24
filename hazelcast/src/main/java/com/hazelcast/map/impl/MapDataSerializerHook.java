@@ -61,6 +61,7 @@ import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
 import com.hazelcast.map.impl.operation.MapIsEmptyOperation;
 import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
+import com.hazelcast.map.impl.operation.MapReplicationStateHolder;
 import com.hazelcast.map.impl.operation.MapSizeOperation;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryBackupOperation;
@@ -97,6 +98,7 @@ import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
+import com.hazelcast.map.impl.operation.WriteBehindStateHolder;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
@@ -244,8 +246,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int CLEAR_NEAR_CACHE_INVALIDATION = 110;
     public static final int MAP_TRANSACTION_LOG_RECORD = 111;
     public static final int VERSIONED_VALUE = 112;
+    public static final int MAP_REPLICATION_STATE_HOLDER = 113;
+    public static final int WRITE_BEHIND_STATE_HOLDER = 114;
 
-    private static final int LEN = VERSIONED_VALUE + 1;
+    private static final int LEN = WRITE_BEHIND_STATE_HOLDER + 1;
 
     @Override
     public int getFactoryId() {
@@ -814,6 +818,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[VERSIONED_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new VersionedValue();
+            }
+        };
+        constructors[MAP_REPLICATION_STATE_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapReplicationStateHolder();
+            }
+        };
+        constructors[WRITE_BEHIND_STATE_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new WriteBehindStateHolder();
             }
         };
 
