@@ -42,6 +42,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * The expirationPolicy contains the expiration policy of the items. If a time to live is set, the policy is created, otherwise
  * it is null to save space.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class RingbufferContainer implements IdentifiedDataSerializable {
 
     private static final long TTL_DISABLED = 0;
