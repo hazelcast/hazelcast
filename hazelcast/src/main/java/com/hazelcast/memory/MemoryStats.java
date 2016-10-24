@@ -48,7 +48,6 @@ public interface MemoryStats {
      * Returns the maximum amount of memory that the JVM will attempt to use in bytes.
      *
      * @return the maximum amount of memory in bytes.
-     *
      * @see Runtime#maxMemory()
      */
     long getMaxHeap();
@@ -58,7 +57,6 @@ public interface MemoryStats {
      * the Java virtual machine to use.
      *
      * @return the amount of committed memory in bytes.
-     *
      * @see Runtime#totalMemory()
      * @see java.lang.management.MemoryUsage#getCommitted()
      */
@@ -68,7 +66,6 @@ public interface MemoryStats {
      * Returns the amount of used memory in the JVM in bytes.
      *
      * @return the amount of used memory in bytes
-     *
      * @see java.lang.management.MemoryUsage#getUsed()
      */
     long getUsedHeap();
@@ -77,7 +74,6 @@ public interface MemoryStats {
      * Returns the amount of free memory in the JVM in bytes.
      *
      * @return the amount of free memory in bytes
-     *
      * @see Runtime#freeMemory()
      */
     long getFreeHeap();
@@ -125,6 +121,7 @@ public interface MemoryStats {
 
     /**
      * Returns the garbage collector statistics for the JVM
+     *
      * @return GC statistics
      */
     GarbageCollectorStats getGCStats();

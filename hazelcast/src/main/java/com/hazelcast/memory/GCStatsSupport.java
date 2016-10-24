@@ -22,9 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
- * Used to gather garbage collection statistics
- *
+ * Used to gather garbage collection statistics.
  */
 public final class GCStatsSupport {
 
@@ -44,7 +42,8 @@ public final class GCStatsSupport {
     /**
      * No public constructor is needed for utility classes
      */
-    private GCStatsSupport() { }
+    private GCStatsSupport() {
+    }
 
     static void fill(DefaultGarbageCollectorStats stats) {
         long minorCount = 0;
