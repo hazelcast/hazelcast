@@ -43,7 +43,6 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
     private long lastStoredTime;
     private long lastUpdateTime;
     private long version;
-    private long evictionCriteriaNumber;
     private long ttl;
 
     private SerializationService serializationService;
@@ -162,11 +161,10 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
     }
 
     public long getEvictionCriteriaNumber() {
-        return evictionCriteriaNumber;
+        return 0;
     }
 
     public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-        this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
     @Override
