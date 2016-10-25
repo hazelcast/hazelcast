@@ -128,14 +128,12 @@ public class RecordInfo implements IdentifiedDataSerializable {
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
 
-        boolean statsEnabled = lastStoredTime == NOT_AVAILABLE && expirationTime == NOT_AVAILABLE;
+        boolean statsEnabled = !(lastStoredTime == NOT_AVAILABLE && expirationTime == NOT_AVAILABLE);
         out.writeBoolean(statsEnabled);
         if (statsEnabled) {
             out.writeLong(lastStoredTime);
             out.writeLong(expirationTime);
         }
-
-
     }
 
     @Override
