@@ -523,5 +523,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         public int getPartitionId() {
             return task.getPartitionId();
         }
+
+        @Override
+        public String toString() {
+            return "PriorityPartitionSpecificRunnable:{ " + task + "}";
+        }
     }
 }
