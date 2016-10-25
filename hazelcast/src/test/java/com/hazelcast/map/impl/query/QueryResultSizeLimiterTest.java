@@ -120,14 +120,14 @@ public class QueryResultSizeLimiterTest {
     public void testLocalPreCheckDisabled() {
         initMocksWithConfiguration(200000, QueryResultSizeLimiter.DISABLED);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test
     public void testLocalPreCheckEnabledWithNoLocalPartitions() {
         initMocksWithConfiguration(200000, 1);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test
@@ -136,7 +136,7 @@ public class QueryResultSizeLimiterTest {
         populatePartitions(partitionsSizes);
         initMocksWithConfiguration(200000, 1);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test
@@ -145,16 +145,16 @@ public class QueryResultSizeLimiterTest {
         populatePartitions(partitionsSizes);
         initMocksWithConfiguration(200000, 1);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testLocalPreCheckEnabledWitPartitionOverLimit() {
-        int[] partitionsSizes = {850};
+        int[] partitionsSizes = {1090};
         populatePartitions(partitionsSizes);
         initMocksWithConfiguration(200000, 1);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test
@@ -163,16 +163,16 @@ public class QueryResultSizeLimiterTest {
         populatePartitions(partitionsSizes);
         initMocksWithConfiguration(200000, 2);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testLocalPreCheckEnabledWitTwoPartitionsOverLimit() {
-        int[] partitionsSizes = {849, 850};
+        int[] partitionsSizes = {1062, 1063};
         populatePartitions(partitionsSizes);
         initMocksWithConfiguration(200000, 2);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test
@@ -181,16 +181,16 @@ public class QueryResultSizeLimiterTest {
         populatePartitions(partitionSizes);
         initMocksWithConfiguration(200000, 2);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testLocalPreCheckEnabledWitMorePartitionsThanPreCheckThresholdOverLimit() {
-        int[] partitionSizes = {849, 850, Integer.MIN_VALUE};
+        int[] partitionSizes = {1200, 1000, Integer.MIN_VALUE};
         populatePartitions(partitionSizes);
         initMocksWithConfiguration(200000, 2);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test
@@ -199,16 +199,16 @@ public class QueryResultSizeLimiterTest {
         populatePartitions(partitionSizes);
         initMocksWithConfiguration(200000, 2);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testLocalPreCheckEnabledWitDifferentPartitionSizesOverLimit() {
-        int[] partitionSizes = {0, 1699, Integer.MIN_VALUE};
+        int[] partitionSizes = {0, 2200, Integer.MIN_VALUE};
         populatePartitions(partitionSizes);
         initMocksWithConfiguration(200000, 2);
 
-        limiter.checkMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
+        limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
     private void initMocksWithConfiguration(int maxResultSizeLimit, int maxLocalPartitionLimitForPreCheck) {

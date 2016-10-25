@@ -59,6 +59,14 @@ public class QueryResultSizeLimiter {
     public static final float MAX_RESULT_LIMIT_FACTOR = 1.15f;
 
     /**
+     * Adds a security margin to the configured result size limit to prevent false positives in pre-check.
+     * Required since the precheck takes 3 partitions by default and their size may vary due to data distr. imbalance.
+     *
+     * @see QueryResultSizeLimiter
+     */
+    public static final float MAX_RESULT_LIMIT_FACTOR_FOR_PRECHECK = 1.25f;
+
+    /**
      * Special value to mark the disabled state.
      */
     static final int DISABLED = -1;
@@ -106,7 +114,7 @@ public class QueryResultSizeLimiter {
         return isQueryResultLimitEnabled ? (long) ceil(resultLimitPerPartition * ownedPartitions) : Long.MAX_VALUE;
     }
 
-    void checkMaxResultLimitOnLocalPartitions(String mapName) {
+    void precheckMaxResultLimitOnLocalPartitions(String mapName) {
         // check if feature is enabled
         if (!isPreCheckEnabled) {
             return;
@@ -127,7 +135,7 @@ public class QueryResultSizeLimiter {
 
         // check local result size
         long localResultLimit = getNodeResultLimit(partitionsToCheck);
-        if (localPartitionSize > localResultLimit) {
+        if (localPartitionSize > localResultLimit * MAX_RESULT_LIMIT_FACTOR_FOR_PRECHECK) {
             throw new QueryResultSizeExceededException(maxResultLimit, " Result size exceeded in local pre-check.");
         }
     }
