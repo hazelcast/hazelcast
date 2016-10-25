@@ -133,9 +133,6 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public NearCacheManager createNearCacheManager() {
-        // If there is a specific behaviour for client,
-        // there maybe a custom "NearCacheManager" implementation such as "ClientNearCacheManager".
-        // Currently "DefaultNearCacheManager" is enough.
         return new DefaultNearCacheManager();
     }
 }

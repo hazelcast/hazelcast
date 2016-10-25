@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.ClientExtension;
@@ -171,6 +172,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManagerService transactionManager;
     private final NearCacheManager nearCacheManager;
+    private final NearCacheContext nearCacheContext;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
@@ -222,6 +224,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
         nearCacheManager = clientExtension.createNearCacheManager();
+        nearCacheContext = new NearCacheContext(serializationService, executionService, nearCacheManager,
+                config.getClassLoader());
 
         diagnostics = initDiagnostics(config);
 
@@ -660,6 +664,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public NearCacheManager getNearCacheManager() {
         return nearCacheManager;
+    }
+
+    public NearCacheContext getNearCacheContext() {
+        return nearCacheContext;
     }
 
     public ThreadGroup getThreadGroup() {

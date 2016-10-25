@@ -192,11 +192,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         NearCacheConfig nearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
-            NearCacheContext nearCacheContext = new NearCacheContext(
-                    clientContext.getSerializationService(),
-                    clientContext.getExecutionService(),
-                    nearCacheManager
-            );
+            NearCacheContext nearCacheContext = clientContext.getNearCacheContext();
             nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();
         }
