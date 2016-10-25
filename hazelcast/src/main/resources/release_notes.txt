@@ -77,6 +77,14 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
+*3.7.3 Fixes*
+
+- NullPointerException is thrown while deleting an entry through Entry Processor by setting value to NULL. [9135]
+- There is a discrepancy between the Reference Manual and source code in the default value of hazelcast.heartbeat.interval.seconds. [9070]
+- When Hazelcast is upgraded from 3.6.5 to 3.7.1, calls to Spring cache generate exceptions. [9023]
+- Hazelcast 3.6.x client cannot obtain cache proxy from 3.7.x cluster. Configuration creation and retrieval seem to be not working on 3.6.x clients when they connect to a 3.7.x cluster. [9006]
+- There is an unnecessary warning about member side near cache invalidation operations. [8841]
+
 *3.7.2 Fixes*
 
 - The container WaitingOperation (which wraps BlockingOperation) is asked for call ID/caller address. But this container object does not have any sensible information, so the heartbeat is not constructed correctly for a blocked operation. [8979]
