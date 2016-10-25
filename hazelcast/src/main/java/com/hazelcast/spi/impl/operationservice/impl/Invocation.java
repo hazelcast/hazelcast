@@ -363,11 +363,6 @@ public abstract class Invocation implements OperationResponseHandler {
         }
     }
 
-    @Override
-    public boolean isLocal() {
-        return true;
-    }
-
     void notifyError(Object error) {
         assert error != null;
 

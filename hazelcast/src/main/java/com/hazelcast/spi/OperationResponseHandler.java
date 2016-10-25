@@ -34,11 +34,4 @@ public interface OperationResponseHandler<O extends Operation> {
      * @param response the response of the operation that got executed.
      */
     void sendResponse(O op, Object response);
-
-    /**
-     * Checks if this OperationResponseHandler is for a local invocation.
-     *
-     * @return true if local, false otherwise.
-     */
-    boolean isLocal();
 }

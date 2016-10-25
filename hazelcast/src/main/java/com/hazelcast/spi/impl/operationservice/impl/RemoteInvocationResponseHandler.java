@@ -53,9 +53,4 @@ final class RemoteInvocationResponseHandler implements OperationResponseHandler 
                     + ". " + operation);
         }
     }
-
-    @Override
-    public boolean isLocal() {
-        return false;
-    }
 }

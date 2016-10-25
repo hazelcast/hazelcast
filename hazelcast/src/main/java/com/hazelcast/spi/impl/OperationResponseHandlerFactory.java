@@ -37,11 +37,6 @@ public final class OperationResponseHandlerFactory {
         @Override
         public void sendResponse(Operation op, Object obj) {
         }
-
-        @Override
-        public boolean isLocal() {
-            return false;
-        }
     }
 
     public static OperationResponseHandler createErrorLoggingResponseHandler(ILogger logger) {
@@ -61,11 +56,6 @@ public final class OperationResponseHandlerFactory {
                 Throwable t = (Throwable) obj;
                 logger.severe(t);
             }
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
         }
     }
 }
