@@ -131,7 +131,6 @@ class ExecutionService {
     }
 
     private static class NonBlockingWorker implements Runnable {
-        private static final NonBlockingWorker[] EMPTY_WORKERS = new NonBlockingWorker[0];
         private final List<TaskletTracker> trackers;
         private final NonBlockingWorker[] colleagues;
 

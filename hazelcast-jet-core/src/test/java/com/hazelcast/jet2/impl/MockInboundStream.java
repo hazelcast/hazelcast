@@ -45,7 +45,7 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
-    public ProgressState drainAvailableItemsInto(CollectionWithObserver dest) {
+    public ProgressState drainTo(CollectionWithObserver dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }

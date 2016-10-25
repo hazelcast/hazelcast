@@ -36,6 +36,11 @@ class ProgressTracker {
         madeProgress(true);
     }
 
+    public void update(ProgressState state) {
+        isMadeProgress = isMadeProgress || state.isMadeProgress();
+        isDone = isDone && state.isDone();
+    }
+
     /**
      * Equivalent to {@code update(NO_PROGRESS)}, but more descriptive in certain usages.
      */

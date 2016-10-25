@@ -132,7 +132,7 @@ public class ProcessorTasklet implements Tasklet {
         ProgressState result;
         do {
             currInstream = instreamCursor.value();
-            result = currInstream.drainAvailableItemsInto(inbox);
+            result = currInstream.drainTo(inbox);
             progTracker.madeProgress(result.isMadeProgress());
             currInstreamExhausted = result.isDone();
             if (currInstreamExhausted) {

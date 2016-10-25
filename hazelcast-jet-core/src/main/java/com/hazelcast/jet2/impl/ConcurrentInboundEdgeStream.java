@@ -16,45 +16,31 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
-
-import java.util.function.Predicate;
-
 /**
  * {@code InboundEdgeStream} implemented in terms of a {@code ConcurrentConveyor}. The conveyor has as many
  * 1-to-1 concurrent queues as there are upstream tasklets contributing to it.
  */
 class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
-    private final ConcurrentConveyor<Object> conveyor;
     private final int ordinal;
     private final int priority;
-    private final ExhaustedQueueCleaner exhaustedQueueCleaner = new ExhaustedQueueCleaner();
+    private final InboundProducer[] producers;
+    private final ProgressTracker tracker;
 
-    public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority) {
-        this.conveyor = conveyor;
+    public ConcurrentInboundEdgeStream(InboundProducer[] producers, int ordinal, int priority) {
+        this.producers = producers;
         this.ordinal = ordinal;
         this.priority = priority;
+        this.tracker = new ProgressTracker();
     }
 
     @Override
-    public ProgressState drainAvailableItemsInto(CollectionWithObserver dest) {
-        assert dest.isEmpty() : "Destination is not empty";
-        boolean madeProgress = false;
-        dest.setVetoingObserverOfAdd(exhaustedQueueCleaner);
-        try {
-            exhaustedQueueCleaner.doneItem = conveyor.submitterGoneItem();
-            for (int i = 0; i < conveyor.queueCount(); i++) {
-                if (conveyor.queue(i) == null) {
-                    continue;
-                }
-                exhaustedQueueCleaner.index = i;
-                madeProgress |= conveyor.drainTo(i, dest) > 0;
-            }
-        } finally {
-            dest.setVetoingObserverOfAdd(null);
+    public ProgressState drainTo(CollectionWithObserver dest) {
+        tracker.reset();
+        for (InboundProducer producer : producers) {
+            tracker.update(producer.drainTo(dest));
         }
-        return ProgressState.valueOf(madeProgress, exhaustedQueueCleaner.cleanedCount == conveyor.queueCount());
+        return tracker.toProgressState();
     }
 
     @Override
@@ -67,20 +53,5 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         return priority;
     }
 
-    private final class ExhaustedQueueCleaner implements Predicate<Object> {
-        Object doneItem;
-        int index;
-        int cleanedCount;
-
-        @Override
-        public boolean test(Object o) {
-            if (o == doneItem) {
-                assert conveyor.queue(index) != null : "Repeated 'submitterGoneItem' in queue at index " + index;
-                conveyor.removeQueue(index);
-                cleanedCount++;
-                return false;
-            }
-            return true;
-        }
-    }
 }
+

@@ -28,6 +28,7 @@ import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.jet2.impl.deployment.JetClassLoader;
 import com.hazelcast.spi.NodeEngine;
+
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -94,8 +95,14 @@ public class ExecutionContext {
 
                 for (Edge inboundEdge : inboundEdges) {
                     ConcurrentConveyor<Object>[] conveyors = conveyorMap.get(inboundEdge);
+                    ConcurrentConveyor<Object> conveyor = conveyors[taskletIndex];
+                    InboundProducer[] producers = new InboundProducer[conveyor.queueCount()];
+                    for (int i = 0; i < producers.length; i++) {
+                        producers[i] = new ConveyorProducer(conveyor, i);
+                    }
+
                     ConcurrentInboundEdgeStream inboundStream =
-                            new ConcurrentInboundEdgeStream(conveyors[taskletIndex],
+                            new ConcurrentInboundEdgeStream(producers,
                                     inboundEdge.getInputOrdinal(),
                                     inboundEdge.getPriority());
                     inboundStreams.add(inboundStream);
