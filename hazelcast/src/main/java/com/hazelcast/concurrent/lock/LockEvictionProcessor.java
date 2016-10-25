@@ -94,10 +94,5 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
                 }
             }
         }
-
-        @Override
-        public boolean isLocal() {
-            return true;
-        }
     }
 }

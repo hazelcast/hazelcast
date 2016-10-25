@@ -16,23 +16,44 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.instance.Node;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * An {@link OperationResponseHandler} that is used for a remotely executed Operation. So when a calling member
  * sends an Operation to the receiving member, the receiving member attaches this RemoteInvocationResponseHandler
  * to that operation.
  */
-final class RemoteInvocationResponseHandler implements OperationResponseHandler {
-    private final OperationServiceImpl operationService;
+public final class RemoteInvocationResponseHandler implements OperationResponseHandler {
+    private final Address thisAddress;
+    private final InternalSerializationService serializationService;
+    private final ILogger logger;
+    private final Node node;
 
-    RemoteInvocationResponseHandler(OperationServiceImpl operationService) {
-        this.operationService = operationService;
+    RemoteInvocationResponseHandler(
+            Address thisAddress,
+            InternalSerializationService serializationService,
+            ILogger logger,
+            Node node) {
+        this.thisAddress = thisAddress;
+        this.serializationService = serializationService;
+        this.logger = logger;
+        this.node = node;
     }
 
     @Override
@@ -48,14 +69,29 @@ final class RemoteInvocationResponseHandler implements OperationResponseHandler 
             response = (Response) obj;
         }
 
-        if (!operationService.send(response, operation.getCallerAddress())) {
-            operationService.logger.warning("Cannot send response: " + obj + " to " + conn.getEndPoint()
+        if (!send(response, operation.getCallerAddress())) {
+            logger.warning("Cannot send response: " + obj + " to " + conn.getEndPoint()
                     + ". " + operation);
         }
     }
 
-    @Override
-    public boolean isLocal() {
-        return false;
+    public boolean send(Response response, Address target) {
+        checkNotNull(target, "Target is required!");
+
+        if (thisAddress.equals(target)) {
+            throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
+        }
+
+        byte[] bytes = serializationService.toBytes(response);
+        Packet packet = new Packet(bytes, -1)
+                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
+
+        if (response.isUrgent()) {
+            packet.setFlag(FLAG_URGENT);
+        }
+
+        ConnectionManager connectionManager = node.getConnectionManager();
+        Connection connection = connectionManager.getOrConnect(target);
+        return connectionManager.transmit(packet, connection);
     }
 }

@@ -48,7 +48,6 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -65,7 +64,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
@@ -130,6 +128,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     final ILogger logger;
     final OperationBackupHandler backupHandler;
     final BackpressureRegulator backpressureRegulator;
+    final RemoteInvocationResponseHandler remoteResponseHandler;
     volatile Invocation.Context invocationContext;
 
     private final InvocationMonitor invocationMonitor;
@@ -175,6 +174,10 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 node.getHazelcastThreadGroup(), node.getLogger(AsyncResponseHandler.class),
                 responseHandler, node.getProperties());
 
+        this.remoteResponseHandler = new RemoteInvocationResponseHandler(
+                nodeEngine.getThisAddress(), serializationService,
+                nodeEngine.getLogger(RemoteInvocationResponseHandler.class), node);
+
         this.operationExecutor = new OperationExecutorImpl(
                 node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
                 node.getHazelcastThreadGroup(), node.getNodeExtension());
@@ -184,6 +187,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 node.getProperties(), node.getHazelcastThreadGroup());
     }
 
+    public RemoteInvocationResponseHandler getRemoteResponseHandler() {
+        return remoteResponseHandler;
+    }
 
     public PacketHandler getAsyncResponseHandler() {
         return asyncResponseHandler;
@@ -414,26 +420,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 .setFlag(FLAG_OP);
 
         if (op.isUrgent()) {
-            packet.setFlag(FLAG_URGENT);
-        }
-
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
-    }
-
-    public boolean send(Response response, Address target) {
-        checkNotNull(target, "Target is required!");
-
-        if (thisAddress.equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
-        }
-
-        byte[] bytes = serializationService.toBytes(response);
-        Packet packet = new Packet(bytes, -1)
-                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
-
-        if (response.isUrgent()) {
             packet.setFlag(FLAG_URGENT);
         }
 

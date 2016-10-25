@@ -221,11 +221,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
                     loaded.set(true);
                 }
             }
-
-            @Override
-            public boolean isLocal() {
-                return true;
-            }
         });
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
