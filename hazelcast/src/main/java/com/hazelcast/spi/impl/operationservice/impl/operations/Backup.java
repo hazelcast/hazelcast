@@ -163,10 +163,10 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
         if (nodeEngine.getThisAddress().equals(originalCaller)) {
-            operationService.getResponseHandler().notifyBackupComplete(callId);
+            operationService.getInboundResponseHandler().notifyBackupComplete(callId);
         } else {
             BackupAckResponse backupAckResponse = new BackupAckResponse(callId, backupOp.isUrgent());
-            operationService.send(backupAckResponse, originalCaller);
+            operationService.getOutboundResponseHandler().send(backupAckResponse, originalCaller);
         }
     }
 

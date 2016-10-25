@@ -100,7 +100,7 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
 
     private void notifyCaller() {
         OperationServiceImpl operationService = (OperationServiceImpl) getNodeEngine().getOperationService();
-        operationService.getResponseHandler().notifyBackupComplete(callId);
+        operationService.getInboundResponseHandler().notifyBackupComplete(callId);
     }
 
     @Override

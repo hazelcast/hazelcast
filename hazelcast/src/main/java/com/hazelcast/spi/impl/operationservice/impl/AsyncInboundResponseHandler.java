@@ -52,9 +52,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *
  * The reason that the IO thread doesn't immediately deals with the response is that deserializing the
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
- * deal with the response can be rather expensive currently.
+ * deal with the response can be rather expensive.
  */
-public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
+public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvider {
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
@@ -67,8 +67,8 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
     final ResponseThread responseThread;
     private final ILogger logger;
 
-    AsyncResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler,
-                         HazelcastProperties properties) {
+    AsyncInboundResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler,
+                                HazelcastProperties properties) {
         this.logger = logger;
         this.responseThread = new ResponseThread(threadGroup, responsePacketHandler, properties);
     }

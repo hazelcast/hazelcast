@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartbeat;
-import static com.hazelcast.spi.impl.operationservice.impl.AsyncResponseHandler.getIdleStrategy;
+import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService {
 
