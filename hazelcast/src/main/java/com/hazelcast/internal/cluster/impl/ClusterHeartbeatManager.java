@@ -43,6 +43,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NA
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.createMemberInfoList;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * ClusterHeartbeatManager manages the heartbeat sending and receiving
@@ -61,7 +62,7 @@ import static java.lang.String.format;
  */
 public class ClusterHeartbeatManager {
 
-    private static final long CLOCK_JUMP_THRESHOLD = 10000L;
+    private static final long CLOCK_JUMP_THRESHOLD = MINUTES.toMillis(2);
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
     private static final int MAX_PING_RETRY_COUNT = 5;
 
