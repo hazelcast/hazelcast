@@ -85,7 +85,11 @@ public class ExecutionContext {
                     ConcurrentConveyor<Object>[] conveyorArray = conveyorMap.computeIfAbsent(outboundEdge, e ->
                             createConveyorArray(getParallelism(outboundEdge.getDestination()),
                                     parallelism, QUEUE_SIZE));
-                    outboundStreams.add(newStream(conveyorArray, outboundEdge, taskletIndex));
+                    OutboundConsumer[] consumers = new OutboundConsumer[conveyorArray.length];
+                    for (int i = 0, conveyorsLength = conveyorArray.length; i < conveyorsLength; i++) {
+                        consumers[i] = new ConveyorConsumer(conveyorArray[i], taskletIndex);
+                    }
+                    outboundStreams.add(newStream(consumers, outboundEdge));
                 }
 
                 for (Edge inboundEdge : inboundEdges) {
