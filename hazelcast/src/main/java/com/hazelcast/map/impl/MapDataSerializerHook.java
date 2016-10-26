@@ -77,6 +77,7 @@ import com.hazelcast.map.impl.operation.PartitionWideEntryOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
 import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateBackupOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperation;
+import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperationFactory;
 import com.hazelcast.map.impl.operation.PostJoinMapOperation;
 import com.hazelcast.map.impl.operation.PutAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutAllOperation;
@@ -678,6 +679,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PARTITION_WIDE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PartitionWideEntryOperationFactory();
+            }
+        };
+        constructors[PARTITION_WIDE_PREDICATE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionWideEntryWithPredicateOperationFactory();
             }
         };
         constructors[PUT_ALL_PARTITION_AWARE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
