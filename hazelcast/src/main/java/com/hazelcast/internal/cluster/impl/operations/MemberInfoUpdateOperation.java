@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -36,16 +38,19 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     protected Collection<MemberInfo> memberInfos;
     protected long masterTime = Clock.currentTimeMillis();
+    protected PartitionRuntimeState partitionRuntimeState;
     protected boolean sendResponse;
 
     public MemberInfoUpdateOperation() {
         memberInfos = new ArrayList<MemberInfo>();
     }
 
-    public MemberInfoUpdateOperation(Collection<MemberInfo> memberInfos, long masterTime, boolean sendResponse) {
+    public MemberInfoUpdateOperation(Collection<MemberInfo> memberInfos, long masterTime,
+            PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         this.masterTime = masterTime;
         this.memberInfos = memberInfos;
         this.sendResponse = sendResponse;
+        this.partitionRuntimeState = partitionRuntimeState;
     }
 
     @Override
@@ -63,13 +68,26 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         }
 
         processMemberUpdate();
+
+        processPartitionState();
     }
 
-    protected final void processMemberUpdate() {
+    final void processMemberUpdate() {
         if (isValid()) {
             final ClusterServiceImpl clusterService = getService();
             clusterService.updateMembers(memberInfos);
         }
+    }
+
+    final void processPartitionState() {
+        if (partitionRuntimeState == null) {
+            return;
+        }
+
+        partitionRuntimeState.setEndpoint(getCallerAddress());
+        ClusterServiceImpl clusterService = getService();
+        Node node = clusterService.getNodeEngine().getNode();
+        node.partitionService.processPartitionRuntimeState(partitionRuntimeState);
     }
 
     protected final boolean isValid() {
@@ -96,6 +114,8 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
             memberInfo.readData(in);
             memberInfos.add(memberInfo);
         }
+
+        partitionRuntimeState = in.readObject();
         sendResponse = in.readBoolean();
     }
 
@@ -106,6 +126,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         for (MemberInfo memberInfo : memberInfos) {
             memberInfo.writeData(out);
         }
+        out.writeObject(partitionRuntimeState);
         out.writeBoolean(sendResponse);
     }
 

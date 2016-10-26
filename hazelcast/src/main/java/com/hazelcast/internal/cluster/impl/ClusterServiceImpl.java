@@ -211,7 +211,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
         Collection<MemberImpl> members = getMemberImpls();
         MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(
-                createMemberInfoList(members), clusterClock.getClusterTime(), false);
+                createMemberInfoList(members), clusterClock.getClusterTime(), null, false);
         nodeEngine.getOperationService().send(op, target);
     }
 

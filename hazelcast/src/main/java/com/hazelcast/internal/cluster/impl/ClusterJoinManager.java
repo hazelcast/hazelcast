@@ -31,6 +31,7 @@ import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -489,11 +490,12 @@ public class ClusterJoinManager {
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
+            InternalPartitionService partitionService = node.getPartitionService();
             try {
                 joinInProgress = true;
 
                 // pause migrations until join, member-update and post-join operations are completed
-                node.getPartitionService().pauseMigration();
+                partitionService.pauseMigration();
                 Collection<MemberImpl> members = clusterService.getMemberImpls();
                 Collection<MemberInfo> memberInfos = createMemberInfoList(members);
                 for (MemberInfo memberJoining : joiningMembers.values()) {
@@ -511,27 +513,28 @@ public class ClusterJoinManager {
 
                 int count = members.size() - 1 + joiningMembers.size();
                 List<Future> calls = new ArrayList<Future>(count);
-                PartitionRuntimeState partitionState = node.getPartitionService().createPartitionState();
+                PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
-                    Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
+                    Operation finalizeJoinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
                             clusterService.getClusterId(), startTime,
-                            clusterStateManager.getState(), partitionState);
-                    calls.add(invokeClusterOperation(joinOperation, member.getAddress()));
+                            clusterStateManager.getState(), partitionRuntimeState);
+                    calls.add(invokeClusterOperation(finalizeJoinOperation, member.getAddress()));
                 }
                 for (MemberImpl member : members) {
                     if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
                         continue;
                     }
-                    Operation infoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time, true);
-                    calls.add(invokeClusterOperation(infoUpdateOperation, member.getAddress()));
+                    Operation memberInfoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time,
+                            partitionRuntimeState, true);
+                    calls.add(invokeClusterOperation(memberInfoUpdateOperation, member.getAddress()));
                 }
 
                 int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);
                 waitWithDeadline(calls, timeout, TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
             } finally {
                 reset();
-                node.getPartitionService().resumeMigration();
+                partitionService.resumeMigration();
             }
         } finally {
             clusterServiceLock.unlock();
