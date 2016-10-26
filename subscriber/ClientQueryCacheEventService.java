@@ -175,7 +175,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     /**
-     * Query cache event handler
+     * Query cache event handler.
      */
     private final class QueryCacheHandler extends EnterpriseMapAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {

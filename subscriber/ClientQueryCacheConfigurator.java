@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Client side implementation of {@link QueryCacheConfigurator}
+ * Client side implementation of {@link QueryCacheConfigurator}.
  *
  * @see QueryCacheConfigurator
  */

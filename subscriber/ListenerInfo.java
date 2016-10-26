@@ -4,7 +4,7 @@ import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.spi.EventFilter;
 
 /**
- * Contains all listener specific information for {@link ClientQueryCacheEventService}
+ * Contains all listener specific information for {@link ClientQueryCacheEventService}.
  *
  * @see ClientQueryCacheEventService
  */
