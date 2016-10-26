@@ -59,7 +59,6 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertThat;
-import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
 
 /**
  * Tests that verifies the behavior of the DefaultPortableReader.
@@ -117,7 +116,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         Object resultToMatch = expectedResult;
         if (expectedResult instanceof Class) {
             // expected exception case
-            expected.expectCause(hasCause(isA((Class) expectedResult)));
+            expected.expect(isA((Class) expectedResult));
         } else if (expectedResult instanceof List) {
             // just convenience -> if result is a list if will be compared to an array, so it has to be converted
             resultToMatch = ((List) resultToMatch).toArray();
