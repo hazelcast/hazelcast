@@ -45,8 +45,30 @@ public class AbstractSerializationServiceTest {
     @Before
     public void setup() {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-        abstractSerializationService = (AbstractSerializationService) defaultSerializationServiceBuilder
+        abstractSerializationService = defaultSerializationServiceBuilder
                 .setVersion(InternalSerializationService.VERSION_1).build();
+    }
+
+    @Test
+    public void toBytes_withPadding() {
+        String payload = "somepayload";
+        int padding = 10;
+
+        byte[] unpadded = abstractSerializationService.toBytes(payload);
+        byte[] padded = abstractSerializationService.toBytes(10, payload);
+
+        // make sure the size is expected
+        assertEquals(unpadded.length + padding, padded.length);
+
+        // check if the header is zero'ed and doesn't contains anything unexpected
+        for (int k = 0; k < padding; k++) {
+            assertEquals(0, padded[k]);
+        }
+
+        // check if the actual content is the same
+        for (int k = 0; k < unpadded.length; k++) {
+            assertEquals(unpadded[k], padded[k + padding]);
+        }
     }
 
     @Test

@@ -400,11 +400,17 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     @Override
     public byte toByteArray()[] {
+        return toByteArray(0);
+    }
+
+    @Override
+    public byte[] toByteArray(int padding) {
         if (buffer == null || pos == 0) {
-            return new byte[0];
+            return new byte[padding];
         }
-        final byte[] newBuffer = new byte[pos];
-        System.arraycopy(buffer, 0, newBuffer, 0, pos);
+
+        final byte[] newBuffer = new byte[padding + pos];
+        System.arraycopy(buffer, 0, newBuffer, padding, pos);
         return newBuffer;
     }
 

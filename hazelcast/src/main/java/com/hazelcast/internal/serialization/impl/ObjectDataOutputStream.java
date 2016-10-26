@@ -29,6 +29,7 @@ import java.nio.ByteOrder;
 
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable {
 
     private final InternalSerializationService serializationService;
@@ -258,6 +259,11 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public byte[] toByteArray() {
+       return toByteArray(0);
+    }
+
+    @Override
+    public byte[] toByteArray(int padding) {
         throw new UnsupportedOperationException();
     }
 
