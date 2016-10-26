@@ -149,7 +149,7 @@ public class PartitionStateManager {
             Address[] replicas = newState[partitionId];
             partition.setReplicaAddresses(replicas);
         }
-        initialized = true;
+        setInitialized();
         return true;
     }
 
@@ -169,8 +169,10 @@ public class PartitionStateManager {
             }
             partition.setInitialReplicaAddresses(replicas);
         }
-        initialized = foundReplica;
         stateVersion.set(partitionTable.getVersion());
+        if (foundReplica) {
+            setInitialized();
+        }
     }
 
     void updateMemberGroupsSize() {
@@ -293,8 +295,13 @@ public class PartitionStateManager {
         stateVersion.incrementAndGet();
     }
 
-    void setInitialized() {
-        initialized = true;
+    boolean setInitialized() {
+        if (!initialized) {
+            initialized = true;
+            node.getNodeExtension().onPartitionStateChange();
+            return true;
+        }
+        return false;
     }
 
     public boolean isInitialized() {

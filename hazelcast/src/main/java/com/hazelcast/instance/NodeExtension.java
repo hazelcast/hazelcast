@@ -181,6 +181,11 @@ public interface NodeExtension {
     void onClusterStateChange(ClusterState newState, boolean isTransient);
 
     /**
+     * Called when partition state (partition assignments, version etc) changes
+     */
+    void onPartitionStateChange();
+
+    /**
      * Registers given register if it's a known type.
      * @param listener listener instance
      * @return true if listener is registered, false otherwise

@@ -660,6 +660,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         updateAllPartitions(partitionTable);
         partitionStateManager.setVersion(partitionState.getVersion());
+        if (!partitionStateManager.setInitialized()) {
+            node.getNodeExtension().onPartitionStateChange();
+        }
 
         migrationManager.retainCompletedMigrations(completedMigrations);
     }
@@ -1166,6 +1169,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     applyNewState(newState, thisAddress);
                 } else if (partitionStateManager.isInitialized()) {
                     partitionStateManager.incrementVersion();
+                    node.getNodeExtension().onPartitionStateChange();
+
                     for (MigrationInfo migrationInfo : allCompletedMigrations) {
                         if (migrationManager.addCompletedMigration(migrationInfo)) {
                             if (logger.isFinestEnabled()) {

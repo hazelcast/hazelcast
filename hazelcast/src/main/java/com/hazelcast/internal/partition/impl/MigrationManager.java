@@ -923,6 +923,7 @@ public class MigrationManager {
                 scheduleActiveMigrationFinalization(migrationInfo);
                 int delta = PARTITION_STATE_VERSION_INCREMENT_DELTA_ON_MIGRATION_FAILURE;
                 partitionService.getPartitionStateManager().incrementVersion(delta);
+                node.getNodeExtension().onPartitionStateChange();
                 if (partitionService.syncPartitionRuntimeState()) {
                     evictCompletedMigrations(migrationInfo);
                 }
@@ -979,6 +980,7 @@ public class MigrationManager {
 
                 addCompletedMigration(migrationInfo);
                 scheduleActiveMigrationFinalization(migrationInfo);
+                node.getNodeExtension().onPartitionStateChange();
                 if (partitionService.syncPartitionRuntimeState()) {
                     evictCompletedMigrations(migrationInfo);
                 }

@@ -230,6 +230,10 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void onPartitionStateChange() {
+    }
+
+    @Override
     public boolean registerListener(Object listener) {
         return false;
     }
