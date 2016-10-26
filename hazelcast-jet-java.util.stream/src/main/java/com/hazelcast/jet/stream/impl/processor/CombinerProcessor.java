@@ -16,52 +16,36 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.TaskContext;
-
+import com.hazelcast.jet2.impl.AbstractProcessor;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
-public class CombinerProcessor<T, R> extends AbstractStreamProcessor<T, R> {
+public class CombinerProcessor<T, R> extends AbstractProcessor {
 
     private final BinaryOperator<T> combiner;
     private final Function<T, R> finisher;
     private T result;
 
-    public CombinerProcessor(Function<Pair, T> inputMapper,
-                             Function<R, Pair> outputMapper,
-                             BinaryOperator<T> combiner,
+    public CombinerProcessor(BinaryOperator<T> combiner,
                              Function<T, R> finisher) {
-        super(inputMapper, outputMapper);
         this.combiner = combiner;
         this.finisher = finisher;
     }
 
-
     @Override
-    public void before(TaskContext taskContext) {
-        result = null;
-    }
-
-    @Override
-    protected boolean process(InputChunk<T> inputChunk, OutputCollector<R> output)
-            throws Exception {
-        for (T input : inputChunk) {
-            if (result != null) {
-                result = combiner.apply(result, input);
-            } else {
-                result = input;
-            }
+    protected boolean process(int ordinal, Object item) {
+        if (result != null) {
+            result = combiner.apply(result, (T) item);
+        } else {
+            result = (T) item;
         }
         return true;
     }
 
     @Override
-    protected boolean finalize(OutputCollector<R> output, int chunkSize) throws Exception {
+    public boolean complete() {
         if (result != null) {
-            output.collect(finisher.apply(result));
+            emit(finisher.apply(result));
         }
         return true;
     }

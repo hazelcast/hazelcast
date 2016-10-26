@@ -16,22 +16,16 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.impl.AbstractProcessor;
 
-import java.util.function.Function;
+public class PassthroughProcessor extends AbstractProcessor {
 
-public class PassthroughProcessor<T> extends AbstractStreamProcessor<T, T> {
-
-    public PassthroughProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper) {
-        super(inputMapper, outputMapper);
+    public PassthroughProcessor() {
     }
 
     @Override
-    protected boolean process(InputChunk<T> input,
-                              OutputCollector<T> output) throws Exception {
-        output.collect(input);
+    protected boolean process(int ordinal, Object item) {
+        emit(item);
         return true;
     }
 }

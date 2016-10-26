@@ -17,13 +17,12 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.Sink;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.Vertex;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
@@ -33,15 +32,21 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
     public R collect(StreamContext context, Pipeline<? extends T> upstream) {
         R target = getTarget(context.getHazelcastInstance());
         DAG dag = new DAG();
-        Vertex vertex = upstream.buildDAG(dag, null, toPairMapper());
-        vertex.addSink(getSinkTap());
+        Vertex vertex = upstream.buildDAG(dag);
+        Vertex writer = new Vertex(getName(), getConsumer());
+        if (parallelism() > 0) {
+            writer.parallelism(parallelism());
+        }
+        dag.addVertex(writer).addEdge(new Edge(vertex, writer));
         executeJob(context, dag);
         return target;
     }
 
     protected abstract R getTarget(HazelcastInstance instance);
 
-    protected abstract <U extends T> Distributed.Function<U, Pair> toPairMapper();
+    protected abstract ProcessorSupplier getConsumer();
 
-    protected abstract Sink getSinkTap();
+    protected abstract int parallelism();
+
+    protected abstract String getName();
 }

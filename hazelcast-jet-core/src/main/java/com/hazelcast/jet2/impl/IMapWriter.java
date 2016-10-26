@@ -22,8 +22,6 @@ import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.jet2.ProcessorSupplier;
-
-import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -31,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 public class IMapWriter extends AbstractProcessor {
 

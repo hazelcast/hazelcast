@@ -16,58 +16,40 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.io.Pair;
-
+import com.hazelcast.jet2.impl.AbstractProcessor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Function;
 
-public class SortProcessor<T> extends AbstractStreamProcessor<T, T> {
+public class SortProcessor<T> extends AbstractProcessor {
 
     private final List<T> list;
     private final Comparator<T> comparator;
     private Iterator<T> iterator;
 
-    public SortProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper, Comparator<T> comparator) {
-        super(inputMapper, outputMapper);
+    public SortProcessor(Comparator<T> comparator) {
         this.list = new ArrayList<>();
         this.comparator = comparator;
     }
 
     @Override
-    protected boolean process(InputChunk<T> input, OutputCollector<T> output) throws Exception {
-        for (T t : input) {
-            list.add(t);
-        }
+    protected boolean process(int ordinal, Object item) {
+        list.add((T) item);
         return true;
     }
 
     @Override
-    protected boolean finalize(OutputCollector<T> output, final int chunkSize) throws Exception {
+    public boolean complete() {
         if (iterator == null) {
             Collections.sort(list, comparator);
             iterator = list.iterator();
         }
-        int i = 0;
-        while (iterator.hasNext()) {
+        while (iterator.hasNext() && !getOutbox().isHighWater()) {
             T key = iterator.next();
-            output.collect(key);
-
-            if (chunkSize == ++i) {
-                return false;
-            }
+            emit(key);
         }
-        return true;
-    }
-
-    @Override
-    public void after() {
-        this.iterator = null;
-        this.list.clear();
+        return !iterator.hasNext();
     }
 }

@@ -51,6 +51,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int COUNT = 1_000_000;

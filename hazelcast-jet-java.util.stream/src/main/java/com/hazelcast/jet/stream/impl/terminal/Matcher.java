@@ -17,23 +17,20 @@
 package com.hazelcast.jet.stream.impl.terminal;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.sink.ListSink;
-import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AnyMatchProcessor;
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Vertex;
+import com.hazelcast.jet2.impl.IListWriter;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class Matcher {
 
@@ -45,16 +42,13 @@ public class Matcher {
 
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
         DAG dag = new DAG();
-        Distributed.Function<Pair, ? extends T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
-        Vertex vertex = vertexBuilder(AnyMatchProcessor.class)
-                .addToDAG(dag)
-                .args(fromPairMapper, toPairMapper(), predicate)
-                .build();
-        Vertex previous = upstream.buildDAG(dag, vertex, toPairMapper());
-        if (previous != vertex) {
-            dag.addEdge(newEdge(previous, vertex));
+        Vertex anymatch = new Vertex(randomName(), () -> new AnyMatchProcessor<>(predicate));
+        dag.addVertex(anymatch);
+        Vertex previous = upstream.buildDAG(dag);
+        if (previous != anymatch) {
+            dag.addEdge(new Edge(previous, anymatch));
         }
-        IList<Boolean> results = execute(dag, vertex);
+        IList<Boolean> results = execute(dag, anymatch);
         boolean result = anyMatch(results);
         results.destroy();
         return result;
@@ -70,14 +64,15 @@ public class Matcher {
     }
 
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
-        IList<Boolean> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
-        vertex.addSink(new ListSink(list));
+        String listName = randomName(LIST_PREFIX);
+        Vertex writer = new Vertex(randomName(), IListWriter.supplier(listName));
+        dag.addVertex(writer).addEdge(new Edge(vertex, writer));
         executeJob(context, dag);
-        return list;
+        return context.getHazelcastInstance().getList(listName);
     }
 
     private <T, U extends T> Distributed.Function<U, Pair> toPairMapper() {
-        return  o -> new JetPair<Object, T>(0, o);
+        return o -> new JetPair<Object, T>(0, o);
     }
 
 

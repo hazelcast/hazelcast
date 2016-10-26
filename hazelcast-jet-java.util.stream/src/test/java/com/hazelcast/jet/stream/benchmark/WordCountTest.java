@@ -44,6 +44,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class WordCountTest extends JetStreamTestSupport implements Serializable {
 
     private static final int COUNT = 1_000_000;
@@ -93,7 +94,8 @@ public class WordCountTest extends JetStreamTestSupport implements Serializable 
         long start = System.currentTimeMillis();
         Map<String, Long> wordCounts = map.stream()
                 .flatMap(m -> Stream.of(space.split(m.getValue())))
-                .collect(DistributedCollectors.groupingBy(m -> m, DistributedCollectors.counting()));
+                .collect(DistributedCollectors.groupingByToIMap(m -> m, DistributedCollectors.counting()));
+
         System.out.println("java.util.stream: totalTime=" + (System.currentTimeMillis() - start));
 
         assertCounts(wordCounts);

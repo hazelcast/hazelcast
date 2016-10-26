@@ -16,23 +16,18 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.TransformProcessor;
-
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Vertex;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class TransformPipeline extends AbstractIntermediatePipeline {
 
@@ -46,23 +41,19 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function toPairMapper) {
-        Distributed.Function<Pair, ?> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
+    public Vertex buildDAG(DAG dag) {
+        Vertex transform = new Vertex("transform-" + randomName(), () -> new TransformProcessor(operations));
+        if (upstream.isOrdered()) {
+            transform.parallelism(1);
+        }
+        dag.addVertex(transform);
 
-        int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
-        Vertex vertex = vertexBuilder(TransformProcessor.class)
-                .name("transform")
-                .addToDAG(dag)
-                .args(fromPairMapper, toPairMapper, operations)
-                .taskCount(taskCount)
-                .build();
-
-        Vertex previous = this.upstream.buildDAG(dag, vertex, toPairMapper());
-        if (previous != vertex) {
-            dag.addEdge(newEdge(previous, vertex));
+        Vertex previous = upstream.buildDAG(dag);
+        if (previous != transform) {
+            dag.addEdge(new Edge(previous, transform));
         }
 
-        return vertex;
+        return transform;
     }
 
     @Override

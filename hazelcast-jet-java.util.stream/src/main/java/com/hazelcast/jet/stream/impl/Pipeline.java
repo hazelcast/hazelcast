@@ -16,14 +16,13 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.DistributedStream;
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Vertex;
 
 public interface Pipeline<E_OUT> extends DistributedStream<E_OUT> {
-    Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<E_OUT, Pair> toPairMapper);
+    Vertex buildDAG(DAG dag);
+
     boolean isOrdered();
 }
 

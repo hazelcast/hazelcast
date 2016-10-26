@@ -16,52 +16,33 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.io.Pair;
-
-import java.util.function.Function;
+import com.hazelcast.jet2.impl.AbstractProcessor;
 import java.util.function.Predicate;
 
 
-public class AnyMatchProcessor<T> extends AbstractStreamProcessor<T, Boolean> {
+public class AnyMatchProcessor<T> extends AbstractProcessor {
 
     private boolean match;
     private final Predicate<T> predicate;
 
-    public AnyMatchProcessor(Function<Pair, T> inputMapper, Function<Boolean, Pair> outputMapper,
-                             Predicate<T> predicate) {
-        super(inputMapper, outputMapper);
-
+    public AnyMatchProcessor(Predicate<T> predicate) {
         this.predicate = predicate;
     }
 
     @Override
-    public void before(TaskContext context) {
-        super.before(context);
-        match = false;
-    }
-
-    @Override
-    protected boolean process(InputChunk<T> input,
-                              OutputCollector<Boolean> output) throws Exception {
+    protected boolean process(int ordinal, Object item) {
         if (match) {
             return true;
         }
-
-        for (T t : input) {
-            if (predicate.test(t)) {
-                match = true;
-                return true;
-            }
+        if (predicate.test((T) item)) {
+            match = true;
         }
         return true;
     }
 
     @Override
-    protected boolean finalize(OutputCollector<Boolean> output, final int chunkSize) throws Exception {
-        output.collect(match);
+    public boolean complete() {
+        emit(match);
         return true;
     }
 }

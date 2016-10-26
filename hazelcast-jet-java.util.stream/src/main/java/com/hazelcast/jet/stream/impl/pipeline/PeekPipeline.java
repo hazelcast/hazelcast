@@ -17,21 +17,15 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.sink.ListSink;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Vertex;
+import com.hazelcast.jet2.impl.IListWriter;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
@@ -43,24 +37,20 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
+    public Vertex buildDAG(DAG dag) {
         String listName = randomName();
         IList<T> list = context.getHazelcastInstance().getList(listName);
-        Distributed.Function<T, Pair> toPair = v -> new JetPair<>(0, v);
-        Vertex previous = upstream.buildDAG(dag, null, toPair);
-        previous.addSink(new ListSink(list));
-        int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
-        //This vertex is necessary to convert the input to format suitable for list
-        Vertex vertex = vertexBuilder(PassthroughProcessor.class)
-                .addToDAG(dag)
-                .args(defaultFromPairMapper(), toPairMapper)
-                .taskCount(taskCount)
-                .build();
-        dag.addEdge(newEdge(previous, vertex));
+        Vertex previous = upstream.buildDAG(dag);
+        Vertex writer = new Vertex(listName, IListWriter.supplier(listName));
+        if (upstream.isOrdered()) {
+            writer.parallelism(1);
+        }
+        dag.addVertex(writer);
+        dag.addEdge(new Edge(previous, 1, writer, 0));
         context.addStreamListener(() -> {
-            list.forEach(consumer::accept);
+            list.forEach(consumer);
             list.destroy();
         });
-        return vertex;
+        return previous;
     }
 }

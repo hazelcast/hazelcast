@@ -16,37 +16,24 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.impl.AbstractProcessor;
 
-import java.util.function.Function;
-
-public class SkipProcessor<T> extends AbstractStreamProcessor<T, T> {
+public class SkipProcessor extends AbstractProcessor {
 
     private final long skip;
     private long index;
 
-    public SkipProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper, Long skip) {
-        super(inputMapper, outputMapper);
+    public SkipProcessor(Long skip) {
         this.skip = skip;
     }
 
-    @Override
-    public void before(TaskContext context) {
-        index = 0;
-    }
 
     @Override
-    protected boolean process(InputChunk<T> inputChunk,
-                              OutputCollector<T> output) throws Exception {
-        for (T input : inputChunk) {
-            if (index >= skip) {
-                output.collect(input);
-            } else {
-                index++;
-            }
+    protected boolean process(int ordinal, Object item) {
+        if (index >= skip) {
+            emit(item);
+        } else {
+            index++;
         }
         return true;
     }

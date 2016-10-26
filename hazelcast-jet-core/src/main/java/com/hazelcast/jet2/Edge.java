@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -199,6 +200,13 @@ public class Edge implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return JetDataSerializerHook.EDGE;
+    }
+
+    /**
+     * Javadoc pending
+     */
+    public Edge distributed(MemberDistributionStrategy memberDistributionStrategy) {
+        return null;
     }
 
 
