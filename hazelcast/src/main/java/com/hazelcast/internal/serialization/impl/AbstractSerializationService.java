@@ -130,11 +130,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
-    public byte[] toBytes(int padding, Object obj) {
-        return toBytes(padding, obj, globalPartitioningStrategy);
-    }
-
-    @Override
     public byte[] toBytes(Object obj, PartitioningStrategy strategy) {
         return toBytes(0, obj, strategy);
     }

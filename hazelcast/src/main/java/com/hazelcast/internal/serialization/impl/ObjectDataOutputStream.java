@@ -268,11 +268,6 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     }
 
     @Override
-    public byte[] toByteArray(int padding) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void flush() throws IOException {
         dataOut.flush();
     }
