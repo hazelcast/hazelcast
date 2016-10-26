@@ -41,6 +41,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         super(name, transactionContext);
     }
 
+    @Override
     public boolean offer(E e) {
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
@@ -49,6 +50,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         }
     }
 
+    @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         final Data data = toData(e);
         ClientMessage request = TransactionalQueueOfferCodec.encodeRequest(name, getTransactionId(),
@@ -65,6 +67,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         return (E) toObject(TransactionalQueueTakeCodec.decodeResponse(response).response);
     }
 
+    @Override
     public E poll() {
         try {
             return poll(0, TimeUnit.MILLISECONDS);
@@ -73,6 +76,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         }
     }
 
+    @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         ClientMessage request = TransactionalQueuePollCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), unit.toMillis(timeout));
@@ -97,6 +101,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         return (E) toObject(TransactionalQueuePeekCodec.decodeResponse(response).response);
     }
 
+    @Override
     public int size() {
         ClientMessage request = TransactionalQueueSizeCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId());
@@ -109,6 +114,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     void onDestroy() {
     }
 }

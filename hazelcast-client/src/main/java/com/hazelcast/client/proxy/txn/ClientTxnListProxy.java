@@ -32,16 +32,18 @@ import com.hazelcast.util.ThreadUtil;
  *
  * @param <E> the type of elements in this list
  */
-public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalList<E> {
+public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy implements TransactionalList<E> {
 
     public ClientTxnListProxy(String name, ClientTransactionContext transactionContext) {
         super(name, transactionContext);
     }
 
+    @Override
     public String getServiceName() {
         return ListService.SERVICE_NAME;
     }
 
+    @Override
     public boolean add(E e) {
         Preconditions.checkNotNull(e);
         Data value = toData(e);
@@ -51,6 +53,7 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> i
         return TransactionalListAddCodec.decodeResponse(response).response;
     }
 
+    @Override
     public boolean remove(E e) {
         Preconditions.checkNotNull(e);
         Data value = toData(e);
@@ -60,6 +63,7 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> i
         return TransactionalListRemoveCodec.decodeResponse(response).response;
     }
 
+    @Override
     public int size() {
         ClientMessage request = TransactionalListSizeCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId());

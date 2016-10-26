@@ -20,16 +20,14 @@ import com.hazelcast.client.spi.ClientTransactionContext;
 
 /**
  * Abstract proxy collection implementation of {@link com.hazelcast.transaction.TransactionalObject}.
- *
- * @param <E> the type of elements in this collection
  */
-public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy {
+abstract class AbstractClientTxnCollectionProxy extends ClientTxnProxy {
 
-    protected AbstractClientTxnCollectionProxy(String name, ClientTransactionContext transactionContext) {
+    AbstractClientTxnCollectionProxy(String name, ClientTransactionContext transactionContext) {
         super(name, transactionContext);
     }
 
+    @Override
     void onDestroy() {
     }
-
 }

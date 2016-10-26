@@ -142,10 +142,12 @@ public class TransactionContextProxy implements ClientTransactionContext {
         return (T) obj;
     }
 
+    @Override
     public ClientConnection getConnection() {
         return connection;
     }
 
+    @Override
     public HazelcastClientInstanceImpl getClient() {
         return client;
     }
