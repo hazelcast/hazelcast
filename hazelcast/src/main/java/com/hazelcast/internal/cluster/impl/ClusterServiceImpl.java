@@ -366,6 +366,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                     clusterHeartbeatManager.onHeartbeat(member, now);
                     clusterHeartbeatManager.acceptMasterConfirmation(member, now);
 
+                    repairPartitionTableIfReturningMember(member);
 
                 }
                 updatedMembers[memberIndex++] = member;
@@ -385,7 +386,35 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    private boolean shouldProcessMemberUpdate(Map<Address, MemberImpl> currentMembers,
+    private void repairPartitionTableIfReturningMember(MemberImpl member) {
+        if (!isMaster()) {
+             return;
+        }
+
+        if (getClusterState() == ClusterState.ACTIVE) {
+            return;
+        }
+
+        if (!node.getNodeExtension().isStartCompleted()) {
+             return;
+        }
+
+        Address address = member.getAddress();
+        MemberImpl memberRemovedWhileClusterIsNotActive = getMemberRemovedWhileClusterIsNotActive(member.getUuid());
+        if (memberRemovedWhileClusterIsNotActive != null) {
+            Address oldAddress = memberRemovedWhileClusterIsNotActive.getAddress();
+            if (!oldAddress.equals(address)) {
+                assert !isMemberRemovedWhileClusterIsNotActive(address);
+
+                logger.warning(member + " is returning with a new address. Old one was: " + oldAddress
+                    + ". Will update partition table with the new address.");
+                InternalPartitionServiceImpl partitionService = node.partitionService;
+                partitionService.replaceAddress(oldAddress, address);
+            }
+        }
+    }
+
+    private boolean shouldProcessMemberUpdate(MemberMap currentMembers,
                                               Collection<MemberInfo> newMemberInfos) {
         int currentMembersSize = currentMembers.size();
         int newMembersSize = newMemberInfos.size();
