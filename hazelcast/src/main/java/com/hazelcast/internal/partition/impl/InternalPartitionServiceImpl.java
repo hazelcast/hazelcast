@@ -1066,6 +1066,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
        }
     }
 
+    public void replaceAddress(Address oldAddress, Address newAddress) {
+        lock.lock();
+        try {
+            partitionStateManager.replaceAddress(oldAddress, newAddress);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @Override
     public PartitionTableView createPartitionTableView() {
         lock.lock();

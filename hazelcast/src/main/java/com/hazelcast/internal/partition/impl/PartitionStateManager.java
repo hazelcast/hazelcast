@@ -316,6 +316,24 @@ public class PartitionStateManager {
         }
     }
 
+    int replaceAddress(Address oldAddress, Address newAddress) {
+        if (!initialized) {
+            return 0;
+        }
+        int count = 0;
+        for (InternalPartitionImpl partition : partitions) {
+            if (partition.replaceAddress(oldAddress, newAddress) > -1) {
+                count++;
+            }
+        }
+        if (count > 0) {
+            node.getNodeExtension().onPartitionStateChange();
+            logger.info("Replaced " + oldAddress + " with " + newAddress + " in partition table in "
+                    + count + " partitions.");
+        }
+        return count;
+    }
+
     PartitionTableView getPartitionTable() {
         if (!initialized) {
             return new PartitionTableView(new Address[partitions.length][InternalPartition.MAX_REPLICA_COUNT], 0);
