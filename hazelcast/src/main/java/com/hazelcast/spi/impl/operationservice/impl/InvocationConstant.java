@@ -17,31 +17,34 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 /**
- * Contains some predefined values for the Invocation.
+ * Contains some constants for the Invocation to indicate the state of the Invocation.
  */
-final class InvocationValue {
+final class InvocationConstant {
 
     /**
-     * A value indicating that an operation is considered to be dead. So the system has no way of
+     * Indicating that an operation is considered to be dead. So the system has no way of
      * figuring out what happened to the operation or to its response.
      */
-    static final Object HEARTBEAT_TIMEOUT = new InvocationValue("Invocation::HEARTBEAT_TIMEOUT");
+    static final Object HEARTBEAT_TIMEOUT = new InvocationConstant("Invocation::HEARTBEAT_TIMEOUT");
 
     /**
-     * A value indicating that an operation got rejected on the executing side because its call timeout expired.
+     * Indicating that an operation got rejected on the executing side because its call timeout expired.
      */
-    static final Object CALL_TIMEOUT = new InvocationValue("Invocation::CALL_TIMEOUT");
+    static final Object CALL_TIMEOUT = new InvocationConstant("Invocation::CALL_TIMEOUT");
 
     /**
-     * A value indicating that the operation execution was interrupted.
+     * Indicating that the operation execution was interrupted.
      */
-    static final Object INTERRUPTED = new InvocationValue("Invocation::INTERRUPTED");
+    static final Object INTERRUPTED = new InvocationConstant("Invocation::INTERRUPTED");
 
-    static final Object VOID = new InvocationValue("VOID");
+    /**
+     * Indicates that the Invocation has no response yet.
+     */
+    static final Object VOID = new InvocationConstant("VOID");
 
     private String toString;
 
-    private InvocationValue(String toString) {
+    private InvocationConstant(String toString) {
         this.toString = toString;
     }
 

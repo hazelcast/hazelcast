@@ -25,9 +25,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.CALL_TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.HEARTBEAT_TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.INTERRUPTED;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.StringUtil.timeToString;
