@@ -42,6 +42,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -50,10 +51,10 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -78,17 +79,19 @@ import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 
 /**
  * Implementation of {@link ClientConnectionManager}.
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     protected volatile boolean alive;
 
-    private final NonBlockingIOThreadOutOfMemoryHandler outOfMemoryHandler = new NonBlockingIOThreadOutOfMemoryHandler() {
+    private final IOOutOfMemoryHandler outOfMemoryHandler = new IOOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             logger.severe(error);
@@ -102,8 +105,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
-    private NonBlockingIOThread inputThread;
-    private NonBlockingIOThread outputThread;
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
     private final ClientExecutionServiceImpl executionService;
@@ -118,50 +119,52 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
     private final LoggingService loggingService;
     private final Credentials credentials;
+    private NonBlockingIOThreadingModel ioThreadModel;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator) {
         this.client = client;
         this.addressTranslator = addressTranslator;
-        final ClientConfig config = client.getClientConfig();
-        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        this.loggingService = client.getLoggingService();
+        this.logger = loggingService.getLogger(ClientConnectionManager.class);
+
+        ClientConfig config = client.getClientConfig();
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
         final int connTimeout = networkConfig.getConnectionTimeout();
-        connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
+        this.connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
         HazelcastProperties hazelcastProperties = client.getProperties();
         long timeout = hazelcastProperties.getMillis(HEARTBEAT_TIMEOUT);
         this.heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
 
         long interval = hazelcastProperties.getMillis(HEARTBEAT_INTERVAL);
-        heartbeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
+        this.heartbeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
 
-        executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        loggingService = client.getLoggingService();
+        this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        this.socketOptions = networkConfig.getSocketOptions();
 
         initializeSelectors(client);
 
-        socketOptions = networkConfig.getSocketOptions();
         ClientExtension clientExtension = client.getClientExtension();
-        socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
-        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
-        logger = loggingService.getLogger(ClientConnectionManager.class);
-        credentials = client.getCredentials();
+        this.socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
+        this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
+
+        this.credentials = client.getCredentials();
     }
 
     protected void initializeSelectors(HazelcastClientInstanceImpl client) {
-        inputThread = new NonBlockingIOThread(
-                client.getThreadGroup(),
-                client.getName() + ".thread-in",
-                loggingService.getLogger(NonBlockingIOThread.class),
-                outOfMemoryHandler);
-        client.getMetricsRegistry().scanAndRegister(inputThread, "tcp." + inputThread.getName());
+        boolean directBuffer = client.getProperties().getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
-        outputThread = new NonBlockingIOThread(
-                client.getThreadGroup(),
-                client.getName() + ".thread-out",
-                loggingService.getLogger(NonBlockingIOThread.class),
-                outOfMemoryHandler);
-        client.getMetricsRegistry().scanAndRegister(outputThread, "tcp." + outputThread.getName());
+        ioThreadModel = new NonBlockingIOThreadingModel(
+                loggingService,
+                client.getMetricsRegistry(),
+                new HazelcastThreadGroup(client.getName(), logger, client.getClientConfig().getClassLoader()),
+                outOfMemoryHandler,
+                1,
+                1,
+                0,
+                new ClientSocketWriterInitializer(getBufferSize(), directBuffer),
+                new ClientSocketReaderInitializer(getBufferSize(), directBuffer));
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
@@ -189,8 +192,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void startSelectors() {
-        inputThread.start();
-        outputThread.start();
+        ioThreadModel.start();
     }
 
     @Override
@@ -208,8 +210,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void shutdownSelectors() {
-        inputThread.shutdown();
-        outputThread.shutdown();
+        ioThreadModel.shutdown();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -336,25 +337,23 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (socketOptions.getLingerSeconds() > 0) {
                 socket.setSoLinger(true, socketOptions.getLingerSeconds());
             }
-            int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
-            if (bufferSize <= 0) {
-                bufferSize = DEFAULT_BUFFER_SIZE_BYTE;
-            }
+            int bufferSize = getBufferSize();
             socket.setSendBufferSize(bufferSize);
             socket.setReceiveBufferSize(bufferSize);
             InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
             socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
             SocketChannelWrapper socketChannelWrapper =
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
-            final ClientConnection clientConnection = new ClientConnection(client, inputThread,
-                    outputThread, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+
+            final ClientConnection clientConnection = new ClientConnection(
+                    client, ioThreadModel, connectionIdGen.incrementAndGet(), socketChannelWrapper);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
-            socketChannel.configureBlocking(false);
+            socketChannel.configureBlocking(ioThreadModel.isBlocking());
             socket.setSoTimeout(0);
-            clientConnection.init();
+            clientConnection.start();
             return clientConnection;
         } catch (Exception e) {
             if (socketChannel != null) {
@@ -364,19 +363,24 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
+    private int getBufferSize() {
+        int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
+        if (bufferSize <= 0) {
+            bufferSize = DEFAULT_BUFFER_SIZE_BYTE;
+        }
+        return bufferSize;
+    }
+
     @Override
-    public void destroyConnection(final Connection connection, final String reason, final Throwable cause) {
+    public void onClose(Connection connection) {
         Address endPoint = connection.getEndPoint();
-        ClientConnection conn = (ClientConnection) connection;
-        if (endPoint != null && connections.remove(endPoint, conn)) {
+
+        if (endPoint != null && connections.remove(endPoint, connection)) {
             logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
 
-            conn.close(reason, cause);
-            for (ConnectionListener connectionListener : connectionListeners) {
-                connectionListener.connectionRemoved(conn);
+            for (ConnectionListener listener : connectionListeners) {
+                listener.connectionRemoved(connection);
             }
-        } else {
-            connection.close(reason, cause);
         }
     }
 
@@ -505,21 +509,21 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         break;
                     case CREDENTIALS_FAILED:
                         AuthenticationException e = new AuthenticationException("Invalid credentials!");
-                        failed(target, connection, e);
+                        onAuthenticationFailed(target, connection, e);
                         callback.onFailure(e);
                         break;
                     default:
                         AuthenticationException exception =
                                 new AuthenticationException("Authentication status code not supported. status:"
                                         + authenticationStatus);
-                        failed(target, connection, exception);
+                        onAuthenticationFailed(target, connection, exception);
                         callback.onFailure(exception);
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                failed(target, connection, t);
+                onAuthenticationFailed(target, connection, t);
                 callback.onFailure(t);
             }
         }, executionService.getInternalExecutor());
@@ -555,7 +559,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 authenticate(target, connection, asOwner, callback);
             } catch (Exception e) {
                 callback.onFailure(e);
-                destroyConnection(connection, "Failed to authenticate connection", e);
+                connection.close("Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
             }
         }
@@ -572,9 +576,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());
     }
 
-    private void failed(Address target, ClientConnection connection, Throwable cause) {
+    private void onAuthenticationFailed(Address target, ClientConnection connection, Throwable cause) {
         logger.finest(cause);
-        destroyConnection(connection, null, cause);
+        connection.close(null, cause);
         connectionsInProgress.remove(target);
     }
 

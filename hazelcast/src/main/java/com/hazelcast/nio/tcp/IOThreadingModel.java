@@ -49,7 +49,7 @@ import com.hazelcast.nio.Connection;
  * @see com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel
  * @see com.hazelcast.nio.tcp.spinning.SpinningIOThreadingModel
  */
-public interface IOThreadingModel<C extends Connection, R, W> {
+public interface IOThreadingModel {
 
     /**
      * Tells whether or not every I/O operation on SocketChannel should block until it completes.
@@ -65,7 +65,7 @@ public interface IOThreadingModel<C extends Connection, R, W> {
      * @param connection the TcpIpConnection to create the SocketWriter for.
      * @return the created SocketWriter
      */
-    W newSocketWriter(C connection);
+    SocketWriter newSocketWriter(SocketConnection connection);
 
     /**
      * Creates a new SocketReader for the given connection.
@@ -73,21 +73,21 @@ public interface IOThreadingModel<C extends Connection, R, W> {
      * @param connection the TcpIpConnection to create the SocketReader for.
      * @return the created SocketReader
      */
-    R newSocketReader(C connection);
+    SocketReader newSocketReader(SocketConnection connection);
 
     /**
      * Is called when a connection is added.
      *
      * @param connection the connection added.
      */
-    void onConnectionAdded(C connection);
+    void onConnectionAdded(SocketConnection connection);
 
     /**
      * Is called when a connection is removed.
      *
      * @param connection the connection removed.
      */
-    void onConnectionRemoved(C connection);
+    void onConnectionRemoved(SocketConnection connection);
 
     /**
      * Starts the IOThreadingModel.

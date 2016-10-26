@@ -102,11 +102,11 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
             @Override
             public void run() throws Exception {
                 logger.info("writer total frames pending   : " + writer.totalFramesPending());
-                logger.info("writer last write time millis : " + writer.getLastWriteTimeMillis());
+                logger.info("writer last write time millis : " + writer.lastWriteTimeMillis());
 
                 logger.info("reader total frames handled   : " + reader.getNormalFramesReadCounter().get()
                         + reader.getPriorityFramesReadCounter().get());
-                logger.info("reader last read time millis  : " + reader.getLastReadTimeMillis());
+                logger.info("reader last read time millis  : " + reader.lastReadTimeMillis());
 
                 assertEquals(expectedNormalPackets, reader.getNormalFramesReadCounter().get());
                 assertEquals(expectedUrgentPackets, reader.getPriorityFramesReadCounter().get());

@@ -30,6 +30,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -68,8 +69,13 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void onOutOfMemory(OutOfMemoryError oom) {
-        OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
+    public IOOutOfMemoryHandler getIoOutOfMemoryHandler() {
+        return new IOOutOfMemoryHandler() {
+            @Override
+            public void handle(OutOfMemoryError error) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(error);
+            }
+        };
     }
 
     @Override

@@ -19,12 +19,13 @@ package com.hazelcast.nio.tcp.spinning;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.IOThreadingModel;
+import com.hazelcast.nio.tcp.SocketConnection;
 import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.SocketReaderInitializerImpl;
+import com.hazelcast.nio.tcp.SocketReaderInitializer;
 import com.hazelcast.nio.tcp.SocketWriter;
-import com.hazelcast.nio.tcp.SocketWriterInitializerImpl;
-import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.SocketWriterInitializer;
 
 /**
  * A {@link IOThreadingModel} that uses (busy) spinning on the SocketChannels to see if there is something
@@ -41,22 +42,28 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
  *
  * This is an experimental feature and disabled by default.
  */
-public class SpinningIOThreadingModel implements IOThreadingModel<TcpIpConnection, SocketReader, SocketWriter> {
+public class SpinningIOThreadingModel implements IOThreadingModel {
 
     private final ILogger logger;
     private final LoggingService loggingService;
     private final SpinningInputThread inputThread;
     private final SpinningOutputThread outThread;
-    private final SocketWriterInitializerImpl socketWriterInitializer;
-    private final SocketReaderInitializerImpl socketReaderInitializer;
+    private final SocketWriterInitializer socketWriterInitializer;
+    private final SocketReaderInitializer socketReaderInitializer;
+    private final IOOutOfMemoryHandler oomeHandler;
 
-    public SpinningIOThreadingModel(LoggingService loggingService, HazelcastThreadGroup hazelcastThreadGroup) {
+    public SpinningIOThreadingModel(LoggingService loggingService,
+                                    HazelcastThreadGroup hazelcastThreadGroup,
+                                    IOOutOfMemoryHandler oomeHandler,
+                                    SocketWriterInitializer socketWriterInitializer,
+                                    SocketReaderInitializer socketReaderInitializer) {
         this.logger = loggingService.getLogger(SpinningIOThreadingModel.class);
         this.loggingService = loggingService;
+        this.oomeHandler = oomeHandler;
         this.inputThread = new SpinningInputThread(hazelcastThreadGroup);
         this.outThread = new SpinningOutputThread(hazelcastThreadGroup);
-        this.socketWriterInitializer = new SocketWriterInitializerImpl(logger);
-        this.socketReaderInitializer = new SocketReaderInitializerImpl(logger);
+        this.socketWriterInitializer = socketWriterInitializer;
+        this.socketReaderInitializer = socketReaderInitializer;
     }
 
     @Override
@@ -65,25 +72,25 @@ public class SpinningIOThreadingModel implements IOThreadingModel<TcpIpConnectio
     }
 
     @Override
-    public SocketWriter newSocketWriter(TcpIpConnection connection) {
+    public SocketWriter newSocketWriter(SocketConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningSocketWriter.class);
-        return new SpinningSocketWriter(connection, logger, socketWriterInitializer);
+        return new SpinningSocketWriter(connection, logger, oomeHandler, socketWriterInitializer);
     }
 
     @Override
-    public SocketReader newSocketReader(TcpIpConnection connection) {
+    public SocketReader newSocketReader(SocketConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningSocketReader.class);
-        return new SpinningSocketReader(connection, logger, connection.getSocketChannelWrapper(), socketReaderInitializer);
+        return new SpinningSocketReader(connection, logger, oomeHandler, socketReaderInitializer);
     }
 
     @Override
-    public void onConnectionAdded(TcpIpConnection connection) {
+    public void onConnectionAdded(SocketConnection connection) {
         inputThread.addConnection(connection);
         outThread.addConnection(connection);
     }
 
     @Override
-    public void onConnectionRemoved(TcpIpConnection connection) {
+    public void onConnectionRemoved(SocketConnection connection) {
         inputThread.removeConnection(connection);
         outThread.removeConnection(connection);
     }

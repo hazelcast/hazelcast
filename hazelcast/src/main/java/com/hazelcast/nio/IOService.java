@@ -24,6 +24,7 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -42,7 +43,7 @@ public interface IOService {
 
     ILogger getLogger(String name);
 
-    void onOutOfMemory(OutOfMemoryError oom);
+    IOOutOfMemoryHandler getIoOutOfMemoryHandler();
 
     Address getThisAddress();
 

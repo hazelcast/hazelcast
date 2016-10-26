@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp.nonblocking;
+package com.hazelcast.nio.tcp;
 
-public interface NonBlockingIOThreadOutOfMemoryHandler {
+public interface IOOutOfMemoryHandler {
 
     void handle(OutOfMemoryError error);
 }

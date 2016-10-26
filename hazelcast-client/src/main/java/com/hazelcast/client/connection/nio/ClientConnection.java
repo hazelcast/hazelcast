@@ -25,15 +25,16 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Protocols;
+import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.nio.tcp.SocketConnection;
+import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -52,7 +53,7 @@ import static com.hazelcast.util.StringUtil.timeToStringFriendly;
  * Client implementation of {@link Connection}.
  * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
  */
-public class ClientConnection implements Connection, DiscardableMetricsProvider {
+public class ClientConnection implements SocketConnection, DiscardableMetricsProvider {
 
     @Probe
     protected final int connectionId;
@@ -60,9 +61,9 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
     private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
-    private final ClientNonBlockingSocketWriter writer;
-    private final ClientNonBlockingSocketReader reader;
-    private final SocketChannelWrapper socketChannelWrapper;
+    private final SocketWriter writer;
+    private final SocketReader reader;
+    private final SocketChannelWrapper socketChannel;
     private final ClientConnectionManager connectionManager;
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
@@ -81,20 +82,18 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
     private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
 
-    public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
-                            int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
-        final Socket socket = socketChannelWrapper.socket();
-
+    public ClientConnection(HazelcastClientInstanceImpl client,
+                            IOThreadingModel ioThreadingModel,
+                            int connectionId,
+                            SocketChannelWrapper socketChannel) throws IOException {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
-        this.socketChannelWrapper = socketChannelWrapper;
+        this.socketChannel = socketChannel;
         this.connectionId = connectionId;
-        LoggingService loggingService = client.getLoggingService();
-        this.logger = loggingService.getLogger(ClientConnection.class);
-        boolean directBuffer = client.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
-        this.reader = new ClientNonBlockingSocketReader(this, in, socket.getReceiveBufferSize(), directBuffer, loggingService);
-        this.writer = new ClientNonBlockingSocketWriter(this, out, socket.getSendBufferSize(), directBuffer, loggingService);
+        this.logger = client.getLoggingService().getLogger(ClientConnection.class);
+        this.reader = ioThreadingModel.newSocketReader(this);
+        this.writer = ioThreadingModel.newSocketWriter(this);
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -105,13 +104,13 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         this.connectionId = connectionId;
         this.writer = null;
         this.reader = null;
-        this.socketChannelWrapper = null;
+        this.socketChannel = null;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
     }
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        Socket socket = socketChannelWrapper.socket();
+        Socket socket = socketChannel.socket();
         String connectionName = "tcp.connection["
                 + socket.getLocalSocketAddress() + " -> " + socket.getRemoteSocketAddress() + "]";
         registry.scanAndRegister(this, connectionName);
@@ -124,6 +123,21 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         registry.deregister(this);
         registry.deregister(reader);
         registry.deregister(writer);
+    }
+
+    @Override
+    public SocketReader getSocketReader() {
+        return reader;
+    }
+
+    @Override
+    public SocketWriter getSocketWriter() {
+        return writer;
+    }
+
+    @Override
+    public SocketChannelWrapper getSocketChannel() {
+        return socketChannel;
     }
 
     public void incrementPendingPacketCount() {
@@ -150,11 +164,11 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         return true;
     }
 
-    public void init() throws IOException {
+    public void start() throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(3);
         buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
         buffer.flip();
-        socketChannelWrapper.write(buffer);
+        socketChannel.write(buffer);
 
         // we need to give the reader a kick so it starts reading from the socket.
         reader.init();
@@ -172,12 +186,12 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
 
     @Override
     public long lastReadTimeMillis() {
-        return reader.getLastReadTime();
+        return reader.lastReadTimeMillis();
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        return writer.getLastWriteTime();
+        return writer.lastWriteTimeMillis();
     }
 
     @Override
@@ -197,29 +211,21 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
 
     @Override
     public InetAddress getInetAddress() {
-        return socketChannelWrapper.socket().getInetAddress();
+        return socketChannel.socket().getInetAddress();
     }
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) socketChannelWrapper.socket().getRemoteSocketAddress();
+        return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
     }
 
     @Override
     public int getPort() {
-        return socketChannelWrapper.socket().getPort();
-    }
-
-    public SocketChannelWrapper getSocketChannelWrapper() {
-        return socketChannelWrapper;
+        return socketChannel.socket().getPort();
     }
 
     public ClientConnectionManager getConnectionManager() {
         return connectionManager;
-    }
-
-    public ClientNonBlockingSocketReader getReader() {
-        return reader;
     }
 
     public void setRemoteEndpoint(Address remoteEndpoint) {
@@ -231,7 +237,7 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) socketChannelWrapper.socket().getLocalSocketAddress();
+        return (InetSocketAddress) socketChannel.socket().getLocalSocketAddress();
     }
 
     @Override
@@ -263,12 +269,14 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
             logger.finest(message);
         }
 
+        connectionManager.onClose(this);
+
         client.getMetricsRegistry().discardMetrics(this);
     }
 
     protected void innerClose() throws IOException {
-        if (socketChannelWrapper.isOpen()) {
-            socketChannelWrapper.close();
+        if (socketChannel.isOpen()) {
+            socketChannel.close();
         }
         reader.close();
         writer.close();
@@ -353,7 +361,7 @@ public class ClientConnection implements Connection, DiscardableMetricsProvider 
         return "ClientConnection{"
                 + "alive=" + alive
                 + ", connectionId=" + connectionId
-                + ", socketChannel=" + socketChannelWrapper
+                + ", socketChannel=" + socketChannel
                 + ", remoteEndpoint=" + remoteEndpoint
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())

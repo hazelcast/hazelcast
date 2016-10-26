@@ -17,7 +17,7 @@
 package com.hazelcast.nio.tcp.spinning;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.SocketConnection;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -37,7 +37,7 @@ public class SpinningOutputThread extends Thread {
         this.socketWriters = new SocketWriters();
     }
 
-    public void addConnection(TcpIpConnection connection) {
+    void addConnection(SocketConnection connection) {
         SpinningSocketWriter writer = (SpinningSocketWriter) connection.getSocketWriter();
 
         for (; ; ) {
@@ -59,7 +59,7 @@ public class SpinningOutputThread extends Thread {
         }
     }
 
-    public void removeConnection(TcpIpConnection connection) {
+    void removeConnection(SocketConnection connection) {
         SpinningSocketWriter writeHandlers = (SpinningSocketWriter) connection.getSocketWriter();
 
         for (; ; ) {
@@ -115,14 +115,14 @@ public class SpinningOutputThread extends Thread {
         }
     }
 
-    static class SocketWriters {
+    private static class SocketWriters {
         final SpinningSocketWriter[] writers;
 
-        public SocketWriters() {
+        SocketWriters() {
             this(new SpinningSocketWriter[0]);
         }
 
-        public SocketWriters(SpinningSocketWriter[] writers) {
+        SocketWriters(SpinningSocketWriter[] writers) {
             this.writers = writers;
         }
 
