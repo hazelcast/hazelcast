@@ -39,6 +39,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import java.util.concurrent.Future;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +52,7 @@ import static org.mockito.Mockito.when;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class VertexRunnerStateMachineTest extends HazelcastTestSupport {
 
     private StateMachineContext stateMachineContext;

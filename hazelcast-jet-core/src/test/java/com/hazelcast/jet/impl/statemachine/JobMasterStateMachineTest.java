@@ -39,6 +39,7 @@ import static org.mockito.Mockito.when;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class JobMasterStateMachineTest extends HazelcastTestSupport {
 
     private StateMachineContext stateMachineContext;

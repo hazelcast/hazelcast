@@ -19,17 +19,16 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.JetPair;
+import com.hazelcast.jet.runtime.OutputCollector;
 import com.hazelcast.jet.sink.FileSink;
 import com.hazelcast.jet.sink.ListSink;
 import com.hazelcast.jet.sink.MapSink;
 import com.hazelcast.jet.source.FileSource;
 import com.hazelcast.jet.source.ListSource;
 import com.hazelcast.jet.source.MapSource;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.File;
@@ -38,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,6 +47,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class SourceSinkTest extends JetTestSupport {
 
     private static final int COUNT = 10_000;

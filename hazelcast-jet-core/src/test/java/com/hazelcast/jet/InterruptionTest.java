@@ -26,6 +26,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,6 +42,7 @@ import static org.junit.Assert.fail;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class InterruptionTest extends JetTestSupport {
 
     public static final int NODE_COUNT = 3;

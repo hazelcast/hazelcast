@@ -4,19 +4,20 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.sink.ListSink;
 import com.hazelcast.jet.source.ListSource;
-import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.strategy.MemberDistributionStrategy.*;
+import static com.hazelcast.jet.strategy.MemberDistributionStrategy.allMembers;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class RoutingStrategyTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 1;

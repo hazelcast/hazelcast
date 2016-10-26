@@ -19,7 +19,6 @@ package com.hazelcast.jet;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.sink.FileSink;
 import com.hazelcast.jet.source.FileSource;
-import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.jet.strategy.SerializedHashingStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
@@ -30,6 +29,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,6 +42,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class DAGTest {
 
     @Test(expected = IllegalArgumentException.class)
