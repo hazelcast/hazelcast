@@ -32,7 +32,7 @@ public class RemoveAllListenersMessageTask
 
     @Override
     protected Object call() throws Exception {
-        endpoint.clearAllListeners();
+        getEndpoint().clearAllListeners();
         return null;
     }
 

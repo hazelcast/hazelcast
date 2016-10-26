@@ -64,7 +64,7 @@ public class ServerCompatibilityTest_1_3 {
         }
         {
             ClientMessage clientMessage = ClientAuthenticationCodec
-                    .encodeResponse(aByte, anAddress, aString, aString, aByte, aString);
+                    .encodeResponse(aByte, anAddress, aString, aString, aByte, aString, members);
             int length = inputStream.readInt();
             byte[] bytes = new byte[length];
             inputStream.read(bytes);
@@ -86,7 +86,7 @@ public class ServerCompatibilityTest_1_3 {
         }
         {
             ClientMessage clientMessage = ClientAuthenticationCustomCodec
-                    .encodeResponse(aByte, anAddress, aString, aString, aByte, aString);
+                    .encodeResponse(aByte, anAddress, aString, aString, aByte, aString, members);
             int length = inputStream.readInt();
             byte[] bytes = new byte[length];
             inputStream.read(bytes);

@@ -82,7 +82,7 @@ public class MapAddNearCacheEntryListenerMessageTask
 
     @Override
     protected EventFilter getEventFilter() {
-        return new EventListenerFilter(parameters.listenerFlags, new UuidFilter(endpoint.getUuid()));
+        return new EventListenerFilter(parameters.listenerFlags, new UuidFilter(getEndpoint().getUuid()));
     }
 
     private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener, InvalidationHandler {
@@ -92,7 +92,7 @@ public class MapAddNearCacheEntryListenerMessageTask
 
         @Override
         public void onInvalidate(Invalidation invalidation) {
-            if (!endpoint.isAlive()) {
+            if (!getEndpoint().isAlive()) {
                 return;
             }
 

@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -216,8 +217,8 @@ public class ClientServiceTest extends HazelcastTestSupport {
         client1.getLifecycleService().shutdown();
         client2.getLifecycleService().shutdown();
 
-        assertTrue(latchAdd.await(6, TimeUnit.SECONDS));
-        assertTrue(latchRemove.await(6, TimeUnit.SECONDS));
+        assertTrue(latchAdd.await(ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS));
+        assertTrue(latchRemove.await(ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS));
 
         assertTrue(clientService.removeClientListener(id));
 

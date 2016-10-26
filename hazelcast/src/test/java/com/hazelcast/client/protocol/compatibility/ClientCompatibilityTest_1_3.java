@@ -32,6 +32,7 @@ import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.datas
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.distributedObjectInfos;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.jobPartitionStates;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.members;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheEventDatas;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.strings;
 import static org.junit.Assert.assertTrue;
@@ -68,6 +69,7 @@ public class ClientCompatibilityTest_1_3 {
             assertTrue(isEqual(aString, params.ownerUuid));
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.serverHazelcastVersion));
+            assertTrue(isEqual(members, params.clientUnregisteredMembers));
         }
 
         {
@@ -91,6 +93,7 @@ public class ClientCompatibilityTest_1_3 {
             assertTrue(isEqual(aString, params.ownerUuid));
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.serverHazelcastVersion));
+            assertTrue(isEqual(members, params.clientUnregisteredMembers));
         }
 
         {

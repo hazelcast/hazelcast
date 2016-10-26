@@ -60,7 +60,7 @@ public abstract class AbstractPartitionMessageTask<P>
     public final void processMessage() {
         beforeProcess();
         Operation op = prepareOperation();
-        op.setCallerUuid(endpoint.getUuid());
+        op.setCallerUuid(getEndpoint().getUuid());
         ICompletableFuture f = nodeEngine.getOperationService()
                 .createInvocationBuilder(getServiceName(), op, getPartitionId())
                 .setResultDeserialized(false)

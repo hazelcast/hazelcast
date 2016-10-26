@@ -46,9 +46,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     private final ClientEngineImpl clientEngine;
     private final Connection conn;
-    private final ConcurrentMap<String, TransactionContext> transactionContextMap
+    private ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
-    private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
+    private ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
     private final SocketAddress socketAddress;
 
     private LoginContext loginContext;
@@ -264,5 +264,10 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersionString
                 + '}';
+    }
+
+    public void getState(ClientEndpointImpl existingEndpoint) {
+        transactionContextMap = existingEndpoint.transactionContextMap;
+        removeListenerActions = existingEndpoint.removeListenerActions;
     }
 }

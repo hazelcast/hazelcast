@@ -33,7 +33,7 @@ public abstract class AbstractRemoveListenerMessageTask<P> extends AbstractCalla
     }
 
     public final Object call() {
-        endpoint.removeDestroyAction(getRegistrationId());
+        getEndpoint().removeDestroyAction(getRegistrationId());
         return deRegisterListener();
     }
 

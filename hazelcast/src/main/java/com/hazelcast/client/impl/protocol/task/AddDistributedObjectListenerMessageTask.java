@@ -41,7 +41,7 @@ public class AddDistributedObjectListenerMessageTask
     protected Object call() throws Exception {
         final ProxyService proxyService = clientEngine.getProxyService();
         final String registrationId = proxyService.addProxyListener(this);
-        endpoint.addDestroyAction(registrationId, new Callable() {
+        getEndpoint().addDestroyAction(registrationId, new Callable() {
             @Override
             public Boolean call() {
                 return proxyService.removeProxyListener(registrationId);
@@ -110,7 +110,7 @@ public class AddDistributedObjectListenerMessageTask
     }
 
     private boolean shouldSendEvent() {
-        if (!endpoint.isAlive()) {
+        if (!getEndpoint().isAlive()) {
             return false;
         }
 

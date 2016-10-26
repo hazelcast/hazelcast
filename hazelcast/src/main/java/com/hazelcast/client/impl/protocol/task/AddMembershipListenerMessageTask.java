@@ -142,7 +142,8 @@ public class AddMembershipListenerMessageTask
         }
 
         private boolean shouldSendEvent() {
-            if (!endpoint.isAlive()) {
+            ClientEndpoint endpoint = getEndpoint();
+            if (null == endpoint || !endpoint.isAlive()) {
                 return false;
             }
 

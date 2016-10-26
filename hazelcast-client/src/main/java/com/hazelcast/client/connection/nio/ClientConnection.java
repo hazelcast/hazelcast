@@ -18,7 +18,9 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -43,6 +45,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -81,6 +84,11 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     private volatile String closeReason;
     private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
+
+    private volatile AuthenticationStatus authenticationStatus;
+
+    private List<Member> clientUnregisteredMembers;
+
 
     public ClientConnection(HazelcastClientInstanceImpl client,
                             IOThreadingModel ioThreadingModel,
@@ -333,6 +341,14 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         this.isAuthenticatedAsOwner = true;
     }
 
+    public AuthenticationStatus getAuthenticationStatus() {
+        return authenticationStatus;
+    }
+
+    public void setAuthenticationStatus(AuthenticationStatus authenticationStatus) {
+        this.authenticationStatus = authenticationStatus;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -387,5 +403,13 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
 
     public String getConnectedServerVersionString() {
         return connectedServerVersionString;
+    }
+
+    public List<Member> getClientUnregisteredMembers() {
+        return clientUnregisteredMembers;
+    }
+
+    public void setClientUnregisteredMembers(List<Member> clientUnregisteredMembers) {
+        this.clientUnregisteredMembers = clientUnregisteredMembers;
     }
 }

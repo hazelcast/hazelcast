@@ -81,7 +81,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
 
         @Override
         public void onEntryEvent(EntryEvent event) {
-            if (endpoint.isAlive()) {
+            if (getEndpoint().isAlive()) {
                 if (!(event instanceof DataAwareEntryEvent)) {
                     throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
                             + event.getClass().getSimpleName());
@@ -100,7 +100,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
 
         @Override
         public void onMapEvent(MapEvent event) {
-            if (endpoint.isAlive()) {
+            if (getEndpoint().isAlive()) {
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
                 sendClientMessage(null, encodeEvent(null,

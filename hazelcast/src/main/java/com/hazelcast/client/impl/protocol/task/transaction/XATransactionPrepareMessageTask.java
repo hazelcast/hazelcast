@@ -49,7 +49,7 @@ public class XATransactionPrepareMessageTask
     @Override
     protected Object call() throws Exception {
         String transactionId = parameters.transactionId;
-        TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
+        TransactionContext transactionContext = getEndpoint().getTransactionContext(transactionId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context with given transactionId: " + transactionId);
         }
