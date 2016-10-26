@@ -23,7 +23,6 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -41,7 +40,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
 
 
-        Edge edge = newEdge(previous, skipVertex);
+        Edge edge = new Edge(previous, skipVertex);
 //
 //        // if upstream is not ordered, we need to shuffle data to one node
 //        if (!upstream.isOrdered()) {

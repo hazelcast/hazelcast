@@ -20,9 +20,9 @@ import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.DistinctProcessor;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -38,7 +38,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
             dag.addVertex(distinct);
             Vertex previous = upstream.buildDAG(dag);
             if (previous != distinct) {
-                dag.addEdge(newEdge(previous, distinct));
+                dag.addEdge(new Edge(previous, distinct));
             }
             return distinct;
         }
@@ -49,13 +49,13 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
 
         if (previous != distinct) {
-            dag.addEdge(newEdge(previous, distinct).partitioned(context.getPartitioner()));
+            dag.addEdge(new Edge(previous, distinct).partitioned(context.getPartitioner()));
         }
 
         Vertex combiner = new Vertex(randomName(), DistinctProcessor::new);
         dag.addVertex(combiner);
 
-        dag.addEdge(newEdge(distinct, combiner).partitioned(context.getPartitioner()));
+        dag.addEdge(new Edge(distinct, combiner).partitioned(context.getPartitioner()));
 
         return combiner;
     }

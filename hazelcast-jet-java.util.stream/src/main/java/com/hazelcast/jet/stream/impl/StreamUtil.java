@@ -22,11 +22,9 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Job;
-import com.hazelcast.jet2.Vertex;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.util.UuidUtil;
 import java.lang.reflect.Field;
@@ -37,7 +35,6 @@ import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public final class StreamUtil {
 
-    public static final int DEFAULT_TASK_COUNT = Runtime.getRuntime().availableProcessors();
     public static final String MAP_PREFIX = "__hz_map_";
     public static final String LIST_PREFIX = "__hz_list_";
 
@@ -65,10 +62,6 @@ public final class StreamUtil {
         } finally {
             jetEngine.destroy();
         }
-    }
-
-    public static Edge newEdge(Vertex from, Vertex to) {
-        return new Edge(from, to);
     }
 
     public static void setPrivateField(Object instance, Class<?> clazz, String name, Object val)

@@ -20,9 +20,9 @@ import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.LimitProcessor;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -39,10 +39,7 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         dag.addVertex(first);
 
         Vertex previous = upstream.buildDAG(dag);
-
-        if (first != previous) {
-            dag.addEdge(newEdge(previous, first));
-        }
+        dag.addEdge(new Edge(previous, first));
 
         if (upstream.isOrdered()) {
             return first;
@@ -50,7 +47,7 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         Vertex second = new Vertex(randomName(), () -> new LimitProcessor(limit)).parallelism(1);
         dag.addVertex(second);
-        dag.addEdge(newEdge(first, second));
+        dag.addEdge(new Edge(first, second));
 //                .distributed(singlePartition(randomName())));
 
         return second;

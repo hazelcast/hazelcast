@@ -21,6 +21,7 @@ import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.IMapWriter;
 import java.util.function.BinaryOperator;
@@ -28,7 +29,6 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector<T, K, V> {
@@ -56,15 +56,15 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         Vertex merger = new Vertex("accumulator-" + randomName(), () -> new MergeProcessor<T, K, V>(keyMapper,
                 valueMapper, mergeFunction));
         dag.addVertex(merger);
-        dag.addEdge(newEdge(previous, merger).partitioned(context.getPartitioner()));
+        dag.addEdge(new Edge(previous, merger).partitioned(context.getPartitioner()));
 
         Vertex combiner = new Vertex("combiner-" + randomName(), () -> new MergeProcessor<T, K, V>(null, null,
                 mergeFunction));
         dag.addVertex(combiner);
-        dag.addEdge(newEdge(merger, combiner).distributed().partitioned(context.getPartitioner()));
+        dag.addEdge(new Edge(merger, combiner).distributed().partitioned(context.getPartitioner()));
 
         Vertex writer = new Vertex(randomName(), IMapWriter.supplier(mapName));
-        dag.addVertex(writer).addEdge(newEdge(combiner, writer));
+        dag.addVertex(writer).addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         return target;
     }

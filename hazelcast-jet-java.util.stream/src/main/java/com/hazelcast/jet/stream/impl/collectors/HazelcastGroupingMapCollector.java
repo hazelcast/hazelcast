@@ -23,6 +23,7 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.GroupingCombinerProcessor;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.IMapWriter;
 import java.util.function.Function;
@@ -30,7 +31,6 @@ import java.util.stream.Collector;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector<T, A, IMap<K, D>> {
@@ -60,18 +60,18 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
         Vertex previous = upstream.buildDAG(dag);
         if (previous != merger) {
-            dag.addEdge(newEdge(previous, merger).partitioned(context.getPartitioner()));
+            dag.addEdge(new Edge(previous, merger).partitioned(context.getPartitioner()));
         }
 
         Vertex combiner = new Vertex(randomName(), () -> new GroupingCombinerProcessor<>(collector)).parallelism(1);
         dag.addVertex(combiner);
 
-        dag.addEdge(newEdge(merger, combiner)
+        dag.addEdge(new Edge(merger, combiner)
                 .distributed()
                 .partitioned(context.getPartitioner()));
 
         Vertex writer = new Vertex(randomName(), IMapWriter.supplier(mapName));
-        dag.addVertex(writer).addEdge(newEdge(combiner, writer));
+        dag.addVertex(writer).addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         return target;
     }

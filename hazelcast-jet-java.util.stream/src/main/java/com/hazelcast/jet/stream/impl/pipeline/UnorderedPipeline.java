@@ -20,9 +20,9 @@ import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class UnorderedPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -36,7 +36,7 @@ public class UnorderedPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex unordered = new Vertex("unordered-" + randomName(), PassthroughProcessor::new);
         dag.addVertex(unordered);
         Vertex previous = upstream.buildDAG(dag);
-        dag.addEdge(newEdge(previous, unordered));
+        dag.addEdge(new Edge(previous, unordered));
         return unordered;
     }
 }

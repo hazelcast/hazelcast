@@ -20,7 +20,6 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Vertex;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> implements SourcePipeline<E_OUT> {
@@ -31,7 +30,10 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
 
     @Override
     public Vertex buildDAG(DAG dag) {
-        Vertex vertex = new Vertex(randomName(), getProducer()).parallelism(isOrdered() ? 1 : DEFAULT_TASK_COUNT);
+        Vertex vertex = new Vertex(randomName(), getProducer());
+        if (isOrdered()) {
+            vertex.parallelism(1);
+        }
         dag.addVertex(vertex);
         return vertex;
     }

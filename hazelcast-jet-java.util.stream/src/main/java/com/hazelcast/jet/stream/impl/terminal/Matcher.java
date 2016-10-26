@@ -24,12 +24,12 @@ import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AnyMatchProcessor;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.IListWriter;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class Matcher {
@@ -46,7 +46,7 @@ public class Matcher {
         dag.addVertex(anymatch);
         Vertex previous = upstream.buildDAG(dag);
         if (previous != anymatch) {
-            dag.addEdge(newEdge(previous, anymatch));
+            dag.addEdge(new Edge(previous, anymatch));
         }
         IList<Boolean> results = execute(dag, anymatch);
         boolean result = anyMatch(results);
@@ -66,7 +66,7 @@ public class Matcher {
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
         String listName = randomName(LIST_PREFIX);
         Vertex writer = new Vertex(randomName(), IListWriter.supplier(listName));
-        dag.addVertex(writer).addEdge(newEdge(vertex, writer));
+        dag.addVertex(writer).addEdge(new Edge(vertex, writer));
         executeJob(context, dag);
         return context.getHazelcastInstance().getList(listName);
     }

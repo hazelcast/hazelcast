@@ -20,11 +20,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 
 public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector<T, Object, R> {
 
@@ -37,7 +37,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
         if (parallelism() > 0) {
             writer.parallelism(parallelism());
         }
-        dag.addVertex(writer).addEdge(newEdge(vertex, writer));
+        dag.addVertex(writer).addEdge(new Edge(vertex, writer));
         executeJob(context, dag);
         return target;
     }

@@ -25,7 +25,6 @@ import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.IListWriter;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -42,9 +41,10 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         String listName = randomName();
         IList<T> list = context.getHazelcastInstance().getList(listName);
         Vertex previous = upstream.buildDAG(dag);
-        int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
         Vertex writer = new Vertex(listName, IListWriter.supplier(listName));
-        writer.parallelism(taskCount);
+        if (upstream.isOrdered()) {
+            writer.parallelism(1);
+        }
         dag.addVertex(writer);
         dag.addEdge(new Edge(previous, 1, writer, 0));
         context.addStreamListener(() -> {
