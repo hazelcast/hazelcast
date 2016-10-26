@@ -54,7 +54,9 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
 
     @Override
     public void shutdown(boolean terminate) {
-
+        for (ExecutionContext executionContext : executionContexts.values()) {
+            executionContext.destroy();
+        }
     }
 
     @Override
@@ -69,15 +71,18 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
         if (executionContext != null) {
             DeploymentStore deploymentStore = executionContext.getDeploymentStore();
             deploymentStore.cleanup();
+            executionContext.destroy();
         }
     }
 
-    public void createContext(String name, JetEngineConfig config) {
-        DeploymentStore deploymentStore = new DeploymentStore(config.getDeploymentDirectory());
-        ExecutionService executionService = new ExecutionService(config);
-        ExecutionContext executionContext = new ExecutionContext(nodeEngine, executionService,
-                deploymentStore, config);
-        executionContexts.put(name, executionContext);
+    public synchronized void ensureContext(String name, JetEngineConfig config) {
+        if (executionContexts.get(name) == null) {
+            DeploymentStore deploymentStore = new DeploymentStore(config.getDeploymentDirectory());
+            ExecutionService executionService = new ExecutionService(nodeEngine, name, config);
+            ExecutionContext executionContext = new ExecutionContext(nodeEngine, executionService,
+                    deploymentStore, config);
+            executionContexts.put(name, executionContext);
+        }
     }
 
     public ExecutionContext getExecutionContext(String name) {

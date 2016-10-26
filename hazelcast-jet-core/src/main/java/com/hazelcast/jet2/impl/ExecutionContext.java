@@ -150,5 +150,8 @@ public class ExecutionContext {
         return classLoader;
     }
 
+    public void destroy() {
+        executionService.shutdown();
+    }
 }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
@@ -44,8 +45,14 @@ class ExecutionService {
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
     private final NonBlockingWorker[] workers;
     private final Thread[] threads;
+    private final NodeEngine nodeEngine;
+    private final String name;
+    private final JetEngineConfig cfg;
 
-    public ExecutionService(JetEngineConfig cfg) {
+    public ExecutionService(NodeEngine nodeEngine, String name, JetEngineConfig cfg) {
+        this.nodeEngine = nodeEngine;
+        this.name = name;
+        this.cfg = cfg;
         this.workers = new NonBlockingWorker[cfg.getParallelism()];
         this.threads = new Thread[cfg.getParallelism()];
     }
@@ -57,6 +64,15 @@ class ExecutionService {
         submitBlockingTasklets(completionLatch, jobFuture, byBlocking.get(true));
         submitNonblockingTasklets(completionLatch, jobFuture, byBlocking.get(false));
         return jobFuture;
+    }
+
+    public void shutdown() {
+        blockingTaskletExecutor.shutdown();
+        for (NonBlockingWorker worker : workers) {
+            if (worker != null) {
+                worker.isShutdown = true;
+            }
+        }
     }
 
     private void submitBlockingTasklets(CountDownLatch completionLatch, JobFuture jobFuture, List<Tasklet> tasklets) {
@@ -81,13 +97,18 @@ class ExecutionService {
         Arrays.stream(threads).forEach(LockSupport::unpark);
     }
 
-    private void ensureThreadsStarted() {
+    private synchronized void ensureThreadsStarted() {
         if (workers[0] != null) {
             return;
         }
         Arrays.setAll(workers, i -> new NonBlockingWorker(workers));
-        Arrays.setAll(threads, i -> new Thread(workers[i], "Non-blocking tasklet thread #" + i));
+        Arrays.setAll(threads, i -> new Thread(workers[i], "hz." + getThreadNamePrefix()
+                + ".non-blocking-executor.thread-" + i));
         Arrays.stream(threads).forEach(Thread::start);
+    }
+
+    private String getThreadNamePrefix() {
+        return nodeEngine.getHazelcastInstance().getName() + ".jet-engine." + name;
     }
 
     private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture, CountDownLatch completionLatch) {
@@ -133,6 +154,7 @@ class ExecutionService {
     private static class NonBlockingWorker implements Runnable {
         private final List<TaskletTracker> trackers;
         private final NonBlockingWorker[] colleagues;
+        private volatile boolean isShutdown;
 
         NonBlockingWorker(NonBlockingWorker[] colleagues) {
             this.colleagues = colleagues;
@@ -142,7 +164,7 @@ class ExecutionService {
         @Override
         public void run() {
             long idleCount = 0;
-            while (true) {
+            while (!isShutdown) {
                 boolean madeProgress = false;
                 for (TaskletTracker t : trackers) {
                     final NonBlockingWorker stealingWorker = t.stealingWorker.get();
@@ -216,12 +238,12 @@ class ExecutionService {
         }
     }
 
-    private static final class BlockingTaskThreadFactory implements ThreadFactory {
+    private final class BlockingTaskThreadFactory implements ThreadFactory {
         private int seq;
 
         @Override
         public Thread newThread(Runnable r) {
-            return new Thread(r, "Blocking tasklet thread #" + seq++);
+            return new Thread(r, ExecutionService.this.getThreadNamePrefix() + ".blocking-executor.thread-" + seq++);
         }
     }
 }

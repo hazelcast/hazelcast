@@ -23,15 +23,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
-public class CreateExecutionContextOperation extends Operation {
+public class EnsureExecutionContextOperation extends Operation {
 
     private String name;
     private JetEngineConfig config;
 
-    public CreateExecutionContextOperation() {
+    public EnsureExecutionContextOperation() {
     }
 
-    public CreateExecutionContextOperation(String name, JetEngineConfig config) {
+    public EnsureExecutionContextOperation(String name, JetEngineConfig config) {
         this.name = name;
         this.config = config;
     }
@@ -39,7 +39,7 @@ public class CreateExecutionContextOperation extends Operation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.createContext(name, config);
+        service.ensureContext(name, config);
     }
 
     @Override

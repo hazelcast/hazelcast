@@ -24,7 +24,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.jet2.impl.JetEngineImpl;
 import com.hazelcast.jet2.impl.JetService;
-import com.hazelcast.jet2.impl.deployment.CreateExecutionContextOperation;
+import com.hazelcast.jet2.impl.deployment.EnsureExecutionContextOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -59,8 +59,8 @@ public interface JetEngine extends DistributedObject {
             Set<Member> members = nodeEngine.getClusterService().getMembers();
             ArrayList<InternalCompletableFuture> futures = new ArrayList<>();
             for (Member member : members) {
-                CreateExecutionContextOperation createExecutionContextOperation =
-                        new CreateExecutionContextOperation(name, config);
+                EnsureExecutionContextOperation createExecutionContextOperation =
+                        new EnsureExecutionContextOperation(name, config);
                 futures.add(operationService.invokeOnTarget(JetService.SERVICE_NAME,
                         createExecutionContextOperation, member.getAddress()));
             }
