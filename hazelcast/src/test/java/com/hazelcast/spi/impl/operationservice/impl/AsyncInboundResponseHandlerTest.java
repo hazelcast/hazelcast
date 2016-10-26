@@ -30,10 +30,10 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AsyncResponseHandlerTest extends HazelcastTestSupport {
+public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
 
     private PacketHandler responsePacketHandler;
-    private AsyncResponseHandler asyncHandler;
+    private AsyncInboundResponseHandler asyncHandler;
     private InternalSerializationService serializationService;
 
     @Before
@@ -41,7 +41,7 @@ public class AsyncResponseHandlerTest extends HazelcastTestSupport {
         ILogger logger = Logger.getLogger(getClass());
         HazelcastThreadGroup threadGroup = new HazelcastThreadGroup("test", logger, getClass().getClassLoader());
         responsePacketHandler = mock(PacketHandler.class);
-        asyncHandler = new AsyncResponseHandler(threadGroup, logger, responsePacketHandler, new HazelcastProperties(new Config()));
+        asyncHandler = new AsyncInboundResponseHandler(threadGroup, logger, responsePacketHandler, new HazelcastProperties(new Config()));
         asyncHandler.start();
         serializationService = new DefaultSerializationServiceBuilder().build();
     }
