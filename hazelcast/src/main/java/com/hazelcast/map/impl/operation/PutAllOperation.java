@@ -58,7 +58,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     private List<RecordInfo> backupRecordInfos;
     private List<Data> invalidationKeys;
 
-    @SuppressWarnings("unused")
     public PutAllOperation() {
     }
 
