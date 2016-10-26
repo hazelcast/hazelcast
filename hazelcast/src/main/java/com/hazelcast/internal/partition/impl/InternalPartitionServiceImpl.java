@@ -33,6 +33,7 @@ import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
 import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionServiceProxy;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
@@ -278,10 +279,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).isEmpty();
     }
 
-    public void setInitialState(Address[][] newState, int partitionStateVersion) {
+    public void setInitialState(PartitionTableView partitionTable) {
         lock.lock();
         try {
-            partitionStateManager.setInitialState(newState, partitionStateVersion);
+            partitionStateManager.setInitialState(partitionTable);
         } finally {
             lock.unlock();
         }
@@ -400,10 +401,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     public PartitionRuntimeState createPartitionStateInternal() {
-        if (!partitionStateManager.isInitialized()) {
-            return null;
-        }
-
         lock.lock();
         try {
             if (!partitionStateManager.isInitialized()) {
@@ -619,29 +616,25 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
             if (newVersion < currentVersion) {
                 logger.warning("Master version should be greater than ours! Local version: " + currentVersion
-                        + ", Master version: " + newVersion + " Master: " + nodeEngine.getMasterAddress());
+                        + ", Master version: " + newVersion + " Master: " + sender);
                 return false;
             } else if (newVersion == currentVersion) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Master version should be greater than ours! Local version: " + currentVersion
-                            + ", Master version: " + newVersion + " Master: " + nodeEngine.getMasterAddress());
+                            + ", Master version: " + newVersion + " Master: " + sender);
                 }
-
                 return true;
             }
 
-            partitionStateManager.setVersion(newVersion);
-            partitionStateManager.setInitialized();
-
             filterAndLogUnknownAddressesInPartitionTable(sender, partitionState.getPartitionTable());
-            finalizeOrRollbackMigration(partitionState);
+            updatePartitionsAndFinalizeMigrations(partitionState);
             return true;
         } finally {
             lock.unlock();
         }
     }
 
-    private void finalizeOrRollbackMigration(PartitionRuntimeState partitionState) {
+    private void updatePartitionsAndFinalizeMigrations(PartitionRuntimeState partitionState) {
         final Address[][] partitionTable = partitionState.getPartitionTable();
         Collection<MigrationInfo> completedMigrations = partitionState.getCompletedMigrations();
         for (MigrationInfo completedMigration : completedMigrations) {
@@ -666,6 +659,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         updateAllPartitions(partitionTable);
+        partitionStateManager.setVersion(partitionState.getVersion());
+
         migrationManager.retainCompletedMigrations(completedMigrations);
     }
 
@@ -1068,6 +1063,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
        }
     }
 
+    @Override
+    public PartitionTableView createPartitionTableView() {
+        lock.lock();
+        try {
+            return partitionStateManager.getPartitionTable();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private class FetchMostRecentPartitionTableTask implements MigrationRunnable {
 
         private final Address thisAddress = node.getThisAddress();
@@ -1171,7 +1176,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         }
                     }
                 }
-
                 shouldFetchPartitionTables = false;
             } finally {
                 lock.unlock();

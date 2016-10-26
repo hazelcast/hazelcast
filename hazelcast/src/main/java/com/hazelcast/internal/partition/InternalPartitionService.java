@@ -85,4 +85,6 @@ public interface InternalPartitionService extends IPartitionService {
     void updatePartitionReplicaVersions(int partitionId, long[] replicaVersions, int replicaIndex);
 
     long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
+
+    PartitionTableView createPartitionTableView();
 }
