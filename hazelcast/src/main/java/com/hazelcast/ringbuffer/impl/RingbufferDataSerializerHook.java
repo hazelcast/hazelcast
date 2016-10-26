@@ -48,6 +48,7 @@ public class RingbufferDataSerializerHook implements DataSerializerHook {
     public static final int ADD_ALL_OPERATION = 7;
     public static final int ADD_ALL_BACKUP_OPERATION = 8;
     public static final int READ_RESULT_SET = 9;
+    public static final int RINGBUFFER_CONTAINER = 10;
 
     @Override
     public int getFactoryId() {
@@ -78,6 +79,8 @@ public class RingbufferDataSerializerHook implements DataSerializerHook {
                         return new AddAllBackupOperation();
                     case READ_RESULT_SET:
                         return new ReadResultSetImpl();
+                    case RINGBUFFER_CONTAINER:
+                        return new RingbufferContainer();
                     default:
                         return null;
                 }

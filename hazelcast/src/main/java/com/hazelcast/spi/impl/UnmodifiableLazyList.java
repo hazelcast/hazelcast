@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UnmodifiableListIterator;
@@ -32,7 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-public class UnmodifiableLazyList<E> extends AbstractList<E> implements DataSerializable {
+public class UnmodifiableLazyList<E> extends AbstractList<E> implements IdentifiedDataSerializable {
 
     private final transient SerializationService serializationService;
     private List list;
@@ -174,5 +174,15 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements DataSeri
             return (E) o;
         }
 
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.UNMODIFIABLE_LAZY_LIST;
     }
 }

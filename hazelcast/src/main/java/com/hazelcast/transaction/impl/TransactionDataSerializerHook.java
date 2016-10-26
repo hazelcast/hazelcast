@@ -29,6 +29,7 @@ import com.hazelcast.transaction.impl.operations.ReplicateAllowedDuringPassiveSt
 import com.hazelcast.transaction.impl.operations.ReplicateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.RollbackAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
+import com.hazelcast.transaction.impl.xa.XATransactionDTO;
 import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionBackupOperation;
 import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperation;
@@ -64,6 +65,7 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
     public static final int PUT_REMOTE_TX_BACKUP = 15;
     public static final int PUT_REMOTE_TX = 16;
     public static final int XA_REPLICATION = 17;
+    public static final int XA_TRANSACTION_DTO = 18;
 
 
     @Override
@@ -113,7 +115,8 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
                         return new PutRemoteTransactionOperation();
                     case XA_REPLICATION:
                         return new XaReplicationOperation();
-
+                    case XA_TRANSACTION_DTO:
+                        return new XATransactionDTO();
                     default:
                         return null;
                 }

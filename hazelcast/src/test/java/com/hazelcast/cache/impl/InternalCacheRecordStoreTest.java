@@ -4,10 +4,13 @@ import com.hazelcast.cache.CacheFromDifferentNodesTest;
 import com.hazelcast.cache.CacheTestSupport;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -18,6 +21,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.omg.CORBA.INTERNAL;
 
 import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
@@ -46,6 +50,14 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
     @Override
     protected HazelcastInstance getHazelcastInstance() {
         return factory.newHazelcastInstance(createConfig());
+    }
+
+    @Override
+    protected Config createConfig() {
+        Config config = super.createConfig();
+        config.getSerializationConfig().addDataSerializableFactory(InternalCacheRecordStoreTestFactory.F_ID,
+                new InternalCacheRecordStoreTestFactory());
+        return config;
     }
 
     /**
@@ -148,7 +160,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         return operation;
     }
 
-    private static class CachePrimaryStateGetterOperation
+    static class CachePrimaryStateGetterOperation
             extends AbstractNamedOperation {
 
         private boolean isPrimary;
@@ -178,6 +190,30 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
             return ICacheService.SERVICE_NAME;
         }
 
+        @Override
+        public int getFactoryId() {
+            return InternalCacheRecordStoreTestFactory.F_ID;
+        }
+
+        @Override
+        public int getId() {
+            return InternalCacheRecordStoreTestFactory.INTERNAL_CACHE_PRIMARY_STATE_GETTER;
+        }
+    }
+
+    static class InternalCacheRecordStoreTestFactory implements DataSerializableFactory {
+
+        static final int F_ID = 1;
+        static final int INTERNAL_CACHE_PRIMARY_STATE_GETTER = 0;
+
+        @Override
+        public IdentifiedDataSerializable create(int typeId) {
+            if (typeId == INTERNAL_CACHE_PRIMARY_STATE_GETTER) {
+                return new CachePrimaryStateGetterOperation();
+            } else {
+                throw new UnsupportedOperationException("Could not create instance of type id " + typeId);
+            }
+        }
     }
 
 }

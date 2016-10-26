@@ -26,6 +26,7 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY;
@@ -37,40 +38,25 @@ public class PredicateDataSerializerHook
     public static final int F_ID = FactoryIdHelper.getFactoryId(PREDICATE_DS_FACTORY, PREDICATE_DS_FACTORY_ID);
 
     public static final int SQL_PREDICATE = 0;
-
     public static final int AND_PREDICATE = 1;
-
     public static final int BETWEEN_PREDICATE = 2;
-
     public static final int EQUAL_PREDICATE = 3;
-
     public static final int GREATERLESS_PREDICATE = 4;
-
     public static final int LIKE_PREDICATE = 5;
-
     public static final int ILIKE_PREDICATE = 6;
-
     public static final int IN_PREDICATE = 7;
-
     public static final int INSTANCEOF_PREDICATE = 8;
-
     public static final int NOTEQUAL_PREDICATE = 9;
-
     public static final int NOT_PREDICATE = 10;
-
     public static final int OR_PREDICATE = 11;
-
     public static final int REGEX_PREDICATE = 12;
-
     public static final int FALSE_PREDICATE = 13;
-
     public static final int TRUE_PREDICATE = 14;
-
     public static final int PAGING_PREDICATE = 15;
-
     public static final int PARTITION_PREDICATE = 16;
+    public static final int NULL_OBJECT = 17;
 
-    public static final int LEN = 17;
+    public static final int LEN = NULL_OBJECT + 1;
 
     @Override
     public int getFactoryId() {
@@ -164,6 +150,11 @@ public class PredicateDataSerializerHook
         constructors[PARTITION_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PartitionPredicate();
+            }
+        };
+        constructors[NULL_OBJECT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new IndexImpl.NullObject();
             }
         };
 
