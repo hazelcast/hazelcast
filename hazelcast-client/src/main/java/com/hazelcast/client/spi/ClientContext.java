@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -34,7 +35,7 @@ public final class ClientContext {
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
     private final ClientListenerService listenerService;
-    private final NearCacheManager nearCacheManager;
+    private final NearCacheContext nearCacheContext;
     private final ClientTransactionManagerService transactionManager;
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
@@ -47,7 +48,7 @@ public final class ClientContext {
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
         this.listenerService = client.getListenerService();
-        this.nearCacheManager = client.getNearCacheManager();
+        this.nearCacheContext = client.getNearCacheContext();
         this.proxyManager = proxyManager;
         this.clientConfig = client.getClientConfig();
         this.transactionManager = client.getTransactionManager();
@@ -87,7 +88,11 @@ public final class ClientContext {
     }
 
     public NearCacheManager getNearCacheManager() {
-        return nearCacheManager;
+        return nearCacheContext.getNearCacheManager();
+    }
+
+    public NearCacheContext getNearCacheContext() {
+        return nearCacheContext;
     }
 
     public LoggingService getLoggingService() {

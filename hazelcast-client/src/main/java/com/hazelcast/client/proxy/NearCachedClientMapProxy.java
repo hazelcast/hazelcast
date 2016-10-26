@@ -17,7 +17,6 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
@@ -86,12 +85,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
 
-        NearCacheContext nearCacheContext = new NearCacheContext(
-                context.getSerializationService(),
-                context.getExecutionService());
-
         NearCache<Data, Object> clientNearCache = context.getNearCacheManager()
-                .getOrCreateNearCache(name, nearCacheConfig, nearCacheContext);
+                .getOrCreateNearCache(name, nearCacheConfig, context.getNearCacheContext());
 
         int partitionCount = context.getPartitionService().getPartitionCount();
         nearCache = wrapAsStaleReadPreventerNearCache(clientNearCache, partitionCount);
