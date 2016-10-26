@@ -38,7 +38,6 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
     protected String name;
     protected MapEntries[] mapEntries;
 
-    @SuppressWarnings("unused")
     public PutAllPartitionAwareOperationFactory() {
     }
 
