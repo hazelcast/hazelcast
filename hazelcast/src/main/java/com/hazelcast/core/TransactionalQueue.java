@@ -32,26 +32,31 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
     /**
      * {@inheritDoc}
      */
+    @Override
     boolean offer(E e);
 
     /**
      * {@inheritDoc}
      */
+    @Override
     boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
      * {@inheritDoc}
      */
+    @Override
     E take() throws InterruptedException;
 
     /**
      * {@inheritDoc}
      */
+    @Override
     E poll();
 
     /**
      * {@inheritDoc}
      */
+    @Override
     E poll(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
@@ -67,6 +72,6 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
     /**
      * {@inheritDoc}
      */
+    @Override
     int size();
-
 }

@@ -33,31 +33,36 @@ public interface TransactionalMultiMap<K, V> extends BaseMultiMap<K, V>, Transac
     /**
      * {@inheritDoc}
      */
+    @Override
     boolean put(K key, V value);
 
     /**
      * {@inheritDoc}
      */
+    @Override
     Collection<V> get(K key);
 
     /**
      * {@inheritDoc}
      */
+    @Override
     boolean remove(Object key, Object value);
 
     /**
      * {@inheritDoc}
      */
+    @Override
     Collection<V> remove(Object key);
 
     /**
      * {@inheritDoc}
      */
+    @Override
     int valueCount(K key);
 
     /**
      * {@inheritDoc}
      */
+    @Override
     int size();
-
 }
