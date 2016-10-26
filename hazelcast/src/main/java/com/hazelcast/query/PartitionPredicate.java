@@ -40,7 +40,7 @@ public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedData
     private Object partitionKey;
     private Predicate<K, V> target;
 
-    // should only be used for deserialization.
+    // should only be used for deserialization
     public PartitionPredicate() {
     }
 
