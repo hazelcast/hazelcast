@@ -27,13 +27,14 @@ import java.util.Map;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * A {@link Predicate} that restricts the execution of a Predicate to a single Partition. This can help to speed up query
- * execution since only 1 instead of all partitions needs to be queried.
+ * A {@link Predicate} that restricts the execution of a Predicate to a single Partition.
+ *
+ * This can help to speed up query execution since only a single instead of all partitions needs to be queried.
  *
  * This predicate can only be used as an outer predicate.
  *
- * @param <K>
- * @param <V>
+ * @param <K> type of the entry key
+ * @param <V> type of the entry value
  */
 public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedDataSerializable {
 
@@ -45,12 +46,12 @@ public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedData
     }
 
     /**
-     * Creates a new PartitionPredicate
+     * Creates a new PartitionPredicate.
      *
      * @param partitionKey the partition key
-     * @param target       the target Predicate
-     * @throws IllegalArgumentException if partitionId smaller than 0
-     * @throws NullPointerException     if target Predicate is null.
+     * @param target       the target {@link Predicate}
+     * @throws IllegalArgumentException if partitionId smaller than zero
+     * @throws NullPointerException     if target Predicate is {@code null}
      */
     public PartitionPredicate(Object partitionKey, Predicate<K, V> target) {
         this.partitionKey = checkNotNull(partitionKey, "partitionKey can't be null");
@@ -58,18 +59,18 @@ public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedData
     }
 
     /**
-     * The partition key that determines the partition the target Predicate is going to execute on.
+     * Returns the partition key that determines the partition the target {@link Predicate} is going to execute on.
      *
-     * @return the partition id.
+     * @return the partition id
      */
     public Object getPartitionKey() {
         return partitionKey;
     }
 
     /**
-     * Returns the target Predicate.
+     * Returns the target {@link Predicate}.
      *
-     * @return the target Predicate.
+     * @return the target {@link Predicate}.
      */
     public Predicate<K, V> getTarget() {
         return target;
