@@ -37,8 +37,15 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     @Override
     public ProgressState drainTo(CollectionWithObserver dest) {
         tracker.reset();
-        for (InboundProducer producer : producers) {
-            tracker.update(producer.drainTo(dest));
+        for (int i = 0; i < producers.length; i++) {
+            InboundProducer producer = producers[i];
+            if (producer != null) {
+                ProgressState result = producer.drainTo(dest);
+                if (result.isDone()) {
+                    producers[i] = null;
+                }
+                tracker.update(result);
+            }
         }
         return tracker.toProgressState();
     }
