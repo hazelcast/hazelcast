@@ -9,7 +9,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.tcp.nonblocking.Select_NonBlockingIOThreadingModelFactory;
+import com.hazelcast.internal.networking.nonblocking.Select_NonBlockingIOThreadingModelFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;

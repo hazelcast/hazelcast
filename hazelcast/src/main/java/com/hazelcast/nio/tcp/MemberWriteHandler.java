@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;

@@ -1,5 +1,7 @@
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.SocketReader;
+import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestThread;

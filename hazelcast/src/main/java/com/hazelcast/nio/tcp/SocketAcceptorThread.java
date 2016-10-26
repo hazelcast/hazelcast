@@ -18,10 +18,11 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.nonblocking.SelectorMode;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.tcp.nonblocking.SelectorMode;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;

@@ -18,9 +18,9 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.tcp.SocketWriter;
-import com.hazelcast.nio.tcp.SocketWriterInitializer;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.internal.networking.SocketWriter;
+import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.WriteHandler;
 
 import java.nio.ByteBuffer;
 

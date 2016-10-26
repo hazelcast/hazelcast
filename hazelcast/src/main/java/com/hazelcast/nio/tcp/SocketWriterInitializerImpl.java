@@ -16,6 +16,9 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.SocketWriter;
+import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.ascii.TextWriteHandler;

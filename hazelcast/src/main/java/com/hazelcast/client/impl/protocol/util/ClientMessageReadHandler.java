@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 
 import java.nio.ByteBuffer;
