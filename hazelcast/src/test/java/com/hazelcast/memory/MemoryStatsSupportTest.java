@@ -8,6 +8,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.memory.MemoryStatsSupport.freePhysicalMemory;
+import static com.hazelcast.memory.MemoryStatsSupport.freeSwapSpace;
+import static com.hazelcast.memory.MemoryStatsSupport.totalPhysicalMemory;
+import static com.hazelcast.memory.MemoryStatsSupport.totalSwapSpace;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -21,21 +25,21 @@ public class MemoryStatsSupportTest extends HazelcastTestSupport {
 
     @Test
     public void testTotalPhysicalMemory() {
-        assertTrue(MemoryStatsSupport.totalPhysicalMemory() > 0);
+        assertTrue(totalPhysicalMemory() >= -1);
     }
 
     @Test
     public void testFreePhysicalMemory() {
-        assertTrue(MemoryStatsSupport.freePhysicalMemory() > 0);
+        assertTrue(freePhysicalMemory() >= -1);
     }
 
     @Test
     public void testTotalSwapSpace() {
-        assertTrue(MemoryStatsSupport.totalSwapSpace() >= 0);
+        assertTrue(totalSwapSpace() >= -1);
     }
 
     @Test
     public void testFreeSwapSpace() {
-        assertTrue(MemoryStatsSupport.freeSwapSpace() >= 0);
+        assertTrue(freeSwapSpace() >= -1);
     }
 }
