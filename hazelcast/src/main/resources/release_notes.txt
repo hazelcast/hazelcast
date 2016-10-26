@@ -79,7 +79,7 @@ This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
 *3.7.3 Fixes*
 
-- EntryView's storeTime and expirationTime are not available even though they are set. [9166].
+- EntryView's storeTime and expirationTime are not available even though they are set. [9166]
 - NullPointerException is thrown while deleting an entry through Entry Processor by setting value to NULL. [9135]
 - There is a discrepancy between the Reference Manual and source code in the default value of hazelcast.heartbeat.interval.seconds. [9070]
 - When Hazelcast is upgraded from 3.6.5 to 3.7.1, calls to Spring cache generate exceptions. [9023]
