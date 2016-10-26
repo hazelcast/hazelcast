@@ -46,10 +46,10 @@ public class SortProcessor<T> extends AbstractProcessor {
             Collections.sort(list, comparator);
             iterator = list.iterator();
         }
-        while (iterator.hasNext()) {
+        while (iterator.hasNext() && !getOutbox().isHighWater()) {
             T key = iterator.next();
             emit(key);
         }
-        return true;
+        return !iterator.hasNext();
     }
 }
