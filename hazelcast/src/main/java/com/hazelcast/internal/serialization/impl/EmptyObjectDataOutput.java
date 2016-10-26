@@ -126,6 +126,11 @@ final class EmptyObjectDataOutput implements ObjectDataOutput {
 
     @Override
     public byte[] toByteArray() {
+        return toByteArray(0);
+    }
+
+    @Override
+    public byte[] toByteArray(int padding) {
         throw new UnsupportedOperationException();
     }
 

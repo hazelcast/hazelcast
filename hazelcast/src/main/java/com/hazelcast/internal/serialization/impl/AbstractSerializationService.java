@@ -121,11 +121,21 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public byte[] toBytes(Object obj) {
-        return toBytes(obj, globalPartitioningStrategy);
+        return toBytes(0, obj, globalPartitioningStrategy);
+    }
+
+    @Override
+    public byte[] toBytes(int padding, Object obj) {
+        return toBytes(padding, obj, globalPartitioningStrategy);
     }
 
     @Override
     public byte[] toBytes(Object obj, PartitioningStrategy strategy) {
+        return toBytes(0, obj, strategy);
+    }
+
+    @Override
+    public byte[] toBytes(int padding, Object obj, PartitioningStrategy strategy) {
         checkNotNull(obj);
 
         BufferPool pool = bufferPoolThreadLocal.get();
@@ -138,7 +148,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             out.writeInt(serializer.getTypeId(), ByteOrder.BIG_ENDIAN);
 
             serializer.write(out, obj);
-            return out.toByteArray();
+            return out.toByteArray(padding);
         } catch (Throwable e) {
             throw handleSerializeException(obj, e);
         } finally {

@@ -99,6 +99,12 @@ public interface ObjectDataOutput extends DataOutput {
     byte[] toByteArray();
 
     /**
+     * @param padding padding bytes at the beginning of the byte-array.
+     * @return copy of internal byte array
+     */
+    byte[] toByteArray(int padding);
+
+    /**
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
