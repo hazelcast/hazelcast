@@ -23,13 +23,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 import java.util.Set;
 
-public class ClientReAuthOperation extends AbstractOperation implements UrgentSystemOperation {
+public class ClientReAuthOperation extends AbstractOperation implements UrgentSystemOperation, AllowedDuringPassiveState {
 
     private String clientUuid;
+    private boolean clientDisconnectOperationRun;
 
     public ClientReAuthOperation() {
     }
@@ -40,7 +42,6 @@ public class ClientReAuthOperation extends AbstractOperation implements UrgentSy
 
     @Override
     public void run() throws Exception {
-        ClientEngineImpl service = getService();
         String memberUuid = getCallerUuid();
         ClientEngineImpl engine = getService();
         Set<ClientEndpoint> endpoints = engine.getEndpointManager().getEndpoints(clientUuid);
@@ -48,17 +49,18 @@ public class ClientReAuthOperation extends AbstractOperation implements UrgentSy
             ClientPrincipal principal = new ClientPrincipal(clientUuid, memberUuid);
             endpoint.authenticated(principal);
         }
-        service.addOwnershipMapping(clientUuid, memberUuid);
+        String previousMemberUuid = engine.addOwnershipMapping(clientUuid, memberUuid);
+        clientDisconnectOperationRun = previousMemberUuid == null;
     }
 
     @Override
     public boolean returnsResponse() {
-        return false;
+        return Boolean.TRUE;
     }
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return clientDisconnectOperationRun;
     }
 
     @Override

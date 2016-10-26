@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.transaction;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCommitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -49,6 +50,7 @@ public class XATransactionCommitMessageTask
     @Override
     protected Object call() throws Exception {
         String transactionId = parameters.transactionId;
+        ClientEndpoint endpoint = getEndpoint();
         TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context with given transactionId: " + transactionId);

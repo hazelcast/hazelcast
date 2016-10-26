@@ -43,7 +43,7 @@ public class BinaryCompatibilityFileGenerator {
         }
         {
             ClientMessage clientMessage = ClientAuthenticationCodec
-                    .encodeResponse(aByte, anAddress, aString, aString, aByte, aString);
+                    .encodeResponse(aByte, anAddress, aString, aString, aByte, aString, members);
             outputStream.writeInt(clientMessage.getFrameLength());
             outputStream.write(clientMessage.buffer().byteArray(), 0, clientMessage.getFrameLength());
         }
@@ -56,7 +56,7 @@ public class BinaryCompatibilityFileGenerator {
         }
         {
             ClientMessage clientMessage = ClientAuthenticationCustomCodec
-                    .encodeResponse(aByte, anAddress, aString, aString, aByte, aString);
+                    .encodeResponse(aByte, anAddress, aString, aString, aByte, aString, members);
             outputStream.writeInt(clientMessage.getFrameLength());
             outputStream.write(clientMessage.buffer().byteArray(), 0, clientMessage.getFrameLength());
         }

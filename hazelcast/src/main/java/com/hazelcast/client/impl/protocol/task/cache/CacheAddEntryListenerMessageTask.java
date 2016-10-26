@@ -105,7 +105,7 @@ public class CacheAddEntryListenerMessageTask
 
         @Override
         public void handleEvent(Object eventObject) {
-            if (!endpoint.isAlive()) {
+            if (!cacheAddEntryListenerMessageTask.getEndpoint().isAlive()) {
                 return;
             }
             if (eventObject instanceof CacheEventSet) {

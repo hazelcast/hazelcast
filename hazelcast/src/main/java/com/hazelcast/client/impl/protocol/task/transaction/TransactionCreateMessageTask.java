@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.transaction;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionCreateCodec;
@@ -47,6 +48,7 @@ public class TransactionCreateMessageTask
 
         TransactionManagerServiceImpl transactionManager =
                 (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
+        ClientEndpoint endpoint = getEndpoint();
         TransactionContext context = transactionManager.newClientTransactionContext(options, endpoint.getUuid());
         context.beginTransaction();
         endpoint.setTransactionContext(context);

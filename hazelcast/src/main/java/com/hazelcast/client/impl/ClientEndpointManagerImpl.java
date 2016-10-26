@@ -55,6 +55,8 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     @Probe(name = "count", level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
+    private final ConcurrentMap<String, ClientEndpoint> clientEndpoints =
+            new ConcurrentHashMap<String, ClientEndpoint>();
 
     @Probe(name = "totalRegistrations", level = MANDATORY)
     private MwCounter totalRegistrations = newMwCounter();
@@ -88,13 +90,24 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         return endpoints.get(connection);
     }
 
+    public ClientEndpoint getEndpoint(String clientUuid) {
+        return clientEndpoints.get(clientUuid);
+    }
+
     @Override
     public void registerEndpoint(ClientEndpoint endpoint) {
         checkNotNull(endpoint, "endpoint can't be null");
 
         final Connection conn = endpoint.getConnection();
-        if (endpoints.putIfAbsent(conn, endpoint) != null) {
-            logger.severe("An endpoint already exists for connection:" + conn);
+        ClientEndpointImpl existingEndpoint = (ClientEndpointImpl) endpoints.put(conn, endpoint);
+        clientEndpoints.put(endpoint.getUuid(), endpoint);
+        if (existingEndpoint != null) {
+            if (existingEndpoint.isFirstConnection()) {
+                logger.severe("An endpoint (first connection) already exists for connection:" + conn);
+            } else {
+                logger.info("Changed " + conn + " as the first connection for " + endpoint);
+            }
+            ((ClientEndpointImpl) endpoint).getState(existingEndpoint);
         } else {
             totalRegistrations.inc();
         }
@@ -112,6 +125,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
 
         endpoints.remove(endpoint.getConnection());
+        clientEndpoints.remove(endpoint.getUuid());
         logger.info("Destroying " + endpoint);
         try {
             endpoint.destroy();

@@ -38,7 +38,7 @@ public class TransactionalSetSizeMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
+        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         TransactionalSet<Object> set = context.getSet(parameters.name);
         return set.size();
     }

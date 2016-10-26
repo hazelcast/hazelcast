@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEndpointManager;
+import com.hazelcast.client.impl.ClientEndpointManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
@@ -38,22 +38,21 @@ import java.security.Permission;
 import java.util.logging.Level;
 
 /**
- * Base Message task
+ * Base Message task.
  */
-public abstract class AbstractMessageTask<P>
-        implements MessageTask, SecureRequest {
+public abstract class AbstractMessageTask<P> implements MessageTask, SecureRequest {
 
     protected final ClientMessage clientMessage;
 
     protected final Connection connection;
-    protected final ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
     protected final InternalSerializationService serializationService;
     protected final ILogger logger;
-    protected final ClientEndpointManager endpointManager;
+    protected final ClientEndpointManagerImpl endpointManager;
     protected final ClientEngineImpl clientEngine;
     protected P parameters;
 
+    private String clientUuid;
     private final Node node;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -64,8 +63,11 @@ public abstract class AbstractMessageTask<P>
         this.serializationService = node.getSerializationService();
         this.connection = connection;
         this.clientEngine = node.clientEngine;
-        this.endpointManager = clientEngine.getEndpointManager();
-        this.endpoint = getEndpoint();
+        this.endpointManager = (ClientEndpointManagerImpl) clientEngine.getEndpointManager();
+        ClientEndpoint endpoint = getEndpoint();
+        if (null != endpoint) {
+            this.clientUuid = endpoint.getUuid();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -74,6 +76,13 @@ public abstract class AbstractMessageTask<P>
     }
 
     protected ClientEndpoint getEndpoint() {
+        if (null != clientUuid) {
+            ClientEndpoint endpoint = endpointManager.getEndpoint(clientUuid);
+            if (null != endpoint) {
+                return endpoint;
+            }
+        }
+
         return endpointManager.getEndpoint(connection);
     }
 
@@ -93,6 +102,7 @@ public abstract class AbstractMessageTask<P>
     @Override
     public void run() {
         try {
+            ClientEndpoint endpoint = getEndpoint();
             if (endpoint == null) {
                 handleMissingEndpoint();
             } else if (isAuthenticationMessage()) {
@@ -102,7 +112,6 @@ public abstract class AbstractMessageTask<P>
             } else {
                 initializeAndProcessMessage();
             }
-
         } catch (Throwable e) {
             handleProcessingFailure(e);
         }
@@ -116,6 +125,7 @@ public abstract class AbstractMessageTask<P>
         if (!node.getNodeExtension().isStartCompleted()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
+        ClientEndpoint endpoint = getEndpoint();
         parameters = decodeClientMessage(clientMessage);
         Credentials credentials = endpoint.getCredentials();
         interceptBefore(credentials);
@@ -126,6 +136,7 @@ public abstract class AbstractMessageTask<P>
 
     private void handleAuthenticationFailure() {
         Exception exception;
+        ClientEndpoint endpoint = getEndpoint();
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             logger.severe(message);
@@ -159,7 +170,7 @@ public abstract class AbstractMessageTask<P>
 
     protected void handleProcessingFailure(Throwable throwable) {
         logProcessingFailure(throwable);
-        if (endpoint != null) {
+        if (getEndpoint() != null) {
             sendClientMessage(throwable);
         }
     }
@@ -205,9 +216,16 @@ public abstract class AbstractMessageTask<P>
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
         resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
-        final Connection connection = endpoint.getConnection();
+        Connection endpointConnection = null;
+        ClientEndpoint endpoint = getEndpoint();
+        if (null != endpoint) {
+            endpointConnection = endpoint.getConnection();
+        }
+        if (null == endpointConnection) {
+            endpointConnection = connection;
+        }
         //TODO framing not implemented yet, should be split into frames before writing to connection
-        connection.write(resultClientMessage);
+        endpointConnection.write(resultClientMessage);
     }
 
     protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {
@@ -224,6 +242,7 @@ public abstract class AbstractMessageTask<P>
 
     public abstract String getServiceName();
 
+    @Override
     public String getDistributedObjectType() {
         return getServiceName();
     }

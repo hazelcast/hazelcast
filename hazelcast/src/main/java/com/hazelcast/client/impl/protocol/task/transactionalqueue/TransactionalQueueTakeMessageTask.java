@@ -38,7 +38,7 @@ public class TransactionalQueueTakeMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
+        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
         Object item = queue.take();
         return serializationService.toData(item);
