@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -211,7 +212,7 @@ public class ClusterJoinManager {
             }
 
             final Address target = joinRequest.getAddress();
-            if (checkClusterStateBeforeJoin(target)) {
+            if (checkClusterStateBeforeJoin(target, joinRequest.getUuid())) {
                 return;
             }
 
@@ -234,25 +235,46 @@ public class ClusterJoinManager {
         }
     }
 
-    private boolean checkClusterStateBeforeJoin(Address target) {
+    private boolean checkClusterStateBeforeJoin(Address address, String uuid) {
         ClusterState state = clusterStateManager.getState();
         if (state == ClusterState.IN_TRANSITION) {
-            logger.warning("Cluster state is in transition process. Join is not allowed for now -> "
+            logger.warning("Cluster state is in transition process. Join is not allowed until "
+                    + "transaction is completed -> "
                     + clusterStateManager.stateToString());
             return true;
         }
 
-        if (state != ClusterState.ACTIVE) {
-            if (!clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
-                String message = "Cluster state either is locked or doesn't allow new members to join -> "
-                        + clusterStateManager.stateToString();
-                logger.warning(message);
-                OperationService operationService = nodeEngine.getOperationService();
-                operationService.send(new BeforeJoinCheckFailureOperation(message), target);
+        if (state == ClusterState.ACTIVE) {
+            return false;
+        }
+
+        if (clusterService.isMemberRemovedWhileClusterIsNotActive(address)) {
+            MemberImpl memberRemovedWhileClusterIsNotActive =
+                    clusterService.getMemberRemovedWhileClusterIsNotActive(uuid);
+
+            if (memberRemovedWhileClusterIsNotActive != null
+                    && !address.equals(memberRemovedWhileClusterIsNotActive.getAddress())) {
+
+                logger.warning("Uuid " + uuid + " was being used by " + memberRemovedWhileClusterIsNotActive
+                        + " before. " + address + " is not allowed to join with a uuid which belongs to"
+                        + " a known passive member.");
+
                 return true;
             }
+
+            return false;
         }
-        return false;
+
+        if (clusterService.isMemberRemovedWhileClusterIsNotActive(uuid)) {
+            return false;
+        }
+
+        String message = "Cluster state either is locked or doesn't allow new members to join -> "
+                + clusterStateManager.stateToString();
+        logger.warning(message);
+        OperationService operationService = nodeEngine.getOperationService();
+        operationService.send(new BeforeJoinCheckFailureOperation(message), address);
+        return true;
     }
 
     private boolean authenticate(JoinRequest joinRequest) {
@@ -436,12 +458,12 @@ public class ClusterJoinManager {
     }
 
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
-        MemberImpl member = clusterService.getMember(joinMessage.getAddress());
+        Address target = joinMessage.getAddress();
+        MemberImpl member = clusterService.getMember(target);
         if (member == null) {
-            return false;
+            return checkIfUsingAnExistingMemberUuid(joinMessage);
         }
 
-        Address target = member.getAddress();
         if (joinMessage.getUuid().equals(member.getUuid())) {
             if (node.isMaster()) {
                 if (logger.isFineEnabled()) {
@@ -484,6 +506,24 @@ public class ClusterJoinManager {
             return false;
         }
         return true;
+    }
+
+    private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {
+        Member member = clusterService.getMember(joinMessage.getUuid());
+        Address target = joinMessage.getAddress();
+        if (member != null) {
+            if (node.isMaster()) {
+                String message = "There's already an existing member " + member + " with the same UUID. "
+                        + target + " is not allowed to join.";
+                logger.warning(message);
+                OperationService operationService = nodeEngine.getOperationService();
+                operationService.send(new BeforeJoinCheckFailureOperation(message), target);
+            } else {
+                sendMasterAnswer(target);
+            }
+            return true;
+        }
+        return false;
     }
 
     private void startJoin() {
