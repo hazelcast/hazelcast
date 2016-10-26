@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.HazelcastInstance;
-
+import com.hazelcast.jet2.Partitioner;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,6 +29,12 @@ public class StreamContext {
     private final HazelcastInstance instance;
     private final List<Runnable> streamListeners = new ArrayList<>();
     private final Set<Class> classes = new HashSet<>();
+    private Partitioner partitioner = new Partitioner() {
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return instance.getPartitionService().getPartition(item).getPartitionId() % numPartitions;
+        }
+    };
 
     public StreamContext(HazelcastInstance instance) {
         this.instance = instance;
@@ -56,5 +62,9 @@ public class StreamContext {
 
     public Set<Class> getClasses() {
         return Collections.unmodifiableSet(classes);
+    }
+
+    public Partitioner getPartitioner() {
+        return partitioner;
     }
 }

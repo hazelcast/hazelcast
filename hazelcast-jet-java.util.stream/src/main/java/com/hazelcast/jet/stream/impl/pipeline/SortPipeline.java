@@ -16,24 +16,15 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.SourcePipeline;
-import com.hazelcast.jet.stream.impl.processor.EmptyProcessor;
 import com.hazelcast.jet.stream.impl.processor.SortProcessor;
-
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Vertex;
 import java.util.Comparator;
 
-import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
@@ -45,30 +36,14 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
-        boolean isFirstVertex = upstream instanceof SourcePipeline;
-        Distributed.Function<Pair, T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
-        Vertex vertex = vertexBuilder(SortProcessor.class)
-                .name("sorter")
-                .addToDAG(dag)
-                .args(fromPairMapper, toPairMapper, comparator)
-                .taskCount(1)
-                .build();
+    public Vertex buildDAG(DAG dag) {
+        Vertex sorter = new Vertex("sorter-" + randomName(), () -> new SortProcessor<>(comparator)).parallelism(1);
+        dag.addVertex(sorter);
+        Vertex previous = upstream.buildDAG(dag);
 
-        Vertex previous;
-        if (isFirstVertex) {
-            Vertex passthrough = vertexBuilder(EmptyProcessor.class)
-                    .name("passthrough")
-                    .addToDAG(dag)
-                    .build();
-            previous = this.upstream.buildDAG(dag, passthrough, toPairMapper());
-        } else {
-            previous = this.upstream.buildDAG(dag, vertex, toPairMapper());
-        }
+        dag.addEdge(newEdge(previous, sorter));
+//                .distributed(singlePartition(randomName())));
 
-        dag.addEdge(newEdge(previous, vertex)
-                .distributed(singlePartition(randomName())));
-
-        return vertex;
+        return sorter;
     }
 }

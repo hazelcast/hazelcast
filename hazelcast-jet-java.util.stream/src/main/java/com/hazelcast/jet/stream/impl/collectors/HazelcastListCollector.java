@@ -18,11 +18,8 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.sink.ListSink;
-import com.hazelcast.jet.Sink;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.impl.IListWriter;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
@@ -44,14 +41,19 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ILi
         return instance.getList(listName);
     }
 
-
-    protected <U extends T> Distributed.Function<U, Pair> toPairMapper() {
-        return v -> new JetPair<>(0, v);
+    @Override
+    protected ProcessorSupplier getConsumer() {
+        return IListWriter.supplier(listName);
     }
 
     @Override
-    protected Sink getSinkTap() {
-        return new ListSink(listName);
+    protected int parallelism() {
+        return 1;
+    }
+
+    @Override
+    protected String getName() {
+        return listName;
     }
 
 }

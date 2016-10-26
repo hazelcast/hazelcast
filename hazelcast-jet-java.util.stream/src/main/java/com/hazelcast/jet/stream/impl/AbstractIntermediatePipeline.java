@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 public abstract class AbstractIntermediatePipeline<E_IN, E_OUT> extends AbstractPipeline<E_OUT> {
@@ -28,10 +25,6 @@ public abstract class AbstractIntermediatePipeline<E_IN, E_OUT> extends Abstract
     public AbstractIntermediatePipeline(StreamContext context, boolean isOrdered, Pipeline<E_IN> upstream) {
         super(context, isOrdered);
         this.upstream = upstream;
-    }
-
-    protected Distributed.Function<E_IN, Pair> toPairMapper() {
-        return v -> new JetPair<>(v, v);
     }
 
 }

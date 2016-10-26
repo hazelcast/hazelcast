@@ -20,28 +20,20 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.Job;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.JetEngine;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Job;
+import com.hazelcast.jet2.Vertex;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.util.UuidUtil;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
-import static com.hazelcast.jet.impl.util.JetUtil.uncheckedGet;
 
 public final class StreamUtil {
 
@@ -62,37 +54,21 @@ public final class StreamUtil {
 
     public static void executeJob(StreamContext context, DAG dag) {
         Set<Class> classes = context.getClasses();
-        JobConfig config = new JobConfig();
+        JetEngineConfig config = new JetEngineConfig();
         config.addClass(classes.toArray(new Class[classes.size()]));
-        Job job = JetEngine.getJob(context.getHazelcastInstance(), randomName(), dag, config);
+
+        JetEngine jetEngine = JetEngine.get(context.getHazelcastInstance(), randomName(), config);
+        Job job = jetEngine.newJob(dag);
         try {
-            uncheckedGet(job.execute());
+            job.execute();
             context.getStreamListeners().forEach(Runnable::run);
         } finally {
-            job.destroy();
+            jetEngine.destroy();
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <E_OUT> Distributed.Function<Pair, E_OUT> defaultFromPairMapper() {
-        return pair -> (E_OUT) pair.getValue();
-    }
-
-    public static <E_OUT> Distributed.Function<Pair, E_OUT>
-    getPairMapper(Pipeline<E_OUT> upstream, Distributed.Function<Pair, E_OUT> mapper) {
-        if (upstream instanceof SourcePipeline) {
-            SourcePipeline<E_OUT> source = (SourcePipeline<E_OUT>) upstream;
-            return source.fromPairMapper();
-        }
-        return mapper;
     }
 
     public static Edge newEdge(Vertex from, Vertex to) {
-        return new Edge(randomName(), from, to);
-    }
-
-    public static VertexBuilder vertexBuilder(Class<? extends Processor> clazz) {
-        return new VertexBuilder(clazz);
+        return new Edge(from, to);
     }
 
     public static void setPrivateField(Object instance, Class<?> clazz, String name, Object val)
@@ -100,48 +76,6 @@ public final class StreamUtil {
         Field field = clazz.getDeclaredField(name);
         field.setAccessible(true);
         field.set(instance, val);
-    }
-
-    public static class VertexBuilder {
-
-        private final Class<? extends Processor> clazz;
-        private final List<Object> args = new ArrayList<>();
-        private Integer taskCount;
-        private String name;
-        private DAG dag;
-
-        public VertexBuilder(Class<? extends Processor> clazz) {
-            this.clazz = clazz;
-        }
-
-        public VertexBuilder name(String name) {
-            this.name = name + "-" + randomName();
-            return this;
-        }
-
-        public VertexBuilder args(Object... args) {
-            Collections.addAll(this.args, args);
-            return this;
-        }
-
-        public VertexBuilder taskCount(int taskCount) {
-            this.taskCount = taskCount;
-            return this;
-        }
-
-        public VertexBuilder addToDAG(DAG dag) {
-            this.dag = dag;
-            return this;
-        }
-
-        public Vertex build() {
-            Vertex vertex = new Vertex(name == null ? randomName() : name, clazz, args.toArray())
-                    .parallelism(taskCount == null ? Runtime.getRuntime().availableProcessors() : taskCount);
-            if (dag != null) {
-                dag.addVertex(vertex);
-            }
-            return vertex;
-        }
     }
 
     public static HazelcastInstance getHazelcastInstance(DistributedObject object) {

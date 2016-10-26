@@ -23,14 +23,13 @@ import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 public class IMapReader extends AbstractProducer {
 
@@ -63,7 +62,7 @@ public class IMapReader extends AbstractProducer {
     @Override
     public boolean complete() {
         do {
-            Iterator currIterator = iteratorCursor.value();
+            Iterator<Map.Entry> currIterator = iteratorCursor.value();
             if (!currIterator.hasNext()) {
                 iteratorCursor.remove();
                 continue;

@@ -17,20 +17,19 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.sink.MapSink;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Vertex;
+import com.hazelcast.jet2.impl.IMapWriter;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
+import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector<T, K, V> {
 
@@ -45,7 +44,6 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
     public HazelcastMergingMapCollector(String mapName, Function<? super T, ? extends K> keyMapper,
                                         Function<? super T, ? extends V> valueMapper, BinaryOperator<V> mergeFunction) {
         super(mapName, keyMapper, valueMapper);
-
         this.mergeFunction = mergeFunction;
     }
 
@@ -53,28 +51,20 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
     public IMap<K, V> collect(StreamContext context, Pipeline<? extends T> upstream) {
         IMap<K, V> target = getTarget(context.getHazelcastInstance());
         DAG dag = new DAG();
-        Vertex previous = upstream.buildDAG(dag, null, toPairMapper());
+        Vertex previous = upstream.buildDAG(dag);
 
-        Vertex merger = vertexBuilder(MergeProcessor.class)
-                .name("accumulator")
-                .addToDAG(dag)
-                .args(mergeFunction)
-                .build();
+        Vertex merger = new Vertex("accumulator-" + randomName(), () -> new MergeProcessor<T, K, V>(keyMapper,
+                valueMapper, mergeFunction));
+        dag.addVertex(merger);
+        dag.addEdge(newEdge(previous, merger).partitioned(context.getPartitioner()));
 
-        dag.addEdge(newEdge(previous, merger)
-                .partitioned());
+        Vertex combiner = new Vertex("combiner-" + randomName(), () -> new MergeProcessor<T, K, V>(null, null,
+                mergeFunction));
+        dag.addVertex(combiner);
+        dag.addEdge(newEdge(merger, combiner).distributed().partitioned(context.getPartitioner()));
 
-        Vertex combiner = vertexBuilder(MergeProcessor.class)
-                .name("merger")
-                .addToDAG(dag)
-                .args(mergeFunction)
-                .build();
-
-        dag.addEdge(newEdge(merger, combiner)
-                .distributed()
-                .partitioned());
-
-        combiner.addSink(new MapSink(mapName));
+        Vertex writer = new Vertex(randomName(), IMapWriter.supplier(mapName));
+        dag.addVertex(writer).addEdge(newEdge(combiner, writer));
         executeJob(context, dag);
         return target;
     }
