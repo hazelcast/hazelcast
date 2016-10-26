@@ -225,6 +225,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                     @Override
                     public void run() {
                         try {
+                            client.getNearCacheManager().clearAllNearCaches();
                             connectToCluster();
                         } catch (Exception e) {
                             logger.warning("Could not re-connect to cluster shutting down the client", e);
