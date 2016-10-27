@@ -24,24 +24,24 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelTest.class})
 public class LatencyTrackingCacheWriterTest extends HazelcastTestSupport {
 
-    private static final String NAME = "somecache";
+    private static final String NAME = "someCache";
 
-    private HazelcastInstance hz;
     private StoreLatencyPlugin plugin;
-    private CacheWriter delegate;
-    private LatencyTrackingCacheWriter cacheWriter;
+    private CacheWriter<Integer, String> delegate;
+    private LatencyTrackingCacheWriter<Integer, String> cacheWriter;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setup() {
-        hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(CacheWriter.class);
-        cacheWriter = new LatencyTrackingCacheWriter(delegate, plugin, NAME);
+        cacheWriter = new LatencyTrackingCacheWriter<Integer, String>(delegate, plugin, NAME);
     }
 
     @Test
     public void write() {
-        Cache.Entry entry = new CacheEntry(1, "peter");
+        Cache.Entry<Integer, String> entry = new CacheEntry<Integer, String>(1, "peter");
         cacheWriter.write(entry);
 
         verify(delegate).write(entry);
@@ -58,7 +58,26 @@ public class LatencyTrackingCacheWriterTest extends HazelcastTestSupport {
         assertProbeCalledOnce("writeAll");
     }
 
-    public void assertProbeCalledOnce(String methodName) {
+    @Test
+    public void delete() {
+        Cache.Entry<Integer, String> entry = new CacheEntry<Integer, String>(1, "peter");
+        cacheWriter.delete(entry);
+
+        verify(delegate).delete(entry);
+        assertProbeCalledOnce("delete");
+    }
+
+    @Test
+    public void deleteAll() {
+        Collection c = new LinkedList();
+
+        cacheWriter.deleteAll(c);
+
+        verify(delegate).deleteAll(c);
+        assertProbeCalledOnce("deleteAll");
+    }
+
+    private void assertProbeCalledOnce(String methodName) {
         assertEquals(1, plugin.count(LatencyTrackingCacheWriter.KEY, NAME, methodName));
     }
 }

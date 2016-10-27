@@ -21,12 +21,10 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.omg.CORBA.INTERNAL;
 
 import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
@@ -101,7 +99,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
      * Test for issue: https://github.com/hazelcast/hazelcast/issues/6983
      */
     @Test
-    public void ownerStateShouldBeUpdatedAfterMigration() throws ExecutionException, InterruptedException {
+    public void ownerStateShouldBeUpdatedAfterMigration() throws Exception {
         HazelcastCacheManager hzCacheManager = (HazelcastCacheManager) cacheManager;
 
         HazelcastInstance instance1 = hzCacheManager.getHazelcastInstance();
@@ -112,7 +110,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
 
         String cacheName = randomName();
         CacheConfig cacheConfig = new CacheConfig().setName(cacheName);
-        Cache cache = cacheManager.createCache(cacheName, cacheConfig);
+        Cache<String, String> cache = cacheManager.createCache(cacheName, cacheConfig);
         String fullCacheName = hzCacheManager.getCacheNameWithPrefix(cacheName);
 
         for (int i = 0; i < partitionCount; i++) {
@@ -142,14 +140,13 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         }
     }
 
-    private void verifyPrimaryState(Node node, String fullCacheName, int partitionId, boolean expectedState)
-            throws ExecutionException, InterruptedException {
+    private void verifyPrimaryState(Node node, String fullCacheName, int partitionId, boolean expectedState) throws Exception {
         NodeEngineImpl nodeEngine = node.getNodeEngine();
         InternalOperationService operationService = nodeEngine.getOperationService();
-        Future<Boolean> isPrimaryOnNode =
-                operationService.invokeOnTarget(ICacheService.SERVICE_NAME,
-                        createCacheOwnerStateGetterOperation(fullCacheName, partitionId),
-                        node.getThisAddress());
+        Future<Boolean> isPrimaryOnNode = operationService.invokeOnTarget(
+                ICacheService.SERVICE_NAME,
+                createCacheOwnerStateGetterOperation(fullCacheName, partitionId),
+                node.getThisAddress());
         assertEquals(expectedState, isPrimaryOnNode.get());
     }
 
@@ -160,8 +157,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         return operation;
     }
 
-    static class CachePrimaryStateGetterOperation
-            extends AbstractNamedOperation {
+    static class CachePrimaryStateGetterOperation extends AbstractNamedOperation {
 
         private boolean isPrimary;
 
@@ -215,5 +211,4 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
             }
         }
     }
-
 }
