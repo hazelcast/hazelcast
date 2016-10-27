@@ -27,7 +27,7 @@ public class GroupingCombinerProcessor<T, K, V, A, R> extends AbstractProcessor 
 
     private final Map<K, A> cache = new HashMap<>();
     private final Collector<V, A, R> collector;
-    private Iterator<Map.Entry<K, A>> finalizationIterator;
+    private Iterator<Map.Entry<K, A>> iterator;
 
     public GroupingCombinerProcessor(Collector<V, A, R> collector) {
         this.collector = collector;
@@ -48,16 +48,16 @@ public class GroupingCombinerProcessor<T, K, V, A, R> extends AbstractProcessor 
 
     @Override
     public boolean complete() {
-        if (finalizationIterator == null) {
-            finalizationIterator = cache.entrySet().iterator();
+        if (iterator == null) {
+            iterator = cache.entrySet().iterator();
         }
-        while (finalizationIterator.hasNext() && !getOutbox().isHighWater()) {
-            Map.Entry<K, A> next = finalizationIterator.next();
+        while (iterator.hasNext() && !getOutbox().isHighWater()) {
+            Map.Entry<K, A> next = iterator.next();
             K key = next.getKey();
             R value = collector.finisher().apply(next.getValue());
             emit(new AbstractMap.SimpleImmutableEntry<>(key, value));
         }
-        return !finalizationIterator.hasNext();
+        return !iterator.hasNext();
     }
 
 }

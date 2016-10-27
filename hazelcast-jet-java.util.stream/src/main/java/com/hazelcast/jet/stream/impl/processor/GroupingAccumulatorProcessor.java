@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet2.impl.AbstractProcessor;
-import java.util.AbstractMap;
+
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -30,7 +30,7 @@ public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcess
     private final Map<K, A> cache = new HashMap<>();
     private final Function<? super T, ? extends K> classifier;
     private final Collector<V, A, R> collector;
-    private Iterator<Map.Entry<K, A>> finalizationIterator;
+    private Iterator<Map.Entry<K, A>> iterator;
 
     public GroupingAccumulatorProcessor(Function<? super T, ? extends K> classifier, Collector<V, A, R> collector) {
         this.classifier = classifier;
@@ -39,7 +39,7 @@ public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcess
 
     @Override
     protected boolean process(int ordinal, Object item) {
-        Map.Entry<K, V> entry = toEntryMapper().apply((T) item);
+        Map.Entry<K, V> entry = new SimpleImmutableEntry<>(classifier.apply((T) item), (V) item);
         A value = this.cache.get(entry.getKey());
         if (value == null) {
             value = collector.supplier().get();
@@ -51,18 +51,14 @@ public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcess
 
     @Override
     public boolean complete() {
-        if (finalizationIterator == null) {
-            finalizationIterator = cache.entrySet().iterator();
+        if (iterator == null) {
+            iterator = cache.entrySet().iterator();
         }
-        while (finalizationIterator.hasNext() && !getOutbox().isHighWater()) {
-            Map.Entry<K, A> next = finalizationIterator.next();
-            emit(new AbstractMap.SimpleImmutableEntry<>(next.getKey(), next.getValue()));
+        while (iterator.hasNext() && !getOutbox().isHighWater()) {
+            Map.Entry<K, A> next = iterator.next();
+            emit(new SimpleImmutableEntry<>(next.getKey(), next.getValue()));
         }
-        return !finalizationIterator.hasNext();
-    }
-
-    private <U extends T> Distributed.Function<U, Map.Entry> toEntryMapper() {
-        return v -> new AbstractMap.SimpleImmutableEntry<>(classifier.apply(v), v);
+        return !iterator.hasNext();
     }
 
 }

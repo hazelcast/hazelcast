@@ -35,19 +35,18 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
     @Override
     public Vertex buildDAG(DAG dag) {
-        Vertex first = new Vertex(randomName(), () -> new LimitProcessor(limit)).parallelism(1);
-        dag.addVertex(first);
-
         Vertex previous = upstream.buildDAG(dag);
-        dag.addEdge(new Edge(previous, first));
+        Vertex first = new Vertex(randomName(), () -> new LimitProcessor(limit)).parallelism(1);
+        dag.addVertex(first)
+                .addEdge(new Edge(previous, first));
 
         if (upstream.isOrdered()) {
             return first;
         }
 
         Vertex second = new Vertex(randomName(), () -> new LimitProcessor(limit)).parallelism(1);
-        dag.addVertex(second);
-        dag.addEdge(new Edge(first, second));
+        dag.addVertex(second)
+                .addEdge(new Edge(first, second));
 //                .distributed(singlePartition(randomName())));
 
         return second;

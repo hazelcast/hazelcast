@@ -35,12 +35,12 @@ public class TransformProcessor extends AbstractProcessor {
 
     @Override
     protected boolean process(int ordinal, Object item) {
-        processInputs(item, 0);
+        processItem(item, 0);
         return true;
     }
 
-    private void processInputs(Object item, int startIndex) {
-        for (int i = startIndex; i < operations.length; i++) {
+    private void processItem(Object item, int operatorIndex) {
+        for (int i = operatorIndex; i < operations.length; i++) {
             TransformOperation operation = operations[i];
             switch (operation.getType()) {
                 case FILTER:
@@ -55,7 +55,7 @@ public class TransformProcessor extends AbstractProcessor {
                     Stream stream = (Stream) ((Function) operation.getFunction()).apply(item);
                     Iterator iterator = stream.iterator();
                     while (iterator.hasNext()) {
-                        processInputs(iterator.next(), i + 1);
+                        processItem(iterator.next(), i + 1);
                     }
                     stream.close();
                     return;

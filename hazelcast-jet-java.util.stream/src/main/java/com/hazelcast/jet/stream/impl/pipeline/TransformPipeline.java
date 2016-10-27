@@ -24,6 +24,7 @@ import com.hazelcast.jet.stream.impl.processor.TransformProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.Vertex;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,16 +43,14 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
 
     @Override
     public Vertex buildDAG(DAG dag) {
+        Vertex previous = upstream.buildDAG(dag);
+
         Vertex transform = new Vertex("transform-" + randomName(), () -> new TransformProcessor(operations));
         if (upstream.isOrdered()) {
             transform.parallelism(1);
         }
-        dag.addVertex(transform);
-
-        Vertex previous = upstream.buildDAG(dag);
-        if (previous != transform) {
-            dag.addEdge(new Edge(previous, transform));
-        }
+        dag.addVertex(transform)
+                .addEdge(new Edge(previous, transform));
 
         return transform;
     }

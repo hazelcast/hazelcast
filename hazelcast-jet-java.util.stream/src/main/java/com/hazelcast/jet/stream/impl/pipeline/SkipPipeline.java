@@ -35,10 +35,9 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
     @Override
     public Vertex buildDAG(DAG dag) {
+        Vertex previous = upstream.buildDAG(dag);
         Vertex skipVertex = new Vertex("skip-" + randomName(), () -> new SkipProcessor(skip)).parallelism(1);
         dag.addVertex(skipVertex);
-        Vertex previous = upstream.buildDAG(dag);
-
 
         Edge edge = new Edge(previous, skipVertex);
 //

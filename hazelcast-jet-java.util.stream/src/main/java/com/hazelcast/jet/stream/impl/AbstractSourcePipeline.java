@@ -18,11 +18,12 @@ package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
-public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> implements SourcePipeline<E_OUT> {
+public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> {
 
     public AbstractSourcePipeline(StreamContext context) {
         super(context);
@@ -37,4 +38,6 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
         dag.addVertex(vertex);
         return vertex;
     }
+
+    public abstract ProcessorSupplier getProducer();
 }

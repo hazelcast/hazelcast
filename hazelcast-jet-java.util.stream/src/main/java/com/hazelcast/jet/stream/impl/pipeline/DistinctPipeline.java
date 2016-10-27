@@ -34,28 +34,23 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     @Override
     public Vertex buildDAG(DAG dag) {
         if (upstream.isOrdered()) {
-            Vertex distinct = new Vertex(randomName(), DistinctProcessor::new).parallelism(1);
-            dag.addVertex(distinct);
             Vertex previous = upstream.buildDAG(dag);
-            if (previous != distinct) {
-                dag.addEdge(new Edge(previous, distinct));
-            }
+            Vertex distinct = new Vertex(randomName(), DistinctProcessor::new).parallelism(1);
+            dag.addVertex(distinct)
+                    .addEdge(new Edge(previous, distinct));
+
             return distinct;
         }
 
-        Vertex distinct = new Vertex(randomName(), DistinctProcessor::new);
-        dag.addVertex(distinct);
-
         Vertex previous = upstream.buildDAG(dag);
+        Vertex distinct = new Vertex("distinct-" + randomName(), DistinctProcessor::new);
+        Vertex combiner = new Vertex("distinct-" + randomName(), DistinctProcessor::new);
 
-        if (previous != distinct) {
-            dag.addEdge(new Edge(previous, distinct).partitioned(context.getPartitioner()));
-        }
-
-        Vertex combiner = new Vertex(randomName(), DistinctProcessor::new);
-        dag.addVertex(combiner);
-
-        dag.addEdge(new Edge(distinct, combiner).partitioned(context.getPartitioner()));
+        dag
+                .addVertex(distinct)
+                .addVertex(combiner)
+                .addEdge(new Edge(previous, distinct).partitioned(context.getPartitioner()))
+                .addEdge(new Edge(distinct, combiner).partitioned(context.getPartitioner()));
 
         return combiner;
     }
