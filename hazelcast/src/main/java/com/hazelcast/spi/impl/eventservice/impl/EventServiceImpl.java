@@ -59,6 +59,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.nio.Packet.FLAG_EVENT;
+import static com.hazelcast.nio.PacketUtil.toBytePacket;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -398,10 +400,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
                 ignore(ignored);
             }
         } else {
-            Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey);
-            packet.setFlag(Packet.FLAG_EVENT);
+            byte[] packet = toBytePacket(serializationService, eventEnvelope, FLAG_EVENT, -1);
 
-            if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
+            if (!nodeEngine.getNode().getConnectionManager().transmit(packet, false, subscriber)) {
                 if (nodeEngine.isRunning()) {
                     logFailure("Failed to send event packet to: %s , connection might not alive.", subscriber);
                 }

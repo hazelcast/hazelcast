@@ -53,7 +53,7 @@ class DroppingConnection implements Connection {
     }
 
     @Override
-    public boolean write(OutboundFrame frame) {
+    public boolean write(byte[] frame, boolean urgent) {
         return true;
     }
 

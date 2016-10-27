@@ -398,9 +398,14 @@ public class TextCommandServiceImpl implements TextCommandService {
                             return true;
                         }
 
+//                        @Override
+//                        public boolean writeTo(ByteBuffer dst) {
+//                            return true;
+//                        }
+
                         @Override
-                        public boolean writeTo(ByteBuffer dst) {
-                            return true;
+                        public byte[] toBytes() {
+                            throw new UnsupportedOperationException();
                         }
                     });
                     //noinspection WaitNotInLoop

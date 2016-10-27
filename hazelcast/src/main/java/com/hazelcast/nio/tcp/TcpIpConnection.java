@@ -23,7 +23,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.OutboundFrame;
 
 import java.io.EOFException;
 import java.net.InetAddress;
@@ -210,14 +209,14 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
     }
 
     @Override
-    public boolean write(OutboundFrame frame) {
+    public boolean write(byte[] frame, boolean urgent) {
         if (!alive.get()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + frame);
             }
             return false;
         }
-        socketWriter.write(frame);
+        socketWriter.write(frame, urgent);
         return true;
     }
 

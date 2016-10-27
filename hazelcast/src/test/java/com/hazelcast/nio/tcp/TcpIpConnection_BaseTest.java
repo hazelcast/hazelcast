@@ -1,6 +1,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketUtil;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.AssertTask;
 import org.junit.Before;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.nio.PacketUtil.toBytePacket;
 import static java.lang.System.currentTimeMillis;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -45,9 +47,9 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
     public void write_whenNonUrgent() {
         TcpIpConnection c = connect(connManagerA, addressB);
 
-        Packet packet = new Packet(serializationService.toBytes("foo"));
+        final byte[] packet = toBytePacket(serializationService, "foo", 0, -1);
 
-        boolean result = c.write(packet);
+        boolean result = c.write(packet, false);
 
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
@@ -58,17 +60,16 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         });
 
         Packet found = packetsB.get(0);
-        assertEquals(packet, found);
+        assertEquals(PacketUtil.toPacket(packet), found);
     }
 
     @Test
     public void write_whenUrgent() {
         TcpIpConnection c = connect(connManagerA, addressB);
 
-        Packet packet = new Packet(serializationService.toBytes("foo"));
-        packet.setFlag(Packet.FLAG_URGENT);
+        final byte[] packet = toBytePacket(serializationService, "foo", Packet.FLAG_URGENT, -1);
 
-        boolean result = c.write(packet);
+        boolean result = c.write(packet, true);
 
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
@@ -79,7 +80,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         });
 
         Packet found = packetsB.get(0);
-        assertEquals(packet, found);
+        assertEquals(PacketUtil.toPacket(packet), found);
     }
 
     @Test
@@ -90,9 +91,9 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         // we need this so we can determine the lastWriteTime got updated
         sleepSeconds(LAST_READ_WRITE_SLEEP_SECONDS);
 
-        Packet packet = new Packet(serializationService.toBytes("foo"));
+        final byte[] packet = toBytePacket(serializationService, "foo", 0, -1);
 
-        connAB.write(packet);
+        connAB.write(packet, false);
 
         // wait for the packet to get written.
         assertTrueEventually(new AssertTask() {
@@ -135,9 +136,9 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         // we need this so we can determine the lastReadTime got updated
         sleepSeconds(LAST_READ_WRITE_SLEEP_SECONDS);
 
-        Packet packet = new Packet(serializationService.toBytes("foo"));
+        final byte[] packet = toBytePacket(serializationService, "foo", 0, -1);
 
-        connAB.write(packet);
+        connAB.write(packet, false);
 
         // wait for the packet to get read.
         assertTrueEventually(new AssertTask() {
@@ -174,9 +175,9 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         TcpIpConnection c = connect(connManagerA, addressB);
         c.close(null, null);
 
-        Packet packet = new Packet(serializationService.toBytes("foo"));
+        final byte[] packet = toBytePacket(serializationService, "foo", 0, -1);
 
-        boolean result = c.write(packet);
+        boolean result = c.write(packet, false);
 
         assertFalse(result);
     }

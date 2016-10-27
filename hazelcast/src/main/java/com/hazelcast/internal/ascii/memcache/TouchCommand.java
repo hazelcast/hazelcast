@@ -36,15 +36,20 @@ public class TouchCommand extends AbstractTextCommand {
     }
 
     @Override
-    public boolean writeTo(ByteBuffer dst) {
-        if (response == null) {
-            response = ByteBuffer.wrap(TextCommandConstants.STORED);
-        }
-        while (dst.hasRemaining() && response.hasRemaining()) {
-            dst.put(response.get());
-        }
-        return !response.hasRemaining();
+    public byte[] toBytes() {
+        return TextCommandConstants.STORED;
     }
+//
+//    @Override
+//    public boolean writeTo(ByteBuffer dst) {
+//        if (response == null) {
+//            response = ByteBuffer.wrap(TextCommandConstants.STORED);
+//        }
+//        while (dst.hasRemaining() && response.hasRemaining()) {
+//            dst.put(response.get());
+//        }
+//        return !response.hasRemaining();
+//    }
 
     @Override
     public boolean readFrom(ByteBuffer src) {

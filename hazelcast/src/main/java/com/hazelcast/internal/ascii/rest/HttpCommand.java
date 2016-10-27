@@ -22,7 +22,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 @SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT"})
@@ -121,10 +120,20 @@ public abstract class HttpCommand extends AbstractTextCommand {
     }
 
     @Override
-    public boolean writeTo(ByteBuffer dst) {
-        copyToHeapBuffer(response, dst);
-        return !response.hasRemaining();
+    public byte[] toBytes() {
+        return response.array();
     }
+
+    @Override
+    public boolean readFrom(ByteBuffer src) {
+        return false;
+    }
+//
+//    @Override
+//    public boolean writeTo(ByteBuffer dst) {
+//        copyToHeapBuffer(response, dst);
+//        return !response.hasRemaining();
+//    }
 
     @Override
     public String toString() {

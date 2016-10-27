@@ -36,7 +36,7 @@ public interface TextCommand extends OutboundFrame {
 
     boolean shouldReply();
 
-    boolean readFrom(ByteBuffer src);
+    byte[] toBytes();
 
-    boolean writeTo(ByteBuffer dst);
+    boolean readFrom(ByteBuffer src);
 }

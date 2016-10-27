@@ -22,7 +22,7 @@ import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 import java.nio.ByteBuffer;
 
 public class SimpleCommand extends AbstractTextCommand {
-    private ByteBuffer response;
+    private byte[] response;
 
     public SimpleCommand(TextCommandType type) {
         super(type);
@@ -32,16 +32,22 @@ public class SimpleCommand extends AbstractTextCommand {
         return true;
     }
 
-    public void setResponse(byte[] value) {
-        this.response = ByteBuffer.wrap(value);
+    public void setResponse(byte[] response) {
+        this.response = response;
     }
 
-    public boolean writeTo(ByteBuffer dst) {
-        while (dst.hasRemaining() && response.hasRemaining()) {
-            dst.put(response.get());
-        }
-        return !response.hasRemaining();
+    @Override
+    public byte[] toBytes() {
+        return response;
     }
+
+    //
+//    public boolean writeTo(ByteBuffer dst) {
+//        while (dst.hasRemaining() && response.hasRemaining()) {
+//            dst.put(response.get());
+//        }
+//        return !response.hasRemaining();
+//    }
 
     @Override
     public String toString() {

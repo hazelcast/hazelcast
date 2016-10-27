@@ -30,11 +30,16 @@ public class VersionCommand extends AbstractTextCommand {
     protected VersionCommand(TextCommandConstants.TextCommandType type) {
         super(type);
     }
+//
+//    @Override
+//    public boolean writeTo(ByteBuffer dst) {
+//        dst.put(VERSION);
+//        return true;
+//    }
 
     @Override
-    public boolean writeTo(ByteBuffer dst) {
-        dst.put(VERSION);
-        return true;
+    public byte[] toBytes() {
+        return VERSION;
     }
 
     @Override

@@ -65,6 +65,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.nio.PacketUtil.toBytePacket;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
@@ -413,21 +414,16 @@ public final class OperationServiceImpl implements InternalOperationService, Met
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
 
-        byte[] bytes = serializationService.toBytes(op);
-        int partitionId = op.getPartitionId();
-        Packet packet = new Packet(bytes, partitionId)
-                .setFlag(FLAG_OP);
-
+        int flags = FLAG_OP;
         if (op.isUrgent()) {
-            packet.setFlag(FLAG_URGENT);
+            flags = flags | FLAG_URGENT;
         }
 
+        byte[] packet = toBytePacket(serializationService, op, flags, op.getPartitionId());
         ConnectionManager connectionManager = node.getConnectionManager();
         Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
+        return connectionManager.transmit(packet, op.isUrgent(), connection);
     }
-
-
 
     public void onMemberLeft(MemberImpl member) {
         invocationMonitor.onMemberLeft(member);

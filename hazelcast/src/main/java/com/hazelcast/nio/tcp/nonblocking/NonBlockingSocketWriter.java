@@ -53,13 +53,12 @@ public final class NonBlockingSocketWriter
 
     private static final long TIMEOUT = 3;
 
-
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
-    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public final Queue writeQueue = new ConcurrentLinkedQueue();
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
-    public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public final Queue urgentWriteQueue = new ConcurrentLinkedQueue();
     private final SocketWriterInitializer initializer;
 
     private ByteBuffer outputBuffer;
@@ -73,7 +72,8 @@ public final class NonBlockingSocketWriter
     private final SwCounter priorityFramesWritten = newSwCounter();
     private WriteHandler writeHandler;
 
-    private volatile OutboundFrame currentFrame;
+    private volatile byte[] currentFrame;
+    private int position;
     private volatile long lastWriteTime;
 
     // this field will be accessed by the NonBlockingIOThread or
@@ -166,20 +166,25 @@ public final class NonBlockingSocketWriter
     }
 
     @Override
-    public void write(OutboundFrame frame) {
-        if (frame.isUrgent()) {
-            urgentWriteQueue.offer(frame);
+    public void write(byte[] bytes, boolean urgent) {
+        if (urgent) {
+            urgentWriteQueue.offer(bytes);
         } else {
-            writeQueue.offer(frame);
+            writeQueue.offer(bytes);
         }
 
         schedule();
     }
 
-    private OutboundFrame poll() {
+    private void writeTask(Task task) {
+        urgentWriteQueue.offer(task);
+        schedule();
+    }
+
+    private byte[] poll() {
         for (; ; ) {
             boolean urgent = true;
-            OutboundFrame frame = urgentWriteQueue.poll();
+            Object frame = urgentWriteQueue.poll();
 
             if (frame == null) {
                 urgent = false;
@@ -190,9 +195,9 @@ public final class NonBlockingSocketWriter
                 return null;
             }
 
-            if (frame.getClass() == TaskFrame.class) {
-                TaskFrame taskFrame = (TaskFrame) frame;
-                taskFrame.task.run();
+            if (frame.getClass() == Task.class) {
+                Task task = (Task) frame;
+                task.task.run();
                 continue;
             }
 
@@ -202,7 +207,7 @@ public final class NonBlockingSocketWriter
                 normalFramesWritten.inc();
             }
 
-            return frame;
+            return (byte[]) frame;
         }
     }
 
@@ -365,14 +370,35 @@ public final class NonBlockingSocketWriter
                 }
             }
 
-            // Lets write the currentFrame to the outputBuffer.
-            if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
-                // We are done for this round because not all data of the current frame fits in the outputBuffer
+            // the number of bytes that can be written to the bb.
+            int bytesWritable = outputBuffer.remaining();
+
+            // the number of bytes that need to be written.
+            int bytesNeeded = currentFrame.length - position;
+
+            int bytesWrite;
+            boolean done;
+            if (bytesWritable >= bytesNeeded) {
+                // All bytes for the value are available.
+                bytesWrite = bytesNeeded;
+                done = true;
+            } else {
+                // Not all bytes for the value are available. So lets write as much as is available.
+                bytesWrite = bytesWritable;
+                done = false;
+            }
+
+            outputBuffer.put(currentFrame, position, bytesWrite);
+            position += bytesWrite;
+
+            if (!done) {
                 return;
             }
 
+
             // The current frame has been written completely. So lets null it and lets try to write another frame.
             currentFrame = null;
+            position = 0;
         }
     }
 
@@ -391,13 +417,13 @@ public final class NonBlockingSocketWriter
         urgentWriteQueue.clear();
 
         CloseTask closeTask = new CloseTask();
-        write(new TaskFrame(closeTask));
+        writeTask(new Task(closeTask));
         closeTask.awaitCompletion();
     }
 
     @Override
     public void requestMigration(NonBlockingIOThread newOwner) {
-        write(new TaskFrame(new StartMigrationTask(newOwner)));
+        writeTask(new Task(new StartMigrationRunnable(newOwner)));
     }
 
     @Override
@@ -405,23 +431,12 @@ public final class NonBlockingSocketWriter
         return connection + ".socketWriter";
     }
 
-    /**
-     * The TaskFrame is not really a Frame. It is a way to put a task on one of the frame-queues. Using this approach we
-     * can lift on top of the Frame scheduling mechanism and we can prevent having:
-     * - multiple NonBlockingIOThread-tasks for a SocketWriter on multiple NonBlockingIOThread
-     * - multiple NonBlockingIOThread-tasks for a SocketWriter on the same NonBlockingIOThread.
-     */
-    private static final class TaskFrame implements OutboundFrame {
+    private static final class Task {
 
         private final Runnable task;
 
-        private TaskFrame(Runnable task) {
+        private Task(Runnable task) {
             this.task = task;
-        }
-
-        @Override
-        public boolean isUrgent() {
-            return true;
         }
     }
 
@@ -431,12 +446,12 @@ public final class NonBlockingSocketWriter
      *
      * If the current ioThread is the same as 'theNewOwner' then the call is ignored.
      */
-    private final class StartMigrationTask implements Runnable {
+    private final class StartMigrationRunnable implements Runnable {
         // field is called 'theNewOwner' to prevent any ambiguity problems with the writeHandler.newOwner.
         // Else you get a lot of ugly WriteHandler.this.newOwner is ...
         private final NonBlockingIOThread theNewOwner;
 
-        StartMigrationTask(NonBlockingIOThread theNewOwner) {
+        StartMigrationRunnable(NonBlockingIOThread theNewOwner) {
             this.theNewOwner = theNewOwner;
         }
 

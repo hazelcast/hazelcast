@@ -232,17 +232,19 @@ public class TestClientRegistry {
             return stateMap.get(remoteAddress);
         }
 
-        @Override
-        public boolean write(OutboundFrame frame) {
-            Node node = serverNodeEngine.getNode();
-            if (node.getState() == NodeState.SHUT_DOWN) {
-                return false;
-            }
-            ClientMessage newPacket = readFromPacket((ClientMessage) frame);
-            lastWriteTime = System.currentTimeMillis();
-            node.clientEngine.handleClientMessage(newPacket, serverSideConnection);
-            return true;
-        }
+//
+//
+//        @Override
+//        public boolean write(OutboundFrame frame) {
+//            Node node = serverNodeEngine.getNode();
+//            if (node.getState() == NodeState.SHUT_DOWN) {
+//                return false;
+//            }
+//            ClientMessage newPacket = readFromPacket((ClientMessage) frame);
+//            lastWriteTime = System.currentTimeMillis();
+//            node.clientEngine.handleClientMessage(newPacket, serverSideConnection);
+//            return true;
+//        }
 
         private ClientMessage readFromPacket(ClientMessage packet) {
             return ClientMessage.createForDecode(packet.buffer(), 0);
@@ -317,16 +319,16 @@ public class TestClientRegistry {
             node.getConnectionManager().registerConnection(getEndPoint(), this);
         }
 
-        @Override
-        public boolean write(OutboundFrame frame) {
-            final ClientMessage packet = (ClientMessage) frame;
-            if (isAlive()) {
-                ClientMessage newPacket = readFromPacket(packet);
-                responseConnection.handleClientMessage(newPacket);
-                return true;
-            }
-            return false;
-        }
+//        @Override
+//        public boolean write(OutboundFrame frame) {
+//            final ClientMessage packet = (ClientMessage) frame;
+//            if (isAlive()) {
+//                ClientMessage newPacket = readFromPacket(packet);
+//                responseConnection.handleClientMessage(newPacket);
+//                return true;
+//            }
+//            return false;
+//        }
 
         @Override
         public boolean isClient() {

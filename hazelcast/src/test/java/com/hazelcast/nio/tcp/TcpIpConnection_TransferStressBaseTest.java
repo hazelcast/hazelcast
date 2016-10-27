@@ -1,6 +1,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestThread;
 import org.junit.Before;
@@ -171,13 +172,14 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
             long prev = System.currentTimeMillis();
 
             while (!stop.get()) {
-                Packet packet = nextPacket();
-                if (packet.isUrgent()) {
+                byte[] packet = nextPacket();
+                boolean urgent = (PacketUtil.getFlags(packet) & Packet.FLAG_URGENT) != 0;
+                if (urgent) {
                     urgentPackets++;
                 } else {
                     normalPackets++;
                 }
-                writeHandler.write(packet);
+                writeHandler.write(packet, urgent);
 
                 long now = System.currentTimeMillis();
                 if (now > prev + 2000) {
@@ -207,15 +209,11 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
             return 100d * writeHandler.totalFramesPending() / maxPendingPacketCount;
         }
 
-        public Packet nextPacket() {
+        // todo: in theory we don't need to create new byte[]; we could just recycle
+        byte[] nextPacket() {
             DummyPayload payload = payloads[random.nextInt(payloads.length)];
-            Packet packet = new Packet(serializationService.toBytes(payload));
-            if (payload.isUrgent()) {
-                packet.setFlag(Packet.FLAG_URGENT);
-            }
-            return packet;
+            int flags = payload.isUrgent() ? 0 : Packet.FLAG_URGENT;
+            return PacketUtil.toBytePacket(serializationService, payload, flags, -1);
         }
-
     }
-
 }

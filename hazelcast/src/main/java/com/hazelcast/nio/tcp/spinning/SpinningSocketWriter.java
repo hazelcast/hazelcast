@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.SocketConnection;
 import com.hazelcast.nio.tcp.SocketWriter;
@@ -46,11 +45,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
-    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public final Queue writeQueue = new ConcurrentLinkedQueue();
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
-    public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public final Queue urgentWriteQueue = new ConcurrentLinkedQueue();
 
     private final SocketWriterInitializer initializer;
     private ByteBuffer outputBuffer;
@@ -62,7 +61,8 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private final SwCounter priorityFramesWritten = newSwCounter();
     private volatile long lastWriteTime;
     private WriteHandler writeHandler;
-    private volatile OutboundFrame currentFrame;
+    private volatile byte[] currentFrame;
+    private int position;
 
     public SpinningSocketWriter(SocketConnection connection,
                                 ILogger logger,
@@ -73,11 +73,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
-    public void write(OutboundFrame frame) {
-        if (frame.isUrgent()) {
-            urgentWriteQueue.add(frame);
+    public void write(byte[] bytes, boolean urgent) {
+        if (urgent) {
+            urgentWriteQueue.add(bytes);
         } else {
-            writeQueue.add(frame);
+            writeQueue.add(bytes);
         }
     }
 
@@ -101,11 +101,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         return urgentWriteQueue.size() + writeQueue.size();
     }
 
-    private long bytesPending(Queue<OutboundFrame> writeQueue) {
+    private long bytesPending(Queue<Object> writeQueue) {
         long bytesPending = 0;
-        for (OutboundFrame frame : writeQueue) {
-            if (frame instanceof Packet) {
-                bytesPending += ((Packet) frame).packetSize();
+        for (Object frame : writeQueue) {
+            if (frame instanceof byte[]) {
+                bytesPending += ((byte[]) frame).length;
             }
         }
         return bytesPending;
@@ -153,10 +153,10 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         this.outputBuffer = outputBuffer;
     }
 
-    private OutboundFrame poll() {
+    private byte[] poll() {
         for (; ; ) {
             boolean urgent = true;
-            OutboundFrame frame = urgentWriteQueue.poll();
+            Object frame = urgentWriteQueue.poll();
 
             if (frame == null) {
                 urgent = false;
@@ -179,7 +179,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
                 normalFramesWritten.inc();
             }
 
-            return frame;
+            return (byte[]) frame;
         }
     }
 
@@ -189,7 +189,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         urgentWriteQueue.clear();
 
         ShutdownTask shutdownTask = new ShutdownTask();
-        write(new TaskFrame(shutdownTask));
+        // write(new TaskFrame(shutdownTask));
         shutdownTask.awaitCompletion();
     }
 
@@ -245,14 +245,35 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
                 }
             }
 
-            // Lets write the currentFrame to the outputBuffer.
-            if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
-                // We are done for this round because not all data of the current frame fits in the outputBuffer
+            // the number of bytes that can be written to the bb.
+            int bytesWritable = outputBuffer.remaining();
+
+            // the number of bytes that need to be written.
+            int bytesNeeded = currentFrame.length - position;
+
+            int bytesWrite;
+            boolean done;
+            if (bytesWritable >= bytesNeeded) {
+                // All bytes for the value are available.
+                bytesWrite = bytesNeeded;
+                done = true;
+            } else {
+                // Not all bytes for the value are available. So lets write as much as is available.
+                bytesWrite = bytesWritable;
+                done = false;
+            }
+
+            outputBuffer.put(currentFrame, position, bytesWrite);
+            position += bytesWrite;
+
+            if (!done) {
                 return;
             }
 
+
             // The current frame has been written completely. So lets null it and lets try to write another frame.
             currentFrame = null;
+            position = 0;
         }
     }
 

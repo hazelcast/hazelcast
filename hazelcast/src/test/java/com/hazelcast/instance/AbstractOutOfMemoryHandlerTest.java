@@ -91,12 +91,12 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
         }
 
         @Override
-        public boolean transmit(Packet packet, Connection connection) {
+        public boolean transmit(byte[] packet, boolean urgent, Connection connection) {
             return false;
         }
 
         @Override
-        public boolean transmit(Packet packet, Address target) {
+        public boolean transmit(byte[] packet, boolean urgent, Address target) {
             return false;
         }
 

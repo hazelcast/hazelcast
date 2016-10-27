@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketUtil;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.nio.tcp.PacketFilter;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
@@ -37,6 +38,9 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.PacketUtil.isFlagSet;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -88,13 +92,14 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
         }
 
         @Override
-        public boolean allow(Packet packet, Address endpoint) {
-            return !packet.isFlagSet(Packet.FLAG_OP) || allowOperation(packet);
+        public boolean allow(byte[] packet, boolean urgent, Address endpoint) {
+            return !isFlagSet(packet, FLAG_OP) || allowOperation(packet);
         }
 
-        private boolean allowOperation(Packet packet) {
+        private boolean allowOperation(byte[] packet) {
             try {
-                ObjectDataInput input = serializationService.createObjectDataInput(packet);
+                Packet p = PacketUtil.toPacket(packet);
+                ObjectDataInput input = serializationService.createObjectDataInput(p);
                 boolean identified = input.readBoolean();
                 if (identified) {
                     int factory = input.readInt();

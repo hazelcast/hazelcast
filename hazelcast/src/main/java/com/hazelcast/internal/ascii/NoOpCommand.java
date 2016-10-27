@@ -22,11 +22,13 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 
 public class NoOpCommand extends AbstractTextCommand {
 
-    private final ByteBuffer response;
+   // private final ByteBuffer response;
+    private final byte[] response;
 
     public NoOpCommand(byte[] response) {
         super(TextCommandConstants.TextCommandType.NO_OP);
-        this.response = ByteBuffer.wrap(response);
+        this.response = response;
+   //     this.response = ByteBuffer.wrap(response);
     }
 
     @Override
@@ -35,15 +37,20 @@ public class NoOpCommand extends AbstractTextCommand {
     }
 
     @Override
-    public boolean writeTo(ByteBuffer dst) {
-        while (dst.hasRemaining() && response.hasRemaining()) {
-            dst.put(response.get());
-        }
-        return !response.hasRemaining();
+    public byte[] toBytes() {
+        return response;
     }
+
+//    @Override
+//    public boolean writeTo(ByteBuffer dst) {
+//        while (dst.hasRemaining() && response.hasRemaining()) {
+//            dst.put(response.get());
+//        }
+//        return !response.hasRemaining();
+//    }
 
     @Override
     public String toString() {
-        return "NoOpCommand {" + bytesToString(response.array()) + "}";
+        return "NoOpCommand {" + bytesToString(response) + "}";
     }
 }

@@ -95,7 +95,7 @@ public interface ConnectionManager extends ConnectionListenable {
      * to be received since the Packet perhaps is stuck in some buffer. It just means that it is buffered somewhere.
      * @throws NullPointerException if packet is null.
      */
-    boolean transmit(Packet packet, Connection connection);
+    boolean transmit(byte[] packet, boolean urgent, Connection connection);
 
     /**
      * Transmits a packet to a certain address.
@@ -109,7 +109,7 @@ public interface ConnectionManager extends ConnectionListenable {
      * @throws NullPointerException if packet or target is null.
      * @see #transmit(com.hazelcast.nio.Packet, com.hazelcast.nio.Connection)
      */
-    boolean transmit(Packet packet, Address target);
+    boolean transmit(byte[] packet, boolean urgent, Address target);
 
     /**
      * Starts ConnectionManager, initializes its resources, starts threads, etc. After start, ConnectionManager

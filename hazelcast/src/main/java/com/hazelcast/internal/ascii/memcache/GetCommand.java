@@ -22,9 +22,10 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.GET;
-import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 
 public class GetCommand extends AbstractTextCommand {
+
+    private static final byte[] EMPTY = new byte[0];
 
     protected final String key;
     private ByteBuffer value;
@@ -56,16 +57,32 @@ public class GetCommand extends AbstractTextCommand {
     }
 
     @Override
-    public boolean writeTo(ByteBuffer dst) {
-        if (value != null) {
-            copyToHeapBuffer(value, dst);
+    public byte[] toBytes() {
+        if (value == null) {
+            return lastOne == null ? EMPTY : lastOne.array();
+        } else if (lastOne == null) {
+            return value.array();
+        } else {
+            byte[] valueBytes = value.array();
+            byte[] lastOneBytes = lastOne.array();
+            byte[] result = new byte[valueBytes.length + lastOneBytes.length];
+            System.arraycopy(valueBytes, 0, result, 0, valueBytes.length);
+            System.arraycopy(lastOneBytes, 0, result, valueBytes.length, lastOneBytes.length);
+            return result;
         }
-        if (lastOne != null) {
-            copyToHeapBuffer(lastOne, dst);
-        }
-        return !((value != null && value.hasRemaining())
-                || (lastOne != null && lastOne.hasRemaining()));
     }
+
+//    @Override
+//    public boolean writeTo(ByteBuffer dst) {
+//        if (value != null) {
+//            copyToHeapBuffer(value, dst);
+//        }
+//        if (lastOne != null) {
+//            copyToHeapBuffer(lastOne, dst);
+//        }
+//        return !((value != null && value.hasRemaining())
+//                || (lastOne != null && lastOne.hasRemaining()));
+//    }
 
     @Override
     public String toString() {

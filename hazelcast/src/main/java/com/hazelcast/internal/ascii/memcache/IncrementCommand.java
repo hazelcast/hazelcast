@@ -26,7 +26,7 @@ public class IncrementCommand extends AbstractTextCommand {
     private String key;
     private int value;
     private boolean noreply;
-    private ByteBuffer response;
+    private byte[] response;
 
     public IncrementCommand(TextCommandConstants.TextCommandType type, String key, int value, boolean noReply) {
         super(type);
@@ -36,12 +36,17 @@ public class IncrementCommand extends AbstractTextCommand {
     }
 
     @Override
-    public boolean writeTo(ByteBuffer dst) {
-        while (dst.hasRemaining() && response.hasRemaining()) {
-            dst.put(response.get());
-        }
-        return !response.hasRemaining();
+    public byte[] toBytes() {
+        return response;
     }
+//
+//    @Override
+//    public boolean writeTo(ByteBuffer dst) {
+//        while (dst.hasRemaining() && response.hasRemaining()) {
+//            dst.put(response.get());
+//        }
+//        return !response.hasRemaining();
+//    }
 
     @Override
     public boolean readFrom(ByteBuffer src) {
@@ -62,6 +67,6 @@ public class IncrementCommand extends AbstractTextCommand {
     }
 
     public void setResponse(byte[] value) {
-        this.response = ByteBuffer.wrap(value);
+        this.response = value;
     }
 }

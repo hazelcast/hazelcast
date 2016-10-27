@@ -209,26 +209,26 @@ public class MockConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public boolean transmit(Packet packet, Connection connection) {
-        return (connection != null && connection.write(packet));
+    public boolean transmit(byte[] packet, boolean priority, Connection connection) {
+        return (connection != null && connection.write(packet, priority));
     }
 
     /**
      * Retries sending packet maximum 5 times until connection to target becomes available.
      */
     @Override
-    public boolean transmit(Packet packet, Address target) {
-        return send(packet, target, null);
+    public boolean transmit(byte[] packet, boolean priority, Address target) {
+        return send(packet,priority,  target, null);
     }
 
-    private boolean send(Packet packet, Address target, SendTask sendTask) {
+    private boolean send(byte[] packet, boolean priority, Address target, SendTask sendTask) {
         Connection connection = getConnection(target);
         if (connection != null) {
-            return transmit(packet, connection);
+            return transmit(packet, priority, connection);
         }
 
         if (sendTask == null) {
-            sendTask = new SendTask(packet, target);
+            sendTask = new SendTask(packet, priority, target);
         }
 
         int retries = sendTask.retries;
@@ -243,12 +243,14 @@ public class MockConnectionManager implements ConnectionManager {
 
     private final class SendTask implements Runnable {
 
-        private final Packet packet;
+        private final byte[] packet;
         private final Address target;
+        private final boolean priority;
 
         private volatile int retries;
 
-        private SendTask(Packet packet, Address target) {
+        private SendTask(byte[] packet, boolean priority, Address target) {
+            this.priority = priority;
             this.packet = packet;
             this.target = target;
         }
@@ -260,7 +262,7 @@ public class MockConnectionManager implements ConnectionManager {
             if (logger.isFinestEnabled()) {
                 logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
             }
-            send(packet, target, this);
+            send(packet, priority, target, this);
         }
     }
 }
