@@ -99,8 +99,8 @@ Read more about how you can [tag your virtual machines](https://azure.microsoft.
 
 # Using Azure With ZONE_AWARE Partition Group
 
-When you use Azure plugin as discovery provider, you can configure Hazelcast Partition Group configuration with Azure. You need to add fault domain or dns domain to your machines. So machines will be grouped with respect to their fault or dns domains.
-For more information please read: http://docs.hazelcast.org/docs/3.7/manual/html-single/index.html#partition-group-configuration
+When you use Azure plugin as discovery provider, you can configure Hazelcast Partition Grouping with Azure. You need to add fault domain or DNS domain to your machines. So machines will be grouped with respect to their fault or DNS domains.
+For more information please read: http://docs.hazelcast.org/docs/3.7/manual/html-single/index.html#partition-group-configuration.
 
 ```xml
 ...
