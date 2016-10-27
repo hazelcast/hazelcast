@@ -17,7 +17,6 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.jet2.impl.ListConsumer;
 import com.hazelcast.jet2.impl.ListProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -25,9 +24,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -148,7 +145,7 @@ public class ForwardingTest extends HazelcastTestSupport {
 
         @Override
         public void init(ProcessorContext context) {
-            consumers = new ListConsumer[context.parallelism()];
+            consumers = new ListConsumer[context.totalParallelism()];
             Arrays.setAll(consumers, i -> new ListConsumer());
         }
 

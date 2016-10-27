@@ -20,25 +20,26 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 class ExecuteJobOperation extends Operation {
 
-    private String name;
+    private String engineName;
     private DAG dag;
 
     public ExecuteJobOperation() {
     }
 
-    public ExecuteJobOperation(String name, DAG dag) {
-        this.name = name;
+    public ExecuteJobOperation(String engineName, DAG dag) {
+        this.engineName = engineName;
         this.dag = dag;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(name);
+        ExecutionContext executionContext = service.getExecutionContext(engineName);
         executionContext.execute(dag).get();
     }
 
@@ -46,7 +47,7 @@ class ExecuteJobOperation extends Operation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeUTF(name);
+        out.writeUTF(engineName);
         out.writeObject(dag);
     }
 
@@ -54,7 +55,7 @@ class ExecuteJobOperation extends Operation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        name = in.readUTF();
+        engineName = in.readUTF();
         dag = in.readObject();
     }
 }

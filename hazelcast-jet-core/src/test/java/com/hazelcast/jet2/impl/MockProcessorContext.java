@@ -26,7 +26,7 @@ public class MockProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public int parallelism() {
+    public int totalParallelism() {
         return 0;
     }
 

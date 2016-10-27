@@ -29,9 +29,14 @@ public interface ProcessorContext {
     HazelcastInstance getHazelcastInstance();
 
     /**
-     * @return
+     * @return the total number of instances of the processor over the whole cluster
      */
-    int parallelism();
+    int totalParallelism();
+
+    /**
+     * @return the total number of instances of the processor over the whole cluster
+     */
+    int localParallelism();
 
     /**
      * @return

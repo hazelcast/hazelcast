@@ -39,7 +39,7 @@ public abstract class AbstractProcessor implements Processor {
     @Override
     @SuppressWarnings("checkstyle:innerassignment")
     public void process(int ordinal, Inbox inbox) {
-        for (Object item; (item = inbox.peek()) != null;) {
+        for (Object item; (item = inbox.peek()) != null; ) {
             if (!process(ordinal, item)) {
                 return;
             }

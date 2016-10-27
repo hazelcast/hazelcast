@@ -23,13 +23,14 @@ import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 public class IMapReader extends AbstractProducer {
 
@@ -43,8 +44,7 @@ public class IMapReader extends AbstractProducer {
 
     private CircularCursor<Iterator> iteratorCursor;
 
-    protected IMapReader(MapProxyImpl map,
-                         List<Integer> partitions, int fetchSize) {
+    public IMapReader(MapProxyImpl map, List<Integer> partitions, int fetchSize) {
         this.map = map;
         this.partitions = partitions;
         this.fetchSize = fetchSize;
@@ -112,7 +112,7 @@ public class IMapReader extends AbstractProducer {
             partitionGroups = partitions.stream()
                     .filter(p -> p.getOwner().equals(localMember))
                     .map(Partition::getPartitionId)
-                    .collect(Collectors.groupingBy(p -> p % context.parallelism()));
+                    .collect(Collectors.groupingBy(p -> p % context.localParallelism()));
             map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
         }
 

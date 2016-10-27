@@ -22,12 +22,15 @@ import com.hazelcast.jet2.ProcessorContext;
 class ProcessorContextImpl implements ProcessorContext {
 
     private final HazelcastInstance instance;
-    private final int parallelism;
+    private final int localParallelism;
+    private final int totalParallelism;
     private final ClassLoader classLoader;
 
-    public ProcessorContextImpl(HazelcastInstance instance, int parallelism, ClassLoader classLoader) {
+    public ProcessorContextImpl(HazelcastInstance instance, int localParallelism, int totalParallelism,
+                                ClassLoader classLoader) {
         this.instance = instance;
-        this.parallelism = parallelism;
+        this.localParallelism = localParallelism;
+        this.totalParallelism = totalParallelism;
         this.classLoader = classLoader;
     }
 
@@ -37,8 +40,13 @@ class ProcessorContextImpl implements ProcessorContext {
     }
 
     @Override
-    public int parallelism() {
-        return parallelism;
+    public int totalParallelism() {
+        return localParallelism;
+    }
+
+    @Override
+    public int localParallelism() {
+        return localParallelism;
     }
 
     @Override

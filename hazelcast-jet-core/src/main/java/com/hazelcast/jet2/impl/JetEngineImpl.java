@@ -20,11 +20,11 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.DeploymentConfig;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.Job;
 import com.hazelcast.jet2.impl.deployment.ChunkIterator;
 import com.hazelcast.jet2.impl.deployment.DeployChunkOperation;
-import com.hazelcast.jet2.DeploymentConfig;
 import com.hazelcast.jet2.impl.deployment.ResourceChunk;
 import com.hazelcast.jet2.impl.deployment.UpdateDeploymentCatalogOperation;
 import com.hazelcast.logging.ILogger;
@@ -32,11 +32,13 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
@@ -73,13 +75,23 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
     public Job newJob(DAG dag) {
         return new JobImpl(this, dag);
     }
-
-
+    
     public void execute(JobImpl job) {
-        invokeOperation(() -> new ExecuteJobOperation(getName(), job.getDag()));
+        try {
+            invokeLocal(new ExecuteJobOperation(getName(), job.getDag())).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw unchecked(e);
+        }
     }
 
-    private <T> List<T> invokeOperation(Supplier<Operation> supplier) {
+    private <T> Future<T> invokeLocal(Operation op) {
+        InternalCompletableFuture<T> future = getOperationService()
+                .createInvocationBuilder(JetService.SERVICE_NAME, op, getNodeEngine().getThisAddress())
+                .<T>invoke();
+        return future;
+    }
+
+    private <T> List<T> invokeOnCluster(Supplier<Operation> supplier) {
         ClusterService clusterService = getNodeEngine().getClusterService();
 
         List<ICompletableFuture<T>> futures = new ArrayList<>();
@@ -104,10 +116,10 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         Iterator<ResourceChunk> iterator = new ChunkIterator(resources, DEFAULT_RESOURCE_CHUNK_SIZE);
         while (iterator.hasNext()) {
             final ResourceChunk resourceChunk = iterator.next();
-            invokeOperation(() -> new DeployChunkOperation(name, resourceChunk));
+            invokeOnCluster(() -> new DeployChunkOperation(name, resourceChunk));
         }
         for (DeploymentConfig resource : resources) {
-            invokeOperation(() -> new UpdateDeploymentCatalogOperation(name, resource.getDescriptor()));
+            invokeOnCluster(() -> new UpdateDeploymentCatalogOperation(name, resource.getDescriptor()));
         }
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
@@ -64,6 +65,38 @@ public class ExecutionContext {
         });
     }
 
+
+    public ExecutionPlan buildExecutionPlan(DAG dag) {
+        ExecutionPlan plan = new ExecutionPlan();
+        List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
+        int clusterSize = members.size();
+        for (Vertex vertex : dag) {
+            int localParallelism = getParallelism(vertex);
+            int totalParallelism = localParallelism * clusterSize;
+
+            List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
+            List<Edge> inboundEdges = dag.getInboundEdges(vertex);
+
+            ProcessorContextImpl context = new ProcessorContextImpl(nodeEngine.getHazelcastInstance(),
+                    localParallelism, totalParallelism, classLoader);
+            ProcessorSupplier supplier = vertex.getProcessorSupplier();
+            supplier.init(context);
+
+            for (int i = 0; i < members.size(); i++) {
+                Member member = members.get(i);
+                List<Processor> processors = supplier.get(member.getAddress());
+                assert processors.size() == localParallelism : "Requested number of processors was not returned";
+
+                for (Processor processor : processors) {
+
+                }
+            }
+
+        }
+
+
+    }
+
     public Future<Void> execute(DAG dag) {
         Map<Edge, ConcurrentConveyor<Object>[]> conveyorMap = new HashMap<>();
         List<Tasklet> tasks = new ArrayList<>();
@@ -73,7 +106,7 @@ public class ExecutionContext {
             List<Edge> inboundEdges = dag.getInboundEdges(vertex);
             int parallelism = getParallelism(vertex);
             ProcessorContextImpl context = new ProcessorContextImpl(nodeEngine.getHazelcastInstance(),
-                    parallelism, classLoader);
+                    parallelism, parallelism, classLoader);
             ProcessorSupplier supplier = vertex.getProcessorSupplier();
             supplier.init(context);
             for (int taskletIndex = 0; taskletIndex < parallelism; taskletIndex++) {
@@ -117,8 +150,7 @@ public class ExecutionContext {
     }
 
     private int getParallelism(Vertex vertex) {
-        int parallelism = vertex.getParallelism();
-        return parallelism != -1 ? parallelism : config.getParallelism();
+        return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
     }
 
     @SuppressWarnings("unchecked")
