@@ -24,6 +24,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,14 +76,13 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
         }
     }
 
-    public synchronized void ensureContext(String name, JetEngineConfig config) {
-        if (executionContexts.get(name) == null) {
+    public void ensureContext(String name, JetEngineConfig config) {
+        ConcurrencyUtil.getOrPutSynchronized(executionContexts, name, this, (key) -> {
             DeploymentStore deploymentStore = new DeploymentStore(config.getDeploymentDirectory());
             ExecutionService executionService = new ExecutionService(nodeEngine, name, config);
-            ExecutionContext executionContext = new ExecutionContext(nodeEngine, executionService,
+            return new ExecutionContext(nodeEngine, executionService,
                     deploymentStore, config);
-            executionContexts.put(name, executionContext);
-        }
+        });
     }
 
     public ExecutionContext getExecutionContext(String name) {

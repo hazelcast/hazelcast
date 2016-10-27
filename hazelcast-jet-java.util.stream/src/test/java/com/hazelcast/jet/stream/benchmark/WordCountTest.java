@@ -16,6 +16,7 @@
 package com.hazelcast.jet.stream.benchmark;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IMap;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.JetStreamTestSupport;
@@ -35,6 +36,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
@@ -44,7 +47,6 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-@Ignore
 public class WordCountTest extends JetStreamTestSupport implements Serializable {
 
     private static final int COUNT = 1_000_000;
@@ -69,7 +71,9 @@ public class WordCountTest extends JetStreamTestSupport implements Serializable 
         }
         map.put(row, sb.toString());
     }
-    @Test @Ignore
+
+    @Test
+    @Ignore
     public void testMapReduce() throws Exception {
         long start = System.currentTimeMillis();
 
@@ -89,22 +93,32 @@ public class WordCountTest extends JetStreamTestSupport implements Serializable 
     }
 
     @Test
+    @Ignore
     public void testWordCount() throws Exception {
         final Pattern space = Pattern.compile("\\s+");
-        long start = System.currentTimeMillis();
-        Map<String, Long> wordCounts = map.stream()
-                .flatMap(m -> Stream.of(space.split(m.getValue())))
-                .collect(DistributedCollectors.groupingByToIMap(m -> m, DistributedCollectors.counting()));
+        IMap<String, Long> wordCounts = null;
 
-        System.out.println("java.util.stream: totalTime=" + (System.currentTimeMillis() - start));
+        List<Long> times = new ArrayList<>();
+        final int warmupCount = 10;
+        for (int i = 0; i < 20; i++) {
+            long start = System.currentTimeMillis();
+            wordCounts = map.stream()
+                    .flatMap(m -> Stream.of(space.split(m.getValue())))
+                    .collect(DistributedCollectors.groupingByToIMap(m -> m, DistributedCollectors.counting()));
+            long time = System.currentTimeMillis() - start;
+            times.add(time);
+            System.out.println("java.util.stream: totalTime=" + time);
+        }
 
+        System.out.println(times.stream()
+                .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
         assertCounts(wordCounts);
     }
 
     private void assertCounts(Map<String, Long> wordCounts) {
         for (int i = 0; i < DISTINCT; i++) {
             Long count = wordCounts.get(Integer.toString(i));
-            assertEquals(COUNT/DISTINCT, (long)count);
+            assertEquals(COUNT / DISTINCT, (long) count);
         }
     }
 

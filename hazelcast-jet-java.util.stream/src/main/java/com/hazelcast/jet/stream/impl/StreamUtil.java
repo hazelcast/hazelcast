@@ -26,13 +26,10 @@ import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Job;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.UuidUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
@@ -40,7 +37,7 @@ public final class StreamUtil {
 
     public static final String MAP_PREFIX = "__hz_map_";
     public static final String LIST_PREFIX = "__hz_list_";
-    private static ConcurrentMap<HazelcastInstance, JetEngine> engines = new ConcurrentHashMap<>();
+    public static final String ENGINE_NAME = "java.util.stream";
 
     private StreamUtil() {
     }
@@ -58,8 +55,7 @@ public final class StreamUtil {
         JetEngineConfig config = new JetEngineConfig();
         config.addClass(classes.toArray(new Class[classes.size()]));
 
-        JetEngine jetEngine = ConcurrencyUtil.getOrPutSynchronized(engines, context.getHazelcastInstance(), engines,
-                hazelcastInstance -> JetEngine.get(context.getHazelcastInstance(), randomName(), config));
+        JetEngine jetEngine = JetEngine.get(context.getHazelcastInstance(), ENGINE_NAME);
         Job job = jetEngine.newJob(dag);
         job.execute();
         context.getStreamListeners().forEach(Runnable::run);

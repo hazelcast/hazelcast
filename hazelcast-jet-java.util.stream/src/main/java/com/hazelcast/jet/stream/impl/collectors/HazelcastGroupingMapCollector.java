@@ -24,8 +24,11 @@ import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.GroupingCombinerProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Partitioner;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.IMapWriter;
+
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
@@ -54,24 +57,28 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
     @Override
     public IMap<K, D> collect(StreamContext context, Pipeline<? extends T> upstream) {
         IMap<K, D> target = context.getHazelcastInstance().getMap(mapName);
+
         DAG dag = new DAG();
-        Vertex merger = new Vertex(randomName(), () -> new GroupingAccumulatorProcessor<>(classifier, collector)).parallelism(1);
-        dag.addVertex(merger);
-
         Vertex previous = upstream.buildDAG(dag);
-        if (previous != merger) {
-            dag.addEdge(new Edge(previous, merger).partitioned(context.getPartitioner()));
-        }
+        Vertex merger = new Vertex("grouping-accumulator-" + randomName(),
+                () -> new GroupingAccumulatorProcessor<>(classifier, collector));
+        Vertex combiner = new Vertex("grouping-combiner-" + randomName(),
+                () -> new GroupingCombinerProcessor<>(collector));
+        Vertex writer = new Vertex("map-writer-" + mapName, IMapWriter.supplier(mapName));
 
-        Vertex combiner = new Vertex(randomName(), () -> new GroupingCombinerProcessor<>(collector)).parallelism(1);
-        dag.addVertex(combiner);
+        Partitioner partitioner = context.getPartitioner();
 
-        dag.addEdge(new Edge(merger, combiner)
-                .distributed()
-                .partitioned(context.getPartitioner()));
-
-        Vertex writer = new Vertex(randomName(), IMapWriter.supplier(mapName));
-        dag.addVertex(writer).addEdge(new Edge(combiner, writer));
+        dag.addVertex(merger)
+                .addVertex(combiner)
+                .addVertex(writer)
+                .addEdge(new Edge(previous, merger).partitioned((item, numPartitions) ->
+                        partitioner.getPartition(classifier.apply((T) item), numPartitions)
+                ))
+                .addEdge(new Edge(merger, combiner)
+                        .distributed()
+                        .partitioned((item, numPartitions) ->
+                                partitioner.getPartition(((Map.Entry) item).getKey(), numPartitions)))
+                .addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         return target;
     }

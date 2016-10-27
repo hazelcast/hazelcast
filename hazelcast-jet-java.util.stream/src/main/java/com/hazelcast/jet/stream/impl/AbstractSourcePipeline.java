@@ -21,8 +21,6 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-
 public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> {
 
     public AbstractSourcePipeline(StreamContext context) {
@@ -31,7 +29,7 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
 
     @Override
     public Vertex buildDAG(DAG dag) {
-        Vertex vertex = new Vertex(randomName(), getProducer());
+        Vertex vertex = new Vertex(getName(), getProducer());
         if (isOrdered()) {
             vertex.parallelism(1);
         }
@@ -39,5 +37,7 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
         return vertex;
     }
 
-    public abstract ProcessorSupplier getProducer();
+    protected abstract ProcessorSupplier getProducer();
+
+    protected abstract String getName();
 }

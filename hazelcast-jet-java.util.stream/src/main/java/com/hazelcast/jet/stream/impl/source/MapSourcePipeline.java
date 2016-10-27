@@ -21,6 +21,7 @@ import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.impl.IMapReader;
+
 import java.util.Map;
 
 
@@ -34,9 +35,15 @@ public class MapSourcePipeline<K, V> extends AbstractSourcePipeline<Map.Entry<K,
     }
 
     @Override
-    public ProcessorSupplier getProducer() {
+    protected ProcessorSupplier getProducer() {
         return IMapReader.supplier(map.getName());
     }
+
+    @Override
+    protected String getName() {
+        return "map-reader-" + map.getName();
+    }
+
 
 }
 

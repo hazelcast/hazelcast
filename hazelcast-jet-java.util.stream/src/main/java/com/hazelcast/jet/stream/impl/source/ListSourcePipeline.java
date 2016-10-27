@@ -32,8 +32,13 @@ public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
     }
 
     @Override
-    public ProcessorSupplier getProducer() {
+    protected ProcessorSupplier getProducer() {
         return IListReader.supplier(list.getName());
+    }
+
+    @Override
+    protected String getName() {
+        return "list-reader-" + list.getName();
     }
 
     @Override
