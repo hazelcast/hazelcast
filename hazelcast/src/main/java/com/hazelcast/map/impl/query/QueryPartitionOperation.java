@@ -16,36 +16,40 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 public class QueryPartitionOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
-    private Predicate predicate;
-    private QueryResult result;
-    private IterationType iterationType;
+    private Query query;
+    private Result result;
 
     public QueryPartitionOperation() {
     }
 
-    public QueryPartitionOperation(String mapName, Predicate predicate, IterationType iterationType) {
-        super(mapName);
-        this.predicate = predicate;
-        this.iterationType = iterationType;
+    public QueryPartitionOperation(Query query) {
+        super(query.getMapName());
+        this.query = query;
     }
 
     @Override
     public void run() {
-        MapLocalQueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
-        result = queryRunner.runUsingPartitionScanOnSinglePartition(name, predicate, getPartitionId(), iterationType);
+        QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
+        try {
+            result = queryRunner.runUsingPartitionScanOnSinglePartition(query, getPartitionId());
+        } catch (ExecutionException e) {
+            throw new HazelcastException(e);
+        } catch (InterruptedException e) {
+            throw new HazelcastException(e);
+        }
     }
 
     @Override
@@ -56,15 +60,13 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(predicate);
-        out.writeByte(iterationType.getId());
+        out.writeObject(query);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        predicate = in.readObject();
-        iterationType = IterationType.getById(in.readByte());
+        query = in.readObject();
     }
 
     @Override

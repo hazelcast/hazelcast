@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MapValuesWithPagingPredicateMessageTask
-        extends AbstractMapQueryMessageTask<MapValuesWithPagingPredicateCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<MapValuesWithPagingPredicateCodec.RequestParameters> {
 
     public MapValuesWithPagingPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

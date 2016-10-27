@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -26,6 +27,8 @@ import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerWithPredicate
 import com.hazelcast.client.impl.protocol.codec.MapAddIndexCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAggregateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAggregateWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
@@ -52,6 +55,8 @@ import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapLoadAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapLoadGivenKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapProjectCodec;
+import com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
@@ -101,6 +106,7 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
@@ -117,6 +123,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -161,6 +168,7 @@ public class ClientMapProxy<K, V>
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
+    protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
 
     @SuppressWarnings("unchecked")
     private static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
@@ -1283,6 +1291,56 @@ public class ClientMapProxy<K, V>
         MapExecuteWithPredicateCodec.ResponseParameters resultParameters = MapExecuteWithPredicateCodec.decodeResponse(response);
         return prepareResult(resultParameters.response);
     }
+
+    @Override
+    public <R> R aggregate(Aggregator<R, K, V> aggregator) {
+        checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
+
+        ClientMessage request = MapAggregateCodec.encodeRequest(name, toData(aggregator));
+        ClientMessage response = invoke(request);
+
+        MapAggregateCodec.ResponseParameters resultParameters =
+                MapAggregateCodec.decodeResponse(response);
+        AggregationResult result = toObject(resultParameters.response);
+        return (R) result.getAggregator().aggregate();
+    }
+
+    @Override
+    public <R> R aggregate(Aggregator<R, K, V> aggregator, Predicate<K, V> predicate) {
+        checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+
+        ClientMessage request = MapAggregateWithPredicateCodec.encodeRequest(name, toData(aggregator), toData(predicate));
+        ClientMessage response = invoke(request);
+
+        MapAggregateWithPredicateCodec.ResponseParameters resultParameters =
+                MapAggregateWithPredicateCodec.decodeResponse(response);
+        AggregationResult result = toObject(resultParameters.response);
+        return (R) result.getAggregator().aggregate();
+    }
+
+    @Override
+    public <R> Collection<R> project(Projection<Entry<K, V>, R> projection) {
+        ClientMessage request = MapProjectCodec.encodeRequest(name, toData(projection));
+        ClientMessage response = invoke(request);
+
+        MapProjectCodec.ResponseParameters resultParameters =
+                MapProjectCodec.decodeResponse(response);
+
+        return new UnmodifiableLazyList<R>(resultParameters.response, getSerializationService());
+    }
+
+    @Override
+    public <R> Collection<R> project(Projection<Entry<K, V>, R> projection, Predicate<K, V> predicate) {
+        ClientMessage request = MapProjectWithPredicateCodec.encodeRequest(name, toData(projection), toData(predicate));
+        ClientMessage response = invoke(request);
+
+        MapProjectWithPredicateCodec.ResponseParameters resultParameters =
+                MapProjectWithPredicateCodec.decodeResponse(response);
+
+        return new UnmodifiableLazyList<R>(resultParameters.response, getSerializationService());
+    }
+
 
     @Override
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
