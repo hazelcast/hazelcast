@@ -19,6 +19,7 @@ package com.hazelcast.query;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
@@ -73,6 +74,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * @param <K>
  * @param <V>
  */
+@BinaryInterface
 public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, IdentifiedDataSerializable {
 
     private static final Map.Entry<Integer, Map.Entry> NULL_ANCHOR = new SimpleImmutableEntry(-1, null);

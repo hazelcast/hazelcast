@@ -19,6 +19,7 @@ package com.hazelcast.query;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -51,6 +52,7 @@ import static com.hazelcast.query.Predicates.regex;
 /**
  * This class contains methods related to conversion of sql query to predicate.
  */
+@BinaryInterface
 public class SqlPredicate
         implements IndexAwarePredicate, VisitablePredicate, IdentifiedDataSerializable {
 

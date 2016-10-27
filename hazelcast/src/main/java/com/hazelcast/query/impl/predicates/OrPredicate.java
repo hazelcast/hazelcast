@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
@@ -39,6 +40,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
 /**
  * Or Predicate
  */
+@BinaryInterface
 public final class OrPredicate
         implements IndexAwarePredicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable, CompoundPredicate {
 

@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Map;

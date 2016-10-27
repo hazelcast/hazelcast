@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
@@ -31,10 +32,9 @@ import java.util.Set;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
 /**
- * reminder:
- * when FalsePredicate is going to implement IdentifiedDataSerializable, make sure no new instance
- * is created, but the INSTANCE is returned. No need to create new objects.
+ * A {@link com.hazelcast.query.Predicate} which always returns false.
  */
+@BinaryInterface
 public class FalsePredicate<K, V> implements IdentifiedDataSerializable, Predicate<K, V>, IndexAwarePredicate<K, V> {
     /**
      * An instance of the FalsePredicate.

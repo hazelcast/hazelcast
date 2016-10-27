@@ -16,11 +16,14 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.util.regex.Pattern;
 
 /**
  * Ilike Predicate
  */
+@BinaryInterface
 public class ILikePredicate extends LikePredicate {
 
     public ILikePredicate() {

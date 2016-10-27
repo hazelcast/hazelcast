@@ -18,6 +18,7 @@ package com.hazelcast.security;
 
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.impl.SpiPortableHook;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  * Simple implementation of {@link Credentials} using
  * username and password as security attributes.
  */
+@BinaryInterface
 public class UsernamePasswordCredentials extends AbstractCredentials {
 
     private static final long serialVersionUID = -1508314631354255039L;

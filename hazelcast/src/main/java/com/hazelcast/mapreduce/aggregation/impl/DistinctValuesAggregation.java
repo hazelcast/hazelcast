@@ -28,6 +28,7 @@ import com.hazelcast.mapreduce.impl.task.DefaultContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -83,6 +84,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
      *
      * @param <DistinctType> the distinct values type
      */
+    @BinaryInterface
     static class DistinctValuesCombinerFactory<DistinctType>
             extends AbstractAggregationCombinerFactory<Integer, DistinctType, Set<DistinctType>> {
 
@@ -102,6 +104,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
      *
      * @param <DistinctType> the distinct values type
      */
+    @BinaryInterface
     private static class DistinctValuesCombiner<DistinctType>
             extends Combiner<DistinctType, Set<DistinctType>> {
 
@@ -126,6 +129,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
      *
      * @param <DistinctType> the distinct values type
      */
+    @BinaryInterface
     static class DistinctValuesReducerFactory<DistinctType>
             extends AbstractAggregationReducerFactory<Integer, Set<DistinctType>, Set<DistinctType>> {
 
@@ -169,6 +173,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
      * @param <DistinctType> the type of distinct values
      */
     @SuppressFBWarnings("SE_NO_SERIALVERSIONID")
+    @BinaryInterface
     static class DistinctValueMapper<Key, Value, DistinctType>
             implements Mapper<Key, Value, Integer, DistinctType>, IdentifiedDataSerializable {
 

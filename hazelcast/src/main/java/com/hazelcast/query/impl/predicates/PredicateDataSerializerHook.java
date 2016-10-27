@@ -134,12 +134,12 @@ public class PredicateDataSerializerHook
         };
         constructors[FALSE_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FalsePredicate();
+                return FalsePredicate.INSTANCE;
             }
         };
         constructors[TRUE_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TruePredicate();
+                return TruePredicate.INSTANCE;
             }
         };
         constructors[PAGING_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

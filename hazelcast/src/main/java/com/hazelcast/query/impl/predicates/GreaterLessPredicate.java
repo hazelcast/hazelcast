@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.ComparisonType;
 import com.hazelcast.query.impl.Index;
@@ -31,6 +32,7 @@ import java.util.Set;
 /**
  * Greater Less Predicate
  */
+@BinaryInterface
 public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
 
     protected Comparable value;

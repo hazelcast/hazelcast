@@ -19,12 +19,14 @@ package com.hazelcast.map.impl.event;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 
 /**
  * Contains the data related to a map partition event
  */
+@BinaryInterface
 public class MapPartitionEventData extends AbstractEventData {
 
     private int partitionId;

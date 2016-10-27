@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
@@ -48,6 +49,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 3.3.1
  */
+@BinaryInterface
 public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable, Serializable {
 
     private Duration create;
