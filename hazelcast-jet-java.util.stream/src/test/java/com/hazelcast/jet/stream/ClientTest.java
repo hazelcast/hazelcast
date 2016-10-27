@@ -65,6 +65,6 @@ public class ClientTest extends JetStreamTestSupport {
                 .stream()
                 .collect(DistributedCollectors.toIList());
 
-        assertEquals(COUNT, list.size());
+        assertEquals(COUNT, collected.size());
     }
 }
