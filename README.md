@@ -5,6 +5,7 @@
 * [Compiling with Gradle](#compiling-with-gradle)
 * [Configuring at Hazelcast Side](#configuring-at-hazelcast-side)
 * [Configuring at Azure Side](#configuring-at-azure-side)
+* [Using Azure With ZONE_AWARE Partition Group](#using-azure-with-zone_aware-partition-group)
 * [Automated Deployment](#automated-deployment)
 
 
@@ -95,6 +96,17 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 With every Hazelcast Virtual Machine you deploy in your resource group, you need to ensure that each VM is tagged with the value of `cluster-id` defined in your Hazelcast configuration. The only requirement is that every VM can access each other either by private or public IP address.
 
 Read more about how you can [tag your virtual machines](https://azure.microsoft.com/en-us/documentation/articles/virtual-machines-tagging-arm/).
+
+# Using Azure With ZONE_AWARE Partition Group
+
+When you use Azure plugin as discovery provider, you can configure Hazelcast Partition Group configuration with Azure. You need to add fault domain or dns domain to your machines. So machines will be grouped with respect to their fault or dns domains.
+For more information please read: http://docs.hazelcast.org/docs/3.7/manual/html-single/index.html#partition-group-configuration
+
+```xml
+...
+<partition-group enabled="true" group-type="ZONE_AWARE" />
+...
+```
 
 # Automated Deployment
 
