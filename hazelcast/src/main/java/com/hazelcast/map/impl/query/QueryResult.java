@@ -34,11 +34,11 @@ import java.util.LinkedList;
 /**
  * Contains the result of a query evaluation.
  *
- * A QueryResults is a collections of {@link QueryResultRow} instances.
+ * A {@link QueryResult} is a collections of {@link QueryResultRow} instances.
  */
 public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryResultRow> {
 
-    // todo: probably arraylist cheaper.
+    // TODO: probably ArrayList is cheaper
     private final Collection<QueryResultRow> rows = new LinkedList<QueryResultRow>();
 
     private Collection<Integer> partitionIds;
@@ -74,11 +74,6 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
         return rows.isEmpty();
     }
 
-    // just for testing
-    long getResultLimit() {
-        return resultLimit;
-    }
-
     public void addAllRows(Collection<QueryResultRow> r) {
         rows.addAll(r);
     }
@@ -107,7 +102,7 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
                     value = entry.getValueData();
                     break;
                 default:
-                    throw new IllegalStateException("Unknown iterationtype:" + iterationType);
+                    throw new IllegalStateException("Unknown iterationType: " + iterationType);
             }
 
             rows.add(new QueryResultRow(key, value));
