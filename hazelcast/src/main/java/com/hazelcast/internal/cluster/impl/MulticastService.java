@@ -99,12 +99,11 @@ public final class MulticastService implements Runnable {
                 } else {
                     // If LoopBack is not enabled but its the selected interface from the given
                     // bind address, then we rely on Default Network Interface.
-                    logger.warning("Hazelcast is bind to " + bindAddress.getHost() + " and loop-back mode is disabled in the configuration. "
-                            + "This could cause multicast auto-discovery issues and render it unable to work. "
+                    logger.warning("Hazelcast is bind to " + bindAddress.getHost() + " and loop-back mode is disabled in "
+                            + "the configuration. This could cause multicast auto-discovery issues and render it unable to work. "
                             + "Check you network connectivity, try to enable the loopback mode and/or "
                             + "force -Djava.net.preferIPv4Stack=true on your JVM.");
                 }
-
             } catch (Exception e) {
                 logger.warning(e);
             }
