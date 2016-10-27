@@ -17,11 +17,9 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
@@ -32,62 +30,52 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.map.impl.query.MapQueryEngineUtils.waitForResult;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
+import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.SortingUtil.getSortedSubList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
- * Specialization of the {@link MapLocalQueryRunner} - the only difference is that
- * the query evaluation per partition is run in a PARALLEL fashion.
- * <p>
- * Runs query operations in the calling thread (thus blocking it)
- * Query evaluation per partition is run in a PARALLEL fashion.
- * <p>
- * Used by query operations only: QueryOperation & QueryPartitionOperation
- * Should not be used by proxies or any other query related objects.
+ * Implementation of the {@link PartitionScanExecutor} which executes the partition scan in a parallel-fashion
+ * delegating to the underlying executor.
  */
-public class MapLocalParallelQueryRunner extends MapLocalQueryRunner {
+public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
 
     protected static final int QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
 
+    private final PartitionScanRunner partitionScanRunner;
     private final ManagedExecutorService executor;
     private final int timeoutInMinutes;
 
-    public MapLocalParallelQueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer,
-                                       ManagedExecutorService executor, int timeoutInMinutes) {
-        super(mapServiceContext, optimizer);
+    public ParallelPartitionScanExecutor(
+            PartitionScanRunner partitionScanRunner, ManagedExecutorService executor, int timeoutInMinutes) {
+        this.partitionScanRunner = partitionScanRunner;
         this.executor = executor;
         this.timeoutInMinutes = timeoutInMinutes;
     }
 
-    public MapLocalParallelQueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer,
-                                       ManagedExecutorService executor) {
-        this(mapServiceContext, optimizer, executor, QUERY_EXECUTION_TIMEOUT_MINUTES);
+    public ParallelPartitionScanExecutor(
+            PartitionScanRunner partitionScanRunner, ManagedExecutorService executor) {
+        this.partitionScanRunner = partitionScanRunner;
+        this.executor = executor;
+        this.timeoutInMinutes = QUERY_EXECUTION_TIMEOUT_MINUTES;
     }
 
     @Override
-    protected Collection<QueryableEntry> runUsingPartitionScan(
-            String mapName, Predicate predicate, Collection<Integer> partitions) {
+    public List<QueryableEntry> execute(String mapName, Predicate predicate, Collection<Integer> partitions) {
         try {
+            List<QueryableEntry> result = runUsingPartitionScanWithoutPaging(mapName, predicate, partitions);
             if (predicate instanceof PagingPredicate) {
-                return runUsingPartitionScanWithPaging(mapName, (PagingPredicate) predicate, partitions);
-            } else {
-                return runUsingPartitionScanWithoutPaging(mapName, predicate, partitions);
+                Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry((PagingPredicate) predicate);
+                result = getSortedSubList(result, (PagingPredicate) predicate, nearestAnchorEntry);
             }
-        } catch (InterruptedException e) {
-            throw new HazelcastException(e.getMessage(), e);
-        } catch (ExecutionException e) {
-            throw new HazelcastException(e.getMessage(), e);
+            return result;
+        } catch (ExecutionException ex) {
+            throw new HazelcastException(ex);
+        } catch (InterruptedException ex) {
+            throw new HazelcastException(ex);
         }
-    }
-
-    protected List<QueryableEntry> runUsingPartitionScanWithPaging(
-            String name, PagingPredicate predicate, Collection<Integer> partitions)
-            throws InterruptedException, ExecutionException {
-
-        List<QueryableEntry> result = runUsingPartitionScanWithoutPaging(name, predicate, partitions);
-        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(predicate);
-        return getSortedSubList(result, predicate, nearestAnchorEntry);
     }
 
     protected List<QueryableEntry> runUsingPartitionScanWithoutPaging(
@@ -97,8 +85,7 @@ public class MapLocalParallelQueryRunner extends MapLocalQueryRunner {
         List<Future<Collection<QueryableEntry>>> futures = new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
 
         for (Integer partitionId : partitions) {
-            QueryPartitionCallable task = new QueryPartitionCallable(name, predicate, partitionId);
-            Future<Collection<QueryableEntry>> future = executor.submit(task);
+            Future<Collection<QueryableEntry>> future = runPartitionScanForPartition(name, predicate, partitionId);
             futures.add(future);
         }
 
@@ -108,6 +95,15 @@ public class MapLocalParallelQueryRunner extends MapLocalQueryRunner {
             result.addAll(returnedResult);
         }
         return result;
+    }
+
+    protected Future<Collection<QueryableEntry>> runPartitionScanForPartition(String name, Predicate predicate, int partitionId) {
+        QueryPartitionCallable task = new QueryPartitionCallable(name, predicate, partitionId);
+        return executor.submit(task);
+    }
+
+    private static <T> Collection<Collection<T>> waitForResult(List<Future<Collection<T>>> lsFutures, int timeoutInMinutes) {
+        return returnWithDeadline(lsFutures, timeoutInMinutes, MINUTES, RETHROW_EVERYTHING);
     }
 
     private final class QueryPartitionCallable implements Callable<Collection<QueryableEntry>> {
@@ -123,7 +119,7 @@ public class MapLocalParallelQueryRunner extends MapLocalQueryRunner {
 
         @Override
         public Collection<QueryableEntry> call() throws Exception {
-            return runUsingPartitionScanOnSinglePartition(name, predicate, partition);
+            return partitionScanRunner.run(name, predicate, partition);
         }
     }
 

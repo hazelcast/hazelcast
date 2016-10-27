@@ -24,8 +24,10 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.query.MapLocalQueryRunner;
 import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.PartitionScanRunner;
+import com.hazelcast.map.impl.query.QueryRunner;
+import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -131,7 +133,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapQueryEngine getMapQueryEngine(String name);
 
-    MapLocalQueryRunner getMapQueryRunner(String name);
+    QueryRunner getMapQueryRunner(String name);
 
     QueryOptimizer getQueryOptimizer();
 
@@ -155,5 +157,10 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     void onClusterStateChange(ClusterState newState);
 
+    PartitionScanRunner getPartitionScanRunner();
+
+    ResultProcessorRegistry getResultProcessorRegistry();
+
     MapNearCacheManager getMapNearCacheManager();
+
 }

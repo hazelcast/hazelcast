@@ -22,7 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
@@ -32,13 +34,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
- * Contains the result of a query evaluation.
- *
- * A {@link QueryResult} is a collections of {@link QueryResultRow} instances.
+ * Contains the result of a query or projection evaluation.
+ * <p>
+ * A QueryResults is a collections of {@link QueryResultRow} instances.
  */
-public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryResultRow> {
+public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializable, Iterable<QueryResultRow> {
 
-    // TODO: probably ArrayList is cheaper
     private final Collection<QueryResultRow> rows = new LinkedList<QueryResultRow>();
 
     private Collection<Integer> partitionIds;
@@ -74,38 +75,45 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
         return rows.isEmpty();
     }
 
-    public void addAllRows(Collection<QueryResultRow> r) {
-        rows.addAll(r);
+    // just for testing
+    long getResultLimit() {
+        return resultLimit;
     }
 
     public void addRow(QueryResultRow row) {
         rows.add(row);
     }
 
-    public void addAll(Collection<QueryableEntry> entries) {
-        for (QueryableEntry entry : entries) {
-            if (++resultSize > resultLimit) {
-                throw new QueryResultSizeExceededException();
-            }
+    public void add(QueryableEntry entry, Projection projection, SerializationService serializationService) {
+        if (++resultSize > resultLimit) {
+            throw new QueryResultSizeExceededException();
+        }
 
-            Data key = null;
-            Data value = null;
-            switch (iterationType) {
-                case KEY:
-                    key = entry.getKeyData();
-                    break;
-                case VALUE:
-                    value = entry.getValueData();
-                    break;
-                case ENTRY:
-                    key = entry.getKeyData();
-                    value = entry.getValueData();
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown iterationType: " + iterationType);
-            }
+        Data key = null;
+        Data value = null;
+        switch (iterationType) {
+            case KEY:
+                key = entry.getKeyData();
+                break;
+            case VALUE:
+                value = getValueData(entry, projection, serializationService);
+                break;
+            case ENTRY:
+                key = entry.getKeyData();
+                value = entry.getValueData();
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationtype:" + iterationType);
+        }
 
-            rows.add(new QueryResultRow(key, value));
+        rows.add(new QueryResultRow(key, value));
+    }
+
+    private Data getValueData(QueryableEntry entry, Projection projection, SerializationService serializationService) {
+        if (projection != null) {
+            return serializationService.toData(projection.transform(entry));
+        } else {
+            return entry.getValueData();
         }
     }
 
@@ -113,8 +121,21 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
         return partitionIds;
     }
 
+    @Override
+    public void combine(QueryResult result) {
+        if (partitionIds == null) {
+            partitionIds = new ArrayList<Integer>(result.getPartitionIds().size());
+        }
+        partitionIds.addAll(result.getPartitionIds());
+        rows.addAll(result.getRows());
+    }
+
+    @Override
+    public void onCombineFinished() {
+    }
+
     public void setPartitionIds(Collection<Integer> partitionIds) {
-        this.partitionIds = partitionIds;
+        this.partitionIds = new ArrayList<Integer>(partitionIds);
     }
 
     public Collection<QueryResultRow> getRows() {

@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class MapKeySetWithPagingPredicateMessageTask
-        extends AbstractMapQueryMessageTask<MapKeySetWithPagingPredicateCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<MapKeySetWithPagingPredicateCodec.RequestParameters> {
 
     public MapKeySetWithPagingPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

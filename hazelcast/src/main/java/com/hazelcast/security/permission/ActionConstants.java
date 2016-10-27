@@ -57,6 +57,8 @@ public final class ActionConstants {
     public static final String ACTION_INDEX = "index";
     public static final String ACTION_INTERCEPT = "intercept";
     public static final String ACTION_PUBLISH = "publish";
+    public static final String ACTION_AGGREGATE = "aggregate";
+    public static final String ACTION_PROJECTION = "projection";
 
     public static final String LISTENER_INSTANCE = "instance";
     public static final String LISTENER_MEMBER = "member";

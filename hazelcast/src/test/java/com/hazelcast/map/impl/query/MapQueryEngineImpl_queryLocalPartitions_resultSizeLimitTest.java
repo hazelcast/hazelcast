@@ -48,28 +48,34 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     }
 
     @Test
-    public void checkResultSize_limitNotExceeded() {
+    public void checkResultSize_limitNotExceeded() throws Exception {
         fillMap(limit - 1);
 
-        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
+        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE)
+                .iterationType(ENTRY).build();
+        QueryResult result = (QueryResult) queryEngine.execute(query, Target.LOCAL_NODE);
 
         assertEquals(limit - 1, result.size());
     }
 
     @Test
-    public void checkResultSize_limitEquals() {
+    public void checkResultSize_limitEquals() throws Exception {
         fillMap(limit);
 
-        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
+        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE)
+                .iterationType(ENTRY).build();
+        QueryResult result = (QueryResult) queryEngine.execute(query, Target.LOCAL_NODE);
 
         assertEquals(limit, result.size());
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
-    public void checkResultSize_limitExceeded() {
+    public void checkResultSize_limitExceeded() throws Exception {
         fillMap(limit + 1);
 
-        queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
+        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE)
+                .iterationType(ENTRY).build();
+        queryEngine.execute(query, Target.LOCAL_NODE);
     }
 
     private void fillMap(long count) {

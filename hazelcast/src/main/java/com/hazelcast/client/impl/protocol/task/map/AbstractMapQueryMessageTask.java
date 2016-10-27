@@ -16,17 +16,19 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
+import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
-import com.hazelcast.map.impl.query.QueryResult;
-import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.map.impl.query.Result;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -49,7 +51,8 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.BitSetUtils.hasAtLeastOneBitSet;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMessageTask<P> {
+public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result, AccumulatedResults, ReducedResult>
+        extends AbstractCallableMessageTask<P> {
 
     protected AbstractMapQueryMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -67,13 +70,19 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
 
     protected abstract Predicate getPredicate();
 
-    protected abstract IterationType getIterationType();
+    protected abstract Aggregator<?, ?, ?> getAggregator();
 
-    protected abstract Object reduce(Collection<QueryResultRow> result);
+    protected abstract Projection<?, ?> getProjection();
+
+    protected abstract void extractAndAppendResult(Collection<AccumulatedResults> results, QueryResult queryResult);
+
+    protected abstract ReducedResult reduce(Collection<AccumulatedResults> results);
+
+    protected abstract IterationType getIterationType();
 
     @Override
     protected final Object call() throws Exception {
-        Collection<QueryResultRow> result = new LinkedList<QueryResultRow>();
+        Collection<AccumulatedResults> result = new LinkedList<AccumulatedResults>();
         try {
             Predicate predicate = getPredicate();
             int partitionCount = clientEngine.getPartitionService().getPartitionCount();
@@ -86,16 +95,16 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         return reduce(result);
     }
 
-    private BitSet invokeOnMembers(Collection<QueryResultRow> result, Predicate predicate, int partitionCount)
+    private BitSet invokeOnMembers(Collection<AccumulatedResults> result, Predicate predicate, int partitionCount)
             throws InterruptedException, ExecutionException {
         Collection<Member> members = clientEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         List<Future> futures = createInvocations(members, predicate);
         return collectResults(result, futures, partitionCount);
     }
 
-    private void invokeOnMissingPartitions(Collection<QueryResultRow> result, Predicate predicate,
+    private void invokeOnMissingPartitions(Collection<AccumulatedResults> result, Predicate predicate,
                                            BitSet finishedPartitions, int partitionCount)
-            throws InterruptedException, java.util.concurrent.ExecutionException {
+            throws InterruptedException, ExecutionException {
         if (hasMissingPartitions(finishedPartitions, partitionCount)) {
             List<Integer> missingList = findMissingPartitions(finishedPartitions, partitionCount);
             List<Future> missingFutures = new ArrayList<Future>(missingList.size());
@@ -107,11 +116,12 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
         List<Future> futures = new ArrayList<Future>(members.size());
         final InternalOperationService operationService = nodeEngine.getOperationService();
+        final Query query = buildQuery(predicate);
         for (Member member : members) {
             try {
                 Future future = operationService.createInvocationBuilder(SERVICE_NAME,
-                        new QueryOperation(getDistributedObjectName(), predicate, getIterationType()), member.getAddress())
-                                                .invoke();
+                        new QueryOperation(query), member.getAddress())
+                        .invoke();
                 futures.add(future);
             } catch (Throwable t) {
                 if (t.getCause() instanceof QueryResultSizeExceededException) {
@@ -128,8 +138,25 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         return futures;
     }
 
+    private Query buildQuery(Predicate predicate) {
+        Query.QueryBuilder builder =
+            Query.of().mapName(getDistributedObjectName())
+                      .predicate(predicate)
+                      .iterationType(getIterationType());
+
+        if (getAggregator() != null) {
+            builder = builder.aggregator(getAggregator());
+        }
+
+        if (getProjection() != null) {
+            builder = builder.projection(getProjection());
+        }
+
+        return builder.build();
+    }
+
     @SuppressWarnings("unchecked")
-    private BitSet collectResults(Collection<QueryResultRow> result, List<Future> futures, int partitionCount)
+    private BitSet collectResults(Collection<AccumulatedResults> result, List<Future> futures, int partitionCount)
             throws InterruptedException, ExecutionException {
         BitSet finishedPartitions = new BitSet(partitionCount);
         for (Future future : futures) {
@@ -143,7 +170,7 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
                         // running. In this case we discard all results from this member and will target the missing
                         // partition separately later.
                         BitSetUtils.setBits(finishedPartitions, partitionIds);
-                        result.addAll(queryResult.getRows());
+                        extractAndAppendResult(result, queryResult);
                     }
                 }
             } catch (Throwable t) {
@@ -179,9 +206,9 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
                                                        Predicate predicate) {
 
         final InternalOperationService operationService = nodeEngine.getOperationService();
+        Query query = buildQuery(predicate);
         for (Integer partitionId : missingPartitionsList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(
-                    getDistributedObjectName(), predicate, getIterationType());
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(query);
             queryPartitionOperation.setPartitionId(partitionId);
             try {
                 Future future = operationService.invokeOnPartition(SERVICE_NAME,
@@ -193,14 +220,14 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         }
     }
 
-    private void collectResultsFromMissingPartitions(BitSet finishedPartitions, Collection<QueryResultRow> result,
+    private void collectResultsFromMissingPartitions(BitSet finishedPartitions, Collection<AccumulatedResults> result,
                                                      List<Future> futures)
-            throws InterruptedException, java.util.concurrent.ExecutionException {
+            throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult.getPartitionIds() != null && queryResult.getPartitionIds().size() > 0
                     && !hasAtLeastOneBitSet(finishedPartitions, queryResult.getPartitionIds())) {
-                result.addAll(queryResult.getRows());
+                extractAndAppendResult(result, queryResult);
                 BitSetUtils.setBits(finishedPartitions, queryResult.getPartitionIds());
             }
         }

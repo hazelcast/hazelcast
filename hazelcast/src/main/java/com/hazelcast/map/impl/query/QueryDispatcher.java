@@ -23,12 +23,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
@@ -38,7 +36,6 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.map.impl.query.MapQueryEngineUtils.shouldSkipPartitionsQuery;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singletonList;
@@ -52,7 +49,7 @@ import static java.util.Collections.singletonList;
  * Does not contain any query logic. Relies on query operations only.
  * Should be used by query engine only!
  */
-final class MapQueryDispatcher {
+final class QueryDispatcher {
 
     protected final MapServiceContext mapServiceContext;
     protected final NodeEngine nodeEngine;
@@ -64,7 +61,7 @@ final class MapQueryDispatcher {
     protected final LocalMapStatsProvider localMapStatsProvider;
     protected final ManagedExecutorService executor;
 
-    protected MapQueryDispatcher(MapServiceContext mapServiceContext) {
+    protected QueryDispatcher(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
@@ -76,55 +73,50 @@ final class MapQueryDispatcher {
         this.executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
     }
 
-    protected List<Future<QueryResult>> dispatchFullQueryOnQueryThread(
-            String mapName, Predicate predicate, IterationType iterationType, DispatchTarget target) {
-        switch (target) {
-            case LOCAL_MEMBER:
-                return dispatchFullQueryOnLocalMemberOnQueryThread(mapName, predicate, iterationType);
-            case ALL_MEMBERS:
-                return dispatchFullQueryOnAllMembersOnQueryThread(mapName, predicate, iterationType);
-            default:
-                throw new RuntimeException("Illegal dispatch target " + target);
+    protected List<Future<Result>> dispatchFullQueryOnQueryThread(
+            Query query, Target target) {
+        if (target.isTargetAllNodes()) {
+            return dispatchFullQueryOnAllMembersOnQueryThread(query);
+        } else if (target.isTargetLocalNode()) {
+            return dispatchFullQueryOnLocalMemberOnQueryThread(query);
         }
+        throw new IllegalArgumentException("Illegal target " + query);
     }
 
-    protected List<Future<QueryResult>> dispatchFullQueryOnLocalMemberOnQueryThread(
-            String mapName, Predicate predicate, IterationType iterationType) {
-        Operation operation = new QueryOperation(mapName, predicate, iterationType);
-        Future<QueryResult> result = operationService.invokeOnTarget(
+    private List<Future<Result>> dispatchFullQueryOnLocalMemberOnQueryThread(Query query) {
+        Operation operation = new QueryOperation(query);
+        Future<Result> result = operationService.invokeOnTarget(
                 MapService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
         return singletonList(result);
     }
 
-    protected List<Future<QueryResult>> dispatchFullQueryOnAllMembersOnQueryThread(
-            String mapName, Predicate predicate, IterationType iterationType) {
+    private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query) {
         Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
-        List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
+        List<Future<Result>> futures = new ArrayList<Future<Result>>(members.size());
         for (Member member : members) {
-            Operation operation = new QueryOperation(mapName, predicate, iterationType);
-            Future<QueryResult> future = operationService.invokeOnTarget(
+            Operation operation = new QueryOperation(query);
+            Future<Result> future = operationService.invokeOnTarget(
                     MapService.SERVICE_NAME, operation, member.getAddress());
             futures.add(future);
         }
         return futures;
     }
 
-    protected List<Future<QueryResult>> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-            String mapName, Predicate predicate, Collection<Integer> partitionIds, IterationType iterationType) {
+    protected List<Future<Result>> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+            Query query, Collection<Integer> partitionIds) {
         if (shouldSkipPartitionsQuery(partitionIds)) {
             return Collections.emptyList();
         }
 
-        List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(partitionIds.size());
+        List<Future<Result>> futures = new ArrayList<Future<Result>>(partitionIds.size());
         for (Integer partitionId : partitionIds) {
-            futures.add(dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(mapName, predicate, partitionId, iterationType));
+            futures.add(dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId));
         }
         return futures;
     }
 
-    protected Future<QueryResult> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-            String mapName, Predicate predicate, Integer partitionId, IterationType iterationType) {
-        Operation op = new QueryPartitionOperation(mapName, predicate, iterationType);
+    protected Future<Result> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(Query query, int partitionId) {
+        Operation op = new QueryPartitionOperation(query);
         op.setPartitionId(partitionId);
         try {
             return operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
@@ -133,9 +125,9 @@ final class MapQueryDispatcher {
         }
     }
 
-    enum DispatchTarget {
-        LOCAL_MEMBER,
-        ALL_MEMBERS
+    private static boolean shouldSkipPartitionsQuery(Collection<Integer> partitionIds) {
+        return partitionIds == null || partitionIds.isEmpty();
     }
+
 
 }

@@ -16,18 +16,19 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.query.Predicate;
-import com.hazelcast.util.IterationType;
-
 /**
  * Responsible for executing queries on the IMap.
  */
 public interface MapQueryEngine {
 
-    QueryResult runQueryOnAllPartitions(String mapName, Predicate predicate, IterationType iterationType);
-
-    QueryResult runQueryOnLocalPartitions(String mapName, Predicate predicate, IterationType iterationType);
-
-    QueryResult runQueryOnGivenPartition(String mapName, Predicate predicate, IterationType iterationType, int partitionId);
+    /**
+     * Executes the given query on the given target.
+     *
+     * @param query  query to execute
+     * @param target target where to execute the query
+     * @param <T>    Type of the result
+     * @return Result of the specific type
+     */
+    <T extends Result> T execute(Query query, Target target);
 
 }

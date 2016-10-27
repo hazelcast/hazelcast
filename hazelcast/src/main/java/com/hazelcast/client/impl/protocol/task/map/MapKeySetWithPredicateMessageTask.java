@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class MapKeySetWithPredicateMessageTask
-        extends AbstractMapQueryMessageTask<MapKeySetWithPredicateCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<MapKeySetWithPredicateCodec.RequestParameters> {
 
     public MapKeySetWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

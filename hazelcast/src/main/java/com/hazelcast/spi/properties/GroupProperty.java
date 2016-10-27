@@ -81,7 +81,7 @@ public final class GroupProperty {
      * The number of priority generic operation handler threads per Member.
      * <p/>
      * The default is 1.
-     *
+     * <p>
      * Having at least 1 priority generic operation thread helps to improve cluster stability since a lot of the cluster
      * operations are generic priority operations and they should get executed as soon as possible. If there is a dedicated
      * generic operation thread, than these operations don't get delayed because the generic threads are busy executing regular
@@ -536,6 +536,18 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty QUERY_PREDICATE_PARALLEL_EVALUATION
             = new HazelcastProperty("hazelcast.query.predicate.parallel.evaluation", false);
+
+    /**
+     * Run aggregation accumulation for multiple entries in parallel.
+     * <p/>
+     * Each Hazelcast member executes the accumulation stage of an aggregation using a single thread by default.
+     * In most cases it pays off to do it in parallel.
+     * <p/>
+     * The default is true.
+     */
+    public static final HazelcastProperty AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION
+            = new HazelcastProperty("hazelcast.aggregation.accumulation.parallel.evaluation", true);
+
 
     /**
      * Result size limit for query operations on maps.
