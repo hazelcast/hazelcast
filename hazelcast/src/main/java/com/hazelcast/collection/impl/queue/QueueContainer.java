@@ -121,7 +121,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
     }
 
-    //TX Methods
+    public QueueStoreWrapper getStore() {
+        return store;
+    }
+//TX Methods
 
     public boolean txnCheckReserve(long itemId) {
         if (txMap.get(itemId) == null) {

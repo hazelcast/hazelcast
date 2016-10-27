@@ -18,12 +18,13 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public abstract class AbstractNamedOperation extends Operation implements NamedOperation {
+public abstract class AbstractNamedOperation extends Operation implements NamedOperation, IdentifiedDataSerializable {
     protected String name;
 
     protected AbstractNamedOperation(String name) {

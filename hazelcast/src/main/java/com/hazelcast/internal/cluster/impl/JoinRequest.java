@@ -20,14 +20,13 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JoinRequest extends JoinMessage implements DataSerializable {
+public class JoinRequest extends JoinMessage {
 
     private Credentials credentials;
     private int tryCount;
@@ -106,4 +105,8 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
                 + '}';
     }
 
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.JOIN_REQUEST;
+    }
 }

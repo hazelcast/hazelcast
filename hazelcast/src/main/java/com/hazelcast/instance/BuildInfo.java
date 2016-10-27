@@ -99,10 +99,6 @@ public class BuildInfo {
         return UNKNOWN_HAZELCAST_VERSION;
     }
 
-    public static int getUnknownHazelcastVersion() {
-        return UNKNOWN_HAZELCAST_VERSION;
-    }
-
     @Override
     public String toString() {
         return "BuildInfo{"

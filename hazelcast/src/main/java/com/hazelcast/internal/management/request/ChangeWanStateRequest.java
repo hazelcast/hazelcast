@@ -60,9 +60,7 @@ public class ChangeWanStateRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
-        ChangeWanStateOperation changeWanStateOperation =
-                new ChangeWanStateOperation(schemeName, publisherName, start);
-        Object operationResult = mcs.callOnThis(changeWanStateOperation);
+        Object operationResult = mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start));
         JsonObject result = new JsonObject();
         if (operationResult == null) {
             result.add("result", SUCCESS);

@@ -79,15 +79,17 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public int getId() {
+        throw new UnsupportedOperationException();
+    }
 }

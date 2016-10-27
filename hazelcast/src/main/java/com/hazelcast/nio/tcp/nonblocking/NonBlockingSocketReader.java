@@ -19,9 +19,8 @@ package com.hazelcast.nio.tcp.nonblocking;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.tcp.SocketConnection;
 import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketReaderInitializer;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
@@ -41,8 +40,8 @@ import static java.nio.channels.SelectionKey.OP_READ;
  * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
  * {@link ReadHandler} to get processed.
  */
-public final class NonBlockingSocketReader<C extends Connection>
-        extends AbstractHandler<C>
+public final class NonBlockingSocketReader
+        extends AbstractHandler
         implements SocketReader {
 
     protected ByteBuffer inputBuffer;
@@ -60,13 +59,12 @@ public final class NonBlockingSocketReader<C extends Connection>
     private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
     public NonBlockingSocketReader(
-            C connection,
-            SocketChannelWrapper socketChannel,
+            SocketConnection connection,
             NonBlockingIOThread ioThread,
             ILogger logger,
             IOBalancer balancer,
             SocketReaderInitializer initializer) {
-        super(connection, ioThread, OP_READ, socketChannel, logger, balancer);
+        super(connection, ioThread, OP_READ, logger, balancer);
         this.initializer = initializer;
     }
 
@@ -101,7 +99,7 @@ public final class NonBlockingSocketReader<C extends Connection>
     }
 
     @Override
-    public long getLastReadTimeMillis() {
+    public long lastReadTimeMillis() {
         return lastReadTime;
     }
 

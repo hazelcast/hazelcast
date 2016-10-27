@@ -34,4 +34,6 @@ interface SerializerAdapter {
     void destroy();
 
     Serializer getImpl();
+
+    Object read(ObjectDataInput in, Class aClass) throws IOException;
 }

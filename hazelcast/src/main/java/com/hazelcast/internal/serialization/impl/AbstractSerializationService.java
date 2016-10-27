@@ -121,11 +121,21 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public byte[] toBytes(Object obj) {
-        return toBytes(obj, globalPartitioningStrategy);
+        return toBytes(0, obj, globalPartitioningStrategy);
+    }
+
+    @Override
+    public byte[] toBytes(int padding, Object obj) {
+        return toBytes(padding, obj, globalPartitioningStrategy);
     }
 
     @Override
     public byte[] toBytes(Object obj, PartitioningStrategy strategy) {
+        return toBytes(0, obj, strategy);
+    }
+
+    @Override
+    public byte[] toBytes(int padding, Object obj, PartitioningStrategy strategy) {
         checkNotNull(obj);
 
         BufferPool pool = bufferPoolThreadLocal.get();
@@ -138,7 +148,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             out.writeInt(serializer.getTypeId(), ByteOrder.BIG_ENDIAN);
 
             serializer.write(out, obj);
-            return out.toByteArray();
+            return out.toByteArray(padding);
         } catch (Throwable e) {
             throw handleSerializeException(obj, e);
         } finally {
@@ -170,6 +180,41 @@ public abstract class AbstractSerializationService implements InternalSerializat
             }
 
             Object obj = serializer.read(in);
+            if (managedContext != null) {
+                obj = managedContext.initialize(obj);
+            }
+            return (T) obj;
+        } catch (Throwable e) {
+            throw handleException(e);
+        } finally {
+            pool.returnInputBuffer(in);
+        }
+    }
+
+    @Override
+    public final <T> T toObject(final Object object, Class aClass) {
+        if (!(object instanceof Data)) {
+            return (T) object;
+        }
+
+        Data data = (Data) object;
+        if (isNullData(data)) {
+            return null;
+        }
+
+        BufferPool pool = bufferPoolThreadLocal.get();
+        BufferObjectDataInput in = pool.takeInputBuffer(data);
+        try {
+            final int typeId = data.getType();
+            final SerializerAdapter serializer = serializerFor(typeId);
+            if (serializer == null) {
+                if (active) {
+                    throw newHazelcastSerializationException(typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
+            }
+
+            Object obj = serializer.read(in, aClass);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
             }
@@ -214,6 +259,27 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 throw new HazelcastInstanceNotActiveException();
             }
             Object obj = serializer.read(in);
+            if (managedContext != null) {
+                obj = managedContext.initialize(obj);
+            }
+            return (T) obj;
+        } catch (Throwable e) {
+            throw handleException(e);
+        }
+    }
+
+    @Override
+    public final <T> T readObject(final ObjectDataInput in, Class aClass) {
+        try {
+            final int typeId = in.readInt();
+            final SerializerAdapter serializer = serializerFor(typeId);
+            if (serializer == null) {
+                if (active) {
+                    throw newHazelcastSerializationException(typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
+            }
+            Object obj = serializer.read(in, aClass);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
             }

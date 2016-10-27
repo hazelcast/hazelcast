@@ -68,7 +68,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCardinalityEstimatorSpawnNodeInParallel() throws InterruptedException {
+    public void testCardinalityEstimatorSpawnNodeInParallel() {
         int total = 6;
         int parallel = 2;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(total + 1);

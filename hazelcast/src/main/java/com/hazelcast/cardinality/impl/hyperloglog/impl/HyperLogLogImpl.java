@@ -31,7 +31,7 @@ public class HyperLogLogImpl implements HyperLogLog {
     private static final int UPPER_P_BOUND = 16;
     private static final int UPPER_P_PRIME_BOUND = 25;
 
-    // [1] Shows good cardinality estimation
+    // [1] shows good cardinality estimation
     private static final int DEFAULT_P = 14;
     private static final int DEFAULT_P_PRIME = 25;
 
@@ -109,5 +109,4 @@ public class HyperLogLogImpl implements HyperLogLog {
             encoder = ((SparseHyperLogLogEncoder) encoder).asDense();
         }
     }
-
 }

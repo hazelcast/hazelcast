@@ -87,5 +87,4 @@ public interface GarbageCollectorStats {
      * @return total unidentified collection time in ms.
      */
     long getUnknownCollectionTime();
-
 }

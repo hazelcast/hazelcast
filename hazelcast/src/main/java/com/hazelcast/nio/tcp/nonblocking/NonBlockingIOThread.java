@@ -21,6 +21,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.util.EmptyStatement;
 
@@ -76,7 +77,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     private Selector selector;
 
-    private final NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
+    private final IOOutOfMemoryHandler oomeHandler;
 
     private final SelectorMode selectMode;
 
@@ -88,14 +89,14 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
                                ILogger logger,
-                               NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
+                               IOOutOfMemoryHandler oomeHandler) {
         this(threadGroup, threadName, logger, oomeHandler, SelectorMode.SELECT);
     }
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
                                ILogger logger,
-                               NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
+                               IOOutOfMemoryHandler oomeHandler,
                                SelectorMode selectMode) {
         this(threadGroup, threadName, logger, oomeHandler, selectMode, newSelector(logger));
     }
@@ -103,7 +104,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
                                ILogger logger,
-                               NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
+                               IOOutOfMemoryHandler oomeHandler,
                                SelectorMode selectMode,
                                Selector selector) {
         super(threadGroup, threadName);
@@ -135,7 +136,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         return selector;
     }
 
-    public NonBlockingIOThreadOutOfMemoryHandler getOomeHandler() {
+    public IOOutOfMemoryHandler getOomeHandler() {
         return oomeHandler;
     }
 
@@ -335,7 +336,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         }
     }
 
-    protected void handleSelectionKey(SelectionKey sk) {
+    private void handleSelectionKey(SelectionKey sk) {
         SelectionHandler handler = (SelectionHandler) sk.attachment();
         try {
             if (!sk.isValid()) {

@@ -33,19 +33,19 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 /**
  * Operation to update map configuration from Management Center.
  */
-public class UpdateMapConfigOperation extends Operation {
+public class UpdateMapConfigOperation extends AbstractManagementOperation {
 
     private String mapName;
     private MapConfig mapConfig;
@@ -90,5 +90,10 @@ public class UpdateMapConfigOperation extends Operation {
         MapConfigDTO adapter = new MapConfigDTO();
         adapter.readData(in);
         mapConfig = adapter.getMapConfig();
+    }
+
+    @Override
+    public int getId() {
+        return ManagementDataSerializerHook.UPDATE_MAP_CONFIG;
     }
 }

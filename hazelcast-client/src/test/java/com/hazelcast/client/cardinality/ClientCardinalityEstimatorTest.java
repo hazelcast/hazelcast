@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,16 +36,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientCardinalityEstimatorTest
-        extends HazelcastTestSupport {
+public class ClientCardinalityEstimatorTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private HazelcastInstance client;
     private CardinalityEstimator estimator;
 
@@ -54,7 +52,6 @@ public class ClientCardinalityEstimatorTest
     public void setup() {
         hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
-        estimator = client.getCardinalityEstimator(randomString());
     }
 
     @After
@@ -63,7 +60,7 @@ public class ClientCardinalityEstimatorTest
     }
 
     private HazelcastInstance createSerializationConfiguredClient() {
-        final SerializerConfig serializerConfig = new SerializerConfig();
+        SerializerConfig serializerConfig = new SerializerConfig();
         serializerConfig.setImplementation(new CustomObjectSerializer());
         serializerConfig.setTypeClass(CustomObject.class);
 
@@ -75,20 +72,19 @@ public class ClientCardinalityEstimatorTest
 
     @Test
     public void estimate() {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("estimate");
+        estimator = client.getCardinalityEstimator("estimate");
         assertEquals(0, estimator.estimate());
     }
 
     @Test
-    public void estimateAsync()
-            throws ExecutionException, InterruptedException {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("estimateAsync");
+    public void estimateAsync() throws Exception {
+        estimator = client.getCardinalityEstimator("estimateAsync");
         assertEquals(0, estimator.estimateAsync().get().longValue());
     }
 
     @Test
     public void add() {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregate");
+        estimator = client.getCardinalityEstimator("aggregate");
         estimator.add(1L);
         assertEquals(1L, estimator.estimate());
         estimator.add(1L);
@@ -102,9 +98,8 @@ public class ClientCardinalityEstimatorTest
     }
 
     @Test
-    public void addAsync()
-            throws Exception {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateAsync");
+    public void addAsync() throws Exception {
+        estimator = client.getCardinalityEstimator("aggregateAsync");
         estimator.addAsync(1L).get();
         assertEquals(1L, estimator.estimateAsync().get().longValue());
         estimator.addAsync(1L).get();
@@ -119,43 +114,42 @@ public class ClientCardinalityEstimatorTest
 
     @Test
     public void addString() {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateString");
+        estimator = client.getCardinalityEstimator("aggregateString");
         estimator.add("String1");
         assertEquals(1L, estimator.estimate());
     }
 
     @Test
-    public void addStringAsync()
-            throws Exception {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateStringAsync");
+    public void addStringAsync() throws Exception {
+        estimator = client.getCardinalityEstimator("aggregateStringAsync");
         estimator.addAsync("String1").get();
         assertEquals(1L, estimator.estimateAsync().get().longValue());
     }
 
     @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)
     public void addCustomObject() {
-        CardinalityEstimator estimator = client.getCardinalityEstimator("aggregateCustomObject");
+        estimator = client.getCardinalityEstimator("aggregateCustomObject");
         estimator.add(new CustomObject(1, 2));
     }
 
-    @Test()
-    public void addCustomObjectRegisteredAsync()
-            throws Exception {
-        CardinalityEstimator estimator = createSerializationConfiguredClient().getCardinalityEstimator("aggregateCustomObjectAsync");
+    @Test
+    public void addCustomObjectRegisteredAsync() {
+        estimator = createSerializationConfiguredClient().getCardinalityEstimator("aggregateCustomObjectAsync");
         assertEquals(0L, estimator.estimate());
         estimator.add(new CustomObject(1, 2));
         assertEquals(1L, estimator.estimate());
     }
 
-    @Test()
+    @Test
     public void addCustomObjectRegistered() {
-        CardinalityEstimator estimator = createSerializationConfiguredClient().getCardinalityEstimator("aggregateCustomObject");
+        estimator = createSerializationConfiguredClient().getCardinalityEstimator("aggregateCustomObject");
         assertEquals(0L, estimator.estimate());
         estimator.add(new CustomObject(1, 2));
         assertEquals(1L, estimator.estimate());
     }
 
     private class CustomObject {
+
         private final int x;
         private final int y;
 
@@ -177,17 +171,14 @@ public class ClientCardinalityEstimatorTest
         }
 
         @Override
-        public void write(ObjectDataOutput out, CustomObject object)
-                throws IOException {
+        public void write(ObjectDataOutput out, CustomObject object) throws IOException {
             out.writeLong((object.x << Bits.INT_SIZE_IN_BYTES) | object.y);
         }
 
         @Override
-        public CustomObject read(ObjectDataInput in)
-                throws IOException {
-            // Not needed
+        public CustomObject read(ObjectDataInput in) throws IOException {
+            // not needed
             throw new UnsupportedOperationException();
         }
     }
-
 }

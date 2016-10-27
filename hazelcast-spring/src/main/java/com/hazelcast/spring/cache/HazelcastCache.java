@@ -91,7 +91,7 @@ public class HazelcastCache implements Cache {
         try {
             value = valueLoader.call();
         } catch (Exception ex) {
-            throw new ValueRetrievalException(key, valueLoader, ex);
+            throw ValueRetrievalExceptionResolver.resolveException(key, valueLoader, ex);
         }
         put(key, value);
         return value;
@@ -158,4 +158,13 @@ public class HazelcastCache implements Cache {
             return 0;
         }
     }
+
+    private static class ValueRetrievalExceptionResolver {
+
+        static RuntimeException resolveException(Object key, Callable<?> valueLoader,
+                Throwable ex) {
+            return new ValueRetrievalException(key, valueLoader, ex);
+        }
+    }
+
 }

@@ -20,15 +20,13 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.IOThreadingModel;
+import com.hazelcast.nio.tcp.SocketConnection;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketReaderInitializer;
-import com.hazelcast.nio.tcp.SocketReaderInitializerImpl;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.SocketWriterInitializer;
-import com.hazelcast.nio.tcp.SocketWriterInitializerImpl;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -47,7 +45,7 @@ import static java.util.logging.Level.INFO;
  * this feature is enabled, the number of io threads should be reduced (preferably 1).
  */
 public class NonBlockingIOThreadingModel
-        implements IOThreadingModel<TcpIpConnection, SocketReader, SocketWriter> {
+        implements IOThreadingModel {
 
     private final NonBlockingIOThread[] inputThreads;
     private final NonBlockingIOThread[] outputThreads;
@@ -57,7 +55,7 @@ public class NonBlockingIOThreadingModel
     private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final HazelcastThreadGroup hazelcastThreadGroup;
-    private final NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
+    private final IOOutOfMemoryHandler oomeHandler;
     private final int balanceIntervalSeconds;
     private final SocketWriterInitializer socketWriterInitializer;
     private final SocketReaderInitializer socketReaderInitializer;
@@ -75,37 +73,15 @@ public class NonBlockingIOThreadingModel
     private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
 
     public NonBlockingIOThreadingModel(
-            final IOService ioService,
-            LoggingService loggingService,
-            MetricsRegistry metricsRegistry,
-            HazelcastThreadGroup hazelcastThreadGroup) {
-
-        this(loggingService,
-                metricsRegistry,
-                hazelcastThreadGroup,
-                ioService.getInputSelectorThreadCount(),
-                ioService.getOutputSelectorThreadCount(),
-                ioService.getBalancerIntervalSeconds(),
-                new SocketWriterInitializerImpl(loggingService.getLogger(SocketWriterInitializerImpl.class)),
-                new SocketReaderInitializerImpl(loggingService.getLogger(SocketReaderInitializerImpl.class)),
-                new NonBlockingIOThreadOutOfMemoryHandler() {
-                    @Override
-                    public void handle(OutOfMemoryError error) {
-                        ioService.onOutOfMemory(error);
-                    }
-                });
-    }
-
-    public NonBlockingIOThreadingModel(
             LoggingService loggingService,
             MetricsRegistry metricsRegistry,
             HazelcastThreadGroup hazelcastThreadGroup,
+            IOOutOfMemoryHandler oomeHandler,
             int inputThreadCount,
             int outputThreadCount,
             int balanceIntervalSeconds,
             SocketWriterInitializer socketWriterInitializer,
-            SocketReaderInitializer socketReaderInitializer,
-            NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
+            SocketReaderInitializer socketReaderInitializer) {
         this.hazelcastThreadGroup = hazelcastThreadGroup;
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
@@ -197,14 +173,14 @@ public class NonBlockingIOThreadingModel
     }
 
     @Override
-    public void onConnectionAdded(TcpIpConnection connection) {
+    public void onConnectionAdded(SocketConnection connection) {
         MigratableHandler reader = (MigratableHandler) connection.getSocketReader();
         MigratableHandler writer = (MigratableHandler) connection.getSocketWriter();
         ioBalancer.connectionAdded(reader, writer);
     }
 
     @Override
-    public void onConnectionRemoved(TcpIpConnection connection) {
+    public void onConnectionRemoved(SocketConnection connection) {
         MigratableHandler reader = (MigratableHandler) connection.getSocketReader();
         MigratableHandler writer = (MigratableHandler) connection.getSocketWriter();
         ioBalancer.connectionRemoved(reader, writer);
@@ -240,7 +216,7 @@ public class NonBlockingIOThreadingModel
     }
 
     @Override
-    public SocketWriter newSocketWriter(TcpIpConnection connection) {
+    public SocketWriter newSocketWriter(SocketConnection connection) {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreads.length);
         NonBlockingIOThread outputThread = outputThreads[index];
         if (outputThread == null) {
@@ -249,7 +225,6 @@ public class NonBlockingIOThreadingModel
 
         return new NonBlockingSocketWriter(
                 connection,
-                connection.getSocketChannelWrapper(),
                 outputThread,
                 loggingService.getLogger(NonBlockingSocketWriter.class),
                 ioBalancer,
@@ -257,7 +232,7 @@ public class NonBlockingIOThreadingModel
     }
 
     @Override
-    public SocketReader newSocketReader(TcpIpConnection connection) {
+    public SocketReader newSocketReader(SocketConnection connection) {
         int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreads.length);
         NonBlockingIOThread inputThread = inputThreads[index];
         if (inputThread == null) {
@@ -266,7 +241,6 @@ public class NonBlockingIOThreadingModel
 
         return new NonBlockingSocketReader(
                 connection,
-                connection.getSocketChannelWrapper(),
                 inputThread,
                 loggingService.getLogger(NonBlockingSocketReader.class),
                 ioBalancer,

@@ -16,10 +16,11 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.UuidUtil;
 
 import java.io.DataInput;
@@ -27,7 +28,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MigrationInfo implements DataSerializable {
+public class MigrationInfo implements IdentifiedDataSerializable {
 
     public enum MigrationStatus {
 
@@ -263,5 +264,15 @@ public class MigrationInfo implements DataSerializable {
         sb.append(", status=").append(status);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MIGRATION_INFO;
     }
 }

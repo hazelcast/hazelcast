@@ -32,12 +32,17 @@ import java.io.IOException;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_ALL_OPERATION;
 
+/**
+ * Adds a batch of items to the ring buffer. The master node will add the items into the ring buffer, generating sequence IDs.
+ * The backup operation will put the items under the generated sequence IDs that the master generated. This is to avoid
+ * differences in ring buffer data structures.
+ */
 public class AddAllOperation extends AbstractRingBufferOperation
         implements Notifier, BackupAwareOperation {
 
     private OverflowPolicy overflowPolicy;
     private Data[] items;
-    private long resultSequence;
+    private long lastSequence;
 
     public AddAllOperation() {
     }
@@ -51,26 +56,26 @@ public class AddAllOperation extends AbstractRingBufferOperation
 
     @Override
     public void run() throws Exception {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
+        final RingbufferContainer ringbuffer = getRingBufferContainer();
 
         if (overflowPolicy == FAIL) {
             if (ringbuffer.remainingCapacity() < items.length) {
-                resultSequence = -1;
+                lastSequence = -1;
                 return;
             }
         }
 
-        resultSequence = ringbuffer.addAll(items);
+        lastSequence = ringbuffer.addAll(items);
     }
 
     @Override
     public Object getResponse() {
-        return resultSequence;
+        return lastSequence;
     }
 
     @Override
     public boolean shouldNotify() {
-        return resultSequence != -1;
+        return lastSequence != -1;
     }
 
     @Override
@@ -81,7 +86,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
 
     @Override
     public boolean shouldBackup() {
-        return resultSequence != -1;
+        return lastSequence != -1;
     }
 
     @Override
@@ -98,7 +103,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new AddAllBackupOperation(name, items);
+        return new AddAllBackupOperation(name, lastSequence, items);
     }
 
     @Override

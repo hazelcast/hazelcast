@@ -4,7 +4,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.predicates.RuleBasedQueryOptimizer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -30,23 +29,16 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest exten
         map = hz.getMap(randomName());
 
         MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
-        queryEngine = new MapQueryEngineImpl(mapService.getMapServiceContext(), new RuleBasedQueryOptimizer());
+        queryEngine = new MapQueryEngineImpl(mapService.getMapServiceContext());
     }
 
     @Test
-    public void checkResultLimit() throws Exception {
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
-
-        assertEquals(Long.MAX_VALUE, result.getResultLimit());
-    }
-
-    @Test
-    public void checkResultSize() throws Exception {
+    public void checkResultSize() {
         fillMap(10000);
 
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
+        QueryResult result = queryEngine.runQueryOnLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
 
-        assertEquals(10000, result.getRows().size());
+        assertEquals(10000, result.size());
     }
 
     private void fillMap(long count) {

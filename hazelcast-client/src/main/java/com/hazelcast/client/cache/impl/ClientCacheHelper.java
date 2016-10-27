@@ -17,19 +17,24 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheProxyUtil;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.LegacyCacheConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
@@ -43,7 +48,6 @@ import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
  * Helper class for some client cache related stuff.
  */
 final class ClientCacheHelper {
-
     private ClientCacheHelper() {
     }
 
@@ -66,10 +70,31 @@ final class ClientCacheHelper {
             Future<ClientMessage> future = clientInvocation.invoke();
             ClientMessage responseMessage = future.get();
             SerializationService serializationService = client.getSerializationService();
-            return serializationService.toObject(CacheGetConfigCodec.decodeResponse(responseMessage).response);
+
+            return deserializeCacheConfig(client, responseMessage, serializationService, clientInvocation);
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+    private static <K, V> CacheConfig<K, V> deserializeCacheConfig(HazelcastClientInstanceImpl client,
+                                                                   ClientMessage responseMessage,
+                                                                   SerializationService serializationService,
+                                                                   ClientInvocation clientInvocation) {
+        Data responseData = CacheGetConfigCodec.decodeResponse(responseMessage).response;
+        ClientConnection sendConnection = clientInvocation.getSendConnection();
+        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
+            boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
+            if (compatibilityEnabled) {
+                LegacyCacheConfig<K, V> legacyConfig = serializationService.toObject(responseData, LegacyCacheConfig.class);
+                if (null == legacyConfig) {
+                    return null;
+                }
+                return legacyConfig.getConfigAndReset();
+            }
+        }
+
+        return serializationService.toObject(responseData);
     }
 
     /**
@@ -95,20 +120,52 @@ final class ClientCacheHelper {
         try {
             CacheConfig<K, V> currentCacheConfig = configs.get(cacheName);
             int partitionId = client.getClientPartitionService().getPartitionId(newCacheConfig.getNameWithPrefix());
-            Data newCacheConfigData = client.getSerializationService().toData(newCacheConfig);
-            ClientMessage request = CacheCreateConfigCodec.encodeRequest(newCacheConfigData, createAlsoOnOthers);
+
+            Object resolvedConfig = resolveCacheConfig(client, newCacheConfig, partitionId);
+
+            Data configData = client.getSerializationService().toData(resolvedConfig);
+            ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, createAlsoOnOthers);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
             if (syncCreate) {
                 final ClientMessage response = future.get();
                 final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
-                return (CacheConfig<K, V>) client.getSerializationService().toObject(data);
+                return resolveCacheConfig(client, clientInvocation, data);
             } else {
                 return currentCacheConfig;
             }
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+    private static <K, V> CacheConfig<K, V> resolveCacheConfig(HazelcastClientInstanceImpl client,
+                                                               ClientInvocation clientInvocation, Data configData) {
+        ClientConnection sendConnection = clientInvocation.getSendConnection();
+        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
+            boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
+            if (compatibilityEnabled) {
+                LegacyCacheConfig legacyConfig = client.getSerializationService().toObject(configData, LegacyCacheConfig.class);
+                if (null == legacyConfig) {
+                    return null;
+                }
+                return legacyConfig.getConfigAndReset();
+            }
+        }
+        return client.getSerializationService().toObject(configData);
+    }
+
+    private static <K, V> Object resolveCacheConfig(HazelcastClientInstanceImpl client, CacheConfig<K, V> newCacheConfig,
+                                                         int partitionId)
+            throws IOException {
+        ClientConnection sendConnection = client.getInvocationService().getConnection(partitionId);
+        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
+            boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
+            if (compatibilityEnabled) {
+                return new LegacyCacheConfig<K, V>(newCacheConfig);
+            }
+        }
+        return newCacheConfig;
     }
 
     /**

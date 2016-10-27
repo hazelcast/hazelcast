@@ -46,7 +46,8 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     public void testSet() {
         adapter.set(23, "test");
 
-        assertEquals("test", map.get(23));    }
+        assertEquals("test", map.get(23));
+    }
 
     @Test
     public void testPut() {

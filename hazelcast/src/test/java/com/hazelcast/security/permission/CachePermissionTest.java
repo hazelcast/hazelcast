@@ -1,5 +1,3 @@
-package com.hazelcast.security.permission;
-
 /*
  * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
@@ -16,6 +14,8 @@ package com.hazelcast.security.permission;
  * limitations under the License.
  */
 
+package com.hazelcast.security.permission;
+
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
@@ -29,13 +29,13 @@ public class CachePermissionTest extends AbstractPermissionTest {
 
     @Override
     protected String[] getActions() {
-        return new String[] {
-            "put",
-            "read",
-            "remove",
-            "listen",
-            "create",
-            "destroy"
+        return new String[]{
+                "put",
+                "read",
+                "remove",
+                "listen",
+                "create",
+                "destroy"
         };
     }
 
@@ -43,5 +43,4 @@ public class CachePermissionTest extends AbstractPermissionTest {
     protected Permission createPermission(String name, String... actions) {
         return new CachePermission(name, actions);
     }
-
 }

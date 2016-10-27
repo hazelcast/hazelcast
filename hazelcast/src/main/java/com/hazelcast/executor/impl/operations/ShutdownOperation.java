@@ -17,9 +17,11 @@
 package com.hazelcast.executor.impl.operations;
 
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public final class ShutdownOperation extends AbstractNamedOperation {
+public final class ShutdownOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
 
     public ShutdownOperation() {
     }
@@ -42,5 +44,15 @@ public final class ShutdownOperation extends AbstractNamedOperation {
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ExecutorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ExecutorDataSerializerHook.SHUTDOWN;
     }
 }

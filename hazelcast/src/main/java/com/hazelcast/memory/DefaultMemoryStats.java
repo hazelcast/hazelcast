@@ -27,6 +27,7 @@ public class DefaultMemoryStats implements MemoryStats {
     private final Runtime runtime = Runtime.getRuntime();
     private final DefaultGarbageCollectorStats gcStats = new DefaultGarbageCollectorStats();
 
+    @Override
     public final long getTotalPhysical() {
         return totalPhysicalMemory();
     }

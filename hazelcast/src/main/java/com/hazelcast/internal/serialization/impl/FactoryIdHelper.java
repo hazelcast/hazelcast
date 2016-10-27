@@ -110,8 +110,14 @@ public final class FactoryIdHelper {
     public static final String ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY = "hazelcast.serialization.ds.spi.hotrestart.cluster";
     public static final int ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY_ID = -35;
 
+    public static final String MANAGEMENT_DS_FACTORY = "hazelcast.serialization.ds.management";
+    public static final int MANAGEMENT_DS_FACTORY_ID = -36;
+
+    public static final String TEXT_PROTOCOLS_DS_FACTORY = "hazelcast.serialization.ds.text.protocols";
+    public static final int TEXT_PROTOCOLS_DS_FACTORY_ID = -37;
+
     public static final String SCHEDULED_EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.scheduled.executor";
-    public static final int SCHEDULED_EXECUTOR_DS_FACTORY_ID = -36;
+    public static final int SCHEDULED_EXECUTOR_DS_FACTORY_ID = -38;
 
     // =========================== portables =============================================
 

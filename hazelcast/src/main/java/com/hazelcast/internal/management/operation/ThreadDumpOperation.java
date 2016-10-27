@@ -17,24 +17,15 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.internal.management.ThreadDumpGenerator;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
+import com.hazelcast.spi.AbstractLocalOperation;
 
 /**
  *  Operation for generating thread dumps.
  */
-public class ThreadDumpOperation extends Operation {
+public class ThreadDumpOperation extends AbstractLocalOperation {
 
     private boolean dumpDeadlocks;
     private String result;
-
-    @SuppressWarnings("unused")
-    public ThreadDumpOperation() {
-        this(false);
-    }
 
     public ThreadDumpOperation(boolean dumpDeadlocks) {
         this.dumpDeadlocks = dumpDeadlocks;
@@ -45,15 +36,8 @@ public class ThreadDumpOperation extends Operation {
         result = dumpDeadlocks ? ThreadDumpGenerator.dumpDeadlocks() : ThreadDumpGenerator.dumpAllThreads();
     }
 
+    @Override
     public Object getResponse() {
         return result;
-    }
-
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(dumpDeadlocks);
-    }
-
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        dumpDeadlocks = in.readBoolean();
     }
 }

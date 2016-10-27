@@ -151,7 +151,7 @@ public class XmlConfigLocator {
     }
 
     private void loadSystemPropertyFileResource(String configSystemProperty) {
-        //it is a file.
+        // it's a file
         configurationFile = new File(configSystemProperty);
         LOGGER.info("Using configuration file at " + configurationFile.getAbsolutePath());
 
@@ -174,7 +174,7 @@ public class XmlConfigLocator {
     }
 
     private void loadSystemPropertyClassPathResource(String configSystemProperty) {
-        //it is a explicit configured classpath resource.
+        // it's an explicit configured classpath resource
         String resource = configSystemProperty.substring("classpath:".length());
 
         LOGGER.info("Using classpath resource at " + resource);

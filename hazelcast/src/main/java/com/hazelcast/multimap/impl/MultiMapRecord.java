@@ -19,11 +19,11 @@ package com.hazelcast.multimap.impl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class MultiMapRecord implements DataSerializable {
+public class MultiMapRecord implements IdentifiedDataSerializable {
 
     private long recordId = -1;
 
@@ -90,5 +90,15 @@ public class MultiMapRecord implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         recordId = in.readLong();
         object = IOUtil.readObject(in);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MultiMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MultiMapDataSerializerHook.MULTIMAP_RECORD;
     }
 }

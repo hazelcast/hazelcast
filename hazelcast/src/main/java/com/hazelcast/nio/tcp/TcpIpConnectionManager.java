@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -128,15 +127,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final MwCounter closedCount = newMwCounter();
 
     private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
-
-    public TcpIpConnectionManager(IOService ioService,
-                                  ServerSocketChannel serverSocketChannel,
-                                  MetricsRegistry metricsRegistry,
-                                  HazelcastThreadGroup threadGroup,
-                                  LoggingService loggingService) {
-        this(ioService, serverSocketChannel, loggingService, metricsRegistry,
-                new NonBlockingIOThreadingModel(ioService, loggingService, metricsRegistry, threadGroup));
-    }
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,

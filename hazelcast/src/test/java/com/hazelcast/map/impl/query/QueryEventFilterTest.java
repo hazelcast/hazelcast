@@ -40,7 +40,6 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryEventFilterTest {
 
-
     private SerializationService serializationService;
 
     @Before
@@ -201,7 +200,6 @@ public class QueryEventFilterTest {
 
         assertFalse(filter1.equals(filter2));
     }
-
 
     private QueryableEntry mockEntryWithKeyData(Data key) {
         QueryableEntry entry = mock(QueryableEntry.class);

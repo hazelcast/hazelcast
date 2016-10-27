@@ -26,7 +26,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -44,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -398,7 +398,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
 
             try {
-                EvictionConfigHelper.checkEvictionConfig(evictionPolicyValue, comparatorClassNameValue, comparatorBean);
+                checkEvictionConfig(evictionPolicyValue, comparatorClassNameValue, comparatorBean, false);
             } catch (IllegalArgumentException e) {
                 throw new InvalidConfigurationException(e.getMessage());
             }

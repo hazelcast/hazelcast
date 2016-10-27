@@ -2,7 +2,6 @@ package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -15,7 +14,6 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -27,12 +25,6 @@ public class ChangeWanStateRequestTest extends HazelcastTestSupport {
     public void setUp() {
         HazelcastInstance hz = createHazelcastInstance();
         managementCenterService = getNode(hz).getManagementCenterService();
-    }
-
-    @Test
-    public void testOperationDefaultConstructor() {
-        ChangeWanStateOperation operation = new ChangeWanStateOperation();
-        assertNotNull(operation);
     }
 
     @Test

@@ -19,7 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 
 /**
- * The RingbufferContainer is responsible for storing the actual content of a ringbuffer.
+ * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.
  * <p/>
  * Currently the Ringbuffer is not a partitioned data-structure. So all data of a ringbuffer is stored in a single partition
  * and replicated to the replica's. No thread-safety is needed since a partition can only be accessed by a single thread at
@@ -70,6 +70,7 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
+    // not used in the codebase, here just for future API usage
     public boolean isEmpty() {
         return size() == 0;
     }
@@ -96,6 +97,8 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
+    // This method is not used since the RingbufferContainer also checks if the ring buffer store is enabled before
+    // throwing a StaleSequenceException
     public void checkBlockableReadSequence(long readSequence) {
         if (readSequence > tailSequence + 1) {
             throw new IllegalArgumentException("sequence:" + readSequence
@@ -110,6 +113,7 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
+    // the sequence is usually in the right range since the RingbufferContainer checks it too
     public void checkReadSequence(long sequence) {
         if (sequence > tailSequence) {
             throw new IllegalArgumentException("sequence:" + sequence

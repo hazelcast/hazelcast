@@ -19,10 +19,9 @@ package com.hazelcast.nio.tcp.nonblocking;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.tcp.SocketConnection;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.SocketWriterInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -49,7 +48,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
  * The writing side of the {@link TcpIpConnection}.
  */
 public final class NonBlockingSocketWriter
-        extends AbstractHandler<Connection>
+        extends AbstractHandler
         implements Runnable, SocketWriter {
 
     private static final long TIMEOUT = 3;
@@ -82,13 +81,12 @@ public final class NonBlockingSocketWriter
     // This prevents running into an NonBlockingIOThread that is migrating.
     private NonBlockingIOThread newOwner;
 
-    public NonBlockingSocketWriter(Connection connection,
-                                   SocketChannelWrapper socketChannel,
+    public NonBlockingSocketWriter(SocketConnection connection,
                                    NonBlockingIOThread ioThread,
                                    ILogger logger,
                                    IOBalancer balancer,
                                    SocketWriterInitializer initializer) {
-        super(connection, ioThread, OP_WRITE, socketChannel, logger, balancer);
+        super(connection, ioThread, OP_WRITE, logger, balancer);
         this.initializer = initializer;
     }
 
@@ -98,7 +96,7 @@ public final class NonBlockingSocketWriter
     }
 
     @Override
-    public long getLastWriteTimeMillis() {
+    public long lastWriteTimeMillis() {
         return lastWriteTime;
     }
 

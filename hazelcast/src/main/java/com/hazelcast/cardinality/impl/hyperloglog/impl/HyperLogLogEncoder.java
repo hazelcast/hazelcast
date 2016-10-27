@@ -50,5 +50,4 @@ public interface HyperLogLogEncoder extends IdentifiedDataSerializable {
      * @return {@link HyperLogLogEncoding}
      */
     HyperLogLogEncoding getEncodingType();
-
 }

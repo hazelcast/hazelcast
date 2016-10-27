@@ -20,19 +20,23 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.executor.CompletableFutureTask;
+import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.util.executor.LoggingScheduledExecutor;
+import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -58,7 +62,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
             executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
         logger = loggingService.getLogger(ClientExecutionService.class);
-        internalExecutor = new ScheduledThreadPoolExecutor(internalPoolSize,
+        internalExecutor = new LoggingScheduledExecutor(logger, internalPoolSize,
                 new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -84,7 +88,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {
-        CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, internalExecutor);
+        CompletableFutureTask<T> futureTask = new CompletableFutureTask<T>(runnable, null, internalExecutor);
         internalExecutor.submit(futureTask);
         return futureTask;
     }
@@ -95,6 +99,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ICompletableFuture<?> submit(Runnable task) {
         CompletableFutureTask futureTask = new CompletableFutureTask(task, null, getAsyncExecutor());
         userExecutor.submit(futureTask);
@@ -108,9 +113,39 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         return futureTask;
     }
 
+    @Override
+    public ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ManagedExecutorService getExecutor(String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void shutdownExecutor(String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void execute(String name, Runnable command) {
+        execute(command);
+    }
+
+    @Override
+    public Future<?> submit(String name, Runnable task) {
+        return submit(task);
+    }
+
+    @Override
+    public <T> Future<T> submit(String name, Callable<T> task) {
+        return submit(task);
+    }
+
     /**
      * Utilized when given command needs to make a remote call.
-     *
+     * <p>
      * The response of the remote call is not handled in the {@link Runnable} itself, but rather
      * in the execution callback so that executor is not blocked because of a remote operation.
      *
@@ -125,13 +160,43 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     @Override
+    public ScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit) {
+        return schedule(command, delay, unit);
+    }
+
+    @Override
     public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
         return internalExecutor.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     @Override
+    public ScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay, long period,
+                                                     TimeUnit unit) {
+        return scheduleWithRepetition(command, initialDelay, period, unit);
+    }
+
+    @Override
+    public TaskScheduler getGlobalTaskScheduler() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TaskScheduler getTaskScheduler(String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <V> ICompletableFuture<V> asCompletableFuture(Future<V> future) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ExecutorService getAsyncExecutor() {
         return userExecutor;
+    }
+
+    public ExecutorService getInternalExecutor() {
+        return internalExecutor;
     }
 
     public void shutdown() {
@@ -144,15 +209,11 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
-                logger.warning(name + " executor awaitTermination could not completed in "
-                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
+                logger.warning(name + " executor awaitTermination could not complete in " + TERMINATE_TIMEOUT_SECONDS
+                        + " seconds");
             }
         } catch (InterruptedException e) {
             logger.warning(name + " executor await termination is interrupted", e);
         }
-    }
-
-    public ExecutorService getInternalExecutor() {
-        return internalExecutor;
     }
 }

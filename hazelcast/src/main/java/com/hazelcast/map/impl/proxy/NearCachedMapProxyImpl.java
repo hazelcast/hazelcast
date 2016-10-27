@@ -74,11 +74,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     public void initialize() {
         super.initialize();
 
-        init();
+        initNearCache();
     }
 
-    @SuppressWarnings("unchecked")
-    protected void init() {
+    private void initNearCache() {
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         nearCache = nearCacheProvider.getOrCreateNearCache(name);
         keyStateMarker = getKeyStateMarker();

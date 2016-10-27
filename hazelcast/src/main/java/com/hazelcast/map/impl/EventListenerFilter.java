@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
@@ -47,7 +47,7 @@ import static com.hazelcast.map.impl.MapListenerFlagOperator.SET_ALL_LISTENER_FL
  * @see com.hazelcast.map.listener.MapListener
  * @since 3.6
  */
-public class EventListenerFilter implements EventFilter, DataSerializable {
+public class EventListenerFilter implements EventFilter, IdentifiedDataSerializable {
 
     /**
      * Flags of implemented listeners.
@@ -92,5 +92,15 @@ public class EventListenerFilter implements EventFilter, DataSerializable {
                 + "listenerFlags=" + listenerFlags
                 + ", eventFilter=" + eventFilter
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.EVENT_LISTENER_FILTER;
     }
 }

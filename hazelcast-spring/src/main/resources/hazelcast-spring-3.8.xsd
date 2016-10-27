@@ -161,6 +161,158 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="ringbuffer" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="ringbuffer-store" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Includes the ring buffer store factory class name. The store format is the same as
+                                                the in-memory-format for the ringbuffer.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:attribute name="enabled" use="required" type="parameterized-boolean"/>
+                                            <xs:attributeGroup ref="class-or-bean-name">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Name of the class or bean implementing MapLoader and/or MapStore.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attributeGroup>
+                                            <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
+                                            <xs:attribute name="factory-implementation" use="optional"
+                                                          type="xs:string"/>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                                <xs:attribute name="capacity" use="optional" type="parameterized-unsigned-int">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will
+                                            always
+                                            be equal to capacity after the head completed the first loop around the ring. This is
+                                            because no items are getting retired.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count" default="1">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of synchronous backups. For example, if 1 is set as the backup-count,
+                                            then the items in the ringbuffer are copied to one other JVM for fail-safety.
+                                            `backup-count` + `async-backup-count` cannot be bigger than maximum
+                                            backup count which is `6`. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count"
+                                              default="0">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                                            then the items in the ringbuffer are copied to one other JVM for fail-safety.
+                                            `backup-count` + `async-backup-count` cannot be bigger than maximum
+                                            backup count which is `6`. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="time-to-live-seconds" use="optional" type="parameterized-unsigned-int">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Maximum number of seconds for each entry to stay in the ringbuffer. Entries that are
+                                            older than &lt;time-to-live-seconds&gt; and are not updated for &lt;time-to-live-seconds&gt;
+                                            are automatically evicted from the map.
+                                            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="in-memory-format" use="optional" type="in-memory-format" default="BINARY">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Data type used to store entries.
+                                            Possible values:
+                                            BINARY (default): keys and values are stored as binary data.
+                                            OBJECT: values are stored in their object forms.
+                                            NATIVE: keys and values are stored in native memory. Only available on Hazelcast
+                                            Enterprise.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="semaphore" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                                <xs:attribute name="initial-permits" use="optional" type="parameterized-unsigned-int">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The thread count to which the concurrent access is limited. For example, if you set
+                                            it to "3", concurrent access to the object is limited to 3 threads.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count" default="1">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of synchronous backups. For example, if 1 is set as the backup-count,
+                                            then the items in the ringbuffer are copied to one other JVM for fail-safety.
+                                            `backup-count` + `async-backup-count` cannot be bigger than maximum
+                                            backup count which is `6`. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count"
+                                              default="0">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                                            then the items in the ringbuffer are copied to one other JVM for fail-safety.
+                                            `backup-count` + `async-backup-count` cannot be bigger than maximum
+                                            backup count which is `6`. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="reliable-topic" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="message-listener" type="listener" minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Enable/disable statistics.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="read-batch-size" use="optional" type="xs:int" default="10">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The maximum number of items to read in a batch.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="topic-overload-policy" use="optional" type="topic-overload-policy">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Policy to handle an overloaded topic. Available values are `DISCARD_OLDEST`, `DISCARD_NEWEST`,
+                                            `BLOCK` and `ERROR`. The default value is `BLOCK.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="map" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
@@ -317,10 +469,11 @@
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            It is used to determine how the data will be stored in memory. It has two
-                                            values: BINARY and OBJECT. BINARY is the default option and enables to
-                                            store the data in serialized binary format. If OBJECT is set as the value,
-                                            data will be stored in deserialized form.
+                                            Data type used to store entries.
+                                            Possible values:
+                                            BINARY (default): keys and values are stored as binary data.
+                                            OBJECT: values are stored in their object forms.
+                                            NATIVE: keys and values are stored in native memory. Only available on Hazelcast Enterprise.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1340,6 +1493,18 @@
             </xs:appinfo>
         </xs:annotation>
     </xs:element>
+    <xs:element name="ringbuffer" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a Hazelcast Ringbuffer instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.ringbuffer.Ringbuffer"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
     <xs:element name="topic" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
@@ -1736,6 +1901,7 @@
             <xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
             <xs:enumeration value="hazelcast.mc.max.visible.instance.count"/>
             <xs:enumeration value="hazelcast.logging.type"/>
+            <xs:enumeration value="hazelcast.compatibility.3.6.client"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="propertyNameString">
@@ -2430,11 +2596,25 @@
         <xs:restriction base="xs:string">
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
+            <xs:enumeration value="NATIVE"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="in-memory-format">
         <xs:union memberTypes="in-memory-format-enum non-space-string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="topic-overload-policy-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="DISCARD_OLDEST"/>
+            <xs:enumeration value="DISCARD_NEWEST"/>
+            <xs:enumeration value="BLOCK"/>
+            <xs:enumeration value="ERROR"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="topic-overload-policy">
+        <xs:union memberTypes="topic-overload-policy-enum non-space-string"/>
     </xs:simpleType>
 
     <xs:simpleType name="time-unit">

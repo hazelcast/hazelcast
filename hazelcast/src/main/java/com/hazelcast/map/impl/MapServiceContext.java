@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.query.MapLocalQueryRunner;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MergePolicyProvider;
@@ -131,6 +132,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     MapEventPublisher getMapEventPublisher();
 
     MapQueryEngine getMapQueryEngine(String name);
+
+    MapLocalQueryRunner getMapQueryRunner(String name);
 
     QueryOptimizer getQueryOptimizer();
 

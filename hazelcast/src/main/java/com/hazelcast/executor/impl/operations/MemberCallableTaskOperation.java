@@ -42,11 +42,6 @@ public final class MemberCallableTaskOperation extends AbstractCallableTaskOpera
     }
 
     @Override
-    public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
-    }
-
-    @Override
     public int getId() {
         return ExecutorDataSerializerHook.MEMBER_CALLABLE_TASK;
     }

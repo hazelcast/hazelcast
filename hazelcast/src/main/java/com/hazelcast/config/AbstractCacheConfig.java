@@ -344,6 +344,21 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
         return Collections.newSetFromMap(new ConcurrentHashMap<CacheEntryListenerConfiguration<K, V>, Boolean>());
     }
 
+    public CacheConfiguration<K, V> setKeyType(Class<K> keyType) {
+        this.keyType = keyType;
+        return this;
+    }
+
+    public CacheConfiguration<K, V> setValueType(Class<V> valueType) {
+        this.valueType = valueType;
+        return this;
+    }
+
+    public CacheConfiguration<K, V> setListenerConfigurations() {
+        this.listenerConfigurations = createConcurrentSet();
+        return this;
+    }
+
     @Override
     public int hashCode() {
         int result = cacheLoaderFactory != null ? cacheLoaderFactory.hashCode() : 0;

@@ -19,11 +19,11 @@ package com.hazelcast.nio.tcp.spinning;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.SocketConnection;
 import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketReaderInitializer;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.io.EOFException;
 import java.nio.ByteBuffer;
@@ -40,19 +40,17 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final SocketChannelWrapper socketChannel;
     private final SocketReaderInitializer initializer;
     private volatile long lastReadTime;
     private ReadHandler readHandler;
     private ByteBuffer inputBuffer;
     private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
-    public SpinningSocketReader(TcpIpConnection connection,
+    public SpinningSocketReader(SocketConnection connection,
                                 ILogger logger,
-                                SocketChannelWrapper socketChannel,
+                                IOOutOfMemoryHandler oomeHandler,
                                 SocketReaderInitializer initializer) {
-        super(connection, logger);
-        this.socketChannel = socketChannel;
+        super(connection, logger, oomeHandler);
         this.initializer = initializer;
     }
 
@@ -72,7 +70,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     }
 
     @Override
-    public long getLastReadTimeMillis() {
+    public long lastReadTimeMillis() {
         return lastReadTime;
     }
 
@@ -89,11 +87,6 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     @Override
     public SwCounter getPriorityFramesReadCounter() {
         return priorityFramesRead;
-    }
-
-    @Override
-    public SocketChannelWrapper getSocketChannel() {
-        return socketChannel;
     }
 
     @Override

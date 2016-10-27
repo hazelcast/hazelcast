@@ -21,9 +21,10 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -165,7 +166,7 @@ public class IndexImpl implements Index {
         return indexStore.getRecordMap(indexValue);
     }
 
-    public static final class NullObject implements Comparable, DataSerializable {
+    public static final class NullObject implements Comparable, IdentifiedDataSerializable {
         @Override
         public int compareTo(Object o) {
             if (o == this || o instanceof NullObject) {
@@ -198,6 +199,16 @@ public class IndexImpl implements Index {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
 
+        }
+
+        @Override
+        public int getFactoryId() {
+            return PredicateDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getId() {
+            return PredicateDataSerializerHook.NULL_OBJECT;
         }
     }
 }

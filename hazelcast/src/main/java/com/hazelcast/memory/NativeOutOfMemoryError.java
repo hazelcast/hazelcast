@@ -32,4 +32,3 @@ public class NativeOutOfMemoryError extends Error {
         super(message, cause);
     }
 }
-

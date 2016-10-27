@@ -60,16 +60,19 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
+import static java.lang.String.format;
 
 /**
- * Contains Hazelcast Xml Configuration helper methods and variables.
+ * Contains Hazelcast XML Configuration helper methods and variables.
  */
 public abstract class AbstractXmlConfigHelper {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
 
     protected boolean domLevel3 = true;
+
     final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
+
     private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
 
     public static Iterable<Node> childElements(Node node) {
@@ -86,11 +89,11 @@ public abstract class AbstractXmlConfigHelper {
         private final int maximum;
         private final short nodeType;
 
-        IterableNodeList(final Node parent, short nodeType) {
+        IterableNodeList(Node parent, short nodeType) {
             this(parent.getChildNodes(), nodeType);
         }
 
-        IterableNodeList(final NodeList wrapped, short nodeType) {
+        IterableNodeList(NodeList wrapped, short nodeType) {
             this.wrapped = wrapped;
             this.nodeType = nodeType;
             this.maximum = wrapped.getLength();
@@ -129,12 +132,12 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
-    protected ConfigType getXmlType() {
-        return ConfigType.SERVER;
-    }
-
     public String getNamespaceType() {
         return getXmlType().name.equals("hazelcast") ? "config" : "client-config";
+    }
+
+    protected ConfigType getXmlType() {
+        return ConfigType.SERVER;
     }
 
     protected void schemaValidation(Document doc) throws Exception {
@@ -143,16 +146,15 @@ public abstract class AbstractXmlConfigHelper {
         String schemaLocation = doc.getDocumentElement().getAttribute("xsi:schemaLocation");
         schemaLocation = schemaLocation.replaceAll("^ +| +$| (?= )", "");
 
-
-        //get every two pair. every pair includes namespace and uri
+        // get every two pair. every pair includes namespace and uri
         String[] xsdLocations = schemaLocation.split("(?<!\\G\\S+)\\s");
 
         for (String xsdLocation : xsdLocations) {
             if (xsdLocation.isEmpty()) {
                 continue;
             }
-            String namespace = xsdLocation.split('[' +  LINE_SEPARATOR + " ]+")[0];
-            String uri = xsdLocation.split('[' +  LINE_SEPARATOR + " ]+")[1];
+            String namespace = xsdLocation.split('[' + LINE_SEPARATOR + " ]+")[0];
+            String uri = xsdLocation.split('[' + LINE_SEPARATOR + " ]+")[1];
 
             // if this is hazelcast namespace but location is different log only warning
             if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {
@@ -169,7 +171,7 @@ public abstract class AbstractXmlConfigHelper {
         // include hazelcast schema
         schemas.add(new StreamSource(getClass().getClassLoader().getResourceAsStream(hazelcastSchemaLocation)));
 
-        // document to inputstream conversion
+        // document to InputStream conversion
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Source xmlSource = new DOMSource(doc);
         Result outputTarget = new StreamResult(outputStream);
@@ -297,10 +299,8 @@ public abstract class AbstractXmlConfigHelper {
         try {
             return Integer.parseInt(value);
         } catch (final NumberFormatException e) {
-            throw new InvalidConfigurationException(
-                    String.format("Invalid integer value for parameter %s: %s", parameterName, value));
+            throw new InvalidConfigurationException(format("Invalid integer value for parameter %s: %s", parameterName, value));
         }
-
     }
 
     protected static long getLongValue(final String parameterName, final String value) {
@@ -308,7 +308,7 @@ public abstract class AbstractXmlConfigHelper {
             return Long.parseLong(value);
         } catch (final Exception e) {
             throw new InvalidConfigurationException(
-                    String.format("Invalid long integer value for parameter %s: %s", parameterName, value));
+                    format("Invalid long integer value for parameter %s: %s", parameterName, value));
         }
     }
 

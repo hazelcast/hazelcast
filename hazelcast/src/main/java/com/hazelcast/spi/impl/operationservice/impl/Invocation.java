@@ -70,10 +70,10 @@ import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatT
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__RESPONSE_AVAILABLE;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.CALL_TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.HEARTBEAT_TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.INTERRUPTED;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.VOID;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
@@ -361,11 +361,6 @@ public abstract class Invocation implements OperationResponseHandler {
             // there are no backups or the number of expected backups has returned; so signal the future that the result is ready
             complete(response);
         }
-    }
-
-    @Override
-    public boolean isLocal() {
-        return true;
     }
 
     void notifyError(Object error) {

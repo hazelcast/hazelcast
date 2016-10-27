@@ -30,7 +30,8 @@ public final class MemoryStatsSupport {
     /**
      * No public constructor is needed for utility classes
      */
-    private MemoryStatsSupport() { }
+    private MemoryStatsSupport() {
+    }
 
     /**
      * Returns the total available physical memory on the system in bytes or -1 if not available.
@@ -67,5 +68,4 @@ public final class MemoryStatsSupport {
     public static long freeSwapSpace() {
         return readLongAttribute("FreeSwapSpaceSize", -1L);
     }
-
 }

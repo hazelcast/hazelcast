@@ -73,30 +73,33 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = fullMember.getMap(randomMapName());
         DeserializationCountingPredicate predicate = new DeserializationCountingPredicate();
 
-        //initialize all partitions
+        // initialize all partitions
         for (int i = 0; i < 5000; i++) {
             map.put(i, i);
         }
 
         map.values(predicate);
-        assertEquals(0, predicate.serilizationCount());
+        assertEquals(0, predicate.serializationCount());
     }
 
     public static class DeserializationCountingPredicate implements Predicate, DataSerializable {
         private static final AtomicInteger counter = new AtomicInteger();
 
+        @Override
         public boolean apply(Map.Entry mapEntry) {
             return false;
         }
 
-        public int serilizationCount() {
-            return counter.get();
-        }
-
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException { }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             counter.incrementAndGet();
+        }
+
+        int serializationCount() {
+            return counter.get();
         }
     }
 
@@ -298,11 +301,11 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         nodeFactory.newHazelcastInstance(config);
 
-        IMap<String, Employee> imap = instance.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        QueryBasicTest.doFunctionalQueryTest(imap);
+        IMap<String, Employee> map = instance.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+        QueryBasicTest.doFunctionalQueryTest(map);
     }
 
     @Test(timeout = TIMEOUT_MINUTES)

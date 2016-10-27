@@ -17,6 +17,7 @@
 package com.hazelcast.collection.impl.set;
 
 import com.hazelcast.collection.impl.collection.CollectionContainer;
+import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.nio.serialization.Data;
@@ -104,5 +105,10 @@ public class SetContainer extends CollectionContainer {
         if (itemSet != null) {
             itemSet.clear();
         }
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.SET_CONTAINER;
     }
 }

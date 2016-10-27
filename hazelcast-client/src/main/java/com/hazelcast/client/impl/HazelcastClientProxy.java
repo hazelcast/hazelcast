@@ -285,6 +285,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
         getLifecycleService().shutdown();
     }
 
+    @Override
     public SerializationService getSerializationService() {
         return getClient().getSerializationService();
     }

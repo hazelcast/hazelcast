@@ -36,6 +36,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.config.XmlElements.IMPORT;
+import static java.lang.String.format;
 
 /**
  * Contains logic for replacing system variables in the XML file and importing XML files from different locations.
@@ -45,6 +46,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     protected enum ConfigType {
         SERVER("hazelcast"),
         CLIENT("hazelcast-client");
+
         final String name;
 
         ConfigType(String name) {
@@ -53,6 +55,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractConfigBuilder.class);
+
     private final Set<String> currentlyImportedFiles = new HashSet<String>();
     private final XPath xpath;
 
@@ -79,21 +82,19 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     protected void process(Node root) throws Exception {
-        traverseChildsAndReplaceVariables(root);
+        traverseChildrenAndReplaceVariables(root);
         replaceImportElementsWithActualFileContents(root);
     }
 
     private void replaceImportElementsWithActualFileContents(Node root) throws Exception {
         Document document = root.getOwnerDocument();
         NodeList misplacedImports = (NodeList) xpath.evaluate(
-                String.format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.name, getXmlType().name),
-                document, XPathConstants.NODESET);
+                format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.name, getXmlType().name), document, XPathConstants.NODESET);
         if (misplacedImports.getLength() > 0) {
-            throw new InvalidConfigurationException(
-                    "<import> element can appear only in the top level of the XML");
+            throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         }
         NodeList importTags = (NodeList) xpath.evaluate(
-                String.format("/hz:%s/hz:%s", getXmlType().name, IMPORT.name), document, XPathConstants.NODESET);
+                format("/hz:%s/hz:%s", getXmlType().name, IMPORT.name), document, XPathConstants.NODESET);
         for (Node node : asElementIterable(importTags)) {
             loadAndReplaceImportElement(root, node);
         }
@@ -101,8 +102,8 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
 
     private void loadAndReplaceImportElement(Node root, Node node) throws Exception {
         NamedNodeMap attributes = node.getAttributes();
-        Node resourceAtrribute = attributes.getNamedItem("resource");
-        String resource = resourceAtrribute.getTextContent();
+        Node resourceAttribute = attributes.getNamedItem("resource");
+        String resource = resourceAttribute.getTextContent();
         URL url = ConfigLoader.locateConfig(resource);
         if (url == null) {
             throw new InvalidConfigurationException("Failed to load resource: " + resource);
@@ -112,7 +113,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         }
         Document doc = parse(url.openStream());
         Element importedRoot = doc.getDocumentElement();
-        traverseChildsAndReplaceVariables(importedRoot);
+        traverseChildrenAndReplaceVariables(importedRoot);
         replaceImportElementsWithActualFileContents(importedRoot);
         for (Node fromImportedDoc : childElements(importedRoot)) {
             Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
@@ -122,11 +123,11 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     /**
-     * Reads xml from InputStream and parses
+     * Reads XML from InputStream and parses.
      *
-     * @param inputStream
-     * @return Document after parsing xml
-     * @throws Exception
+     * @param inputStream {@link InputStream} to read from
+     * @return Document after parsing XML
+     * @throws Exception if the XML configuration cannot be parsed or is invalid
      */
     protected abstract Document parse(InputStream inputStream) throws Exception;
 
@@ -141,7 +142,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     @Override
     protected abstract ConfigType getXmlType();
 
-    private void traverseChildsAndReplaceVariables(Node root) {
+    private void traverseChildrenAndReplaceVariables(Node root) {
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {
             for (int k = 0; k < attributes.getLength(); k++) {
@@ -155,7 +156,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         final NodeList childNodes = root.getChildNodes();
         for (int k = 0; k < childNodes.getLength(); k++) {
             Node child = childNodes.item(k);
-            traverseChildsAndReplaceVariables(child);
+            traverseChildrenAndReplaceVariables(child);
         }
     }
 
@@ -167,8 +168,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         while (startIndex > -1) {
             endIndex = sb.indexOf("}", startIndex);
             if (endIndex == -1) {
-                LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: "
-                        + node.getLocalName());
+                LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
                 break;
             }
 
@@ -178,8 +178,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
                 sb.replace(startIndex, endIndex + 1, variableReplacement);
                 endIndex = startIndex + variableReplacement.length();
             } else {
-                LOGGER.warning("Could not find a value for property  '" + variable + "' on node: "
-                        + node.getLocalName());
+                LOGGER.warning("Could not find a value for property  '" + variable + "' on node: " + node.getLocalName());
             }
             startIndex = sb.indexOf("${", endIndex);
         }

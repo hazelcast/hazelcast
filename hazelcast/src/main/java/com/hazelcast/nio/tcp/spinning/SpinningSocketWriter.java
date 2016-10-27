@@ -21,10 +21,10 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.SocketConnection;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.SocketWriterInitializer;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.EmptyStatement;
 
@@ -52,8 +52,6 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
 
-    private final ILogger logger;
-    private final SocketChannelWrapper socketChannel;
     private final SocketWriterInitializer initializer;
     private ByteBuffer outputBuffer;
     @Probe(name = "bytesWritten")
@@ -66,10 +64,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private WriteHandler writeHandler;
     private volatile OutboundFrame currentFrame;
 
-    public SpinningSocketWriter(TcpIpConnection connection, ILogger logger, SocketWriterInitializer initializer) {
-        super(connection, logger);
-        this.logger = logger;
-        this.socketChannel = connection.getSocketChannelWrapper();
+    public SpinningSocketWriter(SocketConnection connection,
+                                ILogger logger,
+                                IOOutOfMemoryHandler oomeHandler,
+                                SocketWriterInitializer initializer) {
+        super(connection, logger, oomeHandler);
         this.initializer = initializer;
     }
 
@@ -113,7 +112,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
-    public long getLastWriteTimeMillis() {
+    public long lastWriteTimeMillis() {
         return lastWriteTime;
     }
 

@@ -1,5 +1,3 @@
-package com.hazelcast.security.permission;
-
 /*
  * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
@@ -16,6 +14,8 @@ package com.hazelcast.security.permission;
  * limitations under the License.
  */
 
+package com.hazelcast.security.permission;
+
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -30,7 +30,7 @@ public class MapPermissionTest extends AbstractPermissionTest {
 
     @Override
     protected String[] getActions() {
-        return new String[] {
+        return new String[]{
                 "put",
                 "read",
                 "remove",
@@ -52,5 +52,4 @@ public class MapPermissionTest extends AbstractPermissionTest {
     public void willReturnFalseForNoPermOnIndex() {
         new CheckPermission().of("index").against("read", "create", "put", "intercept").expect(false).run();
     }
-
 }

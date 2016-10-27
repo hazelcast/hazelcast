@@ -26,18 +26,19 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.internal.eviction.EvictionStrategy;
 import com.hazelcast.internal.eviction.EvictionStrategyProvider;
-import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -68,6 +69,7 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheRemovedE
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedEvent;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
+import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
@@ -157,6 +159,21 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         init();
     }
 
+    public void instrument(NodeEngine nodeEngine) {
+        StoreLatencyPlugin plugin = ((NodeEngineImpl) nodeEngine).getDiagnostics().getPlugin(StoreLatencyPlugin.class);
+        if (plugin == null) {
+            return;
+        }
+
+        if (cacheLoader != null) {
+            cacheLoader = new LatencyTrackingCacheLoader(cacheLoader, plugin, cacheConfig.getName());
+        }
+
+        if (cacheWriter != null) {
+            cacheWriter = new LatencyTrackingCacheWriter(cacheWriter, plugin, cacheConfig.getName());
+        }
+    }
+
     private boolean isPrimary() {
         final Address owner = nodeEngine.getPartitionService().getPartition(partitionId, false).getOwnerOrNull();
         final Address thisAddress = nodeEngine.getThisAddress();
@@ -232,7 +249,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
-        EvictionConfigHelper.checkEvictionConfig(evictionConfig);
+        checkEvictionConfig(evictionConfig, false);
         return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, nodeEngine.getConfigClassLoader());
     }
 

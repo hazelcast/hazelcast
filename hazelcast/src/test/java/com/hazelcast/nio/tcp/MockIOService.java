@@ -53,7 +53,7 @@ public class MockIOService implements IOService {
         serverSocket.setSoTimeout(1000);
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         thisAddress = new Address("127.0.0.1", port);
-        this.serializationService = (InternalSerializationService) new DefaultSerializationServiceBuilder()
+        this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
     }
@@ -69,8 +69,12 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public void onOutOfMemory(OutOfMemoryError oom) {
-
+    public IOOutOfMemoryHandler getIoOutOfMemoryHandler() {
+        return new IOOutOfMemoryHandler() {
+            @Override
+            public void handle(OutOfMemoryError error) {
+            }
+        };
     }
 
     @Override

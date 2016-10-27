@@ -22,6 +22,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.io.File;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -115,6 +118,8 @@ public class Diagnostics {
     private final boolean enabled;
     private ScheduledExecutorService scheduler;
     private final HazelcastThreadGroup hzThreadGroup;
+    private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap
+            = new ConcurrentHashMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin>();
 
     public Diagnostics(String fileName, ILogger logger, HazelcastThreadGroup hzThreadGroup, HazelcastProperties properties) {
         this.fileName = fileName;
@@ -124,6 +129,23 @@ public class Diagnostics {
         this.enabled = properties.getBoolean(ENABLED);
         this.directory = properties.getString(DIRECTORY);
         this.singleLine = !properties.getBoolean(HUMAN_FRIENDLY_FORMAT);
+    }
+
+    // just for testing. Returns the current file the system is writing to.
+    public File currentFile() {
+        return diagnosticsLogFile.file;
+    }
+
+    /**
+     * Gets the plugin for a given plugin class. This method should be used if the plugin instance is required within
+     * some data-structure outside of the Diagnostics.
+     *
+     * @param pluginClass the class of the DiagnosticsPlugin
+     * @param <P>
+     * @return the DiagnosticsPlugin found, or null if not active.
+     */
+    public <P extends DiagnosticsPlugin> P getPlugin(Class<P> pluginClass) {
+        return (P) pluginsMap.get(pluginClass);
     }
 
     /**
@@ -155,6 +177,8 @@ public class Diagnostics {
         if (periodMillis == DISABLED) {
             return;
         }
+
+        pluginsMap.put(plugin.getClass(), plugin);
 
         plugin.onStart();
 

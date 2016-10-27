@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.config.NearCacheConfig;
@@ -29,12 +28,8 @@ import com.hazelcast.map.impl.nearcache.invalidation.BatchInvalidator;
 import com.hazelcast.map.impl.nearcache.invalidation.NearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.invalidation.NonStopInvalidator;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
-
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper.wrapAsStaleReadPreventerNearCache;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
@@ -45,17 +40,23 @@ import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAG
  */
 public class NearCacheProvider {
 
+    protected final NearCacheContext nearCacheContext;
     protected final NearCacheManager nearCacheManager;
     protected final MapServiceContext mapServiceContext;
     protected final NodeEngine nodeEngine;
     protected final NearCacheInvalidator nearCacheInvalidator;
 
     public NearCacheProvider(MapServiceContext mapServiceContext) {
-        this(mapServiceContext, new DefaultNearCacheManager());
+        this(new NearCacheContext(
+                mapServiceContext.getNodeEngine().getSerializationService(),
+                mapServiceContext.getNodeEngine().getExecutionService(),
+                new DefaultNearCacheManager()
+        ), mapServiceContext);
     }
 
-    protected NearCacheProvider(MapServiceContext mapServiceContext, NearCacheManager nearCacheManager) {
-        this.nearCacheManager = nearCacheManager;
+    protected NearCacheProvider(NearCacheContext nearCacheContext, MapServiceContext mapServiceContext) {
+        this.nearCacheContext = nearCacheContext;
+        this.nearCacheManager = nearCacheContext.getNearCacheManager();
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.nearCacheInvalidator = isBatchingEnabled() ? new BatchInvalidator(nodeEngine) : new NonStopInvalidator(nodeEngine);
@@ -69,15 +70,9 @@ public class NearCacheProvider {
 
     public <K, V> NearCache<K, V> getOrCreateNearCache(String mapName) {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
-        NearCacheContext nearCacheContext = new NearCacheContext(
-                nodeEngine.getSerializationService(),
-                new MemberNearCacheExecutor(nodeEngine.getExecutionService()),
-                nearCacheManager
-        );
-
         NearCache<K, V> nearCache = nearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig, nearCacheContext);
 
-        int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return wrapAsStaleReadPreventerNearCache(nearCache, partitionCount);
     }
 
@@ -107,7 +102,7 @@ public class NearCacheProvider {
     public void destroyNearCache(String mapName) {
         nearCacheManager.destroyNearCache(mapName);
 
-        String uuid = mapServiceContext.getNodeEngine().getLocalMember().getUuid();
+        String uuid = nodeEngine.getLocalMember().getUuid();
         nearCacheInvalidator.destroy(mapName, uuid);
     }
 
@@ -122,19 +117,5 @@ public class NearCacheProvider {
 
     public NearCacheInvalidator getNearCacheInvalidator() {
         return nearCacheInvalidator;
-    }
-
-    private static final class MemberNearCacheExecutor implements NearCacheExecutor {
-
-        private ExecutionService executionService;
-
-        private MemberNearCacheExecutor(ExecutionService executionService) {
-            this.executionService = executionService;
-        }
-
-        @Override
-        public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-            return executionService.scheduleWithRepetition(command, initialDelay, delay, unit);
-        }
     }
 }

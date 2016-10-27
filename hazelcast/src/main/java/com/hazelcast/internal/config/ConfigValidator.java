@@ -16,16 +16,22 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
  * Validates a Hazelcast configuration in a specific context like OS vs. EE or client vs. member nodes.
@@ -56,8 +62,66 @@ public final class ConfigValidator {
      */
     public static void checkNearCacheConfig(NearCacheConfig nearCacheConfig, boolean isClient) {
         checkNotNative(nearCacheConfig.getInMemoryFormat());
+        checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true);
 
-        checkNoCacheLocalEntriesOnClients(nearCacheConfig, isClient);
+        if (isClient && nearCacheConfig.isCacheLocalEntries()) {
+            throw new IllegalArgumentException(
+                    "The Near Cache option `cache-local-entries` is not supported in client configurations!");
+        }
+    }
+
+    /**
+     * Checks if a {@link EvictionConfig} is valid in its context.
+     *
+     * @param evictionConfig the {@link EvictionConfig}
+     * @param isNearCache    {@code true} if the config is for a Near Cache, {@code false} otherwise
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static void checkEvictionConfig(EvictionConfig evictionConfig, boolean isNearCache) {
+        if (evictionConfig == null) {
+            throw new IllegalArgumentException("Eviction config cannot be null!");
+        }
+        EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
+        String comparatorClassName = evictionConfig.getComparatorClassName();
+        EvictionPolicyComparator comparator = evictionConfig.getComparator();
+
+        checkEvictionConfig(evictionPolicy, comparatorClassName, comparator, isNearCache);
+    }
+
+    /**
+     * Checks if parameters for an {@link EvictionConfig} are valid in their context.
+     *
+     * @param evictionPolicy      the {@link EvictionPolicy} for the {@link EvictionConfig}
+     * @param comparatorClassName the comparator class name for the {@link EvictionConfig}
+     * @param comparator          the comparator implementation for the {@link EvictionConfig}
+     * @param isNearCache         {@code true} if the config is for a Near Cache, {@code false} otherwise
+     */
+    public static void checkEvictionConfig(EvictionPolicy evictionPolicy,
+                                           String comparatorClassName,
+                                           Object comparator,
+                                           boolean isNearCache) {
+        if (comparatorClassName != null && comparator != null) {
+            throw new IllegalArgumentException("Only one of the `comparator class name` and `comparator`"
+                    + " can be configured in the eviction configuration!");
+        }
+        if (!isNearCache && (evictionPolicy == null || evictionPolicy == NONE || evictionPolicy == RANDOM)) {
+            if (isNullOrEmpty(comparatorClassName) && comparator == null) {
+                throw new IllegalArgumentException(
+                        "Eviction policy must be set to an eviction policy type rather than `null`, `NONE`, `RANDOM`"
+                                + " or custom eviction policy comparator must be specified!");
+            }
+        } else {
+            if (evictionPolicy != EvictionConfig.DEFAULT_EVICTION_POLICY) {
+                if (!isNullOrEmpty(comparatorClassName)) {
+                    throw new IllegalArgumentException(
+                            "Only one of the `eviction policy` and `comparator class name` can be configured!");
+                }
+                if (comparator != null) {
+                    throw new IllegalArgumentException(
+                            "Only one of the `eviction policy` and `comparator` can be configured!");
+                }
+            }
+        }
     }
 
     /**
@@ -69,20 +133,6 @@ public final class ConfigValidator {
         if (inMemoryFormat == NATIVE && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
-        }
-    }
-
-    /**
-     * Throws {@link IllegalArgumentException} if the supplied {@link NearCacheConfig} has
-     * {@link NearCacheConfig#isCacheLocalEntries} set.
-     *
-     * @param nearCacheConfig supplied NearCacheConfig
-     * @param isClient        if the supplied NearCacheConfig is from a client
-     */
-    private static void checkNoCacheLocalEntriesOnClients(NearCacheConfig nearCacheConfig, boolean isClient) {
-        if (isClient && nearCacheConfig.isCacheLocalEntries()) {
-            throw new IllegalArgumentException(
-                    "The Near Cache option `cache-local-entries` is not supported in client configurations!");
         }
     }
 

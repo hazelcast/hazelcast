@@ -32,6 +32,7 @@ import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
 import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
 import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
+import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -97,6 +98,8 @@ import static java.lang.System.currentTimeMillis;
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class NodeEngineImpl implements NodeEngine {
 
+    private static final String JET_SERVICE_NAME = "hz:impl:jetService";
+
     private final Node node;
     private final ILogger logger;
     private final EventServiceImpl eventService;
@@ -131,15 +134,36 @@ public class NodeEngineImpl implements NodeEngine {
         this.packetDispatcher = new PacketDispatcherImpl(
                 logger,
                 operationService.getOperationExecutor(),
-                operationService.getAsyncResponseHandler(),
+                operationService.getAsyncInboundResponseHandler(),
                 operationService.getInvocationMonitor(),
                 eventService,
-                new ConnectionManagerPacketHandler());
+                new ConnectionManagerPacketHandler(),
+                newJetPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
         this.diagnostics = newDiagnostics();
 
         serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
         serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
+    }
+
+    private PacketHandler newJetPacketHandler() {
+        // currently service registration is done after the creation of the packet dispatcher, hence
+        // we need to lazily initialize the jet packet handler
+        return new PacketHandler() {
+
+            private volatile PacketHandler handler;
+
+            @Override
+            public void handle(Packet packet) throws Exception {
+                if (handler == null) {
+                    handler = serviceManager.getService(JET_SERVICE_NAME);
+                    if (handler == null) {
+                        throw new UnsupportedOperationException("Jet is not registered on this node");
+                    }
+                }
+                handler.handle(packet);
+            }
+        };
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
@@ -208,6 +232,11 @@ public class NodeEngineImpl implements NodeEngine {
         diagnostics.register(new InvocationPlugin(this));
         diagnostics.register(new MemberHazelcastInstanceInfoPlugin(this));
         diagnostics.register(new SystemLogPlugin(this));
+        diagnostics.register(new StoreLatencyPlugin(this));
+    }
+
+    public Diagnostics getDiagnostics() {
+        return diagnostics;
     }
 
     public ServiceManager getServiceManager() {
@@ -305,6 +334,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public Object toObject(Object object) {
         return serializationService.toObject(object);
+    }
+
+    @Override
+    public <T> T toObject(Object object, Class klazz) {
+        return serializationService.toObject(object, klazz);
     }
 
     @Override

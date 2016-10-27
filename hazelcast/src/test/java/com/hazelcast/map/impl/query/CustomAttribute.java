@@ -29,6 +29,7 @@ public class CustomAttribute implements Serializable, Comparable<CustomAttribute
         this.height = height;
     }
 
+    @Override
     public int compareTo(CustomAttribute o) {
         return age - o.age;
     }

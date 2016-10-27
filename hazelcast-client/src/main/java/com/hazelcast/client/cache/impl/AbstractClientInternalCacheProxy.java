@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.ClientMessageDecoder;
@@ -40,7 +39,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -194,18 +192,10 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         NearCacheConfig nearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
-            NearCacheContext nearCacheContext = new NearCacheContext(
-                    clientContext.getSerializationService(),
-                    createNearCacheExecutor(clientContext.getExecutionService()),
-                    nearCacheManager
-            );
+            NearCacheContext nearCacheContext = clientContext.getNearCacheContext();
             nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();
         }
-    }
-
-    private NearCacheExecutor createNearCacheExecutor(ClientExecutionService clientExecutionService) {
-        return new ClientNearCacheExecutor(clientExecutionService);
     }
 
     @Override

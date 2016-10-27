@@ -123,6 +123,7 @@ final class BasicMapStoreContext implements MapStoreContext {
         // create store.
         final Object store = createStore(mapName, mapStoreConfig, configClassLoader);
         final MapStoreWrapper storeWrapper = new MapStoreWrapper(mapName, store);
+        storeWrapper.instrument(nodeEngine);
 
         setStoreImplToWritableMapStoreConfig(nodeEngine, mapName, store);
 

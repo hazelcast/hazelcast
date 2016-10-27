@@ -37,23 +37,27 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
 import static java.util.concurrent.locks.LockSupport.unpark;
 
 /**
- * todo:
- * - thread value protection
+ * Custom implementation of {@link java.util.concurrent.CompletableFuture}.
  *
- * The long term goal is that this whole class can be ripped out and replaced by the
- * {@link java.util.concurrent.java.util.concurrent.CompletableFuture}. So we need to be very careful with adding more
- * functionality to this class because the more we add, the more difficult the replacement will be.
+ * The long term goal is that this whole class can be ripped out and replaced by {@link java.util.concurrent.CompletableFuture}
+ * from the JDK. So we need to be very careful with adding more functionality to this class because the more we add, the more
+ * difficult the replacement will be.
+ *
+ * TODO:
+ * - thread value protection
  *
  * @param <V>
  */
+@SuppressWarnings("Since15")
 @SuppressFBWarnings(value = "DLS_DEAD_STORE_OF_CLASS_LITERAL", justification = "Recommended way to prevent classloading bug")
 public abstract class AbstractInvocationFuture<V> implements InternalCompletableFuture<V> {
 
     static final Object VOID = "VOID";
 
-    // Reduce the risk of rare disastrous classloading in first call to
+    // reduce the risk of rare disastrous classloading in first call to
     // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
     static {
+        @SuppressWarnings("unused")
         Class<?> ensureLoaded = LockSupport.class;
     }
 
@@ -257,7 +261,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
         }
     }
 
-    // this method should not be needed; but there is a difference between client and server how it handles async throwables.
+    // this method should not be needed; but there is a difference between client and server how it handles async throwables
     protected Throwable unwrap(Throwable throwable) {
         if (throwable instanceof ExecutionException) {
             return throwable.getCause();
@@ -292,10 +296,10 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
 
             Object newState;
             if (oldState == VOID && (executor == null || executor == defaultExecutor)) {
-                // Nothing is syncing on this future, so instead of creating a WaitNode, we just try to cas the waiter
+                // nothing is syncing on this future, so instead of creating a WaitNode, we just try to cas the waiter
                 newState = waiter;
             } else {
-                // something already has been registered for syncing. So we need to create a WaitNode.
+                // something already has been registered for syncing, so we need to create a WaitNode
                 if (waitNode == null) {
                     waitNode = new WaitNode(waiter, executor);
                 }
@@ -319,20 +323,20 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
             Object next = current.getClass() == WaitNode.class ? ((WaitNode) current).next : null;
 
             if (currentWaiter == waiter) {
-                // it is the item we are looking for; so lets try to remove it,
+                // it is the item we are looking for, so lets try to remove it
                 if (prev == null) {
-                    // it is the first item of the stack; so we need to change the head to the next.
+                    // it's the first item of the stack, so we need to change the head to the next
                     Object n = next == null ? VOID : next;
-                    // if we manage to cas, we are done, else we need to restart.
+                    // if we manage to CAS we are done, else we need to restart
                     current = compareAndSetState(current, n) ? null : state;
                 } else {
-                    // remove the current item; this is done by letting the prev.next point to the next instead of current.
+                    // remove the current item (this is done by letting the prev.next point to the next instead of current)
                     prev.next = next;
                     // end the loop
                     current = null;
                 }
             } else {
-                // it isn't the item we are looking for; so lets move on to the next.
+                // it isn't the item we are looking for, so lets move on to the next
                 prev = current.getClass() == WaitNode.class ? (WaitNode) current : null;
                 current = next;
             }
@@ -348,13 +352,14 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
      * is set/applied, <tt>false</tt> otherwise. If <tt>false</tt> is returned, that means offered response is ignored
      * because a final response is already set to this future.
      */
+    @Override
     public final boolean complete(Object value) {
         for (; ; ) {
             final Object oldState = state;
             if (isDone(oldState)) {
                 if (oldState != value) {
                     // it can be that this future already completed, e.g. when an invocation already
-                    // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException.
+                    // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException
                     logger.warning("Future.complete(Object value) can only be called once. Request: " + invocationToString()
                             + ", current value: " + oldState + ", offered value: " + value);
                 }

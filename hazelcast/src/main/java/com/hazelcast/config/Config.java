@@ -598,6 +598,15 @@ public class Config {
         return ringbufferConfigs;
     }
 
+    public Config setRingbufferConfigs(Map<String, RingbufferConfig> ringbufferConfigs) {
+        this.ringbufferConfigs.clear();
+        this.ringbufferConfigs.putAll(ringbufferConfigs);
+        for (Entry<String, RingbufferConfig> entry : ringbufferConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
     public TopicConfig findTopicConfig(String name) {
         String baseName = getBaseName(name);
         TopicConfig config = lookupByPattern(topicConfigs, baseName);
@@ -666,6 +675,16 @@ public class Config {
         reliableTopicConfigs.put(topicConfig.getName(), topicConfig);
         return this;
     }
+
+    public Config setReliableTopicConfigs(Map<String, ReliableTopicConfig> reliableTopicConfigs) {
+        this.reliableTopicConfigs.clear();
+        this.reliableTopicConfigs.putAll(reliableTopicConfigs);
+        for (Entry<String, ReliableTopicConfig> entry : reliableTopicConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
 
     /**
      * @return the topicConfigs

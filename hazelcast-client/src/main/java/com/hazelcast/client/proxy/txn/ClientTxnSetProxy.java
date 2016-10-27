@@ -32,12 +32,13 @@ import com.hazelcast.util.ThreadUtil;
  *
  * @param <E> the type of elements in this set
  */
-public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalSet<E> {
+public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy implements TransactionalSet<E> {
 
     public ClientTxnSetProxy(String name, ClientTransactionContext transactionContext) {
         super(name, transactionContext);
     }
 
+    @Override
     public boolean add(E e) {
         Preconditions.checkNotNull(e);
         Data value = toData(e);
@@ -47,6 +48,7 @@ public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> im
         return TransactionalSetAddCodec.decodeResponse(response).response;
     }
 
+    @Override
     public boolean remove(E e) {
         Preconditions.checkNotNull(e);
         Data value = toData(e);
@@ -56,6 +58,7 @@ public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> im
         return TransactionalSetRemoveCodec.decodeResponse(response).response;
     }
 
+    @Override
     public int size() {
         ClientMessage request = TransactionalSetSizeCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId());
@@ -63,8 +66,8 @@ public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> im
         return TransactionalSetSizeCodec.decodeResponse(response).response;
     }
 
+    @Override
     public String getServiceName() {
         return SetService.SERVICE_NAME;
     }
-
 }

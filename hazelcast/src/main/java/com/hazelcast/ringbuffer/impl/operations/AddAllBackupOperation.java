@@ -27,23 +27,31 @@ import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_ALL_BACKUP_OPERATION;
 
+/**
+ * Backup operation for ring buffer {@link AddAllOperation}. Puts the items under the sequence IDs that the master generated.
+ */
 public class AddAllBackupOperation extends AbstractRingBufferOperation implements BackupOperation {
-
+    private long lastSequenceId;
     private Data[] items;
 
     public AddAllBackupOperation() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public AddAllBackupOperation(String name, Data[] items) {
+    public AddAllBackupOperation(String name, long lastSequenceId, Data[] items) {
         super(name);
         this.items = items;
+        this.lastSequenceId = lastSequenceId;
     }
 
     @Override
     public void run() throws Exception {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        ringbuffer.addAll(items);
+        final RingbufferContainer ringbuffer = getRingBufferContainer();
+        final long firstSequenceId = lastSequenceId - items.length + 1;
+
+        for (int i = 0; i < items.length; i++) {
+            ringbuffer.set(firstSequenceId + i, items[i]);
+        }
     }
 
     @Override
@@ -54,6 +62,7 @@ public class AddAllBackupOperation extends AbstractRingBufferOperation implement
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeLong(lastSequenceId);
         out.writeInt(items.length);
         for (Data item : items) {
             out.writeData(item);
@@ -63,6 +72,7 @@ public class AddAllBackupOperation extends AbstractRingBufferOperation implement
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        lastSequenceId = in.readLong();
         int length = in.readInt();
         items = new Data[length];
         for (int k = 0; k < items.length; k++) {

@@ -23,6 +23,7 @@ import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -243,7 +244,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleNearCache(Node node) {
         String name = getAttribute(node, "name");
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
@@ -264,13 +265,12 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             } else if ("cache-local-entries".equals(nodeName)) {
                 nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
             } else if ("local-update-policy".equals(nodeName)) {
-                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
-                nearCacheConfig.setLocalUpdatePolicy(policy);
+                nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.valueOf(value));
             } else if ("eviction".equals(nodeName)) {
                 nearCacheConfig.setEvictionConfig(getEvictionConfig(child));
             }
         }
-        clientConfig.addNearCacheConfig(name, nearCacheConfig);
+        clientConfig.addNearCacheConfig(nearCacheConfig);
     }
 
     private EvictionConfig getEvictionConfig(Node node) {
@@ -282,15 +282,11 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
         if (maxSizePolicy != null) {
-            evictionConfig.setMaximumSizePolicy(
-                    EvictionConfig.MaxSizePolicy.valueOf(
-                            upperCaseInternal(getTextContent(maxSizePolicy)))
+            evictionConfig.setMaximumSizePolicy(MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy)))
             );
         }
         if (evictionPolicy != null) {
-            evictionConfig.setEvictionPolicy(
-                    EvictionPolicy.valueOf(
-                            upperCaseInternal(getTextContent(evictionPolicy)))
+            evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy)))
             );
         }
         return evictionConfig;
@@ -350,7 +346,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
         NamedNodeMap atts = node.getAttributes();
-
         Node att = atts.getNamedItem("class");
         if (att != null) {
             discoveryConfig.setNodeFilterClass(getTextContent(att).trim());

@@ -35,8 +35,7 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 
-public abstract class CardinalityEstimatorAbstractTest
-        extends HazelcastTestSupport {
+public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "config:{0}")
     public static Collection<Object[]> params() {
@@ -46,8 +45,8 @@ public abstract class CardinalityEstimatorAbstractTest
         serializerConfig.setTypeClass(CustomObject.class);
         config.getSerializationConfig().addSerializerConfig(serializerConfig);
 
-        return Arrays.asList(new Object[][] {
-                { null }, { config }
+        return Arrays.asList(new Object[][]{
+                {null}, {config}
         });
     }
 
@@ -75,8 +74,7 @@ public abstract class CardinalityEstimatorAbstractTest
     }
 
     @Test
-    public void estimateAsync()
-            throws Exception {
+    public void estimateAsync() throws Exception {
         assertEquals(0, estimator.estimateAsync().get().longValue());
     }
 
@@ -95,8 +93,7 @@ public abstract class CardinalityEstimatorAbstractTest
     }
 
     @Test
-    public void addAsync()
-            throws Exception {
+    public void addAsync() throws Exception {
         estimator.addAsync(1L).get();
         assertEquals(1L, estimator.estimateAsync().get().longValue());
         estimator.addAsync(1L).get();
@@ -117,8 +114,7 @@ public abstract class CardinalityEstimatorAbstractTest
     }
 
     @Test()
-    public void addCustomObjectRegisteredAsync()
-            throws Exception {
+    public void addCustomObjectRegisteredAsync() throws Exception {
         assumeTrue(config != null);
 
         assertEquals(0L, estimator.estimate());
@@ -136,6 +132,7 @@ public abstract class CardinalityEstimatorAbstractTest
     }
 
     private class CustomObject {
+
         private final int x;
         private final int y;
 
@@ -157,17 +154,14 @@ public abstract class CardinalityEstimatorAbstractTest
         }
 
         @Override
-        public void write(ObjectDataOutput out, CustomObject object)
-                throws IOException {
+        public void write(ObjectDataOutput out, CustomObject object) throws IOException {
             out.writeLong((object.x << Bits.INT_SIZE_IN_BYTES) | object.y);
         }
 
         @Override
-        public CustomObject read(ObjectDataInput in)
-                throws IOException {
-            // Not needed
+        public CustomObject read(ObjectDataInput in) throws IOException {
+            // not needed
             throw new UnsupportedOperationException();
         }
     }
-
 }

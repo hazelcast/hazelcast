@@ -96,7 +96,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     // will never be called concurrently.
     private InternalPartition internalPartition;
 
-    private final OperationResponseHandler remoteResponseHandler;
+    private final OutboundResponseHandler outboundResponseHandler;
 
     // When partitionId >= 0, it is a partition specific
     // when partitionId = -1, it is generic
@@ -110,7 +110,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.node = operationService.node;
         this.thisAddress = node.getThisAddress();
         this.nodeEngine = operationService.nodeEngine;
-        this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
+        this.outboundResponseHandler = operationService.outboundResponseHandler;
         this.executedOperationsCount = operationService.completedOperationsCount;
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
         this.failedBackupsCounter = failedBackupsCounter;
@@ -343,12 +343,11 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private void sendResponseAfterOperationError(Operation operation, Throwable e) {
-        OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
         try {
             if (node.getState() != NodeState.SHUT_DOWN) {
-                responseHandler.sendResponse(operation, e);
-            } else if (responseHandler.isLocal()) {
-                responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
+                operation.sendResponse(e);
+            } else if (operation.executedLocally()) {
+                operation.sendResponse(new HazelcastInstanceNotActiveException());
             }
         } catch (Throwable t) {
             logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
@@ -392,7 +391,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet, node.getSerializationService());
-            operationService.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
+            outboundResponseHandler.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {
@@ -403,7 +402,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private void setOperationResponseHandler(Operation op) {
-        OperationResponseHandler handler = remoteResponseHandler;
+        OperationResponseHandler handler = outboundResponseHandler;
         if (op.getCallId() == 0) {
             if (op.returnsResponse()) {
                 throw new HazelcastException(

@@ -17,11 +17,12 @@
 package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.util.Collection;
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.emptyCollection;
 
-public class MultiMapResponse implements DataSerializable {
+public class MultiMapResponse implements IdentifiedDataSerializable {
 
     private Collection collection;
 
@@ -115,5 +116,15 @@ public class MultiMapResponse implements DataSerializable {
         for (int i = 0; i < size; i++) {
             collection.add(IOUtil.readObject(in));
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MultiMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MultiMapDataSerializerHook.MULTIMAP_RESPONSE;
     }
 }

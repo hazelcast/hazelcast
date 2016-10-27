@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.record;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -56,5 +57,10 @@ public class CacheObjectRecord extends AbstractCacheRecord<Object> {
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         value = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.CACHE_OBJECT_RECORD;
     }
 }

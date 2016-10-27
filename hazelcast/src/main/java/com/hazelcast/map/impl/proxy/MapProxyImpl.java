@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
-import com.hazelcast.map.impl.query.QueryResultCollection;
+import com.hazelcast.map.impl.query.QueryResultUtils;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
@@ -46,7 +46,7 @@ import com.hazelcast.mapreduce.ReducingSubmittableJob;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.InitializingObject;
@@ -607,16 +607,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-
-        MapQueryEngine queryEngine = getMapQueryEngine();
-        if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
-        } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
-            return new QueryResultCollection<K>(
-                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
-        }
+        return executePredicate(predicate, IterationType.KEY, true);
     }
 
     @Override
@@ -626,16 +617,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Set entrySet(Predicate predicate) {
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-
-        MapQueryEngine queryEngine = getMapQueryEngine();
-        if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.ENTRY);
-        } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
-            return new QueryResultCollection<Map.Entry<K, V>>(
-                    getNodeEngine().getSerializationService(), IterationType.ENTRY, false, true, result);
-        }
+        return executePredicate(predicate, IterationType.ENTRY, true);
     }
 
     @Override
@@ -646,16 +628,22 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values(Predicate predicate) {
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return executePredicate(predicate, IterationType.VALUE, false);
+    }
 
+    private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         MapQueryEngine queryEngine = getMapQueryEngine();
-        if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.VALUE);
+        QueryResult result;
+        if (predicate instanceof PartitionPredicate) {
+            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            Data key = toData(partitionPredicate.getPartitionKey());
+            int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
+            result = queryEngine.runQueryOnGivenPartition(name, partitionPredicate.getTarget(), iterationType, partitionId);
         } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.VALUE);
-            return new QueryResultCollection<V>(
-                    getNodeEngine().getSerializationService(), IterationType.VALUE, false, false, result);
+            result = queryEngine.runQueryOnAllPartitions(name, predicate, iterationType);
         }
+        return QueryResultUtils.transformToSet(serializationService, result, predicate, iterationType, uniqueResult);
     }
 
     @Override
@@ -669,14 +657,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
-        if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryLocalPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
-        } else {
-            QueryResult result = queryEngine.invokeQueryLocalPartitions(name, predicate, IterationType.KEY);
-            // TODO: unique is not needed since map keys are unique by nature
-            return new QueryResultCollection<K>(
-                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
-        }
+        QueryResult result = queryEngine.runQueryOnLocalPartitions(name, predicate, IterationType.KEY);
+        return QueryResultUtils.transformToSet(serializationService, result, predicate, IterationType.KEY, false);
     }
 
     @Override

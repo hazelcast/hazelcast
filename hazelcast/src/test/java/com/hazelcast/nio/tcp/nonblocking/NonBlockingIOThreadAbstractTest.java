@@ -2,6 +2,7 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.when;
  */
 public abstract class NonBlockingIOThreadAbstractTest extends HazelcastTestSupport {
 
-    private NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
+    private IOOutOfMemoryHandler oomeHandler;
     private ILogger logger;
     private MockSelector selector;
     private SelectionHandler handler;
@@ -44,7 +45,7 @@ public abstract class NonBlockingIOThreadAbstractTest extends HazelcastTestSuppo
     @Before
     public void setup() {
         logger = Logger.getLogger(NonBlockingIOThread.class);
-        oomeHandler = mock(NonBlockingIOThreadOutOfMemoryHandler.class);
+        oomeHandler = mock(IOOutOfMemoryHandler.class);
         selector = new MockSelector();
         handler = mock(SelectionHandler.class);
     }

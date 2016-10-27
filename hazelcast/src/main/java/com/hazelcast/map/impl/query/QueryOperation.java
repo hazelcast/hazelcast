@@ -48,8 +48,8 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
 
     @Override
     public void run() throws Exception {
-        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
-        result = queryEngine.queryLocalPartitions(name, predicate, iterationType);
+        MapLocalQueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
+        result = queryRunner.run(name, predicate, iterationType);
     }
 
     @Override

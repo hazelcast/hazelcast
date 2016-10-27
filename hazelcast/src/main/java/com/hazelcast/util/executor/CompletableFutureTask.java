@@ -89,4 +89,11 @@ public class CompletableFutureTask<V> extends AbstractCompletableFuture<V> imple
         }
     }
 
+    @Override
+    public String toString() {
+        return "CompletableFutureTask{"
+                + "callable=" + callable
+                + ", runner=" + runner
+                + '}';
+    }
 }

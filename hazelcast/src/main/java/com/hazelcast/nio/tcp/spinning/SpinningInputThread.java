@@ -17,7 +17,7 @@
 package com.hazelcast.nio.tcp.spinning;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.SocketConnection;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -37,7 +37,7 @@ public class SpinningInputThread extends Thread {
         this.socketReaders = new SocketReaders();
     }
 
-    public void addConnection(TcpIpConnection connection) {
+    public void addConnection(SocketConnection connection) {
         SpinningSocketReader reader = (SpinningSocketReader) connection.getSocketReader();
 
         for (; ; ) {
@@ -58,7 +58,7 @@ public class SpinningInputThread extends Thread {
         }
     }
 
-    public void removeConnection(TcpIpConnection connection) {
+    public void removeConnection(SocketConnection connection) {
         SpinningSocketReader reader = (SpinningSocketReader) connection.getSocketReader();
 
         for (; ; ) {

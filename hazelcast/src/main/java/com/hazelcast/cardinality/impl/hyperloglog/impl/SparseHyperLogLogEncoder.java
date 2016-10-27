@@ -189,14 +189,14 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
             return;
         }
 
-        // Merge existing register with temp
+        // merge existing register with temp
         int[] old = register.explode();
         int[] all = Arrays.copyOf(old, old.length + tempIdx);
 
         System.arraycopy(temp, 0, all, old.length, tempIdx);
         Arrays.sort(all);
 
-        // Clear register, re-inserting will be in different order, due to new values
+        // clear register, re-inserting will be in different order, due to new values
         register.clear();
 
         int previousHash = all[0];
@@ -226,7 +226,6 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
      * be sorted first.
      */
     private static class VariableLengthDiffArray {
-
         //aka 32
         private static final int INITIAL_CAPACITY = 1 << 5;
 
@@ -275,7 +274,7 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
                 exploded[counter] += last;
                 last = exploded[counter];
 
-                // Fix positions
+                // fix positions
                 i--;
                 counter++;
             }
@@ -305,8 +304,5 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
         private boolean needsMoreBytes(byte val) {
             return (val & 0x80) != 0;
         }
-
     }
-
 }
-

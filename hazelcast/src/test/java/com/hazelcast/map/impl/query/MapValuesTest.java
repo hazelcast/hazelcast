@@ -98,14 +98,14 @@ public class MapValuesTest extends HazelcastTestSupport {
 
         QueryResultCollection collection = assertInstanceOf(QueryResultCollection.class, entries);
         QueryResultRow row = (QueryResultRow) collection.getRows().iterator().next();
-        // there should only be a value; no key.
+        // there should only be a value, no key
         assertNull(row.getKey());
         assertEquals(serializationService.toData("a"), row.getValue());
     }
 
     @Test
     public void testSerializationServiceNullClassLoaderProblem() throws Exception {
-        // If the classloader is null the following call throws NullPointerException
+        // if the classloader is null the following call throws NullPointerException
         map.values(new InstanceOfPredicate(SampleObjects.PortableEmployee.class));
     }
 

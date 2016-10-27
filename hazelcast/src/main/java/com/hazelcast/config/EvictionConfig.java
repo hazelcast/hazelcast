@@ -20,7 +20,6 @@ import com.hazelcast.internal.eviction.EvictionConfiguration;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
-import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -119,7 +118,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         /**
          * ===== NOTE =====
          *
-         * Do not use setters, because they are overriden in readonly version of this config and
+         * Do not use setters, because they are overridden in readonly version of this config and
          * cause "UnsupportedOperationException". So just set directly if value is valid.
          */
 
@@ -137,7 +136,6 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         if (config.comparator != null) {
             this.comparator = config.comparator;
         }
-        EvictionConfigHelper.checkEvictionConfig(evictionPolicy, comparatorClassName, comparator);
     }
 
     /**
