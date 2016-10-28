@@ -20,13 +20,13 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
 import java.util.function.Predicate;
 
-class ConveyorProducer implements InboundProducer {
+class ConveyorEmitter implements InboundEmitter {
 
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
     private final DoneDetector doneDetector;
 
-    public ConveyorProducer(ConcurrentConveyor<Object> conveyor, int queueIndex) {
+    public ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
         doneDetector = new DoneDetector(conveyor.submitterGoneItem());

@@ -24,7 +24,6 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.MetaProcessorSupplier;
-import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
@@ -106,9 +105,8 @@ public class ExecutionContext {
             metaSupplier.init(new MetaProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(),
                     totalParallelism, parallelism));
 
-            ProcessorSupplier supplier = metaSupplier.get(nodeEngine.getThisAddress());
-            supplier.init(new ProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(),
-                    parallelism));
+            ProcessorSupplier processorSupplier = metaSupplier.get(nodeEngine.getThisAddress());
+            processorSupplier.init(new ProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(), parallelism));
             for (int taskletIndex = 0; taskletIndex < parallelism; taskletIndex++) {
                 List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
                 List<InboundEdgeStream> inboundStreams = new ArrayList<>();
@@ -117,35 +115,26 @@ public class ExecutionContext {
                     // one conveyor per consumer - each conveyor has one queue per producer
                     // giving a total of number of producers * number of consumers queues
                     ConcurrentConveyor<Object>[] conveyorArray = conveyorMap.computeIfAbsent(outboundEdge, e ->
-                            createConveyorArray(getParallelism(outboundEdge.getDestination()),
-                                    parallelism, QUEUE_SIZE));
-                    OutboundConsumer[] consumers = new OutboundConsumer[conveyorArray.length];
-                    for (int i = 0, conveyorsLength = conveyorArray.length; i < conveyorsLength; i++) {
-                        consumers[i] = new ConveyorConsumer(conveyorArray[i], taskletIndex);
-                    }
-                    outboundStreams.add(newStream(consumers, outboundEdge));
+                            createConveyorArray(getParallelism(outboundEdge.getDestination()), parallelism, QUEUE_SIZE));
+                    OutboundCollector[] collectors = new OutboundCollector[conveyorArray.length];
+                    int ti = taskletIndex; // ti is effectively final, unlike taskletIndex
+                    Arrays.setAll(collectors, i -> new ConveyorCollector(conveyorArray[i], ti));
+                    outboundStreams.add(newStream(collectors, outboundEdge));
                 }
 
                 for (Edge inboundEdge : inboundEdges) {
-                    ConcurrentConveyor<Object>[] conveyors = conveyorMap.get(inboundEdge);
-                    ConcurrentConveyor<Object> conveyor = conveyors[taskletIndex];
-                    InboundProducer[] producers = new InboundProducer[conveyor.queueCount()];
-                    for (int i = 0; i < producers.length; i++) {
-                        producers[i] = new ConveyorProducer(conveyor, i);
-                    }
-
-                    ConcurrentInboundEdgeStream inboundStream =
-                            new ConcurrentInboundEdgeStream(producers,
-                                    inboundEdge.getInputOrdinal(),
-                                    inboundEdge.getPriority());
+                    ConcurrentConveyor<Object> conveyor = conveyorMap.get(inboundEdge)[taskletIndex];
+                    InboundEmitter[] emitters = new InboundEmitter[conveyor.queueCount()];
+                    Arrays.setAll(emitters, i -> new ConveyorEmitter(conveyor, i));
+                    ConcurrentInboundEdgeStream inboundStream = new ConcurrentInboundEdgeStream(
+                            emitters, inboundEdge.getInputOrdinal(), inboundEdge.getPriority());
                     inboundStreams.add(inboundStream);
                 }
-
-                Processor processor = supplier.get();
-                tasks.add(new ProcessorTasklet(processor, classLoader, inboundStreams, outboundStreams));
+                processorSupplier.get().stream()
+                                 .map(p -> new ProcessorTasklet(p, classLoader, inboundStreams, outboundStreams))
+                                 .forEach(tasks::add);
             }
         }
-
         return executionService.execute(tasks);
     }
 

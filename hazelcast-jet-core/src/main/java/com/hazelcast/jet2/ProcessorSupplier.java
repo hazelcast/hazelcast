@@ -17,6 +17,7 @@
 package com.hazelcast.jet2;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  *
@@ -33,7 +34,7 @@ public interface ProcessorSupplier extends Serializable {
     /**
      * Javadoc pending
      */
-    Processor get();
+    List<Processor> get();
 
 
 }

@@ -34,13 +34,13 @@ import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
  */
 abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
-    protected final OutboundConsumer[] consumers;
+    protected final OutboundCollector[] consumers;
     protected final int ordinal;
 
     private final ProgressTracker progTracker = new ProgressTracker();
     private final BitSet isItemSentTo;
 
-    protected ConcurrentOutboundEdgeStream(OutboundConsumer[] consumers, int ordinal) {
+    ConcurrentOutboundEdgeStream(OutboundCollector[] consumers, int ordinal) {
         Preconditions.checkTrue(consumers.length > 0, "Consumer array is empty");
 
         this.consumers = consumers;
@@ -48,10 +48,11 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         this.ordinal = ordinal;
     }
 
-    public static OutboundEdgeStream newStream(
-            OutboundConsumer[] consumers, Edge edge) {
+    static OutboundEdgeStream newStream(OutboundCollector[] consumers, Edge edge) {
         int ordinal = edge.getOutputOrdinal();
         switch (edge.getForwardingPattern()) {
+            case ALL_TO_ONE:
+                throw new RuntimeException("to implement");
             case ALTERNATING_SINGLE:
                 return new RoundRobin(consumers, ordinal);
             case PARTITIONED:
@@ -94,16 +95,16 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
     private static class RoundRobin extends ConcurrentOutboundEdgeStream {
 
-        private final CircularCursor<OutboundConsumer> cursor;
+        private final CircularCursor<OutboundCollector> cursor;
 
-        RoundRobin(OutboundConsumer[] consumers, int ordinal) {
+        RoundRobin(OutboundCollector[] consumers, int ordinal) {
             super(consumers, ordinal);
             this.cursor = new CircularCursor<>(Arrays.asList(this.consumers));
         }
 
         @Override
         public ProgressState offer(Object item) {
-            final OutboundConsumer first = cursor.value();
+            final OutboundCollector first = cursor.value();
             do {
                 boolean accepted = cursor.value().offer(item);
                 cursor.advance();
@@ -116,7 +117,7 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
     }
 
     private static class Broadcast extends ConcurrentOutboundEdgeStream {
-        Broadcast(OutboundConsumer[] consumers, int ordinal) {
+        Broadcast(OutboundCollector[] consumers, int ordinal) {
             super(consumers, ordinal);
         }
 
@@ -130,7 +131,7 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
 
         private final Partitioner partitioner;
 
-        public Partitioned(OutboundConsumer[] consumers, Partitioner partitioner, int ordinal) {
+        Partitioned(OutboundCollector[] consumers, Partitioner partitioner, int ordinal) {
             super(consumers, ordinal);
             this.partitioner = partitioner;
         }

@@ -21,6 +21,8 @@ import com.hazelcast.nio.Address;
 import java.io.Serializable;
 
 public interface MetaProcessorSupplier extends Serializable {
+
     void init(MetaProcessorSupplierContext context);
+
     ProcessorSupplier get(Address address);
 }

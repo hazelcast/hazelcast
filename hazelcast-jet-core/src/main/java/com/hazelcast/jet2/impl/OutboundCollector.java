@@ -16,20 +16,6 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
-
-public class ConveyorConsumer implements OutboundConsumer {
-
-    private final ConcurrentConveyor<Object> conveyor;
-    private final int queueIndex;
-
-    public ConveyorConsumer(ConcurrentConveyor<Object> conveyor, int queueIndex) {
-        this.conveyor = conveyor;
-        this.queueIndex = queueIndex;
-    }
-
-    @Override
-    public boolean offer(Object item) {
-        return conveyor.offer(queueIndex, item);
-    }
+interface OutboundCollector {
+    boolean offer(Object item);
 }

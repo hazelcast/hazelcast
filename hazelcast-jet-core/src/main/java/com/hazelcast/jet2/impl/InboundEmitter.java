@@ -16,6 +16,6 @@
 
 package com.hazelcast.jet2.impl;
 
-interface OutboundConsumer {
-    boolean offer(Object item);
+interface InboundEmitter {
+    ProgressState drainTo(CollectionWithObserver dest);
 }

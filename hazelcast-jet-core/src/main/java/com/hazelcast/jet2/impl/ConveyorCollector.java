@@ -16,6 +16,20 @@
 
 package com.hazelcast.jet2.impl;
 
-interface InboundProducer {
-    ProgressState drainTo(CollectionWithObserver dest);
+import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
+
+public class ConveyorCollector implements OutboundCollector {
+
+    private final ConcurrentConveyor<Object> conveyor;
+    private final int queueIndex;
+
+    public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex) {
+        this.conveyor = conveyor;
+        this.queueIndex = queueIndex;
+    }
+
+    @Override
+    public boolean offer(Object item) {
+        return conveyor.offer(queueIndex, item);
+    }
 }
