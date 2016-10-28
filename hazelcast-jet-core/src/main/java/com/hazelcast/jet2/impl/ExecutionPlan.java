@@ -26,6 +26,10 @@ import java.util.List;
 
 class ExecutionPlan implements Serializable {
     private List<VertexDef> vertices = new ArrayList<>();
+
+    public List<VertexDef> getVertices() {
+        return vertices;
+    }
 }
 
 class VertexDef implements Serializable {
@@ -34,12 +38,10 @@ class VertexDef implements Serializable {
     private final List<EdgeDef> inputs = new ArrayList<>();
     private final List<EdgeDef> outputs = new ArrayList<>();
     private ProcessorSupplier processorSupplier;
-    private int parallelism;
 
-    public VertexDef(int id, ProcessorSupplier processorSupplier, int parallelism) {
+    public VertexDef(int id, ProcessorSupplier processorSupplier) {
         this.id = id;
         this.processorSupplier = processorSupplier;
-        this.parallelism = parallelism;
     }
 
     public void addInput(EdgeDef def) {
@@ -57,26 +59,38 @@ class VertexDef implements Serializable {
     public List<EdgeDef> getOutputs() {
         return outputs;
     }
+
+    public ProcessorSupplier getProcessorSupplier() {
+        return processorSupplier;
+    }
 }
 
 class EdgeDef implements Serializable {
     private final int otherEndId;
+    private final int otherEndParallelism;
     private final int ordinal;
+    private final int priority;
     private final ForwardingPattern forwardingPattern;
     private final Partitioner partitioner;
+    private String id;
 
-    public EdgeDef(int otherEndId,
-                   int ordinal,
-                   ForwardingPattern forwardingPattern,
-                   Partitioner partitioner) {
+    public EdgeDef(String id, int otherEndId, int otherEndParallelism, int ordinal,
+                   int priority, ForwardingPattern forwardingPattern, Partitioner partitioner) {
+        this.id = id;
         this.otherEndId = otherEndId;
+        this.otherEndParallelism = otherEndParallelism;
         this.ordinal = ordinal;
+        this.priority = priority;
         this.forwardingPattern = forwardingPattern;
         this.partitioner = partitioner;
     }
 
     public int getOtherEndId() {
         return otherEndId;
+    }
+
+    public int getOtherEndParallelism() {
+        return otherEndParallelism;
     }
 
     public int getOrdinal() {
@@ -89,6 +103,15 @@ class EdgeDef implements Serializable {
 
     public Partitioner getPartitioner() {
         return partitioner;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+
+    public int getPriority() {
+        return priority;
     }
 }
 

@@ -48,19 +48,19 @@ abstract class ConcurrentOutboundEdgeStream implements OutboundEdgeStream {
         this.ordinal = ordinal;
     }
 
-    static OutboundEdgeStream newStream(OutboundCollector[] consumers, Edge edge) {
-        int ordinal = edge.getOutputOrdinal();
-        switch (edge.getForwardingPattern()) {
+    static OutboundEdgeStream newStream(OutboundCollector[] consumers, EdgeDef outboundEdge) {
+        int ordinal = outboundEdge.getOrdinal();
+        switch (outboundEdge.getForwardingPattern()) {
             case ALL_TO_ONE:
                 throw new RuntimeException("to implement");
             case ALTERNATING_SINGLE:
                 return new RoundRobin(consumers, ordinal);
             case PARTITIONED:
-                return new Partitioned(consumers, edge.getPartitioner(), ordinal);
+                return new Partitioned(consumers, outboundEdge.getPartitioner(), ordinal);
             case BROADCAST:
                 return new Broadcast(consumers, ordinal);
             default:
-                throw new AssertionError("Missing case label for " + edge.getForwardingPattern());
+                throw new AssertionError("Missing case label for " + outboundEdge.getForwardingPattern());
         }
     }
 

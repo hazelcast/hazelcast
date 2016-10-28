@@ -24,6 +24,8 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.MetaProcessorSupplier;
+import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorListSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
@@ -84,12 +86,54 @@ public class ExecutionContext {
 
             for (int i = 0; i < members.size(); i++) {
                 Member member = members.get(i);
-                ProcessorSupplier processorSupplier = supplier.get(member.getAddress());
+                ProcessorListSupplier processorSupplier = supplier.get(member.getAddress());
             }
 
         }
         return null;
 
+    }
+
+    public Future<Void> executePlan(ExecutionPlan plan) {
+        List<Tasklet> tasks = new ArrayList<>();
+        Map<String, ConcurrentConveyor<Object>[]> conveyorMap = new HashMap<>();
+
+        for (VertexDef vertexDef : plan.getVertices()) {
+            List<EdgeDef> inputs = vertexDef.getInputs();
+            List<EdgeDef> outputs = vertexDef.getOutputs();
+            ProcessorSupplier processorSupplier = vertexDef.getProcessorSupplier();
+            List<Processor> processors = processorSupplier.get();
+
+            int parallelism = processors.size();
+            for (int i = 0; i < parallelism; i++) {
+                List<InboundEdgeStream> inboundStreams = new ArrayList<>();
+                List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
+                final int taskletIndex = i; // ti is effectively final, unlike taskletIndex
+
+                for (EdgeDef output : outputs) {
+                    // each edge has an array of conveyors
+                    // one conveyor per consumer - each conveyor has one queue per producer
+                    // giving a total of number of producers * number of consumers queues
+                    ConcurrentConveyor<Object>[] conveyorArray = conveyorMap.computeIfAbsent(output.getId(), e ->
+                            createConveyorArray(output.getOtherEndParallelism(), parallelism, QUEUE_SIZE));
+                    OutboundCollector[] collectors = new OutboundCollector[conveyorArray.length];
+                    Arrays.setAll(collectors, n -> new ConveyorCollector(conveyorArray[n], taskletIndex));
+                    outboundStreams.add(newStream(collectors, output));
+                }
+                for (EdgeDef input : inputs) {
+                    // each tasklet will have one input conveyor
+                    // and one InboundEmitter per queue on the conveyor
+                    ConcurrentConveyor<Object> conveyor = conveyorMap.get(input.getId())[taskletIndex];
+                    InboundEmitter[] emitters = new InboundEmitter[conveyor.queueCount()];
+                    Arrays.setAll(emitters, n -> new ConveyorEmitter(conveyor, n));
+                    ConcurrentInboundEdgeStream inboundStream = new ConcurrentInboundEdgeStream(
+                            emitters, input.getOrdinal(), input.getPriority());
+                    inboundStreams.add(inboundStream);
+                }
+                tasks.add(new ProcessorTasklet(processors.get(i), classLoader, inboundStreams, outboundStreams));
+            }
+        }
+        return executionService.execute(tasks);
     }
 
     public Future<Void> execute(DAG dag) {
@@ -131,8 +175,8 @@ public class ExecutionContext {
                     inboundStreams.add(inboundStream);
                 }
                 processorSupplier.get().stream()
-                                 .map(p -> new ProcessorTasklet(p, classLoader, inboundStreams, outboundStreams))
-                                 .forEach(tasks::add);
+                        .map(p -> new ProcessorTasklet(p, classLoader, inboundStreams, outboundStreams))
+                        .forEach(tasks::add);
             }
         }
         return executionService.execute(tasks);
