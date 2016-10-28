@@ -55,26 +55,31 @@ public class ClientCacheStatsTest extends CacheStatsTest {
         return new ClientConfig();
     }
 
+    @Override
     @Test(expected = UnsupportedOperationException.class)
     public void testOwnedEntryCountWhenThereIsNoBackup() {
         super.testOwnedEntryCountWhenThereIsNoBackup();
     }
 
+    @Override
     @Test(expected = UnsupportedOperationException.class)
     public void testOwnedEntryCountWhenThereAreBackupsOnStaticCluster() {
         super.testOwnedEntryCountWhenThereAreBackupsOnStaticCluster();
     }
 
+    @Override
     @Test(expected = UnsupportedOperationException.class)
     public void testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster() {
         super.testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster();
     }
 
+    @Override
     @Test(expected = UnsupportedOperationException.class)
-    public void testExpiries() {
-        super.testExpiries();
+    public void testExpirations() {
+        super.testExpirations();
     }
 
+    @Override
     @Test(expected = UnsupportedOperationException.class)
     public void testEvictions() {
         super.testEvictions();

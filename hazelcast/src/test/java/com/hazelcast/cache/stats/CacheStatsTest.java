@@ -499,7 +499,7 @@ public class CacheStatsTest extends CacheTestSupport {
     }
 
     @Test
-    public void testExpiries() {
+    public void testExpirations() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
