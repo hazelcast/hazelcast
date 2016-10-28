@@ -19,6 +19,7 @@ package com.hazelcast.quorum;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MembershipAdapter;
@@ -62,18 +63,31 @@ public class PartitionedCluster {
         return splitFiveMembersThreeAndTwo();
     }
 
-    public PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
-        Config config = createClusterConfig();
-        config.addMapConfig(mapConfig);
-        config.addQuorumConfig(quorumConfig);
+    public PartitionedCluster partitionFiveMembersThreeAndTwo(QueueConfig qConfig, QuorumConfig quorumConfig) throws InterruptedException {
+        createFiveMemberCluster(qConfig, quorumConfig);
+        return splitFiveMembersThreeAndTwo();
+    }
+
+    private PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
+        final Config config = createClusterConfig()
+                .addMapConfig(mapConfig)
+                .addQuorumConfig(quorumConfig);
         createInstances(config);
         return this;
     }
 
     public PartitionedCluster createFiveMemberCluster(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
-        Config config = createClusterConfig();
-        config.addCacheConfig(cacheSimpleConfig);
-        config.addQuorumConfig(quorumConfig);
+        final Config config = createClusterConfig()
+                .addCacheConfig(cacheSimpleConfig)
+                .addQuorumConfig(quorumConfig);
+        createInstances(config);
+        return this;
+    }
+
+    public PartitionedCluster createFiveMemberCluster(QueueConfig queueConfig, QuorumConfig quorumConfig) {
+        final Config config = createClusterConfig()
+                .addQueueConfig(queueConfig)
+                .addQuorumConfig(quorumConfig);
         createInstances(config);
         return this;
     }

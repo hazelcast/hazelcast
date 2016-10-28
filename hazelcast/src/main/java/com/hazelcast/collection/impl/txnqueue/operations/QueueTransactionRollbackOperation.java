@@ -21,11 +21,14 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
 
 /**
- * Transaction Rollback Operation for the Queue.
+ * Transaction Rollback Operation for the Queue. Rolls back the given transaction ID on the queue with the given name. This
+ * operation does not happen by invoking {@link TransactionContext#rollbackTransaction()} but in case of a client disconnect
+ * or a member being removed (see {@link com.hazelcast.transaction.impl.operations.BroadcastTxRollbackOperation})
  */
 public class QueueTransactionRollbackOperation extends QueueOperation {
 

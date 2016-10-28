@@ -33,6 +33,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Notifier;
@@ -221,6 +222,12 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         throw new RetryableHazelcastException("Member " + localAddress + " is currently shutting down! Operation: " + op);
     }
 
+    /**
+     * Ensures that the quorum is present if the quorum is configured and the operation service is quorum aware.
+     *
+     * @param op the operation for which the quorum must be checked for presence
+     * @throws QuorumException if the operation requires a quorum and the quorum is not present
+     */
     private void ensureQuorumPresent(Operation op) {
         QuorumServiceImpl quorumService = operationService.nodeEngine.getQuorumService();
         quorumService.ensureQuorumPresent(op);

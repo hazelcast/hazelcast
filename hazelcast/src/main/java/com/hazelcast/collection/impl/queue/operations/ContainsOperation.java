@@ -22,6 +22,7 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import java.util.Collection;
 /**
  * Checks whether contain or not item in the Queue.
  */
-public class ContainsOperation extends QueueOperation {
+public class ContainsOperation extends QueueOperation implements ReadonlyOperation {
 
     private Collection<Data> dataList;
 

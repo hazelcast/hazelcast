@@ -26,13 +26,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 /**
  * Remove operation for the Queue.
  */
-public class RemoveOperation extends QueueBackupAwareOperation implements Notifier {
+public class RemoveOperation extends QueueBackupAwareOperation implements Notifier, MutatingOperation {
 
     private Data data;
     private long itemId = -1;

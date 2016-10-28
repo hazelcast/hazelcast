@@ -19,11 +19,12 @@ package com.hazelcast.collection.impl.queue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.spi.ReadonlyOperation;
 
 /**
  * Returns the remaining capacity of the queue based on config max-size
  */
-public class RemainingCapacityOperation extends QueueOperation {
+public class RemainingCapacityOperation extends QueueOperation implements ReadonlyOperation {
 
     public RemainingCapacityOperation() {
     }

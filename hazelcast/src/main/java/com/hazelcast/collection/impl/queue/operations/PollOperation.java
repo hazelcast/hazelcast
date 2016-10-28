@@ -26,12 +26,13 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
  * Pool operation for Queue.
  */
 public final class PollOperation extends QueueBackupAwareOperation
-        implements BlockingOperation, Notifier, IdentifiedDataSerializable {
+        implements BlockingOperation, Notifier, IdentifiedDataSerializable, MutatingOperation {
 
     private QueueItem item;
 

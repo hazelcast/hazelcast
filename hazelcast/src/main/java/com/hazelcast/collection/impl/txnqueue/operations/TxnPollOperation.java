@@ -24,11 +24,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
  * Poll operation for the transactional queue.
  */
-public class TxnPollOperation extends BaseTxnQueueOperation implements Notifier {
+public class TxnPollOperation extends BaseTxnQueueOperation implements Notifier, MutatingOperation {
 
     private Data data;
 

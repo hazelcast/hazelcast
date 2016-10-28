@@ -21,14 +21,14 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 /**
  * Remove backup of the Queue item.
  */
-
-public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
+public class RemoveBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
 
     private long itemId;
 
