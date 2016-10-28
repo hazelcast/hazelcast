@@ -18,6 +18,8 @@ package com.hazelcast.osgi.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.osgi.HazelcastOSGiService;
+
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
@@ -76,6 +78,9 @@ public class Activator
     }
 
     static boolean isJavaxScriptingAvailable() {
+        if (Boolean.getBoolean(HazelcastOSGiService.HAZELCAST_OSGI_JSR223_DISABLED)) {
+            return false;
+        }
         try {
             Class.forName("javax.script.ScriptEngineManager");
             return true;
