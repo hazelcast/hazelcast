@@ -135,9 +135,11 @@ public class NonBlockingIOThreadingModel
 
     @Override
     public void start() {
-        logger.info("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
-                + inputThreads.length + " input threads and "
-                + outputThreads.length + " output threads");
+        if (logger.isFineEnabled()) {
+            logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
+                    + inputThreads.length + " input threads and "
+                    + outputThreads.length + " output threads");
+        }
 
         logger.log(getSelectorMode() != SelectorMode.SELECT ? INFO : FINE,
                 "IO threads selector mode is " + getSelectorMode());
