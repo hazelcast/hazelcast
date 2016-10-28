@@ -33,7 +33,7 @@ public interface ProcessorSupplier extends Serializable {
     /**
      * Javadoc pending
      */
-    default void init(ProcessorContext context) {
+    default void init(ProcessorSupplierContext context) {
     }
 
     /**
@@ -44,45 +44,19 @@ public interface ProcessorSupplier extends Serializable {
 
 }
 
-interface MetaProcessorSupplier extends Serializable {
-
-    void init(ProcessorContext context);
-    ProcessorSupplier get(Address address);
-}
-
-class DefaultMetaSupplier implements MetaProcessorSupplier {
-
-    private final ProcessorSupplier supplier;
-
-    public DefaultMetaSupplier(ProcessorSupplier supplier) {
-        this.supplier = supplier;
-    }
-
-
-    @Override
-    public void init(ProcessorContext context) {
-
-    }
-
-    @Override
-    public ProcessorSupplier get(Address address) {
-        return supplier;
-    }
-}
 
 class IMapReaderMetaSupplier implements MetaProcessorSupplier {
 
     private final String mapName;
-    private ProcessorContext context;
+    private transient MetaProcessorSupplierContext context;
 
     public IMapReaderMetaSupplier(String mapName) {
         this.mapName = mapName;
     }
 
     @Override
-    public void init(ProcessorContext context) {
+    public void init(MetaProcessorSupplierContext context) {
         this.context = context;
-
     }
 
     @Override
@@ -109,10 +83,10 @@ class IMapReaderMetaSupplier implements MetaProcessorSupplier {
         }
 
         @Override
-        public void init(ProcessorContext context) {
+        public void init(ProcessorSupplierContext context) {
             index = 0;
             map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
-            localParallelism = context.localParallelism();
+            localParallelism = context.perNodeParallelism();
         }
 
         @Override

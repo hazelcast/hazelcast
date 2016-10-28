@@ -20,7 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
+import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 
@@ -104,7 +104,7 @@ public class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public void init(ProcessorContext context) {
+        public void init(ProcessorSupplierContext context) {
             // distribute local partitions
             index = 0;
             Member localMember = context.getHazelcastInstance().getCluster().getLocalMember();
@@ -112,7 +112,7 @@ public class IMapReader extends AbstractProducer {
             partitionGroups = partitions.stream()
                     .filter(p -> p.getOwner().equals(localMember))
                     .map(Partition::getPartitionId)
-                    .collect(Collectors.groupingBy(p -> p % context.localParallelism()));
+                    .collect(Collectors.groupingBy(p -> p % context.perNodeParallelism()));
             map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
         }
 

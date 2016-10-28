@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -29,7 +30,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class Vertex implements IdentifiedDataSerializable {
 
-    private ProcessorSupplier processorSupplier;
+    private MetaProcessorSupplier supplier;
     private String name;
     private int parallelism = -1;
 
@@ -38,14 +39,29 @@ public class Vertex implements IdentifiedDataSerializable {
 
     /**
      * Javadoc pending
+     *
      * @param name
      * @param processorSupplier
      */
     public Vertex(String name, ProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
-        checkNotNull(processorSupplier, "processorSupplier");
+        checkNotNull(processorSupplier, "supplier");
 
-        this.processorSupplier = processorSupplier;
+        this.supplier = new DefaultMetaSupplier(processorSupplier);
+        this.name = name;
+    }
+
+    /**
+     * Javadoc pending
+     *
+     * @param name
+     * @param supplier
+     */
+    public Vertex(String name, MetaProcessorSupplier supplier) {
+        checkNotNull(name, "name");
+        checkNotNull(supplier, "supplier");
+
+        this.supplier = supplier;
         this.name = name;
     }
 
@@ -77,8 +93,8 @@ public class Vertex implements IdentifiedDataSerializable {
     /**
      * @return the processor supplier
      */
-    public ProcessorSupplier getProcessorSupplier() {
-        return processorSupplier;
+    public MetaProcessorSupplier getSupplier() {
+        return supplier;
     }
 
     @Override
@@ -91,14 +107,14 @@ public class Vertex implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeObject(processorSupplier);
+        out.writeObject(supplier);
         out.writeInt(parallelism);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        processorSupplier = in.readObject();
+        supplier = in.readObject();
         parallelism = in.readInt();
     }
 
@@ -110,5 +126,24 @@ public class Vertex implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return JetDataSerializerHook.VERTEX;
+    }
+
+    private class DefaultMetaSupplier implements MetaProcessorSupplier {
+
+        private final ProcessorSupplier supplier;
+
+        public DefaultMetaSupplier(ProcessorSupplier supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public void init(MetaProcessorSupplierContext context) {
+
+        }
+
+        @Override
+        public ProcessorSupplier get(Address address) {
+            return supplier;
+        }
     }
 }

@@ -20,7 +20,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
+import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.jet2.ProcessorSupplier;
 import javax.annotation.Nonnull;
 
@@ -64,7 +64,7 @@ public class IListWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(ProcessorContext context) {
+        public void init(ProcessorSupplierContext context) {
             list = context.getHazelcastInstance().getList(name);
         }
 

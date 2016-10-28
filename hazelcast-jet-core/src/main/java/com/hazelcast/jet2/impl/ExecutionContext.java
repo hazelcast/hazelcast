@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.MetaProcessorSupplier;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
@@ -71,29 +72,24 @@ public class ExecutionContext {
         List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         int clusterSize = members.size();
         for (Vertex vertex : dag) {
-            int localParallelism = getParallelism(vertex);
-            int totalParallelism = localParallelism * clusterSize;
+            int perNodeParallelism = getParallelism(vertex);
+            int totalParallelism = perNodeParallelism * clusterSize;
 
             List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
             List<Edge> inboundEdges = dag.getInboundEdges(vertex);
 
-            ProcessorContextImpl context = new ProcessorContextImpl(nodeEngine.getHazelcastInstance(),
-                    localParallelism, totalParallelism, classLoader);
-            ProcessorSupplier supplier = vertex.getProcessorSupplier();
+            MetaProcessorSupplierContextImpl context = new MetaProcessorSupplierContextImpl(
+                    nodeEngine.getHazelcastInstance(), totalParallelism, perNodeParallelism);
+            MetaProcessorSupplier supplier = vertex.getSupplier();
             supplier.init(context);
 
             for (int i = 0; i < members.size(); i++) {
                 Member member = members.get(i);
-                List<Processor> processors = supplier.get(member.getAddress());
-                assert processors.size() == localParallelism : "Requested number of processors was not returned";
-
-                for (Processor processor : processors) {
-
-                }
+                ProcessorSupplier processorSupplier = supplier.get(member.getAddress());
             }
 
         }
-
+        return null;
 
     }
 
@@ -105,9 +101,9 @@ public class ExecutionContext {
             List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
             List<Edge> inboundEdges = dag.getInboundEdges(vertex);
             int parallelism = getParallelism(vertex);
-            ProcessorContextImpl context = new ProcessorContextImpl(nodeEngine.getHazelcastInstance(),
-                    parallelism, parallelism, classLoader);
-            ProcessorSupplier supplier = vertex.getProcessorSupplier();
+            ProcessorSupplierContextImpl context = new ProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(),
+                    parallelism);
+            ProcessorSupplier supplier = vertex.getSupplier().get(nodeEngine.getThisAddress());
             supplier.init(context);
             for (int taskletIndex = 0; taskletIndex < parallelism; taskletIndex++) {
                 List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
@@ -142,7 +138,7 @@ public class ExecutionContext {
                 }
 
                 Processor processor = supplier.get();
-                tasks.add(new ProcessorTasklet(context, processor, inboundStreams, outboundStreams));
+                tasks.add(new ProcessorTasklet(processor, classLoader, inboundStreams, outboundStreams));
             }
         }
 

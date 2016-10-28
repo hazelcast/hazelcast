@@ -20,7 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
+import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.jet2.ProcessorSupplier;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -84,7 +84,7 @@ public class IMapWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(ProcessorContext context) {
+        public void init(ProcessorSupplierContext context) {
             map = context.getHazelcastInstance().getMap(name);
         }
 

@@ -19,7 +19,7 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.collection.impl.list.ListProxyImpl;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
+import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.jet2.ProcessorSupplier;
 import java.util.Iterator;
 import javax.annotation.Nonnull;
@@ -72,7 +72,7 @@ public class IListReader extends AbstractProducer {
         }
 
         @Override
-        public void init(ProcessorContext context) {
+        public void init(ProcessorSupplierContext context) {
             list = (ListProxyImpl) context.getHazelcastInstance().getList(name);
         }
 

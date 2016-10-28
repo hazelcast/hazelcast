@@ -144,8 +144,8 @@ public class ForwardingTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void init(ProcessorContext context) {
-            consumers = new ListConsumer[context.totalParallelism()];
+        public void init(ProcessorSupplierContext context) {
+            consumers = new ListConsumer[context.perNodeParallelism()];
             Arrays.setAll(consumers, i -> new ListConsumer());
         }
 

@@ -17,21 +17,16 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.ProcessorContext;
+import com.hazelcast.jet2.ProcessorSupplierContext;
 
-class ProcessorContextImpl implements ProcessorContext {
+class ProcessorSupplierContextImpl implements ProcessorSupplierContext {
 
     private final HazelcastInstance instance;
-    private final int localParallelism;
-    private final int totalParallelism;
-    private final ClassLoader classLoader;
+    private final int perNodeParallelism;
 
-    public ProcessorContextImpl(HazelcastInstance instance, int localParallelism, int totalParallelism,
-                                ClassLoader classLoader) {
+    public ProcessorSupplierContextImpl(HazelcastInstance instance, int perNodeParallelism) {
         this.instance = instance;
-        this.localParallelism = localParallelism;
-        this.totalParallelism = totalParallelism;
-        this.classLoader = classLoader;
+        this.perNodeParallelism = perNodeParallelism;
     }
 
     @Override
@@ -40,17 +35,8 @@ class ProcessorContextImpl implements ProcessorContext {
     }
 
     @Override
-    public int totalParallelism() {
-        return localParallelism;
+    public int perNodeParallelism() {
+        return perNodeParallelism;
     }
 
-    @Override
-    public int localParallelism() {
-        return localParallelism;
-    }
-
-    @Override
-    public ClassLoader getClassLoader() {
-        return classLoader;
-    }
 }

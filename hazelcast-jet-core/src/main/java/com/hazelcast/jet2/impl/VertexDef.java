@@ -17,7 +17,7 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Edge;
-import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.nio.Address;
 
 import java.io.Serializable;
@@ -33,7 +33,7 @@ class VertexDef implements Serializable {
     private VertexId id;
     private final List<InputDef> inputs = new ArrayList<>();
     private final List<OutputDef> outputs = new ArrayList<>();
-    private List<Processor> processors;
+    private ProcessorSupplier processorSupplier;
 
     public VertexDef() {
 
@@ -66,12 +66,13 @@ class OutputDef implements Serializable {
 }
 
 class VertexId implements Serializable {
-    private final int id;
+    private final String name;
     private final Address address;
 
-    public VertexId(int id, Address address) {
-        this.id = id;
+    public VertexId(String name, Address address) {
+        this.name = name;
         this.address = address;
     }
 }
+
 

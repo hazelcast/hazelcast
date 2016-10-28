@@ -17,7 +17,6 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayDeque;
@@ -39,7 +38,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private final Processor processor;
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
-    private final ProcessorContext context;
+    private final ClassLoader classLoader;
     private CircularCursor<InboundEdgeStream> instreamCursor;
     private final ArrayDequeWithObserver inbox;
     private final ArrayDequeOutbox outbox;
@@ -50,13 +49,13 @@ public class ProcessorTasklet implements Tasklet {
     private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(ProcessorContext context, Processor processor,
+    public ProcessorTasklet(Processor processor, ClassLoader classLoader,
                             List<InboundEdgeStream> instreams,
                             List<OutboundEdgeStream> outstreams
     ) {
         Preconditions.checkNotNull(processor, "processor");
-        this.context = context;
         this.processor = processor;
+        this.classLoader = classLoader;
         this.instreamGroupQueue = instreams
                 .stream()
                 .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new, toCollection(ArrayList::new)))
@@ -81,13 +80,12 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public ProgressState call() throws Exception {
-        ClassLoader classLoader = null;
+        ClassLoader previousClassLoader = null;
         boolean classLoaderChanged = false;
-        ClassLoader contextClassLoader = context.getClassLoader();
-        if (contextClassLoader != null) {
-            classLoader = Thread.currentThread().getContextClassLoader();
-            if (contextClassLoader != classLoader) {
-                Thread.currentThread().setContextClassLoader(contextClassLoader);
+        if (classLoader != null) {
+            previousClassLoader = Thread.currentThread().getContextClassLoader();
+            if (previousClassLoader != classLoader) {
+                Thread.currentThread().setContextClassLoader(classLoader);
                 classLoaderChanged = true;
             }
         }
@@ -109,7 +107,7 @@ public class ProcessorTasklet implements Tasklet {
             return progTracker.toProgressState();
         } finally {
             if (classLoaderChanged) {
-                Thread.currentThread().setContextClassLoader(classLoader);
+                Thread.currentThread().setContextClassLoader(previousClassLoader);
             }
         }
     }

@@ -16,33 +16,11 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.Address;
 
-/**
- * Javadoc pending
- */
-public interface ProcessorContext {
+import java.io.Serializable;
 
-    /**
-     * @return
-     */
-    HazelcastInstance getHazelcastInstance();
-
-    /**
-     * @return the total number of instances of the processor over the whole cluster
-     */
-    int totalParallelism();
-
-    /**
-     * @return the total number of instances of the processor over the whole cluster
-     */
-    int localParallelism();
-
-    /**
-     * @return
-     */
-    ClassLoader getClassLoader();
+public interface MetaProcessorSupplier extends Serializable {
+    void init(MetaProcessorSupplierContext context);
+    ProcessorSupplier get(Address address);
 }
-
-
-

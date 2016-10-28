@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
+package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.ProcessorContext;
 
-public class MockProcessorContext implements ProcessorContext {
-    @Override
-    public HazelcastInstance getHazelcastInstance() {
-        return null;
-    }
+/**
+ * Javadoc pending
+ */
+public interface ProcessorSupplierContext {
 
-    @Override
-    public int totalParallelism() {
-        return 0;
-    }
+    /**
+     * @return
+     */
+    HazelcastInstance getHazelcastInstance();
 
-    @Override
-    public ClassLoader getClassLoader() {
-        return null;
-    }
+    /**
+     * @return
+     */
+    int perNodeParallelism();
+
 }
+
+
+
