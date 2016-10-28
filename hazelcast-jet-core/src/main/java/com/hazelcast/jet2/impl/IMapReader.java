@@ -16,20 +16,21 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet2.MetaProcessorSupplier;
+import com.hazelcast.jet2.MetaProcessorSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class IMapReader extends AbstractProducer {
@@ -80,12 +81,41 @@ public class IMapReader extends AbstractProducer {
         return true;
     }
 
-    public static ProcessorSupplier supplier(String mapName) {
-        return new Supplier(mapName, DEFAULT_FETCH_SIZE);
+    public static MetaProcessorSupplier supplier(String mapName) {
+        return new MetaSupplier(mapName, DEFAULT_FETCH_SIZE);
     }
 
-    public static ProcessorSupplier supplier(String mapName, int fetchSize) {
-        return new Supplier(mapName, fetchSize);
+    public static MetaProcessorSupplier supplier(String mapName, int fetchSize) {
+        return new MetaSupplier(mapName, fetchSize);
+    }
+
+    private static class MetaSupplier implements MetaProcessorSupplier {
+
+        static final long serialVersionUID = 1L;
+
+        private final String name;
+        private final int fetchSize;
+
+        private transient HazelcastInstance hazelcastInstance;
+
+        public MetaSupplier(String name, int fetchSize) {
+            this.name = name;
+            this.fetchSize = fetchSize;
+        }
+
+        @Override
+        public void init(MetaProcessorSupplierContext context) {
+            hazelcastInstance = context.getHazelcastInstance();
+        }
+
+        @Override
+        public ProcessorSupplier get(Address address) {
+            List<Integer> ownedPartitions = hazelcastInstance.getPartitionService().getPartitions()
+                    .stream().filter(f -> f.getOwner().getAddress().equals(address))
+                    .map(f -> f.getPartitionId())
+                    .collect(Collectors.toList());
+            return new Supplier(name, ownedPartitions, fetchSize);
+        }
     }
 
     private static class Supplier implements ProcessorSupplier {
@@ -93,32 +123,32 @@ public class IMapReader extends AbstractProducer {
         static final long serialVersionUID = 1L;
 
         private final String name;
+        private final List<Integer> ownedPartitions;
         private final int fetchSize;
         private int index;
-        private transient MapProxyImpl map;
-        private transient Map<Integer, List<Integer>> partitionGroups;
+        private int perNodeParallelism;
 
-        public Supplier(String name, int fetchSize) {
+        private transient MapProxyImpl map;
+
+        public Supplier(String name, List<Integer> ownedPartitions, int fetchSize) {
             this.name = name;
+            this.ownedPartitions = ownedPartitions;
             this.fetchSize = fetchSize;
         }
 
         @Override
         public void init(ProcessorSupplierContext context) {
-            // distribute local partitions
             index = 0;
-            Member localMember = context.getHazelcastInstance().getCluster().getLocalMember();
-            Set<Partition> partitions = context.getHazelcastInstance().getPartitionService().getPartitions();
-            partitionGroups = partitions.stream()
-                    .filter(p -> p.getOwner().equals(localMember))
-                    .map(Partition::getPartitionId)
-                    .collect(Collectors.groupingBy(p -> p % context.perNodeParallelism()));
             map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
+            perNodeParallelism = context.perNodeParallelism();
         }
 
         @Override
         public Processor get() {
-            return new IMapReader(map, partitionGroups.get(index++), fetchSize);
+            List<Integer> partitions = this.ownedPartitions.stream().filter(f -> f % perNodeParallelism == index)
+                    .collect(Collectors.toList());
+            index++;
+            return new IMapReader(map, partitions, fetchSize);
         }
     }
 }

@@ -101,10 +101,14 @@ public class ExecutionContext {
             List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
             List<Edge> inboundEdges = dag.getInboundEdges(vertex);
             int parallelism = getParallelism(vertex);
-            ProcessorSupplierContextImpl context = new ProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(),
-                    parallelism);
-            ProcessorSupplier supplier = vertex.getSupplier().get(nodeEngine.getThisAddress());
-            supplier.init(context);
+            int totalParallelism = nodeEngine.getClusterService().getSize() * parallelism;
+            MetaProcessorSupplier metaSupplier = vertex.getSupplier();
+            metaSupplier.init(new MetaProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(),
+                    totalParallelism, parallelism));
+
+            ProcessorSupplier supplier = metaSupplier.get(nodeEngine.getThisAddress());
+            supplier.init(new ProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(),
+                    parallelism));
             for (int taskletIndex = 0; taskletIndex < parallelism; taskletIndex++) {
                 List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
                 List<InboundEdgeStream> inboundStreams = new ArrayList<>();

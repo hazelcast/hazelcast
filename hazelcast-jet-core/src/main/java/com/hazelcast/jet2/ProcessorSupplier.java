@@ -16,13 +16,7 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet2.impl.IMapReader;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.nio.Address;
-
 import java.io.Serializable;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -42,59 +36,4 @@ public interface ProcessorSupplier extends Serializable {
     Processor get();
 
 
-}
-
-
-class IMapReaderMetaSupplier implements MetaProcessorSupplier {
-
-    private final String mapName;
-    private transient MetaProcessorSupplierContext context;
-
-    public IMapReaderMetaSupplier(String mapName) {
-        this.mapName = mapName;
-    }
-
-    @Override
-    public void init(MetaProcessorSupplierContext context) {
-        this.context = context;
-    }
-
-    @Override
-    public ProcessorSupplier get(Address address) {
-        List<Integer> ownedPartitions = context.getHazelcastInstance().getPartitionService().getPartitions()
-                .stream().filter(f -> f.getOwner().getAddress().equals(address))
-                .map(f -> f.getPartitionId())
-                .collect(Collectors.toList());
-
-        return new IMapReaderSupplier(mapName, ownedPartitions);
-    }
-
-    private static class IMapReaderSupplier implements ProcessorSupplier {
-
-        private final String name;
-        private final List<Integer> ownedPartitions;
-        private int index;
-        private transient MapProxyImpl map;
-        private int localParallelism;
-
-        public IMapReaderSupplier(String name, List<Integer> ownedPartitions) {
-            this.name = name;
-            this.ownedPartitions = ownedPartitions;
-        }
-
-        @Override
-        public void init(ProcessorSupplierContext context) {
-            index = 0;
-            map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
-            localParallelism = context.perNodeParallelism();
-        }
-
-        @Override
-        public Processor get() {
-            List<Integer> partitions = this.ownedPartitions.stream().filter(f -> f % localParallelism == index)
-                    .collect(Collectors.toList());
-            index++;
-            return new IMapReader(map, partitions, 1024);
-        }
-    }
 }

@@ -17,12 +17,17 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.collection.impl.list.ListProxyImpl;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet2.MetaProcessorSupplier;
+import com.hazelcast.jet2.MetaProcessorSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.jet2.ProcessorSupplier;
-import java.util.Iterator;
+import com.hazelcast.jet2.ProcessorSupplierContext;
+import com.hazelcast.nio.Address;
+
 import javax.annotation.Nonnull;
+import java.util.Iterator;
 
 public class IListReader extends AbstractProducer {
 
@@ -56,8 +61,37 @@ public class IListReader extends AbstractProducer {
         return true;
     }
 
-    public static ProcessorSupplier supplier(String listName) {
-        return new Supplier(listName);
+    public static MetaProcessorSupplier supplier(String listName) {
+        return new MetaSupplier(listName);
+    }
+
+    private static class MetaSupplier implements MetaProcessorSupplier {
+
+        static final long serialVersionUID = 1L;
+        private final String name;
+        private HazelcastInstance instance;
+        private Address ownerAddress;
+
+        public MetaSupplier(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public void init(MetaProcessorSupplierContext context) {
+            instance = context.getHazelcastInstance();
+            ownerAddress = instance.getPartitionService().getPartition(name).getOwner().getAddress();
+        }
+
+        @Override
+        public ProcessorSupplier get(Address address) {
+            if (address.equals(ownerAddress)) {
+                return new Supplier(name);
+            } else {
+                // nothing to read on other nodes
+                return (ProcessorSupplier) () -> new AbstractProducer() {
+                };
+            }
+        }
     }
 
     private static class Supplier implements ProcessorSupplier {
