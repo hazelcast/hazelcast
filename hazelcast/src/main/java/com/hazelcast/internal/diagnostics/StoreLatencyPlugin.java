@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -56,6 +57,17 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty PERIOD_SECONDS
             = new HazelcastProperty(PREFIX + ".storeLatency.period.seconds", 0, SECONDS);
 
+    /**
+     * The period in second the statistics should be reset. Normally the statistics are not reset and if the system
+     * is running for an extended time, it isn't possible to see that happened in e.g. the last hour.
+     *
+     * Currently there is no sliding window functionality to deal with this correctly. But for the time being this
+     * setting will periodically reset the statistics.
+     */
+    public static final HazelcastProperty RESET_PERIOD_SECONDS
+            = new HazelcastProperty(PREFIX + ".storeLatency.reset.period.seconds", 0, SECONDS);
+
+
     private static final int LOW_WATERMARK_MICROS = 100;
 
     private static final int LATENCY_BUCKET_COUNT = 32;
@@ -74,6 +86,9 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     }
 
     private final long periodMillis;
+    private final long resetPeriodMillis;
+    private final long resetFrequency;
+    private long iteration;
 
     private final ConcurrentMap<String, ServiceProbes> metricsPerServiceMap
             = new ConcurrentHashMap<String, ServiceProbes>();
@@ -101,6 +116,12 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     public StoreLatencyPlugin(ILogger logger, HazelcastProperties properties) {
         super(logger);
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
+        this.resetPeriodMillis = properties.getMillis(RESET_PERIOD_SECONDS);
+        if (periodMillis == 0 || resetPeriodMillis == 0) {
+            this.resetFrequency = 0;
+        } else {
+            this.resetFrequency = max(1, resetPeriodMillis / periodMillis);
+        }
     }
 
     @Override
@@ -110,19 +131,33 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
     @Override
     public void onStart() {
-        logger.info("Plugin:active: period-millis:" + periodMillis);
+        logger.info("Plugin:active: period-millis:" + periodMillis + " resetPeriod-millis:" + resetPeriodMillis);
     }
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
+        iteration++;
+        render(writer);
+        resetStatisticsIfNeeded(writer);
+    }
+
+    private void render(DiagnosticsLogWriter writer) {
         for (ServiceProbes serviceProbes : metricsPerServiceMap.values()) {
             serviceProbes.render(writer);
         }
     }
 
+    private void resetStatisticsIfNeeded(DiagnosticsLogWriter writer) {
+        if (resetFrequency > 0 && iteration % resetFrequency == 0) {
+            for (ServiceProbes serviceProbes : metricsPerServiceMap.values()) {
+                serviceProbes.resetStatistics();
+            }
+        }
+    }
+
     // just for testing
     public long count(String serviceName, String dataStructureName, String methodName) {
-        return ((LatencyProbeImpl) newProbe(serviceName, dataStructureName, methodName)).count;
+        return ((LatencyProbeImpl) newProbe(serviceName, dataStructureName, methodName)).stats.count;
     }
 
     public LatencyProbe newProbe(String serviceName, String dataStructureName, String methodName) {
@@ -158,6 +193,12 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             }
             writer.endSection();
         }
+
+        private void resetStatistics() {
+            for (InstanceProbes instanceProbes : instanceProbesMap.values()) {
+                instanceProbes.resetStatistics();
+            }
+        }
     }
 
     /**
@@ -190,23 +231,20 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             }
             writer.endSection();
         }
+
+        private void resetStatistics() {
+            for (LatencyProbeImpl probe : probes.values()) {
+                probe.resetStatistics();
+            }
+        }
     }
+
 
     // package private for testing
     static final class LatencyProbeImpl implements LatencyProbe {
 
-        private static final AtomicLongFieldUpdater<LatencyProbeImpl> COUNT
-                = newUpdater(LatencyProbeImpl.class, "count");
-        private static final AtomicLongFieldUpdater<LatencyProbeImpl> TOTAL_MICROS
-                = newUpdater(LatencyProbeImpl.class, "totalMicros");
-        private static final AtomicLongFieldUpdater<LatencyProbeImpl> MAX_MICROS
-                = newUpdater(LatencyProbeImpl.class, "maxMicros");
-
-        volatile long count;
-        volatile long maxMicros;
-        volatile long totalMicros;
-
-        private final AtomicLongArray latencyDistribution = new AtomicLongArray(LATENCY_BUCKET_COUNT);
+        // instead of storing it in a final field, it is stored in a volatile field because stats can be reset.
+        volatile Statistics stats = new Statistics();
 
         // a strong reference to prevent garbage collection
         @SuppressWarnings("unused")
@@ -221,6 +259,58 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
         @Override
         public void recordValue(long durationNanos) {
+            stats.recordValue(durationNanos);
+        }
+
+        private void render(DiagnosticsLogWriter writer) {
+            Statistics stats = this.stats;
+            long invocations = stats.count;
+            long totalMicros = stats.totalMicros;
+            long avgMicros = invocations == 0 ? 0 : totalMicros / invocations;
+            long maxMicros = stats.maxMicros;
+
+            if (invocations == 0) {
+                return;
+            }
+
+            writer.startSection(methodName);
+            writer.writeKeyValueEntry("count", invocations);
+            writer.writeKeyValueEntry("totalTime(us)", totalMicros);
+            writer.writeKeyValueEntry("avg(us)", avgMicros);
+            writer.writeKeyValueEntry("max(us)", maxMicros);
+
+            writer.startSection("latency-distribution");
+            for (int k = 0; k < stats.latencyDistribution.length(); k++) {
+                long value = stats.latencyDistribution.get(k);
+                if (value > 0) {
+                    writer.writeKeyValueEntry(LATENCY_KEYS[k], value);
+                }
+            }
+            writer.endSection();
+
+            writer.endSection();
+        }
+
+        private void resetStatistics() {
+            stats = new Statistics();
+        }
+    }
+
+    static final class Statistics {
+        private static final AtomicLongFieldUpdater<Statistics> COUNT
+                = newUpdater(Statistics.class, "count");
+        private static final AtomicLongFieldUpdater<Statistics> TOTAL_MICROS
+                = newUpdater(Statistics.class, "totalMicros");
+        private static final AtomicLongFieldUpdater<Statistics> MAX_MICROS
+                = newUpdater(Statistics.class, "maxMicros");
+
+        volatile long count;
+        volatile long maxMicros;
+        volatile long totalMicros;
+
+        private final AtomicLongArray latencyDistribution = new AtomicLongArray(LATENCY_BUCKET_COUNT);
+
+        private void recordValue(long durationNanos) {
             long durationMicros = NANOSECONDS.toMicros(durationNanos);
 
             COUNT.addAndGet(this, 1);
@@ -249,34 +339,6 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             }
 
             latencyDistribution.incrementAndGet(bucketIndex);
-        }
-
-        private void render(DiagnosticsLogWriter writer) {
-            long invocations = this.count;
-            long totalMicros = this.totalMicros;
-            long avgMicros = invocations == 0 ? 0 : totalMicros / invocations;
-            long maxMicros = this.maxMicros;
-
-            if (invocations == 0) {
-                return;
-            }
-
-            writer.startSection(methodName);
-            writer.writeKeyValueEntry("count", invocations);
-            writer.writeKeyValueEntry("totalTime(us)", totalMicros);
-            writer.writeKeyValueEntry("avg(us)", avgMicros);
-            writer.writeKeyValueEntry("max(us)", maxMicros);
-
-            writer.startSection("latency-distribution");
-            for (int k = 0; k < latencyDistribution.length(); k++) {
-                long value = latencyDistribution.get(k);
-                if (value > 0) {
-                    writer.writeKeyValueEntry(LATENCY_KEYS[k], value);
-                }
-            }
-            writer.endSection();
-
-            writer.endSection();
         }
     }
 
