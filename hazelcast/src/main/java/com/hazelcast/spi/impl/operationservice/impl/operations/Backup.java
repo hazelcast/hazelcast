@@ -38,23 +38,17 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
-import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
-
-    private final AtomicReferenceFieldUpdater<Backup, Operation> backupOpUpdater =
-            newUpdater(Backup.class, Operation.class, "backupOp");
 
     private Address originalCaller;
     private long[] replicaVersions;
     private boolean sync;
 
-    // is volatile so the diagnostics can see inside the Backup what is happening.
-    private volatile Operation backupOp;
+    private Operation backupOp;
     private Data backupOpData;
 
     private transient boolean valid = true;
@@ -64,7 +58,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
-        backupOpUpdater.lazySet(this, backupOp);
+        this.backupOp = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
         this.replicaVersions = replicaVersions;
@@ -129,25 +123,17 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     @Override
     public void run() throws Exception {
         if (!valid) {
-            onExecutionFailure(
-                    new IllegalStateException("Wrong target! " + toString() + " cannot be processed!"));
+            onExecutionFailure(new IllegalStateException("Wrong target! " + toString() + " cannot be processed!"));
             return;
         }
 
+        ensureBackupOperationInitialized();
+
+        backupOp.beforeRun();
+        backupOp.run();
+        backupOp.afterRun();
+
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-
-        if (backupOp == null && backupOpData != null) {
-            backupOpUpdater.lazySet(this, (Operation) nodeEngine.getSerializationService().toObject(backupOpData));
-        }
-
-        if (backupOp != null) {
-            ensureBackupOperationInitialized();
-
-            backupOp.beforeRun();
-            backupOp.run();
-            backupOp.afterRun();
-        }
-
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
     }
@@ -220,19 +206,19 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (backupOpData != null) {
-            out.writeBoolean(true);
-            out.writeData(backupOpData);
-        } else {
+        if (backupOpData == null) {
             out.writeBoolean(false);
             out.writeObject(backupOp);
+        } else {
+            out.writeBoolean(true);
+            out.writeData(backupOpData);
         }
 
-        if (originalCaller != null) {
+        if (originalCaller == null) {
+            out.writeBoolean(false);
+        } else {
             out.writeBoolean(true);
             originalCaller.writeData(out);
-        } else {
-            out.writeBoolean(false);
         }
 
         byte replicaVersionCount = 0;
@@ -253,9 +239,9 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         if (in.readBoolean()) {
-            backupOpData = in.readData();
+            backupOp = in.readDataAsObject();
         } else {
-            backupOpUpdater.lazySet(this, (Operation) in.readObject());
+            backupOp = in.readObject();
         }
 
         if (in.readBoolean()) {
