@@ -99,9 +99,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class OperationServiceImpl implements InternalOperationService, MetricsProvider, LiveOperationsTracker {
 
-    private static final int CORE_SIZE_CHECK = 8;
-    private static final int CORE_SIZE_FACTOR = 4;
-    private static final int CONCURRENCY_LEVEL = 16;
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
@@ -154,16 +151,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.backpressureRegulator = new BackpressureRegulator(
                 node.getProperties(), node.getLogger(BackpressureRegulator.class));
 
-        int coreSize = Runtime.getRuntime().availableProcessors();
-        boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
-        int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
-
         this.outboundResponseHandler = new OutboundResponseHandler(
                 thisAddress, serializationService, node, node.getLogger(OutboundResponseHandler.class));
 
         this.invocationRegistry = new InvocationRegistry(
-                node.getLogger(OperationServiceImpl.class),
-                backpressureRegulator.newCallIdSequence(), concurrencyLevel);
+                node.getLogger(OperationServiceImpl.class), backpressureRegulator.newCallIdSequence());
 
         this.invocationMonitor = new InvocationMonitor(
                 nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(), invocationRegistry,
