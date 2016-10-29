@@ -16,13 +16,18 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.KeyStateMarker;
+import com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationFactory;
@@ -55,24 +60,41 @@ public abstract class TransactionalMapProxySupport
 
     protected final String name;
     protected final MapServiceContext mapServiceContext;
+    protected final MapContainer mapContainer;
     protected final RecordFactory recordFactory;
     protected final MapOperationProvider operationProvider;
     protected final PartitioningStrategy partitionStrategy;
     protected final IPartitionService partitionService;
     protected final OperationService operationService;
-    protected final boolean nearCacheEnabled;
+
+    private final NearCache<Data, Object> nearCache;
+    private final KeyStateMarker keyStateMarker;
+    private final boolean cacheLocalEntries;
+    private final Address thisAddress;
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
         this.name = name;
         this.mapServiceContext = mapService.getMapServiceContext();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        this.mapContainer = mapServiceContext.getMapContainer(name);
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.partitionStrategy = mapContainer.getPartitioningStrategy();
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
-        this.nearCacheEnabled = mapContainer.getMapConfig().isNearCacheEnabled();
+
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        if (mapConfig.isNearCacheEnabled()) {
+            this.nearCache = mapServiceContext.getNearCacheProvider().getOrCreateNearCache(name);
+            this.keyStateMarker = ((StaleReadPreventerNearCacheWrapper) nearCache).getKeyStateMarker();
+            this.cacheLocalEntries = mapConfig.getNearCacheConfig().isCacheLocalEntries();
+            this.thisAddress = nodeEngine.getThisAddress();
+        } else {
+            this.nearCache = null;
+            this.keyStateMarker = null;
+            this.cacheLocalEntries = false;
+            this.thisAddress = null;
+        }
     }
 
     protected boolean isEquals(Object value1, Object value2) {
@@ -98,21 +120,28 @@ public abstract class TransactionalMapProxySupport
     }
 
     public Object getInternal(Data key) {
-        if (nearCacheEnabled) {
-            Object cached = mapServiceContext.getNearCacheProvider().getFromNearCache(name, key);
-            if (cached != null) {
-                if (cached.equals(NULL_OBJECT)) {
-                    cached = null;
+        boolean marked = false;
+        if (nearCache != null && mapContainer.hasInvalidationListener()) {
+            Object value = nearCache.get(key);
+            if (value != null) {
+                if (NULL_OBJECT.equals(value)) {
+                    return null;
                 }
-                return cached;
+                return value;
             }
+            marked = keyStateMarker.tryMark(key);
         }
+
         MapOperation operation = operationProvider.createGetOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         int partitionId = partitionService.getPartitionId(key);
         try {
             Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            return future.get();
+            Object value = future.get();
+            if (marked) {
+                tryToPutNearCache(key, value, partitionId);
+            }
+            return value;
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -287,5 +316,29 @@ public abstract class TransactionalMapProxySupport
     @Override
     public final String getServiceName() {
         return SERVICE_NAME;
+    }
+
+    private void tryToPutNearCache(Data key, Object value, int partitionId) {
+        try {
+            if (cacheLocalEntries || !isOwn(partitionId)) {
+                nearCache.put(key, value);
+            }
+        } finally {
+            if (!keyStateMarker.tryUnmark(key)) {
+                invalidateCache(key);
+                keyStateMarker.forceUnmark(key);
+            }
+        }
+    }
+
+    private void invalidateCache(Data key) {
+        if (key != null) {
+            nearCache.remove(key);
+        }
+    }
+
+    private boolean isOwn(int partitionId) {
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        return thisAddress.equals(partitionOwner);
     }
 }
