@@ -531,6 +531,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         shutdownAcceptorThread();
         closeServerSocket();
         stop();
+        scheduler.shutdownNow();
         connectionListeners.clear();
     }
 
