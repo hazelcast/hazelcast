@@ -105,7 +105,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(EVENT_COUNT <= eventCount.get());
+                int count = eventCount.get();
+                assertTrue("Event count is " + count + " needs to be at least " + EVENT_COUNT, EVENT_COUNT <= count);
             }
         });
 
@@ -114,7 +115,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
             @Override
             public void run()
                     throws Exception {
-                assertEquals(EVENT_COUNT, eventCount.get());
+                int count = eventCount.get();
+                assertEquals("Event count is " + count + " needs to stay at " + EVENT_COUNT, EVENT_COUNT, count);
             }
         }, 3);
 

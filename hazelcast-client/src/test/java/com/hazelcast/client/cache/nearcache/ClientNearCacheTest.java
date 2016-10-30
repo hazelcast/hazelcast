@@ -19,6 +19,7 @@ package com.hazelcast.client.cache.nearcache;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -70,11 +71,13 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
+    @Ignore
     public void putToCacheAndGetInvalidationEventWhenNodeShutdownWithBinaryInMemoryFormat() {
         putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat.BINARY);
     }
 
     @Test
+    @Ignore
     public void putToCacheAndGetInvalidationEventWhenNodeShutdownWithObjectInMemoryFormat() {
         putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat.OBJECT);
     }

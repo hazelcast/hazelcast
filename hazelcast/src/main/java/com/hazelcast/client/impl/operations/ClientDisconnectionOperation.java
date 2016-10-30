@@ -17,12 +17,12 @@
 package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEndpointManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -31,7 +31,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
-public class ClientDisconnectionOperation extends AbstractClientOperation implements UrgentSystemOperation {
+public class ClientDisconnectionOperation extends AbstractOperation
+        implements UrgentSystemOperation {
 
     private String clientUuid;
     private String memberUuid;
@@ -83,10 +84,5 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
         super.readInternal(in);
         clientUuid = in.readUTF();
         memberUuid = in.readUTF();
-    }
-
-    @Override
-    public int getId() {
-        return ClientDataSerializerHook.CLIENT_DISCONNECT;
     }
 }
