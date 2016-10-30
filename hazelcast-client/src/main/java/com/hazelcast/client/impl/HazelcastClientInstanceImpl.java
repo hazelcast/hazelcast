@@ -366,7 +366,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.isSmartRouting()) {
             return new ClientSmartListenerService(this, eventThreadCount, eventQueueCapacity);
-
         } else {
             return new ClientNonSmartListenerService(this, eventThreadCount, eventQueueCapacity);
         }
@@ -401,6 +400,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
         diagnostics.register(
                 new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
+
+        metricsRegistry.collectMetrics(listenerService);
+
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {
