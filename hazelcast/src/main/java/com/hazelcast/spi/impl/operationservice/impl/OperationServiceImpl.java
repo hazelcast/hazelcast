@@ -427,8 +427,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         return connectionManager.transmit(packet, connection);
     }
 
-
-
     public void onMemberLeft(MemberImpl member) {
         invocationMonitor.onMemberLeft(member);
     }
