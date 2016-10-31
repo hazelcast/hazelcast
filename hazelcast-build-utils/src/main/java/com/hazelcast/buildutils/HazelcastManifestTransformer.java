@@ -125,6 +125,11 @@ public class HazelcastManifestTransformer
     private PackageDefinition findStrongerDefinition(PackageDefinition packageDefinition,
                                                      PackageDefinition oldPackageDefinition) {
 
+        // If the override is a remove instruction skip all other tests
+        if (packageDefinition.removeImport) {
+            return packageDefinition;
+        }
+
         // If no old definition or new definition is required import we take the new one
         if (oldPackageDefinition == null
                 || oldPackageDefinition.resolutionOptional && !packageDefinition.resolutionOptional) {
@@ -242,9 +247,13 @@ public class HazelcastManifestTransformer
         for (Map.Entry<String, PackageDefinition> entry : importedPackages.entrySet()) {
             PackageDefinition original = entry.getValue();
             PackageDefinition overridden = overridePackageDefinitionResolution(original);
-            String definition = overridden.buildDefinition(true);
-            imports.add(definition);
-            System.out.println("Adding shaded import -> " + definition);
+            if (overridden != null) {
+                String definition = overridden.buildDefinition(true);
+                imports.add(definition);
+                System.out.println("Adding shaded import -> " + definition);
+            } else {
+                System.out.println("Removing shaded import -> " + entry.getValue().packageName);
+            }
         }
         return imports;
     }
@@ -252,8 +261,13 @@ public class HazelcastManifestTransformer
     private PackageDefinition overridePackageDefinitionResolution(PackageDefinition packageDefinition) {
         for (InstructionDefinition instructionDefinition : importOverrideInstructions) {
             Instruction instruction = instructionDefinition.instruction;
-            boolean instructed = !instruction.isNegated() == instruction.matches(packageDefinition.packageName);
-            if (instructed) {
+            if (instruction.matches(packageDefinition.packageName)) {
+                // Is remove instruction?
+                if (instruction.isNegated()) {
+                    System.out.println("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
+                    return null;
+                }
+
                 System.out.println("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
 
                 PackageDefinition override = instructionDefinition.packageDefinition;
@@ -272,9 +286,11 @@ public class HazelcastManifestTransformer
         private final boolean resolutionOptional;
         private final String version;
         private final Set<String> uses;
+        private final boolean removeImport;
 
         private PackageDefinition(String definition) {
             String[] tokens = definition.split(";");
+            this.removeImport = tokens[0].startsWith("!");
             this.packageName = tokens[0];
             this.resolutionOptional = findResolutionConstraint(tokens);
             this.version = findVersionConstraint(tokens);
@@ -282,6 +298,7 @@ public class HazelcastManifestTransformer
         }
 
         private PackageDefinition(String packageName, boolean resolutionOptional, String version, Set<String> uses) {
+            this.removeImport = packageName.startsWith("!");
             this.packageName = packageName;
             this.resolutionOptional = resolutionOptional;
             this.version = version;
