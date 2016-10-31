@@ -34,7 +34,7 @@ import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.StringUtil;

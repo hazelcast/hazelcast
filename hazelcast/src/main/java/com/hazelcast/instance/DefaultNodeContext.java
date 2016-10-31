@@ -20,12 +20,12 @@ import com.hazelcast.cluster.Joiner;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.IOThreadingModel;
+import com.hazelcast.internal.networking.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketReaderInitializerImpl;
 import com.hazelcast.nio.tcp.SocketWriterInitializerImpl;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
-import com.hazelcast.nio.tcp.spinning.SpinningIOThreadingModel;
+import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.internal.networking.spinning.SpinningIOThreadingModel;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.nio.channels.ServerSocketChannel;

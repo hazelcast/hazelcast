@@ -16,6 +16,9 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+
 import java.nio.channels.SocketChannel;
 
 public class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {

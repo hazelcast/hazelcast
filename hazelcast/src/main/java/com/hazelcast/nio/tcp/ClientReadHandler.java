@@ -18,6 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageReadHandler;
+import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;

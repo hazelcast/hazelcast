@@ -1,5 +1,6 @@
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;

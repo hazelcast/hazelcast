@@ -16,6 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.SocketReader;
+import com.hazelcast.internal.networking.SocketReaderInitializer;
+import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.ascii.TextReadHandler;

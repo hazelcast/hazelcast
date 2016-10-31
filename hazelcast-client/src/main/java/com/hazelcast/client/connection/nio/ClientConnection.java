@@ -30,11 +30,11 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.tcp.IOThreadingModel;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.SocketConnection;
-import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.internal.networking.IOThreadingModel;
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.SocketConnection;
+import com.hazelcast.internal.networking.SocketReader;
+import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
