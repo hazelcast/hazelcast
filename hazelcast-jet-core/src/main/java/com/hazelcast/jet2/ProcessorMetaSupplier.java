@@ -19,11 +19,22 @@ package com.hazelcast.jet2;
 import com.hazelcast.nio.Address;
 
 import java.io.Serializable;
+import java.util.stream.Stream;
 
-public interface MetaProcessorSupplier extends Serializable {
+import static java.util.stream.Collectors.toList;
+
+public interface ProcessorMetaSupplier extends Serializable {
 
     default void init(MetaProcessorSupplierContext context) {
     }
 
     ProcessorListSupplier get(Address address);
+
+    static ProcessorMetaSupplier of(final ProcessorListSupplier listSupplier) {
+      return address -> listSupplier;
+    }
+
+    static ProcessorMetaSupplier of(final ProcessorSupplier processorSupplier) {
+        return address -> count -> Stream.generate(processorSupplier::get).limit(count).collect(toList());
+    }
 }

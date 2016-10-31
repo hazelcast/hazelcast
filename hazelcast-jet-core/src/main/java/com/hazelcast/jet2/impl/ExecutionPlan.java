@@ -18,18 +18,26 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Edge.ForwardingPattern;
 import com.hazelcast.jet2.Partitioner;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorListSupplier;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 class ExecutionPlan implements Serializable {
-    private List<VertexDef> vertices = new ArrayList<>();
+    private final List<VertexDef> vertices = new ArrayList<>();
+
+    public ExecutionPlan() {
+    }
 
     public List<VertexDef> getVertices() {
         return vertices;
     }
+
+    public void addVertex(VertexDef vertex) {
+        vertices.add(vertex);
+    }
+
 }
 
 class VertexDef implements Serializable {
@@ -37,19 +45,21 @@ class VertexDef implements Serializable {
     private int id;
     private final List<EdgeDef> inputs = new ArrayList<>();
     private final List<EdgeDef> outputs = new ArrayList<>();
-    private ProcessorSupplier processorSupplier;
+    private final ProcessorListSupplier processorSupplier;
+    private final int parallelism;
 
-    public VertexDef(int id, ProcessorSupplier processorSupplier) {
+    public VertexDef(int id, ProcessorListSupplier processorSupplier, int parallelism) {
         this.id = id;
         this.processorSupplier = processorSupplier;
+        this.parallelism = parallelism;
     }
 
-    public void addInput(EdgeDef def) {
-        inputs.add(def);
+    public void addInputs(List<EdgeDef> inputs) {
+        this.inputs.addAll(inputs);
     }
 
-    public void addOutput(EdgeDef def) {
-        outputs.add(def);
+    public void addOutputs(List<EdgeDef> outputs) {
+        this.outputs.addAll(outputs);
     }
 
     public List<EdgeDef> getInputs() {
@@ -60,9 +70,14 @@ class VertexDef implements Serializable {
         return outputs;
     }
 
-    public ProcessorSupplier getProcessorSupplier() {
+    public ProcessorListSupplier getProcessorSupplier() {
         return processorSupplier;
     }
+
+    public int getParallelism() {
+        return parallelism;
+    }
+
 }
 
 class EdgeDef implements Serializable {

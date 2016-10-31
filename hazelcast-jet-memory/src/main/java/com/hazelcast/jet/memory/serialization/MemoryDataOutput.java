@@ -299,6 +299,11 @@ public class MemoryDataOutput implements ObjectDataOutput {
     }
 
     @Override
+    public byte[] toByteArray(int padding) {
+        return new byte[0];
+    }
+
+    @Override
     public ByteOrder getByteOrder() {
         return isBigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
     }

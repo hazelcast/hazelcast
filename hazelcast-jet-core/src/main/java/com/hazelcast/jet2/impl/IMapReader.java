@@ -18,7 +18,7 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
-import com.hazelcast.jet2.MetaProcessorSupplier;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.MetaProcessorSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
@@ -83,15 +83,15 @@ public class IMapReader extends AbstractProducer {
         return true;
     }
 
-    public static MetaProcessorSupplier supplier(String mapName) {
+    public static ProcessorMetaSupplier supplier(String mapName) {
         return new MetaSupplier(mapName, DEFAULT_FETCH_SIZE);
     }
 
-    public static MetaProcessorSupplier supplier(String mapName, int fetchSize) {
+    public static ProcessorMetaSupplier supplier(String mapName, int fetchSize) {
         return new MetaSupplier(mapName, fetchSize);
     }
 
-    private static class MetaSupplier implements MetaProcessorSupplier {
+    private static class MetaSupplier implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 

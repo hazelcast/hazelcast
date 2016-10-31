@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.impl.IListWriter;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
@@ -42,8 +42,8 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ILi
     }
 
     @Override
-    protected ProcessorSupplier getConsumer() {
-        return IListWriter.supplier(listName);
+    protected ProcessorMetaSupplier getConsumer() {
+        return ProcessorMetaSupplier.of(IListWriter.supplier(listName));
     }
 
     @Override

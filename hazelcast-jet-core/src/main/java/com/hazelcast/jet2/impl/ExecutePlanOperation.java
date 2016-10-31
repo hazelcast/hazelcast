@@ -16,49 +16,30 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet2.DAG;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
 
-class ExecuteJobOperation extends Operation {
+class ExecutePlanOperation extends Operation {
 
     private String engineName;
-    private DAG dag;
+    private ExecutionPlan plan;
 
-    public ExecuteJobOperation() {
+    public ExecutePlanOperation() {
     }
 
-    public ExecuteJobOperation(String engineName, DAG dag) {
+    public ExecutePlanOperation(String engineName, ExecutionPlan plan) {
         this.engineName = engineName;
-        this.dag = dag;
+        this.plan = plan;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
         ExecutionContext executionContext = service.getExecutionContext(engineName);
-        Map<Member, ExecutionPlan> executionPlanMap = executionContext.buildExecutionPlan(dag);
-        OperationService operationService = getNodeEngine().getOperationService();
-        List<Future> futures = new ArrayList<>();
-        for (Map.Entry<Member, ExecutionPlan> entry : executionPlanMap.entrySet()) {
-            futures.add(operationService.createInvocationBuilder(JetService.SERVICE_NAME,
-                    new ExecutePlanOperation(engineName, entry.getValue()), entry.getKey().getAddress())
-                    .invoke());
-        }
-        for (Future future : futures) {
-            JetUtil.uncheckedGet(future);
-        }
+        executionContext.executePlan(plan).get();
     }
 
     @Override
@@ -66,7 +47,7 @@ class ExecuteJobOperation extends Operation {
         super.writeInternal(out);
 
         out.writeUTF(engineName);
-        out.writeObject(dag);
+        out.writeObject(plan);
     }
 
     @Override
@@ -74,6 +55,6 @@ class ExecuteJobOperation extends Operation {
         super.readInternal(in);
 
         engineName = in.readUTF();
-        dag = in.readObject();
+        plan = in.readObject();
     }
 }

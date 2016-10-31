@@ -18,12 +18,11 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.collection.impl.list.ListProxyImpl;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.MetaProcessorSupplier;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.MetaProcessorSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorListSupplier;
-import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.nio.Address;
 
@@ -65,11 +64,11 @@ public class IListReader extends AbstractProducer {
         return true;
     }
 
-    public static MetaProcessorSupplier supplier(String listName) {
+    public static ProcessorMetaSupplier supplier(String listName) {
         return new MetaSupplier(listName);
     }
 
-    private static class MetaSupplier implements MetaProcessorSupplier {
+    private static class MetaSupplier implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
         private final String name;
