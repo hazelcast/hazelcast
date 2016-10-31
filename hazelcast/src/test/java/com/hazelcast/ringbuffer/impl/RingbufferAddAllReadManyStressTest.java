@@ -13,6 +13,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -69,6 +70,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/5498
     @Test
     public void whenShortTTLAndBigBuffer() throws Exception {
 
