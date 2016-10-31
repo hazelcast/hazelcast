@@ -20,10 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
@@ -41,7 +41,9 @@ public interface IOService {
 
     boolean isActive();
 
-    ILogger getLogger(String name);
+    HazelcastThreadGroup getHazelcastThreadGroup();
+
+    LoggingService getLoggingService();
 
     IOOutOfMemoryHandler getIoOutOfMemoryHandler();
 
@@ -64,10 +66,6 @@ public interface IOService {
     boolean isRestEnabled();
 
     void removeEndpoint(Address endpoint);
-
-    String getThreadPrefix();
-
-    ThreadGroup getThreadGroup();
 
     void onSuccessfulConnection(Address address);
 
@@ -129,10 +127,6 @@ public interface IOService {
     EventService getEventService();
 
     Collection<Integer> getOutboundPorts();
-
-    Data toData(Object obj);
-
-    Object toObject(Data data);
 
     InternalSerializationService getSerializationService();
 

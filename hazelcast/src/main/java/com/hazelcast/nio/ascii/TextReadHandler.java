@@ -104,7 +104,7 @@ public class TextReadHandler implements ReadHandler {
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
-        this.logger = ioService.getLogger(this.getClass().getName());
+        this.logger = ioService.getLoggingService().getLogger(getClass());
     }
 
     public void sendResponse(TextCommand command) {

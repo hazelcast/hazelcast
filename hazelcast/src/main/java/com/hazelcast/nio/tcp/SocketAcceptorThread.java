@@ -74,7 +74,7 @@ public class SocketAcceptorThread extends Thread {
         this.serverSocketChannel = serverSocketChannel;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
-        this.logger = ioService.getLogger(this.getClass().getName());
+        this.logger = ioService.getLoggingService().getLogger(getClass());
     }
 
     /**
