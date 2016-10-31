@@ -56,7 +56,6 @@ public class DataSerializableConventionsTest {
 
     // verify that any class which is DataSerializable and is not annotated with @BinaryInterface
     // is also an IdentifiedDataSerializable
-    // ignored until the conversion to IdentifiedDataSerializable is done
     @Test
     public void test_dataSerializableClasses_areIdentifiedDataSerializable() {
         Set dataSerializableClasses = REFLECTIONS.getSubTypesOf(DataSerializable.class);
@@ -108,7 +107,7 @@ public class DataSerializableConventionsTest {
 
         Multimap<Integer, Integer> factoryToTypeId = HashMultimap.create();
 
-        Set<Class> identifiedDataSerializables = getIDSProductionConcreteClasses();
+        Set<Class> identifiedDataSerializables = getIDSConcreteClasses();
 
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
             // exclude classes which are known to be meant for local use only
@@ -173,7 +172,7 @@ public class DataSerializableConventionsTest {
             factories.put(dsHook.getFactoryId(), factory);
         }
 
-        Set<Class> identifiedDataSerializables = getIDSProductionConcreteClasses();
+        Set<Class> identifiedDataSerializables = getIDSConcreteClasses();
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
             if (AbstractLocalOperation.class.isAssignableFrom(klass)) {
                 continue;
@@ -202,13 +201,9 @@ public class DataSerializableConventionsTest {
         }
     }
 
-    /**
-     * Returns all {@code IdentifiedDataSerializable} concrete classes from production classpath of the currently tested module
-     * only, when argument is {@code true}, otherwise from the JVM's classpath.
-     * @return
-     * @throws ClassNotFoundException
-     */
-    private Set<Class> getIDSProductionConcreteClasses() throws ClassNotFoundException {
+    // Returns all concrete classes which implement {@code IdentifiedDataSerializable} located by
+    // {@link com.hazelcast.test.ReflectionsHelper#REFLECTIONS}
+    private Set<Class> getIDSConcreteClasses() throws ClassNotFoundException {
         Set identifiedDataSerializables = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
         for (Iterator<Class> iterator = identifiedDataSerializables.iterator();
              iterator.hasNext();) {
