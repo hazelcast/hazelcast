@@ -45,7 +45,6 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -117,15 +116,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private final Set<ConnectionHeartbeatListener> heartbeatListeners =
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
-    private final LoggingService loggingService;
     private final Credentials credentials;
-    private NonBlockingIOThreadingModel ioThreadModel;
+    private NonBlockingIOThreadingModel ioThreadingModel;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator) {
         this.client = client;
         this.addressTranslator = addressTranslator;
-        this.loggingService = client.getLoggingService();
-        this.logger = loggingService.getLogger(ClientConnectionManager.class);
+        this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
 
         ClientConfig config = client.getClientConfig();
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
@@ -143,7 +140,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.socketOptions = networkConfig.getSocketOptions();
 
-        initializeSelectors(client);
+        initIOThreads(client);
 
         ClientExtension clientExtension = client.getClientExtension();
         this.socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
@@ -152,11 +149,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.credentials = client.getCredentials();
     }
 
-    protected void initializeSelectors(HazelcastClientInstanceImpl client) {
+    protected void initIOThreads(HazelcastClientInstanceImpl client) {
         boolean directBuffer = client.getProperties().getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
-        ioThreadModel = new NonBlockingIOThreadingModel(
-                loggingService,
+        ioThreadingModel = new NonBlockingIOThreadingModel(
+                client.getLoggingService(),
                 client.getMetricsRegistry(),
                 new HazelcastThreadGroup(client.getName(), logger, client.getClientConfig().getClassLoader()),
                 outOfMemoryHandler,
@@ -186,13 +183,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return;
         }
         alive = true;
-        startSelectors();
+        startIOThreads();
         Heartbeat heartbeat = new Heartbeat();
         executionService.scheduleWithRepetition(heartbeat, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
     }
 
-    protected void startSelectors() {
-        ioThreadModel.start();
+    protected void startIOThreads() {
+        ioThreadingModel.start();
     }
 
     @Override
@@ -204,13 +201,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         for (ClientConnection connection : connections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
-        shutdownSelectors();
+        shutdownIOThreads();
         connectionListeners.clear();
         heartbeatListeners.clear();
     }
 
-    protected void shutdownSelectors() {
-        ioThreadModel.shutdown();
+    protected void shutdownIOThreads() {
+        ioThreadingModel.shutdown();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -346,12 +343,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
 
             final ClientConnection clientConnection = new ClientConnection(
-                    client, ioThreadModel, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+                    client, ioThreadingModel, connectionIdGen.incrementAndGet(), socketChannelWrapper);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
-            socketChannel.configureBlocking(ioThreadModel.isBlocking());
+            socketChannel.configureBlocking(ioThreadingModel.isBlocking());
             socket.setSoTimeout(0);
             clientConnection.start();
             return clientConnection;
