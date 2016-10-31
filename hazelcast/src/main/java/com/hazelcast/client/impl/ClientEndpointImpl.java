@@ -45,11 +45,11 @@ import java.util.concurrent.ConcurrentMap;
 public final class ClientEndpointImpl implements ClientEndpoint {
 
     private final ClientEngineImpl clientEngine;
-    private final Connection conn;
+    private volatile Connection conn;
     private ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
     private ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
-    private final SocketAddress socketAddress;
+    private volatile SocketAddress socketAddress;
 
     private LoginContext loginContext;
     private ClientPrincipal principal;
@@ -61,15 +61,20 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
         this.clientEngine = clientEngine;
-        this.conn = conn;
-        if (conn instanceof TcpIpConnection) {
-            TcpIpConnection tcpIpConnection = (TcpIpConnection) conn;
+        setConnection(conn);
+        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
+        this.clientVersionString = "Unknown";
+    }
+
+    @Override
+    public void setConnection(Connection connection) {
+        this.conn = connection;
+        if (connection instanceof TcpIpConnection) {
+            TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
             socketAddress = tcpIpConnection.getSocketChannelWrapper().socket().getRemoteSocketAddress();
         } else {
             socketAddress = null;
         }
-        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
-        this.clientVersionString = "Unknown";
     }
 
     @Override
@@ -264,10 +269,5 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersionString
                 + '}';
-    }
-
-    public void getState(ClientEndpointImpl existingEndpoint) {
-        transactionContextMap = existingEndpoint.transactionContextMap;
-        removeListenerActions = existingEndpoint.removeListenerActions;
     }
 }

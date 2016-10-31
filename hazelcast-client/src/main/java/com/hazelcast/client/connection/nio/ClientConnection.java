@@ -18,7 +18,6 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
@@ -82,8 +81,6 @@ public class ClientConnection implements Connection {
     private volatile String closeReason;
     private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
-
-    private volatile AuthenticationStatus authenticationStatus;
 
     private List<Member> clientUnregisteredMembers;
 
@@ -315,14 +312,6 @@ public class ClientConnection implements Connection {
 
     public void setIsAuthenticatedAsOwner() {
         this.isAuthenticatedAsOwner = true;
-    }
-
-    public AuthenticationStatus getAuthenticationStatus() {
-        return authenticationStatus;
-    }
-
-    public void setAuthenticationStatus(AuthenticationStatus authenticationStatus) {
-        this.authenticationStatus = authenticationStatus;
     }
 
     @Override

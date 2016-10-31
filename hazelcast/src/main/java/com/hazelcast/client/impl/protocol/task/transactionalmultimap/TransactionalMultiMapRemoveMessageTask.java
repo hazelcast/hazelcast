@@ -42,7 +42,7 @@ public class TransactionalMultiMapRemoveMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
         Collection<Object> collection = multiMap.remove(parameters.key);
         List<Data> list = new ArrayList<Data>(collection.size());

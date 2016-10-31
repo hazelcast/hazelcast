@@ -39,7 +39,7 @@ public class TransactionalQueuePollMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
         Object item = queue.poll(parameters.timeout, TimeUnit.MILLISECONDS);
         return serializationService.toData(item);

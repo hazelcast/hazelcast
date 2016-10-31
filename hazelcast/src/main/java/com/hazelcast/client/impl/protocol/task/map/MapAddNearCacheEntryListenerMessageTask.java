@@ -92,7 +92,7 @@ public class MapAddNearCacheEntryListenerMessageTask
 
         @Override
         public void onInvalidate(Invalidation event) {
-            if (!getEndpoint().isAlive()) {
+            if (!endpoint.isAlive()) {
                 return;
             }
 

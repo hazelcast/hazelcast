@@ -88,8 +88,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
 
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {
-            ClientEndpoint endpoint = getEndpoint();
-            if (null != endpoint && endpoint.isAlive()) {
+            if (endpoint.isAlive()) {
                 if (!(event instanceof DataAwareEntryEvent)) {
                     throw new IllegalArgumentException(
                             "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
@@ -107,7 +106,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
 
         @Override
         public void onMapEvent(MapEvent event) {
-            if (getEndpoint().isAlive()) {
+            if (endpoint.isAlive()) {
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
                 int numberOfEntriesAffected = event.getNumberOfEntriesAffected();

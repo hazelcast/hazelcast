@@ -58,7 +58,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             registrationId = eventPublishingService.addEventListener(this,
                     new ReplicatedQueryEventFilter(getKey(), predicate), getDistributedObjectName());
         }
-        getEndpoint().addListenerDestroyAction(ReplicatedMapService.SERVICE_NAME, getDistributedObjectName(), registrationId);
+        endpoint.addListenerDestroyAction(ReplicatedMapService.SERVICE_NAME, getDistributedObjectName(), registrationId);
         return registrationId;
     }
 
@@ -111,7 +111,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
     private boolean shouldSendEvent(IMapEvent event) {
-        if (!getEndpoint().isAlive()) {
+        if (!endpoint.isAlive()) {
             return false;
         }
 

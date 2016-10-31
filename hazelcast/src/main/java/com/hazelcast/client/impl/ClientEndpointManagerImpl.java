@@ -90,6 +90,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         return endpoints.get(connection);
     }
 
+    @Override
     public ClientEndpoint getEndpoint(String clientUuid) {
         return clientEndpoints.get(clientUuid);
     }
@@ -99,17 +100,18 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         checkNotNull(endpoint, "endpoint can't be null");
 
         final Connection conn = endpoint.getConnection();
-        ClientEndpointImpl existingEndpoint = (ClientEndpointImpl) endpoints.put(conn, endpoint);
+        ClientEndpoint existingEndpoint = endpoints.put(conn, endpoint);
         clientEndpoints.put(endpoint.getUuid(), endpoint);
-        if (existingEndpoint != null) {
+        if (existingEndpoint != null && endpoint != existingEndpoint) {
             if (existingEndpoint.isFirstConnection()) {
                 logger.severe("An endpoint (first connection) already exists for connection:" + conn);
             } else {
                 logger.info("Changed " + conn + " as the first connection for " + endpoint);
             }
-            ((ClientEndpointImpl) endpoint).getState(existingEndpoint);
         } else {
-            totalRegistrations.inc();
+            if (endpoint != existingEndpoint) {
+                totalRegistrations.inc();
+            }
         }
     }
 

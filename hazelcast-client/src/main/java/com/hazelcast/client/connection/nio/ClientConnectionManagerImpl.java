@@ -515,7 +515,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         if (asOwner) {
                             connection.setIsAuthenticatedAsOwner();
                             clusterService.setPrincipal(new ClientPrincipal(result.uuid, result.ownerUuid));
-                            connection.setAuthenticationStatus(authenticationStatus);
                         }
                         connection.setConnectedServerVersion(result.serverHazelcastVersion);
                         connection.setClientUnregisteredMembers(result.clientUnregisteredMembers);
