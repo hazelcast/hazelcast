@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
@@ -45,14 +46,12 @@ class ExecutionService {
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
     private final NonBlockingWorker[] workers;
     private final Thread[] threads;
-    private final NodeEngine nodeEngine;
+    private final String hzInstanceName;
     private final String name;
-    private final JetEngineConfig cfg;
 
-    public ExecutionService(NodeEngine nodeEngine, String name, JetEngineConfig cfg) {
-        this.nodeEngine = nodeEngine;
+    public ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
+        this.hzInstanceName = hz.getName();
         this.name = name;
-        this.cfg = cfg;
         this.workers = new NonBlockingWorker[cfg.getParallelism()];
         this.threads = new Thread[cfg.getParallelism()];
     }
@@ -102,13 +101,12 @@ class ExecutionService {
             return;
         }
         Arrays.setAll(workers, i -> new NonBlockingWorker(workers));
-        Arrays.setAll(threads, i -> new Thread(workers[i], "hz." + getThreadNamePrefix()
-                + ".non-blocking-executor.thread-" + i));
+        Arrays.setAll(threads, i -> new Thread(workers[i], threadNamePrefix() + ".nonblocking-executor.thread-" + i));
         Arrays.stream(threads).forEach(Thread::start);
     }
 
-    private String getThreadNamePrefix() {
-        return nodeEngine.getHazelcastInstance().getName() + ".jet-engine." + name;
+    private String threadNamePrefix() {
+        return "hz." + hzInstanceName + ".jet-engine." + name;
     }
 
     private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture, CountDownLatch completionLatch) {
@@ -239,11 +237,11 @@ class ExecutionService {
     }
 
     private final class BlockingTaskThreadFactory implements ThreadFactory {
-        private int seq;
+        private final AtomicInteger seq = new AtomicInteger();
 
         @Override
         public Thread newThread(Runnable r) {
-            return new Thread(r, ExecutionService.this.getThreadNamePrefix() + ".blocking-executor.thread-" + seq++);
+            return new Thread(r, threadNamePrefix() + ".blocking-executor.thread-" + seq.getAndIncrement());
         }
     }
 }

@@ -25,16 +25,16 @@ import static java.util.stream.Collectors.toList;
 
 public interface ProcessorMetaSupplier extends Serializable {
 
-    default void init(MetaProcessorSupplierContext context) {
+    default void init(ProcessorMetaSupplierContext context) {
     }
 
-    ProcessorListSupplier get(Address address);
+    ProcessorSupplier get(Address address);
 
-    static ProcessorMetaSupplier of(final ProcessorListSupplier listSupplier) {
+    static ProcessorMetaSupplier of(final ProcessorSupplier listSupplier) {
       return address -> listSupplier;
     }
 
-    static ProcessorMetaSupplier of(final ProcessorSupplier processorSupplier) {
+    static ProcessorMetaSupplier of(final SimpleProcessorSupplier processorSupplier) {
         return address -> count -> Stream.generate(processorSupplier::get).limit(count).collect(toList());
     }
 }

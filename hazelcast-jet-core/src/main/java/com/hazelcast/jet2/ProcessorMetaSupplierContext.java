@@ -18,7 +18,7 @@ package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
 
-public interface MetaProcessorSupplierContext {
+public interface ProcessorMetaSupplierContext {
 
     HazelcastInstance getHazelcastInstance();
 
@@ -26,4 +26,20 @@ public interface MetaProcessorSupplierContext {
 
     int perNodeParallelism();
 
+    static ProcessorMetaSupplierContext of(HazelcastInstance instance, int totalParallelism, int perNodeParallelism) {
+        return new ProcessorMetaSupplierContext() {
+            @Override
+            public HazelcastInstance getHazelcastInstance() {
+                return instance;
+            }
+            @Override
+            public int totalParallelism() {
+                return totalParallelism;
+            }
+            @Override
+            public int perNodeParallelism() {
+                return perNodeParallelism;
+            }
+        };
+    }
 }

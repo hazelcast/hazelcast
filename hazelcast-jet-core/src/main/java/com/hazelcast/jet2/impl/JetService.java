@@ -79,7 +79,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
     public void ensureContext(String name, JetEngineConfig config) {
         ConcurrencyUtil.getOrPutSynchronized(executionContexts, name, this, (key) -> {
             DeploymentStore deploymentStore = new DeploymentStore(config.getDeploymentDirectory());
-            ExecutionService executionService = new ExecutionService(nodeEngine, name, config);
+            ExecutionService executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config);
             return new ExecutionContext(nodeEngine, executionService,
                     deploymentStore, config);
         });

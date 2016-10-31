@@ -23,17 +23,20 @@ import com.hazelcast.core.HazelcastInstance;
  */
 public interface ProcessorSupplierContext {
 
-    /**
-     * @return
-     */
     HazelcastInstance getHazelcastInstance();
 
-    /**
-     * @return
-     */
     int perNodeParallelism();
 
+    static ProcessorSupplierContext of(HazelcastInstance instance, int perNodeParallelism) {
+        return new ProcessorSupplierContext() {
+            @Override
+            public HazelcastInstance getHazelcastInstance() {
+                return instance;
+            }
+            @Override
+            public int perNodeParallelism() {
+                return perNodeParallelism;
+            }
+        };
+    }
 }
-
-
-

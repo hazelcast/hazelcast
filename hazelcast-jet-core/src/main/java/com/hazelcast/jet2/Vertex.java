@@ -39,7 +39,7 @@ public class Vertex implements IdentifiedDataSerializable {
     /**
      * Javadoc pending
      */
-    public Vertex(String name, ProcessorSupplier processorSupplier) {
+    public Vertex(String name, SimpleProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
         checkNotNull(processorSupplier, "supplier");
 
@@ -50,11 +50,11 @@ public class Vertex implements IdentifiedDataSerializable {
     /**
      * Javadoc pending
      */
-    public Vertex(String name, ProcessorListSupplier processorListSupplier) {
+    public Vertex(String name, ProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
-        checkNotNull(processorListSupplier, "supplier");
+        checkNotNull(processorSupplier, "supplier");
 
-        this.supplier = ProcessorMetaSupplier.of(processorListSupplier);
+        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
         this.name = name;
     }
 

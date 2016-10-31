@@ -25,7 +25,7 @@ import com.hazelcast.jet.stream.impl.processor.CollectorCombinerProcessor;
 import com.hazelcast.jet.stream.impl.processor.CombinerProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.SimpleProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.IListWriter;
 import java.util.Set;
@@ -99,7 +99,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                        Object combiner, Function<A, R> finisher) {
-        ProcessorSupplier processorSupplier = getCombinerSupplier(combiner, finisher);
+        SimpleProcessorSupplier processorSupplier = getCombinerSupplier(combiner, finisher);
         Vertex combinerVertex = new Vertex("combiner-" + randomName(), processorSupplier).parallelism(1);
         dag.addVertex(combinerVertex);
         dag.addEdge(new Edge(accumulatorVertex, combinerVertex));
@@ -108,7 +108,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         return combinerVertex;
     }
 
-    private static <A, R> ProcessorSupplier getCombinerSupplier(Object combiner, Function<A, R> finisher) {
+    private static <A, R> SimpleProcessorSupplier getCombinerSupplier(Object combiner, Function<A, R> finisher) {
         if (combiner instanceof BiConsumer) {
             return () -> new CollectorCombinerProcessor((BiConsumer) combiner, finisher);
         } else if (combiner instanceof BinaryOperator) {

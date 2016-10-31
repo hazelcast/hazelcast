@@ -24,7 +24,7 @@ import com.hazelcast.jet.stream.impl.processor.AccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.CombinerProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.SimpleProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.IListWriter;
 import java.util.Optional;
@@ -54,7 +54,7 @@ public class Reducer {
     }
 
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
-        ProcessorSupplier supplier = () -> new CombinerProcessor<>(combiner, Distributed.Function.<T>identity());
+        SimpleProcessorSupplier supplier = () -> new CombinerProcessor<>(combiner, Distributed.Function.<T>identity());
         Vertex combinerVertex = new Vertex(randomName(), supplier).parallelism(1);
         dag.addVertex(combinerVertex);
         dag.addEdge(new Edge(accumulatorVertex, combinerVertex));

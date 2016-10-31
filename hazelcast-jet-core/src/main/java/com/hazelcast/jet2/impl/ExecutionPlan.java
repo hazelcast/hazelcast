@@ -18,7 +18,7 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Edge.ForwardingPattern;
 import com.hazelcast.jet2.Partitioner;
-import com.hazelcast.jet2.ProcessorListSupplier;
+import com.hazelcast.jet2.ProcessorSupplier;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -45,13 +45,17 @@ class VertexDef implements Serializable {
     private int id;
     private final List<EdgeDef> inputs = new ArrayList<>();
     private final List<EdgeDef> outputs = new ArrayList<>();
-    private final ProcessorListSupplier processorSupplier;
+    private final ProcessorSupplier processorSupplier;
     private final int parallelism;
 
-    public VertexDef(int id, ProcessorListSupplier processorSupplier, int parallelism) {
+    public VertexDef(int id, ProcessorSupplier processorSupplier, int parallelism) {
         this.id = id;
         this.processorSupplier = processorSupplier;
         this.parallelism = parallelism;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public void addInputs(List<EdgeDef> inputs) {
@@ -70,30 +74,28 @@ class VertexDef implements Serializable {
         return outputs;
     }
 
-    public ProcessorListSupplier getProcessorSupplier() {
+    public ProcessorSupplier getProcessorSupplier() {
         return processorSupplier;
     }
 
     public int getParallelism() {
         return parallelism;
     }
-
 }
 
 class EdgeDef implements Serializable {
     private final int otherEndId;
-    private final int otherEndParallelism;
     private final int ordinal;
     private final int priority;
     private final ForwardingPattern forwardingPattern;
     private final Partitioner partitioner;
     private String id;
 
-    public EdgeDef(String id, int otherEndId, int otherEndParallelism, int ordinal,
-                   int priority, ForwardingPattern forwardingPattern, Partitioner partitioner) {
+    public EdgeDef(String id, int otherEndId, int ordinal, int priority,
+                   ForwardingPattern forwardingPattern, Partitioner partitioner
+    ) {
         this.id = id;
         this.otherEndId = otherEndId;
-        this.otherEndParallelism = otherEndParallelism;
         this.ordinal = ordinal;
         this.priority = priority;
         this.forwardingPattern = forwardingPattern;
@@ -102,10 +104,6 @@ class EdgeDef implements Serializable {
 
     public int getOtherEndId() {
         return otherEndId;
-    }
-
-    public int getOtherEndParallelism() {
-        return otherEndParallelism;
     }
 
     public int getOrdinal() {
@@ -123,7 +121,6 @@ class EdgeDef implements Serializable {
     public String getId() {
         return id;
     }
-
 
     public int getPriority() {
         return priority;

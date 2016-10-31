@@ -20,7 +20,6 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorListSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.ProcessorSupplierContext;
 
@@ -54,11 +53,11 @@ public class IListWriter extends AbstractProcessor {
         return true;
     }
 
-    public static ProcessorListSupplier supplier(String listName) {
+    public static ProcessorSupplier supplier(String listName) {
         return new Supplier(listName);
     }
 
-    private static class Supplier implements ProcessorListSupplier {
+    private static class Supplier implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 

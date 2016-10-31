@@ -18,14 +18,8 @@ package com.hazelcast.jet2;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.function.Supplier;
 
-/**
- * Javadoc pending.
- */
-public interface ProcessorListSupplier extends Serializable {
-
-    default void init(ProcessorSupplierContext context) {
-    }
-
-    List<Processor> get(int count);
+@FunctionalInterface
+public interface SimpleProcessorSupplier extends Serializable, Supplier<Processor> {
 }

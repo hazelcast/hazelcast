@@ -19,10 +19,10 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.collection.impl.list.ListProxyImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.MetaProcessorSupplierContext;
+import com.hazelcast.jet2.ProcessorMetaSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorListSupplier;
+import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.nio.Address;
 
@@ -80,13 +80,13 @@ public class IListReader extends AbstractProducer {
         }
 
         @Override
-        public void init(MetaProcessorSupplierContext context) {
+        public void init(ProcessorMetaSupplierContext context) {
             instance = context.getHazelcastInstance();
             ownerAddress = instance.getPartitionService().getPartition(name).getOwner().getAddress();
         }
 
         @Override
-        public ProcessorListSupplier get(Address address) {
+        public ProcessorSupplier get(Address address) {
             if (address.equals(ownerAddress)) {
                 return new Supplier(name);
             } else {
@@ -99,7 +99,7 @@ public class IListReader extends AbstractProducer {
         }
     }
 
-    private static class Supplier implements ProcessorListSupplier {
+    private static class Supplier implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 

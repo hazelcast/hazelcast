@@ -19,10 +19,10 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.MetaProcessorSupplierContext;
+import com.hazelcast.jet2.ProcessorMetaSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorListSupplier;
+import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.nio.Address;
 
@@ -90,16 +90,16 @@ public class IMapWriter extends AbstractProcessor {
         }
 
         @Override
-        public ProcessorListSupplier get(Address address) {
+        public ProcessorSupplier get(Address address) {
             return new Supplier(mapName);
         }
 
         @Override
-        public void init(MetaProcessorSupplierContext context) {
+        public void init(ProcessorMetaSupplierContext context) {
         }
     }
 
-    private static class Supplier implements ProcessorListSupplier {
+    private static class Supplier implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
