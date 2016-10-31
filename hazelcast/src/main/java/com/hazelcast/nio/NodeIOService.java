@@ -28,8 +28,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
@@ -59,13 +58,18 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public boolean isActive() {
-        return node.getState() != NodeState.SHUT_DOWN;
+    public HazelcastThreadGroup getHazelcastThreadGroup() {
+        return nodeEngine.getHazelcastThreadGroup();
     }
 
     @Override
-    public ILogger getLogger(String name) {
-        return node.getLogger(name);
+    public LoggingService getLoggingService() {
+        return nodeEngine.getLoggingService();
+    }
+
+    @Override
+    public boolean isActive() {
+        return node.getState() != NodeState.SHUT_DOWN;
     }
 
     @Override
@@ -127,18 +131,6 @@ public class NodeIOService implements IOService {
     @Override
     public boolean isRestEnabled() {
         return node.getProperties().getBoolean(GroupProperty.REST_ENABLED);
-    }
-
-    @Override
-    public String getThreadPrefix() {
-        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-        return threadGroup.getThreadPoolNamePrefix("IO");
-    }
-
-    @Override
-    public ThreadGroup getThreadGroup() {
-        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-        return threadGroup.getInternalThreadGroup();
     }
 
     @Override
@@ -286,16 +278,6 @@ public class NodeIOService implements IOService {
     @Override
     public EventService getEventService() {
         return nodeEngine.getEventService();
-    }
-
-    @Override
-    public Data toData(Object obj) {
-        return nodeEngine.toData(obj);
-    }
-
-    @Override
-    public Object toObject(Data data) {
-        return nodeEngine.toObject(data);
     }
 
     @Override

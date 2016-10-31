@@ -479,8 +479,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
 
         acceptorThread = new SocketAcceptorThread(
-                ioService.getThreadGroup(),
-                ioService.getThreadPrefix() + "Acceptor",
+                ioService.getHazelcastThreadGroup().getInternalThreadGroup(),
+                ioService.getHazelcastThreadGroup().getThreadPoolNamePrefix("IO") + "Acceptor",
                 serverSocketChannel,
                 this);
         acceptorThread.start();

@@ -53,7 +53,7 @@ public class InitConnectionTask implements Runnable {
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.address = address;
-        this.logger = ioService.getLogger(this.getClass().getName());
+        this.logger = ioService.getLoggingService().getLogger(getClass());
         this.silent = silent;
     }
 

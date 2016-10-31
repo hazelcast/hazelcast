@@ -60,7 +60,7 @@ public class MockConnectionManager implements ConnectionManager {
         this.ioService = ioService;
         this.registry = registry;
         this.node = node;
-        this.logger = ioService.getLogger(MockConnectionManager.class.getName());
+        this.logger = ioService.getLoggingService().getLogger(MockConnectionManager.class);
     }
 
     @Override
