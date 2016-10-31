@@ -47,6 +47,13 @@ public interface ClientEndpointManager {
     ClientEndpoint getEndpoint(Connection connection);
 
     /**
+     * Gets the endpoint of a client with a provided client uuid.
+     * @param clientUuid The uuid of the client for which you want the endpoint.
+     * @return The found endpoint or null of no endpoint was found.
+     */
+     ClientEndpoint getEndpoint(String clientUuid);
+
+    /**
      * Gets all the endpoints for a given client.
      *
      * @param clientUuid the uuid of the client

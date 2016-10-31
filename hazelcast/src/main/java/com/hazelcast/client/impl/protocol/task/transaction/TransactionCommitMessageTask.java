@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.transaction;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionCommitCodec;
@@ -37,7 +36,6 @@ public class TransactionCommitMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
         TransactionContext transactionContext = endpoint.getTransactionContext(parameters.transactionId);
         transactionContext.commitTransaction();
         endpoint.removeTransactionContext(parameters.transactionId);

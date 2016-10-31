@@ -49,7 +49,7 @@ public class CacheAddPartitionLostListenerMessageTask
         CachePartitionLostListener listener = new CachePartitionLostListener() {
             @Override
             public void partitionLost(CachePartitionLostEvent event) {
-                if (getEndpoint().isAlive()) {
+                if (endpoint.isAlive()) {
                     ClientMessage eventMessage =
                             CacheAddPartitionLostListenerCodec.encodeCachePartitionLostEvent(event.getPartitionId(),
                                     event.getMember().getUuid());

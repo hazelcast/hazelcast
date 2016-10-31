@@ -17,6 +17,7 @@
 package com.hazelcast.client.listeners;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
@@ -27,6 +28,10 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.test.AssertTask;
 import org.junit.After;
 import org.junit.Test;
@@ -46,8 +51,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     protected HazelcastInstance client;
     private static final int EVENT_COUNT = 10;
 
-    // This number should be the same milliseconds as CientEngineImpl.private static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
-    private static final int ENDPOINT_REMOVE_DELAY_MILLISECONDS = 10000;
+    private static final int ENDPOINT_REMOVE_DELAY_MILLISECONDS = ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS * 1000;
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -72,7 +76,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                 if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
                     disconnectedLatch.countDown();
                 }
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED== event.getState()) {
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
                     connectedLatch.countDown();
                 }
             }
@@ -85,42 +89,82 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         factory.newHazelcastInstance();
         assertClusterSizeEventually(clusterSize, client);
 
-        final boolean smartRouting = clientInstanceImpl.getClientConfig().getNetworkConfig().isSmartRouting();
-
         assertTrue(disconnectedLatch.await(30, TimeUnit.SECONDS));
         assertTrue(connectedLatch.await(30, TimeUnit.SECONDS));
+
+        validateRegistrations(clusterSize, registrationId, clientInstanceImpl);
+
+        validateListenerFunctionality(eventCount);
+
+        assertTrue(removeListener(registrationId));
+    }
+
+    private void testListenersTerminateRandomNodeInternal()
+            throws InterruptedException {
+        final int clusterSize = factory.getAllHazelcastInstances().size();
+        assertClusterSizeEventually(clusterSize, client);
+
+        final AtomicInteger eventCount = new AtomicInteger();
+        final String registrationId = addListener(eventCount);
+
+        terminateRandomNode();
+
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        final CountDownLatch memberAddedLatch = new CountDownLatch(1);
+        clientInstanceImpl.getClientClusterService().addMembershipListener(new MembershipListener() {
+            @Override
+            public void memberAdded(MembershipEvent membershipEvent) {
+                memberAddedLatch.countDown();
+            }
+
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+            }
+
+            @Override
+            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+            }
+        });
+
+        factory.newHazelcastInstance();
+
+        assertTrue(memberAddedLatch.await(20, TimeUnit.SECONDS));
+
+        assertClusterSizeEventually(clusterSize, client);
+
+        validateRegistrations(clusterSize, registrationId, getHazelcastClientInstanceImpl(client));
+
+        validateListenerFunctionality(eventCount);
+
+        assertTrue(removeListener(registrationId));
+    }
+
+    private void validateRegistrations(final int clusterSize, final String registrationId,
+                                       final HazelcastClientInstanceImpl clientInstanceImpl) {
+        final boolean smartRouting = clientInstanceImpl.getClientConfig().getNetworkConfig().isSmartRouting();
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 int size = smartRouting ? clusterSize : 1;
-                assertEquals(size, getClientEventRegistrations(client, registrationId).size());
+                Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client,
+                        registrationId);
+                assertEquals(size, registrations.size());
+                if (smartRouting) {
+                    Collection<Member> members = clientInstanceImpl.getClientClusterService().getMemberList();
+                    for (ClientEventRegistration registration : registrations) {
+                        Member registeredSubscriber = registration.getSubscriber();
+                        assertTrue("Registered member " + registeredSubscriber + " is not in the cluster member list " + members,
+                                members.contains(registeredSubscriber));
+                    }
+                } else {
+                    ClientEventRegistration registration = registrations.iterator().next();
+                    assertEquals(clientInstanceImpl.getClientClusterService().getOwnerConnectionAddress(),
+                            registration.getSubscriber().getAddress());
+                }
             }
         });
-
-        for (int i = 0; i < EVENT_COUNT; i++) {
-            produceEvent();
-        }
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(EVENT_COUNT <= eventCount.get());
-            }
-        });
-
-        // Make sure that the count stays the same for the next 3 seconds
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(EVENT_COUNT, eventCount.get());
-            }
-        }, 3);
-
-        assertTrue(removeListener(registrationId));
     }
-
 
     private void testListenersWaitMemberDestroy()
             throws InterruptedException {
@@ -162,26 +206,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
         sleepAtLeastMillis(ENDPOINT_REMOVE_DELAY_MILLISECONDS + 2000);
 
-        for (int i = 0; i < EVENT_COUNT; i++) {
-            produceEvent();
-        }
+        validateRegistrations(clusterSize - 1, registrationId, clientInstanceImpl);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(EVENT_COUNT, eventCount.get());
-            }
-        });
-
-        // Make sure that the count stays the same for the next 3 seconds
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(EVENT_COUNT, eventCount.get());
-            }
-        }, 2);
+        validateListenerFunctionality(eventCount);
 
         assertTrue(removeListener(registrationId));
     }
@@ -222,17 +249,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
         unblockMessagesFromInstance(server, client);
 
-        final boolean smartRouting = clientInstanceImpl.getClientConfig().getNetworkConfig().isSmartRouting();
-        final int expectedRegistrationsSize = smartRouting ? clusterSize : 1;
-
         assertTrue(connectedLatch.await(30, TimeUnit.SECONDS));
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedRegistrationsSize, getClientEventRegistrations(client, registrationId).size());
-            }
-        }, 3);
+        validateRegistrations(clusterSize, registrationId, clientInstanceImpl);
 
         validateListenerFunctionality(eventCount);
 
@@ -268,6 +287,29 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         ClientConfig clientConfig = createClientConfig();
         client = factory.newHazelcastClient(clientConfig);
         testListenersInternal();
+    }
+
+    @Test
+    public void testListenersNonSmartRoutingTerminateRandomNode()
+            throws InterruptedException {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = createClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersTerminateRandomNodeInternal();
+    }
+
+    @Test
+    public void testListenersSmartRoutingTerminateRandomNode()
+            throws InterruptedException {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = createClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersTerminateRandomNodeInternal();
     }
 
     @Test
@@ -385,15 +427,19 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(eventCount.get() >= EVENT_COUNT);
+                int count = eventCount.get();
+                assertTrue("Received event count is " + count + " but it is expected to be at least " + EVENT_COUNT,
+                        count >= EVENT_COUNT);
             }
-        });
+        }, 5);
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                assertEquals(EVENT_COUNT, eventCount.get());
+                int count = eventCount.get();
+                assertEquals("Received event count is " + count + " but it is expected to stay at " + EVENT_COUNT, EVENT_COUNT,
+                        eventCount.get());
             }
         }, 3);
     }

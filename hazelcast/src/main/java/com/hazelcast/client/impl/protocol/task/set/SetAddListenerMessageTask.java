@@ -77,7 +77,7 @@ public class SetAddListenerMessageTask
             }
 
             private void send(ItemEvent event) {
-                if (getEndpoint().isAlive()) {
+                if (endpoint.isAlive()) {
                     if (!(event instanceof DataAwareItemEvent)) {
                         throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
                                 + event.getClass().getSimpleName());

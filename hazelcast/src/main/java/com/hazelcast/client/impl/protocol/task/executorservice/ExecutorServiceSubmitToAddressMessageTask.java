@@ -60,7 +60,7 @@ public class ExecutorServiceSubmitToAddressMessageTask
         }
 
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(parameters.name, parameters.uuid, callableData);
-        op.setCallerUuid(getEndpoint().getUuid());
+        op.setCallerUuid(endpoint.getUuid());
         return op;
     }
 

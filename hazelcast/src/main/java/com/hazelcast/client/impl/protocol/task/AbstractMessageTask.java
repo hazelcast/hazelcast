@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEndpointManagerImpl;
+import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
@@ -45,14 +45,15 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected final ClientMessage clientMessage;
 
     protected final Connection connection;
+    protected ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
     protected final InternalSerializationService serializationService;
     protected final ILogger logger;
-    protected final ClientEndpointManagerImpl endpointManager;
+    protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
     protected P parameters;
 
-    private String clientUuid;
+    protected String clientUuid;
     private final Node node;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -63,8 +64,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.serializationService = node.getSerializationService();
         this.connection = connection;
         this.clientEngine = node.clientEngine;
-        this.endpointManager = (ClientEndpointManagerImpl) clientEngine.getEndpointManager();
-        ClientEndpoint endpoint = getEndpoint();
+        this.endpointManager = clientEngine.getEndpointManager();
+        this.endpoint = getEndpoint();
         if (null != endpoint) {
             this.clientUuid = endpoint.getUuid();
         }
@@ -102,15 +103,17 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     @Override
     public void run() {
         try {
-            ClientEndpoint endpoint = getEndpoint();
-            if (endpoint == null) {
-                handleMissingEndpoint();
-            } else if (isAuthenticationMessage()) {
+            if (isAuthenticationMessage()) {
                 initializeAndProcessMessage();
-            } else if (!endpoint.isAuthenticated()) {
-                handleAuthenticationFailure();
             } else {
-                initializeAndProcessMessage();
+                ClientEndpoint endpoint = getEndpoint();
+                if (endpoint == null) {
+                    handleMissingEndpoint();
+                } else if (!endpoint.isAuthenticated()) {
+                    handleAuthenticationFailure();
+                } else {
+                    initializeAndProcessMessage();
+                }
             }
         } catch (Throwable e) {
             handleProcessingFailure(e);
@@ -125,7 +128,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (!node.getNodeExtension().isStartCompleted()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
-        ClientEndpoint endpoint = getEndpoint();
         parameters = decodeClientMessage(clientMessage);
         Credentials credentials = endpoint.getCredentials();
         interceptBefore(credentials);
@@ -136,7 +138,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     private void handleAuthenticationFailure() {
         Exception exception;
-        ClientEndpoint endpoint = getEndpoint();
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             logger.severe(message);
@@ -170,9 +171,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected void handleProcessingFailure(Throwable throwable) {
         logProcessingFailure(throwable);
-        if (getEndpoint() != null) {
-            sendClientMessage(throwable);
-        }
+        sendClientMessage(throwable);
     }
 
     private void interceptBefore(Credentials credentials) {

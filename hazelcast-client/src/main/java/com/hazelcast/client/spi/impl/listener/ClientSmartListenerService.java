@@ -48,8 +48,13 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ClientSmartListenerService extends ClientListenerServiceImpl implements InitialMembershipListener {
+    private static final long SMART_LISTENER_MEMBER_ADDED_RESCHEDULE_TIME = 1000;
+    private static final long SMART_LISTENER_CONNECT_ALL_SERVERS_RETRY_WAIT_TIME = 5000;
+    private static final String SMART_LISTENER_SERVICE_CONNECTION_OPENER = "Smart Listener ConnectionOpener";
     private final Set<Member> members = new HashSet<Member>();
     // The value for the entry is a map of registrations where the key is the uuid string of the member
     private final Map<ClientRegistrationKey, Map<Member, ClientEventRegistration>> registrations
@@ -57,6 +62,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     private final ClientClusterService clusterService;
     private volatile LifecycleEvent.LifecycleState lifecycleState;
     private String membershipListenerId;
+    private ScheduledFuture<?> connectionOpener;
 
     public ClientSmartListenerService(HazelcastClientInstanceImpl client,
                                       int eventThreadCount, int eventQueueCapacity) {
@@ -209,48 +215,91 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                 lifecycleState = event.getState();
             }
         });
+
+        connectionOpener = client.getClientExecutionService()
+                                                   .scheduleWithRepetition(SMART_LISTENER_SERVICE_CONNECTION_OPENER,
+                                                           new Runnable() {
+                                                               @Override
+                                                               public void run() {
+                                                                   registrationExecutor.submit(new Runnable() {
+                                                                       @Override
+                                                                       public void run() {
+                                                                           ensureConnectionsToAllServers();
+                                                                       }
+                                                                   });
+                                                               }
+                                                           }, 0, SMART_LISTENER_CONNECT_ALL_SERVERS_RETRY_WAIT_TIME,
+                                                           TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void shutdown() {
+        if (null != connectionOpener) {
+            connectionOpener.cancel(true);
+        }
         super.shutdown();
         if (membershipListenerId != null) {
             clusterService.removeMembershipListener(membershipListenerId);
         }
     }
 
-    @Override
-    public void memberAdded(final MembershipEvent membershipEvent) {
-        registrationExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED != lifecycleState) {
-                    logger.finest("Ignoring member added event " + membershipEvent + " since the client is disconnected.");
-                    return;
-                }
+    private final class MemberAddedHandler implements Runnable {
+        final MembershipEvent membershipEvent;
 
-                Member member = membershipEvent.getMember();
-                if (members.contains(member)) {
-                    logger.finest("Ignoring member added event " + membershipEvent + " since the member is already in the list.");
-                    return;
-                }
+        public MemberAddedHandler(MembershipEvent membershipEvent) {
+            this.membershipEvent = membershipEvent;
+        }
 
-                members.add(member);
-                logger.finest("New member added to the cluster. Registering " + registrations.size() + " listeners to member "
-                        + member);
-                for (ClientRegistrationKey registrationKey : registrations.keySet()) {
-                    Map<Member, ClientEventRegistration> registrationMap = registrations.get(registrationKey);
-                    // Only register if not already registered
-                    if (null == registrationMap.get(member)) {
-                        try {
-                            invoke(registrationKey, member);
-                        } catch (Exception e) {
-                            logger.warning("Listener " + registrationKey + " can not be added to new member " + member, e);
-                        }
+        @Override
+        public void run() {
+            if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED != lifecycleState) {
+                logger.finest("Ignoring member added event " + membershipEvent + " since the client is disconnected.");
+                return;
+            }
+
+            Member member = membershipEvent.getMember();
+            if (members.contains(member)) {
+                logger.finest("Ignoring member added event " + membershipEvent + " since the member is already in the list.");
+                return;
+            }
+
+            logger.finest("New member added to the cluster. Registering " + registrations.size() + " listeners to member "
+                    + member);
+
+            try {
+                getOrConnect(member, client.getClientClusterService().getOwnerConnectionAddress());
+            } catch (Exception e) {
+                logger.warning("Failed to register listeners to member " + member + " rescheduling the registration in "
+                        + SMART_LISTENER_MEMBER_ADDED_RESCHEDULE_TIME + " msecs", e);
+
+                client.getClientExecutionService().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        memberAdded(membershipEvent);
+                    }
+                }, SMART_LISTENER_MEMBER_ADDED_RESCHEDULE_TIME, TimeUnit.MILLISECONDS);
+                return;
+            }
+
+            members.add(member);
+
+            for (ClientRegistrationKey registrationKey : registrations.keySet()) {
+                Map<Member, ClientEventRegistration> registrationMap = registrations.get(registrationKey);
+                // Only register if not already registered
+                if (null == registrationMap.get(member)) {
+                    try {
+                        invoke(registrationKey, member);
+                    } catch (Exception e) {
+                        logger.warning("Listener " + registrationKey + " can not be added to new member " + member, e);
                     }
                 }
             }
-        });
+        }
+    }
+
+    @Override
+    public void memberAdded(final MembershipEvent membershipEvent) {
+        registrationExecutor.submit(new MemberAddedHandler(membershipEvent));
     }
 
     @Override
@@ -351,19 +400,24 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     }
 
     private void ensureConnectionsToAllServers() {
+        if (registrations.isEmpty()) {
+            return;
+        }
+
         Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
         for (Member member : members) {
-            getOrConnect(member, ownerConnectionAddress);
+            try {
+                getOrConnect(member, ownerConnectionAddress);
+            } catch (Exception e) {
+                logger.warning("Could not open connection to member " + member, e);
+            }
         }
     }
 
-    private void getOrConnect(Member member, Address ownerConnectionAddress) {
+    private void getOrConnect(Member member, Address ownerConnectionAddress)
+            throws IOException {
         Address memberAddress = member.getAddress();
-        try {
-            client.getConnectionManager().getOrConnect(memberAddress, (ownerConnectionAddress.equals(memberAddress)));
-        } catch (IOException e) {
-            logger.warning("Could not open connection to member " + member, e);
-        }
+        client.getConnectionManager().getOrConnect(memberAddress, ownerConnectionAddress.equals(memberAddress));
     }
 
     //For Testing

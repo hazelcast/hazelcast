@@ -95,7 +95,7 @@ public class TopicAddMessageListenerMessageTask
 
     @Override
     public void onMessage(Message message) {
-        if (!getEndpoint().isAlive()) {
+        if (!endpoint.isAlive()) {
             return;
         }
 

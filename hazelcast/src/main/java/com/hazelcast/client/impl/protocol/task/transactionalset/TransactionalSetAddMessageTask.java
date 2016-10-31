@@ -38,7 +38,7 @@ public class TransactionalSetAddMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalSet<Object> set = context.getSet(parameters.name);
         return set.add(parameters.item);
     }

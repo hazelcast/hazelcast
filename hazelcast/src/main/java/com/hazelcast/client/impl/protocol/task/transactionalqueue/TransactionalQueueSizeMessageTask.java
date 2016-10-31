@@ -38,7 +38,7 @@ public class TransactionalQueueSizeMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
         return queue.size();
     }

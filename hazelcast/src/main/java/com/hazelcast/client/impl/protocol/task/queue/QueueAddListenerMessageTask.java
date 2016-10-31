@@ -60,7 +60,7 @@ public class QueueAddListenerMessageTask
             }
 
             private void send(ItemEvent event) {
-                if (getEndpoint().isAlive()) {
+                if (endpoint.isAlive()) {
 
                     if (!(event instanceof DataAwareItemEvent)) {
                         throw new IllegalArgumentException(

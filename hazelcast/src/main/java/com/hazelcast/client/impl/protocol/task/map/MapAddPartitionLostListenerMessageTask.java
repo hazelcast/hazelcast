@@ -47,7 +47,7 @@ public class MapAddPartitionLostListenerMessageTask
         final MapPartitionLostListener listener = new MapPartitionLostListener() {
             @Override
             public void partitionLost(MapPartitionLostEvent event) {
-                if (getEndpoint().isAlive()) {
+                if (endpoint.isAlive()) {
                     ClientMessage eventMessage =
                             MapAddPartitionLostListenerCodec.encodeMapPartitionLostEvent(event.getPartitionId(),
                                     event.getMember().getUuid());

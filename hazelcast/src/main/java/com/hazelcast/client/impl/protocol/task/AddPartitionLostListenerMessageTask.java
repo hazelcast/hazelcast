@@ -42,7 +42,7 @@ public class AddPartitionLostListenerMessageTask
         final PartitionLostListener listener = new PartitionLostListener() {
             @Override
             public void partitionLost(PartitionLostEvent event) {
-                if (getEndpoint().isAlive()) {
+                if (endpoint.isAlive()) {
                     ClientMessage eventMessage =
                             ClientAddPartitionLostListenerCodec.encodePartitionLostEvent(event.getPartitionId(),
                                     event.getLostBackupCount(), event.getEventSource());
@@ -57,8 +57,9 @@ public class AddPartitionLostListenerMessageTask
         } else {
             registrationId = partitionService.addPartitionLostListener(listener);
         }
-        getEndpoint().addListenerDestroyAction(getServiceName(), PARTITION_LOST_EVENT_TOPIC, registrationId);
+        endpoint.addListenerDestroyAction(getServiceName(), PARTITION_LOST_EVENT_TOPIC, registrationId);
         return registrationId;
+
     }
 
     @Override
