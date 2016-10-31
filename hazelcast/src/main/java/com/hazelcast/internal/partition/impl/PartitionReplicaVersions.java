@@ -22,10 +22,15 @@ import java.util.Arrays;
 
 import static java.lang.System.arraycopy;
 
+// read and updated only by partition threads
 final class PartitionReplicaVersions {
-    final int partitionId;
-    // read and updated only by operation/partition threads
-    final long[] versions = new long[InternalPartition.MAX_BACKUP_COUNT];
+    private final int partitionId;
+    private final long[] versions = new long[InternalPartition.MAX_BACKUP_COUNT];
+    /**
+     * Shows whether partition has missing backups somewhere between the last applied backup
+     * and the last incremental backup received.
+     */
+    private boolean dirty;
 
     PartitionReplicaVersions(int partitionId) {
         this.partitionId = partitionId;
@@ -42,35 +47,62 @@ final class PartitionReplicaVersions {
         return versions;
     }
 
-    boolean isStale(long[] newVersions, int currentReplica) {
-        int index = currentReplica - 1;
+    /**
+     * Returns whether given replica version is behind the current version or not.
+     * @param newVersions new replica versions
+     * @param replicaIndex replica index
+     * @return true if given version is stale, false otherwise
+     */
+    boolean isStale(long[] newVersions, int replicaIndex) {
+        int index = replicaIndex - 1;
         long currentVersion = versions[index];
         long newVersion = newVersions[index];
         return currentVersion > newVersion;
     }
 
-    boolean update(long[] newVersions, int currentReplica) {
-        int index = currentReplica - 1;
+    /**
+     * Updates replica version if it is newer than current version. Otherwise has no effect.
+     * Marks versions as dirty if version increase is not incremental.
+     *
+     * @param newVersions new replica versions
+     * @param replicaIndex replica index
+     * @return returns false if versions are dirty, true otherwise
+     */
+    boolean update(long[] newVersions, int replicaIndex) {
+        int index = replicaIndex - 1;
         long currentVersion = versions[index];
         long nextVersion = newVersions[index];
-        boolean valid = (currentVersion == nextVersion - 1);
-        if (valid) {
-            set(newVersions, currentReplica);
-            currentVersion = nextVersion;
+
+        boolean incremental = (currentVersion == nextVersion - 1);
+        boolean newer = currentVersion < nextVersion;
+
+        if (newer) {
+            setVersions(newVersions, replicaIndex);
+            dirty = dirty || !incremental;
         }
-        return currentVersion >= nextVersion;
+        return !dirty;
     }
 
-    void set(long[] newVersions, int fromReplica) {
+    private void setVersions(long[] newVersions, int fromReplica) {
         int fromIndex = fromReplica - 1;
         int len = newVersions.length - fromIndex;
         arraycopy(newVersions, fromIndex, versions, fromIndex, len);
+    }
+
+    void set(long[] newVersions, int fromReplica) {
+        setVersions(newVersions, fromReplica);
+        dirty = false;
+    }
+
+    boolean isDirty() {
+        return dirty;
     }
 
     void clear() {
         for (int i = 0; i < versions.length; i++) {
             versions[i] = 0;
         }
+        dirty = false;
     }
 
     @Override

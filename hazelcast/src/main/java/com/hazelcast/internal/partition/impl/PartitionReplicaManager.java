@@ -239,15 +239,21 @@ public class PartitionReplicaManager {
     void updatePartitionReplicaVersions(int partitionId, long[] versions, int replicaIndex) {
         PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
         if (!partitionVersion.update(versions, replicaIndex)) {
-            // this partition backup is behind the owner.
+            // this partition backup is behind the owner or dirty.
             triggerPartitionReplicaSync(partitionId, replicaIndex, 0L);
         }
     }
 
     // called in operation threads
-    boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex) {
+    public boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex) {
         PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
         return partitionVersion.isStale(versions, replicaIndex);
+    }
+
+    // called in operation threads
+    public boolean isPartitionReplicaVersionDirty(int partitionId) {
+        PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
+        return partitionVersion.isDirty();
     }
 
     // called in operation threads
