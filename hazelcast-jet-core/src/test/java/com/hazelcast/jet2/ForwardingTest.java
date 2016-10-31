@@ -35,7 +35,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -43,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 public class ForwardingTest extends HazelcastTestSupport {
 
     private static final List<Integer> NUMBERS = IntStream.range(0, 10).
-            boxed().collect(Collectors.toList());
+            boxed().collect(toList());
 
     private TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
@@ -63,23 +66,21 @@ public class ForwardingTest extends HazelcastTestSupport {
     @Test
     public void when_single() {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4))
-                .parallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
 
         int parallelism = 4;
-        MultiListSupplier multiListSupplier = new MultiListSupplier();
-        Vertex consumer = new Vertex("consumer", multiListSupplier)
-                .parallelism(parallelism);
+        Supplier supplier = new Supplier();
+        Vertex consumer = new Vertex("consumer", supplier).parallelism(parallelism);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
         execute(dag);
 
         Set<Object> combined = new HashSet<>();
         for (int i = 0; i < parallelism; i++) {
-            combined.addAll(multiListSupplier.getListAt(i));
+            combined.addAll(supplier.getListAt(i));
         }
         assertEquals(new HashSet<>(NUMBERS), combined);
     }
@@ -87,75 +88,66 @@ public class ForwardingTest extends HazelcastTestSupport {
     @Test
     public void when_broadcast() {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4))
-                .parallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
 
         int parallelism = 4;
-        MultiListSupplier multiListSupplier = new MultiListSupplier();
-        Vertex consumer = new Vertex("consumer", multiListSupplier)
-                .parallelism(parallelism);
+        Supplier supplier = new Supplier();
+        Vertex consumer = new Vertex("consumer", supplier).parallelism(parallelism);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer).broadcast());
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer).broadcast());
 
         execute(dag);
 
         for (int i = 0; i < parallelism; i++) {
-            assertEquals(NUMBERS, multiListSupplier.getListAt(i));
+            assertEquals(NUMBERS, supplier.getListAt(i));
         }
     }
 
     @Test
     public void when_partitioned() {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4))
-                .parallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
 
         int parallelism = 2;
-        MultiListSupplier multiListSupplier = new MultiListSupplier();
-        Vertex consumer = new Vertex("consumer", multiListSupplier)
-                .parallelism(parallelism);
+        Supplier supplier = new Supplier();
+        Vertex consumer = new Vertex("consumer", supplier).parallelism(parallelism);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer).partitioned(
-                        (item, numPartitions) -> (int) item % numPartitions
-                ));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer).partitioned(
+                   (item, numPartitions) -> (int) item % numPartitions
+           ));
 
         execute(dag);
 
-        assertEquals(Arrays.asList(0, 2, 4, 6, 8), multiListSupplier.getListAt(0));
-        assertEquals(Arrays.asList(1, 3, 5, 7, 9), multiListSupplier.getListAt(1));
+        assertEquals(asList(0, 2, 4, 6, 8), supplier.getListAt(0));
+        assertEquals(asList(1, 3, 5, 7, 9), supplier.getListAt(1));
 
     }
 
     private void execute(DAG dag) {
-        Job job = jetEngine.newJob(dag);
-        job.execute();
+        jetEngine.newJob(dag).execute();
     }
 
-    private static class MultiListSupplier implements ProcessorSupplier {
+    private static class Supplier implements ProcessorListSupplier {
 
-        private int index;
-        private ListConsumer[] consumers;
-
-        public MultiListSupplier() {
-        }
+        List<Processor> processors;
 
         @Override
         public void init(ProcessorSupplierContext context) {
-            consumers = new ListConsumer[context.perNodeParallelism()];
-            Arrays.setAll(consumers, i -> new ListConsumer());
+            processors = Stream.generate(ListConsumer::new).limit(context.perNodeParallelism()).collect(toList());
         }
 
         @Override
-        public Processor get() {
-            return consumers[index++];
+        public List<Processor> get(int count) {
+            assertEquals(processors.size(), count);
+            return processors;
         }
 
         public List<Object> getListAt(int i) {
-            return consumers[i].getList();
+            return ((ListConsumer) processors.get(i)).getList();
         }
     }
 }

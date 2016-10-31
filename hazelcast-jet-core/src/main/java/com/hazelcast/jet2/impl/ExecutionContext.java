@@ -86,7 +86,7 @@ public class ExecutionContext {
 
             for (int i = 0; i < members.size(); i++) {
                 Member member = members.get(i);
-                ProcessorListSupplier processorSupplier = supplier.get(member.getAddress());
+                ProcessorListSupplier processorListSupplier = supplier.get(member.getAddress());
             }
 
         }
@@ -149,8 +149,8 @@ public class ExecutionContext {
             metaSupplier.init(new MetaProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(),
                     totalParallelism, parallelism));
 
-            ProcessorSupplier processorSupplier = metaSupplier.get(nodeEngine.getThisAddress());
-            processorSupplier.init(new ProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(), parallelism));
+            ProcessorListSupplier procSupplier = metaSupplier.get(nodeEngine.getThisAddress());
+            procSupplier.init(new ProcessorSupplierContextImpl(nodeEngine.getHazelcastInstance(), parallelism));
             for (int taskletIndex = 0; taskletIndex < parallelism; taskletIndex++) {
                 List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
                 List<InboundEdgeStream> inboundStreams = new ArrayList<>();
@@ -174,9 +174,9 @@ public class ExecutionContext {
                             emitters, inboundEdge.getInputOrdinal(), inboundEdge.getPriority());
                     inboundStreams.add(inboundStream);
                 }
-                processorSupplier.get().stream()
-                        .map(p -> new ProcessorTasklet(p, classLoader, inboundStreams, outboundStreams))
-                        .forEach(tasks::add);
+                procSupplier.get(parallelism).stream()
+                            .map(p -> new ProcessorTasklet(p, classLoader, inboundStreams, outboundStreams))
+                            .forEach(tasks::add);
             }
         }
         return executionService.execute(tasks);

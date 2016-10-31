@@ -22,8 +22,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.stream.Stream;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Javadoc pending
@@ -39,23 +41,28 @@ public class Vertex implements IdentifiedDataSerializable {
 
     /**
      * Javadoc pending
-     *
-     * @param name
-     * @param processorSupplier
      */
     public Vertex(String name, ProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
         checkNotNull(processorSupplier, "supplier");
 
-        this.supplier = new DefaultMetaSupplier(processorSupplier);
+        this.supplier = new PlainSupplierToMetaSupplier(processorSupplier);
         this.name = name;
     }
 
     /**
      * Javadoc pending
-     *
-     * @param name
-     * @param supplier
+     */
+    public Vertex(String name, ProcessorListSupplier processorListSupplier) {
+        checkNotNull(name, "name");
+        checkNotNull(processorListSupplier, "supplier");
+
+        this.supplier = new ListSupplierToMetaSupplier(processorListSupplier);
+        this.name = name;
+    }
+
+    /**
+     * Javadoc pending
      */
     public Vertex(String name, MetaProcessorSupplier supplier) {
         checkNotNull(name, "name");
@@ -99,9 +106,7 @@ public class Vertex implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "Vertex{"
-                + "name='" + name + '\''
-                + '}';
+        return "Vertex{name='" + name + '\'' + '}';
     }
 
     @Override
@@ -128,21 +133,39 @@ public class Vertex implements IdentifiedDataSerializable {
         return JetDataSerializerHook.VERTEX;
     }
 
-    private class DefaultMetaSupplier implements MetaProcessorSupplier {
+
+    private static class PlainSupplierToMetaSupplier implements MetaProcessorSupplier {
 
         private final ProcessorSupplier supplier;
 
-        public DefaultMetaSupplier(ProcessorSupplier supplier) {
+        public PlainSupplierToMetaSupplier(ProcessorSupplier supplier) {
             this.supplier = supplier;
         }
 
         @Override
         public void init(MetaProcessorSupplierContext context) {
-
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorListSupplier get(Address address) {
+            return count -> Stream.generate(supplier::get).limit(count).collect(toList());
+        }
+    }
+
+    private static class ListSupplierToMetaSupplier implements MetaProcessorSupplier {
+
+        private final ProcessorListSupplier supplier;
+
+        public ListSupplierToMetaSupplier(ProcessorListSupplier supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public void init(MetaProcessorSupplierContext context) {
+        }
+
+        @Override
+        public ProcessorListSupplier get(Address address) {
             return supplier;
         }
     }

@@ -17,11 +17,12 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Partition;
 import com.hazelcast.jet2.MetaProcessorSupplier;
 import com.hazelcast.jet2.MetaProcessorSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorListSupplier;
 import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
@@ -31,7 +32,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static java.util.stream.Collectors.toList;
 
 public class IMapReader extends AbstractProducer {
 
@@ -55,8 +58,7 @@ public class IMapReader extends AbstractProducer {
     @Override
     public void init(@Nonnull Outbox outbox) {
         super.init(outbox);
-        iterators = partitions.stream().map(p -> map.iterator(fetchSize, p, true))
-                .collect(Collectors.toList());
+        iterators = partitions.stream().map(p -> map.iterator(fetchSize, p, true)).collect(toList());
         this.iteratorCursor = new CircularCursor<>(iterators);
     }
 
@@ -109,46 +111,44 @@ public class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorListSupplier get(Address address) {
             List<Integer> ownedPartitions = hazelcastInstance.getPartitionService().getPartitions()
                     .stream().filter(f -> f.getOwner().getAddress().equals(address))
-                    .map(f -> f.getPartitionId())
-                    .collect(Collectors.toList());
+                    .map(Partition::getPartitionId)
+                    .collect(toList());
             return new Supplier(name, ownedPartitions, fetchSize);
         }
     }
 
-    private static class Supplier implements ProcessorSupplier {
+    private static class Supplier implements ProcessorListSupplier {
 
         static final long serialVersionUID = 1L;
 
-        private final String name;
+        private final String mapName;
         private final List<Integer> ownedPartitions;
         private final int fetchSize;
-        private int index;
         private int perNodeParallelism;
 
         private transient MapProxyImpl map;
 
-        public Supplier(String name, List<Integer> ownedPartitions, int fetchSize) {
-            this.name = name;
+        public Supplier(String mapName, List<Integer> ownedPartitions, int fetchSize) {
+            this.mapName = mapName;
             this.ownedPartitions = ownedPartitions;
             this.fetchSize = fetchSize;
         }
 
         @Override
         public void init(ProcessorSupplierContext context) {
-            index = 0;
-            map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
+            map = (MapProxyImpl) context.getHazelcastInstance().getMap(mapName);
             perNodeParallelism = context.perNodeParallelism();
         }
 
         @Override
-        public Processor get() {
-            List<Integer> partitions = this.ownedPartitions.stream().filter(f -> f % perNodeParallelism == index)
-                    .collect(Collectors.toList());
-            index++;
-            return new IMapReader(map, partitions, fetchSize);
+        public List<Processor> get(int count) {
+            return IntStream.range(0, count)
+                            .mapToObj(i -> ownedPartitions.stream().filter(f -> f % count == i).collect(toList()))
+                            .map(partitions -> new IMapReader(map, partitions, fetchSize))
+                            .collect(toList());
         }
     }
 }

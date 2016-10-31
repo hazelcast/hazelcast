@@ -16,14 +16,16 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.nio.Address;
-
 import java.io.Serializable;
+import java.util.List;
 
-public interface MetaProcessorSupplier extends Serializable {
+/**
+ * Javadoc pending.
+ */
+public interface ProcessorListSupplier extends Serializable {
 
-    default void init(MetaProcessorSupplierContext context) {
+    default void init(ProcessorSupplierContext context) {
     }
 
-    ProcessorListSupplier get(Address address);
+    List<Processor> get(int count);
 }

@@ -22,12 +22,16 @@ import com.hazelcast.jet2.MetaProcessorSupplier;
 import com.hazelcast.jet2.MetaProcessorSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorListSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
+import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 public class IListReader extends AbstractProducer {
 
@@ -83,18 +87,20 @@ public class IListReader extends AbstractProducer {
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorListSupplier get(Address address) {
             if (address.equals(ownerAddress)) {
                 return new Supplier(name);
             } else {
                 // nothing to read on other nodes
-                return (ProcessorSupplier) () -> new AbstractProducer() {
+                return (c) -> {
+                    assertCountIsOne(c);
+                    return singletonList(new AbstractProducer() { });
                 };
             }
         }
     }
 
-    private static class Supplier implements ProcessorSupplier {
+    private static class Supplier implements ProcessorListSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -111,8 +117,15 @@ public class IListReader extends AbstractProducer {
         }
 
         @Override
-        public Processor get() {
-            return new IListReader(list);
+        public List<Processor> get(int count) {
+            assertCountIsOne(count);
+            return singletonList(new IListReader(list));
+        }
+    }
+
+    private static void assertCountIsOne(int count) {
+        if (count != 1) {
+            throw new IllegalArgumentException("count != 1");
         }
     }
 }

@@ -20,9 +20,15 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorSupplierContext;
+import com.hazelcast.jet2.ProcessorListSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorSupplierContext;
+
 import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class IListWriter extends AbstractProcessor {
 
@@ -48,11 +54,11 @@ public class IListWriter extends AbstractProcessor {
         return true;
     }
 
-    public static ProcessorSupplier supplier(String listName) {
+    public static ProcessorListSupplier supplier(String listName) {
         return new Supplier(listName);
     }
 
-    private static class Supplier implements ProcessorSupplier {
+    private static class Supplier implements ProcessorListSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -69,8 +75,8 @@ public class IListWriter extends AbstractProcessor {
         }
 
         @Override
-        public Processor get() {
-            return new IListWriter(list);
+        public List<Processor> get(int count) {
+            return Stream.generate(() -> new IListWriter(list)).limit(count).collect(toList());
         }
     }
 

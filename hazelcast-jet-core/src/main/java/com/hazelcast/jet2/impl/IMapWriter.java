@@ -18,10 +18,15 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.Inbox;
+import com.hazelcast.jet2.MetaProcessorSupplier;
+import com.hazelcast.jet2.MetaProcessorSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorListSupplier;
 import com.hazelcast.jet2.ProcessorSupplierContext;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.nio.Address;
+
+import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -29,7 +34,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class IMapWriter extends AbstractProcessor {
 
@@ -68,11 +75,31 @@ public class IMapWriter extends AbstractProcessor {
         buffer.clear();
     }
 
-    public static ProcessorSupplier supplier(String mapName) {
-        return new Supplier(mapName);
+    public static MetaProcessorSupplier supplier(String mapName) {
+        return new MetaSupplier(mapName);
     }
 
-    private static class Supplier implements ProcessorSupplier {
+    private static class MetaSupplier implements MetaProcessorSupplier {
+
+        static final long serialVersionUID = 1L;
+
+        private final String mapName;
+
+        MetaSupplier(String mapName) {
+            this.mapName = mapName;
+        }
+
+        @Override
+        public ProcessorListSupplier get(Address address) {
+            return new Supplier(mapName);
+        }
+
+        @Override
+        public void init(MetaProcessorSupplierContext context) {
+        }
+    }
+
+    private static class Supplier implements ProcessorListSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -89,8 +116,8 @@ public class IMapWriter extends AbstractProcessor {
         }
 
         @Override
-        public Processor get() {
-            return new IMapWriter(map);
+        public List<Processor> get(int count) {
+            return Stream.generate(() -> new IMapWriter(map)).limit(count).collect(toList());
         }
     }
 
