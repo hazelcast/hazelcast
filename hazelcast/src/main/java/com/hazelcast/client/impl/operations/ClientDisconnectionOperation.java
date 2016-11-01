@@ -23,26 +23,20 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Set;
 
 public class ClientDisconnectionOperation extends AbstractOperation
         implements UrgentSystemOperation {
 
     private String clientUuid;
-    private String memberUuid;
 
     public ClientDisconnectionOperation() {
     }
 
-    public ClientDisconnectionOperation(String clientUuid, String memberUuid) {
+    public ClientDisconnectionOperation(String clientUuid) {
         this.clientUuid = clientUuid;
-        this.memberUuid = memberUuid;
     }
 
     @Override
@@ -51,20 +45,14 @@ public class ClientDisconnectionOperation extends AbstractOperation
         final ClientEndpointManagerImpl endpointManager = (ClientEndpointManagerImpl) engine.getEndpointManager();
         ClientEndpoint clientEndpoint = endpointManager.getEndpoint(clientUuid);
         Connection clientEndpointConnection = (null != clientEndpoint ? clientEndpoint.getConnection() : null);
-        if (null != clientEndpointConnection && !clientEndpointConnection.isAlive()
-                && engine.removeOwnershipMapping(clientUuid, memberUuid)) {
-            Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
-            for (ClientEndpoint endpoint : endpoints) {
-                endpointManager.removeEndpoint(endpoint, true);
-            }
 
-            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            nodeEngine.onClientDisconnected(clientUuid);
-            Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
-            for (ClientAwareService service : services) {
-                service.clientDisconnected(clientUuid);
-            }
+        if (null != clientEndpointConnection && clientEndpointConnection.isAlive()) {
+            getLogger().finest("Will not do the cleanup for client " + clientUuid + " since there exists a live connection from "
+                    + "this client");
+            return;
         }
+
+        engine.removeClient(clientUuid);
     }
 
     @Override
@@ -76,13 +64,11 @@ public class ClientDisconnectionOperation extends AbstractOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(clientUuid);
-        out.writeUTF(memberUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         clientUuid = in.readUTF();
-        memberUuid = in.readUTF();
     }
 }

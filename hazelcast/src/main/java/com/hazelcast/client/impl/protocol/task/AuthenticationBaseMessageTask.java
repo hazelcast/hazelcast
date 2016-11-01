@@ -325,13 +325,17 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
         return UuidUtil.createClientUuid(endpoint.getConnection().getEndPoint());
     }
 
+    /**
+     *
+     * @return true if client resources does not exist on this member, false otherwise
+     */
     private boolean reAuthLocal() {
         final Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(principal.getUuid());
         for (ClientEndpoint endpoint : endpoints) {
             endpoint.authenticated(principal);
         }
-        String previousOwnerUuid = clientEngine.addOwnershipMapping(principal.getUuid(), principal.getOwnerUuid());
-        return previousOwnerUuid == null;
+        clientEngine.addOwnershipMapping(principal.getUuid(), principal.getOwnerUuid());
+        return endpoints.isEmpty();
     }
 
     @Override
