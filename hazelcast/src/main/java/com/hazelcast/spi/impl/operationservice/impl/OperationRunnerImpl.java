@@ -165,7 +165,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         try {
             checkNodeState(op);
 
-            if (timeout(op)) {
+            if (isTimedOut(op)) {
                 return;
             }
 
@@ -246,7 +246,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         return false;
     }
 
-    private boolean timeout(Operation op) {
+    private boolean isTimedOut(Operation op) {
         if (!operationService.isCallTimedOut(op)) {
             return false;
         }

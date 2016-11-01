@@ -48,6 +48,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -357,7 +358,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         }
 
         ClusterClock clusterClock = nodeEngine.getClusterService().getClusterClock();
-        long now = clusterClock.getClusterTime();
+        long now = Clock.currentTimeMillis();
         if (expireTime < now) {
             return true;
         }
@@ -443,7 +444,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         this.invocationContext = new Invocation.Context(
                 asyncExecutor,
-                nodeEngine.getClusterService().getClusterClock(),
                 nodeEngine.getClusterService(),
                 node.connectionManager,
                 node.nodeEngine.getExecutionService(),

@@ -257,7 +257,7 @@ public abstract class Invocation implements OperationResponseHandler {
             return;
         }
 
-        setInvocationTime(op, context.clusterClock.getClusterTime());
+        setInvocationTime(op, Clock.currentTimeMillis());
         if (!context.invocationRegistry.register(this)) {
             return;
         }
@@ -572,7 +572,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
         // a call is always allowed to execute as long as its own call timeout
         long deadlineMillis = op.getInvocationTime() + callTimeoutMillis;
-        if (deadlineMillis > context.clusterClock.getClusterTime()) {
+        if (deadlineMillis > Clock.currentTimeMillis()) {
             return NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
         }
 
@@ -693,7 +693,7 @@ public abstract class Invocation implements OperationResponseHandler {
      */
     static class Context {
         final ManagedExecutorService asyncExecutor;
-        final ClusterClock clusterClock;
+       // final ClusterClock clusterClock;
         final ClusterService clusterService;
         final ConnectionManager connectionManager;
         final InternalExecutionService executionService;
@@ -713,7 +713,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
         @SuppressWarnings("checkstyle:parameternumber")
         Context(ManagedExecutorService asyncExecutor,
-                       ClusterClock clusterClock,
+                       //ClusterClock clusterClock,
                        ClusterService clusterService,
                        ConnectionManager connectionManager,
                        InternalExecutionService executionService,
@@ -731,7 +731,7 @@ public abstract class Invocation implements OperationResponseHandler {
                        InternalSerializationService serializationService,
                        Address thisAddress) {
             this.asyncExecutor = asyncExecutor;
-            this.clusterClock = clusterClock;
+            //this.clusterClock = clusterClock;
             this.clusterService = clusterService;
             this.connectionManager = connectionManager;
             this.executionService = executionService;
