@@ -32,6 +32,13 @@ interface OutboundCollector {
     ProgressState offer(Object item);
 
     /**
+     * Offers an item with a known partition id
+     */
+    default ProgressState offer(Object item, int partitionId) {
+        return offer(item);
+    }
+
+    /**
      * Tries to close this edge collector.
      * If the stream cannot complete the operation now, the call must be retried later.
      */
@@ -173,7 +180,7 @@ interface OutboundCollector {
             OutboundCollector collector = partitionLookupTable[partition];
             assert collector != null : "This item should not be handled by this collector as " +
                     "requested partition is not present";
-            return collector.offer(item);
+            return collector.offer(item, partition);
         }
     }
 }

@@ -40,6 +40,9 @@ class ExecutionPlan implements Serializable {
         vertices.add(vertex);
     }
 
+    public int getId() {
+        return id;
+    }
 }
 
 class VertexDef implements Serializable {

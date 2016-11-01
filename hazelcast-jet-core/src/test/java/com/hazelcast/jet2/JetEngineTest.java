@@ -63,6 +63,7 @@ public class JetEngineTest extends HazelcastTestSupport {
     @Before
     public void setupEngine() {
         instance = factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
     }
 

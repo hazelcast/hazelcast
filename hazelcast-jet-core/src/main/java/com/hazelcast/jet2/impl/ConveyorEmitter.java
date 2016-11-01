@@ -18,17 +18,20 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 class ConveyorEmitter implements InboundEmitter {
 
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
+    private final List<Integer> partitions;
     private final DoneDetector doneDetector;
 
-    public ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex) {
+    public ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex, List<Integer> partitions) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
+        this.partitions = partitions;
         doneDetector = new DoneDetector(conveyor.submitterGoneItem());
     }
 

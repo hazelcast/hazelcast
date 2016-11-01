@@ -17,12 +17,14 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 
@@ -34,13 +36,13 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
 
-    private NodeEngine nodeEngine;
+    private NodeEngineImpl nodeEngine;
 
     private ConcurrentMap<String, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
 
 
     public JetService(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = (NodeEngineImpl) nodeEngine;
     }
 
     @Override
@@ -77,12 +79,8 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
     }
 
     public void ensureContext(String name, JetEngineConfig config) {
-        ConcurrencyUtil.getOrPutSynchronized(executionContexts, name, this, (key) -> {
-            DeploymentStore deploymentStore = new DeploymentStore(config.getDeploymentDirectory());
-            ExecutionService executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config);
-            return new ExecutionContext(nodeEngine, executionService,
-                    deploymentStore, config);
-        });
+        ConcurrencyUtil.getOrPutSynchronized(executionContexts, name, this,
+                (key) -> new ExecutionContext(name, nodeEngine, config));
     }
 
     public ExecutionContext getExecutionContext(String name) {
@@ -92,5 +90,9 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
 
     @Override
     public void handle(Packet packet) throws Exception {
+        // dispatch packet to correct execution context
+        Payload payload = (Payload) nodeEngine.toObject(new HeapData(packet.toByteArray()));
+        ExecutionContext context = executionContexts.get(payload.getEngineName());
+        context.handleIncoming(payload);
     }
 }
