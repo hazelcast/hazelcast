@@ -66,7 +66,7 @@ public class SocketWriterInitializerImpl implements SocketWriterInitializer<TcpI
         IOService ioService = connection.getConnectionManager().getIoService();
         int sizeKb = CLUSTER.equals(protocol)
                 ? ioService.getSocketSendBufferSize()
-                : ioService.getSocketClientReceiveBufferSize();
+                : ioService.getSocketClientSendBufferSize();
         int size = KILO_BYTE * sizeKb;
 
         ByteBuffer outputBuffer = newByteBuffer(size, ioService.isSocketBufferDirect());
