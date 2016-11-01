@@ -58,8 +58,8 @@ class RemoteOutboundCollector implements OutboundCollector {
     @Override
     public ProgressState offer(Object item, int partitionId) {
         byte[] payload = engine.toData(new Payload(engineName, executionId,
-                destinationVertex, partitionId, item)).toByteArray();
-        connection.write(new Packet(payload).setFlag(Packet.FLAG_JET));
+                destinationVertex, item)).toByteArray();
+        connection.write(new Packet(payload, partitionId).setFlag(Packet.FLAG_JET));
         return ProgressState.DONE;
     }
 

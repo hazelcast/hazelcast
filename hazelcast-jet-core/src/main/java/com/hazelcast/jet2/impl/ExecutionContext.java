@@ -182,7 +182,7 @@ public class ExecutionContext {
                                 plan.getId(), destinationId, entry.getValue());
                     }
 
-                    OutboundCollector collector = OutboundCollector.compositeCollector(allCollectors,
+                        OutboundCollector collector = OutboundCollector.compositeCollector(allCollectors,
                             output, partitionCount);
                     outboundStreams.add(new OutboundEdgeStream(output.getOrdinal(), collector));
                 }

@@ -24,13 +24,12 @@ class Payload implements Serializable {
     private final int executionId;
     private final int vertexId;
     private final Object item;
-    private final int partitionId;
+    private int partitionId;
 
-    public Payload(String engineName, int executionId, int vertexId, int partitionId, Object item) {
+    public Payload(String engineName, int executionId, int vertexId, Object item) {
         this.engineName = engineName;
         this.executionId = executionId;
         this.vertexId = vertexId;
-        this.partitionId = partitionId;
         this.item = item;
     }
 
@@ -52,6 +51,10 @@ class Payload implements Serializable {
 
     public int getPartitionId() {
         return partitionId;
+    }
+
+    public void setPartitionId(int partitionId) {
+        this.partitionId = partitionId;
     }
 
     @Override

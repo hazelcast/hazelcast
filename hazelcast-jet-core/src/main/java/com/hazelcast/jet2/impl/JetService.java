@@ -92,7 +92,9 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
     public void handle(Packet packet) throws Exception {
         // dispatch packet to correct execution context
         Payload payload = (Payload) nodeEngine.toObject(new HeapData(packet.toByteArray()));
+        payload.setPartitionId(packet.getPartitionId());
         ExecutionContext context = executionContexts.get(payload.getEngineName());
+        assert context != null : "Packet received for unknown execution context";
         context.handleIncoming(payload);
     }
 }
