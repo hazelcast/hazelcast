@@ -121,15 +121,15 @@ public class TestClientRegistry {
         }
 
         @Override
-        protected void initializeSelectors(HazelcastClientInstanceImpl client) {
+        protected void initIOThreads(HazelcastClientInstanceImpl client) {
         }
 
         @Override
-        protected void startSelectors() {
+        protected void startIOThreads() {
         }
 
         @Override
-        protected void shutdownSelectors() {
+        protected void shutdownIOThreads() {
         }
 
         @Override
