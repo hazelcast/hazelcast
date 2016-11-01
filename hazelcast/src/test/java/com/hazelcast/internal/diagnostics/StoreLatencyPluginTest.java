@@ -26,7 +26,9 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Before
     public void setup() {
-        HazelcastProperties properties = new HazelcastProperties(new Properties());
+        Properties p = new Properties();
+        p.put(StoreLatencyPlugin.PERIOD_SECONDS, "1");
+        HazelcastProperties properties = new HazelcastProperties(p);
         plugin = new StoreLatencyPlugin(Logger.getLogger(StoreLatencyPlugin.class), properties);
     }
 
@@ -50,7 +52,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         probe.recordValue(MICROSECONDS.toNanos(1000));
         probe.recordValue(MICROSECONDS.toNanos(4));
 
-        assertEquals(1000, probe.maxMicros);
+        assertEquals(1000, probe.stats.maxMicros);
     }
 
     @Test
@@ -60,7 +62,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         probe.recordValue(MICROSECONDS.toNanos(10));
         probe.recordValue(MICROSECONDS.toNanos(10));
 
-        assertEquals(3, probe.count);
+        assertEquals(3, probe.stats.count);
     }
 
     @Test
@@ -70,7 +72,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         probe.recordValue(MICROSECONDS.toNanos(20));
         probe.recordValue(MICROSECONDS.toNanos(30));
 
-        assertEquals(60, probe.totalMicros);
+        assertEquals(60, probe.stats.totalMicros);
     }
 
     @Test
