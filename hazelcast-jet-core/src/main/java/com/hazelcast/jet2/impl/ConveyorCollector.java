@@ -18,18 +18,32 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
+import java.util.List;
+
 public class ConveyorCollector implements OutboundCollector {
 
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
+    private final Object doneItem;
 
     public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
+        this.doneItem = conveyor.submitterGoneItem();
     }
 
     @Override
-    public boolean offer(Object item) {
-        return conveyor.offer(queueIndex, item);
+    public ProgressState offer(Object item) {
+        return conveyor.offer(queueIndex, item) ? ProgressState.DONE : ProgressState.NO_PROGRESS;
+    }
+
+    @Override
+    public ProgressState close() {
+        return offer(doneItem);
+    }
+
+    @Override
+    public List<Integer> getPartitions() {
+        return null;
     }
 }

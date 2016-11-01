@@ -24,10 +24,10 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorSupplier;
-import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.ProcessorMetaSupplierContext;
+import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.jet2.impl.deployment.JetClassLoader;
@@ -44,9 +44,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
-import static com.hazelcast.jet2.impl.ConcurrentOutboundEdgeStream.newStream;
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -60,6 +60,7 @@ public class ExecutionContext {
     private DeploymentStore deploymentStore;
     private JetEngineConfig config;
     private JetClassLoader classLoader;
+    private AtomicInteger idCounter = new AtomicInteger();
 
     public ExecutionContext(NodeEngine nodeEngine, ExecutionService executionService, DeploymentStore deploymentStore,
                             JetEngineConfig config) {
@@ -76,7 +77,8 @@ public class ExecutionContext {
     public Map<Member, ExecutionPlan> buildExecutionPlan(DAG dag) {
         List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         int clusterSize = members.size();
-        Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan()));
+        final int planId = idCounter.getAndIncrement();
+        Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(planId)));
         Map<Vertex, Integer> vertexIdMap = assignVertexIds(dag);
         for (Map.Entry<Vertex, Integer> entry : vertexIdMap.entrySet()) {
             Vertex vertex = entry.getKey();
@@ -92,7 +94,6 @@ public class ExecutionContext {
                     nodeEngine.getHazelcastInstance(), totalParallelism, perNodeParallelism));
             List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getDestination());
-                int otherEndParallelism = getParallelism(edge.getDestination());
                 return new EdgeDef(vertexId + ":" + otherEndId,
                         otherEndId, edge.getOutputOrdinal(),
                         edge.getPriority(), edge.getForwardingPattern(), edge.getPartitioner());
@@ -100,7 +101,6 @@ public class ExecutionContext {
 
             List<EdgeDef> inputs = inboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getSource());
-                int otherEndParallelism = getParallelism(edge.getSource());
                 return new EdgeDef(otherEndId + ":" + vertexId,
                         otherEndId, edge.getInputOrdinal(),
                         edge.getPriority(), edge.getForwardingPattern(), edge.getPartitioner());
@@ -143,7 +143,14 @@ public class ExecutionContext {
                                     vMap.get(output.getOtherEndId()).getParallelism(), parallelism, QUEUE_SIZE));
                     OutboundCollector[] collectors = new OutboundCollector[conveyorArray.length];
                     Arrays.setAll(collectors, n -> new ConveyorCollector(conveyorArray[n], taskletIndex));
-                    outboundStreams.add(newStream(collectors, output));
+
+                    OutboundCollector local = OutboundCollector.compositeCollector(collectors, output);
+
+                    //TODO: for each remote node, there will be another collector
+
+                    OutboundCollector collector = OutboundCollector
+                            .compositeCollector(new OutboundCollector[]{local}, output);
+                    outboundStreams.add(new OutboundEdgeStream(output.getOrdinal(), collector));
                 }
                 for (EdgeDef input : inputs) {
                     // each tasklet will have one input conveyor per edge
@@ -204,5 +211,6 @@ public class ExecutionContext {
     public void destroy() {
         executionService.shutdown();
     }
+
 }
 

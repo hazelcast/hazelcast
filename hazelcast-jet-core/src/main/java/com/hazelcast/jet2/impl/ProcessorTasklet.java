@@ -174,7 +174,8 @@ public class ProcessorTasklet implements Tasklet {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null; ) {
                 final ProgressState state =
-                        item != DONE_ITEM ? outstreams[i].offer(item) : outstreams[i].close();
+                        item != DONE_ITEM ? outstreams[i].getCollector().offer(item)
+                                : outstreams[i].getCollector().close();
                 progTracker.madeProgress(state.isMadeProgress());
                 if (!state.isDone()) {
                     progTracker.notDone();

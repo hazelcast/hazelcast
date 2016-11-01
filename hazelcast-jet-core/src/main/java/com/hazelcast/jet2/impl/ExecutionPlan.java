@@ -26,8 +26,10 @@ import java.util.List;
 
 class ExecutionPlan implements Serializable {
     private final List<VertexDef> vertices = new ArrayList<>();
+    private final int id;
 
-    public ExecutionPlan() {
+    public ExecutionPlan(int id) {
+        this.id = id;
     }
 
     public List<VertexDef> getVertices() {
@@ -84,6 +86,7 @@ class VertexDef implements Serializable {
 }
 
 class EdgeDef implements Serializable {
+
     private final int otherEndId;
     private final int ordinal;
     private final int priority;
