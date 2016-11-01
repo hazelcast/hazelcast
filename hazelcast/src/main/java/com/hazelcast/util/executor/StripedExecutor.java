@@ -17,6 +17,7 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Random;
@@ -77,6 +78,18 @@ public final class StripedExecutor implements Executor {
     }
 
     /**
+     * Returns the total number of processed events.
+     * @return
+     */
+    public long processedCount() {
+        long size = 0;
+        for (Worker worker : workers) {
+            size += worker.processed.inc();
+        }
+        return size;
+    }
+
+    /**
      * Shuts down this StripedExecutor.
      * <p/>
      * No checking is done to see if the StripedExecutor already is shut down, so it should be called only once.
@@ -130,7 +143,7 @@ public final class StripedExecutor implements Executor {
     private final class Worker extends Thread {
 
         private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumQueueSize);
-
+        private final SwCounter processed = SwCounter.newSwCounter();
         private Worker(ThreadGroup threadGroup, String threadNamePrefix) {
             super(threadGroup, threadNamePrefix
                     + "-"
@@ -183,6 +196,7 @@ public final class StripedExecutor implements Executor {
         }
 
         private void process(Runnable task) {
+            processed.inc();
             try {
                 task.run();
             } catch (Throwable e) {

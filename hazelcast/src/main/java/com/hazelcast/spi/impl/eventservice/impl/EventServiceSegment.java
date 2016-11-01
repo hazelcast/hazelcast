@@ -50,6 +50,10 @@ public class EventServiceSegment<S> {
         this.service = service;
     }
 
+    private int listenerCount() {
+        return registrationIdMap.size();
+    }
+
     private void pingNotifiableEventListener(String topic, Registration registration, boolean register) {
         Object listener = registration.getListener();
         if (!(listener instanceof NotifiableEventListener)) {

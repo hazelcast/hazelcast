@@ -23,6 +23,9 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -39,7 +42,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 
-public abstract class ClientListenerServiceImpl implements ClientListenerService {
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+
+public abstract class ClientListenerServiceImpl implements ClientListenerService, MetricsProvider {
 
     protected final HazelcastClientInstanceImpl client;
     protected final ClientExecutionServiceImpl executionService;
@@ -47,6 +52,8 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     protected final ClientInvocationService invocationService;
     protected final ExecutorService registrationExecutor;
     protected final ILogger logger;
+
+    @Probe(name = "eventHandlerCount", level = MANDATORY)
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap
             = new ConcurrentHashMap<Long, EventHandler>();
 
@@ -66,6 +73,21 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".eventRegistration-");
         registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.scanAndRegister(this, "listeners");
+    }
+
+    @Probe(level = MANDATORY)
+    private int eventQueueSize() {
+        return eventExecutor.getWorkQueueSize();
+    }
+
+    @Probe(level = MANDATORY)
+    private long eventsProcessed() {
+        return eventExecutor.processedCount();
     }
 
     public void addEventHandler(long callId, EventHandler handler) {
@@ -97,7 +119,6 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     }
 
     public void start() {
-
     }
 
     private final class ClientEventProcessor implements StripedRunnable {
@@ -124,7 +145,6 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
             } finally {
                 connection.decrementPendingPacketCount();
             }
-
         }
 
         @Override
