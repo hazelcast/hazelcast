@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -48,7 +47,6 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -71,7 +69,6 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.util.CollectionUtil.toIntegerList;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
@@ -340,31 +337,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     // =============================== processing operation  ===============================
-
-    @Override
-    public boolean isCallTimedOut(Operation op) {
-        // Join operations should not be checked for timeout because caller is not member of this cluster
-        // and can have a different clock.
-        if (isJoinOperation(op)) {
-            return false;
-        }
-
-        long callTimeout = op.getCallTimeout();
-        long invocationTime = op.getInvocationTime();
-        long expireTime = invocationTime + callTimeout;
-
-        if (expireTime <= 0 || expireTime == Long.MAX_VALUE) {
-            return false;
-        }
-
-        ClusterClock clusterClock = nodeEngine.getClusterService().getClusterClock();
-        long now = Clock.currentTimeMillis();
-        if (expireTime < now) {
-            return true;
-        }
-
-        return false;
-    }
 
     @Override
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory) throws Exception {

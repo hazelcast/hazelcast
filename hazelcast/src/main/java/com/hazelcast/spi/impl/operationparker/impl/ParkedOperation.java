@@ -24,8 +24,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.util.Clock;
 
@@ -79,7 +77,7 @@ class ParkedOperation extends AbstractLocalOperation implements Delayed, Partiti
     }
 
     public boolean needsInvalidation() {
-        return isExpired() || isCancelled() || isCallTimedOut();
+        return isExpired() || isCancelled() || timeout();
     }
 
     public boolean isExpired() {
@@ -90,10 +88,8 @@ class ParkedOperation extends AbstractLocalOperation implements Delayed, Partiti
         return cancelResponse != null;
     }
 
-    public boolean isCallTimedOut() {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        InternalOperationService operationService = nodeEngine.getOperationService();
-        if (operationService.isCallTimedOut(op)) {
+    public boolean timeout() {
+        if (op.isTimedOut()) {
             cancel(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
             return true;
         }

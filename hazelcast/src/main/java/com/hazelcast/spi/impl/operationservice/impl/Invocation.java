@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -644,6 +643,7 @@ public abstract class Invocation implements OperationResponseHandler {
         backupsAcksExpected = 0;
         backupsAcksReceived = 0;
         lastHeartbeatMillis = 0;
+        op.setReceivedTime(0);
         doInvoke(false);
     }
 

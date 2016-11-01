@@ -165,7 +165,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         try {
             checkNodeState(op);
 
-            if (isTimedOut(op)) {
+            if (timeout(op)) {
                 return;
             }
 
@@ -246,8 +246,8 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         return false;
     }
 
-    private boolean isTimedOut(Operation op) {
-        if (!operationService.isCallTimedOut(op)) {
+    private boolean timeout(Operation op) {
+        if (!op.isTimedOut()) {
             return false;
         }
 
@@ -382,6 +382,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             Object object = nodeEngine.toObject(packet);
             Operation op = (Operation) object;
             op.setNodeEngine(nodeEngine);
+            op.setReceivedTime(packet.getReceivedTime());
             setCallerAddress(op, caller);
             setConnection(op, connection);
             setCallerUuidIfNotSet(caller, op);

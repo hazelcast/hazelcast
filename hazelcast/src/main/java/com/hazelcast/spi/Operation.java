@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 
@@ -74,6 +76,8 @@ public abstract class Operation implements DataSerializable {
     private transient Address callerAddress;
     private transient Connection connection;
     private transient OperationResponseHandler responseHandler;
+
+    private transient long receivedTime;
 
     public Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
@@ -322,6 +326,35 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
+     * Checks if this operation is timed out. A timed out call is not going to be executed.
+     *
+     * @return true if it is timed out, false otherwise.
+     */
+    public boolean isTimedOut() {
+        // Join operations should not be checked for timeout because caller is not member of this cluster
+        // and can have a different clock.
+        if (isJoinOperation(this)) {
+            return false;
+        }
+
+        // If there is an infinite timeout
+        if (callTimeout == Long.MAX_VALUE) {
+            return false;
+        }
+
+        long expireTime = receivedTime == 0
+                ? invocationTime + callTimeout
+                : receivedTime + callTimeout;
+
+        if (expireTime <= 0) {
+            // deal with overflow.
+            return false;
+        }
+
+        return expireTime < Clock.currentTimeMillis();
+    }
+
+    /**
      * Sets the call timeout.
      *
      * @param callTimeout the call timeout.
@@ -342,6 +375,15 @@ public abstract class Operation implements DataSerializable {
     public final void setWaitTimeout(long timeout) {
         this.waitTimeout = timeout;
         setFlag(timeout != -1, BITMASK_WAIT_TIMEOUT_SET);
+    }
+
+    public long getReceivedTime() {
+        return receivedTime;
+    }
+
+    public Operation setReceivedTime(long receiveTime) {
+        this.receivedTime = receiveTime;
+        return this;
     }
 
     /**

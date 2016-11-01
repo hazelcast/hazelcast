@@ -73,14 +73,6 @@ public interface InternalOperationService extends OperationService {
     int getGenericThreadCount();
 
     /**
-     * Checks if this call is timed out. A timed out call is not going to be executed.
-     *
-     * @param op the operation to check.
-     * @return true if it is timed out, false otherwise.
-     */
-    boolean isCallTimedOut(Operation op);
-
-    /**
      * Returns true if the given operation is allowed to run on the calling thread, false otherwise.
      * If this method returns true, then the operation can be executed using {@link #run(Operation)}
      * method, otherwise {@link #execute(Operation)} should be used.

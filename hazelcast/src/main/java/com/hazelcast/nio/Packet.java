@@ -81,11 +81,11 @@ public final class Packet extends HeapData implements OutboundFrame {
         this.partitionId = partitionId;
     }
 
-    public void initReceivedTime(){
+    public void initReceivedTime() {
         receivedTime = System.currentTimeMillis();
     }
 
-    public long getReceivedTime(){
+    public long getReceivedTime() {
         return receivedTime;
     }
 
