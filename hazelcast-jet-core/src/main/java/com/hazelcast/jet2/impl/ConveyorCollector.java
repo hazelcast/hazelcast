@@ -24,11 +24,13 @@ public class ConveyorCollector implements OutboundCollector {
 
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
+    private final List<Integer> partitions;
     private final Object doneItem;
 
-    public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex) {
+    public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex, List<Integer> partitions) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
+        this.partitions = partitions;
         this.doneItem = conveyor.submitterGoneItem();
     }
 
@@ -44,6 +46,6 @@ public class ConveyorCollector implements OutboundCollector {
 
     @Override
     public List<Integer> getPartitions() {
-        return null;
+        return partitions;
     }
 }

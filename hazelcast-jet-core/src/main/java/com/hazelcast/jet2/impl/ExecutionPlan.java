@@ -95,8 +95,7 @@ class EdgeDef implements Serializable {
     private String id;
 
     public EdgeDef(String id, int otherEndId, int ordinal, int priority,
-                   ForwardingPattern forwardingPattern, Partitioner partitioner
-    ) {
+                   ForwardingPattern forwardingPattern, Partitioner partitioner) {
         this.id = id;
         this.otherEndId = otherEndId;
         this.ordinal = ordinal;
@@ -128,7 +127,5 @@ class EdgeDef implements Serializable {
     public int getPriority() {
         return priority;
     }
+
 }
-
-
-

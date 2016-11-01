@@ -21,6 +21,8 @@ import com.hazelcast.jet2.Partitioner;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 interface OutboundCollector {
     /**
@@ -41,14 +43,15 @@ interface OutboundCollector {
     List<Integer> getPartitions();
 
 
-    static OutboundCollector compositeCollector(OutboundCollector[] collectors, EdgeDef outboundEdge) {
+    static OutboundCollector compositeCollector(OutboundCollector[] collectors, EdgeDef outboundEdge,
+                                                int partitionCount) {
         switch (outboundEdge.getForwardingPattern()) {
             case ALL_TO_ONE:
                 throw new RuntimeException("to implement");
             case ALTERNATING_SINGLE:
                 return new RoundRobin(collectors);
             case PARTITIONED:
-                return new Partitioned(collectors, outboundEdge.getPartitioner());
+                return new Partitioned(collectors, outboundEdge.getPartitioner(), partitionCount);
             case BROADCAST:
                 return new Broadcast(collectors);
             default:
@@ -60,9 +63,12 @@ interface OutboundCollector {
 
         protected final OutboundCollector[] collectors;
         protected final ProgressTracker progTracker = new ProgressTracker();
+        protected final List<Integer> partitions;
 
         Composite(OutboundCollector[] collectors) {
             this.collectors = collectors;
+            this.partitions = Stream.of(collectors).flatMap(c -> c.getPartitions().stream())
+                    .sorted().collect(Collectors.toList());
         }
 
         @Override
@@ -80,94 +86,96 @@ interface OutboundCollector {
             }
             return progTracker.toProgressState();
         }
-    }
-}
 
-class RoundRobin extends OutboundCollector.Composite {
-
-    private final CircularCursor<OutboundCollector> cursor;
-
-    RoundRobin(OutboundCollector[] collectors) {
-        super(collectors);
-        this.cursor = new CircularCursor<>(Arrays.asList(collectors));
+        @Override
+        public List<Integer> getPartitions() {
+            return partitions;
+        }
     }
 
-    @Override
-    public ProgressState offer(Object item) {
-        final OutboundCollector first = cursor.value();
-        ProgressState result;
-        do {
-            result = cursor.value().offer(item);
-            if (result.isDone()) {
+    class RoundRobin extends Composite {
+
+        private final CircularCursor<OutboundCollector> cursor;
+
+        RoundRobin(OutboundCollector[] collectors) {
+            super(collectors);
+            this.cursor = new CircularCursor<>(Arrays.asList(collectors));
+        }
+
+        @Override
+        public ProgressState offer(Object item) {
+            final OutboundCollector first = cursor.value();
+            ProgressState result;
+            do {
+                result = cursor.value().offer(item);
+                if (result.isDone()) {
+                    cursor.advance();
+                    return result;
+                } else if (result.isMadeProgress()) {
+                    return result;
+                }
                 cursor.advance();
-                return result;
-            } else if (result.isMadeProgress()) {
-                return result;
+            } while (cursor.value() != first);
+            return result;
+        }
+    }
+
+    class Broadcast extends Composite {
+        private final ProgressTracker progTracker = new ProgressTracker();
+        private final BitSet isItemSentTo;
+
+        Broadcast(OutboundCollector[] collectors) {
+            super(collectors);
+            this.isItemSentTo = new BitSet(collectors.length);
+        }
+
+        @Override
+        public ProgressState offer(Object item) {
+            progTracker.reset();
+            for (int i = 0; i < collectors.length; i++) {
+                if (isItemSentTo.get(i)) {
+                    continue;
+                }
+                ProgressState result = collectors[i].offer(item);
+                progTracker.update(result);
+                if (result.isDone()) {
+                    isItemSentTo.set(i);
+                }
             }
-            cursor.advance();
-        } while (cursor.value() != first);
-        return result;
-    }
-
-    @Override
-    public List<Integer> getPartitions() {
-        return null;
-    }
-}
-
-class Broadcast extends OutboundCollector.Composite {
-    private final ProgressTracker progTracker = new ProgressTracker();
-    private final BitSet isItemSentTo;
-
-    Broadcast(OutboundCollector[] collectors) {
-        super(collectors);
-        this.isItemSentTo = new BitSet(collectors.length);
-    }
-
-    @Override
-    public ProgressState offer(Object item) {
-        progTracker.reset();
-        for (int i = 0; i < collectors.length; i++) {
-            if (isItemSentTo.get(i)) {
-                continue;
+            if (progTracker.isDone()) {
+                isItemSentTo.clear();
             }
-            ProgressState result = collectors[i].offer(item);
-            progTracker.update(result);
-            if (result.isDone()) {
-                isItemSentTo.set(i);
+            return progTracker.toProgressState();
+        }
+    }
+
+    class Partitioned extends Composite {
+
+        private final Partitioner partitioner;
+        private final OutboundCollector[] partitionLookupTable;
+
+        Partitioned(OutboundCollector[] collectors, Partitioner partitioner, int partitionCount) {
+            super(collectors);
+            this.partitioner = partitioner;
+            this.partitionLookupTable = new OutboundCollector[partitionCount];
+
+            for (OutboundCollector collector : collectors) {
+                for (Integer integer : collector.getPartitions()) {
+                    partitionLookupTable[integer] = collector;
+                }
             }
         }
-        if (progTracker.isDone()) {
-            isItemSentTo.clear();
+
+        @Override
+        public ProgressState offer(Object item) {
+            int partition = partitioner.getPartition(item, partitionLookupTable.length);
+            assert partition >= 0 && partition < partitionLookupTable.length : "Partition number out of range";
+            OutboundCollector collector = partitionLookupTable[partition];
+            assert collector != null : "This item should not be handled by this collector as " +
+                    "requested partition is not present";
+            return collector.offer(item);
         }
-        return progTracker.toProgressState();
-    }
-
-    @Override
-    public List<Integer> getPartitions() {
-        return null;
     }
 }
 
-class Partitioned extends OutboundCollector.Composite {
 
-    private final Partitioner partitioner;
-
-    Partitioned(OutboundCollector[] collectors, Partitioner partitioner) {
-        super(collectors);
-        this.partitioner = partitioner;
-    }
-
-    @Override
-    public ProgressState offer(Object item) {
-        int partition = partitioner.getPartition(item, collectors.length);
-        assert partition >= 0 && partition < collectors.length : "Partition number out of range";
-        return collectors[partition].offer(item);
-    }
-
-    @Override
-    public List<Integer> getPartitions() {
-        return null;
-    }
-
-}
