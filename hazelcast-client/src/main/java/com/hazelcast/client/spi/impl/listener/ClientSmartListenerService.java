@@ -54,7 +54,6 @@ import java.util.concurrent.TimeUnit;
 public class ClientSmartListenerService extends ClientListenerServiceImpl implements InitialMembershipListener {
     private static final long SMART_LISTENER_MEMBER_ADDED_RESCHEDULE_TIME = 1000;
     private static final long SMART_LISTENER_CONNECT_ALL_SERVERS_RETRY_WAIT_TIME = 5000;
-    private static final String SMART_LISTENER_SERVICE_CONNECTION_OPENER = "Smart Listener ConnectionOpener";
     private final Set<Member> members = new HashSet<Member>();
     // The value for the entry is a map of registrations where the key is the uuid string of the member
     private final Map<ClientRegistrationKey, Map<Member, ClientEventRegistration>> registrations
@@ -247,6 +246,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
             this.membershipEvent = membershipEvent;
         }
 
+        /**
+         * Warning: Make sure that this method is only be executed by the registrationExecutor.
+         */
         @Override
         public void run() {
             if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED != lifecycleState) {
@@ -389,6 +391,11 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         }
     }
 
+    /**
+     * Warning: Should be called from the registrationExecutor.
+     * @param member The member for which the registration is to be removed.
+     * @param registrationMap The registrations from which to remove the registrations.
+     */
     private void removeRegistrationLocally(Member member, Map<Member, ClientEventRegistration> registrationMap) {
         ClientEventRegistration registration = registrationMap.remove(member);
         if (null != registration) {

@@ -82,6 +82,10 @@ public class ClientConnection implements Connection {
     private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
 
+    /**
+     * The list of members from which the client resources are deleted at the time of connection authentication. The client may
+     * use this list to re-register the client resources such the listeners to these members.
+     */
     private List<Member> clientUnregisteredMembers;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
