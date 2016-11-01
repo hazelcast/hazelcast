@@ -250,6 +250,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
             this.membershipEvent = membershipEvent;
         }
 
+        /**
+         * Warning: Make sure that this method is only be executed by the registrationExecutor.
+         */
         @Override
         public void run() {
             if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED != lifecycleState) {
@@ -392,6 +395,11 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         }
     }
 
+    /**
+     * Warning: Should be called from the registrationExecutor.
+     * @param member The member for which the registration is to be removed.
+     * @param registrationMap The registrations from which to remove the registrations.
+     */
     private void removeRegistrationLocally(Member member, Map<Member, ClientEventRegistration> registrationMap) {
         ClientEventRegistration registration = registrationMap.remove(member);
         if (null != registration) {

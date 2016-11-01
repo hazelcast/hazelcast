@@ -403,7 +403,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             String clientUuid = endpoint.getUuid();
 
             String ownerMember = ownershipMappings.get(clientUuid);
-            if (memberUuid != ownerMember) {
+            if (!memberUuid.equals(ownerMember)) {
                 // do nothing if the owner already changed (double checked locking)
                 return;
             }
