@@ -41,6 +41,16 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
     private final MigrationEndpoint endpoint;
     private final boolean success;
 
+    /**
+     * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
+     * coding conventions.
+     */
+    public FinalizeMigrationOperation() {
+        migrationInfo = null;
+        endpoint = null;
+        success = false;
+    }
+
     public FinalizeMigrationOperation(MigrationInfo migrationInfo, MigrationEndpoint endpoint, boolean success) {
         this.migrationInfo = migrationInfo;
         this.endpoint = endpoint;

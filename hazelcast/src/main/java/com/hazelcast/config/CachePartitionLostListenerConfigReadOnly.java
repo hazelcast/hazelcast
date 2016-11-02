@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.EventListener;
 
@@ -26,6 +27,7 @@ import java.util.EventListener;
  *
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
+@BinaryInterface
 public class CachePartitionLostListenerConfigReadOnly
         extends CachePartitionLostListenerConfig {
 

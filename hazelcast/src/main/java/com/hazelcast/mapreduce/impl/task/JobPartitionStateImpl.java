@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,6 +28,7 @@ import java.io.IOException;
 /**
  * This class holds information about the current processing state and the owner of a partition.
  */
+@BinaryInterface
 public class JobPartitionStateImpl implements JobPartitionState, DataSerializable {
 
     private Address address;

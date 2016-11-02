@@ -27,6 +27,9 @@ public class CachePartitionEventData extends CacheEventDataImpl implements Cache
     private int partitionId;
     private Member member;
 
+    public CachePartitionEventData() {
+    }
+
     public CachePartitionEventData(String name, int partitionId, Member member) {
         super(name, CacheEventType.PARTITION_LOST, null, null, null, false);
         this.partitionId = partitionId;
@@ -94,5 +97,10 @@ public class CachePartitionEventData extends CacheEventDataImpl implements Cache
         result = 31 * result + partitionId;
         result = 31 * result + (member != null ? member.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.CACHE_PARTITION_EVENT_DATA;
     }
 }

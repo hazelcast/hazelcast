@@ -16,6 +16,7 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -26,6 +27,7 @@ import java.util.Set;
  * @param <K>
  * @param <V>
  */
+@BinaryInterface
 public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
 
     Set<QueryableEntry<K, V>> filter(QueryContext queryContext);

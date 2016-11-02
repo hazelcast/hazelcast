@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
@@ -37,6 +38,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * Provides base features for predicates, such as extraction and convertion of the attribute's value.
  * It also handles apply() on MultiResult.
  */
+@BinaryInterface
 public abstract class AbstractPredicate<K, V>
         implements Predicate<K, V>, IdentifiedDataSerializable {
 

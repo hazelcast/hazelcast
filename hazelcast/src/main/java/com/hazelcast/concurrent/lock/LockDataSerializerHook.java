@@ -100,6 +100,12 @@ public final class LockDataSerializerHook implements DataSerializerHook {
                         return new UnlockBackupOperation();
                     case UNLOCK:
                         return new UnlockOperation();
+                    case LOCK_STORE:
+                        return new LockStoreImpl();
+                    case WAITERS_INFO:
+                        return new WaitersInfo();
+                    case LOCK_RESOURCE:
+                        return new LockResourceImpl();
                     default:
                         return null;
                 }

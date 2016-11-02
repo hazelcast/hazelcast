@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.io.Serializable;
 
 /**
@@ -26,7 +28,10 @@ import java.io.Serializable;
  * on node initialization, it could be added twice. To prevent this, make sure to implement the
  * hashCode method to return the same value for every instance of the class.
  *
+ * Serialized instances of this interface are used in client-member communication, so changing an implementation's binary format
+ * will render it incompatible with its previous versions.
  */
+@BinaryInterface
 public interface MapInterceptor extends Serializable {
 
     /**

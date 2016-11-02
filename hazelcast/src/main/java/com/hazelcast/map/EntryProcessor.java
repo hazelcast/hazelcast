@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.io.Serializable;
 import java.util.Map;
 
@@ -55,10 +57,14 @@ import java.util.Map;
  * EntryProcessor instances can be shared between threads. If an EntryProcessor instance contains mutable state, proper
  * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely on threadlocals.
  *
+ * Serialized instances of this interface are used in client-member communication, so changing an implementation's binary format
+ * will render it incompatible with its previous versions.
+ *
  * @param <K> Type of key of a {@link java.util.Map.Entry}
  * @param <V> Type of value of a {@link java.util.Map.Entry}
  * @see AbstractEntryProcessor
  */
+@BinaryInterface
 public interface EntryProcessor<K, V> extends Serializable {
 
     /**

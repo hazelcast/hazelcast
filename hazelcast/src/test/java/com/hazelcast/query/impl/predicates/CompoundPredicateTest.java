@@ -10,12 +10,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
-import org.reflections.util.ConfigurationBuilder;
 
 import java.util.Collection;
 
+import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -29,15 +27,11 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class CompoundPredicateTest {
 
-    @Parameterized.Parameters
-    public static Collection<Class<? extends CompoundPredicate>> getCompoundPredicateImplementations() {
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Class<? extends CompoundPredicate>> getCompoundPredicateImplementations()
+            throws ClassNotFoundException {
         // locate all classes which implement CompoundPredicate and exercise them
-        Reflections reflections = new Reflections(new ConfigurationBuilder()
-                .forPackages("com.hazelcast.query.impl.predicates")
-                .addScanners(new SubTypesScanner())
-                .build());
-
-        return reflections.getSubTypesOf(CompoundPredicate.class);
+        return REFLECTIONS.getSubTypesOf(CompoundPredicate.class);
     }
 
     @Parameterized.Parameter

@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.AddressUtil;
@@ -33,6 +34,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 /**
  * Represents an address of a member in the cluster.
  */
+@BinaryInterface
 public final class Address implements IdentifiedDataSerializable {
 
     private static final byte IPV4 = 4;

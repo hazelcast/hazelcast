@@ -66,8 +66,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
     /** Contains item ID to queue item mappings for current transactions */
     private final Map<Long, TxQueueItem> txMap = new HashMap<Long, TxQueueItem>();
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
-    private final QueueWaitNotifyKey pollWaitNotifyKey;
-    private final QueueWaitNotifyKey offerWaitNotifyKey;
+    private QueueWaitNotifyKey pollWaitNotifyKey;
+    private QueueWaitNotifyKey offerWaitNotifyKey;
     private LinkedList<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
     private QueueConfig config;
@@ -88,6 +88,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private long totalAgedCount;
 
     private boolean isEvictionScheduled;
+
+    /**
+     * The default no-args constructor is only meant for factory usage.
+     */
+    public QueueContainer() {
+    }
 
     public QueueContainer(String name) {
         this.name = name;
@@ -945,6 +951,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
+        offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
             QueueItem item = in.readObject();

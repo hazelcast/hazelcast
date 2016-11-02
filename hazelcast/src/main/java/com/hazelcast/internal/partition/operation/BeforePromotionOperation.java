@@ -26,6 +26,14 @@ import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
 // before applying promotion result to the partition table.
 final class BeforePromotionOperation extends AbstractPromotionOperation {
 
+    /**
+     * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
+     * coding conventions.
+     */
+    public BeforePromotionOperation() {
+        super(-1);
+    }
+
     BeforePromotionOperation(int currentReplicaIndex) {
         super(currentReplicaIndex);
     }

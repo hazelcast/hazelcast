@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * Predicate version of `instaceof` operator from Java.
  *
  */
+@BinaryInterface
 public class InstanceOfPredicate
         implements Predicate, IdentifiedDataSerializable {
     private Class klass;

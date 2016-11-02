@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 import java.util.Map;
@@ -27,6 +28,7 @@ import java.util.regex.Pattern;
 /**
  * Like Predicate
  */
+@BinaryInterface
 public class LikePredicate extends AbstractPredicate {
 
     protected String expression;

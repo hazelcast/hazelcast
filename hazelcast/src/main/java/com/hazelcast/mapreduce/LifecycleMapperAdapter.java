@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
@@ -51,6 +52,7 @@ import com.hazelcast.spi.annotation.Beta;
  * @since 3.2
  */
 @Beta
+@BinaryInterface
 public abstract class LifecycleMapperAdapter<KeyIn, ValueIn, KeyOut, ValueOut>
         implements LifecycleMapper<KeyIn, ValueIn, KeyOut, ValueOut> {
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -31,6 +32,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for a Near Cache.
  */
+@BinaryInterface
 public class NearCacheConfig implements DataSerializable, Serializable {
 
     /**

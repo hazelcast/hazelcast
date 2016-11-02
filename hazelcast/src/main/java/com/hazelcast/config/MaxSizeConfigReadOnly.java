@@ -16,11 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 /**
  * Contains the configuration for a size of Map.
  *
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
+@BinaryInterface
 public class MaxSizeConfigReadOnly extends MaxSizeConfig {
 
     public MaxSizeConfigReadOnly(MaxSizeConfig config) {

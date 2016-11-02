@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.ClearBackupOperation;
 import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
+import com.hazelcast.map.impl.operation.ClearOperationFactory;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.ContainsValueOperation;
 import com.hazelcast.map.impl.operation.ContainsValueOperationFactory;
@@ -124,7 +125,6 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;

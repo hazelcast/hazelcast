@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -44,6 +45,7 @@ import java.util.Map;
  * @param <K> type of the key of the MultiMap
  * @param <V> type of the value of the MultiMap
  */
+@BinaryInterface
 public class MultiMapKeyValueSource<K, V>
         extends KeyValueSource<K, V>
         implements IdentifiedDataSerializable, PartitionIdAware {
