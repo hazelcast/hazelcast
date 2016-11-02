@@ -31,7 +31,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,8 +52,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
-    private static final int COUNT = 1_000_000;
-    private static final int DISTINCT = 100_000;
+    private static final int COUNT = 100_000;
+    private static final int DISTINCT = 10_000;
 
     private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
@@ -73,6 +72,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @Before
     public void setUp() {
         instance = factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
         IMap<Integer, String> map = instance.getMap("words");
         int row = 0;
@@ -105,12 +105,13 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addVertex(consumer)
                 .addEdge(new Edge(producer, generator))
                 .addEdge(new Edge(generator, combiner)
+                        .distributed()
                         .partitioned((o, n) -> ((Map.Entry<String, Integer>) o).getKey().hashCode() % n))
                 .addEdge(new Edge(combiner, consumer));
 
         List<Long> times = new ArrayList<>();
         final int warmupCount = 10;
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 1; i++) {
             long start = System.currentTimeMillis();
             jetEngine.newJob(dag).execute();
             long time = System.currentTimeMillis() - start;
@@ -153,7 +154,6 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         @Override
         public boolean process(int ordinal, Object item) {
             Map.Entry<String, Long> entry = (Map.Entry<String, Long>) item;
-
             Long value = this.counts.get(entry.getKey());
             if (value == null) {
                 counts.put(entry.getKey(), entry.getValue());
@@ -166,6 +166,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         @Override
         public boolean complete() {
             if (iterator == null) {
+                System.out.println(counts);
                 iterator = counts.entrySet().iterator();
             }
 

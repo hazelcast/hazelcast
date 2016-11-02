@@ -23,13 +23,16 @@ import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 public class ReceiverTasklet implements Tasklet {
 
+    private static int counter = 0;
     private final Queue<Payload> inbox = new ConcurrentLinkedQueue<>();
     //TODO: MPSCQueue does not implement peek() yet
     private final OutboundCollector collector;
+    private int senderCount;
     private final ProgressTracker tracker = new ProgressTracker();
 
-    public ReceiverTasklet(OutboundCollector collector) {
+    public ReceiverTasklet(OutboundCollector collector, int senderCount) {
         this.collector = collector;
+        this.senderCount = senderCount;
     }
 
     @Override
@@ -47,11 +50,14 @@ public class ReceiverTasklet implements Tasklet {
         tracker.notDone();
         for (Payload payload; (payload = inbox.peek()) != null; ) {
             Object item = payload.getItem();
-            if (item == DONE_ITEM) {
-                collector.close();
-                return ProgressState.DONE;
+            if (item != DONE_ITEM) {
+                collector.offer(item, payload.getPartitionId());
+            } else {
+                if (--senderCount == 0) {
+                    collector.close();
+                    return ProgressState.DONE;
+                }
             }
-            collector.offer(item, payload.getPartitionId());
             inbox.remove();
             tracker.madeProgress(true);
         }

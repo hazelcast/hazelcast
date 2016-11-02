@@ -38,7 +38,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     private ForwardingPattern forwardingPattern = ForwardingPattern.ALTERNATING_SINGLE;
     private Partitioner partitioner;
-    private boolean distributed;
+    private boolean isDistributed;
 
     Edge() {
 
@@ -129,7 +129,7 @@ public class Edge implements IdentifiedDataSerializable {
      * Javadoc pending
      */
     public Edge distributed() {
-        distributed = true;
+        isDistributed = true;
         return this;
     }
 
@@ -147,6 +147,9 @@ public class Edge implements IdentifiedDataSerializable {
         return forwardingPattern;
     }
 
+    public boolean isDistributed() {
+        return isDistributed;
+    }
     /**
      * @return the priority for the edge
      */
@@ -171,7 +174,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeInt(inputOrdinal);
 
         out.writeInt(priority);
-        out.writeBoolean(distributed);
+        out.writeBoolean(isDistributed);
 
         out.writeObject(forwardingPattern);
         out.writeObject(partitioner);
@@ -186,7 +189,7 @@ public class Edge implements IdentifiedDataSerializable {
         inputOrdinal = in.readInt();
 
         priority = in.readInt();
-        distributed = in.readBoolean();
+        isDistributed = in.readBoolean();
 
         forwardingPattern = in.readObject();
         partitioner = in.readObject();

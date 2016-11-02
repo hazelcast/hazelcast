@@ -102,13 +102,13 @@ public class ExecutionContext {
             List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getDestination());
                 return new EdgeDef(otherEndId, edge.getOutputOrdinal(), edge.getInputOrdinal(),
-                        edge.getPriority(), edge.getForwardingPattern(), edge.getPartitioner());
+                        edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner());
             }).collect(toList());
 
             List<EdgeDef> inputs = inboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getSource());
                 return new EdgeDef(otherEndId, edge.getInputOrdinal(), edge.getInputOrdinal(),
-                        edge.getPriority(), edge.getForwardingPattern(), edge.getPartitioner());
+                        edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner());
             }).collect(toList());
 
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
@@ -159,23 +159,20 @@ public class ExecutionContext {
                     int ordinalAtDestination = output.getOtherEndOrdinal();
                     int numLocalConsumers = vMap.get(destinationId).getParallelism();
 
-                    // distribute local partitions among the local consumers
-                    Map<Integer, List<Integer>> localPartitions = nodeEngine.getPartitionService()
-                            .getMemberPartitions(nodeEngine.getThisAddress())
-                            .stream().collect(Collectors.groupingBy(p -> p % numLocalConsumers));
 
-                    // distribute remote partitions
-                    Map<Address, List<Integer>> remotePartitions = nodeEngine.getPartitionService()
-                            .getMemberPartitionsMap()
-                            .entrySet().stream()
-                            .filter(e -> !e.getKey().equals(nodeEngine.getThisAddress()))
-                            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+                    // if a local edge, we will take all partitions, if not only partitions local to this node
+                    // and distribute them among the local consumers
+                    Map<Integer, List<Integer>> localPartitions = IntStream.range(0, partitionCount).boxed()
+                            .filter(p -> !output.isDistributed()
+                                    || nodeEngine.getPartitionService().getPartitionOwner(p).equals(nodeEngine.getThisAddress()))
+                            .collect(Collectors.groupingBy(p -> p % numLocalConsumers));
+
 
                     // each edge has an array of conveyors
                     // one conveyor per consumer - each conveyor has one queue per producer
                     // giving a total of number of producers * number of consumers queues
                     String id = vertexDef.getId() + ":" + output.getOtherEndId();
-                    final int receiverCount = 1;
+                    final int receiverCount = output.isDistributed() ? 1 : 0;
                     final ConcurrentConveyor<Object>[] conveyorArray = conveyorMap.computeIfAbsent(id,
                             e -> createConveyorArray(numLocalConsumers, parallelism + receiverCount,
                                     QUEUE_SIZE));
@@ -185,31 +182,43 @@ public class ExecutionContext {
                     Arrays.setAll(localCollectors, n -> new ConveyorCollector(conveyorArray[n], taskletIndex,
                             localPartitions.get(n)));
 
-                    // create the receiver tasklets for the edge, if not already created
-                    receiverTasklets.compute(destinationId, (key, map) ->
-                    {
-                        if (map == null) {
-                            map = new HashMap<>();
-                        }
-                        map.computeIfAbsent(ordinalAtDestination, o -> {
-                            final int receiverIndex = 0; // final copy for lambda
-                            OutboundCollector[] receivers = new OutboundCollector[numLocalConsumers];
-                            Arrays.setAll(receivers, n -> new ConveyorCollector(conveyorArray[n],
-                                    parallelism + receiverIndex, localPartitions.get(n)));
-                            OutboundCollector collector
-                                    = OutboundCollector.compositeCollector(receivers, output, partitionCount);
+                    OutboundCollector[] allCollectors;
+                    if (!output.isDistributed()) {
+                        allCollectors = localCollectors;
+                    } else {
+                        // create the receiver tasklet for the edge, if not already created
+                        receiverTasklets.compute(destinationId, (key, map) ->
+                        {
+                            if (map == null) {
+                                map = new HashMap<>();
+                            }
+                            map.computeIfAbsent(ordinalAtDestination, o -> {
+                                final int receiverIndex = 0; // final copy for lambda
+                                OutboundCollector[] receivers = new OutboundCollector[numLocalConsumers];
+                                Arrays.setAll(receivers, n -> new ConveyorCollector(conveyorArray[n],
+                                        parallelism + receiverIndex, localPartitions.get(n)));
+                                OutboundCollector collector
+                                        = OutboundCollector.compositeCollector(receivers, output, partitionCount);
 
-                            return new ReceiverTasklet(collector);
+                                int senderCount = nodeEngine.getClusterService().getSize() - 1;
+                                return new ReceiverTasklet(collector, parallelism * senderCount);
+                            });
+                            return map;
                         });
-                        return map;
-                    });
-
-                    OutboundCollector[] allCollectors = new OutboundCollector[remotePartitions.size() + 1];
-                    int index = 0;
-                    allCollectors[index++] = OutboundCollector.compositeCollector(localCollectors, output, partitionCount);
-                    for (Entry<Address, List<Integer>> entry : remotePartitions.entrySet()) {
-                        allCollectors[index++] = new RemoteOutboundCollector(nodeEngine, name, entry.getKey(),
-                                plan.getId(), destinationId, ordinalAtDestination, entry.getValue());
+                        // distribute remote partitions
+                        Map<Address, List<Integer>> remotePartitions = nodeEngine.getPartitionService()
+                                .getMemberPartitionsMap()
+                                .entrySet().stream()
+                                .filter(e -> !e.getKey().equals(nodeEngine.getThisAddress()))
+                                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+                        allCollectors = new OutboundCollector[remotePartitions.size() + 1];
+                        int index = 0;
+                        allCollectors[index++] = OutboundCollector.compositeCollector(localCollectors, output,
+                                partitionCount);
+                        for (Entry<Address, List<Integer>> entry : remotePartitions.entrySet()) {
+                            allCollectors[index++] = new RemoteOutboundCollector(nodeEngine, name, entry.getKey(),
+                                    plan.getId(), destinationId, ordinalAtDestination, entry.getValue());
+                        }
                     }
 
                     OutboundCollector collector = OutboundCollector.compositeCollector(allCollectors,
@@ -244,6 +253,10 @@ public class ExecutionContext {
         return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
     }
 
+    private boolean isDistributed(Edge edge) {
+        return edge.isDistributed() && nodeEngine.getClusterService().getSize() > 1;
+    }
+
     private static Map<Vertex, Integer> assignVertexIds(DAG dag) {
         int vertexId = 0;
         Map<Vertex, Integer> vertexIdMap = new LinkedHashMap<>();
@@ -273,9 +286,13 @@ public class ExecutionContext {
     }
 
     public void handleIncoming(Payload payload) {
-        ReceiverTasklet receiverTasklet = receiverMap.get(payload.getExecutionId()).get(payload.getVertexId())
-                .get(payload.getOrdinal());
-        receiverTasklet.offer(payload);
+        Map<Integer, Map<Integer, ReceiverTasklet>> vertexMap = receiverMap.get(payload.getExecutionId());
+        Map<Integer, ReceiverTasklet> ordinalMap = vertexMap.get(payload.getVertexId());
+        if (ordinalMap == null) {
+            throw new IllegalArgumentException("Could not find vertex for " + payload.getVertexId());
+        }
+        ReceiverTasklet tasklet = ordinalMap.get(payload.getOrdinal());
+        tasklet.offer(payload);
     }
 
     public void destroy() {
