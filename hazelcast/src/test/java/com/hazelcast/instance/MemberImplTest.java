@@ -244,5 +244,6 @@ public class MemberImplTest extends HazelcastTestSupport {
         assertEquals("127.0.0.1", member.getInetAddress().getHostAddress());
         assertTrue(member.getFactoryId() > -1);
         assertTrue(member.getId() > -1);
+        assertEquals(BuildInfoProvider.getBuildInfo().getBuildNumber(), member.getBuildNumber());
     }
 }

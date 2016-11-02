@@ -667,7 +667,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         Address address = memberInfo.getAddress();
         address.setScopeId(ipV6ScopeId);
         return new MemberImpl(address, thisAddress.equals(address), memberInfo.getUuid(),
-                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), memberInfo.getAttributes(), memberInfo.isLiteMember());
+                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), memberInfo.getAttributes(), memberInfo.isLiteMember(),
+                memberInfo.getBuildNumber());
     }
 
     @Override

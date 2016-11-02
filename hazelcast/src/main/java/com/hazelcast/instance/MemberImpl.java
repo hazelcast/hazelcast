@@ -42,8 +42,12 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     private boolean localMember;
     private volatile HazelcastInstanceImpl instance;
     private volatile ILogger logger;
+    // the build number of this member, as reported by its {@code BuildInfo#getBuildNumber()} method
+    // added in 3.7.3 for compatibility fixes, this field is not serialized/deserialized over the wire
+    private int buildNumber;
 
     public MemberImpl() {
+        buildNumber = BuildInfoProvider.BUILD_INFO.getBuildNumber();
     }
 
     public MemberImpl(Address address, boolean localMember) {
@@ -63,11 +67,21 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         super(address, uuid, attributes, liteMember);
         this.localMember = localMember;
         this.instance = instance;
+        buildNumber = BuildInfoProvider.BUILD_INFO.getBuildNumber();
+    }
+
+    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance,
+                      Map<String, Object> attributes, boolean liteMember, int buildNumber) {
+        super(address, uuid, attributes, liteMember);
+        this.localMember = localMember;
+        this.instance = instance;
+        this.buildNumber = buildNumber;
     }
 
     public MemberImpl(MemberImpl member) {
         super(member);
         this.localMember = member.localMember;
+        this.buildNumber = member.buildNumber;
     }
 
     @Override
@@ -183,6 +197,10 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
             MemberAttributeChangedOperation operation = new MemberAttributeChangedOperation(REMOVE, key, null);
             invokeOnAllMembers(operation);
         }
+    }
+
+    public int getBuildNumber() {
+        return buildNumber;
     }
 
     private void isLocalMember() {

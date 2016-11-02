@@ -60,7 +60,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     }
 
     public MemberInfo toMemberInfo() {
-        return new MemberInfo(address, uuid, attributes, liteMember);
+        return new MemberInfo(address, uuid, attributes, liteMember, buildNumber);
     }
 
     @Override
