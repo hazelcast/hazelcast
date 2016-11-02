@@ -23,13 +23,15 @@ class Payload implements Serializable {
     private final String engineName;
     private final int executionId;
     private final int vertexId;
+    private final int ordinal;
     private final Object item;
     private int partitionId;
 
-    public Payload(String engineName, int executionId, int vertexId, Object item) {
+    public Payload(String engineName, int executionId, int vertexId, int ordinal, Object item) {
         this.engineName = engineName;
         this.executionId = executionId;
         this.vertexId = vertexId;
+        this.ordinal = ordinal;
         this.item = item;
     }
 
@@ -57,12 +59,17 @@ class Payload implements Serializable {
         this.partitionId = partitionId;
     }
 
+    public int getOrdinal() {
+        return ordinal;
+    }
+
     @Override
     public String toString() {
         return "Payload{" +
                 "engineName='" + engineName + '\'' +
                 ", executionId=" + executionId +
                 ", vertexId=" + vertexId +
+                ", ordinal=" + ordinal +
                 ", item=" + item +
                 ", partitionId=" + partitionId +
                 '}';

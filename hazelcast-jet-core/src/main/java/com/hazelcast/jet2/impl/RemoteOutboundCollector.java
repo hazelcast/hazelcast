@@ -32,6 +32,7 @@ class RemoteOutboundCollector implements OutboundCollector {
     private final String engineName;
     private final int executionId;
     private final int destinationVertex;
+    private final int ordinal;
     private final List<Integer> partitions;
     private final NodeEngineImpl engine;
 
@@ -40,10 +41,12 @@ class RemoteOutboundCollector implements OutboundCollector {
                                    Address destinationAddress,
                                    int executionId,
                                    int destinationVertex,
+                                   int inboundOrdinal,
                                    List<Integer> partitions) {
         this.engineName = engineName;
         this.executionId = executionId;
         this.destinationVertex = destinationVertex;
+        this.ordinal = inboundOrdinal;
         this.engine = (NodeEngineImpl) engine;
         this.connection = this.engine.getNode().getConnectionManager().getConnection(destinationAddress);
         this.partitions = partitions;
@@ -58,7 +61,7 @@ class RemoteOutboundCollector implements OutboundCollector {
     @Override
     public ProgressState offer(Object item, int partitionId) {
         byte[] payload = engine.toData(new Payload(engineName, executionId,
-                destinationVertex, item)).toByteArray();
+                destinationVertex, ordinal, item)).toByteArray();
         connection.write(new Packet(payload, partitionId).setFlag(Packet.FLAG_JET));
         return ProgressState.DONE;
     }

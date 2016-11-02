@@ -99,15 +99,13 @@ public class ExecutionContext {
                     nodeEngine.getHazelcastInstance(), totalParallelism, perNodeParallelism));
             List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getDestination());
-                return new EdgeDef(vertexId + ":" + otherEndId,
-                        otherEndId, edge.getOutputOrdinal(),
+                return new EdgeDef(otherEndId, edge.getOutputOrdinal(), edge.getInputOrdinal(),
                         edge.getPriority(), edge.getForwardingPattern(), edge.getPartitioner());
             }).collect(toList());
 
             List<EdgeDef> inputs = inboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getSource());
-                return new EdgeDef(otherEndId + ":" + vertexId,
-                        otherEndId, edge.getInputOrdinal(),
+                return new EdgeDef(otherEndId, edge.getInputOrdinal(), edge.getInputOrdinal(),
                         edge.getPriority(), edge.getForwardingPattern(), edge.getPartitioner());
             }).collect(toList());
 
@@ -168,7 +166,8 @@ public class ExecutionContext {
                     // each edge has an array of conveyors
                     // one conveyor per consumer - each conveyor has one queue per producer
                     // giving a total of number of producers * number of consumers queues
-                    final ConcurrentConveyor<Object>[] localConveyorArray = conveyorMap.computeIfAbsent(output.getId(),
+                    String id = vertexDef.getId() + ":" + output.getOtherEndId();
+                    final ConcurrentConveyor<Object>[] localConveyorArray = conveyorMap.computeIfAbsent(id,
                             e -> createConveyorArray(numLocalConsumers, parallelism, QUEUE_SIZE));
                     OutboundCollector[] localCollectors = new OutboundCollector[localConveyorArray.length];
                     Arrays.setAll(localCollectors, n -> new ConveyorCollector(localConveyorArray[n], taskletIndex,
@@ -178,11 +177,12 @@ public class ExecutionContext {
                     int index = 0;
                     allCollectors[index++] = OutboundCollector.compositeCollector(localCollectors, output, partitionCount);
                     for (Entry<Address, List<Integer>> entry : remotePartitions.entrySet()) {
+
                         allCollectors[index++] = new RemoteOutboundCollector(nodeEngine, name, entry.getKey(),
-                                plan.getId(), destinationId, entry.getValue());
+                                plan.getId(), destinationId, output.getOtherEndOrdinal(), entry.getValue());
                     }
 
-                        OutboundCollector collector = OutboundCollector.compositeCollector(allCollectors,
+                    OutboundCollector collector = OutboundCollector.compositeCollector(allCollectors,
                             output, partitionCount);
                     outboundStreams.add(new OutboundEdgeStream(output.getOrdinal(), collector));
                 }
@@ -190,7 +190,8 @@ public class ExecutionContext {
                 for (EdgeDef input : inputs) {
                     // each tasklet will have one input conveyor per edge
                     // and one InboundEmitter per queue on the conveyor
-                    final ConcurrentConveyor<Object> conveyor = conveyorMap.get(input.getId())[taskletIndex];
+                    String id = input.getOtherEndId() + ":" + vertexDef.getId();
+                    final ConcurrentConveyor<Object> conveyor = conveyorMap.get(id)[taskletIndex];
                     InboundEmitter[] emitters = new InboundEmitter[conveyor.queueCount()];
                     Arrays.setAll(emitters, n -> new ConveyorEmitter(conveyor, n, partitionGrouping.get(taskletIndex)));
                     ConcurrentInboundEdgeStream inboundStream = new ConcurrentInboundEdgeStream(

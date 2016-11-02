@@ -91,16 +91,16 @@ class VertexDef implements Serializable {
 class EdgeDef implements Serializable {
 
     private final int otherEndId;
+    private final int otherEndOrdinal;
     private final int ordinal;
     private final int priority;
     private final ForwardingPattern forwardingPattern;
     private final Partitioner partitioner;
-    private String id;
 
-    public EdgeDef(String id, int otherEndId, int ordinal, int priority,
+    public EdgeDef(int otherEndId, int ordinal, int otherEndOrdinal, int priority,
                    ForwardingPattern forwardingPattern, Partitioner partitioner) {
-        this.id = id;
         this.otherEndId = otherEndId;
+        this.otherEndOrdinal = otherEndOrdinal;
         this.ordinal = ordinal;
         this.priority = priority;
         this.forwardingPattern = forwardingPattern;
@@ -123,12 +123,11 @@ class EdgeDef implements Serializable {
         return partitioner;
     }
 
-    public String getId() {
-        return id;
-    }
-
     public int getPriority() {
         return priority;
     }
 
+    public int getOtherEndOrdinal() {
+        return otherEndOrdinal;
+    }
 }
