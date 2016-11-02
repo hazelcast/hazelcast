@@ -18,8 +18,10 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -29,25 +31,34 @@ import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class JetService implements ManagedService, RemoteService, PacketHandler {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
+    private final PacketHandlerThread handler;
 
     private NodeEngineImpl nodeEngine;
+    private final ILogger logger;
 
     private ConcurrentMap<String, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
 
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        this.logger = nodeEngine.getLogger(JetService.class);
+        this.handler = new PacketHandlerThread();
+
     }
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-
+        handler.start();
     }
 
     @Override
@@ -60,6 +71,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
         for (ExecutionContext executionContext : executionContexts.values()) {
             executionContext.destroy();
         }
+        handler.shutdown();
     }
 
     @Override
@@ -91,10 +103,45 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
     @Override
     public void handle(Packet packet) throws Exception {
         // dispatch packet to correct execution context
-        Payload payload = (Payload) nodeEngine.toObject(new HeapData(packet.toByteArray()));
-        payload.setPartitionId(packet.getPartitionId());
-        ExecutionContext context = executionContexts.get(payload.getEngineName());
-        assert context != null : "Packet received for unknown execution context";
-        context.handleIncoming(payload);
+        handler.queue.offer(packet);
+    }
+
+    private class PacketHandlerThread extends Thread {
+
+        private final BlockingQueue<Packet> queue = new MPSCQueue<>(this, null);
+        private volatile boolean isShutdown;
+
+        @Override
+        public void run() {
+            try {
+                doRun();
+            } catch (InterruptedException e) {
+                ignore(e);
+            } catch (Throwable t) {
+                inspectOutOfMemoryError(t);
+                logger.severe(t);
+            }
+        }
+
+        private void doRun() throws InterruptedException {
+            while (!isShutdown) {
+                Packet packet = queue.take();
+                try {
+                    Payload payload = (Payload) nodeEngine.toObject(new HeapData(packet.toByteArray()));
+                    payload.setPartitionId(packet.getPartitionId());
+                    ExecutionContext context = executionContexts.get(payload.getEngineName());
+                    assert context != null : "Packet received for unknown execution context";
+                    context.handleIncoming(payload);
+                } catch (Throwable e) {
+                    inspectOutOfMemoryError(e);
+                    logger.severe("Error processing packet: " + packet, e);
+                }
+            }
+        }
+
+        private void shutdown() {
+            isShutdown = true;
+            interrupt();
+        }
     }
 }
