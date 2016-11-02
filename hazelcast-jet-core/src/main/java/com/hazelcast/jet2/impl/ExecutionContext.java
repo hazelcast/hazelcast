@@ -66,6 +66,8 @@ public class ExecutionContext {
     private JetClassLoader classLoader;
     private AtomicInteger idCounter = new AtomicInteger();
 
+    private Map<Integer, Map<Integer, Map<Integer, ReceiverTasklet>>> receiverMap = new HashMap<>();
+
     public ExecutionContext(String name, NodeEngine nodeEngine, JetEngineConfig config) {
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -123,8 +125,13 @@ public class ExecutionContext {
 
     public Future<Void> executePlan(ExecutionPlan plan) {
         List<Tasklet> tasks = new ArrayList<>();
+
+        // map of conveyors
         Map<String, ConcurrentConveyor<Object>[]> conveyorMap = new HashMap<>();
         Map<Integer, VertexDef> vMap = plan.getVertices().stream().collect(toMap(VertexDef::getId, v -> v));
+
+        // map of receiver tasklets: vertex id -> ordinal -> tasklet
+        Map<Integer, Map<Integer, ReceiverTasklet>> receiverTasklets = new HashMap<>();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 
         for (VertexDef vertexDef : plan.getVertices()) {
@@ -149,6 +156,7 @@ public class ExecutionContext {
                 for (EdgeDef output : outputs) {
 
                     int destinationId = output.getOtherEndId();
+                    int ordinalAtDestination = output.getOtherEndOrdinal();
                     int numLocalConsumers = vMap.get(destinationId).getParallelism();
 
                     // distribute local partitions among the local consumers
@@ -167,19 +175,41 @@ public class ExecutionContext {
                     // one conveyor per consumer - each conveyor has one queue per producer
                     // giving a total of number of producers * number of consumers queues
                     String id = vertexDef.getId() + ":" + output.getOtherEndId();
-                    final ConcurrentConveyor<Object>[] localConveyorArray = conveyorMap.computeIfAbsent(id,
-                            e -> createConveyorArray(numLocalConsumers, parallelism, QUEUE_SIZE));
-                    OutboundCollector[] localCollectors = new OutboundCollector[localConveyorArray.length];
-                    Arrays.setAll(localCollectors, n -> new ConveyorCollector(localConveyorArray[n], taskletIndex,
+                    final int receiverCount = 1;
+                    final ConcurrentConveyor<Object>[] conveyorArray = conveyorMap.computeIfAbsent(id,
+                            e -> createConveyorArray(numLocalConsumers, parallelism + receiverCount,
+                                    QUEUE_SIZE));
+
+                    OutboundCollector[] localCollectors = new OutboundCollector[numLocalConsumers];
+
+                    Arrays.setAll(localCollectors, n -> new ConveyorCollector(conveyorArray[n], taskletIndex,
                             localPartitions.get(n)));
+
+                    // create the receiver tasklets for the edge, if not already created
+                    receiverTasklets.compute(destinationId, (key, map) ->
+                    {
+                        if (map == null) {
+                            map = new HashMap<>();
+                        }
+                        map.computeIfAbsent(ordinalAtDestination, o -> {
+                            final int receiverIndex = 0; // final copy for lambda
+                            OutboundCollector[] receivers = new OutboundCollector[numLocalConsumers];
+                            Arrays.setAll(receivers, n -> new ConveyorCollector(conveyorArray[n],
+                                    parallelism + receiverIndex, localPartitions.get(n)));
+                            OutboundCollector collector
+                                    = OutboundCollector.compositeCollector(receivers, output, partitionCount);
+
+                            return new ReceiverTasklet(collector);
+                        });
+                        return map;
+                    });
 
                     OutboundCollector[] allCollectors = new OutboundCollector[remotePartitions.size() + 1];
                     int index = 0;
                     allCollectors[index++] = OutboundCollector.compositeCollector(localCollectors, output, partitionCount);
                     for (Entry<Address, List<Integer>> entry : remotePartitions.entrySet()) {
-
                         allCollectors[index++] = new RemoteOutboundCollector(nodeEngine, name, entry.getKey(),
-                                plan.getId(), destinationId, output.getOtherEndOrdinal(), entry.getValue());
+                                plan.getId(), destinationId, ordinalAtDestination, entry.getValue());
                     }
 
                     OutboundCollector collector = OutboundCollector.compositeCollector(allCollectors,
@@ -202,6 +232,11 @@ public class ExecutionContext {
             }
         }
 
+        List<Tasklet> receivers = receiverTasklets.values().stream()
+                .flatMap(e -> e.values().stream()).collect(Collectors.toList());
+        tasks.addAll(receivers);
+
+        receiverMap.put(plan.getId(), receiverTasklets);
         return executionService.execute(tasks);
     }
 
@@ -238,8 +273,9 @@ public class ExecutionContext {
     }
 
     public void handleIncoming(Payload payload) {
-        System.out.println("Received payload = " + payload);
-        // put item into correct queue
+        ReceiverTasklet receiverTasklet = receiverMap.get(payload.getExecutionId()).get(payload.getVertexId())
+                .get(payload.getOrdinal());
+        receiverTasklet.offer(payload);
     }
 
     public void destroy() {

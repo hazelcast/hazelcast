@@ -102,7 +102,6 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
 
     @Override
     public void handle(Packet packet) throws Exception {
-        // dispatch packet to correct execution context
         handler.queue.offer(packet);
     }
 

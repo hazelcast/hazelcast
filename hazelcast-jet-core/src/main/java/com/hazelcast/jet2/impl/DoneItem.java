@@ -29,4 +29,9 @@ class DoneItem implements Serializable {
     public String toString() {
         return "DONE_ITEM";
     }
+
+    protected Object readResolve() {
+        return DONE_ITEM;
+    }
+
 }
