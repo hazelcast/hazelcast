@@ -330,7 +330,7 @@ public abstract class Operation implements DataSerializable {
      *
      * @return true if it is timed out, false otherwise.
      */
-    public boolean isTimedOut() {
+    public final boolean isTimedOut() {
         // Join operations should not be checked for timeout because caller is not member of this cluster
         // and can have a different clock.
         if (isJoinOperation(this)) {
@@ -346,12 +346,8 @@ public abstract class Operation implements DataSerializable {
                 ? invocationTime + callTimeout
                 : receivedTime + callTimeout;
 
-        if (expireTime <= 0) {
-            // deal with overflow.
-            return false;
-        }
-
-        return expireTime < Clock.currentTimeMillis();
+        // deal with overflow.
+        return expireTime > 0 && expireTime < Clock.currentTimeMillis();
     }
 
     /**
