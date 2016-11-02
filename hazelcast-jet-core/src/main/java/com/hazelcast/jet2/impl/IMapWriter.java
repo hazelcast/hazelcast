@@ -19,11 +19,9 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.ProcessorMetaSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorSupplier;
-import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
@@ -95,7 +93,7 @@ public class IMapWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(ProcessorMetaSupplierContext context) {
+        public void init(Context context) {
         }
     }
 
@@ -111,7 +109,7 @@ public class IMapWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(ProcessorSupplierContext context) {
+        public void init(Context context) {
             map = context.getHazelcastInstance().getMap(name);
         }
 

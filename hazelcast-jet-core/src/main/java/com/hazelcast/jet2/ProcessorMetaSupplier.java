@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 
 import java.io.Serializable;
@@ -25,7 +26,7 @@ import static java.util.stream.Collectors.toList;
 
 public interface ProcessorMetaSupplier extends Serializable {
 
-    default void init(ProcessorMetaSupplierContext context) {
+    default void init(Context context) {
     }
 
     ProcessorSupplier get(Address address);
@@ -36,5 +37,31 @@ public interface ProcessorMetaSupplier extends Serializable {
 
     static ProcessorMetaSupplier of(final SimpleProcessorSupplier processorSupplier) {
         return address -> count -> Stream.generate(processorSupplier::get).limit(count).collect(toList());
+    }
+
+    interface Context {
+
+        HazelcastInstance getHazelcastInstance();
+
+        int totalParallelism();
+
+        int perNodeParallelism();
+
+        static Context of(HazelcastInstance instance, int totalParallelism, int perNodeParallelism) {
+            return new Context() {
+                @Override
+                public HazelcastInstance getHazelcastInstance() {
+                    return instance;
+                }
+                @Override
+                public int totalParallelism() {
+                    return totalParallelism;
+                }
+                @Override
+                public int perNodeParallelism() {
+                    return perNodeParallelism;
+                }
+            };
+        }
     }
 }

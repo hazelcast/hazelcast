@@ -19,11 +19,9 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.ProcessorMetaSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorSupplier;
-import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 
@@ -106,7 +104,7 @@ public class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public void init(ProcessorMetaSupplierContext context) {
+        public void init(Context context) {
             hazelcastInstance = context.getHazelcastInstance();
         }
 
@@ -138,7 +136,7 @@ public class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public void init(ProcessorSupplierContext context) {
+        public void init(Context context) {
             map = (MapProxyImpl) context.getHazelcastInstance().getMap(mapName);
             perNodeParallelism = context.perNodeParallelism();
         }

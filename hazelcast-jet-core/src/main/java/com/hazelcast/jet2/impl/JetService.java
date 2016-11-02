@@ -87,7 +87,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
             return;
         }
         DeploymentStore deploymentStore = ec.getDeploymentStore();
-        deploymentStore.cleanup();
+        deploymentStore.destroy();
         ec.destroy();
     }
 

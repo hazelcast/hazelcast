@@ -134,7 +134,7 @@ public class ForwardingTest extends HazelcastTestSupport {
         List<Processor> processors;
 
         @Override
-        public void init(ProcessorSupplierContext context) {
+        public void init(Context context) {
             processors = Stream.generate(ListConsumer::new).limit(context.perNodeParallelism()).collect(toList());
         }
 

@@ -27,9 +27,8 @@ import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.ProcessorMetaSupplierContext;
 import com.hazelcast.jet2.ProcessorSupplier;
-import com.hazelcast.jet2.ProcessorSupplierContext;
+import com.hazelcast.jet2.ProcessorSupplier.Context;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.jet2.impl.deployment.JetClassLoader;
@@ -104,7 +103,7 @@ public class ExecutionContext {
             List<Edge> inboundEdges = dag.getInboundEdges(vertex);
 
             ProcessorMetaSupplier supplier = vertex.getSupplier();
-            supplier.init(ProcessorMetaSupplierContext.of(
+            supplier.init(ProcessorMetaSupplier.Context.of(
                     nodeEngine.getHazelcastInstance(), totalParallelism, perNodeParallelism));
             List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getDestination());
@@ -210,7 +209,7 @@ public class ExecutionContext {
             List<EdgeDef> outputs = vertexDef.getOutputs();
             ProcessorSupplier processorSupplier = vertexDef.getProcessorSupplier();
             int parallelism = vertexDef.getParallelism();
-            processorSupplier.init(ProcessorSupplierContext.of(nodeEngine.getHazelcastInstance(), parallelism));
+            processorSupplier.init(Context.of(nodeEngine.getHazelcastInstance(), parallelism));
             List<Processor> processors = processorSupplier.get(parallelism);
 
             // allocate partitions to tasks
@@ -320,4 +319,3 @@ public class ExecutionContext {
         receiverMap.put(plan.getId(), receiverTasklets);
     }
 }
-

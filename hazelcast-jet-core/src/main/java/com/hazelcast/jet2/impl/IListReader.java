@@ -19,11 +19,9 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.collection.impl.list.ListProxyImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.ProcessorMetaSupplierContext;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorSupplier;
-import com.hazelcast.jet2.ProcessorSupplierContext;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
@@ -80,7 +78,7 @@ public class IListReader extends AbstractProducer {
         }
 
         @Override
-        public void init(ProcessorMetaSupplierContext context) {
+        public void init(Context context) {
             instance = context.getHazelcastInstance();
             ownerAddress = instance.getPartitionService().getPartition(name).getOwner().getAddress();
         }
@@ -111,7 +109,7 @@ public class IListReader extends AbstractProducer {
         }
 
         @Override
-        public void init(ProcessorSupplierContext context) {
+        public void init(Context context) {
             list = (ListProxyImpl) context.getHazelcastInstance().getList(name);
         }
 
