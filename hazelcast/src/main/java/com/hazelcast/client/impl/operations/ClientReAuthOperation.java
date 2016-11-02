@@ -50,7 +50,7 @@ public class ClientReAuthOperation extends AbstractOperation implements UrgentSy
             endpoint.authenticated(principal);
         }
         engine.addOwnershipMapping(clientUuid, memberUuid);
-        clientDisconnectOperationRun = (endpoints.size() == 0);
+        clientDisconnectOperationRun = endpoints.isEmpty();
     }
 
     @Override
