@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.spi.partition.IPartitionService;
+
 import java.io.Serializable;
 
 /**
@@ -23,6 +25,10 @@ import java.io.Serializable;
  */
 @FunctionalInterface
 public interface Partitioner extends Serializable {
+
+    default void init(IPartitionService service) {
+
+    }
 
     /**
      * @return the partition for the given object

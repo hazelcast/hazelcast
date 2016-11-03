@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

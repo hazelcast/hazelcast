@@ -18,6 +18,7 @@ package com.hazelcast.jet2.impl;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
@@ -26,12 +27,12 @@ public class ReceiverTasklet implements Tasklet {
     private final Queue<Payload> inbox = new ConcurrentLinkedQueue<>();
     //TODO: MPSCQueue does not implement peek() yet
     private final OutboundCollector collector;
-    private int senderCount;
+    private int remainingSenders;
     private final ProgressTracker tracker = new ProgressTracker();
 
-    public ReceiverTasklet(OutboundCollector collector, int senderCount) {
+    public ReceiverTasklet(OutboundCollector collector, int remainingSenders) {
         this.collector = collector;
-        this.senderCount = senderCount;
+        this.remainingSenders = remainingSenders;
     }
 
     @Override
@@ -48,16 +49,25 @@ public class ReceiverTasklet implements Tasklet {
         tracker.notDone();
         for (Payload payload; (payload = inbox.peek()) != null; ) {
             Object item = payload.getItem();
-            if (item != DONE_ITEM) {
-                collector.offer(item, payload.getPartitionId());
+            if (item == DONE_ITEM) {
+                remainingSenders--;
+                tracker.madeProgress();
             } else {
-                if (--senderCount == 0) {
-                    collector.close();
-                    return ProgressState.DONE;
+                ProgressState offered = collector.offer(item, payload.getPartitionId());
+                tracker.update(offered);
+                if (!offered.isDone()) {
+                    break;
                 }
             }
             inbox.remove();
-            tracker.madeProgress(true);
+        }
+
+        if (remainingSenders == 0) {
+            ProgressState closed = collector.close();
+            tracker.update(collector.close());
+            if (closed.isDone()) {
+                return ProgressState.DONE;
+            }
         }
         return tracker.toProgressState();
     }

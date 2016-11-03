@@ -183,6 +183,38 @@ interface OutboundCollector {
             return collector.offer(item, partition);
         }
     }
+
+    class Diagnostic implements OutboundCollector {
+
+        private final String name;
+        private final OutboundCollector collector;
+        private int counter = 0;
+
+        public Diagnostic(String name, OutboundCollector collector) {
+            this.name = name;
+            this.collector = collector;
+        }
+
+        @Override
+        public ProgressState offer(Object item) {
+            ProgressState offered = collector.offer(item);
+            if (offered == ProgressState.DONE) {
+                counter++;
+            }
+            return offered;
+        }
+
+        @Override
+        public ProgressState close() {
+            System.out.println(name + ": " + counter);
+            return collector.close();
+        }
+
+        @Override
+        public List<Integer> getPartitions() {
+            return collector.getPartitions();
+        }
+    }
 }
 
 

@@ -21,10 +21,12 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Partitioner;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.jet2.impl.IMapReader;
 import com.hazelcast.jet2.impl.IMapWriter;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -32,7 +34,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,10 +46,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -76,7 +80,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Before
     public void setUp() {
-        for (int i = 0; i <NODE_COUNT; i++) {
+        for (int i = 0; i < NODE_COUNT; i++) {
             instance = factory.newHazelcastInstance();
         }
 
@@ -114,7 +118,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addEdge(new Edge(producer, generator))
                 .addEdge(new Edge(generator, combiner)
                         .distributed()
-                        .partitioned((o, n) -> ((Map.Entry<String, Integer>) o).getKey().hashCode() % n))
+                        .partitioned(new HazelcastPartitioner()))
                 .addEdge(new Edge(combiner, consumer));
 
         List<Long> times = new ArrayList<>();
@@ -127,6 +131,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
             System.out.println("jet2: totalTime=" + time);
             IMap<String, Long> consumerMap = instance.getMap("counts");
             assertCounts(consumerMap);
+            consumerMap.clear();
         }
         System.out.println(times.stream()
                 .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
@@ -137,6 +142,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     private void assertCounts(Map<String, Long> wordCounts) {
         for (int i = 0; i < DISTINCT; i++) {
             Long count = wordCounts.get(Integer.toString(i));
+            assertNotNull("Missing count for " + i, count);
             assertEquals("The count for " + i + " is not correct", COUNT / DISTINCT, (long) count);
         }
     }
@@ -182,6 +188,24 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 emit(iterator.next());
             }
             return !iterator.hasNext();
+        }
+    }
+
+    private static class HazelcastPartitioner implements Partitioner {
+
+        private transient IPartitionService service;
+
+        public HazelcastPartitioner() {
+        }
+
+        @Override
+        public void init(IPartitionService service) {
+            this.service = service;
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return service.getPartitionId(((Map.Entry)item).getKey());
         }
     }
 }

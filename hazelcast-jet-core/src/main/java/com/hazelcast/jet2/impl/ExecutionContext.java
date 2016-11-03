@@ -225,11 +225,13 @@ public class ExecutionContext {
                 List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
                 final int taskletIndex = i; // final copy of i, as needed in lambdas below
                 for (EdgeDef output : outputs) {
-
                     int destinationId = output.getOtherEndId();
                     int ordinalAtDestination = output.getOtherEndOrdinal();
                     int numLocalConsumers = vMap.get(destinationId).getParallelism();
 
+                    if (output.getPartitioner() != null) {
+                        output.getPartitioner().init(nodeEngine.getPartitionService());
+                    }
 
                     // if a local edge, we will take all partitions, if not only partitions local to this node
                     // and distribute them among the local consumers
