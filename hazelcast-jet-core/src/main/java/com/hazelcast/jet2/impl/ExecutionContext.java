@@ -68,11 +68,11 @@ public class ExecutionContext {
     private ExecutionService executionService;
     private DeploymentStore deploymentStore;
     private JetEngineConfig config;
-    private JetClassLoader classLoader;
 
     // execution id -> vertex id -> ordinal -> receiver
     private Map<Long, Map<Integer, Map<Integer, ReceiverTasklet>>> receiverMap = new ConcurrentHashMap<>();
-    private Map<Long, List<Tasklet>> tasklets = new ConcurrentHashMap<>(); // execution id to tasklet list
+    // execution id to tasklet list
+    private Map<Long, List<Tasklet>> tasklets = new ConcurrentHashMap<>();
 
     public ExecutionContext(String name, NodeEngine nodeEngine, JetEngineConfig config) {
         this.name = name;
@@ -184,6 +184,7 @@ public class ExecutionContext {
         Map<Integer, ReceiverTasklet> ordinalMap = vertexMap.get(vertexId);
         ReceiverTasklet tasklet = ordinalMap.get(ordinal);
         byte[] data = new byte[buffer.length - offset];
+        //TODO: modify HeapData to work with a byte[] and offset
         System.arraycopy(buffer, offset, data, 0, data.length);
         tasklet.offer(new HeapData(data), partitionId);
     }
@@ -192,7 +193,6 @@ public class ExecutionContext {
         deploymentStore.destroy();
         executionService.shutdown();
     }
-
 
     public void initializePlan(ExecutionPlan plan) {
         List<Tasklet> tasks = new ArrayList<>();

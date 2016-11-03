@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Connection;
@@ -35,6 +36,7 @@ class RemoteOutboundCollector implements OutboundCollector {
     private final byte[] headerBytes;
     private final List<Integer> partitions;
     private final NodeEngineImpl engine;
+    private final InternalSerializationService serializationService;
 
     public RemoteOutboundCollector(NodeEngine engine,
                                    String engineName,
@@ -44,6 +46,7 @@ class RemoteOutboundCollector implements OutboundCollector {
                                    int ordinal,
                                    List<Integer> partitions) {
         this.engine = (NodeEngineImpl) engine;
+        this.serializationService = (InternalSerializationService)engine.getSerializationService();
         this.connection = this.engine.getNode().getConnectionManager().getConnection(destinationAddress);
         this.partitions = partitions;
         this.headerBytes = getHeaderBytes(engineName, executionId, destinationVertexId, ordinal);
@@ -76,10 +79,8 @@ class RemoteOutboundCollector implements OutboundCollector {
 
     @Override
     public ProgressState offer(Object item, int partitionId) {
-        byte[] payload = engine.toData(item).toByteArray();
-        byte[] buffer = new byte[headerBytes.length + payload.length];
+        byte[] buffer = serializationService.toBytes(headerBytes.length, item);
         System.arraycopy(headerBytes, 0, buffer, 0, headerBytes.length);
-        System.arraycopy(payload, 0, buffer, headerBytes.length, payload.length);
         connection.write(new Packet(buffer, partitionId).setFlag(Packet.FLAG_JET));
         return ProgressState.DONE;
     }
