@@ -18,6 +18,7 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
@@ -78,8 +79,6 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
         if (ec == null) {
             return;
         }
-        DeploymentStore deploymentStore = ec.getDeploymentStore();
-        deploymentStore.destroy();
         ec.destroy();
     }
 
