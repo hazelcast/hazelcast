@@ -118,41 +118,34 @@ public final class JetUtil {
         }
     }
 
+    /**
+     * Finds offsets where to split a text file along line breaks into the given number of chunks.
+     */
     public static long[] splitFile(File file, int chunkCount) {
         try {
-            InputStreamReader raf = new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8"));
             long[] offsets = new long[chunkCount];
             Arrays.fill(offsets, -1L);
-
-            try {
+            try (InputStreamReader in = new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8"))) {
                 long offset = 0;
                 offsets[0] = 0;
-
                 for (int i = 1; i < chunkCount; i++) {
                     long delta = (file.length() / chunkCount);
                     long newOffset = offset + delta;
-
                     if (newOffset >= file.length()) {
                         break;
                     }
-
-                    raf.skip(delta);
+                    in.skip(delta);
                     offset = newOffset;
-
                     while (true) {
-                        int read = raf.read();
+                        int read = in.read();
                         offset++;
                         if (read == '\n' || read == -1) {
                             break;
                         }
                     }
-
                     offsets[i] = offset;
                 }
-            } finally {
-                raf.close();
             }
-
             return offsets;
         } catch (Throwable e) {
             throw unchecked(e);

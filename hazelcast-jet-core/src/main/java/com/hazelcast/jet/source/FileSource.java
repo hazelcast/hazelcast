@@ -25,7 +25,8 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import java.io.File;
 
 /**
- * A source which uses a file as the input.
+ * A source which uses a text file as the input. The text is expected to be broken into lines and the number of
+ * lines should be substantial enough to allow parallel processing by splitting into chunks of lines.
  */
 public class FileSource implements Source {
 

@@ -82,11 +82,13 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
 
     @Override
     public void destroyDistributedObject(String objectName) {
-        ExecutionContext executionContext = executionContexts.remove(objectName);
-        if (executionContext != null) {
-
-            executionContext.destroy();
+        ExecutionContext ec = executionContexts.remove(objectName);
+        if (ec == null) {
+            return;
         }
+        DeploymentStore deploymentStore = ec.getDeploymentStore();
+        deploymentStore.cleanup();
+        ec.destroy();
     }
 
     public void ensureContext(String name, JetEngineConfig config) {

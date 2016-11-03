@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet2.impl.ExecutionContext;
 import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 public class DeployChunkOperation extends Operation {
@@ -29,7 +29,6 @@ public class DeployChunkOperation extends Operation {
 
     @SuppressWarnings("unused")
     public DeployChunkOperation() {
-
     }
 
     public DeployChunkOperation(String name, ResourceChunk chunk) {
@@ -40,8 +39,7 @@ public class DeployChunkOperation extends Operation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(engineName);
-        executionContext.getDeploymentStore().receiveChunk(chunk);
+        service.getExecutionContext(engineName).getDeploymentStore().receiveChunk(chunk);
     }
 
     @Override
