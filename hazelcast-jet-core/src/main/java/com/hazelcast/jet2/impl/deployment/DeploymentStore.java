@@ -44,6 +44,7 @@ public class DeploymentStore {
     private static final ILogger LOGGER = Logger.getLogger(DeploymentStore.class);
     private final String storagePath;
     private final File storageDirectory;
+    private final int chunkSize;
     private long fileNameCounter = 1;
     private final Map<DeploymentDescriptor, File> resources = new ConcurrentHashMap<>();
 
@@ -52,7 +53,8 @@ public class DeploymentStore {
     private final Map<String, ClassLoaderEntry> classEntries = new HashMap<>();
 
 
-    public DeploymentStore(String storagePath) {
+    public DeploymentStore(String storagePath, int chunkSize) {
+        this.chunkSize = chunkSize;
         this.storagePath = getStoragePathOrDefault(storagePath);
         this.storageDirectory = createStorageDirectory();
     }
@@ -85,8 +87,12 @@ public class DeploymentStore {
         return storageDirectoryPath.toFile();
     }
 
-    public void cleanup() {
+    public void destroy() {
         delete(storageDirectory);
+    }
+
+    public int getChunkSize() {
+        return chunkSize;
     }
 
     private void delete(File file) {
@@ -131,7 +137,7 @@ public class DeploymentStore {
         }
         File file = resources.get(descriptor);
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rws")) {
-            int offset = chunk.getSequence() * chunk.getChunkSize();
+            int offset = chunk.getSequence() * chunkSize;
             randomAccessFile.seek(offset);
             randomAccessFile.write(chunk.getBytes());
         } catch (Exception e) {
@@ -272,7 +278,6 @@ public class DeploymentStore {
             throw unchecked(lastError);
         }
     }
-
 
     private static class ResourceStream {
         final String baseUrl;

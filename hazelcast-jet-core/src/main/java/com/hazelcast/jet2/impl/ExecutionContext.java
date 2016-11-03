@@ -56,7 +56,8 @@ import static java.util.stream.Collectors.toMap;
 
 public class ExecutionContext {
 
-    public static final int QUEUE_SIZE = 1024;
+    private static final int DEFAULT_RESOURCE_CHUNK_SIZE = 1 << 14;
+    private static final int QUEUE_SIZE = 1024;
 
     private final String name;
     private NodeEngine nodeEngine;
@@ -72,7 +73,7 @@ public class ExecutionContext {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config);
-        this.deploymentStore = new DeploymentStore(config.getDeploymentDirectory());
+        this.deploymentStore = new DeploymentStore(config.getDeploymentDirectory(), DEFAULT_RESOURCE_CHUNK_SIZE);
 
         this.config = config;
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -187,8 +188,7 @@ public class ExecutionContext {
                         allCollectors = localCollectors;
                     } else {
                         // create the receiver tasklet for the edge, if not already created
-                        receiverTasklets.compute(destinationId, (key, map) ->
-                        {
+                        receiverTasklets.compute(destinationId, (key, map) -> {
                             if (map == null) {
                                 map = new HashMap<>();
                             }
@@ -287,15 +287,16 @@ public class ExecutionContext {
 
     public void handleIncoming(Payload payload) {
         Map<Integer, Map<Integer, ReceiverTasklet>> vertexMap = receiverMap.get(payload.getExecutionId());
-        Map<Integer, ReceiverTasklet> ordinalMap = vertexMap.get(payload.getVertexId());
-        if (ordinalMap == null) {
-            throw new IllegalArgumentException("Could not find vertex for " + payload.getVertexId());
+        if (vertexMap == null) {
+            throw new IllegalArgumentException("Execution id " + payload.getExecutionId() + " could not be found");
         }
+        Map<Integer, ReceiverTasklet> ordinalMap = vertexMap.get(payload.getVertexId());
         ReceiverTasklet tasklet = ordinalMap.get(payload.getOrdinal());
         tasklet.offer(payload);
     }
 
     public void destroy() {
+        deploymentStore.destroy();
         executionService.shutdown();
     }
 

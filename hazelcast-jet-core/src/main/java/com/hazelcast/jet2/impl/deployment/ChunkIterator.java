@@ -32,7 +32,7 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
     private final Iterator<DeploymentConfig> configIterator;
     private InputStream inputStream;
     private DeploymentConfig deploymentConfig;
-    private int sequenceGenerator;
+    private int sequence;
 
     public ChunkIterator(Set<DeploymentConfig> deploymentConfigs, int chunkSize) {
         this.configIterator = deploymentConfigs.iterator();
@@ -45,7 +45,7 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
         }
         deploymentConfig = configIterator.next();
         inputStream = deploymentConfig.getUrl().openStream();
-        sequenceGenerator = 0;
+        sequence = 0;
     }
 
     @Override
@@ -77,12 +77,7 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
             }
 
             if (bytes.length > 0) {
-                return new ResourceChunk(
-                        bytes,
-                        deploymentConfig.getDescriptor(),
-                        chunkSize,
-                        sequenceGenerator++
-                );
+                return new ResourceChunk(bytes, deploymentConfig.getDescriptor(), sequence++);
             } else {
                 throw new NoSuchElementException();
             }

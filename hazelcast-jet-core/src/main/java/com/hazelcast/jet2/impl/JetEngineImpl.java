@@ -46,7 +46,6 @@ import static java.util.stream.Collectors.toList;
 public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
     @SuppressWarnings("checkstyle:magicnumber")
-    private static final int DEFAULT_RESOURCE_CHUNK_SIZE = 1 << 14;
     private final String name;
     private final ILogger logger;
     private final ExecutionContext executionContext;
@@ -115,7 +114,7 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
     }
 
     private void invokeDeployment(final Set<DeploymentConfig> resources) {
-        new ChunkIterator(resources, DEFAULT_RESOURCE_CHUNK_SIZE).forEachRemaining(
+        new ChunkIterator(resources, executionContext.getDeploymentStore().getChunkSize()).forEachRemaining(
                 chunk -> invokeOnCluster(() -> new DeployChunkOperation(name, chunk))
         );
         resources.forEach(

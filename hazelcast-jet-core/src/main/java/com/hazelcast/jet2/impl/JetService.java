@@ -84,8 +84,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
     public void destroyDistributedObject(String objectName) {
         ExecutionContext executionContext = executionContexts.remove(objectName);
         if (executionContext != null) {
-            DeploymentStore deploymentStore = executionContext.getDeploymentStore();
-            deploymentStore.cleanup();
+
             executionContext.destroy();
         }
     }

@@ -23,7 +23,6 @@ import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 public class ReceiverTasklet implements Tasklet {
 
-    private static int counter = 0;
     private final Queue<Payload> inbox = new ConcurrentLinkedQueue<>();
     //TODO: MPSCQueue does not implement peek() yet
     private final OutboundCollector collector;

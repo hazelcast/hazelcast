@@ -20,6 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngine;
+import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.jet2.impl.IMapReader;
@@ -31,6 +32,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,10 +52,14 @@ import static org.junit.Assert.assertEquals;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
-    private static final int COUNT = 100_000;
-    private static final int DISTINCT = 10_000;
+    private static final int NODE_COUNT = 2;
+    private static final int PARALLELISM = Runtime.getRuntime().availableProcessors() / NODE_COUNT;
+
+    private static final int COUNT = 100;
+    private static final int DISTINCT = 10;
 
     private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
@@ -71,9 +77,12 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Before
     public void setUp() {
-        instance = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        for (int i = 0; i <NODE_COUNT; i++) {
+            instance = factory.newHazelcastInstance();
+        }
+
+        JetEngineConfig config = new JetEngineConfig().setParallelism(PARALLELISM);
+        jetEngine = JetEngine.get(instance, "jetEngine", config);
         IMap<Integer, String> map = instance.getMap("words");
         int row = 0;
         StringBuilder sb = new StringBuilder();
@@ -111,24 +120,25 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         List<Long> times = new ArrayList<>();
         final int warmupCount = 10;
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 50; i++) {
             long start = System.currentTimeMillis();
             jetEngine.newJob(dag).execute();
             long time = System.currentTimeMillis() - start;
             times.add(time);
             System.out.println("jet2: totalTime=" + time);
+            IMap<String, Long> consumerMap = instance.getMap("counts");
+            assertCounts(consumerMap);
         }
         System.out.println(times.stream()
                 .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
-        IMap<String, Long> consumerMap = instance.getMap("counts");
-        assertCounts(consumerMap);
+
 
     }
 
     private void assertCounts(Map<String, Long> wordCounts) {
         for (int i = 0; i < DISTINCT; i++) {
             Long count = wordCounts.get(Integer.toString(i));
-            assertEquals(COUNT / DISTINCT, (long) count);
+            assertEquals("The count for " + i + " is not correct", COUNT / DISTINCT, (long) count);
         }
     }
 
@@ -166,7 +176,6 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         @Override
         public boolean complete() {
             if (iterator == null) {
-                System.out.println(counts);
                 iterator = counts.entrySet().iterator();
             }
 
