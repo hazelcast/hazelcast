@@ -26,7 +26,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.*;
+import java.util.concurrent.ExecutionException;
+
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
@@ -43,7 +46,85 @@ public class ExecutionServiceTest {
     }
 
     @Test
-    public void when_blockingTask_then_executed() {
+    public void when_blockingTask_then_executed() throws Exception {
+        final MockTasklet t = new MockTasklet().blocking();
+        es.execute(singletonList(t)).get();
+        assertTrue(t.didRun);
+    }
 
+    @Test
+    public void when_nonblockingTask_then_executed() throws Exception {
+        final MockTasklet t = new MockTasklet();
+        es.execute(singletonList(t)).get();
+        assertTrue(t.didRun);
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void when_nonblockingAndInitFails_then_futureFails() throws Exception {
+        final MockTasklet t = new MockTasklet().initFails();
+        es.execute(singletonList(t)).get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void when_blockingAndInitFails_then_futureFails() throws Exception {
+        final MockTasklet t = new MockTasklet().blocking().initFails();
+        es.execute(singletonList(t)).get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void when_nonblockingAndCallFails_then_futureFails() throws Exception {
+        final MockTasklet t = new MockTasklet().callFails();
+        es.execute(singletonList(t)).get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void when_blockingAndCallFails_then_futureFails() throws Exception {
+        final MockTasklet t = new MockTasklet().blocking().callFails();
+        es.execute(singletonList(t)).get();
+    }
+
+    static class MockTasklet implements Tasklet {
+
+        volatile boolean didRun;
+
+        boolean isBlocking;
+        boolean initFails;
+        boolean callFails;
+
+        @Override
+        public boolean isBlocking() {
+            return isBlocking;
+        }
+
+        @Override
+        public ProgressState call() {
+            didRun = true;
+            if (callFails) {
+                throw new RuntimeException("mock call failure");
+            }
+            return ProgressState.DONE;
+        }
+
+        @Override
+        public void init() {
+            if (initFails) {
+                throw new RuntimeException("mock init failure");
+            }
+        }
+
+        MockTasklet blocking() {
+            isBlocking = true;
+            return this;
+        }
+
+        MockTasklet initFails() {
+            initFails = true;
+            return this;
+        }
+
+        MockTasklet callFails() {
+            callFails = true;
+            return this;
+        }
     }
 }

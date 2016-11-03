@@ -44,7 +44,7 @@ public class ReceiverTasklet implements Tasklet {
     }
 
     @Override
-    public ProgressState call() throws Exception {
+    public ProgressState call() {
         tracker.reset();
         tracker.notDone();
         for (Payload payload; (payload = inbox.peek()) != null; ) {

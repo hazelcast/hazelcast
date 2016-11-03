@@ -79,7 +79,7 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     @Override
-    public ProgressState call() throws Exception {
+    public ProgressState call() {
         ClassLoader previousClassLoader = null;
         boolean classLoaderChanged = false;
         if (classLoader != null) {
