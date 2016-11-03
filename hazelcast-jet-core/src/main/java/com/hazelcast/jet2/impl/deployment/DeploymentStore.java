@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -187,7 +188,7 @@ public class DeploymentStore {
                 if (jarEntry.isDirectory()) {
                     continue;
                 }
-                NoCopyBAOS out = new NoCopyBAOS();
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
                 byte[] buf = new byte[JetUtil.KILOBYTE];
                 for (int len; (len = jis.read(buf)) > 0;) {
                     out.write(buf, 0, len);
@@ -197,7 +198,7 @@ public class DeploymentStore {
                 if (jarEntry.getName().endsWith(clazzSuffix)) {
                     name = name.substring(0, name.length() - clazzSuffix.length()).replace("/", ".");
                 }
-                ClassLoaderEntry entry = new ClassLoaderEntry(out.getBuffer(),
+                ClassLoaderEntry entry = new ClassLoaderEntry(out.toByteArray(),
                         String.format("jar:%s!/%s", resourceStream.baseUrl, name));
                 jarEntries.put(name, entry);
             }
@@ -218,12 +219,12 @@ public class DeploymentStore {
 
     private static byte[] readFully(InputStream in) {
         try {
-            NoCopyBAOS out = new NoCopyBAOS();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] b = new byte[JetUtil.KILOBYTE];
             for (int len; (len = in.read(b)) != -1;) {
                 out.write(b, 0, len);
             }
-            return out.getBuffer();
+            return out.toByteArray();
         } catch (IOException e) {
             throw unchecked(e);
         }
