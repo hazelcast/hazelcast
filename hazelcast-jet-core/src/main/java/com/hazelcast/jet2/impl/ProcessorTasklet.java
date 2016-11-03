@@ -48,7 +48,8 @@ public class ProcessorTasklet implements Tasklet {
     private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(Processor processor, List<InboundEdgeStream> instreams, List<OutboundEdgeStream> outstreams
+    public ProcessorTasklet(
+            Processor processor, List<InboundEdgeStream> instreams, List<OutboundEdgeStream> outstreams
     ) {
         Preconditions.checkNotNull(processor, "processor");
         this.processor = processor;

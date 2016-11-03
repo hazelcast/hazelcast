@@ -62,7 +62,8 @@ class ExecutionService {
         this(hz, name, cfg, null);
     }
 
-    public Future<Void> execute(List<Tasklet> tasklets) {
+    public Future<Void> execute(List<? extends Tasklet> tasklets) {
+        ensureStillRunning();
         final CountDownLatch completionLatch = new CountDownLatch(tasklets.size());
         final JobFuture jobFuture = new JobFuture(completionLatch);
         final Map<Boolean, List<Tasklet>> byBlocking = tasklets.stream().collect(partitioningBy(Tasklet::isBlocking));
@@ -73,10 +74,18 @@ class ExecutionService {
 
     public void shutdown() {
         blockingTaskletExecutor.shutdown();
-        for (NonBlockingWorker worker : workers) {
-            if (worker != null) {
-                worker.isShutdown = true;
+        synchronized (this) {
+            for (NonBlockingWorker worker : workers) {
+                if (worker != null) {
+                    worker.isShutdown = true;
+                }
             }
+        }
+    }
+
+    private void ensureStillRunning() {
+        if (blockingTaskletExecutor.isShutdown()) {
+            throw new IllegalStateException("Execution service was ordered to shut down");
         }
     }
 
@@ -198,6 +207,8 @@ class ExecutionService {
                     IDLER.idle(++idleCount);
                 }
             }
+            // Best-effort attempt to release all tasklets. A tasklet can still be added later on through work stealing.
+            trackers.clear();
         }
 
         private void dismissTasklet(TaskletTracker t) {

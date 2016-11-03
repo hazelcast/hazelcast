@@ -21,20 +21,33 @@ import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
+import static com.hazelcast.jet2.impl.ProgressState.DONE;
+import static com.hazelcast.jet2.impl.ProgressState.MADE_PROGRESS;
+import static com.hazelcast.jet2.impl.ProgressState.NO_PROGRESS;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class ExecutionServiceTest {
+
+    @Rule
+    public final ExpectedException exceptionRule = ExpectedException.none();
 
     ExecutionService es;
 
@@ -83,6 +96,29 @@ public class ExecutionServiceTest {
         es.execute(singletonList(t)).get();
     }
 
+    @Test
+    public void when_shutdown_then_submitFails() {
+        es.execute(singletonList(new MockTasklet()));
+        es.execute(singletonList(new MockTasklet()));
+        es.shutdown();
+        exceptionRule.expect(IllegalStateException.class);
+        es.execute(singletonList(new MockTasklet()));
+    }
+
+    @Test
+    public void when_manyCallsWithSomeStalling_then_eventuallyDone() throws Exception {
+        final MockTasklet t1 = new MockTasklet().blocking().callsBeforeDone(10);
+        final MockTasklet t2 = new MockTasklet().callsBeforeDone(10);
+        es.execute(asList(t1, t2)).get();
+    }
+
+    @Test
+    public void when_workStealing_then_allComplete() throws Exception {
+        final List<MockTasklet> tasklets =
+                Stream.generate(() -> new MockTasklet().callsBeforeDone(1000)).limit(100).collect(toList());
+        es.execute(tasklets).get();
+    }
+
     static class MockTasklet implements Tasklet {
 
         volatile boolean didRun;
@@ -90,6 +126,9 @@ public class ExecutionServiceTest {
         boolean isBlocking;
         boolean initFails;
         boolean callFails;
+        int callsBeforeDone;
+
+        private boolean willMakeProgress = true;
 
         @Override
         public boolean isBlocking() {
@@ -102,7 +141,10 @@ public class ExecutionServiceTest {
             if (callFails) {
                 throw new RuntimeException("mock call failure");
             }
-            return ProgressState.DONE;
+            willMakeProgress = !willMakeProgress;
+            return callsBeforeDone-- == 0 ? DONE
+                    : willMakeProgress ? MADE_PROGRESS
+                    : NO_PROGRESS;
         }
 
         @Override
@@ -124,6 +166,11 @@ public class ExecutionServiceTest {
 
         MockTasklet callFails() {
             callFails = true;
+            return this;
+        }
+
+        MockTasklet callsBeforeDone(int count) {
+            callsBeforeDone = count;
             return this;
         }
     }

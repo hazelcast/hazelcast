@@ -142,8 +142,10 @@ public class ProcessorTaskletTest {
         outstreams.add(outstream1);
         Tasklet tasklet = createTasklet();
 
+        // When
         callUntil(tasklet, NO_PROGRESS);
 
+        // Then
         assertTrue("isEmpty", outstream1.getBuffer().equals(mockInput.subList(0, 4)));
     }
 
