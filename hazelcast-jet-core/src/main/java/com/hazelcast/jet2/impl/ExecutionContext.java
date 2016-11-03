@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
@@ -33,6 +35,7 @@ import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.jet2.impl.deployment.JetClassLoader;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -44,8 +47,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -60,18 +63,21 @@ public class ExecutionContext {
     private static final int QUEUE_SIZE = 1024;
 
     private final String name;
+    private final IdGenerator idGenerator;
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
     private DeploymentStore deploymentStore;
     private JetEngineConfig config;
     private JetClassLoader classLoader;
-    private AtomicInteger idCounter = new AtomicInteger();
 
-    private Map<Integer, Map<Integer, Map<Integer, ReceiverTasklet>>> receiverMap = new HashMap<>();
+    // execution id -> vertex id -> ordinal -> receiver
+    private Map<Long, Map<Integer, Map<Integer, ReceiverTasklet>>> receiverMap = new ConcurrentHashMap<>();
+    private Map<Long, List<Tasklet>> tasklets = new ConcurrentHashMap<>(); // execution id to tasklet list
 
     public ExecutionContext(String name, NodeEngine nodeEngine, JetEngineConfig config) {
         this.name = name;
         this.nodeEngine = nodeEngine;
+        this.idGenerator = nodeEngine.getHazelcastInstance().getIdGenerator("__jetIdGenerator" + name);
         this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config);
         this.deploymentStore = new DeploymentStore(config.getDeploymentDirectory(), DEFAULT_RESOURCE_CHUNK_SIZE);
 
@@ -85,7 +91,7 @@ public class ExecutionContext {
     public Map<Member, ExecutionPlan> buildExecutionPlan(DAG dag) {
         List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         int clusterSize = members.size();
-        final int planId = idCounter.getAndIncrement();
+        final long planId = idGenerator.newId();
         Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(planId)));
         Map<Vertex, Integer> vertexIdMap = assignVertexIds(dag);
         for (Map.Entry<Vertex, Integer> entry : vertexIdMap.entrySet()) {
@@ -124,7 +130,71 @@ public class ExecutionContext {
         return plans;
     }
 
-    public Future<Void> executePlan(ExecutionPlan plan) {
+    public ICompletableFuture<Void> executePlan(long planId) {
+        Future<Void> future = executionService.execute(tasklets.get(planId));
+        ICompletableFuture<Void> completable = nodeEngine.getExecutionService().asCompletableFuture(future);
+        completable.andThen(new SimpleExecutionCallback<Void>() {
+            @Override
+            public void notify(Object response) {
+                tasklets.remove(planId);
+            }
+        });
+        return completable;
+    }
+
+    private int getParallelism(Vertex vertex) {
+        return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
+    }
+
+    private boolean isDistributed(Edge edge) {
+        return edge.isDistributed() && nodeEngine.getClusterService().getSize() > 1;
+    }
+
+    private static Map<Vertex, Integer> assignVertexIds(DAG dag) {
+        int vertexId = 0;
+        Map<Vertex, Integer> vertexIdMap = new LinkedHashMap<>();
+        for (Iterator<Vertex> iterator = dag.iterator(); iterator.hasNext(); vertexId++) {
+            vertexIdMap.put(iterator.next(), vertexId);
+        }
+        return vertexIdMap;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ConcurrentConveyor<Object>[] createConveyorArray(int count, int queueCount, int queueSize) {
+        ConcurrentConveyor<Object>[] concurrentConveyors = new ConcurrentConveyor[count];
+        Arrays.setAll(concurrentConveyors, i -> {
+            QueuedPipe<Object>[] queues = new QueuedPipe[queueCount];
+            Arrays.setAll(queues, j -> new OneToOneConcurrentArrayQueue<>(queueSize));
+            return concurrentConveyor(DONE_ITEM, queues);
+        });
+        return concurrentConveyors;
+    }
+
+    public DeploymentStore getDeploymentStore() {
+        return deploymentStore;
+    }
+
+    public JetEngineConfig getConfig() {
+        return config;
+    }
+
+    public void handleIncoming(Payload payload) {
+        Map<Integer, Map<Integer, ReceiverTasklet>> vertexMap = receiverMap.get(payload.getExecutionId());
+        if (vertexMap == null) {
+            throw new IllegalArgumentException("Execution id " + payload.getExecutionId() + " could not be found");
+        }
+        Map<Integer, ReceiverTasklet> ordinalMap = vertexMap.get(payload.getVertexId());
+        ReceiverTasklet tasklet = ordinalMap.get(payload.getOrdinal());
+        tasklet.offer(payload);
+    }
+
+    public void destroy() {
+        deploymentStore.destroy();
+        executionService.shutdown();
+    }
+
+
+    public void initializePlan(ExecutionPlan plan) {
         List<Tasklet> tasks = new ArrayList<>();
 
         // map of conveyors
@@ -244,62 +314,8 @@ public class ExecutionContext {
         List<Tasklet> receivers = receiverTasklets.values().stream()
                 .flatMap(e -> e.values().stream()).collect(Collectors.toList());
         tasks.addAll(receivers);
-
+        tasklets.put(plan.getId(), tasks);
         receiverMap.put(plan.getId(), receiverTasklets);
-        return executionService.execute(tasks);
     }
-
-    private int getParallelism(Vertex vertex) {
-        return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
-    }
-
-    private boolean isDistributed(Edge edge) {
-        return edge.isDistributed() && nodeEngine.getClusterService().getSize() > 1;
-    }
-
-    private static Map<Vertex, Integer> assignVertexIds(DAG dag) {
-        int vertexId = 0;
-        Map<Vertex, Integer> vertexIdMap = new LinkedHashMap<>();
-        for (Iterator<Vertex> iterator = dag.iterator(); iterator.hasNext(); vertexId++) {
-            vertexIdMap.put(iterator.next(), vertexId);
-        }
-        return vertexIdMap;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static ConcurrentConveyor<Object>[] createConveyorArray(int count, int queueCount, int queueSize) {
-        ConcurrentConveyor<Object>[] concurrentConveyors = new ConcurrentConveyor[count];
-        Arrays.setAll(concurrentConveyors, i -> {
-            QueuedPipe<Object>[] queues = new QueuedPipe[queueCount];
-            Arrays.setAll(queues, j -> new OneToOneConcurrentArrayQueue<>(queueSize));
-            return concurrentConveyor(DONE_ITEM, queues);
-        });
-        return concurrentConveyors;
-    }
-
-    public DeploymentStore getDeploymentStore() {
-        return deploymentStore;
-    }
-
-    public JetEngineConfig getConfig() {
-        return config;
-    }
-
-    public void handleIncoming(Payload payload) {
-        Map<Integer, Map<Integer, ReceiverTasklet>> vertexMap = receiverMap.get(payload.getExecutionId());
-        if (vertexMap == null) {
-            throw new IllegalArgumentException("Execution id " + payload.getExecutionId() + " could not be found");
-        }
-        Map<Integer, ReceiverTasklet> ordinalMap = vertexMap.get(payload.getVertexId());
-        ReceiverTasklet tasklet = ordinalMap.get(payload.getOrdinal());
-        tasklet.offer(payload);
-    }
-
-    public void destroy() {
-        deploymentStore.destroy();
-        executionService.shutdown();
-    }
-
-
 }
 

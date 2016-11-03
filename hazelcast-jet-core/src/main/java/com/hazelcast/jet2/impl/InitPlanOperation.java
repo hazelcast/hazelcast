@@ -39,7 +39,7 @@ class InitPlanOperation extends Operation {
     public void run() throws Exception {
         JetService service = getService();
         ExecutionContext executionContext = service.getExecutionContext(engineName);
-        executionContext.executePlan(plan).get();
+        executionContext.initializePlan(plan);
     }
 
     @Override

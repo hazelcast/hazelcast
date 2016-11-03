@@ -26,9 +26,9 @@ import java.util.List;
 
 class ExecutionPlan implements Serializable {
     private final List<VertexDef> vertices = new ArrayList<>();
-    private final int id;
+    private final long id;
 
-    public ExecutionPlan(int id) {
+    public ExecutionPlan(long id) {
         this.id = id;
     }
 
@@ -40,7 +40,7 @@ class ExecutionPlan implements Serializable {
         vertices.add(vertex);
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 }

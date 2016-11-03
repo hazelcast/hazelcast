@@ -30,7 +30,7 @@ class RemoteOutboundCollector implements OutboundCollector {
 
     private final Connection connection;
     private final String engineName;
-    private final int executionId;
+    private final long executionId;
     private final int destinationVertex;
     private final int ordinal;
     private final List<Integer> partitions;
@@ -39,7 +39,7 @@ class RemoteOutboundCollector implements OutboundCollector {
     public RemoteOutboundCollector(NodeEngine engine,
                                    String engineName,
                                    Address destinationAddress,
-                                   int executionId,
+                                   long executionId,
                                    int destinationVertex,
                                    int inboundOrdinal,
                                    List<Integer> partitions) {

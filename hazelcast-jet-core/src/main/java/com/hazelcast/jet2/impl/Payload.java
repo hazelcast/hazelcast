@@ -21,13 +21,13 @@ import java.io.Serializable;
 class Payload implements Serializable {
 
     private final String engineName;
-    private final int executionId;
+    private final long executionId;
     private final int vertexId;
     private final int ordinal;
     private final Object item;
     private int partitionId;
 
-    public Payload(String engineName, int executionId, int vertexId, int ordinal, Object item) {
+    public Payload(String engineName, long executionId, int vertexId, int ordinal, Object item) {
         this.engineName = engineName;
         this.executionId = executionId;
         this.vertexId = vertexId;
@@ -39,7 +39,7 @@ class Payload implements Serializable {
         return engineName;
     }
 
-    public int getExecutionId() {
+    public long getExecutionId() {
         return executionId;
     }
 

@@ -16,30 +16,50 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.io.IOException;
 
 class ExecutePlanOperation extends Operation {
 
     private String engineName;
-    private ExecutionPlan plan;
+    private long planId;
 
     public ExecutePlanOperation() {
     }
 
-    public ExecutePlanOperation(String engineName, ExecutionPlan plan) {
+    public ExecutePlanOperation(String engineName, long planId) {
         this.engineName = engineName;
-        this.plan = plan;
+        this.planId = planId;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
         ExecutionContext executionContext = service.getExecutionContext(engineName);
-        executionContext.executePlan(plan).get();
+        ICompletableFuture<Void> future = executionContext.executePlan(planId);
+        future.andThen(new SimpleExecutionCallback<Void>() {
+            @Override
+            public void notify(Object response) {
+                sendResponse(response);
+            }
+        });
+    }
+
+    @Override
+    public Object getResponse() {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override
@@ -47,7 +67,7 @@ class ExecutePlanOperation extends Operation {
         super.writeInternal(out);
 
         out.writeUTF(engineName);
-        out.writeObject(plan);
+        out.writeLong(planId);
     }
 
     @Override
@@ -55,6 +75,6 @@ class ExecutePlanOperation extends Operation {
         super.readInternal(in);
 
         engineName = in.readUTF();
-        plan = in.readObject();
+        planId = in.readLong();
     }
 }

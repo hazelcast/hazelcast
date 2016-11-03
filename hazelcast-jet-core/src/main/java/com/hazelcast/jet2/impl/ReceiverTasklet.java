@@ -36,7 +36,6 @@ public class ReceiverTasklet implements Tasklet {
 
     @Override
     public void init() {
-
     }
 
     void offer(Payload item) {
@@ -62,4 +61,5 @@ public class ReceiverTasklet implements Tasklet {
         }
         return tracker.toProgressState();
     }
+
 }

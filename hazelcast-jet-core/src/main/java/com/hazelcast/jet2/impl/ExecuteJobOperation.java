@@ -21,15 +21,14 @@ import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 class ExecuteJobOperation extends Operation {
 
@@ -49,17 +48,22 @@ class ExecuteJobOperation extends Operation {
         JetService service = getService();
         ExecutionContext executionContext = service.getExecutionContext(engineName);
         Map<Member, ExecutionPlan> executionPlanMap = executionContext.buildExecutionPlan(dag);
-        OperationService operationService = getNodeEngine().getOperationService();
+
+        invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan));
+        invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId()));
+    }
+
+    private void invokeForPlan(Map<Member, ExecutionPlan> planMap, Function<ExecutionPlan, Operation> func) {
         List<Future> futures = new ArrayList<>();
-        for (Map.Entry<Member, ExecutionPlan> entry : executionPlanMap.entrySet()) {
-            futures.add(operationService.createInvocationBuilder(JetService.SERVICE_NAME,
-                    new ExecutePlanOperation(engineName, entry.getValue()), entry.getKey().getAddress())
-                    .invoke());
+        for (Map.Entry<Member, ExecutionPlan> entry : planMap.entrySet()) {
+            futures.add(getNodeEngine().getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,
+                    func.apply(entry.getValue()), entry.getKey().getAddress()).invoke());
         }
         for (Future future : futures) {
             JetUtil.uncheckedGet(future);
         }
     }
+
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {

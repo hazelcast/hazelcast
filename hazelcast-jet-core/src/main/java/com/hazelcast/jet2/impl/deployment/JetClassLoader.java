@@ -41,7 +41,6 @@ public class JetClassLoader extends ClassLoader {
 
     }
 
-
     @Override
     public Class loadClass(String className) throws ClassNotFoundException {
         return loadClass(className, true);
