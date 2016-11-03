@@ -148,7 +148,7 @@ public class ProcessorTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        final ProcessorTasklet t = new ProcessorTasklet(processor, Thread.currentThread().getContextClassLoader(),
+        final ProcessorTasklet t = new ProcessorTasklet(processor,
                 instreams, outstreams);
         t.init();
         return t;

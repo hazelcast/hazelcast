@@ -77,14 +77,11 @@ public class ExecutionContext {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.idGenerator = nodeEngine.getHazelcastInstance().getIdGenerator("__jetIdGenerator" + name);
-        this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config);
+        final ClassLoader cl = AccessController.doPrivileged(
+                (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(deploymentStore));
+        this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config, cl);
         this.deploymentStore = new DeploymentStore(config.getDeploymentDirectory(), DEFAULT_RESOURCE_CHUNK_SIZE);
-
         this.config = config;
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            this.classLoader = new JetClassLoader(deploymentStore);
-            return null;
-        });
     }
 
     public Map<Member, ExecutionPlan> buildExecutionPlan(DAG dag) {
@@ -308,7 +305,7 @@ public class ExecutionContext {
                             emitters, input.getOrdinal(), input.getPriority());
                     inboundStreams.add(inboundStream);
                 }
-                tasks.add(new ProcessorTasklet(processors.get(i), classLoader, inboundStreams, outboundStreams));
+                tasks.add(new ProcessorTasklet(processors.get(i), inboundStreams, outboundStreams));
             }
         }
 

@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -45,17 +44,22 @@ class ExecutionService {
     private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
+    private final ClassLoader contextClassLoader;
     private final NonBlockingWorker[] workers;
     private final Thread[] threads;
     private final String hzInstanceName;
     private final String name;
 
-    public ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
+    public ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg, ClassLoader contextClassLoader) {
         this.hzInstanceName = hz.getName();
         this.name = name;
         this.workers = new NonBlockingWorker[cfg.getParallelism()];
         this.threads = new Thread[cfg.getParallelism()];
+        this.contextClassLoader = contextClassLoader;
+    }
 
+    ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
+        this(hz, name, cfg, null);
     }
 
     public Future<Void> execute(List<Tasklet> tasklets) {
@@ -103,7 +107,7 @@ class ExecutionService {
             return;
         }
         Arrays.setAll(workers, i -> new NonBlockingWorker(workers));
-        Arrays.setAll(threads, i -> new Thread(workers[i], threadNamePrefix() + ".nonblocking-executor.thread-" + i));
+        Arrays.setAll(threads, i -> createThread(workers[i], "nonblocking-executor", i));
         Arrays.stream(threads).forEach(Thread::start);
     }
 
@@ -238,12 +242,20 @@ class ExecutionService {
         }
     }
 
+    Thread createThread(Runnable r, String executorName, int seq) {
+        Thread t = new Thread(r, threadNamePrefix() + executorName + ".thread-" + seq);
+        if (contextClassLoader != null) {
+            t.setContextClassLoader(contextClassLoader);
+        }
+        return t;
+    }
+
     private final class BlockingTaskThreadFactory implements ThreadFactory {
         private final AtomicInteger seq = new AtomicInteger();
 
         @Override
         public Thread newThread(Runnable r) {
-            return new Thread(r, threadNamePrefix() + ".blocking-executor.thread-" + seq.getAndIncrement());
+            return createThread(r, "blocking-executor", seq.getAndIncrement());
         }
     }
 }
