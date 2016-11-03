@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.HazelcastClient;
@@ -67,7 +67,6 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
@@ -172,7 +171,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManagerService transactionManager;
     private final NearCacheManager nearCacheManager;
-    private final NearCacheContext nearCacheContext;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
@@ -223,16 +221,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService = initInvocationService();
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
-        nearCacheManager = clientExtension.createNearCacheManager();
-        nearCacheContext = new NearCacheContext(serializationService, executionService, nearCacheManager,
-                config.getClassLoader());
-
         diagnostics = initDiagnostics(config);
 
         proxyManager.init(config);
         hazelcastCacheManager = new ClientICacheManager(this);
 
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
+        nearCacheManager = clientExtension.createNearCacheManager();
     }
 
     private Diagnostics initDiagnostics(ClientConfig config) {
@@ -660,16 +655,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return invocationService;
     }
 
+    public ClientExecutionServiceImpl getExecutionService() {
+        return executionService;
+    }
+
     public ClientListenerService getListenerService() {
         return listenerService;
     }
 
     public NearCacheManager getNearCacheManager() {
         return nearCacheManager;
-    }
-
-    public NearCacheContext getNearCacheContext() {
-        return nearCacheContext;
     }
 
     public ThreadGroup getThreadGroup() {

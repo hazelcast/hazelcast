@@ -4,9 +4,13 @@ import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
+import org.junit.Before;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +22,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
+
+    protected SerializationService ss;
+    protected ExecutionService executionService;
+
+    @Before
+    public void setUp() throws Exception {
+        HazelcastInstance instance = createHazelcastInstance();
+        ss = getSerializationService(instance);
+        executionService = getNodeEngineImpl(instance).getExecutionService();
+    }
 
     protected abstract NearCache<Integer, String> createNearCache(String name,
                                                                   NearCacheConfig nearCacheConfig,
@@ -200,7 +214,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             nearCacheConfig.setMaxIdleSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS - 1);
         }
 
-        createNearCache(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, managedNearCacheRecordStore);
+        createNearCache(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, managedNearCacheRecordStore).initialize();
 
         sleepSeconds(DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS + 1);
 
@@ -245,6 +259,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         protected ManagedNearCacheRecordStore(Map<Integer, String> expectedKeyValueMappings) {
             this.expectedKeyValueMappings = expectedKeyValueMappings;
+        }
+
+        @Override
+        public void initialize() {
+
         }
 
         @Override

@@ -22,7 +22,7 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.MapLocalQueryRunner;
 import com.hazelcast.map.impl.query.MapQueryEngine;
@@ -105,8 +105,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      */
     void shutdown();
 
-    NearCacheProvider getNearCacheProvider();
-
     RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader);
 
     RecordStore getRecordStore(int partitionId, String mapName);
@@ -156,4 +154,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     PartitionContainer[] getPartitionContainers();
 
     void onClusterStateChange(ClusterState newState);
+
+    MapNearCacheManager getMapNearCacheManager();
 }

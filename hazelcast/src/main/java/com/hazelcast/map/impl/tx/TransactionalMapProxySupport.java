@@ -20,6 +20,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.RecordFactory;
@@ -55,6 +56,7 @@ public abstract class TransactionalMapProxySupport
 
     protected final String name;
     protected final MapServiceContext mapServiceContext;
+    protected final MapNearCacheManager mapNearCacheManager;
     protected final RecordFactory recordFactory;
     protected final MapOperationProvider operationProvider;
     protected final PartitioningStrategy partitionStrategy;
@@ -66,6 +68,7 @@ public abstract class TransactionalMapProxySupport
         super(nodeEngine, mapService, transaction);
         this.name = name;
         this.mapServiceContext = mapService.getMapServiceContext();
+        this.mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
@@ -99,7 +102,7 @@ public abstract class TransactionalMapProxySupport
 
     public Object getInternal(Data key) {
         if (nearCacheEnabled) {
-            Object cached = mapServiceContext.getNearCacheProvider().getFromNearCache(name, key);
+            Object cached = mapNearCacheManager.getFromNearCache(name, key);
             if (cached != null) {
                 if (cached.equals(NULL_OBJECT)) {
                     cached = null;

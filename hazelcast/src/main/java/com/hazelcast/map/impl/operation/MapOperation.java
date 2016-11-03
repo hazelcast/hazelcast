@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -102,9 +102,10 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         if (!mapContainer.hasInvalidationListener() || isEmpty(keys)) {
             return;
         }
-        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         for (Data key : keys) {
-            nearCacheProvider.getNearCacheInvalidator().invalidate(key, name, getCallerUuid());
+            mapNearCacheManager.getNearCacheInvalidator().invalidate(key, name, getCallerUuid());
         }
     }
 
@@ -112,8 +113,9 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         if (!mapContainer.hasInvalidationListener() || key == null) {
             return;
         }
-        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        nearCacheProvider.getNearCacheInvalidator().invalidate(key, name, getCallerUuid());
+
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        mapNearCacheManager.getNearCacheInvalidator().invalidate(key, name, getCallerUuid());
     }
 
     protected void evict(Data excludedKey) {

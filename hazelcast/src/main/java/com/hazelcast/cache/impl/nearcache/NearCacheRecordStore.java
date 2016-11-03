@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.nearcache;
 
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.spi.InitializingObject;
 
 /**
  * {@link NearCacheRecordStore} is the contract point to store keys and values as
@@ -25,7 +26,7 @@ import com.hazelcast.monitor.NearCacheStats;
  * @param <K> the type of the key
  * @param <V> the type of the value
  */
-public interface NearCacheRecordStore<K, V> {
+public interface NearCacheRecordStore<K, V> extends InitializingObject {
 
     /**
      * Gets the value associated with the given {@code key}.

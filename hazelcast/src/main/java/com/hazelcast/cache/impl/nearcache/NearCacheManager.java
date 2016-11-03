@@ -40,16 +40,13 @@ public interface NearCacheManager {
      * Creates a new {@link NearCache} with given configurations
      * or returns existing one.
      *
-     * @param name             the name of the {@link NearCache} to be created or existing one
-     * @param nearCacheConfig  the {@link NearCacheConfig} of the {@link NearCache} to be created
-     * @param nearCacheContext the {@link NearCacheContext} of the {@link NearCache} to be created
-     * @param <K>              the key type of the {@link NearCache}
-     * @param <V>              the value type of the {@link NearCache}
+     * @param name            the name of the {@link NearCache} to be created or existing one
+     * @param nearCacheConfig the {@link NearCacheConfig} of the {@link NearCache} to be created
+     * @param <K>             the key type of the {@link NearCache}
+     * @param <V>             the value type of the {@link NearCache}
      * @return the created or existing {@link NearCache} instance associated with given {@code name}
      */
-    <K, V> NearCache<K, V> getOrCreateNearCache(String name,
-                                                NearCacheConfig nearCacheConfig,
-                                                NearCacheContext nearCacheContext);
+    <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig);
 
     /**
      * Lists all existing {@link NearCache} instances.

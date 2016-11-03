@@ -27,7 +27,7 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
@@ -105,7 +105,7 @@ class MapServiceContextImpl implements MapServiceContext {
      */
     protected final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
     protected final ExpirationManager expirationManager;
-    protected final NearCacheProvider nearCacheProvider;
+    protected final MapNearCacheManager mapNearCacheManager;
     protected final LocalMapStatsProvider localMapStatsProvider;
     protected final MergePolicyProvider mergePolicyProvider;
     protected final MapQueryEngine mapQueryEngine;
@@ -124,26 +124,25 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(partitionContainers, nodeEngine);
-        this.nearCacheProvider = createNearCacheProvider();
-        this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
-        this.queryOptimizer = newOptimizer(nodeEngine.getProperties());
         this.mapQueryEngine = createMapQueryEngine();
-        this.mapQueryRunner = createMapQueryRunner(nodeEngine, queryOptimizer);
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
+        this.mapNearCacheManager = createMapNearCacheManager();
+        this.localMapStatsProvider = createLocalMapStatsProvider();
+        this.queryOptimizer = newOptimizer(nodeEngine.getProperties());
+        this.mapQueryRunner = createMapQueryRunner(nodeEngine, queryOptimizer);
+    }
+
+    MapNearCacheManager createMapNearCacheManager() {
+        return new MapNearCacheManager(this);
     }
 
     // this method is overridden in another context.
     MapOperationProviders createOperationProviders() {
         return new MapOperationProviders(this);
-    }
-
-    // this method is overridden in another context.
-    NearCacheProvider createNearCacheProvider() {
-        return new NearCacheProvider(this);
     }
 
     // this method is overridden in another context.
@@ -278,7 +277,7 @@ class MapServiceContextImpl implements MapServiceContext {
             return;
         }
         mapContainer.getMapStoreContext().stop();
-        nearCacheProvider.destroyNearCache(mapName);
+        mapNearCacheManager.destroyNearCache(mapName);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, mapName);
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
 
@@ -303,19 +302,14 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void reset() {
         clearPartitions(false);
-        getNearCacheProvider().reset();
+        mapNearCacheManager.reset();
     }
 
     @Override
     public void shutdown() {
         clearPartitions(true);
-        nearCacheProvider.shutdown();
+        mapNearCacheManager.shutdown();
         mapContainers.clear();
-    }
-
-    @Override
-    public NearCacheProvider getNearCacheProvider() {
-        return nearCacheProvider;
     }
 
     @Override
@@ -646,5 +640,10 @@ class MapServiceContextImpl implements MapServiceContext {
         } else {
             expirationManager.start();
         }
+    }
+
+    @Override
+    public MapNearCacheManager getMapNearCacheManager() {
+        return mapNearCacheManager;
     }
 }

@@ -17,9 +17,10 @@
 package com.hazelcast.cache.impl.nearcache.impl;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -28,8 +29,21 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DefaultNearCacheManager implements NearCacheManager {
 
+    protected final SerializationService serializationService;
+    protected final ExecutionService executionService;
+    protected final ClassLoader classLoader;
+
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final Object mutex = new Object();
+
+    public DefaultNearCacheManager(SerializationService ss, ExecutionService es, ClassLoader classLoader) {
+        assert ss != null;
+        assert es != null;
+
+        this.serializationService = ss;
+        this.executionService = es;
+        this.classLoader = classLoader;
+    }
 
     @Override
     public <K, V> NearCache<K, V> getNearCache(String name) {
@@ -37,14 +51,15 @@ public class DefaultNearCacheManager implements NearCacheManager {
     }
 
     @Override
-    public <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig,
-                                                       NearCacheContext nearCacheContext) {
+    public <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig) {
         NearCache<K, V> nearCache = nearCacheMap.get(name);
         if (nearCache == null) {
             synchronized (mutex) {
                 nearCache = nearCacheMap.get(name);
                 if (nearCache == null) {
-                    nearCache = createNearCache(name, nearCacheConfig, nearCacheContext);
+                    nearCache = createNearCache(name, nearCacheConfig);
+                    nearCache.initialize();
+
                     nearCacheMap.put(name, nearCache);
                 }
             }
@@ -52,12 +67,8 @@ public class DefaultNearCacheManager implements NearCacheManager {
         return nearCache;
     }
 
-    protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig,
-                                                     NearCacheContext nearCacheContext) {
-        if (nearCacheContext.getNearCacheManager() == null) {
-            nearCacheContext.setNearCacheManager(this);
-        }
-        return new DefaultNearCache<K, V>(name, nearCacheConfig, nearCacheContext);
+    protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig) {
+        return new DefaultNearCache<K, V>(name, nearCacheConfig, serializationService, executionService, classLoader);
     }
 
     @Override

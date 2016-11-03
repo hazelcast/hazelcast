@@ -138,10 +138,8 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
         evictionConfig.setEvictionPolicy(evictionPolicy);
         nearCacheConfig.setEvictionConfig(evictionConfig);
 
-        NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(
-                nearCacheConfig,
-                createNearCacheContext(),
-                inMemoryFormat);
+        NearCacheRecordStore<Integer, String> nearCacheRecordStore
+                = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             nearCacheRecordStore.put(i, "Record-" + i);

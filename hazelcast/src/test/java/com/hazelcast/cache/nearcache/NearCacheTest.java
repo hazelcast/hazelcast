@@ -17,7 +17,8 @@ public class NearCacheTest extends NearCacheTestSupport {
     @Override
     protected NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
-        return new DefaultNearCache<Integer, String>(name, nearCacheConfig, createNearCacheContext(), nearCacheRecordStore);
+        return new DefaultNearCache<Integer, String>(name, nearCacheConfig,
+                nearCacheRecordStore, ss, executionService, null);
     }
 
     @Test

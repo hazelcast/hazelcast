@@ -29,6 +29,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.NearCacheStats;
@@ -45,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
@@ -115,7 +118,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
 
     /**
      * Tests the Near Cache memory cost calculation.
-     *
+     * <p>
      * Depending on the parameters the following memory costs are asserted:
      * <ul>
      * <li>{@link NearCacheStats#getOwnedEntryMemoryCost()}</li>
@@ -260,9 +263,11 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
 
     protected NearCache getNearCache(String mapName, HazelcastInstance instance) {
         NodeEngineImpl nodeEngine = getNode(instance).nodeEngine;
-        MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
+        MapService service = nodeEngine.getService(SERVICE_NAME);
 
-        return service.getMapServiceContext().getNearCacheProvider().getOrCreateNearCache(mapName);
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        return mapNearCacheManager.getOrCreateNearCache(mapName);
     }
 
     protected int getNearCacheSize(IMap map) {

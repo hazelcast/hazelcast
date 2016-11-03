@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.NearCacheRecordMap;
@@ -46,7 +45,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     /**
      * If Unsafe is available, Object array index scale (every index represents a reference)
      * can be assumed as reference size.
-     *
+     * <p>
      * Otherwise, we assume reference size as integer size that means
      * we assume 32 bit JVM or compressed-references enabled 64 bit JVM
      * by ignoring compressed-references disable mode on 64 bit JVM.
@@ -62,31 +61,35 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected final SerializationService serializationService;
     protected final ClassLoader classLoader;
     protected final NearCacheStatsImpl nearCacheStats;
-
-    protected final MaxSizeChecker maxSizeChecker;
-    protected final EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
-    protected final EvictionChecker evictionChecker;
-    protected final EvictionStrategy<KS, R, NCRM> evictionStrategy;
-    protected final EvictionPolicyType evictionPolicyType;
+    protected MaxSizeChecker maxSizeChecker;
+    protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
+    protected EvictionChecker evictionChecker;
+    protected EvictionStrategy<KS, R, NCRM> evictionStrategy;
+    protected EvictionPolicyType evictionPolicyType;
 
     protected NCRM records;
 
-    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
-        this(nearCacheConfig, nearCacheContext, new NearCacheStatsImpl());
+    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
+                                        ClassLoader classLoader) {
+        this(nearCacheConfig, new NearCacheStatsImpl(), serializationService, classLoader);
     }
 
-    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext,
-                                        NearCacheStatsImpl nearCacheStats) {
+    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheStatsImpl nearCacheStats,
+                                        SerializationService serializationService, ClassLoader classLoader) {
         this.nearCacheConfig = nearCacheConfig;
         this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
-        this.serializationService = nearCacheContext.getSerializationService();
-        this.classLoader = nearCacheContext.getClassLoader();
+        this.serializationService = serializationService;
+        this.classLoader = classLoader;
         this.nearCacheStats = nearCacheStats;
-        this.records = createNearCacheRecordMap(nearCacheConfig, nearCacheContext);
+        this.evictionPolicyType = nearCacheConfig.getEvictionConfig().getEvictionPolicyType();
+    }
 
+    @Override
+    public void initialize() {
         EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
-        this.maxSizeChecker = createNearCacheMaxSizeChecker(evictionConfig, nearCacheConfig, nearCacheContext);
+        this.records = createNearCacheRecordMap(nearCacheConfig);
+        this.maxSizeChecker = createNearCacheMaxSizeChecker(evictionConfig, nearCacheConfig);
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         this.evictionChecker = createEvictionChecker(nearCacheConfig);
         this.evictionStrategy = createEvictionStrategy(evictionConfig);
@@ -94,11 +97,9 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     protected abstract MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
-                                                                    NearCacheConfig nearCacheConfig,
-                                                                    NearCacheContext nearCacheContext);
+                                                                    NearCacheConfig nearCacheConfig);
 
-    protected abstract NCRM createNearCacheRecordMap(NearCacheConfig nearCacheConfig,
-                                                     NearCacheContext nearCacheContext);
+    protected abstract NCRM createNearCacheRecordMap(NearCacheConfig nearCacheConfig);
 
     protected abstract long getKeyStorageMemoryCost(K key);
 

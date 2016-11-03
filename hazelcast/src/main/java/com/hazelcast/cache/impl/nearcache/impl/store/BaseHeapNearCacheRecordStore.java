@@ -17,12 +17,12 @@
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.cache.impl.nearcache.impl.maxsize.EntryCountNearCacheMaxSizeChecker;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Map;
 
@@ -31,14 +31,14 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
     protected static final int DEFAULT_INITIAL_CAPACITY = 1000;
 
-    public BaseHeapNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
-        super(nearCacheConfig, nearCacheContext);
+    public BaseHeapNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
+                                        ClassLoader classLoader) {
+        super(nearCacheConfig, serializationService, classLoader);
     }
 
     @Override
     protected MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
-                                                           NearCacheConfig nearCacheConfig,
-                                                           NearCacheContext nearCacheContext) {
+                                                           NearCacheConfig nearCacheConfig) {
         MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
@@ -52,9 +52,8 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected HeapNearCacheRecordMap<K, R> createNearCacheRecordMap(NearCacheConfig nearCacheConfig,
-                                                                    NearCacheContext nearCacheContext) {
-        return new HeapNearCacheRecordMap<K, R>(nearCacheContext.getSerializationService(), DEFAULT_INITIAL_CAPACITY);
+    protected HeapNearCacheRecordMap<K, R> createNearCacheRecordMap(NearCacheConfig nearCacheConfig) {
+        return new HeapNearCacheRecordMap<K, R>(serializationService, DEFAULT_INITIAL_CAPACITY);
     }
 
     @Override

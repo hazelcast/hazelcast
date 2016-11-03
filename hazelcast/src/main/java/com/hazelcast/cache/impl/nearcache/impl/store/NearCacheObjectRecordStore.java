@@ -16,18 +16,19 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.cache.impl.nearcache.impl.record.NearCacheObjectRecord;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 public class NearCacheObjectRecordStore<K, V>
         extends BaseHeapNearCacheRecordStore<K, V, NearCacheObjectRecord> {
 
-    public NearCacheObjectRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
-        super(nearCacheConfig, nearCacheContext);
+    public NearCacheObjectRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
+                                      ClassLoader classLoader) {
+        super(nearCacheConfig, serializationService, classLoader);
     }
 
     @Override
