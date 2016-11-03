@@ -44,7 +44,7 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 if (result.isDone()) {
                     producers[i] = null;
                 }
-                tracker.update(result);
+                tracker.mergeWith(result);
             }
         }
         return tracker.toProgressState();

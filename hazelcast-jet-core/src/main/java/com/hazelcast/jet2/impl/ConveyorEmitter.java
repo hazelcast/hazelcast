@@ -50,18 +50,18 @@ class ConveyorEmitter implements InboundEmitter {
         final Object doneItem;
         boolean done;
 
-        public DoneDetector(Object doneItem) {
+        DoneDetector(Object doneItem) {
             this.doneItem = doneItem;
         }
 
         @Override
         public boolean test(Object o) {
-            if (o == doneItem) {
-                assert !done : "Repeated 'submitterGoneItem' in queue at index " + queueIndex;
-                done = true;
-                return false;
+            if (o != doneItem) {
+                return true;
             }
-            return true;
+            assert !done : "Repeated 'submitterGoneItem' in queue at index " + queueIndex;
+            done = true;
+            return false;
         }
     }
 }

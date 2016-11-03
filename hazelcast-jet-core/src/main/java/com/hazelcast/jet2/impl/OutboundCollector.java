@@ -39,19 +39,20 @@ interface OutboundCollector {
     }
 
     /**
-     * Tries to close this edge collector.
-     * If the stream cannot complete the operation now, the call must be retried later.
+     * Tries to close this collector.
+     * If the collector didn't complete the operation now, the call must be retried later.
      */
     ProgressState close();
 
     /**
-     * Returns the list of partitions handled by this collector
+     * Returns the list of partitions handled by this collector.
      */
     List<Integer> getPartitions();
 
 
-    static OutboundCollector compositeCollector(OutboundCollector[] collectors, EdgeDef outboundEdge,
-                                                int partitionCount) {
+    static OutboundCollector compositeCollector(
+            OutboundCollector[] collectors, EdgeDef outboundEdge, int partitionCount
+    ) {
         switch (outboundEdge.getForwardingPattern()) {
             case ALL_TO_ONE:
                 throw new RuntimeException("to implement");
@@ -86,7 +87,7 @@ interface OutboundCollector {
                     continue;
                 }
                 ProgressState result = collectors[i].close();
-                progTracker.update(result);
+                progTracker.mergeWith(result);
                 if (result.isDone()) {
                     collectors[i] = null;
                 }
@@ -144,7 +145,7 @@ interface OutboundCollector {
                     continue;
                 }
                 ProgressState result = collectors[i].offer(item);
-                progTracker.update(result);
+                progTracker.mergeWith(result);
                 if (result.isDone()) {
                     isItemSentTo.set(i);
                 }

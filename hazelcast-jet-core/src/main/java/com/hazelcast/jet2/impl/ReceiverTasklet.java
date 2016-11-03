@@ -65,7 +65,7 @@ public class ReceiverTasklet implements Tasklet {
                 tracker.madeProgress();
             } else {
                 ProgressState offered = collector.offer(currItem, entry.getValue());
-                tracker.update(offered);
+                tracker.mergeWith(offered);
                 if (!offered.isDone()) {
                     break;
                 }
@@ -76,7 +76,7 @@ public class ReceiverTasklet implements Tasklet {
 
         if (remainingSenders == 0) {
             ProgressState closed = collector.close();
-            tracker.update(collector.close());
+            tracker.mergeWith(collector.close());
             if (closed.isDone()) {
                 return ProgressState.DONE;
             }

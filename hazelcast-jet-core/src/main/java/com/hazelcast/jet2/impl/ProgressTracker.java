@@ -17,7 +17,9 @@
 package com.hazelcast.jet2.impl;
 
 /**
- * Javadoc pending.
+ * Tracks the overall progress and completion state of a multi-stage operation.
+ * The operation as a whole made progress if any stage made progress.
+ * The operation as a whole is done if each stage is done.
  */
 class ProgressTracker {
     private boolean isMadeProgress;
@@ -28,15 +30,25 @@ class ProgressTracker {
         isDone = true;
     }
 
+    /**
+     * Lets this progress tracker know whether some stage made progress.
+     */
     public void madeProgress(boolean isMadeProgress) {
         this.isMadeProgress |= isMadeProgress;
     }
 
+    /**
+     * Lets this progress tracker know that some stage made progress.
+     */
     public void madeProgress() {
         madeProgress(true);
     }
 
-    public void update(ProgressState state) {
+    /**
+     * Merges the state of this progress tracker with the given {@code ProgressState} enum
+     * member.
+     */
+    public void mergeWith(ProgressState state) {
         isMadeProgress = isMadeProgress || state.isMadeProgress();
         isDone = isDone && state.isDone();
     }
