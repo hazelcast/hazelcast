@@ -177,10 +177,15 @@ interface OutboundCollector {
         public ProgressState offer(Object item) {
             int partition = partitioner.getPartition(item, partitionLookupTable.length);
             assert partition >= 0 && partition < partitionLookupTable.length : "Partition number out of range";
-            OutboundCollector collector = partitionLookupTable[partition];
+            return offer(item, partition);
+        }
+
+        @Override
+        public ProgressState offer(Object item, int partitionId) {
+            OutboundCollector collector = partitionLookupTable[partitionId];
             assert collector != null : "This item should not be handled by this collector as " +
                     "requested partition is not present";
-            return collector.offer(item, partition);
+            return collector.offer(item, partitionId);
         }
     }
 

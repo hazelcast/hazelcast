@@ -17,11 +17,9 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -30,18 +28,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 
+import java.nio.charset.Charset;
 import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
-import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class JetService implements ManagedService, RemoteService, PacketHandler {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
-    private final PacketHandlerThread handler;
+    public static final Charset CHARSET = Charset.forName("UTF-8");
 
     private NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -52,13 +47,11 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(JetService.class);
-        this.handler = new PacketHandlerThread();
 
     }
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        handler.start();
     }
 
     @Override
@@ -71,7 +64,6 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
         for (ExecutionContext executionContext : executionContexts.values()) {
             executionContext.destroy();
         }
-        handler.shutdown();
     }
 
     @Override
@@ -103,45 +95,19 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
 
     @Override
     public void handle(Packet packet) throws Exception {
-        handler.queue.offer(packet);
-    }
-
-    private class PacketHandlerThread extends Thread {
-
-        private final BlockingQueue<Packet> queue = new MPSCQueue<>(this, null);
-        private volatile boolean isShutdown;
-
-        @Override
-        public void run() {
-            try {
-                doRun();
-            } catch (InterruptedException e) {
-                ignore(e);
-            } catch (Throwable t) {
-                inspectOutOfMemoryError(t);
-                logger.severe(t);
-            }
-        }
-
-        private void doRun() throws InterruptedException {
-            while (!isShutdown) {
-                Packet packet = queue.take();
-                try {
-                    Payload payload = (Payload) nodeEngine.toObject(new HeapData(packet.toByteArray()));
-                    payload.setPartitionId(packet.getPartitionId());
-                    ExecutionContext context = executionContexts.get(payload.getEngineName());
-                    assert context != null : "Packet received for unknown execution context";
-                    context.handleIncoming(payload);
-                } catch (Throwable e) {
-                    inspectOutOfMemoryError(e);
-                    logger.severe("Error processing packet: " + packet, e);
-                }
-            }
-        }
-
-        private void shutdown() {
-            isShutdown = true;
-            interrupt();
-        }
+        int offset = 0;
+        byte[] bytes = packet.toByteArray();
+        int length = Bits.readIntB(bytes, offset);
+        offset += Bits.INT_SIZE_IN_BYTES;
+        String engineName = new String(bytes, offset, length);
+        offset += length;
+        ExecutionContext context = executionContexts.get(engineName);
+        long executionId = Bits.readLongB(bytes, offset);
+        offset += Bits.LONG_SIZE_IN_BYTES;
+        int vertexId = Bits.readIntB(bytes, offset);
+        offset += Bits.INT_SIZE_IN_BYTES;
+        int ordinal = Bits.readIntB(bytes, offset);
+        offset += Bits.INT_SIZE_IN_BYTES;
+        context.handleIncoming(executionId, vertexId, ordinal, packet.getPartitionId(), bytes, offset);
     }
 }

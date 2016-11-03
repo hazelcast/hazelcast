@@ -17,22 +17,22 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.io.IOException;
 import java.util.List;
 
+import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 class RemoteOutboundCollector implements OutboundCollector {
 
     private final Connection connection;
-    private final String engineName;
-    private final long executionId;
-    private final int destinationVertex;
-    private final int ordinal;
+    private final byte[] headerBytes;
     private final List<Integer> partitions;
     private final NodeEngineImpl engine;
 
@@ -40,17 +40,33 @@ class RemoteOutboundCollector implements OutboundCollector {
                                    String engineName,
                                    Address destinationAddress,
                                    long executionId,
-                                   int destinationVertex,
-                                   int inboundOrdinal,
+                                   int destinationVertexId,
+                                   int ordinal,
                                    List<Integer> partitions) {
-        this.engineName = engineName;
-        this.executionId = executionId;
-        this.destinationVertex = destinationVertex;
-        this.ordinal = inboundOrdinal;
         this.engine = (NodeEngineImpl) engine;
         this.connection = this.engine.getNode().getConnectionManager().getConnection(destinationAddress);
         this.partitions = partitions;
+        this.headerBytes = getHeaderBytes(engineName, executionId, destinationVertexId, ordinal);
+    }
 
+    private byte[] getHeaderBytes(String name, long executionId, int destinationVertexId, int ordinal) {
+        byte[] nameBytes = name.getBytes(JetService.CHARSET);
+        int length = Bits.INT_SIZE_IN_BYTES + nameBytes.length
+                + Bits.LONG_SIZE_IN_BYTES
+                + Bits.INT_SIZE_IN_BYTES
+                + Bits.INT_SIZE_IN_BYTES;
+        byte [] headerBytes = new byte[length];
+        int offset = 0;
+        Bits.writeIntB(headerBytes, offset, nameBytes.length);
+        offset += Bits.INT_SIZE_IN_BYTES;
+        System.arraycopy(nameBytes, 0 , headerBytes, offset, nameBytes.length);
+        offset += nameBytes.length;
+        Bits.writeLongB(headerBytes, offset, executionId);
+        offset += Bits.LONG_SIZE_IN_BYTES;
+        Bits.writeIntB(headerBytes, offset, destinationVertexId);
+        offset += Bits.INT_SIZE_IN_BYTES;
+        Bits.writeIntB(headerBytes, offset, ordinal);
+        return headerBytes;
     }
 
     @Override
@@ -60,9 +76,11 @@ class RemoteOutboundCollector implements OutboundCollector {
 
     @Override
     public ProgressState offer(Object item, int partitionId) {
-        byte[] payload = engine.toData(new Payload(engineName, executionId,
-                destinationVertex, ordinal, item)).toByteArray();
-        connection.write(new Packet(payload, partitionId).setFlag(Packet.FLAG_JET));
+        byte[] payload = engine.toData(item).toByteArray();
+        byte[] buffer = new byte[headerBytes.length + payload.length];
+        System.arraycopy(headerBytes, 0, buffer, 0, headerBytes.length);
+        System.arraycopy(payload, 0, buffer, headerBytes.length, payload.length);
+        connection.write(new Packet(buffer, partitionId).setFlag(Packet.FLAG_JET));
         return ProgressState.DONE;
     }
 

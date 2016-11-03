@@ -15,6 +15,9 @@
  */
 package com.hazelcast.jet2.benchmark;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.DAG;
@@ -26,11 +29,15 @@ import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.jet2.impl.IMapReader;
 import com.hazelcast.jet2.impl.IMapWriter;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -38,6 +45,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -46,8 +54,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -80,8 +86,37 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Before
     public void setUp() {
+        Config hazelcastConfig = new Config();
+        hazelcastConfig.getNetworkConfig().setPort(5701);
+        SerializerConfig serializerConfig = new SerializerConfig();
+        serializerConfig.setImplementation(new StreamSerializer<Map.Entry>() {
+            @Override
+            public int getTypeId() {
+                return 60000;
+            }
+
+            @Override
+            public void destroy() {
+
+            }
+
+            @Override
+            public void write(ObjectDataOutput out, Entry object) throws IOException {
+                out.writeObject(object.getKey());
+                out.writeObject(object.getValue());
+            }
+
+            @Override
+            public Entry read(ObjectDataInput in) throws IOException {
+                Object key = in.readObject();
+                Object value = in.readObject();
+                return new SimpleImmutableEntry(key, value);
+            }
+        }).setTypeClass(Map.Entry.class);
+
+        hazelcastConfig.getSerializationConfig().addSerializerConfig(serializerConfig);
         for (int i = 0; i < NODE_COUNT; i++) {
-            instance = factory.newHazelcastInstance();
+            instance = factory.newHazelcastInstance(hazelcastConfig);
         }
 
         JetEngineConfig config = new JetEngineConfig().setParallelism(PARALLELISM);
@@ -123,7 +158,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         List<Long> times = new ArrayList<>();
         final int warmupCount = 10;
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 20; i++) {
             long start = System.currentTimeMillis();
             jetEngine.newJob(dag).execute();
             long time = System.currentTimeMillis() - start;
@@ -205,7 +240,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         @Override
         public int getPartition(Object item, int numPartitions) {
-            return service.getPartitionId(((Map.Entry)item).getKey());
+            return service.getPartitionId(((Map.Entry) item).getKey());
         }
     }
 }

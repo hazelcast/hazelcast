@@ -16,21 +16,30 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
+
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 public class ReceiverTasklet implements Tasklet {
 
-    private final Queue<Payload> inbox = new ConcurrentLinkedQueue<>();
+    private final Queue<Map.Entry<Data, Integer>> inbox = new ConcurrentLinkedQueue<>();
+    private final SerializationService serializationService;
     //TODO: MPSCQueue does not implement peek() yet
     private final OutboundCollector collector;
     private int remainingSenders;
     private final ProgressTracker tracker = new ProgressTracker();
 
-    public ReceiverTasklet(OutboundCollector collector, int remainingSenders) {
+    private Object currItem;
+
+    public ReceiverTasklet(SerializationService serializationService,
+                           OutboundCollector collector, int remainingSenders) {
+        this.serializationService = serializationService;
         this.collector = collector;
         this.remainingSenders = remainingSenders;
     }
@@ -39,26 +48,29 @@ public class ReceiverTasklet implements Tasklet {
     public void init() {
     }
 
-    void offer(Payload item) {
-        inbox.offer(item);
+    void offer(Data item, int partitionCount) {
+        inbox.offer(new SimpleImmutableEntry<>(item, partitionCount));
     }
 
     @Override
     public ProgressState call() {
         tracker.reset();
         tracker.notDone();
-        for (Payload payload; (payload = inbox.peek()) != null; ) {
-            Object item = payload.getItem();
-            if (item == DONE_ITEM) {
+        for (Map.Entry<Data, Integer> entry; (entry = inbox.peek()) != null; ) {
+            if (currItem == null) {
+                currItem = serializationService.toObject(entry.getKey());
+            }
+            if (currItem == DONE_ITEM) {
                 remainingSenders--;
                 tracker.madeProgress();
             } else {
-                ProgressState offered = collector.offer(item, payload.getPartitionId());
+                ProgressState offered = collector.offer(currItem, entry.getValue());
                 tracker.update(offered);
                 if (!offered.isDone()) {
                     break;
                 }
             }
+            currItem = null;
             inbox.remove();
         }
 

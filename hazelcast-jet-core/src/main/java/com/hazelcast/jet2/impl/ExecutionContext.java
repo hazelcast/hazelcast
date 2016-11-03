@@ -19,6 +19,7 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
@@ -174,14 +175,17 @@ public class ExecutionContext {
         return config;
     }
 
-    public void handleIncoming(Payload payload) {
-        Map<Integer, Map<Integer, ReceiverTasklet>> vertexMap = receiverMap.get(payload.getExecutionId());
+    public void handleIncoming(long executionId, int vertexId, int ordinal, int partitionId,
+                               byte[] buffer, int offset) {
+        Map<Integer, Map<Integer, ReceiverTasklet>> vertexMap = receiverMap.get(executionId);
         if (vertexMap == null) {
-            throw new IllegalArgumentException("Execution id " + payload.getExecutionId() + " could not be found");
+            throw new IllegalArgumentException("Execution id " + executionId + " could not be found");
         }
-        Map<Integer, ReceiverTasklet> ordinalMap = vertexMap.get(payload.getVertexId());
-        ReceiverTasklet tasklet = ordinalMap.get(payload.getOrdinal());
-        tasklet.offer(payload);
+        Map<Integer, ReceiverTasklet> ordinalMap = vertexMap.get(vertexId);
+        ReceiverTasklet tasklet = ordinalMap.get(ordinal);
+        byte[] data = new byte[buffer.length - offset];
+        System.arraycopy(buffer, offset, data, 0, data.length);
+        tasklet.offer(new HeapData(data), partitionId);
     }
 
     public void destroy() {
@@ -269,7 +273,8 @@ public class ExecutionContext {
                                         = OutboundCollector.compositeCollector(receivers, output, partitionCount);
 
                                 int senderCount = nodeEngine.getClusterService().getSize() - 1;
-                                return new ReceiverTasklet(collector, parallelism * senderCount);
+                                return new ReceiverTasklet(nodeEngine.getSerializationService(),
+                                        collector, parallelism * senderCount);
                             });
                             return map;
                         });
