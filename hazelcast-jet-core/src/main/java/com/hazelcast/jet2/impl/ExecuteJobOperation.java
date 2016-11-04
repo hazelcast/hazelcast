@@ -47,8 +47,8 @@ class ExecuteJobOperation extends AsyncOperation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(engineName);
-        Map<Member, ExecutionPlan> executionPlanMap = executionContext.buildExecutionPlan(dag);
+        EngineContext engineContext = service.getEngineContext(engineName);
+        Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(dag);
 
         invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
                 .andThen(callback(()

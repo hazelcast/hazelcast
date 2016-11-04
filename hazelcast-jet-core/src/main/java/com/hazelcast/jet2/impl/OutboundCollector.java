@@ -17,6 +17,7 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Partitioner;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.BitSet;
@@ -73,8 +74,8 @@ interface OutboundCollector {
         Composite(OutboundCollector[] collectors) {
             this.collectors = collectors;
             this.partitions = Stream.of(collectors)
-                    .flatMapToInt(c -> IntStream.of(c.getPartitions()))
-                    .sorted().toArray();
+                                    .flatMapToInt(c -> IntStream.of(c.getPartitions()))
+                                    .sorted().toArray();
         }
 
         @Override
@@ -94,6 +95,7 @@ interface OutboundCollector {
         }
 
         @Override
+        @SuppressFBWarnings("EI_EXPOSE_REP")
         public int[] getPartitions() {
             return partitions;
         }
@@ -166,8 +168,8 @@ interface OutboundCollector {
             this.partitionLookupTable = new OutboundCollector[partitionCount];
 
             for (OutboundCollector collector : collectors) {
-                for (Integer integer : collector.getPartitions()) {
-                    partitionLookupTable[integer] = collector;
+                for (int partitionId : collector.getPartitions()) {
+                    partitionLookupTable[partitionId] = collector;
                 }
             }
         }

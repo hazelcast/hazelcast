@@ -38,7 +38,7 @@ public class DeployChunkOperation extends EngineOperation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.getExecutionContext(engineName).getDeploymentStore().receiveChunk(chunk);
+        service.getEngineContext(engineName).getDeploymentStore().receiveChunk(chunk);
     }
 
     @Override

@@ -17,7 +17,7 @@
 package com.hazelcast.jet2.impl.deployment;
 
 import com.hazelcast.jet2.impl.EngineOperation;
-import com.hazelcast.jet2.impl.ExecutionContext;
+import com.hazelcast.jet2.impl.EngineContext;
 import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,8 +41,8 @@ public class UpdateDeploymentCatalogOperation extends EngineOperation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(engineName);
-        DeploymentStore deploymentStore = executionContext.getDeploymentStore();
+        EngineContext engineContext = service.getEngineContext(engineName);
+        DeploymentStore deploymentStore = engineContext.getDeploymentStore();
         deploymentStore.updateCatalog(descriptor);
     }
 

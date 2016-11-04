@@ -38,8 +38,8 @@ class ExecutePlanOperation extends AsyncOperation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(engineName);
-        ICompletableFuture<Void> future = executionContext.executePlan(planId);
+        EngineContext engineContext = service.getEngineContext(engineName);
+        ICompletableFuture<Void> future = engineContext.getExecutionContext(planId).execute();
         future.andThen(new SimpleExecutionCallback<Void>() {
             @Override
             public void notify(Object response) {

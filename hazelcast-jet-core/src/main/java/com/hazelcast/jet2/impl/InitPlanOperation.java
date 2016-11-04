@@ -36,8 +36,8 @@ class InitPlanOperation extends EngineOperation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(engineName);
-        executionContext.initializePlan(plan);
+        EngineContext engineContext = service.getEngineContext(engineName);
+        engineContext.newExecutionContext(plan);
     }
 
     @Override

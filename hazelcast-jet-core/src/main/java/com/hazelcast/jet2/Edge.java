@@ -262,6 +262,8 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     private static class Default implements Partitioner {
+        private static final long serialVersionUID = 1L;
+
         protected transient IPartitionService service;
 
         @Override
@@ -289,6 +291,8 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     private static class Single implements Partitioner {
+
+        private static final long serialVersionUID = 1L;
 
         private final String key;
         private int partition;

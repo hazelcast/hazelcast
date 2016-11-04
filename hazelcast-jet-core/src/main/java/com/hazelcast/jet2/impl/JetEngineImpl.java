@@ -21,10 +21,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.DeploymentConfig;
-import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.Job;
-import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.ChunkIterator;
 import com.hazelcast.jet2.impl.deployment.DeployChunkOperation;
 import com.hazelcast.jet2.impl.deployment.UpdateDeploymentCatalogOperation;
@@ -48,17 +46,17 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
     @SuppressWarnings("checkstyle:magicnumber")
     private final String name;
     private final ILogger logger;
-    private final ExecutionContext executionContext;
+    private final EngineContext engineContext;
 
     JetEngineImpl(String name, NodeEngine nodeEngine, JetService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(JetEngine.class);
-        executionContext = service.getExecutionContext(name);
+        engineContext = service.getEngineContext(name);
     }
 
     public void initializeDeployment() {
-        invokeDeployment(executionContext.getConfig().getDeploymentConfigs());
+        invokeDeployment(engineContext.getConfig().getDeploymentConfigs());
     }
 
     @Override
@@ -105,16 +103,8 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
                       .collect(toList());
     }
 
-    private void toExecutableDag(DAG dag) {
-        for (Vertex v : dag) {
-            v.getSupplier();
-            for (Edge e : dag.getInboundEdges(v)) {
-            }
-        }
-    }
-
     private void invokeDeployment(final Set<DeploymentConfig> resources) {
-        new ChunkIterator(resources, executionContext.getDeploymentStore().getChunkSize()).forEachRemaining(
+        new ChunkIterator(resources, engineContext.getDeploymentStore().getChunkSize()).forEachRemaining(
                 chunk -> invokeOnCluster(() -> new DeployChunkOperation(name, chunk))
         );
         resources.forEach(

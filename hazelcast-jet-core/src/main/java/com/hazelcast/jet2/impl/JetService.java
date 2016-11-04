@@ -27,6 +27,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
+
 import java.nio.charset.Charset;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +41,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
     private NodeEngineImpl nodeEngine;
     private final ILogger logger;
 
-    private ConcurrentMap<String, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
 
 
     public JetService(NodeEngine nodeEngine) {
@@ -60,8 +61,8 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
 
     @Override
     public void shutdown(boolean terminate) {
-        for (ExecutionContext executionContext : executionContexts.values()) {
-            executionContext.destroy();
+        for (EngineContext engineContext : engineContexts.values()) {
+            engineContext.destroy();
         }
     }
 
@@ -73,7 +74,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
 
     @Override
     public void destroyDistributedObject(String objectName) {
-        ExecutionContext ec = executionContexts.remove(objectName);
+        EngineContext ec = engineContexts.remove(objectName);
         if (ec == null) {
             return;
         }
@@ -81,12 +82,12 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
     }
 
     public void ensureContext(String name, JetEngineConfig config) {
-        ConcurrencyUtil.getOrPutSynchronized(executionContexts, name, this,
-                (key) -> new ExecutionContext(name, nodeEngine, config));
+        ConcurrencyUtil.getOrPutSynchronized(engineContexts, name, this,
+                (key) -> new EngineContext(name, nodeEngine, config));
     }
 
-    public ExecutionContext getExecutionContext(String name) {
-        return executionContexts.get(name);
+    public EngineContext getEngineContext(String name) {
+        return engineContexts.get(name);
     }
 
 
@@ -96,15 +97,18 @@ public class JetService implements ManagedService, RemoteService, PacketHandler 
         byte[] bytes = packet.toByteArray();
         int length = Bits.readIntB(bytes, offset);
         offset += Bits.INT_SIZE_IN_BYTES;
-        String engineName = new String(bytes, offset, length);
+        String engineName = new String(bytes, offset, length, CHARSET);
         offset += length;
-        ExecutionContext context = executionContexts.get(engineName);
         long executionId = Bits.readLongB(bytes, offset);
         offset += Bits.LONG_SIZE_IN_BYTES;
         int vertexId = Bits.readIntB(bytes, offset);
         offset += Bits.INT_SIZE_IN_BYTES;
         int ordinal = Bits.readIntB(bytes, offset);
         offset += Bits.INT_SIZE_IN_BYTES;
-        context.handleIncoming(executionId, vertexId, ordinal, packet.getPartitionId(), bytes, offset);
+
+        engineContexts
+                .get(engineName)
+                .getExecutionContext(executionId)
+                .handlePacket(vertexId, ordinal, packet.getPartitionId(), bytes, offset);
     }
 }
