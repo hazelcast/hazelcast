@@ -221,7 +221,7 @@ class ExecutionContext {
         int partitionCount = ptionService.getPartitionCount();
         final Map<Integer, List<Integer>> consumerToPartitions = IntStream
                 .range(0, partitionCount).boxed()
-                .filter(p -> !isEdgeDistributed || ptionService.getPartitionOwner(p).equals(thisAddress))
+                .filter(p -> !isEdgeDistributed || ptionService.getPartitionOwnerOrWait(p).equals(thisAddress))
                 .collect(groupingBy(p -> p % localConsumerCount));
         return toIntArrayMap(consumerToPartitions);
     }
