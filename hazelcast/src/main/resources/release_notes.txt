@@ -88,6 +88,7 @@ This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
 *3.7.2 Fixes*
 
+- The scheduler in TcpIpConnectionManager is not completing after the method instance.shutdown() is called. [9187]
 - The container WaitingOperation (which wraps BlockingOperation) is asked for call ID/caller address. But this container object does not have any sensible information, so the heartbeat is not constructed correctly for a blocked operation. [8979]
 - JCache backup operation does not propagate the exception CacheNotExists. [8955]
 - The log message "unsafe unavailable" is at WARNING level and it also displays the full stack trace. [8852]
