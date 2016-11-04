@@ -217,8 +217,8 @@ public class ClientServiceTest extends HazelcastTestSupport {
         client1.getLifecycleService().shutdown();
         client2.getLifecycleService().shutdown();
 
-        assertTrue(latchAdd.await(ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS));
-        assertTrue(latchRemove.await(ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS));
+        assertTrue(latchAdd.await(2 * ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS));
+        assertTrue(latchRemove.await(2 * ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS));
 
         assertTrue(clientService.removeClientListener(id));
 
