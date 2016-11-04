@@ -28,8 +28,7 @@ public class AccumulatorProcessor<IN, OUT> extends AbstractProcessor {
     private OUT result;
 
 
-    public AccumulatorProcessor(BiFunction<OUT, IN, OUT> accumulator,
-                                OUT identity) {
+    public AccumulatorProcessor(BiFunction<OUT, IN, OUT> accumulator, OUT identity) {
         this.accumulator = accumulator;
         this.identity = identity;
     }

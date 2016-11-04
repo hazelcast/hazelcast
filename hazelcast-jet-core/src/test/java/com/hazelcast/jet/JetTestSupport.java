@@ -22,17 +22,14 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.util.UuidUtil;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import com.hazelcast.util.UuidUtil;
 import org.apache.log4j.Level;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 
 public class JetTestSupport extends HazelcastTestSupport {
 
@@ -47,7 +44,7 @@ public class JetTestSupport extends HazelcastTestSupport {
 
     @AfterClass
     public static void tearDownFactory() {
-        hazelcastInstanceFactory.shutdownAll();
+        hazelcastInstanceFactory.terminateAll();
     }
 
     protected static HazelcastInstance createCluster(TestHazelcastInstanceFactory factory, int nodeCount) {
@@ -104,16 +101,6 @@ public class JetTestSupport extends HazelcastTestSupport {
                     throw t;
                 }
             }
-        }
-    }
-
-    public static void executeSafely(Job job) {
-        try {
-            job.execute().get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw unchecked(e);
-        } finally {
-            job.destroy();
         }
     }
 

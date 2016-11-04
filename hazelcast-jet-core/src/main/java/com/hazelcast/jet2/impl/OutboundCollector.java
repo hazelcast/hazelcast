@@ -17,7 +17,6 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Partitioner;
-
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
@@ -54,8 +53,6 @@ interface OutboundCollector {
             OutboundCollector[] collectors, EdgeDef outboundEdge, int partitionCount
     ) {
         switch (outboundEdge.getForwardingPattern()) {
-            case ALL_TO_ONE:
-                throw new RuntimeException("to implement");
             case ALTERNATING_SINGLE:
                 return new RoundRobin(collectors);
             case PARTITIONED:

@@ -70,8 +70,8 @@ public class IListReader extends AbstractProducer {
 
         static final long serialVersionUID = 1L;
         private final String name;
-        private HazelcastInstance instance;
-        private Address ownerAddress;
+        private transient HazelcastInstance instance;
+        private transient Address ownerAddress;
 
         public MetaSupplier(String name) {
             this.name = name;

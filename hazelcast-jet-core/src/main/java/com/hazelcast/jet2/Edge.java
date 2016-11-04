@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
+import com.hazelcast.spi.partition.IPartitionService;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Random;
 
 /**
  * Represents an edge between two vertices in a DAG
@@ -109,6 +109,15 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Partition the edge with the default {@link Partitioner}
+     */
+    public Edge partitioned() {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = new Partitioner.Default();
+        return this;
+    }
+
+    /**
      * Partition the edge with the given {@link Partitioner}
      */
     public Edge partitioned(Partitioner partitioner) {
@@ -116,6 +125,39 @@ public class Edge implements IdentifiedDataSerializable {
         this.partitioner = partitioner;
         return this;
     }
+
+    /**
+     * Partition the edge with the default {@link Partitioner}
+     * and applies the provided function before partitioning
+     */
+    public Edge partitioned(KeyExtractor extractor) {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = new Partitioner.DefaultWithExtractor(extractor);
+        return this;
+    }
+
+    /**
+     * Forward the edge to a single point
+     */
+    public Edge allToOne() {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = new Partitioner() {
+            private int partition;
+
+            @Override
+            public void init(IPartitionService service) {
+                Random random = new Random();
+                partition = random.nextInt(service.getPartitionCount());
+            }
+
+            @Override
+            public int getPartition(Object item, int numPartitions) {
+                return partition;
+            }
+        };
+        return this;
+    }
+
 
     /**
      * Javadoc pending
@@ -150,6 +192,7 @@ public class Edge implements IdentifiedDataSerializable {
     public boolean isDistributed() {
         return isDistributed;
     }
+
     /**
      * @return the priority for the edge
      */
@@ -205,23 +248,11 @@ public class Edge implements IdentifiedDataSerializable {
         return JetDataSerializerHook.EDGE;
     }
 
-    /**
-     * Javadoc pending
-     */
-    public Edge distributed(MemberDistributionStrategy memberDistributionStrategy) {
-        return null;
-    }
-
 
     /**
      * Javadoc pending
      */
     public enum ForwardingPattern implements Serializable {
-
-        /**
-         * Output of all source tasklets is forwarded to a single destination tasklet
-         */
-        ALL_TO_ONE,
 
         /**
          * Output of the source tasklet is only available to a single destination tasklet,

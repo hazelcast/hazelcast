@@ -49,8 +49,8 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         dag
                 .addVertex(distinct)
                 .addVertex(combiner)
-                .addEdge(new Edge(previous, distinct).partitioned(context.getPartitioner()))
-                .addEdge(new Edge(distinct, combiner).partitioned(context.getPartitioner()));
+                .addEdge(new Edge(previous, distinct).partitioned())
+                .addEdge(new Edge(distinct, combiner).partitioned().distributed());
 
         return combiner;
     }
