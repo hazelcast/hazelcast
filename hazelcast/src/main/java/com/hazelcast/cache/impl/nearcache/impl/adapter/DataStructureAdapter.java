@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.adapter;
 
+import com.hazelcast.monitor.LocalMapStats;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -32,5 +34,11 @@ public interface DataStructureAdapter<K, V> {
 
     V get(K key);
 
+    void putAll(Map<K, V> map);
+
     Map<K, V> getAll(Set<K> keys);
+
+    void remove(K key);
+
+    LocalMapStats getLocalMapStats();
 }

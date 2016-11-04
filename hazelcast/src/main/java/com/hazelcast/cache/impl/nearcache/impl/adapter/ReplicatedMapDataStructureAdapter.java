@@ -16,17 +16,18 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.adapter;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalMapStats;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
+public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
-    private final IMap<K, V> map;
+    private final ReplicatedMap<K, V> map;
 
-    public IMapDataStructureAdapter(IMap<K, V> map) {
+    public ReplicatedMapDataStructureAdapter(ReplicatedMap<K, V> map) {
         this.map = map;
     }
 
@@ -37,7 +38,7 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
 
     @Override
     public void set(K key, V value) {
-        map.set(key, value);
+        map.put(key, value);
     }
 
     @Override
@@ -57,7 +58,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
-        return map.getAll(keys);
+        Map<K, V> result = new HashMap<K, V>(keys.size());
+        for (K key : keys) {
+            result.put(key, map.get(key));
+        }
+        return result;
     }
 
     @Override
@@ -67,6 +72,6 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
 
     @Override
     public LocalMapStats getLocalMapStats() {
-        return map.getLocalMapStats();
+        return null;
     }
 }

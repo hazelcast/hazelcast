@@ -20,6 +20,9 @@ import java.util.Map;
 
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -76,6 +79,20 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPutAll() {
+        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        expectedResult.put(23, "value-23");
+        expectedResult.put(42, "value-42");
+
+        adapter.putAll(expectedResult);
+
+        assertEquals(expectedResult.size(), cache.size());
+        for (Integer key : expectedResult.keySet()) {
+            assertTrue(cache.containsKey(key));
+        }
+    }
+
+    @Test
     public void testGetAll() {
         cache.put(23, "value-23");
         cache.put(42, "value-42");
@@ -86,5 +103,19 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
         Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
         assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void testRemove() {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        adapter.remove(23);
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
+    public void testGetLocalMapStats() {
+        assertNull(adapter.getLocalMapStats());
     }
 }

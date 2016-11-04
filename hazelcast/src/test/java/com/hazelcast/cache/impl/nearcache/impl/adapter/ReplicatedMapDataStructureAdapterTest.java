@@ -1,7 +1,7 @@
 package com.hazelcast.cache.impl.nearcache.impl.adapter;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -17,23 +17,23 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
+public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport {
 
-    private IMap<Integer, String> map;
-    private IMapDataStructureAdapter<Integer, String> adapter;
+    private ReplicatedMap<Integer, String> map;
+    private ReplicatedMapDataStructureAdapter<Integer, String> adapter;
 
     @Before
     public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
 
-        map = hazelcastInstance.getMap("IMapDataStructureAdapterTest");
-        adapter = new IMapDataStructureAdapter<Integer, String>(map);
+        map = hazelcastInstance.getReplicatedMap("ReplicatedMapDataStructureAdapterTest");
+        adapter = new ReplicatedMapDataStructureAdapter<Integer, String>(map);
     }
 
     @Test
@@ -108,11 +108,6 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test
     public void testGetLocalMapStats() {
-        assertNotNull(adapter.getLocalMapStats());
-
-        assertEquals(0, adapter.getLocalMapStats().getOwnedEntryCount());
-
-        adapter.put(23, "value-23");
-        assertEquals(1, adapter.getLocalMapStats().getOwnedEntryCount());
+        assertNull(adapter.getLocalMapStats());
     }
 }
