@@ -24,8 +24,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.List;
-
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 class RemoteOutboundCollector implements OutboundCollector {
@@ -42,7 +40,7 @@ class RemoteOutboundCollector implements OutboundCollector {
                                    int destinationVertexId,
                                    int ordinal,
                                    int[] partitions) {
-        this.serializationService = (InternalSerializationService)engine.getSerializationService();
+        this.serializationService = (InternalSerializationService) engine.getSerializationService();
         this.connection = ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(destinationAddress);
         this.partitions = partitions;
         this.headerBytes = getHeaderBytes(engineName, executionId, destinationVertexId, ordinal);
@@ -52,11 +50,11 @@ class RemoteOutboundCollector implements OutboundCollector {
         byte[] nameBytes = name.getBytes(JetService.CHARSET);
         int length = Bits.INT_SIZE_IN_BYTES + nameBytes.length + Bits.LONG_SIZE_IN_BYTES + Bits.INT_SIZE_IN_BYTES
                 + Bits.INT_SIZE_IN_BYTES;
-        byte [] headerBytes = new byte[length];
+        byte[] headerBytes = new byte[length];
         int offset = 0;
         Bits.writeIntB(headerBytes, offset, nameBytes.length);
         offset += Bits.INT_SIZE_IN_BYTES;
-        System.arraycopy(nameBytes, 0 , headerBytes, offset, nameBytes.length);
+        System.arraycopy(nameBytes, 0, headerBytes, offset, nameBytes.length);
         offset += nameBytes.length;
         Bits.writeLongB(headerBytes, offset, executionId);
         offset += Bits.LONG_SIZE_IN_BYTES;

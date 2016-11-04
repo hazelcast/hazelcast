@@ -175,6 +175,9 @@ public class Edge implements IdentifiedDataSerializable {
         return forwardingPattern;
     }
 
+    /**
+     * @return Javadoc pending
+     */
     public boolean isDistributed() {
         return isDistributed;
     }
@@ -289,7 +292,7 @@ public class Edge implements IdentifiedDataSerializable {
 
         private final String key;
         private int partition;
-        
+
         public Single() {
             key = UuidUtil.newUnsecureUuidString();
         }

@@ -17,7 +17,6 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.UuidUtil;
 
 import java.io.Serializable;
 
@@ -27,6 +26,9 @@ import java.io.Serializable;
 @FunctionalInterface
 public interface Partitioner extends Serializable {
 
+    /**
+     * Initialize the partitioner state
+     */
     default void init(IPartitionService service) {
     }
 

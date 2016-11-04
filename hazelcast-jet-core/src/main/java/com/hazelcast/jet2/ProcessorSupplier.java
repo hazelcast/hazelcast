@@ -26,9 +26,15 @@ import java.util.List;
  */
 public interface ProcessorSupplier extends Serializable {
 
+    /**
+     * Javadoc pending.
+     */
     default void init(Context context) {
     }
 
+    /**
+     * Javadoc pending.
+     */
     List<Processor> get(int count);
 
     /**

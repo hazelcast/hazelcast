@@ -56,7 +56,8 @@ class ExecuteJobOperation extends AsyncOperation {
                         .andThen(callback(() -> sendResponse(true)))));
     }
 
-    private ICompletableFuture<List<Object>> invokeForPlan(Map<Member, ExecutionPlan> planMap, Function<ExecutionPlan, Operation> func) {
+    private ICompletableFuture<List<Object>> invokeForPlan(Map<Member, ExecutionPlan> planMap,
+                                                           Function<ExecutionPlan, Operation> func) {
         List<ICompletableFuture<Object>> futures = new ArrayList<>();
         for (Map.Entry<Member, ExecutionPlan> entry : planMap.entrySet()) {
             futures.add(getNodeEngine().getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,

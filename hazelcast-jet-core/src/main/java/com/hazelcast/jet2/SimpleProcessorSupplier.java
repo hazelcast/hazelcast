@@ -17,9 +17,11 @@
 package com.hazelcast.jet2;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * Javadoc pending
+ */
 @FunctionalInterface
 public interface SimpleProcessorSupplier extends Serializable, Supplier<Processor> {
 }

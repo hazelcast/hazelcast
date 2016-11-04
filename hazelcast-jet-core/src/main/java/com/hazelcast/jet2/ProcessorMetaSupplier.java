@@ -24,29 +24,59 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Javadoc pending.
+ */
 public interface ProcessorMetaSupplier extends Serializable {
 
+    /**
+     * Javadoc pending.
+     */
     default void init(Context context) {
     }
 
+    /**
+     * Javadoc pending.
+     */
     ProcessorSupplier get(Address address);
 
+    /**
+     * Javadoc pending.
+     */
     static ProcessorMetaSupplier of(final ProcessorSupplier listSupplier) {
       return address -> listSupplier;
     }
 
+    /**
+     * Javadoc pending.
+     */
     static ProcessorMetaSupplier of(final SimpleProcessorSupplier processorSupplier) {
         return address -> count -> Stream.generate(processorSupplier::get).limit(count).collect(toList());
     }
 
+    /**
+     * Javadoc pending.
+     */
     interface Context {
 
+        /**
+         * Javadoc pending.
+         */
         HazelcastInstance getHazelcastInstance();
 
+        /**
+         * Javadoc pending.
+         */
         int totalParallelism();
 
+        /**
+         * Javadoc pending.
+         */
         int perNodeParallelism();
 
+        /**
+         * Javadoc pending.
+         */
         static Context of(HazelcastInstance instance, int totalParallelism, int perNodeParallelism) {
             return new Context() {
                 @Override

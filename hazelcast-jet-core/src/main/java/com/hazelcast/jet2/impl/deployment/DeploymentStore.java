@@ -177,6 +177,7 @@ public class DeploymentStore {
         dataEntries.put(descriptor.getId(), new ClassLoaderEntry(bytes, resourceStream.baseUrl));
     }
 
+    @SuppressWarnings("checkstyle:innerassignment")
     private void loadJarStream(ResourceStream resourceStream) {
         BufferedInputStream bis = null;
         JarInputStream jis = null;
@@ -191,7 +192,7 @@ public class DeploymentStore {
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 byte[] buf = new byte[JetUtil.KILOBYTE];
-                for (int len; (len = jis.read(buf)) > 0;) {
+                for (int len; (len = jis.read(buf)) > 0; ) {
                     out.write(buf, 0, len);
                 }
                 String name = jarEntry.getName();
@@ -218,11 +219,12 @@ public class DeploymentStore {
         }
     }
 
+    @SuppressWarnings("checkstyle:innerassignment")
     private static byte[] readFully(InputStream in) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] b = new byte[JetUtil.KILOBYTE];
-            for (int len; (len = in.read(b)) != -1;) {
+            for (int len; (len = in.read(b)) != -1; ) {
                 out.write(b, 0, len);
             }
             return out.toByteArray();

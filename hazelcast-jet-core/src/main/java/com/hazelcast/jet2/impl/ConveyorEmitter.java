@@ -18,7 +18,6 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
-import java.util.List;
 import java.util.function.Predicate;
 
 class ConveyorEmitter implements InboundEmitter {

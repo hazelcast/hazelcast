@@ -16,10 +16,6 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.Edge.ForwardingPattern;
-import com.hazelcast.jet2.Partitioner;
-import com.hazelcast.jet2.ProcessorSupplier;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,95 +41,3 @@ class ExecutionPlan implements Serializable {
     }
 }
 
-class VertexDef implements Serializable {
-
-    private int id;
-    private final List<EdgeDef> inputs = new ArrayList<>();
-    private final List<EdgeDef> outputs = new ArrayList<>();
-    private final ProcessorSupplier processorSupplier;
-    private final int parallelism;
-
-    public VertexDef(int id, ProcessorSupplier processorSupplier, int parallelism) {
-        this.id = id;
-        this.processorSupplier = processorSupplier;
-        this.parallelism = parallelism;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void addInputs(List<EdgeDef> inputs) {
-        this.inputs.addAll(inputs);
-    }
-
-    public void addOutputs(List<EdgeDef> outputs) {
-        this.outputs.addAll(outputs);
-    }
-
-    public List<EdgeDef> getInputs() {
-        return inputs;
-    }
-
-    public List<EdgeDef> getOutputs() {
-        return outputs;
-    }
-
-    public ProcessorSupplier getProcessorSupplier() {
-        return processorSupplier;
-    }
-
-    public int getParallelism() {
-        return parallelism;
-    }
-}
-
-class EdgeDef implements Serializable {
-
-    private final int otherEndId;
-    private final int otherEndOrdinal;
-    private final int ordinal;
-    private final int priority;
-    private final boolean isDistributed;
-    private final ForwardingPattern forwardingPattern;
-    private final Partitioner partitioner;
-
-    public EdgeDef(int otherEndId, int ordinal, int otherEndOrdinal, int priority,
-                   boolean isDistributed, ForwardingPattern forwardingPattern, Partitioner partitioner) {
-        this.otherEndId = otherEndId;
-        this.otherEndOrdinal = otherEndOrdinal;
-        this.ordinal = ordinal;
-        this.priority = priority;
-        this.isDistributed = isDistributed;
-        this.forwardingPattern = forwardingPattern;
-        this.partitioner = partitioner;
-    }
-
-    public int getOtherEndId() {
-        return otherEndId;
-    }
-
-    public int getOrdinal() {
-        return ordinal;
-    }
-
-    public ForwardingPattern getForwardingPattern() {
-        return forwardingPattern;
-    }
-
-    public Partitioner getPartitioner() {
-        return partitioner;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public int getOtherEndOrdinal() {
-        return otherEndOrdinal;
-    }
-
-    public boolean isDistributed() {
-        return isDistributed;
-    }
-}

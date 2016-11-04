@@ -19,7 +19,6 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.io.IOException;

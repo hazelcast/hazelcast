@@ -17,6 +17,7 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Partitioner;
+
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.stream.IntStream;
@@ -72,8 +73,8 @@ interface OutboundCollector {
         Composite(OutboundCollector[] collectors) {
             this.collectors = collectors;
             this.partitions = Stream.of(collectors)
-                                    .flatMapToInt(c -> IntStream.of(c.getPartitions()))
-                                    .sorted().toArray();
+                    .flatMapToInt(c -> IntStream.of(c.getPartitions()))
+                    .sorted().toArray();
         }
 
         @Override
@@ -181,8 +182,8 @@ interface OutboundCollector {
         @Override
         public ProgressState offer(Object item, int partitionId) {
             OutboundCollector collector = partitionLookupTable[partitionId];
-            assert collector != null : "This item should not be handled by this collector as " +
-                    "requested partition is not present";
+            assert collector != null : "This item should not be handled by this collector as "
+                    + "requested partition is not present";
             return collector.offer(item, partitionId);
         }
     }
@@ -191,7 +192,7 @@ interface OutboundCollector {
 
         private final String name;
         private final OutboundCollector collector;
-        private int counter = 0;
+        private int counter;
 
         public Diagnostic(String name, OutboundCollector collector) {
             this.name = name;

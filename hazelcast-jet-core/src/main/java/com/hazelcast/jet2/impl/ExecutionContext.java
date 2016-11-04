@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
@@ -215,7 +214,8 @@ public class ExecutionContext {
             for (Processor p : processors) {
                 final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
                 final List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
-                final int taskletIndex = i++; // final copy of i, as needed in lambdas below
+                // final copy of i, as needed in lambdas below
+                final int taskletIndex = i++;
                 for (EdgeDef output : outputs) {
                     final int destinationId = output.getOtherEndId();
                     final int ordinalAtDestination = output.getOtherEndOrdinal();
@@ -318,6 +318,6 @@ public class ExecutionContext {
 
     private static <K> Map<K, int[]> toIntArrayMap(Map<K, List<Integer>> intListMap) {
         return intListMap.entrySet().stream()
-                    .collect(toMap(Entry::getKey, e -> e.getValue().stream().mapToInt(x -> x).toArray()));
+                .collect(toMap(Entry::getKey, e -> e.getValue().stream().mapToInt(x -> x).toArray()));
     }
 }
