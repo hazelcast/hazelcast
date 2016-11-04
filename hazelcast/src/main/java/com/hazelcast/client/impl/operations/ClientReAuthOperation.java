@@ -31,7 +31,6 @@ import java.util.Set;
 public class ClientReAuthOperation extends AbstractOperation implements UrgentSystemOperation, AllowedDuringPassiveState {
 
     private String clientUuid;
-    private boolean clientDisconnectOperationRun;
 
     public ClientReAuthOperation() {
     }
@@ -50,17 +49,11 @@ public class ClientReAuthOperation extends AbstractOperation implements UrgentSy
             endpoint.authenticated(principal);
         }
         engine.addOwnershipMapping(clientUuid, memberUuid);
-        clientDisconnectOperationRun = endpoints.isEmpty();
     }
 
     @Override
     public boolean returnsResponse() {
-        return Boolean.TRUE;
-    }
-
-    @Override
-    public Object getResponse() {
-        return clientDisconnectOperationRun;
+        return false;
     }
 
     @Override

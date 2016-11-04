@@ -31,18 +31,15 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -107,35 +104,24 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
 
     @Override
     public void onClusterConnect(final ClientConnection clientConnection) {
-        registrationExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                Collection<Member> newMemberList = client.getClientClusterService().getMemberList();
-                if (registrations.isEmpty()) {
+        try {
+            registrationExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Collection<Member> newMemberList = client.getClientClusterService().getMemberList();
                     members.clear();
                     members.addAll(newMemberList);
-                    return;
-                }
-                List<Member> removedMembers = new ArrayList<Member>();
-                for (Member member : members) {
-                    if (!newMemberList.contains(member)) {
-                        removedMembers.add(member);
-                    }
-                }
-                List<Member> newMembers = new ArrayList<Member>();
-                for (Member member : newMemberList) {
-                    if (!members.contains(member)) {
-                        newMembers.add(member);
-                    }
-                }
 
-                members.clear();
-                members.addAll(newMemberList);
+                    if (registrations.isEmpty()) {
+                        return;
+                    }
 
-                updateRegistrations(clientConnection, removedMembers, newMembers);
-                ensureConnectionsToAllServers();
-            }
-        });
+                    reRegisterAll();
+                }
+            }).get();
+        } catch (Exception e) {
+            ExceptionUtil.rethrow(e);
+        }
     }
 
     private void invoke(ClientRegistrationKey registrationKey, Member member) throws Exception {
@@ -165,7 +151,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                 @Override
                 public Boolean call() throws Exception {
                     ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
-                    return deregister(key);
+                    return deregister(key, getMemberUuids());
                 }
             });
 
@@ -175,7 +161,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         }
     }
 
-    private Boolean deregister(ClientRegistrationKey key) {
+    private Boolean deregister(ClientRegistrationKey key, Set<String> memberUuids) {
         Map<Member, ClientEventRegistration> registrationMap = registrations.get(key);
         if (registrationMap == null) {
             return false;
@@ -184,10 +170,14 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         for (ClientEventRegistration registration : registrationMap.values()) {
             Member subscriber = registration.getSubscriber();
             try {
-                ListenerMessageCodec listenerMessageCodec = registration.getCodec();
-                String serverRegistrationId = registration.getServerRegistrationId();
-                ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                new ClientInvocation(client, request, subscriber.getAddress()).invoke().get();
+                // We need to compare uuids since the member may reconnect to the restarted member which restarted at the same
+                // address and member.equals return true but they are actually different instances.
+                if (memberUuids.contains(subscriber.getUuid())) {
+                    ListenerMessageCodec listenerMessageCodec = registration.getCodec();
+                    String serverRegistrationId = registration.getServerRegistrationId();
+                    ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
+                    new ClientInvocation(client, request, subscriber.getAddress()).invoke().get();
+                }
                 removeEventHandler(registration.getCallId());
                 registrationMap.remove(subscriber);
             } catch (Exception e) {
@@ -200,6 +190,14 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
             registrations.remove(key);
         }
         return successful;
+    }
+
+    private Set<String> getMemberUuids() {
+        Set<String> memberUuids = new HashSet<String>(members.size());
+        for (Member m : members) {
+            memberUuids.add(m.getUuid());
+        }
+        return memberUuids;
     }
 
     @Override
@@ -329,65 +327,15 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     public void init(final InitialMembershipEvent event) {
     }
 
-    private void updateRegistrations(ClientConnection clientConnection, List<Member> removedMembers, List<Member> newMembers) {
-        /**
-         * The servers prior to 3.7.3 do not send the unregistered members list, hence we always need to reregister all
-         * existing members to ensure that the listeners work.
-         */
-        if (clientConnection.getConnectedServerVersion() == BuildInfo.UNKNOWN_HAZELCAST_VERSION) {
-            reRegisterAll();
-            return;
-        }
-
-        List<Member> clientUnregisteredMembers = clientConnection.getClientUnregisteredMembers();
-        // remove the registrations for the members who left the cluster
-        for (Member member : removedMembers) {
-            for (Map<Member, ClientEventRegistration> registrationMap : registrations.values()) {
-                removeRegistrationLocally(member, registrationMap);
-            }
-            // This member should not exist as a cleanedup member since it is already removed
-            clientUnregisteredMembers.remove(member);
-        }
-
-        for (Member member : clientUnregisteredMembers) {
-            reRegister(member);
-            newMembers.remove(member);
-        }
-
-        for (Member member : newMembers) {
-            register(member);
-        }
-    }
-
-    private void reRegister(Member member) {
-        register(member, true);
-    }
-
-    private void register(Member member) {
-        register(member, false);
-    }
-
-    private void register(Member member, boolean removeLocally) {
-        for (Map.Entry<ClientRegistrationKey, Map<Member, ClientEventRegistration>> entry : registrations.entrySet()) {
-            ClientRegistrationKey registrationKey = entry.getKey();
-            if (removeLocally) {
-                Map<Member, ClientEventRegistration> registrationMap = entry.getValue();
-                removeRegistrationLocally(member, registrationMap);
-            }
-
-            try {
-                invoke(registrationKey, member);
-            } catch (Exception e) {
-                logger.warning("Listener " + registrationKey + " could not be added to the new member " + member, e);
-            }
-        }
-    }
-
     private void reRegisterAll() {
         for (ClientRegistrationKey key : registrations.keySet()) {
-            deregister(key);
+            logger.finest("Reregistering listener " + key + " to the cluster.");
+
+            deregister(key, getMemberUuids());
 
             register(key);
+
+            logger.finest("Reregistered listener " + key + " to the cluster.");
         }
     }
 
@@ -409,6 +357,10 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         }
 
         Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
+        if (null == ownerConnectionAddress) {
+            return;
+        }
+
         for (Member member : members) {
             try {
                 getOrConnect(member, ownerConnectionAddress);

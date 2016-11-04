@@ -610,7 +610,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 destroyConnection(oldConnection, "Replaced by newer connection", null);
             }
         }
-        assert oldConnection == null || connection.equals(oldConnection);
         connectionsInProgress.remove(target);
         logger.info("Authenticated with server " + connection.getRemoteEndpoint() + ", server version:" + connection
                 .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());

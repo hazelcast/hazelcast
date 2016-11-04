@@ -19,14 +19,12 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.ClientEndpointImpl;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -37,7 +35,6 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginContext;
@@ -47,15 +44,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
  * Base authentication task
  */
 public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableMessageTask<P> {
-    private static final int REAUTHENTICATION_TIMEOUT = ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS;
-
     protected transient ClientPrincipal principal;
     protected transient Credentials credentials;
     protected transient byte clientSerializationVersion;
@@ -195,7 +189,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
 
             principal = new ClientPrincipal(uuid, localMemberUUID);
 
-            boolean success = reAuthenticateWithMembers(clientUnregisteredMembers, uuid);
+            boolean success = reAuthenticateWithMembers(uuid);
 
             if (!success) {
                 byte status = AuthenticationStatus.CREDENTIALS_FAILED.getId();
@@ -225,7 +219,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
                 clientUnregisteredMembers);
     }
 
-    private boolean reAuthenticateWithMembers(final List<Member> cleanedUpMembers, final String uuid) {
+    private boolean reAuthenticateWithMembers(final String uuid) {
         boolean success = true;
 
         ArrayList<OperationInfo> operationInfos = new ArrayList<OperationInfo>();
@@ -249,46 +243,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
         }
 
         if (success) {
-            if (reAuthLocal()) {
-                cleanedUpMembers.add(localMember);
-            }
-
-            if (getReAuthenticationResponses(cleanedUpMembers, operationInfos)) {
-                return false;
-            }
+            reAuthLocal();
         }
 
-        return true;
-    }
-
-    private boolean getReAuthenticationResponses(List<Member> cleanedUpMembers, List<OperationInfo> operationInfos) {
-        List<Future> futures = new ArrayList<Future>();
-        for (OperationInfo operationInfo : operationInfos) {
-            futures.add(operationInfo.getFuture());
-        }
-        try {
-            FutureUtil.waitWithDeadline(futures, REAUTHENTICATION_TIMEOUT, TimeUnit.SECONDS,
-                    FutureUtil.RETHROW_ALL_EXCEPT_MEMBER_LEFT);
-        } catch (Exception e) {
-            logger.warning("Cluster reAuthentication failed.", e);
-            return true;
-        }
-
-        for (OperationInfo operationInfo : operationInfos) {
-            try {
-                boolean clientDisconnectOperationRun = (Boolean) operationInfo.getFuture().get();
-                if (clientDisconnectOperationRun) {
-                    cleanedUpMembers.add(operationInfo.getMember());
-                }
-            } catch (MemberLeftException e) {
-                // this is ok as expected
-                cleanedUpMembers.add(operationInfo.getMember());
-            } catch (Exception e) {
-                logger.warning("Failed to get response for invocation to member:" + operationInfo.getMember(), e);
-                return true;
-            }
-        }
-        return false;
+        return success;
     }
 
     private void setConnectionType() {
