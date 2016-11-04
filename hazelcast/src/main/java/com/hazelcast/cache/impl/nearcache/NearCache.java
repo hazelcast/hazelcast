@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.spi.InitializingObject;
 
 /**
  * {@link NearCache} is the contract point to store keys and values in underlying
@@ -26,7 +27,7 @@ import com.hazelcast.monitor.NearCacheStats;
  * @param <K> the type of the key
  * @param <V> the type of the value
  */
-public interface NearCache<K, V> {
+public interface NearCache<K, V> extends InitializingObject {
 
     /**
      * Default expiration task initial delay time as seconds

@@ -40,7 +40,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.nearcache.invalidation.NearCacheInvalidator;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
@@ -908,8 +908,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected void sendNearCacheClearEvent() {
-        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        NearCacheInvalidator nearCacheInvalidator = mapNearCacheManager.getNearCacheInvalidator();
         nearCacheInvalidator.clear(name, localMemberUuid);
     }
 

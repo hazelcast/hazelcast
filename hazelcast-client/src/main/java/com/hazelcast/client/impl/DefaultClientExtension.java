@@ -24,6 +24,7 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -40,6 +41,7 @@ import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
@@ -133,6 +135,10 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public NearCacheManager createNearCacheManager() {
-        return new DefaultNearCacheManager();
+        SerializationService ss = client.getSerializationService();
+        ClientExecutionServiceImpl es = client.getExecutionService();
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+
+        return new DefaultNearCacheManager(ss, es, classLoader);
     }
 }

@@ -15,7 +15,7 @@ public class NearCacheManagerTest extends NearCacheManagerTestSupport {
 
     @Override
     protected NearCacheManager createNearCacheManager() {
-        return new DefaultNearCacheManager();
+        return new DefaultNearCacheManager(ss, executionService, null);
     }
 
     @Test

@@ -1,15 +1,16 @@
 package com.hazelcast.cache.nearcache;
 
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -30,6 +31,8 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
     protected static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
 
     protected List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
+    protected SerializationService ss = new DefaultSerializationServiceBuilder()
+            .setVersion(InternalSerializationService.VERSION_1).build();
 
     @After
     public final void shutdownExecutorServices() {
@@ -45,27 +48,28 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
                 .setInMemoryFormat(inMemoryFormat);
     }
 
-    protected NearCacheContext createNearCacheContext() {
-        return new NearCacheContext(new DefaultSerializationServiceBuilder().build(), createExecutionService());
+    protected <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
+                                                                           InMemoryFormat inMemoryFormat) {
+        NearCacheRecordStore<K, V> recordStore = null;
+        switch (inMemoryFormat) {
+            case BINARY:
+                recordStore = new NearCacheDataRecordStore<K, V>(nearCacheConfig, ss, null);
+                break;
+            case OBJECT:
+                recordStore = new NearCacheObjectRecordStore<K, V>(nearCacheConfig, ss, null);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);
+        }
+        recordStore.initialize();
+
+        return recordStore;
     }
 
     protected ExecutionService createExecutionService() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorServices.add(scheduledExecutorService);
         return new TestExecutionService(scheduledExecutorService);
-    }
-
-    protected <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
-                                                                           NearCacheContext nearCacheContext,
-                                                                           InMemoryFormat inMemoryFormat) {
-        switch (inMemoryFormat) {
-            case BINARY:
-                return new NearCacheDataRecordStore<K, V>(nearCacheConfig, nearCacheContext);
-            case OBJECT:
-                return new NearCacheObjectRecordStore<K, V>(nearCacheConfig, nearCacheContext);
-            default:
-                throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);
-        }
     }
 
     private static class TestExecutionService implements ExecutionService {

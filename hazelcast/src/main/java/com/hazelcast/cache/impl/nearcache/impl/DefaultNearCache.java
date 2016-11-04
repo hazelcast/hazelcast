@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl.nearcache.impl;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheObjectRecordStore;
@@ -31,47 +30,59 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     protected final String name;
     protected final NearCacheConfig nearCacheConfig;
-    protected final NearCacheContext nearCacheContext;
     protected final SerializationService serializationService;
-    protected final NearCacheRecordStore<K, V> nearCacheRecordStore;
-    protected final ScheduledFuture expirationTaskFuture;
+    protected final ExecutionService executionService;
+    protected final ClassLoader classLoader;
 
-    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
-        this.name = name;
-        this.nearCacheConfig = nearCacheConfig;
-        this.nearCacheContext = nearCacheContext;
-        this.serializationService = nearCacheContext.getSerializationService();
-        this.nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, nearCacheContext);
-        this.expirationTaskFuture = createAndScheduleExpirationTask();
+    protected NearCacheRecordStore<K, V> nearCacheRecordStore;
+    protected ScheduledFuture expirationTaskFuture;
+
+    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig,
+                            SerializationService serializationService, ExecutionService executionService,
+                            ClassLoader classLoader) {
+        this(name, nearCacheConfig, null, serializationService, executionService, classLoader);
     }
 
-    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext,
-                            NearCacheRecordStore<K, V> nearCacheRecordStore) {
+    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig, NearCacheRecordStore<K, V> nearCacheRecordStore,
+                            SerializationService serializationService, ExecutionService executionService,
+                            ClassLoader classLoader
+    ) {
         this.name = name;
         this.nearCacheConfig = nearCacheConfig;
-        this.nearCacheContext = nearCacheContext;
-        this.serializationService = nearCacheContext.getSerializationService();
+        this.serializationService = serializationService;
+        this.classLoader = classLoader;
+        this.executionService = executionService;
         this.nearCacheRecordStore = nearCacheRecordStore;
-        this.expirationTaskFuture = createAndScheduleExpirationTask();
+
     }
 
-    protected NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
-                                                                    NearCacheContext nearCacheContext) {
+    @Override
+    public void initialize() {
+        if (nearCacheRecordStore == null) {
+            nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig);
+            nearCacheRecordStore.initialize();
+        }
+
+        expirationTaskFuture = createAndScheduleExpirationTask();
+    }
+
+    protected NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig) {
         InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         if (inMemoryFormat == null) {
-            inMemoryFormat = NearCacheConfig.DEFAULT_MEMORY_FORMAT;
+            inMemoryFormat = DEFAULT_MEMORY_FORMAT;
         }
         switch (inMemoryFormat) {
             case BINARY:
-                return new NearCacheDataRecordStore<K, V>(nearCacheConfig, nearCacheContext);
+                return new NearCacheDataRecordStore<K, V>(nearCacheConfig, serializationService, classLoader);
             case OBJECT:
-                return new NearCacheObjectRecordStore<K, V>(nearCacheConfig, nearCacheContext);
+                return new NearCacheObjectRecordStore<K, V>(nearCacheConfig, serializationService, classLoader);
             default:
                 throw new IllegalArgumentException("Invalid in memory format: " + inMemoryFormat);
         }
@@ -80,7 +91,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     private ScheduledFuture createAndScheduleExpirationTask() {
         if (nearCacheConfig.getMaxIdleSeconds() > 0L || nearCacheConfig.getTimeToLiveSeconds() > 0L) {
             ExpirationTask expirationTask = new ExpirationTask();
-            return expirationTask.schedule(nearCacheContext.getExecutionService());
+            return expirationTask.schedule(executionService);
         }
         return null;
     }

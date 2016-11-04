@@ -3,11 +3,16 @@ package com.hazelcast.cache.nearcache;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.serialization.SerializationService;
+import org.junit.Before;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -20,10 +25,19 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
 
     protected abstract NearCacheManager createNearCacheManager();
 
+    protected SerializationService ss;
+    protected ExecutionService executionService;
+
+    @Before
+    public void setUp() throws Exception {
+        HazelcastInstance instance = createHazelcastInstance();
+        ss = getSerializationService(instance);
+        executionService = getNodeEngineImpl(instance).getExecutionService();
+    }
+
     protected NearCache createNearCache(NearCacheManager nearCacheManager, String name) {
-        return nearCacheManager.getOrCreateNearCache(name,
-                createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, NearCacheConfig.DEFAULT_MEMORY_FORMAT),
-                createNearCacheContext());
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, DEFAULT_MEMORY_FORMAT);
+        return nearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
     }
 
     protected void doCreateAndGetNearCache() {

@@ -21,7 +21,6 @@ import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.ClientMessageDecoder;
@@ -79,7 +78,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
  * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
  * by actual cache methods.
- *
+ * <p>
  * Note: this partial implementation is used by client.
  *
  * @param <K> the type of key
@@ -192,8 +191,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         NearCacheConfig nearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
-            NearCacheContext nearCacheContext = clientContext.getNearCacheContext();
-            nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
+            nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig);
             registerInvalidationListener();
         }
     }

@@ -7,6 +7,8 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -240,7 +242,9 @@ public class MapNearCacheInvalidationFromClientTest {
 
     @SuppressWarnings("unchecked")
     private NearCache<Object, Object> getNearCache(HazelcastInstance instance, String mapName) {
-        return getMapService(instance).getMapServiceContext().getNearCacheProvider().getOrCreateNearCache(mapName);
+        MapServiceContext mapServiceContext = getMapService(instance).getMapServiceContext();
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        return mapNearCacheManager.getOrCreateNearCache(mapName);
     }
 
     private Data toData(HazelcastInstance instance, Object obj) {
