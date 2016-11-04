@@ -102,8 +102,10 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         SimpleProcessorSupplier processorSupplier = getCombinerSupplier(combiner, finisher);
         Vertex combinerVertex = new Vertex("combiner-" + randomName(), processorSupplier).parallelism(1);
         dag.addVertex(combinerVertex);
-        dag.addEdge(new Edge(accumulatorVertex, combinerVertex));
-//                .distributed(singlePartition(randomName())));
+        dag.addEdge(new Edge(accumulatorVertex, combinerVertex)
+                .distributed()
+                .allToOne()
+        );
 
         return combinerVertex;
     }
