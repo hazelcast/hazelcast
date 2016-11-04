@@ -109,8 +109,7 @@ public class IMapReader extends AbstractProducer {
 
         @Override
         public ProcessorSupplier get(Address address) {
-            List<Integer> ownedPartitions = partitionService.getMemberPartitionsMap()
-                                                            .get(address);
+            List<Integer> ownedPartitions = partitionService.getMemberPartitionsMap().get(address);
             return new Supplier(name, ownedPartitions, fetchSize);
         }
     }
@@ -140,7 +139,9 @@ public class IMapReader extends AbstractProducer {
         public List<Processor> get(int count) {
             return IntStream.range(0, count)
                             .mapToObj(i -> ownedPartitions.stream().filter(f -> f % count == i).collect(toList()))
-                            .map(partitions -> new IMapReader(map, partitions, fetchSize))
+                            .map(partitions -> partitions.size() > 0 ? new IMapReader(map, partitions, fetchSize)
+                                    : new AbstractProducer() {
+                            })
                             .collect(toList());
         }
     }
