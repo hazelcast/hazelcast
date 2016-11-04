@@ -67,8 +67,8 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     private static final int NODE_COUNT = 2;
     private static final int PARALLELISM = Runtime.getRuntime().availableProcessors() / NODE_COUNT;
 
-    private static final int COUNT = 1_000_000;
-    private static final int DISTINCT = 100_000;
+    private static final int COUNT = 100_000;
+    private static final int DISTINCT = 10_000;
 
     private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;

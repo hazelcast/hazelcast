@@ -38,10 +38,10 @@ public class ReceiverTasklet implements Tasklet {
     private Object currItem;
 
     public ReceiverTasklet(SerializationService serializationService,
-                           OutboundCollector collector, int remainingSenders) {
+                           OutboundCollector collector, int senderCount) {
         this.serializationService = serializationService;
         this.collector = collector;
-        this.remainingSenders = remainingSenders;
+        this.remainingSenders = senderCount;
     }
 
     @Override

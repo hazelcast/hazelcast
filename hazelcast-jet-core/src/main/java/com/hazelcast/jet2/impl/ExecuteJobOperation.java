@@ -50,12 +50,10 @@ class ExecuteJobOperation extends AsyncOperation {
         ExecutionContext executionContext = service.getExecutionContext(engineName);
         Map<Member, ExecutionPlan> executionPlanMap = executionContext.buildExecutionPlan(dag);
 
-
         invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
-                .andThen(new Callback(() ->
-                        invokeForPlan(executionPlanMap,
-                                plan -> new ExecutePlanOperation(engineName, plan.getId()))
-                                .andThen(new Callback(() -> sendResponse(true)))));
+                .andThen(callback(()
+                        -> invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId()))
+                        .andThen(callback(() -> sendResponse(true)))));
     }
 
     private ICompletableFuture<List<Object>> invokeForPlan(Map<Member, ExecutionPlan> planMap, Function<ExecutionPlan, Operation> func) {
@@ -79,22 +77,17 @@ class ExecuteJobOperation extends AsyncOperation {
         dag = in.readObject();
     }
 
-    private class Callback implements ExecutionCallback<List<Object>> {
+    private ExecutionCallback<List<Object>> callback(final Runnable r) {
+        return new ExecutionCallback<List<Object>>() {
+            @Override
+            public void onResponse(List<Object> response) {
+                r.run();
+            }
 
-        private final Runnable r;
-
-        public Callback(Runnable r) {
-            this.r = r;
-        }
-
-        @Override
-        public void onResponse(List<Object> response) {
-            r.run();
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            sendResponse(t);
-        }
+            @Override
+            public void onFailure(Throwable t) {
+                sendResponse(t);
+            }
+        };
     }
 }
