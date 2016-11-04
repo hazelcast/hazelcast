@@ -24,17 +24,15 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.IOException;
 import java.util.List;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 class RemoteOutboundCollector implements OutboundCollector {
 
     private final Connection connection;
     private final byte[] headerBytes;
-    private final List<Integer> partitions;
+    private final int[] partitions;
     private final InternalSerializationService serializationService;
 
     public RemoteOutboundCollector(NodeEngine engine,
@@ -43,15 +41,14 @@ class RemoteOutboundCollector implements OutboundCollector {
                                    long executionId,
                                    int destinationVertexId,
                                    int ordinal,
-                                   List<Integer> partitions) {
-        NodeEngineImpl engineImpl = (NodeEngineImpl) engine;
+                                   int[] partitions) {
         this.serializationService = (InternalSerializationService)engine.getSerializationService();
-        this.connection = engineImpl.getNode().getConnectionManager().getConnection(destinationAddress);
+        this.connection = ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(destinationAddress);
         this.partitions = partitions;
         this.headerBytes = getHeaderBytes(engineName, executionId, destinationVertexId, ordinal);
     }
 
-    private byte[] getHeaderBytes(String name, long executionId, int destinationVertexId, int ordinal) {
+    private static byte[] getHeaderBytes(String name, long executionId, int destinationVertexId, int ordinal) {
         byte[] nameBytes = name.getBytes(JetService.CHARSET);
         int length = Bits.INT_SIZE_IN_BYTES + nameBytes.length + Bits.LONG_SIZE_IN_BYTES + Bits.INT_SIZE_IN_BYTES
                 + Bits.INT_SIZE_IN_BYTES;
@@ -88,7 +85,7 @@ class RemoteOutboundCollector implements OutboundCollector {
     }
 
     @Override
-    public List<Integer> getPartitions() {
+    public int[] getPartitions() {
         return partitions;
     }
 

@@ -18,16 +18,14 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
-import java.util.List;
-
 public class ConveyorCollector implements OutboundCollector {
 
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
-    private final List<Integer> partitions;
+    private final int[] partitions;
     private final Object doneItem;
 
-    public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex, List<Integer> partitions) {
+    public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex, int[] partitions) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
         this.partitions = partitions;
@@ -45,7 +43,7 @@ public class ConveyorCollector implements OutboundCollector {
     }
 
     @Override
-    public List<Integer> getPartitions() {
+    public int[] getPartitions() {
         return partitions;
     }
 }

@@ -25,25 +25,22 @@ class ConveyorEmitter implements InboundEmitter {
 
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
-    private final List<Integer> partitions;
     private final DoneDetector doneDetector;
 
-    public ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex, List<Integer> partitions) {
+    public ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
-        this.partitions = partitions;
-        doneDetector = new DoneDetector(conveyor.submitterGoneItem());
+        this.doneDetector = new DoneDetector(conveyor.submitterGoneItem());
     }
 
     public ProgressState drainTo(CollectionWithObserver dest) {
         dest.setVetoingObserverOfAdd(doneDetector);
-        int numDrained;
         try {
-            numDrained = conveyor.drainTo(queueIndex, dest);
+            int drainedCount = conveyor.drainTo(queueIndex, dest);
+            return ProgressState.valueOf(drainedCount > 0, doneDetector.done);
         } finally {
             dest.setVetoingObserverOfAdd(null);
         }
-        return ProgressState.valueOf(numDrained > 0, doneDetector.done);
     }
 
     private final class DoneDetector implements Predicate<Object> {

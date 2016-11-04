@@ -58,7 +58,7 @@ public class MockOutboundStream extends OutboundEdgeStream {
         }
 
         @Override
-        public List<Integer> getPartitions() {
+        public int[] getPartitions() {
             return null;
         }
 

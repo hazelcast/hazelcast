@@ -19,8 +19,7 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.Partitioner;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 interface OutboundCollector {
@@ -46,7 +45,7 @@ interface OutboundCollector {
     /**
      * Returns the list of partitions handled by this collector.
      */
-    List<Integer> getPartitions();
+    int[] getPartitions();
 
 
     static OutboundCollector compositeCollector(
@@ -68,12 +67,13 @@ interface OutboundCollector {
 
         protected final OutboundCollector[] collectors;
         protected final ProgressTracker progTracker = new ProgressTracker();
-        protected final List<Integer> partitions;
+        protected final int[] partitions;
 
         Composite(OutboundCollector[] collectors) {
             this.collectors = collectors;
-            this.partitions = Stream.of(collectors).flatMap(c -> c.getPartitions().stream())
-                    .sorted().collect(Collectors.toList());
+            this.partitions = Stream.of(collectors)
+                                    .flatMapToInt(c -> IntStream.of(c.getPartitions()))
+                                    .sorted().toArray();
         }
 
         @Override
@@ -93,7 +93,7 @@ interface OutboundCollector {
         }
 
         @Override
-        public List<Integer> getPartitions() {
+        public int[] getPartitions() {
             return partitions;
         }
     }
@@ -214,7 +214,7 @@ interface OutboundCollector {
         }
 
         @Override
-        public List<Integer> getPartitions() {
+        public int[] getPartitions() {
             return collector.getPartitions();
         }
     }
