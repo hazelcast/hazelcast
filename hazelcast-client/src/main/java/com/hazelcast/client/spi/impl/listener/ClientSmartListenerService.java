@@ -177,6 +177,20 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                     String serverRegistrationId = registration.getServerRegistrationId();
                     ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
                     new ClientInvocation(client, request, subscriber.getAddress()).invoke().get();
+                    logger.finest("Unregistered listener " + registration + " from member " + subscriber);
+                } else {
+                    // just send the invocation and do not wait for response and suppress any exceptions
+                    try {
+                        ListenerMessageCodec listenerMessageCodec = registration.getCodec();
+                        String serverRegistrationId = registration.getServerRegistrationId();
+                        ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
+                        new ClientInvocation(client, request, subscriber.getAddress()).invoke();
+                        logger.finest("Sent unregister listener invocation for " + registration + " to member " + subscriber);
+                    } catch (Exception e) {
+                        logger.finest(
+                                "Suppressing the exception since registered member " + subscriber + " is not in the members list "
+                                        + members, e);
+                    }
                 }
                 removeEventHandler(registration.getCallId());
                 registrationMap.remove(subscriber);
