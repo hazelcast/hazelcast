@@ -28,6 +28,7 @@ public class FieldDefinitionImpl implements FieldDefinition {
     int factoryId;
     int version;
 
+
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int version) {
         this(index, fieldName, type, 0, 0, version);
     }
