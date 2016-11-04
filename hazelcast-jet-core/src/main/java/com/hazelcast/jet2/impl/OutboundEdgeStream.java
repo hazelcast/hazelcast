@@ -17,7 +17,8 @@
 package com.hazelcast.jet2.impl;
 
 /**
- * The outbound side of a data stream corresponding to a single DAG edge identified by its ordinal.
+ * The outbound side of a data stream corresponding to the origin of a single DAG edge identified by its ordinal.
+ * A thin wrapper around an {@link OutboundCollector}
  */
 class OutboundEdgeStream {
 

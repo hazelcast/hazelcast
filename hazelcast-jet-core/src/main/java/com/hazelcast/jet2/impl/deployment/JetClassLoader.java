@@ -165,7 +165,7 @@ public class JetClassLoader extends ClassLoader {
         private DeploymentStore store;
 
         UserClassLoader(DeploymentStore deploymentStore) {
-            store = deploymentStore;
+            this.store = deploymentStore;
         }
 
         @Override
