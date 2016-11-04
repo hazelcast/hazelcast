@@ -18,14 +18,14 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.runtime.JetPair;
+import com.hazelcast.jet.runtime.OutputCollector;
 import com.hazelcast.jet.sink.ListSink;
 import com.hazelcast.jet.source.ListSource;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.io.Pair;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,10 +39,10 @@ import static org.junit.Assert.assertEquals;
 public class ConsumerProducerTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
-    private static HazelcastInstance instance;
+    private HazelcastInstance instance;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         instance = createCluster(NODE_COUNT);
     }
 

@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public final class ChunkIterator implements Iterator<ResourceChunk> {
     private final int chunkSize;
@@ -53,7 +53,7 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
         try {
             return configIterator.hasNext() || (inputStream != null && inputStream.available() > 0);
         } catch (IOException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -82,7 +82,7 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
                 throw new NoSuchElementException();
             }
         } catch (IOException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -92,13 +92,11 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
         }
     }
 
-    private byte[] readChunk(InputStream in, int chunkSize) {
+    private byte[] readChunk(InputStream in, int chunkSize) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] b = new byte[chunkSize];
             out.write(b, 0, in.read(b));
             return out.toByteArray();
-        } catch (IOException e) {
-            throw unchecked(e);
         }
     }
 

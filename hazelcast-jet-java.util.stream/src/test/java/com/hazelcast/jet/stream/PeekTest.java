@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class PeekTest extends JetStreamTestSupport {
+public class PeekTest extends StreamTestSupport {
 
     @Test
     public void testPeek_whenSourceMap() {

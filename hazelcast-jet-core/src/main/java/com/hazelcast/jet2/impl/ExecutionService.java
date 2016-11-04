@@ -121,7 +121,7 @@ class ExecutionService {
     }
 
     private String threadNamePrefix() {
-        return "hz." + hzInstanceName + ".jet-engine." + name;
+        return "hz." + hzInstanceName + ".jet-engine." + name + ".";
     }
 
     private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture, CountDownLatch completionLatch) {

@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class SortTest extends JetStreamTestSupport {
+public class SortTest extends StreamTestSupport {
 
     @Test
     public void testSort_whenSourceList() {

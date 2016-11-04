@@ -22,8 +22,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
 import static com.hazelcast.jet.stream.impl.StreamUtil.setPrivateField;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class DistributedIntSummaryStatistics extends java.util.IntSummaryStatistics implements DataSerializable {
 
@@ -44,7 +44,7 @@ public class DistributedIntSummaryStatistics extends java.util.IntSummaryStatist
             setPrivateField(this, clazz, "min", in.readInt());
             setPrivateField(this, clazz, "max", in.readInt());
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 }

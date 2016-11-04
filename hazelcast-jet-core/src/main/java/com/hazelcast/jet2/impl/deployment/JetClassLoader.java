@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 public class JetClassLoader extends ClassLoader {
     private final List<ClassLoaderDelegate> loaders = new ArrayList<>();
 
@@ -250,13 +252,13 @@ public class JetClassLoader extends ClassLoader {
                 return null;
             }
             if (entry.getBaseUrl() == null) {
-                throw new JetClassLoaderException("non-URL accessible resource");
+                throw new IllegalArgumentException("non-URL accessible resource");
             }
 
             try {
                 return new URL(entry.getBaseUrl());
             } catch (MalformedURLException e) {
-                throw new JetClassLoaderException(e);
+                throw rethrow(e);
             }
 
         }

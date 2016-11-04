@@ -29,7 +29,7 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class IteratorTest extends JetStreamTestSupport {
+public class IteratorTest extends StreamTestSupport {
 
     @Test
     public void testIterator_whenSourceMap() {

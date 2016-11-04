@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class LimitTest extends JetStreamTestSupport {
+public class LimitTest extends StreamTestSupport {
 
     @Test
     public void testLimit_whenSourceMap() {

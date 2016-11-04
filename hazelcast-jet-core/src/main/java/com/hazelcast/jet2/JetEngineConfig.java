@@ -17,6 +17,7 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.jet2.impl.deployment.DeploymentType;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -25,7 +26,7 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -79,7 +80,7 @@ public class JetEngineConfig implements Serializable {
             try {
                 deploymentConfigs.add(new DeploymentConfig(clazz));
             } catch (IOException e) {
-                throw unchecked(e);
+                throw rethrow(e);
             }
         }
     }
@@ -112,7 +113,7 @@ public class JetEngineConfig implements Serializable {
         try {
             addJar(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -126,7 +127,7 @@ public class JetEngineConfig implements Serializable {
         try {
             addJar(file.toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -140,7 +141,7 @@ public class JetEngineConfig implements Serializable {
             File file = new File(path);
             addJar(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -154,7 +155,7 @@ public class JetEngineConfig implements Serializable {
         try {
             addJar(new File(path).toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -188,7 +189,7 @@ public class JetEngineConfig implements Serializable {
         try {
             addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
 
     }
@@ -203,7 +204,7 @@ public class JetEngineConfig implements Serializable {
         try {
             add(file.toURI().toURL(), id, DeploymentType.DATA);
         } catch (MalformedURLException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -217,7 +218,7 @@ public class JetEngineConfig implements Serializable {
         try {
             addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -232,7 +233,7 @@ public class JetEngineConfig implements Serializable {
         try {
             addResource(file.toURI().toURL(), id);
         } catch (MalformedURLException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -249,7 +250,7 @@ public class JetEngineConfig implements Serializable {
         try {
             deploymentConfigs.add(new DeploymentConfig(url, id, type));
         } catch (IOException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 

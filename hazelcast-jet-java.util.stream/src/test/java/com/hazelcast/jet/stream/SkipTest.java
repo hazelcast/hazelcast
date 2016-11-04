@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class SkipTest extends JetStreamTestSupport {
+public class SkipTest extends StreamTestSupport {
 
     @Test
     public void testSkip_whenSourceMap() {

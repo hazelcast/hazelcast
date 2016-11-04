@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class AllMatchTest extends JetStreamTestSupport {
+public class AllMatchTest extends StreamTestSupport {
 
     @Test
     public void testAllMatchTrue_whenSourceMap() {

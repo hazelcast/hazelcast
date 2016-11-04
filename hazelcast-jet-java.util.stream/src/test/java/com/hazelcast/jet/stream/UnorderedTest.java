@@ -30,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class UnorderedTest extends JetStreamTestSupport {
+public class UnorderedTest extends StreamTestSupport {
 
     @Test
     public void testUnordered_whenOrderedSource() {

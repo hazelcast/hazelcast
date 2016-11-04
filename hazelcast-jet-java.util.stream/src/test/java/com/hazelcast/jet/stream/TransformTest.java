@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class TransformTest extends JetStreamTestSupport {
+public class TransformTest extends StreamTestSupport {
 
     @Test
     public void testMultipleTransforms_whenSourceMap() {

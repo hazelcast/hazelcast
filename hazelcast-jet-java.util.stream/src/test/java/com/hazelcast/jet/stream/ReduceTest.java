@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ReduceTest extends JetStreamTestSupport {
+public class ReduceTest extends StreamTestSupport {
 
     @Test
     public void testReduceWithIdentity() throws Exception {

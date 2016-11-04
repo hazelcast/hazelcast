@@ -59,7 +59,7 @@
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core</artifactId>
+            <artifactId>hazelcast-jet-core-old</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 

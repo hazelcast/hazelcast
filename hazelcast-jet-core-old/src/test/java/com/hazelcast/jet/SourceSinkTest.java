@@ -31,16 +31,18 @@ import com.hazelcast.jet.source.ListSource;
 import com.hazelcast.jet.source.MapSource;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singleMember;
 import static org.junit.Assert.assertEquals;
@@ -55,8 +57,8 @@ public class SourceSinkTest extends JetTestSupport {
 
     private static HazelcastInstance instance;
 
-    @BeforeClass
-    public static void initCluster() {
+    @Before
+    public void initCluster() throws ExecutionException, InterruptedException {
         instance = createCluster(NODE_COUNT);
     }
 

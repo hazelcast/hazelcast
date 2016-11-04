@@ -27,7 +27,7 @@ import java.util.stream.DoubleStream;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class DoubleStreamCastingTest extends JetStreamTestSupport {
+public class DoubleStreamCastingTest extends StreamTestSupport {
 
     private DoubleStream stream;
 

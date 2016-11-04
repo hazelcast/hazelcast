@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.util.BasicCompletableFuture.allOf;
+import static com.hazelcast.jet2.impl.BasicCompletableFuture.allOf;
 
 class ExecuteJobOperation extends AsyncOperation {
 

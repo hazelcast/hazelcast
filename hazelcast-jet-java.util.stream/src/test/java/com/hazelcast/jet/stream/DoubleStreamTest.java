@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class DoubleStreamTest extends JetStreamTestSupport {
+public class DoubleStreamTest extends StreamTestSupport {
 
     private IStreamMap<String, Double> map;
     private DistributedDoubleStream stream;

@@ -28,7 +28,7 @@ import java.util.stream.LongStream;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class LongStreamCastingTest extends JetStreamTestSupport {
+public class LongStreamCastingTest extends StreamTestSupport {
 
     private LongStream stream;
 

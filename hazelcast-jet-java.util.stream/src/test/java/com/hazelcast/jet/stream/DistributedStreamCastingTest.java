@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class DistributedStreamCastingTest extends JetStreamTestSupport {
+public class DistributedStreamCastingTest extends StreamTestSupport {
 
     private Stream<Integer> stream;
 

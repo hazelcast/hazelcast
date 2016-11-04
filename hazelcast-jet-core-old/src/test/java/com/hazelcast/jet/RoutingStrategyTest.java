@@ -6,7 +6,7 @@ import com.hazelcast.jet.sink.ListSink;
 import com.hazelcast.jet.source.ListSource;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -22,10 +22,10 @@ public class RoutingStrategyTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 1;
     private static final int COUNT = 10_000;
-    private static HazelcastInstance instance;
+    private HazelcastInstance instance;
 
-    @BeforeClass
-    public static void initCluster() throws Exception {
+    @Before
+    public void initCluster() throws Exception {
         instance = createCluster(NODE_COUNT);
     }
 

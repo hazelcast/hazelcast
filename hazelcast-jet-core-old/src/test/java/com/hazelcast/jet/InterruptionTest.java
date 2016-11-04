@@ -22,10 +22,7 @@ import com.hazelcast.jet.runtime.InputChunk;
 import com.hazelcast.jet.runtime.OutputCollector;
 import com.hazelcast.jet.source.MapSource;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,22 +44,11 @@ public class InterruptionTest extends JetTestSupport {
 
     public static final int NODE_COUNT = 3;
     private static int COUNT = 10000;
-    private TestHazelcastInstanceFactory factory;
-
-    @Before
-    public void setup() throws InterruptedException {
-        factory = new TestHazelcastInstanceFactory();
-    }
-
-    @After
-    public void tearDown() {
-        factory.shutdownAll();
-    }
 
     @Test
     public void testInterruptSlowApplication() throws Exception {
         SlowProcessor.latch = new CountDownLatch(NODE_COUNT * PARALLELISM);
-        HazelcastInstance instance = createCluster(factory, NODE_COUNT);
+        HazelcastInstance instance = createCluster(NODE_COUNT);
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -96,7 +82,7 @@ public class InterruptionTest extends JetTestSupport {
 
     @Test
     public void testInterruptAlreadyCompletedApplication() throws Exception {
-        HazelcastInstance instance = createCluster(factory, NODE_COUNT);
+        HazelcastInstance instance = createCluster(NODE_COUNT);
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -116,7 +102,7 @@ public class InterruptionTest extends JetTestSupport {
 
     @Test
     public void testExceptionInProcessor_whenMultipleNodes() throws Exception {
-        HazelcastInstance instance = createCluster(factory, NODE_COUNT);
+        HazelcastInstance instance = createCluster(NODE_COUNT);
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -137,7 +123,7 @@ public class InterruptionTest extends JetTestSupport {
 
     @Test
     public void testExceptionInProcessor_whenSingleNode() throws Exception {
-        HazelcastInstance instance = createCluster(factory, 1);
+        HazelcastInstance instance = createCluster(1);
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 

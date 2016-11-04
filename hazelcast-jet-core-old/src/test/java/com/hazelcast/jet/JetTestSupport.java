@@ -16,47 +16,40 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.util.UuidUtil;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.log4j.Level;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
 public class JetTestSupport extends HazelcastTestSupport {
 
-    protected static TestHazelcastFactory hazelcastInstanceFactory;
     protected static final int PARALLELISM = 8;
+    protected static final ExecutorService executor = Executors.newCachedThreadPool();
 
-    @BeforeClass
-    public static void setUpFactory() {
-        setLogLevel(Level.INFO);
-        hazelcastInstanceFactory = new TestHazelcastFactory();
-    }
-
-    @AfterClass
-    public static void tearDownFactory() {
-        hazelcastInstanceFactory.terminateAll();
-    }
-
-    protected static HazelcastInstance createCluster(TestHazelcastInstanceFactory factory, int nodeCount) {
-        HazelcastInstance instance = null;
+    protected HazelcastInstance createCluster(int nodeCount) throws ExecutionException, InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        List<Future<HazelcastInstance>> futures = new ArrayList<>();
         for (int i = 0; i < nodeCount; i++) {
-            instance = factory.newHazelcastInstance();
+            futures.add(executor.submit((Callable<HazelcastInstance>) factory::newHazelcastInstance));
+        }
+        HazelcastInstance instance = null;
+        for (Future<HazelcastInstance> future : futures) {
+            instance = future.get();
         }
         return instance;
-    }
-
-    protected static HazelcastInstance createCluster(int nodeCount) {
-        return createCluster(hazelcastInstanceFactory, nodeCount);
     }
 
     protected static <K, V> IMap<K, V> getMap(HazelcastInstance instance) {

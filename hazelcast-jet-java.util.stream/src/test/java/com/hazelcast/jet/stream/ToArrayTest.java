@@ -28,7 +28,7 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ToArrayTest extends JetStreamTestSupport {
+public class ToArrayTest extends StreamTestSupport {
 
     @Test
     public void testToArray_whenSourceMap() {

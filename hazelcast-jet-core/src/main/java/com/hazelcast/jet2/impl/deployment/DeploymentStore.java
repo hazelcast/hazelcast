@@ -17,7 +17,6 @@
 
 package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
@@ -40,11 +39,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class DeploymentStore {
 
     private static final ILogger LOGGER = Logger.getLogger(DeploymentStore.class);
+    private static final int KILOBYTE = 1024;
 
     private final String storagePath;
     private final File storageDirectory;
@@ -84,7 +84,7 @@ public class DeploymentStore {
             } catch (FileAlreadyExistsException e) {
                 storageDirectoryPath = Paths.get(storagePath + File.pathSeparator + '_' + directoryNameCounter++);
             } catch (IOException e) {
-                throw unchecked(e);
+                throw rethrow(e);
             }
 
         } while (!storageDirectoryPath.toFile().exists());
@@ -128,7 +128,7 @@ public class DeploymentStore {
             raf.seek(chunk.getSequence() * chunkSize);
             raf.write(chunk.getBytes());
         } catch (Exception e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -143,7 +143,7 @@ public class DeploymentStore {
         try {
             return Files.createTempDirectory("hazelcast-jet-").toString();
         } catch (IOException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -163,7 +163,7 @@ public class DeploymentStore {
                     throw new AssertionError("Unhandled deployment type " + descriptor.getDeploymentType());
             }
         } catch (IOException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -178,7 +178,7 @@ public class DeploymentStore {
     }
 
     @SuppressWarnings("checkstyle:innerassignment")
-    private void loadJarStream(ResourceStream resourceStream) {
+    private void loadJarStream(ResourceStream resourceStream) throws IOException {
         BufferedInputStream bis = null;
         JarInputStream jis = null;
 
@@ -191,7 +191,7 @@ public class DeploymentStore {
                     continue;
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] buf = new byte[JetUtil.KILOBYTE];
+                byte[] buf = new byte[KILOBYTE];
                 for (int len; (len = jis.read(buf)) > 0; ) {
                     out.write(buf, 0, len);
                 }
@@ -204,8 +204,6 @@ public class DeploymentStore {
                         String.format("jar:%s!/%s", resourceStream.baseUrl, name));
                 jarEntries.put(name, entry);
             }
-        } catch (IOException e) {
-            throw new JetClassLoaderException(e);
         } finally {
             close(bis, jis);
         }
@@ -215,7 +213,7 @@ public class DeploymentStore {
         try {
             return new ResourceStream(new FileInputStream(resource), resource.toURI().toURL().toString());
         } catch (IOException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -223,13 +221,13 @@ public class DeploymentStore {
     private static byte[] readFully(InputStream in) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] b = new byte[JetUtil.KILOBYTE];
+            byte[] b = new byte[KILOBYTE];
             for (int len; (len = in.read(b)) != -1; ) {
                 out.write(b, 0, len);
             }
             return out.toByteArray();
         } catch (IOException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -249,7 +247,7 @@ public class DeploymentStore {
             }
         }
         if (error != null) {
-            throw unchecked(error);
+            throw rethrow(error);
         }
     }
 

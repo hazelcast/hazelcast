@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class FindFirstTest extends JetStreamTestSupport {
+public class FindFirstTest extends StreamTestSupport {
 
     @Test
     public void testFindFirst_whenSourceMap() {

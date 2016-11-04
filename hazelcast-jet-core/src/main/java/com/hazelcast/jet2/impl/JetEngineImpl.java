@@ -16,9 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.DeploymentConfig;
 import com.hazelcast.jet2.JetEngine;
@@ -37,9 +35,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
@@ -78,7 +76,7 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         try {
             invokeLocal(new ExecuteJobOperation(getName(), job.getDag())).get();
         } catch (InterruptedException | ExecutionException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -91,25 +89,25 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
     private <T> List<T> invokeOnCluster(Supplier<Operation> supplier) {
         final OperationService operationService = getOperationService();
         final Set<Member> members = getNodeEngine().getClusterService().getMembers();
-        final List<ICompletableFuture<?>> futures = members
-                .stream()
-                .map(member -> operationService
-                        .createInvocationBuilder(JetService.SERVICE_NAME, supplier.get(), member.getAddress())
-                        .invoke())
-                .collect(toList());
-        return futures.stream()
-                      .map(JetUtil::uncheckedGet)
-                      .map(x -> (T) x)
-                      .collect(toList());
+        return members.stream()
+                      .map(member -> operationService
+                              .createInvocationBuilder(JetService.SERVICE_NAME, supplier.get(), member.getAddress())
+                              .<T>invoke())
+                      .map(JetEngineImpl::uncheckedGet).collect(Collectors.toList());
     }
 
     private void invokeDeployment(final Set<DeploymentConfig> resources) {
-        new ChunkIterator(resources, engineContext.getDeploymentStore().getChunkSize()).forEachRemaining(
-                chunk -> invokeOnCluster(() -> new DeployChunkOperation(name, chunk))
-        );
-        resources.forEach(
-                r -> invokeOnCluster(() -> new UpdateDeploymentCatalogOperation(name, r.getDescriptor()))
-        );
+        new ChunkIterator(resources, engineContext.getDeploymentStore().getChunkSize())
+                .forEachRemaining(chunk -> invokeOnCluster(() -> new DeployChunkOperation(name, chunk)));
+        resources.forEach(r -> invokeOnCluster(() -> new UpdateDeploymentCatalogOperation(name, r.getDescriptor())));
+    }
+
+    private static <T> T uncheckedGet(Future<T> f) {
+        try {
+            return f.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw rethrow(e);
+        }
     }
 }
 

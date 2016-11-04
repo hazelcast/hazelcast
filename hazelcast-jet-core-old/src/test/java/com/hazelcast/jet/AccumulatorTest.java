@@ -45,10 +45,10 @@ public class AccumulatorTest extends JetTestSupport {
     private static final int NODE_COUNT = 2;
     private static final int COUNT = 10000;
 
-    private static HazelcastInstance instance;
+    private HazelcastInstance instance;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public void setUp() throws Exception {
         instance = createCluster(NODE_COUNT);
     }
 

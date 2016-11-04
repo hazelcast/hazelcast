@@ -13,33 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.stream.impl.StreamUtil;
+import com.hazelcast.jet2.JetEngine;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.JetTestSupport;
 import org.apache.log4j.Level;
-import org.junit.BeforeClass;
+import org.junit.Before;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import static org.junit.Assert.fail;
 
-public abstract class JetStreamTestSupport extends JetTestSupport {
+public abstract class StreamTestSupport extends JetTestSupport {
 
-    public static final int COUNT = 2000;
-    public static final int NODE_COUNT = 4;
+    public static final int COUNT = 10000;
+    public static final int NODE_COUNT = 2;
 
-    protected static HazelcastInstance instance;
+    protected HazelcastInstance instance;
 
-    @BeforeClass
-    public static void setupCluster() throws InterruptedException {
+    @Before
+    public void setupCluster() throws InterruptedException, ExecutionException {
         setLogLevel(Level.INFO);
+        String engineName = "stream-test";
+        System.setProperty(StreamUtil.ENGINE_NAME_PROPERTY.getName(), engineName);
         instance = createCluster(NODE_COUNT);
+        JetEngineConfig config = new JetEngineConfig()
+                .setParallelism(Runtime.getRuntime().availableProcessors() / NODE_COUNT);
+        JetEngine.get(instance, engineName, config);
     }
 
     protected static <K, V> IStreamMap<K, V> getStreamMap(HazelcastInstance instance) {

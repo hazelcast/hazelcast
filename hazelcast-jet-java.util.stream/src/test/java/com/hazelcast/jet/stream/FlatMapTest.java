@@ -30,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class FlatMapTest extends JetStreamTestSupport {
+public class FlatMapTest extends StreamTestSupport {
 
     @Test
     public void testFlatMap_whenSourceMap() {

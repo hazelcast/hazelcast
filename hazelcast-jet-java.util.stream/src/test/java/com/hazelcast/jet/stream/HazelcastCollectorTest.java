@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class HazelcastCollectorTest extends JetStreamTestSupport {
+public class HazelcastCollectorTest extends StreamTestSupport {
 
     @Test
     public void testIMapCollect_whenNoIntermediaries() throws Exception {

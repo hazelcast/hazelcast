@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class MapTest extends JetStreamTestSupport {
+public class MapTest extends StreamTestSupport {
 
     @Test
     public void testSimpleMap_whenSourceMap() {
