@@ -92,23 +92,6 @@ public final class FutureUtil {
         }
     };
 
-    /**
-     * This ExceptionHandler rethrows {@link java.util.concurrent.ExecutionException}s and logs
-     * {@link com.hazelcast.core.MemberLeftException}s to the log.
-     */
-    public static final ExceptionHandler RETHROW_ALL_EXCEPT_MEMBER_LEFT = new ExceptionHandler() {
-        @Override
-        public void handleException(Throwable throwable) {
-            if (throwable instanceof MemberLeftException) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Member left while waiting for futures...", throwable);
-                }
-            } else {
-                throw new HazelcastException(throwable);
-            }
-        }
-    };
-
     private static final class CollectAllExceptionHandler implements ExceptionHandler {
 
         private List<Throwable> throwables;
