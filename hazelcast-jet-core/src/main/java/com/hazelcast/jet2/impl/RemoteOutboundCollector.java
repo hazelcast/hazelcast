@@ -35,7 +35,6 @@ class RemoteOutboundCollector implements OutboundCollector {
     private final Connection connection;
     private final byte[] headerBytes;
     private final List<Integer> partitions;
-    private final NodeEngineImpl engine;
     private final InternalSerializationService serializationService;
 
     public RemoteOutboundCollector(NodeEngine engine,
@@ -45,18 +44,16 @@ class RemoteOutboundCollector implements OutboundCollector {
                                    int destinationVertexId,
                                    int ordinal,
                                    List<Integer> partitions) {
-        this.engine = (NodeEngineImpl) engine;
+        NodeEngineImpl engineImpl = (NodeEngineImpl) engine;
         this.serializationService = (InternalSerializationService)engine.getSerializationService();
-        this.connection = this.engine.getNode().getConnectionManager().getConnection(destinationAddress);
+        this.connection = engineImpl.getNode().getConnectionManager().getConnection(destinationAddress);
         this.partitions = partitions;
         this.headerBytes = getHeaderBytes(engineName, executionId, destinationVertexId, ordinal);
     }
 
     private byte[] getHeaderBytes(String name, long executionId, int destinationVertexId, int ordinal) {
         byte[] nameBytes = name.getBytes(JetService.CHARSET);
-        int length = Bits.INT_SIZE_IN_BYTES + nameBytes.length
-                + Bits.LONG_SIZE_IN_BYTES
-                + Bits.INT_SIZE_IN_BYTES
+        int length = Bits.INT_SIZE_IN_BYTES + nameBytes.length + Bits.LONG_SIZE_IN_BYTES + Bits.INT_SIZE_IN_BYTES
                 + Bits.INT_SIZE_IN_BYTES;
         byte [] headerBytes = new byte[length];
         int offset = 0;

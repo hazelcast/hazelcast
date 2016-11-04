@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet2.impl.deployment;
 
+import com.hazelcast.jet2.impl.EngineOperation;
 import com.hazelcast.jet2.impl.ExecutionContext;
 import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
-public class UpdateDeploymentCatalogOperation extends Operation {
-    private String name;
+public class UpdateDeploymentCatalogOperation extends EngineOperation {
     private DeploymentDescriptor descriptor;
 
     @SuppressWarnings("unused")
@@ -32,15 +32,16 @@ public class UpdateDeploymentCatalogOperation extends Operation {
 
     }
 
-    public UpdateDeploymentCatalogOperation(String name, DeploymentDescriptor descriptor) {
-        this.name = name;
+    public UpdateDeploymentCatalogOperation(String engineName, DeploymentDescriptor descriptor) {
+        super(engineName);
+
         this.descriptor = descriptor;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(name);
+        ExecutionContext executionContext = service.getExecutionContext(engineName);
         DeploymentStore deploymentStore = executionContext.getDeploymentStore();
         deploymentStore.updateCatalog(descriptor);
     }
@@ -48,14 +49,12 @@ public class UpdateDeploymentCatalogOperation extends Operation {
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(name);
         out.writeObject(descriptor);
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        name = in.readUTF();
         descriptor = in.readObject();
     }
 }

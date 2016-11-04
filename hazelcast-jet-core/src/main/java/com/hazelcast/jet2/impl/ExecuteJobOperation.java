@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,19 +28,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.function.Function;
 
-class ExecuteJobOperation extends Operation {
+import static com.hazelcast.jet.impl.util.BasicCompletableFuture.allOf;
 
-    private String engineName;
+class ExecuteJobOperation extends AsyncOperation {
+
     private DAG dag;
 
     public ExecuteJobOperation() {
     }
 
     public ExecuteJobOperation(String engineName, DAG dag) {
-        this.engineName = engineName;
+        super(engineName);
         this.dag = dag;
     }
 
@@ -49,35 +50,51 @@ class ExecuteJobOperation extends Operation {
         ExecutionContext executionContext = service.getExecutionContext(engineName);
         Map<Member, ExecutionPlan> executionPlanMap = executionContext.buildExecutionPlan(dag);
 
-        invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan));
-        invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId()));
+
+        invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
+                .andThen(new Callback(() ->
+                        invokeForPlan(executionPlanMap,
+                                plan -> new ExecutePlanOperation(engineName, plan.getId()))
+                                .andThen(new Callback(() -> sendResponse(true)))));
     }
 
-    private void invokeForPlan(Map<Member, ExecutionPlan> planMap, Function<ExecutionPlan, Operation> func) {
-        List<Future> futures = new ArrayList<>();
+    private ICompletableFuture<List<Object>> invokeForPlan(Map<Member, ExecutionPlan> planMap, Function<ExecutionPlan, Operation> func) {
+        List<ICompletableFuture<Object>> futures = new ArrayList<>();
         for (Map.Entry<Member, ExecutionPlan> entry : planMap.entrySet()) {
             futures.add(getNodeEngine().getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,
                     func.apply(entry.getValue()), entry.getKey().getAddress()).invoke());
         }
-        for (Future future : futures) {
-            JetUtil.uncheckedGet(future);
-        }
+        return allOf(getNodeEngine(), getLogger(), futures);
     }
-
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
-        out.writeUTF(engineName);
         out.writeObject(dag);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
-        engineName = in.readUTF();
         dag = in.readObject();
+    }
+
+    private class Callback implements ExecutionCallback<List<Object>> {
+
+        private final Runnable r;
+
+        public Callback(Runnable r) {
+            this.r = r;
+        }
+
+        @Override
+        public void onResponse(List<Object> response) {
+            r.run();
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            sendResponse(t);
+        }
     }
 }

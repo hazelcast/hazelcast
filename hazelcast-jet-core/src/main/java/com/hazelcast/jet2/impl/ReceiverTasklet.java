@@ -28,13 +28,13 @@ import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 
 public class ReceiverTasklet implements Tasklet {
 
+    //TODO: MPSCQueue does not implement peek() yet
     private final Queue<Map.Entry<Data, Integer>> inbox = new ConcurrentLinkedQueue<>();
     private final SerializationService serializationService;
-    //TODO: MPSCQueue does not implement peek() yet
     private final OutboundCollector collector;
-    private int remainingSenders;
     private final ProgressTracker tracker = new ProgressTracker();
 
+    private int remainingSenders;
     private Object currItem;
 
     public ReceiverTasklet(SerializationService serializationService,
@@ -83,5 +83,4 @@ public class ReceiverTasklet implements Tasklet {
         }
         return tracker.toProgressState();
     }
-
 }

@@ -18,20 +18,18 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-class InitPlanOperation extends Operation {
+class InitPlanOperation extends EngineOperation {
 
-    private String engineName;
     private ExecutionPlan plan;
 
     public InitPlanOperation() {
     }
 
     public InitPlanOperation(String engineName, ExecutionPlan plan) {
-        this.engineName = engineName;
+        super(engineName);
         this.plan = plan;
     }
 
@@ -46,7 +44,6 @@ class InitPlanOperation extends Operation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeUTF(engineName);
         out.writeObject(plan);
     }
 
@@ -54,7 +51,6 @@ class InitPlanOperation extends Operation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        engineName = in.readUTF();
         plan = in.readObject();
     }
 }

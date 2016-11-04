@@ -14,44 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl.deployment;
+package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.impl.EngineOperation;
-import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class DeployChunkOperation extends EngineOperation {
-    private ResourceChunk chunk;
+public abstract class EngineOperation extends Operation {
 
-    @SuppressWarnings("unused")
-    public DeployChunkOperation() {
+    protected String engineName;
+
+    public EngineOperation() {
     }
 
-    public DeployChunkOperation(String engineName, ResourceChunk chunk) {
-        super(engineName);
-        this.chunk = chunk;
-    }
-
-    @Override
-    public void run() throws Exception {
-        JetService service = getService();
-        service.getExecutionContext(engineName).getDeploymentStore().receiveChunk(chunk);
+    public EngineOperation(String engineName) {
+        this.engineName = engineName;
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeObject(chunk);
+        out.writeUTF(engineName);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        chunk = in.readObject();
+        engineName = in.readUTF();
     }
 }

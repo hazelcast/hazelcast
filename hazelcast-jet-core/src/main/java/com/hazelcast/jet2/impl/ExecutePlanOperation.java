@@ -24,16 +24,15 @@ import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.io.IOException;
 
-class ExecutePlanOperation extends Operation {
+class ExecutePlanOperation extends AsyncOperation {
 
-    private String engineName;
     private long planId;
 
     public ExecutePlanOperation() {
     }
 
     public ExecutePlanOperation(String engineName, long planId) {
-        this.engineName = engineName;
+        super(engineName);
         this.planId = planId;
     }
 
@@ -51,21 +50,9 @@ class ExecutePlanOperation extends Operation {
     }
 
     @Override
-    public Object getResponse() {
-        throw new UnsupportedOperationException();
-    }
-
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeUTF(engineName);
         out.writeLong(planId);
     }
 
@@ -73,7 +60,6 @@ class ExecutePlanOperation extends Operation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        engineName = in.readUTF();
         planId = in.readLong();
     }
 }

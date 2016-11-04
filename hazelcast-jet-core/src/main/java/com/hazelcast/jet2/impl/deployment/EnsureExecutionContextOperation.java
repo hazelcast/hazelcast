@@ -17,40 +17,43 @@
 package com.hazelcast.jet2.impl.deployment;
 
 import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.impl.EngineOperation;
 import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
-public class EnsureExecutionContextOperation extends Operation {
+public class EnsureExecutionContextOperation extends EngineOperation {
 
-    private String name;
     private JetEngineConfig config;
 
+    @SuppressWarnings("unused")
     public EnsureExecutionContextOperation() {
     }
 
-    public EnsureExecutionContextOperation(String name, JetEngineConfig config) {
-        this.name = name;
+    public EnsureExecutionContextOperation(String engineName, JetEngineConfig config) {
+        super(engineName);
         this.config = config;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.ensureContext(name, config);
+        service.ensureContext(engineName, config);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        super.writeInternal(out);
+
         out.writeObject(config);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        super.readInternal(in);
+
         config = in.readObject();
     }
 }

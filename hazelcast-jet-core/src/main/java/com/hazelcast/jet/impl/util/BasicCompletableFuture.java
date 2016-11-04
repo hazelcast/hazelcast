@@ -16,9 +16,16 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
     public BasicCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
@@ -30,4 +37,31 @@ public class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
         super.setResult(result);
     }
 
+    public static <V> ICompletableFuture<List<V>> allOf(NodeEngine nodeEngine, ILogger logger,
+                                                        Collection<ICompletableFuture<V>> futures) {
+        V[] results = (V[]) new Object[futures.size()];
+        ICompletableFuture<V>[] futureArray = futures.toArray(new ICompletableFuture[futures.size()]);
+
+        BasicCompletableFuture<List<V>> compositeFuture = new BasicCompletableFuture<>(nodeEngine, logger);
+        AtomicInteger latch = new AtomicInteger(futures.size());
+        for (int i = 0; i < futureArray.length; i++) {
+            final int futureIndex = i;
+            ICompletableFuture<V> future = futureArray[futureIndex];
+            future.andThen(new ExecutionCallback<V>() {
+                @Override
+                public void onResponse(V response) {
+                    results[futureIndex] = response;
+                    if (latch.decrementAndGet() == 0) {
+                        compositeFuture.setResult(Arrays.asList(results));
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    compositeFuture.setResult(t);
+                }
+            });
+        }
+        return compositeFuture;
+    }
 }

@@ -87,7 +87,6 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @Before
     public void setUp() {
         Config hazelcastConfig = new Config();
-        hazelcastConfig.getNetworkConfig().setPort(5701);
         SerializerConfig serializerConfig = new SerializerConfig();
         serializerConfig.setImplementation(new StreamSerializer<Map.Entry>() {
             @Override
