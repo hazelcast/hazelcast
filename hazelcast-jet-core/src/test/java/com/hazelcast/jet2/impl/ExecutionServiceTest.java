@@ -39,7 +39,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
@@ -60,68 +59,110 @@ public class ExecutionServiceTest {
 
     @Test
     public void when_blockingTask_then_executed() throws Exception {
+        // Given
         final MockTasklet t = new MockTasklet().blocking();
+
+        // When
         es.execute(singletonList(t)).get();
-        assertTrue(t.didRun);
+
+        // Then
+        t.assertDone();
     }
 
     @Test
     public void when_nonblockingTask_then_executed() throws Exception {
+        // Given
         final MockTasklet t = new MockTasklet();
+
+        // When
         es.execute(singletonList(t)).get();
-        assertTrue(t.didRun);
+
+        // Then
+        t.assertDone();
     }
 
     @Test(expected = ExecutionException.class)
     public void when_nonblockingAndInitFails_then_futureFails() throws Exception {
+        // Given
         final MockTasklet t = new MockTasklet().initFails();
+
+        // When
         es.execute(singletonList(t)).get();
+
+        // Then
+        t.assertDone();
     }
 
     @Test(expected = ExecutionException.class)
     public void when_blockingAndInitFails_then_futureFails() throws Exception {
+        // Given
         final MockTasklet t = new MockTasklet().blocking().initFails();
+
+        // When - Then
         es.execute(singletonList(t)).get();
     }
 
     @Test(expected = ExecutionException.class)
     public void when_nonblockingAndCallFails_then_futureFails() throws Exception {
+        // Given
         final MockTasklet t = new MockTasklet().callFails();
+
+        // When - Then
         es.execute(singletonList(t)).get();
     }
 
     @Test(expected = ExecutionException.class)
     public void when_blockingAndCallFails_then_futureFails() throws Exception {
+        // Given
         final MockTasklet t = new MockTasklet().blocking().callFails();
+
+        // When - Then
         es.execute(singletonList(t)).get();
     }
 
     @Test
     public void when_shutdown_then_submitFails() {
+        // Given
         es.execute(singletonList(new MockTasklet()));
         es.execute(singletonList(new MockTasklet()));
+
+        // When
         es.shutdown();
+
+        // Then
         exceptionRule.expect(IllegalStateException.class);
         es.execute(singletonList(new MockTasklet()));
     }
 
     @Test
     public void when_manyCallsWithSomeStalling_then_eventuallyDone() throws Exception {
-        final MockTasklet t1 = new MockTasklet().blocking().callsBeforeDone(10);
-        final MockTasklet t2 = new MockTasklet().callsBeforeDone(10);
-        es.execute(asList(t1, t2)).get();
+        // Given
+        final List<MockTasklet> tasklets = asList(
+                new MockTasklet().blocking().callsBeforeDone(10),
+                new MockTasklet().callsBeforeDone(10));
+
+        // When
+        es.execute(tasklets).get();
+
+        // Then
+        tasklets.forEach(MockTasklet::assertDone);
     }
 
     @Test
     public void when_workStealing_then_allComplete() throws Exception {
+        // Given
         final List<MockTasklet> tasklets =
-                Stream.generate(() -> new MockTasklet().callsBeforeDone(1000)).limit(100).collect(toList());
+                Stream.generate(() -> new MockTasklet().callsBeforeDone(1000))
+                      .limit(100).collect(toList());
+
+        // When
         es.execute(tasklets).get();
+
+        // Then
+        tasklets.forEach(MockTasklet::assertDone);
     }
 
     static class MockTasklet implements Tasklet {
-
-        volatile boolean didRun;
 
         boolean isBlocking;
         boolean initFails;
@@ -137,7 +178,6 @@ public class ExecutionServiceTest {
 
         @Override
         public ProgressState call() {
-            didRun = true;
             if (callFails) {
                 throw new RuntimeException("mock call failure");
             }
@@ -172,6 +212,10 @@ public class ExecutionServiceTest {
         MockTasklet callsBeforeDone(int count) {
             callsBeforeDone = count;
             return this;
+        }
+
+        void assertDone() {
+            assertEquals("Tasklet wasn't done", -1, callsBeforeDone);
         }
     }
 }
