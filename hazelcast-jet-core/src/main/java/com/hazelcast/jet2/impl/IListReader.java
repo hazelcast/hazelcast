@@ -17,10 +17,9 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.collection.impl.list.ListProxyImpl;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.nio.Address;
 
@@ -70,7 +69,7 @@ public class IListReader extends AbstractProducer {
 
         static final long serialVersionUID = 1L;
         private final String name;
-        private transient HazelcastInstance instance;
+
         private transient Address ownerAddress;
 
         public MetaSupplier(String name) {
@@ -79,8 +78,8 @@ public class IListReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            instance = context.getHazelcastInstance();
-            ownerAddress = instance.getPartitionService().getPartition(name).getOwner().getAddress();
+            int partitionId = context.getPartitionServce().getPartitionId(name);
+            ownerAddress = context.getPartitionServce().getPartitionOwnerOrWait(partitionId);
         }
 
         @Override
@@ -91,7 +90,8 @@ public class IListReader extends AbstractProducer {
                 // nothing to read on other nodes
                 return (c) -> {
                     assertCountIsOne(c);
-                    return singletonList(new AbstractProducer() { });
+                    return singletonList(new AbstractProducer() {
+                    });
                 };
             }
         }

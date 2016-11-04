@@ -16,14 +16,13 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Partition;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -96,7 +95,7 @@ public class IMapReader extends AbstractProducer {
         private final String name;
         private final int fetchSize;
 
-        private transient HazelcastInstance hazelcastInstance;
+        private transient IPartitionService partitionService;
 
         public MetaSupplier(String name, int fetchSize) {
             this.name = name;
@@ -105,15 +104,13 @@ public class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            hazelcastInstance = context.getHazelcastInstance();
+            partitionService = context.getPartitionServce();
         }
 
         @Override
         public ProcessorSupplier get(Address address) {
-            List<Integer> ownedPartitions = hazelcastInstance.getPartitionService().getPartitions()
-                    .stream().filter(f -> f.getOwner().getAddress().equals(address))
-                    .map(Partition::getPartitionId)
-                    .collect(toList());
+            List<Integer> ownedPartitions = partitionService.getMemberPartitionsMap()
+                                                            .get(address);
             return new Supplier(name, ownedPartitions, fetchSize);
         }
     }
@@ -125,7 +122,6 @@ public class IMapReader extends AbstractProducer {
         private final String mapName;
         private final List<Integer> ownedPartitions;
         private final int fetchSize;
-        private int perNodeParallelism;
 
         private transient MapProxyImpl map;
 
@@ -138,7 +134,6 @@ public class IMapReader extends AbstractProducer {
         @Override
         public void init(Context context) {
             map = (MapProxyImpl) context.getHazelcastInstance().getMap(mapName);
-            perNodeParallelism = context.perNodeParallelism();
         }
 
         @Override

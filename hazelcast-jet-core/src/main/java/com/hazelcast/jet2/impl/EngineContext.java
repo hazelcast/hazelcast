@@ -83,7 +83,7 @@ public class EngineContext {
 
             ProcessorMetaSupplier supplier = vertex.getSupplier();
             supplier.init(ProcessorMetaSupplier.Context.of(
-                    nodeEngine.getHazelcastInstance(), totalParallelism, perNodeParallelism));
+                    nodeEngine, totalParallelism, perNodeParallelism));
             List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getDestination());
                 return new EdgeDef(otherEndId, edge.getOutputOrdinal(), edge.getInputOrdinal(),

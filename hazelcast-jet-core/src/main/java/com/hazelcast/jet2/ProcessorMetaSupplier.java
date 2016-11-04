@@ -18,6 +18,8 @@ package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.Serializable;
 import java.util.stream.Stream;
@@ -44,7 +46,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Javadoc pending.
      */
     static ProcessorMetaSupplier of(final ProcessorSupplier listSupplier) {
-      return address -> listSupplier;
+        return address -> listSupplier;
     }
 
     /**
@@ -67,6 +69,11 @@ public interface ProcessorMetaSupplier extends Serializable {
         /**
          * Javadoc pending.
          */
+        IPartitionService getPartitionServce();
+
+        /**
+         * Javadoc pending.
+         */
         int totalParallelism();
 
         /**
@@ -77,16 +84,23 @@ public interface ProcessorMetaSupplier extends Serializable {
         /**
          * Javadoc pending.
          */
-        static Context of(HazelcastInstance instance, int totalParallelism, int perNodeParallelism) {
+        static Context of(NodeEngine nodeEngine, int totalParallelism, int perNodeParallelism) {
             return new Context() {
                 @Override
                 public HazelcastInstance getHazelcastInstance() {
-                    return instance;
+                    return nodeEngine.getHazelcastInstance();
                 }
+
+                @Override
+                public IPartitionService getPartitionServce() {
+                    return nodeEngine.getPartitionService();
+                }
+
                 @Override
                 public int totalParallelism() {
                     return totalParallelism;
                 }
+
                 @Override
                 public int perNodeParallelism() {
                     return perNodeParallelism;
