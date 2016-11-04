@@ -20,9 +20,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.UuidUtil;
+
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Random;
 
 /**
  * Represents an edge between two vertices in a DAG
@@ -113,7 +114,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     public Edge partitioned() {
         this.forwardingPattern = ForwardingPattern.PARTITIONED;
-        this.partitioner = new Partitioner.Default();
+        this.partitioner = new Default();
         return this;
     }
 
@@ -132,7 +133,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     public Edge partitioned(KeyExtractor extractor) {
         this.forwardingPattern = ForwardingPattern.PARTITIONED;
-        this.partitioner = new Partitioner.DefaultWithExtractor(extractor);
+        this.partitioner = new Keyed(extractor);
         return this;
     }
 
@@ -140,22 +141,7 @@ public class Edge implements IdentifiedDataSerializable {
      * Forward the edge to a single point
      */
     public Edge allToOne() {
-        this.forwardingPattern = ForwardingPattern.PARTITIONED;
-        this.partitioner = new Partitioner() {
-            private int partition;
-
-            @Override
-            public void init(IPartitionService service) {
-                Random random = new Random();
-                partition = random.nextInt(service.getPartitionCount());
-            }
-
-            @Override
-            public int getPartition(Object item, int numPartitions) {
-                return partition;
-            }
-        };
-        return this;
+        return partitioned(new Single());
     }
 
 
@@ -270,5 +256,53 @@ public class Edge implements IdentifiedDataSerializable {
          * Output of the source tasklet is available to all destination tasklets.
          */
         BROADCAST
+    }
+
+    private static class Default implements Partitioner {
+        protected transient IPartitionService service;
+
+        @Override
+        public void init(IPartitionService service) {
+            this.service = service;
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return service.getPartitionId(item) % numPartitions;
+        }
+    }
+
+    private static class Keyed extends Default {
+        private KeyExtractor extractor;
+
+        public Keyed(KeyExtractor extractor) {
+            this.extractor = extractor;
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return service.getPartitionId(extractor.extract(item)) % numPartitions;
+        }
+    }
+
+    private static class Single implements Partitioner {
+
+        private final String key;
+        private int partition;
+        
+        public Single() {
+            key = UuidUtil.newUnsecureUuidString();
+        }
+
+
+        @Override
+        public void init(IPartitionService service) {
+            partition = service.getPartitionId(key);
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return partition;
+        }
     }
 }
