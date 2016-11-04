@@ -92,7 +92,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                 invoke(registrationKey, member);
             } catch (Exception e) {
                 try {
-                    deregisterListener(registrationKey.getUserRegistrationId());
+                    deregister(registrationKey, getMemberUuids());
                 } catch (Exception cleanupException) {
                     logger.warning("Could not perform appropriate cleanup for " + registrationKey, cleanupException);
                 }
