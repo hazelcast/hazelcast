@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.InitialMembershipEvent;
@@ -56,6 +57,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     private final Map<ClientRegistrationKey, Map<Member, ClientEventRegistration>> registrations
             = new ConcurrentHashMap<ClientRegistrationKey, Map<Member, ClientEventRegistration>>();
     private final ClientClusterService clusterService;
+    private final int invocationTimeout;
     private volatile LifecycleEvent.LifecycleState lifecycleState;
     private String membershipListenerId;
     private ScheduledFuture<?> connectionOpener;
@@ -64,6 +66,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                                       int eventThreadCount, int eventQueueCapacity) {
         super(client, eventThreadCount, eventQueueCapacity);
         clusterService = client.getClientClusterService();
+        invocationTimeout = client.getClientConfig().getNetworkConfig().getConnectionTimeout();
     }
 
     @Override
@@ -133,7 +136,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         Address address = member.getAddress();
         ClientInvocation invocation = new ClientInvocation(client, request, address);
         invocation.setEventHandler(handler);
-        String serverRegistrationId = codec.decodeAddResponse(invocation.invoke().get());
+        String serverRegistrationId = codec.decodeAddResponse(invocation.invoke().get(invocationTimeout, TimeUnit.MILLISECONDS));
 
         handler.onListenerRegister();
         long correlationId = request.getCorrelationId();
@@ -161,6 +164,12 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         }
     }
 
+    /**
+     * Should be called while in the registration executor
+     * @param key The key of the registration
+     * @param memberUuids The uuids of the members in the cluster
+     * @return true if deregistered the registration from the cluster
+     */
     private Boolean deregister(ClientRegistrationKey key, Set<String> memberUuids) {
         Map<Member, ClientEventRegistration> registrationMap = registrations.get(key);
         if (registrationMap == null) {
@@ -173,23 +182,16 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                 // We need to compare uuids since the member may reconnect to the restarted member which restarted at the same
                 // address and member.equals return true but they are actually different instances.
                 if (memberUuids.contains(subscriber.getUuid())) {
-                    ListenerMessageCodec listenerMessageCodec = registration.getCodec();
-                    String serverRegistrationId = registration.getServerRegistrationId();
-                    ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                    new ClientInvocation(client, request, subscriber.getAddress()).invoke().get();
-                    logger.finest("Unregistered listener " + registration + " from member " + subscriber);
+                    ClientInvocationFuture invocationFuture = getClientInvocationFuture(registration, subscriber);
+                    invocationFuture.get(invocationTimeout, TimeUnit.MILLISECONDS);
                 } else {
                     // just send the invocation and do not wait for response and suppress any exceptions
                     try {
-                        ListenerMessageCodec listenerMessageCodec = registration.getCodec();
-                        String serverRegistrationId = registration.getServerRegistrationId();
-                        ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                        new ClientInvocation(client, request, subscriber.getAddress()).invoke();
-                        logger.finest("Sent unregister listener invocation for " + registration + " to member " + subscriber);
+                        getClientInvocationFuture(registration, subscriber);
                     } catch (Exception e) {
-                        logger.finest(
-                                "Suppressing the exception since registered member " + subscriber + " is not in the members list "
-                                        + members, e);
+                        logger.finest("Suppressing the exception during listener deregistration invocation for registration:"
+                                + registration + ", since registered member " + subscriber + " is not in the members list "
+                                + members, e);
                     }
                 }
                 removeEventHandler(registration.getCallId());
@@ -204,6 +206,23 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
             registrations.remove(key);
         }
         return successful;
+    }
+
+    /**
+     * Should be called while in the registration executor
+     * @param registration The registration for which the deregister invocation will be sent
+     * @param subscriber The member added from which to deregister
+     * @return The future for the invocation.
+     */
+    private ClientInvocationFuture getClientInvocationFuture(ClientEventRegistration registration, Member subscriber) {
+        ClientInvocationFuture invocationFuture;
+        ListenerMessageCodec listenerMessageCodec = registration.getCodec();
+        String serverRegistrationId = registration.getServerRegistrationId();
+        ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
+        invocationFuture = new ClientInvocation(client, request, subscriber.getAddress()).invoke();
+
+        logger.finest("Invoked deregister listener invocation for " + registration + " to member " + subscriber);
+        return invocationFuture;
     }
 
     private Set<String> getMemberUuids() {
@@ -301,7 +320,15 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                     try {
                         invoke(registrationKey, member);
                     } catch (Exception e) {
-                        logger.warning("Listener " + registrationKey + " can not be added to new member " + member, e);
+                        logger.warning("Listener " + registrationKey + " can not be added to new member " + member
+                                        + " rescheduling the registration in " + SMART_LISTENER_MEMBER_ADDED_RESCHEDULE_TIME
+                                + " msecs", e);
+                        client.getClientExecutionService().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                memberAdded(membershipEvent);
+                            }
+                        }, SMART_LISTENER_MEMBER_ADDED_RESCHEDULE_TIME, TimeUnit.MILLISECONDS);
                     }
                 }
             }
@@ -347,7 +374,16 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
 
             deregister(key, getMemberUuids());
 
-            register(key);
+            try {
+                register(key);
+            } catch (Exception e) {
+                Map<Member, ClientEventRegistration> registrationMap = registrations.get(key);
+                if (null == registrationMap) {
+                    // put back an empty map for keeping the key to be registered in the next try
+                    registrations.put(key, new ConcurrentHashMap<Member, ClientEventRegistration>());
+                }
+                ExceptionUtil.rethrow(e);
+            }
 
             logger.finest("Reregistered listener " + key + " to the cluster.");
         }

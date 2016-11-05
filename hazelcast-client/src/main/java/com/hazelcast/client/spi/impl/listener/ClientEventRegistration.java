@@ -95,5 +95,11 @@ public class ClientEventRegistration {
     public int hashCode() {
         return serverRegistrationId.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return "ClientEventRegistration {Subscribed server:" + subscriber + ", registration id at the server:"
+                + serverRegistrationId + ", correlation id for this event registration:" + callId + " }";
+    }
 }
 
