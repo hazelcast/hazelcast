@@ -159,30 +159,27 @@ public class TestClientRegistry {
         /**
          * Stores incoming messages from address to a temporary queue
          * When unblocked first this queue will be processed after that new messages will be consumed
-         *
-         * @param address
          */
         public void block(Address address) {
             stateMap.put(address, State.BLOCKING);
-        }
-
-        /**
-         * Drops incoming messages from address
-         *
-         * @param address
-         */
-        public void drop(Address address) {
-            stateMap.put(address, State.DROPPING);
+            LOGGER.info("Blocked messages from " + address);
         }
 
         /**
          * Removes the filter that is put by either block or drop
          * Consumes from the temporary queue if there is anything then continues to normal behaviour
-         *
-         * @param address
          */
         public void unblock(Address address) {
             stateMap.remove(address);
+            LOGGER.info("Unblocked messages from " + address);
+        }
+
+        /**
+         * Drops incoming messages from address
+         */
+        public void drop(Address address) {
+            stateMap.put(address, State.DROPPING);
+            LOGGER.info("Dropping messages from " + address);
         }
     }
 

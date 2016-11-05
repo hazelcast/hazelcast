@@ -184,20 +184,25 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 }
                 break;
             }
+            Connection connection = null;
             try {
                 triedAddresses.add(inetSocketAddress);
                 Address address = new Address(inetSocketAddress);
                 if (logger.isFinestEnabled()) {
                     logger.finest("Trying to connect to " + address);
                 }
-                Connection connection = connectionManager.getOrConnect(address, true);
+                connection = connectionManager.getOrConnect(address, true);
                 ownerConnectionAddress = connection.getEndPoint();
                 clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
+                client.getListenerService().onClusterConnect((ClientConnection) connection);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {
                 Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
                 logger.log(level, "Exception during initial connection to " + inetSocketAddress, e);
+                if (null != connection) {
+                    connection.close("Could not connect to " + inetSocketAddress + " as owner", e);
+                }
             }
         }
         return false;

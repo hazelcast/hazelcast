@@ -101,11 +101,11 @@ public class MapAddNearCacheEntryListenerMessageTask
 
         private void sendEvent(Invalidation event) {
             if (event instanceof BatchNearCacheInvalidation) {
-                List<Data> keys = getKeysExcludingSource(((BatchNearCacheInvalidation) event), endpoint.getUuid());
+                List<Data> keys = getKeysExcludingSource(((BatchNearCacheInvalidation) event), getEndpoint().getUuid());
                 if (!isEmpty(keys)) {
                     sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys));
                 }
-            } else if (!endpoint.getUuid().equals(event.getSourceUuid())) {
+            } else if (!getEndpoint().getUuid().equals(event.getSourceUuid())) {
                 if (event instanceof SingleNearCacheInvalidation) {
                     Data key = ((SingleNearCacheInvalidation) event).getKey();
                     sendClientMessage(key, encodeIMapInvalidationEvent(key));

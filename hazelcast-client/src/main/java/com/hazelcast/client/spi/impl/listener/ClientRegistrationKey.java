@@ -45,6 +45,10 @@ public class ClientRegistrationKey {
         return handler;
     }
 
+    public String getUserRegistrationId() {
+        return userRegistrationId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -41,6 +42,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -79,6 +81,12 @@ public class ClientConnection implements Connection {
     private volatile String closeReason;
     private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
+
+    /**
+     * The list of members from which the client resources are deleted at the time of connection authentication. The client may
+     * use this list to re-register the client resources such the listeners to these members.
+     */
+    private List<Member> clientUnregisteredMembers;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -364,5 +372,13 @@ public class ClientConnection implements Connection {
 
     public String getConnectedServerVersionString() {
         return connectedServerVersionString;
+    }
+
+    public List<Member> getClientUnregisteredMembers() {
+        return clientUnregisteredMembers;
+    }
+
+    public void setClientUnregisteredMembers(List<Member> clientUnregisteredMembers) {
+        this.clientUnregisteredMembers = clientUnregisteredMembers;
     }
 }

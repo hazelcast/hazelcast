@@ -17,20 +17,18 @@
 package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEndpointManager;
+import com.hazelcast.client.impl.ClientEndpointManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Set;
 
-public class ClientDisconnectionOperation extends AbstractOperation implements UrgentSystemOperation {
+public class ClientDisconnectionOperation extends AbstractOperation
+        implements UrgentSystemOperation {
 
     private String clientUuid;
 
@@ -44,19 +42,17 @@ public class ClientDisconnectionOperation extends AbstractOperation implements U
     @Override
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
-        final ClientEndpointManager endpointManager = engine.getEndpointManager();
-        Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
-        for (ClientEndpoint endpoint : endpoints) {
-            endpointManager.removeEndpoint(endpoint, true);
-        }
-        engine.removeOwnershipMapping(clientUuid);
+        final ClientEndpointManagerImpl endpointManager = (ClientEndpointManagerImpl) engine.getEndpointManager();
+        ClientEndpoint clientEndpoint = endpointManager.getEndpoint(clientUuid);
+        Connection clientEndpointConnection = (null != clientEndpoint ? clientEndpoint.getConnection() : null);
 
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        nodeEngine.onClientDisconnected(clientUuid);
-        Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
-        for (ClientAwareService service : services) {
-            service.clientDisconnected(clientUuid);
+        if (null != clientEndpointConnection && clientEndpointConnection.isAlive()) {
+            getLogger().finest("Will not do the cleanup for client " + clientUuid + " since there exists a live connection from "
+                    + "this client");
+            return;
         }
+
+        engine.removeClient(clientUuid);
     }
 
     @Override

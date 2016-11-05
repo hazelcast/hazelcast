@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 
 /**
@@ -29,4 +30,10 @@ public interface ClientListenerService {
     String registerListener(ListenerMessageCodec listenerMessageCodec, EventHandler handler);
 
     boolean deregisterListener(String registrationId);
+
+    /**
+     * Do the appropriate action based on connection to the cluster
+     * @param clientConnection The connection that the client is using for cluster connection.
+     */
+    void onClusterConnect(ClientConnection clientConnection);
 }

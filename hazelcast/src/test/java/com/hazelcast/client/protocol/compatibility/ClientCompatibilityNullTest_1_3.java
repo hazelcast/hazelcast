@@ -65,6 +65,7 @@ public class ClientCompatibilityNullTest_1_3 {
             assertTrue(isEqual(null, params.ownerUuid));
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.serverHazelcastVersion));
+            assertTrue(isEqual(null, params.clientUnregisteredMembers));
         }
 
         {
@@ -87,6 +88,7 @@ public class ClientCompatibilityNullTest_1_3 {
             assertTrue(isEqual(null, params.ownerUuid));
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.serverHazelcastVersion));
+            assertTrue(isEqual(null, params.clientUnregisteredMembers));
         }
 
         {

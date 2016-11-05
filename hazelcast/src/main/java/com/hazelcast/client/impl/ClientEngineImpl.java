@@ -47,6 +47,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -78,6 +79,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -98,7 +100,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
-    private static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
+    public static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
+
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int THREADS_PER_CORE = 20;
 
@@ -291,7 +294,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         try {
             nodeEngine.getExecutionService().schedule(new DestroyEndpointTask(deadMemberUuid),
                     ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
-
         } catch (RejectedExecutionException e) {
             if (logger.isFinestEnabled()) {
                 logger.finest(e);
@@ -306,7 +308,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public Collection<Client> getClients() {
         final HashSet<Client> clients = new HashSet<Client>();
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            clients.add((Client) endpoint);
+            clients.add(endpoint);
         }
         return clients;
     }
@@ -342,12 +344,24 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         ownershipMappings.clear();
     }
 
-    public void addOwnershipMapping(String clientUuid, String ownerUuid) {
-        ownershipMappings.put(clientUuid, ownerUuid);
+    public String addOwnershipMapping(String clientUuid, String ownerUuid) {
+        return ownershipMappings.put(clientUuid, ownerUuid);
     }
 
-    public void removeOwnershipMapping(String clientUuid) {
-        ownershipMappings.remove(clientUuid);
+    public void removeClient(String clientUuid) {
+         ownershipMappings.remove(clientUuid);
+
+        Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
+        for (ClientEndpoint endpoint : endpoints) {
+            endpointManager.removeEndpoint(endpoint, true);
+        }
+
+        NodeEngineImpl nodeEngine = node.getNodeEngine();
+        nodeEngine.onClientDisconnected(clientUuid);
+        Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
+        for (ClientAwareService service : services) {
+            service.clientDisconnected(clientUuid);
+        }
     }
 
     public TransactionManagerService getTransactionManagerService() {
@@ -366,19 +380,32 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         @Override
         public void connectionRemoved(Connection connection) {
             if (connection.isClient() && nodeEngine.isRunning()) {
-                ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
+                final ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
                 if (endpoint == null) {
+                    logger.finest("connectionRemoved: No endpoint for connection:" + connection);
                     return;
                 }
 
                 if (!endpoint.isFirstConnection()) {
+                    logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
                     return;
                 }
 
                 String localMemberUuid = node.getLocalMember().getUuid();
                 String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
                 if (localMemberUuid.equals(ownerUuid)) {
-                    callDisconnectionOperation(endpoint);
+                    try {
+                        nodeEngine.getExecutionService().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                callDisconnectionOperation(endpoint);
+                            }
+                        }, ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
+                    } catch (RejectedExecutionException e) {
+                        if (logger.isFinestEnabled()) {
+                            logger.finest(e);
+                        }
+                    }
                 }
             }
         }
@@ -386,12 +413,21 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         private void callDisconnectionOperation(ClientEndpointImpl endpoint) {
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             OperationService operationService = nodeEngine.getOperationService();
-            ClientDisconnectionOperation op = createClientDisconnectionOperation(endpoint.getUuid());
-            operationService.runOperationOnCallingThread(op);
+            String memberUuid = getLocalMember().getUuid();
+            String clientUuid = endpoint.getUuid();
+
+            String ownerMember = ownershipMappings.get(clientUuid);
+            if (!memberUuid.equals(ownerMember)) {
+                // do nothing if the owner already changed (double checked locking)
+                return;
+            }
+
+            ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid);
+            operationService.run(op);
 
             for (Member member : memberList) {
                 if (!member.localMember()) {
-                    op = createClientDisconnectionOperation(endpoint.getUuid());
+                    op = createClientDisconnectionOperation(clientUuid);
                     operationService.send(op, member.getAddress());
                 }
             }
@@ -429,7 +465,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 if (deadMemberUuid.equals(memberUuid)) {
                     iterator.remove();
                     ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid);
-                    nodeEngine.getOperationService().runOperationOnCallingThread(op);
+                    nodeEngine.getOperationService().run(op);
                 }
             }
         }
@@ -522,6 +558,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         @Override
         public int getPartitionId() {
             return task.getPartitionId();
+        }
+
+        @Override
+        public String toString() {
+            return "PriorityPartitionSpecificRunnable:{ " + task + "}";
         }
     }
 }

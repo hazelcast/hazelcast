@@ -16,28 +16,31 @@
 
 package com.hazelcast.client.spi.impl.listener;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
-public class ClientNonSmartListenerService extends ClientListenerServiceImpl implements ConnectionListener {
+public class ClientNonSmartListenerService extends ClientListenerServiceImpl {
 
     private final Map<ClientRegistrationKey, ClientEventRegistration> registrations
             = new ConcurrentHashMap<ClientRegistrationKey, ClientEventRegistration>();
@@ -81,8 +84,9 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
         String registrationId = registrationKey.getCodec().decodeAddResponse(future.get());
         handler.onListenerRegister();
         Address address = future.getInvocation().getSendConnection().getRemoteEndpoint();
+        Member member = client.getClientClusterService().getMember(address);
         return new ClientEventRegistration(registrationId,
-                request.getCorrelationId(), address, registrationKey.getCodec());
+                request.getCorrelationId(), member, registrationKey.getCodec());
 
     }
 
@@ -119,37 +123,13 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public void start() {
-        client.getConnectionManager().addConnectionListener(this);
+        List<Member> allClusterMembers = new ArrayList<Member>(client.getCluster().getMembers());
+        new ReconnectionHandler(allClusterMembers).run();
     }
 
     @Override
-    public void connectionAdded(Connection connection) {
-        registrationExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                for (ClientRegistrationKey registrationKey : registrations.keySet()) {
-                    try {
-                        ClientEventRegistration registration = invoke(registrationKey);
-                        registrations.put(registrationKey, registration);
-                    } catch (Exception e) {
-                        logger.warning("Listener " + registrationKey + " could not be added ");
-                    }
-                }
-            }
-        });
-
-    }
-
-    @Override
-    public void connectionRemoved(Connection connection) {
-        registrationExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<ClientRegistrationKey, ClientEventRegistration> entry : registrations.entrySet()) {
-                    removeEventHandler(entry.getValue().getCallId());
-                }
-            }
-        });
+    public void onClusterConnect(final ClientConnection clientConnection) {
+        registrationExecutor.submit(new ReconnectionHandler(clientConnection.getClientUnregisteredMembers()));
     }
 
     //For Testing
@@ -173,6 +153,67 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
             return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private class ReconnectionHandler
+            implements Runnable {
+        private List<Member> clientUnregisteredMembers;
+
+        public ReconnectionHandler(List<Member> clientUnregisteredMembers) {
+            this.clientUnregisteredMembers = clientUnregisteredMembers;
+        }
+
+        @Override
+        public void run() {
+            if (registrations.isEmpty()) {
+                return;
+            }
+
+            if (checkReconnectionToTheSameMember()) {
+                return;
+            }
+
+            reRegisterListeners();
+        }
+
+        private void reRegisterListeners() {
+            for (Map.Entry<ClientRegistrationKey, ClientEventRegistration> existingRegistrationEntry : registrations.entrySet()) {
+                ClientRegistrationKey key = null;
+                try {
+                    ClientEventRegistration existingRegistration = existingRegistrationEntry.getValue();
+                    removeEventHandler(existingRegistration.getCallId());
+                    key = existingRegistrationEntry.getKey();
+                    ClientEventRegistration registration = invoke(key);
+                    registrations.put(key, registration);
+                } catch (Exception e) {
+                    logger.warning("Listener " + key + " could not be added ");
+                }
+            }
+        }
+
+        private boolean checkReconnectionToTheSameMember() {
+            ClientClusterService clientClusterService = client.getClientClusterService();
+            Address newOwnerAddress = clientClusterService.getOwnerConnectionAddress();
+            Member newOwnerMember = clientClusterService.getMember(newOwnerAddress);
+            ClientEventRegistration firstRegistration = registrations.values().iterator().next();
+            // Since this is non-smart client, all registrations are made against the same member
+            Address oldOwnerAddress = firstRegistration.getSubscriber().getAddress();
+            if (newOwnerAddress.equals(oldOwnerAddress)) {
+                // connected to the same member as the owner
+                boolean ownerCleanedup = false;
+                for (Member member : clientUnregisteredMembers) {
+                    if (newOwnerMember.equals(member)) {
+                        ownerCleanedup = true;
+                        break;
+                    }
+                }
+                if (!ownerCleanedup) {
+                    // TODO: what if the cleanup starts later, how do we protect it?
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

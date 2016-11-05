@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.txn;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -39,6 +40,7 @@ import java.util.concurrent.Callable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -118,11 +120,13 @@ public class ClientTxnDisconnectionTest {
     }
 
     private void assertValidWaitingOperationCount(final int count) {
+
+        // Note: The wait duration here should be more than endpoint remove delay time
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 Assert.assertEquals(count, waitNotifyService.getTotalValidWaitingOperationCount());
             }
-        }, 10);
+        }, 2 * ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS);
     }
 }
