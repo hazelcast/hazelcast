@@ -313,8 +313,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
 
             members.add(member);
 
-            for (ClientRegistrationKey registrationKey : registrations.keySet()) {
-                Map<Member, ClientEventRegistration> registrationMap = registrations.get(registrationKey);
+            for (Map.Entry<ClientRegistrationKey, Map<Member, ClientEventRegistration>> entry : registrations.entrySet()) {
+                ClientRegistrationKey registrationKey = entry.getKey();
+                Map<Member, ClientEventRegistration> registrationMap = entry.getValue();
                 // Only register if not already registered
                 if (null == registrationMap.get(member)) {
                     try {
@@ -369,7 +370,8 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     }
 
     private void reRegisterAll() {
-        for (ClientRegistrationKey key : registrations.keySet()) {
+        for (Map.Entry<ClientRegistrationKey, Map<Member, ClientEventRegistration>> entry : registrations.entrySet()) {
+            ClientRegistrationKey key = entry.getKey();
             logger.finest("Reregistering listener " + key + " to the cluster.");
 
             deregister(key, getMemberUuids());
@@ -377,7 +379,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
             try {
                 register(key);
             } catch (Exception e) {
-                Map<Member, ClientEventRegistration> registrationMap = registrations.get(key);
+                Map<Member, ClientEventRegistration> registrationMap = entry.getValue();
                 if (null == registrationMap) {
                     // put back an empty map for keeping the key to be registered in the next try
                     registrations.put(key, new ConcurrentHashMap<Member, ClientEventRegistration>());
