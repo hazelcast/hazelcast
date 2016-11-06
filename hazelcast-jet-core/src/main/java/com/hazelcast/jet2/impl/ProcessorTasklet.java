@@ -57,11 +57,13 @@ public class ProcessorTasklet implements Tasklet {
                 .stream()
                 .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new, toCollection(ArrayList::new)))
                 .entrySet().stream()
-                .map(Entry::getValue).collect(toCollection(ArrayDeque::new));
+                .map(Entry::getValue)
+                .collect(toCollection(ArrayDeque::new));
         this.inbox = new ArrayDequeWithObserver();
         this.outbox = new ArrayDequeOutbox(outstreams.size(), DEFAULT_HIGH_WATER_MARK);
-        this.outstreams = outstreams.stream().sorted(comparing(OutboundEdgeStream::ordinal))
-                .toArray(OutboundEdgeStream[]::new);
+        this.outstreams = outstreams.stream()
+                                    .sorted(comparing(OutboundEdgeStream::ordinal))
+                                    .toArray(OutboundEdgeStream[]::new);
         this.instreamCursor = popInstreamGroup();
     }
 
@@ -82,7 +84,6 @@ public class ProcessorTasklet implements Tasklet {
         if (progTracker.isDone()) {
             completeIfNeeded();
         } else if (!inbox.isEmpty()) {
-            progTracker.madeProgress(true);
             tryProcessInbox();
         } else if (currInstreamExhausted) {
             progTracker.madeProgress(true);
@@ -125,8 +126,12 @@ public class ProcessorTasklet implements Tasklet {
         } while (!result.isMadeProgress() && instreamCursor.value() != first);
     }
 
-    @SuppressWarnings("checkstyle:innerassignment")
     private void tryProcessInbox() {
+        if (outbox.isHighWater()) {
+            progTracker.notDone();
+            return;
+        }
+        progTracker.madeProgress(true);
         final int inboundOrdinal = currInstream.ordinal();
         processor.process(inboundOrdinal, inbox);
         if (!inbox.isEmpty()) {
