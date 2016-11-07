@@ -63,7 +63,7 @@ public class ExecutionServiceTest {
         final MockTasklet t = new MockTasklet().blocking();
 
         // When
-        es.execute(singletonList(t)).get();
+        es.execute(singletonList(t)).toCompletableFuture().get();
 
         // Then
         t.assertDone();
@@ -75,7 +75,7 @@ public class ExecutionServiceTest {
         final MockTasklet t = new MockTasklet();
 
         // When
-        es.execute(singletonList(t)).get();
+        es.execute(singletonList(t)).toCompletableFuture().get();
 
         // Then
         t.assertDone();
@@ -87,7 +87,7 @@ public class ExecutionServiceTest {
         final MockTasklet t = new MockTasklet().initFails();
 
         // When
-        es.execute(singletonList(t)).get();
+        es.execute(singletonList(t)).toCompletableFuture().get();
 
         // Then
         t.assertDone();
@@ -99,7 +99,7 @@ public class ExecutionServiceTest {
         final MockTasklet t = new MockTasklet().blocking().initFails();
 
         // When - Then
-        es.execute(singletonList(t)).get();
+        es.execute(singletonList(t)).toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
@@ -108,7 +108,7 @@ public class ExecutionServiceTest {
         final MockTasklet t = new MockTasklet().callFails();
 
         // When - Then
-        es.execute(singletonList(t)).get();
+        es.execute(singletonList(t)).toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
@@ -117,7 +117,7 @@ public class ExecutionServiceTest {
         final MockTasklet t = new MockTasklet().blocking().callFails();
 
         // When - Then
-        es.execute(singletonList(t)).get();
+        es.execute(singletonList(t)).toCompletableFuture().get();
     }
 
     @Test
@@ -142,7 +142,7 @@ public class ExecutionServiceTest {
                 new MockTasklet().callsBeforeDone(10));
 
         // When
-        es.execute(tasklets).get();
+        es.execute(tasklets).toCompletableFuture().get();
 
         // Then
         tasklets.forEach(MockTasklet::assertDone);
@@ -156,7 +156,7 @@ public class ExecutionServiceTest {
                       .limit(100).collect(toList());
 
         // When
-        es.execute(tasklets).get();
+        es.execute(tasklets).toCompletableFuture().get();
 
         // Then
         tasklets.forEach(MockTasklet::assertDone);

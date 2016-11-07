@@ -16,10 +16,8 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.io.IOException;
 
@@ -40,26 +38,20 @@ class ExecutePlanOperation extends AsyncOperation {
     public void run() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        ICompletableFuture<Void> future = engineContext.getExecutionContext(planId).execute();
-        future.andThen(new SimpleExecutionCallback<Void>() {
-            @Override
-            public void notify(Object response) {
-                sendResponse(response);
-            }
-        });
+        engineContext.getExecutionContext(planId)
+                     .execute()
+                     .whenComplete((r, error) -> sendResponse(error != null ? error : null));
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
         out.writeLong(planId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
         planId = in.readLong();
     }
 }

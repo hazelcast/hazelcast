@@ -16,25 +16,17 @@
 
 package com.hazelcast.jet2.impl;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Javadoc pending.
- */
-class JobFuture implements Future<Void>, TroubleSetter {
+class JobFuture extends CompletableFuture<Void> {
 
-    private AtomicReference<Throwable> trouble = new AtomicReference<>();
-    private final CountDownLatch completionLatch;
+    private final AtomicInteger completionLatch;
 
-    JobFuture(CountDownLatch completionLatch) {
-        this.completionLatch = completionLatch;
+    JobFuture(int taskletCount) {
+        this.completionLatch = new AtomicInteger(taskletCount);
     }
 
     @Override
@@ -47,41 +39,10 @@ class JobFuture implements Future<Void>, TroubleSetter {
         return false;
     }
 
-    @Override
-    public boolean isDone() {
-        return completionLatch.getCount() == 0;
-    }
-
-    @Override
-    public Void get() throws InterruptedException, ExecutionException {
-        try {
-            return get(Long.MAX_VALUE, SECONDS);
-        } catch (TimeoutException e) {
-            throw new Error("Impossible timeout");
+    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "CompletableFuture<Void>")
+    void taskletDone() {
+        if (completionLatch.decrementAndGet() == 0) {
+            complete(null);
         }
     }
-
-    @Override
-    public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (!completionLatch.await(timeout, unit)) {
-            throw new TimeoutException("Jet Execution Service");
-        }
-        final Throwable t = trouble.get();
-        if (t != null) {
-            throw new ExecutionException(t);
-        }
-        return null;
-    }
-
-
-    @Override
-    public boolean hasTrouble() {
-        return trouble.get() != null;
-    }
-
-    @Override
-    public void setTrouble(Throwable t) {
-        trouble.compareAndSet(null, t);
-    }
-
 }

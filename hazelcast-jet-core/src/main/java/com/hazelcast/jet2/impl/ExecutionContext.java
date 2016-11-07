@@ -17,7 +17,6 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
@@ -26,7 +25,6 @@ import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.ArrayList;
@@ -34,9 +32,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
@@ -66,21 +64,13 @@ class ExecutionContext {
         initialize(plan);
     }
 
-    ICompletableFuture<Void> execute() {
-        Future<Void> future = context.getExecutionService().execute(tasklets);
-        ICompletableFuture<Void> completable = nodeEngine
-                .getExecutionService().asCompletableFuture(future);
-        completable.andThen(new SimpleExecutionCallback<Void>() {
-            @Override
-            public void notify(Object response) {
-                tasklets.clear();
-            }
-        });
-        return completable;
+    CompletionStage<Void> execute() {
+        CompletionStage<Void> stage = context.getExecutionService().execute(tasklets);
+        stage.whenComplete((r, e) -> tasklets.clear());
+        return stage;
     }
 
-    void handlePacket(int vertexId, int ordinal, int partitionId,
-                             byte[] buffer, int offset) {
+    void handlePacket(int vertexId, int ordinal, int partitionId, byte[] buffer, int offset) {
         Map<Integer, ReceiverTasklet> ordinalMap = receiverMap.get(vertexId);
         ReceiverTasklet tasklet = ordinalMap.get(ordinal);
         byte[] data = new byte[buffer.length - offset];
@@ -133,7 +123,7 @@ class ExecutionContext {
         tasklets.addAll(receivers);
     }
 
-    private ConcurrentInboundEdgeStream getInboundEdgeStream(EdgeDef edge, ConcurrentConveyor<Object> conveyor) {
+    private static ConcurrentInboundEdgeStream getInboundEdgeStream(EdgeDef edge, ConcurrentConveyor<Object> conveyor) {
         final InboundEmitter[] emitters = new InboundEmitter[conveyor.queueCount()];
         Arrays.setAll(emitters, n -> new ConveyorEmitter(conveyor, n));
         return new ConcurrentInboundEdgeStream(emitters, edge.getOrdinal(), edge.getPriority());

@@ -25,10 +25,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,13 +61,15 @@ class ExecutionService {
         this(hz, name, cfg, null);
     }
 
-    Future<Void> execute(List<? extends Tasklet> tasklets) {
+    /**
+     * @return instance of {@code java.util.concurrent.CompletableFuture}
+     */
+    CompletionStage<Void> execute(List<? extends Tasklet> tasklets) {
         ensureStillRunning();
-        final CountDownLatch completionLatch = new CountDownLatch(tasklets.size());
-        final JobFuture jobFuture = new JobFuture(completionLatch);
+        final JobFuture jobFuture = new JobFuture(tasklets.size());
         final Map<Boolean, List<Tasklet>> byBlocking = tasklets.stream().collect(partitioningBy(Tasklet::isBlocking));
-        submitBlockingTasklets(completionLatch, jobFuture, byBlocking.get(true));
-        submitNonblockingTasklets(completionLatch, jobFuture, byBlocking.get(false));
+        submitBlockingTasklets(jobFuture, byBlocking.get(true));
+        submitNonblockingTasklets(jobFuture, byBlocking.get(false));
         return jobFuture;
     }
 
@@ -89,20 +90,20 @@ class ExecutionService {
         }
     }
 
-    private void submitBlockingTasklets(CountDownLatch completionLatch, JobFuture jobFuture, List<Tasklet> tasklets) {
+    private void submitBlockingTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
         for (Tasklet t : tasklets) {
-            blockingTaskletExecutor.execute(new BlockingWorker(new TaskletTracker(t, completionLatch, jobFuture)));
+            blockingTaskletExecutor.execute(new BlockingWorker(new TaskletTracker(t, jobFuture)));
         }
     }
 
-    private void submitNonblockingTasklets(CountDownLatch completionLatch, JobFuture jobFuture, List<Tasklet> tasklets) {
+    private void submitNonblockingTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
         ensureThreadsStarted();
         final List<TaskletTracker>[] trackersByThread = new List[workers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         int i = 0;
         for (Tasklet t : tasklets) {
-            if (initPropagatingFailure(t, jobFuture, completionLatch)) {
-                trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, completionLatch, jobFuture));
+            if (initPropagatingFailure(t, jobFuture)) {
+                trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, jobFuture));
             }
         }
         for (i = 0; i < trackersByThread.length; i++) {
@@ -121,16 +122,15 @@ class ExecutionService {
     }
 
     private String threadNamePrefix() {
-        return "hz." + hzInstanceName + ".jet-engine." + name + ".";
+        return "hz." + hzInstanceName + ".jet-engine." + name + '.';
     }
 
-    private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture, CountDownLatch completionLatch) {
+    private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture) {
         try {
             t.init();
             return true;
         } catch (Throwable e) {
-            jobFuture.setTrouble(e);
-            completionLatch.countDown();
+            jobFuture.completeExceptionally(e);
             return false;
         }
     }
@@ -149,17 +149,18 @@ class ExecutionService {
             try {
                 t.init();
                 long idleCount = 0;
-                for (ProgressState result; !(result = t.call()).isDone() && !tracker.troubleSetter.hasTrouble(); ) {
+                for (ProgressState result;
+                     !(result = t.call()).isDone() && !tracker.jobFuture.isCompletedExceptionally();
+                ) {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
                         IDLER.idle(++idleCount);
                     }
                 }
+                tracker.jobFuture.taskletDone();
             } catch (Throwable e) {
-                tracker.troubleSetter.setTrouble(e);
-            } finally {
-                tracker.completionLatch.countDown();
+                tracker.jobFuture.completeExceptionally(e);
             }
         }
     }
@@ -195,9 +196,9 @@ class ExecutionService {
                             madeProgress |= result.isMadeProgress();
                         }
                     } catch (Throwable e) {
-                        t.troubleSetter.setTrouble(e);
+                        t.jobFuture.completeExceptionally(e);
                     }
-                    if (t.troubleSetter.hasTrouble()) {
+                    if (t.jobFuture.isCompletedExceptionally()) {
                         dismissTasklet(t);
                     }
                 }
@@ -213,7 +214,7 @@ class ExecutionService {
         }
 
         private void dismissTasklet(TaskletTracker t) {
-            t.completionLatch.countDown();
+            t.jobFuture.taskletDone();
             trackers.remove(t);
             stealWork();
         }
@@ -243,14 +244,12 @@ class ExecutionService {
 
     private static final class TaskletTracker {
         final Tasklet tasklet;
-        final TroubleSetter troubleSetter;
-        final CountDownLatch completionLatch;
+        final JobFuture jobFuture;
         final AtomicReference<NonBlockingWorker> stealingWorker = new AtomicReference<>();
 
-        TaskletTracker(Tasklet tasklet, CountDownLatch completionLatch, TroubleSetter troubleSetter) {
-            this.completionLatch = completionLatch;
+        TaskletTracker(Tasklet tasklet, JobFuture jobFuture) {
             this.tasklet = tasklet;
-            this.troubleSetter = troubleSetter;
+            this.jobFuture = jobFuture;
         }
     }
 
