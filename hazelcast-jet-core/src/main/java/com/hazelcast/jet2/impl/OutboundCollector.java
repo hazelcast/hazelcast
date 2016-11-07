@@ -161,6 +161,7 @@ interface OutboundCollector {
 
         private final Partitioner partitioner;
         private final OutboundCollector[] partitionLookupTable;
+        private int partitionId = -1;
 
         Partitioned(OutboundCollector[] collectors, Partitioner partitioner, int partitionCount) {
             super(collectors);
@@ -176,16 +177,22 @@ interface OutboundCollector {
 
         @Override
         public ProgressState offer(Object item) {
-            int partition = partitioner.getPartition(item, partitionLookupTable.length);
-            assert partition >= 0 && partition < partitionLookupTable.length : "Partition number out of range";
-            return offer(item, partition);
+            if (partitionId == -1) {
+                partitionId = partitioner.getPartition(item, partitionLookupTable.length);
+                assert partitionId >= 0 && partitionId < partitionLookupTable.length : "Partition number out of range";
+            }
+            ProgressState result = offer(item, partitionId);
+            if (result.isDone()) {
+                partitionId = -1;
+            }
+            return result;
         }
 
         @Override
         public ProgressState offer(Object item, int partitionId) {
             OutboundCollector collector = partitionLookupTable[partitionId];
             assert collector != null : "This item should not be handled by this collector as "
-                    + "requested partition is not present";
+                    + "requested partitionId is not present";
             return collector.offer(item, partitionId);
         }
     }
