@@ -92,6 +92,10 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         ClientExecutionServiceImpl.shutdownExecutor("registrationExecutor", registrationExecutor, logger);
     }
 
+    public StripedExecutor getEventExecutor() {
+        return eventExecutor;
+    }
+
     public void start() {
     }
 
