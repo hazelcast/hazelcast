@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
@@ -200,9 +201,17 @@ class ExecutionContext {
     private List<Processor> getProcessors(VertexDef vertexDef) {
         final ProcessorSupplier processorSupplier = vertexDef.getProcessorSupplier();
         int parallelism = vertexDef.getParallelism();
-        processorSupplier.init(ProcessorSupplier.Context.of(nodeEngine.getHazelcastInstance(),
-                parallelism));
-        return processorSupplier.get(parallelism);
+        processorSupplier.init(ProcessorSupplier.Context.of(nodeEngine.getHazelcastInstance(), parallelism));
+        List<Processor> processors = processorSupplier.get(parallelism);
+        assertProcessorCount(parallelism, processors);
+        return processors;
+    }
+
+    private void assertProcessorCount(int expected, List<Processor> processors) {
+        if (processors.size() != expected) {
+            throw new HazelcastException("Requested number of processors was not returned. Requested: "
+                    + expected + ", actual: " + processors.size());
+        }
     }
 
     private Map<Address, int[]> addrToPartitions() {
