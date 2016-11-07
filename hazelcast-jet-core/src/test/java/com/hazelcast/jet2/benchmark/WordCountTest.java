@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet2.benchmark;
 
 import com.hazelcast.config.Config;
@@ -24,23 +25,22 @@ import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.jet2.Partitioner;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.jet2.impl.IMapReader;
 import com.hazelcast.jet2.impl.IMapWriter;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,13 +62,14 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int NODE_COUNT = 2;
     private static final int PARALLELISM = Runtime.getRuntime().availableProcessors() / NODE_COUNT;
 
-    private static final int COUNT = 100_000;
-    private static final int DISTINCT = 10_000;
+    private static final int COUNT = 1_000_000;
+    private static final int DISTINCT = 100_000;
 
     private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
@@ -82,11 +83,15 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @AfterClass
     public static void shutdownFactory() {
         factory.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Before
     public void setUp() {
         Config hazelcastConfig = new Config();
+        hazelcastConfig.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        hazelcastConfig.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        hazelcastConfig.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         SerializerConfig serializerConfig = new SerializerConfig();
         serializerConfig.setImplementation(new StreamSerializer<Map.Entry>() {
             @Override
@@ -115,7 +120,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         hazelcastConfig.getSerializationConfig().addSerializerConfig(serializerConfig);
         for (int i = 0; i < NODE_COUNT; i++) {
-            instance = factory.newHazelcastInstance(hazelcastConfig);
+            instance = Hazelcast.newHazelcastInstance(hazelcastConfig);
         }
 
         JetEngineConfig config = new JetEngineConfig().setParallelism(PARALLELISM);
@@ -152,23 +157,43 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addEdge(new Edge(producer, generator))
                 .addEdge(new Edge(generator, combiner)
                         .distributed()
-                        .partitioned(new HazelcastPartitioner()))
+                        .partitioned(item -> ((Entry) item).getKey()))
                 .addEdge(new Edge(combiner, consumer));
 
         List<Long> times = new ArrayList<>();
-        final int warmupCount = 10;
-        for (int i = 0; i < 20; i++) {
+        long testStart = System.currentTimeMillis();
+        int warmupCount = 0;
+        boolean warmupEnded = false;
+        ILogger logger = instance.getLoggingService().getLogger(WordCountTest.class);
+        logger.info("Starting test..");
+        logger.info("Warming up...");
+        while (true) {
             long start = System.currentTimeMillis();
             jetEngine.newJob(dag).execute();
-            long time = System.currentTimeMillis() - start;
+            long end = System.currentTimeMillis();
+            long time = end - start;
             times.add(time);
-            System.out.println("jet2: totalTime=" + time);
-            IMap<String, Long> consumerMap = instance.getMap("counts");
-            assertCounts(consumerMap);
-            consumerMap.clear();
+            logger.info("jet2: totalTime=" + time);
+            long sinceTestStart = end - testStart;
+            if (sinceTestStart < 60000) {
+                warmupCount++;
+            }
+
+            if (!warmupEnded && sinceTestStart > 60000) {
+                logger.info("Warm up ended");
+                warmupEnded = true;
+            }
+
+            if (sinceTestStart > 180000) {
+                break;
+            }
+//            IMap<String, Long> consumerMap = instance.getMap("counts");
+//            assertCounts(consumerMap);
+//            consumerMap.clear();
         }
+        logger.info("Test complete");
         System.out.println(times.stream()
-                .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
+                                .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
 
 
     }
@@ -222,24 +247,6 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 emit(iterator.next());
             }
             return !iterator.hasNext();
-        }
-    }
-
-    private static class HazelcastPartitioner implements Partitioner {
-
-        private transient IPartitionService service;
-
-        public HazelcastPartitioner() {
-        }
-
-        @Override
-        public void init(IPartitionService service) {
-            this.service = service;
-        }
-
-        @Override
-        public int getPartition(Object item, int numPartitions) {
-            return service.getPartitionId(((Map.Entry) item).getKey());
         }
     }
 }
