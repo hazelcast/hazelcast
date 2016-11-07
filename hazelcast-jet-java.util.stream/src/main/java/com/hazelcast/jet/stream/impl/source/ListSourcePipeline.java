@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.source;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.impl.IListReader;
 
 public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
@@ -32,7 +32,7 @@ public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
     }
 
     @Override
-    protected ProcessorSupplier getProducer() {
+    protected ProcessorMetaSupplier getProducer() {
         return IListReader.supplier(list.getName());
     }
 

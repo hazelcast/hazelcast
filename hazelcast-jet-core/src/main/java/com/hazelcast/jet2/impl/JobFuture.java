@@ -83,4 +83,5 @@ class JobFuture implements Future<Void>, TroubleSetter {
     public void setTrouble(Throwable t) {
         trouble.compareAndSet(null, t);
     }
+
 }

@@ -18,7 +18,6 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.Processor;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +76,7 @@ public class ProcessorTaskletTest {
     public void when_oneInstreamAndTwoOutstreams_then_allOutstreamsGetAllItems() throws Exception {
         // Given
         mockInput.add(DONE_ITEM);
-        MockInboundStream instream1 = new MockInboundStream(0, mockInput,  mockInput.size());
+        MockInboundStream instream1 = new MockInboundStream(0, mockInput, mockInput.size());
         MockOutboundStream outstream1 = new MockOutboundStream(0, mockInput.size());
         MockOutboundStream outstream2 = new MockOutboundStream(1, mockInput.size());
         instreams.add(instream1);
@@ -143,14 +142,16 @@ public class ProcessorTaskletTest {
         outstreams.add(outstream1);
         Tasklet tasklet = createTasklet();
 
+        // When
         callUntil(tasklet, NO_PROGRESS);
 
+        // Then
         assertTrue("isEmpty", outstream1.getBuffer().equals(mockInput.subList(0, 4)));
     }
 
     private Tasklet createTasklet() {
-        final ProcessorTasklet t = new ProcessorTasklet(
-                new MockProcessorContext(), processor, instreams, outstreams);
+        final ProcessorTasklet t = new ProcessorTasklet(processor,
+                instreams, outstreams);
         t.init();
         return t;
     }
@@ -165,7 +166,7 @@ public class ProcessorTaskletTest {
 
         @Override
         public void process(int ordinal, Inbox inbox) {
-            for (Object item; (item = inbox.poll()) != null;) {
+            for (Object item; (item = inbox.poll()) != null; ) {
                 System.out.println("Processing " + item);
                 for (int i = 0; i < outbox.queueCount(); i++) {
                     outbox.add(i, item);
@@ -176,13 +177,13 @@ public class ProcessorTaskletTest {
 
     private static void callUntil(Tasklet tasklet, ProgressState expectedState) throws Exception {
         int iterCount = 0;
-        for (ProgressState r; (r = tasklet.call()) != expectedState;) {
+        for (ProgressState r; (r = tasklet.call()) != expectedState; ) {
             System.out.println(r);
             assertTrue("Failed to make progress: " + r, r.isMadeProgress());
             assertTrue(String.format(
                     "tasklet.call() invoked %d times without reaching %s. Last state was %s",
                     CALL_COUNT_LIMIT, expectedState, r),
-                  ++iterCount < CALL_COUNT_LIMIT);
+                    ++iterCount < CALL_COUNT_LIMIT);
         }
     }
 }

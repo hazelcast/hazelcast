@@ -36,7 +36,9 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     @Override
     public Vertex buildDAG(DAG dag) {
         Vertex previous = upstream.buildDAG(dag);
-        Vertex first = new Vertex(randomName(), () -> new LimitProcessor(limit)).parallelism(1);
+        // required final for lambda variable capture
+        final long lim = limit;
+        Vertex first = new Vertex(randomName(), () -> new LimitProcessor(lim)).parallelism(1);
         dag.addVertex(first)
                 .addEdge(new Edge(previous, first));
 
@@ -44,10 +46,12 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
             return first;
         }
 
-        Vertex second = new Vertex(randomName(), () -> new LimitProcessor(limit)).parallelism(1);
+        Vertex second = new Vertex(randomName(), () -> new LimitProcessor(lim)).parallelism(1);
         dag.addVertex(second)
-                .addEdge(new Edge(first, second));
-//                .distributed(singlePartition(randomName())));
+                .addEdge(new Edge(first, second)
+                        .distributed()
+                        .allToOne()
+                );
 
         return second;
     }

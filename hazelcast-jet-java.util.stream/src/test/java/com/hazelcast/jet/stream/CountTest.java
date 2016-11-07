@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class CountTest extends JetStreamTestSupport {
+public class CountTest extends StreamTestSupport {
 
     @Test
     public void testCount_whenSourceMap() throws Exception {

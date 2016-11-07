@@ -44,8 +44,9 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
     @Override
     public Vertex buildDAG(DAG dag) {
         Vertex previous = upstream.buildDAG(dag);
-
-        Vertex transform = new Vertex("transform-" + randomName(), () -> new TransformProcessor(operations));
+        // required final for lambda variable capture
+        final List<TransformOperation> ops = operations;
+        Vertex transform = new Vertex("transform-" + randomName(), () -> new TransformProcessor(ops));
         if (upstream.isOrdered()) {
             transform.parallelism(1);
         }

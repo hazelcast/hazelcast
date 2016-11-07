@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 public class JetClassLoader extends ClassLoader {
     private final List<ClassLoaderDelegate> loaders = new ArrayList<>();
 
@@ -41,7 +43,6 @@ public class JetClassLoader extends ClassLoader {
 
     }
 
-
     @Override
     public Class loadClass(String className) throws ClassNotFoundException {
         return loadClass(className, true);
@@ -49,40 +50,35 @@ public class JetClassLoader extends ClassLoader {
 
     @Override
     public Class loadClass(String className, boolean resolveIt) throws ClassNotFoundException {
-        if (className == null || className.trim().equals("")) {
+        if (isEmpty(className)) {
             return null;
         }
-        Class clazz = null;
         for (ClassLoaderDelegate loader : loaders) {
-            clazz = loader.loadClass(className, resolveIt);
-            if (clazz != null) {
-                break;
+            final Class c = loader.loadClass(className, resolveIt);
+            if (c != null) {
+                return c;
             }
         }
-        if (clazz == null) {
-            throw new ClassNotFoundException(className);
-        }
-        return clazz;
+        throw new ClassNotFoundException(className);
     }
 
     @Override
     public URL getResource(String name) {
-        if (name == null || name.trim().equals("")) {
+        if (isEmpty(name)) {
             return null;
         }
-        URL url = null;
         for (ClassLoaderDelegate loader : loaders) {
-            url = loader.findResource(name);
+            URL url = loader.findResource(name);
             if (url != null) {
-                break;
+                return url;
             }
         }
-        return url;
+        return null;
     }
 
     @Override
     public InputStream getResourceAsStream(String name) {
-        if (name == null || name.trim().equals("")) {
+        if (isEmpty(name)) {
             return null;
         }
         InputStream is = null;
@@ -93,117 +89,75 @@ public class JetClassLoader extends ClassLoader {
             }
         }
         return is;
+    }
 
+
+    private static boolean isEmpty(String className) {
+        return className == null || className.isEmpty();
     }
 
     private class SystemLoader implements ClassLoaderDelegate {
         @Override
         public Class loadClass(String className, boolean resolveIt) {
-            Class result;
-
             try {
-                result = findSystemClass(className);
+                return findSystemClass(className);
             } catch (ClassNotFoundException e) {
                 return null;
             }
-
-            return result;
         }
 
         @Override
         public InputStream loadResource(String name) {
-            InputStream is = getSystemResourceAsStream(name);
-
-            if (is != null) {
-                return is;
-            }
-
-            return null;
+            return getSystemResourceAsStream(name);
         }
 
         @Override
         public URL findResource(String name) {
-            URL url = getSystemResource(name);
-
-            if (url != null) {
-                return url;
-            }
-
-            return null;
+            return getSystemResource(name);
         }
     }
 
     private class ParentLoader implements ClassLoaderDelegate {
         @Override
         public Class loadClass(String className, boolean resolveIt) {
-            Class result;
-
             try {
-                result = getParent().loadClass(className);
+                return getParent().loadClass(className);
             } catch (ClassNotFoundException e) {
                 return null;
             }
-
-            return result;
         }
 
         @Override
         public InputStream loadResource(String name) {
-            InputStream is = getParent().getResourceAsStream(name);
-
-            if (is != null) {
-                return is;
-            }
-            return null;
+            return getParent().getResourceAsStream(name);
         }
 
 
         @Override
         public URL findResource(String name) {
-            URL url = getParent().getResource(name);
-
-            if (url != null) {
-                return url;
-            }
-            return null;
+            return getParent().getResource(name);
         }
     }
 
     private static class CurrentLoader implements ClassLoaderDelegate {
         @Override
         public Class loadClass(String className, boolean resolveIt) {
-            Class result;
-
             try {
-                result = getClass().getClassLoader().loadClass(className);
+                return getClass().getClassLoader().loadClass(className);
             } catch (ClassNotFoundException e) {
                 return null;
             }
-
-            return result;
         }
 
         @Override
         public InputStream loadResource(String name) {
-            InputStream is = getClass().getClassLoader().getResourceAsStream(name);
-
-            if (is != null) {
-                return is;
-            }
-
-            return null;
+            return getClass().getClassLoader().getResourceAsStream(name);
         }
 
 
         @Override
         public URL findResource(String name) {
-            URL url = getClass().getClassLoader().getResource(name);
-
-            if (url != null) {
-                return url;
-            }
-
-            return null;
+            return getClass().getClassLoader().getResource(name);
         }
     }
 
@@ -213,44 +167,34 @@ public class JetClassLoader extends ClassLoader {
         private DeploymentStore store;
 
         UserClassLoader(DeploymentStore deploymentStore) {
-            store = deploymentStore;
+            this.store = deploymentStore;
         }
 
         @Override
         public Class loadClass(String className, boolean resolveIt) {
             synchronized (getClassLoadingLock(className)) {
-                Class result;
-                byte[] classBytes;
-
-                result = classes.get(className);
-
-                if (result != null) {
-                    return result;
+                final Class cached = classes.get(className);
+                if (cached != null) {
+                    return cached;
                 }
-
-                classBytes = classBytes(className);
-
+                byte[] classBytes = classBytes(className);
                 if (classBytes == null) {
                     return null;
                 }
-
-                result = defineClass(className, classBytes, 0, classBytes.length);
-
-                if (result == null) {
+                final Class defined = defineClass(className, classBytes, 0, classBytes.length);
+                if (defined == null) {
                     return null;
                 }
-
-                if (result.getPackage() == null) {
+                if (defined.getPackage() == null) {
                     int lastDotIndex = className.lastIndexOf('.');
                     String packageName = (lastDotIndex >= 0) ? className.substring(0, lastDotIndex) : "";
                     definePackage(packageName, null, null, null, null, null, null, null);
                 }
-
                 if (resolveIt) {
-                    resolveClass(result);
+                    resolveClass(defined);
                 }
-                classes.put(className, result);
-                return result;
+                classes.put(className, defined);
+                return defined;
             }
         }
 
@@ -280,7 +224,8 @@ public class JetClassLoader extends ClassLoader {
         }
 
 
-        private ClassLoaderEntry coalesce(String name, Map<String, ClassLoaderEntry>... resources) {
+        @SafeVarargs
+        private final ClassLoaderEntry coalesce(String name, Map<String, ClassLoaderEntry>... resources) {
             for (Map<String, ClassLoaderEntry> map : resources) {
                 ClassLoaderEntry entry = map.get(name);
                 if (entry != null) {
@@ -307,13 +252,13 @@ public class JetClassLoader extends ClassLoader {
                 return null;
             }
             if (entry.getBaseUrl() == null) {
-                throw new JetClassLoaderException("non-URL accessible resource");
+                throw new IllegalArgumentException("non-URL accessible resource");
             }
 
             try {
                 return new URL(entry.getBaseUrl());
             } catch (MalformedURLException e) {
-                throw new JetClassLoaderException(e);
+                throw rethrow(e);
             }
 
         }

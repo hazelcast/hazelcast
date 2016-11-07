@@ -21,7 +21,7 @@ import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.Vertex;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
@@ -44,7 +44,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
 
     protected abstract R getTarget(HazelcastInstance instance);
 
-    protected abstract ProcessorSupplier getConsumer();
+    protected abstract ProcessorMetaSupplier getConsumer();
 
     protected abstract int parallelism();
 

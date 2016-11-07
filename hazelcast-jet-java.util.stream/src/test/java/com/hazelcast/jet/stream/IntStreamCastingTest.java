@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class IntStreamCastingTest extends JetStreamTestSupport {
+public class IntStreamCastingTest extends StreamTestSupport {
 
     private IntStream stream;
 

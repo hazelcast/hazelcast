@@ -21,22 +21,21 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 
 
 public class ResourceChunk implements IdentifiedDataSerializable {
     private byte[] bytes;
     private DeploymentDescriptor descriptor;
-    private int chunkSize;
     private int sequence;
 
     public ResourceChunk() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public ResourceChunk(byte[] bytes, DeploymentDescriptor descriptor, int chunkSize, int sequence) {
+    public ResourceChunk(byte[] bytes, DeploymentDescriptor descriptor, int sequence) {
         this.bytes = bytes;
-        this.chunkSize = chunkSize;
         this.descriptor = descriptor;
         this.sequence = sequence;
     }
@@ -50,10 +49,6 @@ public class ResourceChunk implements IdentifiedDataSerializable {
         return descriptor;
     }
 
-    public int getChunkSize() {
-        return chunkSize;
-    }
-
     public int getSequence() {
         return sequence;
     }
@@ -62,7 +57,6 @@ public class ResourceChunk implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByteArray(bytes);
         out.writeObject(this.descriptor);
-        out.writeInt(chunkSize);
         out.writeInt(sequence);
     }
 
@@ -70,7 +64,6 @@ public class ResourceChunk implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         bytes = in.readByteArray();
         descriptor = in.readObject();
-        chunkSize = in.readInt();
         sequence = in.readInt();
     }
 
@@ -88,7 +81,6 @@ public class ResourceChunk implements IdentifiedDataSerializable {
     public String toString() {
         return "Chunk{"
                 + "length=" + bytes.length
-                + ", chunkSize=" + chunkSize
                 + ", descriptor=" + descriptor
                 + ", seq=" + sequence
                 + '}';

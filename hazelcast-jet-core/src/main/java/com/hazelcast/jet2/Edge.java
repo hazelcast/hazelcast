@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet.strategy.MemberDistributionStrategy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -38,7 +39,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     private ForwardingPattern forwardingPattern = ForwardingPattern.ALTERNATING_SINGLE;
     private Partitioner partitioner;
-    private boolean distributed;
+    private boolean isDistributed;
 
     Edge() {
 
@@ -109,6 +110,15 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Partition the edge with the default {@link Partitioner}
+     */
+    public Edge partitioned() {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = new Default();
+        return this;
+    }
+
+    /**
      * Partition the edge with the given {@link Partitioner}
      */
     public Edge partitioned(Partitioner partitioner) {
@@ -116,6 +126,24 @@ public class Edge implements IdentifiedDataSerializable {
         this.partitioner = partitioner;
         return this;
     }
+
+    /**
+     * Partition the edge with the default {@link Partitioner}
+     * and applies the provided function before partitioning
+     */
+    public Edge partitioned(KeyExtractor extractor) {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = new Keyed(extractor);
+        return this;
+    }
+
+    /**
+     * Forward the edge to a single point
+     */
+    public Edge allToOne() {
+        return partitioned(new Single());
+    }
+
 
     /**
      * Javadoc pending
@@ -129,7 +157,7 @@ public class Edge implements IdentifiedDataSerializable {
      * Javadoc pending
      */
     public Edge distributed() {
-        distributed = true;
+        isDistributed = true;
         return this;
     }
 
@@ -145,6 +173,13 @@ public class Edge implements IdentifiedDataSerializable {
      */
     public ForwardingPattern getForwardingPattern() {
         return forwardingPattern;
+    }
+
+    /**
+     * @return Javadoc pending
+     */
+    public boolean isDistributed() {
+        return isDistributed;
     }
 
     /**
@@ -171,7 +206,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeInt(inputOrdinal);
 
         out.writeInt(priority);
-        out.writeBoolean(distributed);
+        out.writeBoolean(isDistributed);
 
         out.writeObject(forwardingPattern);
         out.writeObject(partitioner);
@@ -186,7 +221,7 @@ public class Edge implements IdentifiedDataSerializable {
         inputOrdinal = in.readInt();
 
         priority = in.readInt();
-        distributed = in.readBoolean();
+        isDistributed = in.readBoolean();
 
         forwardingPattern = in.readObject();
         partitioner = in.readObject();
@@ -202,23 +237,11 @@ public class Edge implements IdentifiedDataSerializable {
         return JetDataSerializerHook.EDGE;
     }
 
-    /**
-     * Javadoc pending
-     */
-    public Edge distributed(MemberDistributionStrategy memberDistributionStrategy) {
-        return null;
-    }
-
 
     /**
      * Javadoc pending
      */
     public enum ForwardingPattern implements Serializable {
-
-        /**
-         * Output of all source tasklets is forwarded to a single destination tasklet
-         */
-        ALL_TO_ONE,
 
         /**
          * Output of the source tasklet is only available to a single destination tasklet,
@@ -236,5 +259,57 @@ public class Edge implements IdentifiedDataSerializable {
          * Output of the source tasklet is available to all destination tasklets.
          */
         BROADCAST
+    }
+
+    private static class Default implements Partitioner {
+        private static final long serialVersionUID = 1L;
+
+        protected transient IPartitionService service;
+
+        @Override
+        public void init(IPartitionService service) {
+            this.service = service;
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return service.getPartitionId(item) % numPartitions;
+        }
+    }
+
+    private static class Keyed extends Default {
+        private KeyExtractor extractor;
+
+        public Keyed(KeyExtractor extractor) {
+            this.extractor = extractor;
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return service.getPartitionId(extractor.extract(item)) % numPartitions;
+        }
+    }
+
+    private static class Single implements Partitioner {
+
+        private static final long serialVersionUID = 1L;
+
+        private final String key;
+        private int partition;
+
+        public Single() {
+            key = UuidUtil.newUnsecureUuidString();
+        }
+
+
+        @Override
+        public void init(IPartitionService service) {
+            partition = service.getPartitionId(key);
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return partition;
+        }
     }
 }

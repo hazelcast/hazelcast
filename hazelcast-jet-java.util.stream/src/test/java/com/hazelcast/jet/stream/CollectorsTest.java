@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class CollectorsTest extends JetStreamTestSupport {
+public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testToCollection_whenSourceMap() {

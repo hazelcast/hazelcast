@@ -18,10 +18,13 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.Inbox;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.nio.Address;
+
+import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -29,7 +32,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class IMapWriter extends AbstractProcessor {
 
@@ -68,8 +73,28 @@ public class IMapWriter extends AbstractProcessor {
         buffer.clear();
     }
 
-    public static ProcessorSupplier supplier(String mapName) {
-        return new Supplier(mapName);
+    public static ProcessorMetaSupplier supplier(String mapName) {
+        return new MetaSupplier(mapName);
+    }
+
+    private static class MetaSupplier implements ProcessorMetaSupplier {
+
+        static final long serialVersionUID = 1L;
+
+        private final String mapName;
+
+        MetaSupplier(String mapName) {
+            this.mapName = mapName;
+        }
+
+        @Override
+        public ProcessorSupplier get(Address address) {
+            return new Supplier(mapName);
+        }
+
+        @Override
+        public void init(Context context) {
+        }
     }
 
     private static class Supplier implements ProcessorSupplier {
@@ -84,13 +109,13 @@ public class IMapWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(ProcessorContext context) {
+        public void init(Context context) {
             map = context.getHazelcastInstance().getMap(name);
         }
 
         @Override
-        public Processor get() {
-            return new IMapWriter(map);
+        public List<Processor> get(int count) {
+            return Stream.generate(() -> new IMapWriter(map)).limit(count).collect(toList());
         }
     }
 

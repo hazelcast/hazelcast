@@ -29,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class Vertex implements IdentifiedDataSerializable {
 
-    private ProcessorSupplier processorSupplier;
+    private ProcessorMetaSupplier supplier;
     private String name;
     private int parallelism = -1;
 
@@ -38,14 +38,34 @@ public class Vertex implements IdentifiedDataSerializable {
 
     /**
      * Javadoc pending
-     * @param name
-     * @param processorSupplier
+     */
+    public Vertex(String name, SimpleProcessorSupplier processorSupplier) {
+        checkNotNull(name, "name");
+        checkNotNull(processorSupplier, "supplier");
+
+        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
+        this.name = name;
+    }
+
+    /**
+     * Javadoc pending
      */
     public Vertex(String name, ProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
-        checkNotNull(processorSupplier, "processorSupplier");
+        checkNotNull(processorSupplier, "supplier");
 
-        this.processorSupplier = processorSupplier;
+        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
+        this.name = name;
+    }
+
+    /**
+     * Javadoc pending
+     */
+    public Vertex(String name, ProcessorMetaSupplier supplier) {
+        checkNotNull(name, "name");
+        checkNotNull(supplier, "supplier");
+
+        this.supplier = supplier;
         this.name = name;
     }
 
@@ -77,28 +97,26 @@ public class Vertex implements IdentifiedDataSerializable {
     /**
      * @return the processor supplier
      */
-    public ProcessorSupplier getProcessorSupplier() {
-        return processorSupplier;
+    public ProcessorMetaSupplier getSupplier() {
+        return supplier;
     }
 
     @Override
     public String toString() {
-        return "Vertex{"
-                + "name='" + name + '\''
-                + '}';
+        return "Vertex{name='" + name + '\'' + '}';
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeObject(processorSupplier);
+        out.writeObject(supplier);
         out.writeInt(parallelism);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        processorSupplier = in.readObject();
+        supplier = in.readObject();
         parallelism = in.readInt();
     }
 
@@ -111,4 +129,5 @@ public class Vertex implements IdentifiedDataSerializable {
     public int getId() {
         return JetDataSerializerHook.VERTEX;
     }
+
 }

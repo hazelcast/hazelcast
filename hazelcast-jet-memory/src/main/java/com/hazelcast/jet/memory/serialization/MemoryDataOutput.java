@@ -294,12 +294,12 @@ public class MemoryDataOutput implements ObjectDataOutput {
     }
 
     @Override
-    public byte toByteArray()[] {
+    public byte[] toByteArray() {
         throw new IllegalStateException("Not available for unified serialization");
     }
 
     @Override
-    public byte[] toByteArray(int i) {
+    public byte[] toByteArray(int padding) {
         return new byte[0];
     }
 

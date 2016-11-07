@@ -17,21 +17,25 @@
 package com.hazelcast.jet2.impl;
 
 /**
- * The outbound side of a data stream corresponding to a single DAG edge identified by its ordinal.
+ * The outbound side of a data stream corresponding to the origin of a single DAG edge identified by its ordinal.
+ * A thin wrapper around an {@link OutboundCollector}
  */
-interface OutboundEdgeStream {
+class OutboundEdgeStream {
 
-    /**
-     * Offers an item to this edge stream.
-     * If the stream cannot complete the operation, the call must be retried later.
-     */
-    ProgressState offer(Object item);
+    private final int ordinal;
+    private final OutboundCollector collector;
 
-    /**
-     * Tries to close this edge stream.
-     * If the stream cannot complete the operation now, the call must be retried later.
-     */
-    ProgressState close();
+    public OutboundEdgeStream(int ordinal, OutboundCollector collector) {
+        this.ordinal = ordinal;
+        this.collector = collector;
+    }
 
-    int ordinal();
+    public int ordinal() {
+        return ordinal;
+    }
+
+    public OutboundCollector getCollector() {
+        return collector;
+    }
+
 }

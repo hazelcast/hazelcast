@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class MaxTest extends JetStreamTestSupport {
+public class MaxTest extends StreamTestSupport {
 
     @Test
     public void testMax_whenSourceMap() throws Exception {

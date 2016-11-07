@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet2.impl;
 
+import java.io.Serializable;
+
 /**
  * Javadoc pending.
  */
-class DoneItem {
+class DoneItem implements Serializable {
 
     static final DoneItem DONE_ITEM = new DoneItem();
 
@@ -27,4 +29,9 @@ class DoneItem {
     public String toString() {
         return "DONE_ITEM";
     }
+
+    protected Object readResolve() {
+        return DONE_ITEM;
+    }
+
 }

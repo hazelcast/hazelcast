@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 import com.hazelcast.jet2.impl.AbstractProcessor;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -60,7 +60,7 @@ public class TransformProcessor extends AbstractProcessor {
                     stream.close();
                     return;
                 default:
-                    throw new JetException("Unknown case: " + operation.getType());
+                    throw new IllegalArgumentException("Unknown case: " + operation.getType());
             }
         }
         emit(item);

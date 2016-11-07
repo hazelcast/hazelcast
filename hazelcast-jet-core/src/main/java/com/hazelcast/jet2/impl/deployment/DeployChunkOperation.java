@@ -16,45 +16,42 @@
 
 package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet2.impl.ExecutionContext;
+import com.hazelcast.jet2.impl.EngineOperation;
 import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
-public class DeployChunkOperation extends Operation {
-    private String engineName;
+public class DeployChunkOperation extends EngineOperation {
     private ResourceChunk chunk;
 
     @SuppressWarnings("unused")
     public DeployChunkOperation() {
-
     }
 
-    public DeployChunkOperation(String name, ResourceChunk chunk) {
-        this.engineName = name;
+    public DeployChunkOperation(String engineName, ResourceChunk chunk) {
+        super(engineName);
         this.chunk = chunk;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ExecutionContext executionContext = service.getExecutionContext(engineName);
-        executionContext.getDeploymentStore().receiveChunk(chunk);
+        service.getEngineContext(engineName).getDeploymentStore().receiveChunk(chunk);
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(engineName);
+
         out.writeObject(chunk);
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        engineName = in.readUTF();
+
         chunk = in.readObject();
     }
 }

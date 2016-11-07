@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.IList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -27,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class DistinctTest extends JetStreamTestSupport {
+public class DistinctTest extends StreamTestSupport {
 
     @Test
     public void testDistinct_whenSourceList() {

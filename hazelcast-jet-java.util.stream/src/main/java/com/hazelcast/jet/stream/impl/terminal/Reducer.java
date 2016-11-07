@@ -24,7 +24,7 @@ import com.hazelcast.jet.stream.impl.processor.AccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.CombinerProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.SimpleProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.IListWriter;
 import java.util.Optional;
@@ -54,24 +54,26 @@ public class Reducer {
     }
 
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
-        ProcessorSupplier supplier = () -> new CombinerProcessor<>(combiner, Distributed.Function.<T>identity());
+        SimpleProcessorSupplier supplier = () -> new CombinerProcessor<>(combiner, Distributed.Function.<T>identity());
         Vertex combinerVertex = new Vertex(randomName(), supplier).parallelism(1);
         dag.addVertex(combinerVertex);
-        dag.addEdge(new Edge(accumulatorVertex, combinerVertex));
-//                .distributed(singlePartition(randomName())));
+        dag.addEdge(new Edge(accumulatorVertex, combinerVertex)
+                .distributed()
+                .allToOne()
+        );
         return combinerVertex;
     }
 
     public <T> Optional<T> reduce(Pipeline<T> upstream, BinaryOperator<T> operator) {
         DAG dag = new DAG();
-        Vertex accumulatorVertex = buildAccumulator(dag, upstream, operator, Optional.empty());
+        Vertex accumulatorVertex = buildAccumulator(dag, upstream, operator, null);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, operator);
         return this.<T>execute(dag, combinerVertex);
     }
 
     public <T> T reduce(Pipeline<T> upstream, T identity, BinaryOperator<T> accumulator) {
         DAG dag = new DAG();
-        Vertex accumulatorVertex = buildAccumulator(dag, upstream, accumulator, Optional.of(identity));
+        Vertex accumulatorVertex = buildAccumulator(dag, upstream, accumulator, identity);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, accumulator);
         return this.<T>execute(dag, combinerVertex).get();
     }
@@ -107,7 +109,7 @@ public class Reducer {
     }
 
     private <T> Vertex buildAccumulator(
-            DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, Optional<T> identity
+            DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, T identity
     ) {
         Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity);
         dag.addVertex(accumulatorVertex);
@@ -120,13 +122,13 @@ public class Reducer {
     }
 
     private <T> Vertex getAccumulatorVertex(
-            BinaryOperator<T> accumulator, Optional<T> identity
+            BinaryOperator<T> accumulator, T identity
     ) {
-        return identity.isPresent()
+        return identity != null
                 ?
-                new Vertex(randomName(), () -> new AccumulatorProcessor<>(accumulator, identity.get()))
+                new Vertex(randomName(), () -> new AccumulatorProcessor<>(accumulator, identity))
                 :
-                new Vertex(randomName(), () -> new CombinerProcessor<>(accumulator, Distributed.Function.<T>identity()));
+                new Vertex(randomName(), () -> new CombinerProcessor<>(accumulator, Distributed.Function.identity()));
     }
 
 }

@@ -30,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class DAGTest {
 
-    private static final ProcessorSupplier PROCESSOR_SUPPLIER = TestProcessor::new;
+    private static final SimpleProcessorSupplier PROCESSOR_SUPPLIER = TestProcessor::new;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();

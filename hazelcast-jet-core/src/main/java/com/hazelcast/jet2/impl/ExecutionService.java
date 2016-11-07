@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
@@ -43,21 +44,26 @@ class ExecutionService {
     private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
+    private final ClassLoader contextClassLoader;
     private final NonBlockingWorker[] workers;
     private final Thread[] threads;
-    private final NodeEngine nodeEngine;
+    private final String hzInstanceName;
     private final String name;
-    private final JetEngineConfig cfg;
 
-    public ExecutionService(NodeEngine nodeEngine, String name, JetEngineConfig cfg) {
-        this.nodeEngine = nodeEngine;
+    public ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg, ClassLoader contextClassLoader) {
+        this.hzInstanceName = hz.getName();
         this.name = name;
-        this.cfg = cfg;
         this.workers = new NonBlockingWorker[cfg.getParallelism()];
         this.threads = new Thread[cfg.getParallelism()];
+        this.contextClassLoader = contextClassLoader;
     }
 
-    public Future<Void> execute(List<Tasklet> tasklets) {
+    ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
+        this(hz, name, cfg, null);
+    }
+
+    public Future<Void> execute(List<? extends Tasklet> tasklets) {
+        ensureStillRunning();
         final CountDownLatch completionLatch = new CountDownLatch(tasklets.size());
         final JobFuture jobFuture = new JobFuture(completionLatch);
         final Map<Boolean, List<Tasklet>> byBlocking = tasklets.stream().collect(partitioningBy(Tasklet::isBlocking));
@@ -68,10 +74,18 @@ class ExecutionService {
 
     public void shutdown() {
         blockingTaskletExecutor.shutdown();
-        for (NonBlockingWorker worker : workers) {
-            if (worker != null) {
-                worker.isShutdown = true;
+        synchronized (this) {
+            for (NonBlockingWorker worker : workers) {
+                if (worker != null) {
+                    worker.isShutdown = true;
+                }
             }
+        }
+    }
+
+    private void ensureStillRunning() {
+        if (blockingTaskletExecutor.isShutdown()) {
+            throw new IllegalStateException("Execution service was ordered to shut down");
         }
     }
 
@@ -102,13 +116,12 @@ class ExecutionService {
             return;
         }
         Arrays.setAll(workers, i -> new NonBlockingWorker(workers));
-        Arrays.setAll(threads, i -> new Thread(workers[i], "hz." + getThreadNamePrefix()
-                + ".non-blocking-executor.thread-" + i));
+        Arrays.setAll(threads, i -> createThread(workers[i], "nonblocking-executor", i));
         Arrays.stream(threads).forEach(Thread::start);
     }
 
-    private String getThreadNamePrefix() {
-        return nodeEngine.getHazelcastInstance().getName() + ".jet-engine." + name;
+    private String threadNamePrefix() {
+        return "hz." + hzInstanceName + ".jet-engine." + name + ".";
     }
 
     private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture, CountDownLatch completionLatch) {
@@ -194,6 +207,8 @@ class ExecutionService {
                     IDLER.idle(++idleCount);
                 }
             }
+            // Best-effort attempt to release all tasklets. A tasklet can still be added later on through work stealing.
+            trackers.clear();
         }
 
         private void dismissTasklet(TaskletTracker t) {
@@ -238,12 +253,20 @@ class ExecutionService {
         }
     }
 
+    Thread createThread(Runnable r, String executorName, int seq) {
+        Thread t = new Thread(r, threadNamePrefix() + executorName + ".thread-" + seq);
+        if (contextClassLoader != null) {
+            t.setContextClassLoader(contextClassLoader);
+        }
+        return t;
+    }
+
     private final class BlockingTaskThreadFactory implements ThreadFactory {
-        private int seq;
+        private final AtomicInteger seq = new AtomicInteger();
 
         @Override
         public Thread newThread(Runnable r) {
-            return new Thread(r, ExecutionService.this.getThreadNamePrefix() + ".blocking-executor.thread-" + seq++);
+            return createThread(r, "blocking-executor", seq.getAndIncrement());
         }
     }
 }

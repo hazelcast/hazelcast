@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.Vertex;
 
 public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> {
@@ -37,7 +37,7 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
         return vertex;
     }
 
-    protected abstract ProcessorSupplier getProducer();
+    protected abstract ProcessorMetaSupplier getProducer();
 
     protected abstract String getName();
 }

@@ -17,8 +17,6 @@
 package com.hazelcast.jet.stream.impl.terminal;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.JetPair;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -69,10 +67,6 @@ public class Matcher {
         dag.addVertex(writer).addEdge(new Edge(vertex, writer));
         executeJob(context, dag);
         return context.getHazelcastInstance().getList(listName);
-    }
-
-    private <T, U extends T> Distributed.Function<U, Pair> toPairMapper() {
-        return o -> new JetPair<Object, T>(0, o);
     }
 
 

@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+
 package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOUtil;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -37,23 +39,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class DeploymentStore {
 
     private static final ILogger LOGGER = Logger.getLogger(DeploymentStore.class);
+    private static final int KILOBYTE = 1024;
+
     private final String storagePath;
     private final File storageDirectory;
-    private long fileNameCounter = 1;
-    private final Map<DeploymentDescriptor, File> resources = new ConcurrentHashMap<>();
+    private final int chunkSize;
 
+    private final Map<DeploymentDescriptor, File> resources = new ConcurrentHashMap<>();
     private final Map<String, ClassLoaderEntry> jarEntries = new HashMap<>();
     private final Map<String, ClassLoaderEntry> dataEntries = new HashMap<>();
     private final Map<String, ClassLoaderEntry> classEntries = new HashMap<>();
 
+    private long fileNameCounter = 1;
 
-    public DeploymentStore(String storagePath) {
-        this.storagePath = getStoragePathOrDefault(storagePath);
+    public DeploymentStore(String storagePath, int chunkSize) {
+        this.storagePath = createTempIfNull(storagePath);
+        this.chunkSize = chunkSize;
         this.storageDirectory = createStorageDirectory();
     }
 
@@ -70,40 +76,28 @@ public class DeploymentStore {
     }
 
     private File createStorageDirectory() {
-        Path storageDirectoryPath = Paths.get(this.storagePath);
+        Path storageDirectoryPath = Paths.get(storagePath);
         int directoryNameCounter = 0;
         do {
             try {
                 storageDirectoryPath = Files.createDirectory(storageDirectoryPath);
             } catch (FileAlreadyExistsException e) {
-                storageDirectoryPath = Paths.get(this.storagePath + File.pathSeparator + "_" + directoryNameCounter++);
+                storageDirectoryPath = Paths.get(storagePath + File.pathSeparator + '_' + directoryNameCounter++);
             } catch (IOException e) {
-                throw unchecked(e);
+                throw rethrow(e);
             }
 
         } while (!storageDirectoryPath.toFile().exists());
         return storageDirectoryPath.toFile();
     }
 
-    public void cleanup() {
-        delete(storageDirectory);
+    public void destroy() {
+        IOUtil.delete(storageDirectory);
     }
 
-    private void delete(File file) {
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            if (files != null) {
-                for (File c : files) {
-                    delete(c);
-                }
-            }
-        }
-
-        if (!file.delete()) {
-            LOGGER.info("Can't delete file " + file.getName());
-        }
+    public int getChunkSize() {
+        return chunkSize;
     }
-
 
     private File createResource(DeploymentDescriptor descriptor) {
         String path = generateResourcePath();
@@ -130,12 +124,11 @@ public class DeploymentStore {
             createResource(descriptor);
         }
         File file = resources.get(descriptor);
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rws")) {
-            int offset = chunk.getSequence() * chunk.getChunkSize();
-            randomAccessFile.seek(offset);
-            randomAccessFile.write(chunk.getBytes());
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+            raf.seek(chunk.getSequence() * chunkSize);
+            raf.write(chunk.getBytes());
         } catch (Exception e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
@@ -143,36 +136,34 @@ public class DeploymentStore {
         return storageDirectory + File.pathSeparator + "resource" + fileNameCounter++;
     }
 
-    private String getStoragePathOrDefault(String storagePath) {
-        if (storagePath == null) {
-            try {
-                storagePath = Files.createTempDirectory("hazelcast-jet-").toString();
-            } catch (IOException e) {
-                throw unchecked(e);
-            }
+    private static String createTempIfNull(String storagePath) {
+        if (storagePath != null) {
+            return storagePath;
         }
-        return storagePath;
+        try {
+            return Files.createTempDirectory("hazelcast-jet-").toString();
+        } catch (IOException e) {
+            throw rethrow(e);
+        }
     }
 
     void updateCatalog(DeploymentDescriptor descriptor) {
-        File file = resources.get(descriptor);
-        ResourceStream resourceStream;
-        try {
-            resourceStream = asResourceStream(file);
+        try (ResourceStream resourceStream = openResource(resources.get(descriptor))) {
+            switch (descriptor.getDeploymentType()) {
+                case JAR:
+                    loadJarStream(resourceStream);
+                    return;
+                case CLASS:
+                    loadClassStream(descriptor, resourceStream);
+                    return;
+                case DATA:
+                    loadDataStream(descriptor, resourceStream);
+                    return;
+                default:
+                    throw new AssertionError("Unhandled deployment type " + descriptor.getDeploymentType());
+            }
         } catch (IOException e) {
-            throw unchecked(e);
-        }
-        switch (descriptor.getDeploymentType()) {
-            case JAR:
-                loadJarStream(resourceStream);
-                break;
-            case CLASS:
-                loadClassStream(descriptor, resourceStream);
-                break;
-            case DATA:
-                loadDataStream(descriptor, resourceStream);
-                break;
-            default:
+            throw rethrow(e);
         }
     }
 
@@ -186,95 +177,81 @@ public class DeploymentStore {
         dataEntries.put(descriptor.getId(), new ClassLoaderEntry(bytes, resourceStream.baseUrl));
     }
 
-    private void loadJarStream(ResourceStream resourceStream) {
+    @SuppressWarnings("checkstyle:innerassignment")
+    private void loadJarStream(ResourceStream resourceStream) throws IOException {
         BufferedInputStream bis = null;
         JarInputStream jis = null;
 
         try {
             bis = new BufferedInputStream(resourceStream.inputStream);
             jis = new JarInputStream(bis);
-
             JarEntry jarEntry;
             while ((jarEntry = jis.getNextJarEntry()) != null) {
                 if (jarEntry.isDirectory()) {
                     continue;
                 }
-
-                byte[] b = new byte[JetUtil.KILOBYTE];
-
-                int len;
-                byte[] bytes;
-
-                try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                    while ((len = jis.read(b)) > 0) {
-                        out.write(b, 0, len);
-                    }
-                    bytes = out.toByteArray();
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                byte[] buf = new byte[KILOBYTE];
+                for (int len; (len = jis.read(buf)) > 0; ) {
+                    out.write(buf, 0, len);
                 }
-
                 String name = jarEntry.getName();
                 String clazzSuffix = ".class";
                 if (jarEntry.getName().endsWith(clazzSuffix)) {
                     name = name.substring(0, name.length() - clazzSuffix.length()).replace("/", ".");
                 }
-                ClassLoaderEntry entry = new ClassLoaderEntry(bytes,
-                        "jar:" + resourceStream.baseUrl + "!/" + name);
+                ClassLoaderEntry entry = new ClassLoaderEntry(out.toByteArray(),
+                        String.format("jar:%s!/%s", resourceStream.baseUrl, name));
                 jarEntries.put(name, entry);
             }
-        } catch (IOException e) {
-            throw new JetClassLoaderException(e);
         } finally {
             close(bis, jis);
         }
     }
 
-    private ResourceStream asResourceStream(File resource) throws IOException {
-        InputStream fileInputStream = new FileInputStream(resource);
+    private static ResourceStream openResource(File resource) throws IOException {
         try {
-            return new ResourceStream(fileInputStream, resource.toURI().toURL().toString());
-        } catch (Throwable e) {
-            fileInputStream.close();
-            throw unchecked(e);
+            return new ResourceStream(new FileInputStream(resource), resource.toURI().toURL().toString());
+        } catch (IOException e) {
+            throw rethrow(e);
         }
     }
 
-    private byte[] readFully(InputStream in) {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            int len;
-            byte[] b = new byte[JetUtil.KILOBYTE];
-            while ((len = in.read(b)) > 0) {
+    @SuppressWarnings("checkstyle:innerassignment")
+    private static byte[] readFully(InputStream in) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] b = new byte[KILOBYTE];
+            for (int len; (len = in.read(b)) != -1; ) {
                 out.write(b, 0, len);
             }
             return out.toByteArray();
         } catch (IOException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 
-    private void close(Closeable... closeables) {
+    private static void close(Closeable... closeables) {
         if (closeables == null) {
             return;
         }
-
-        Throwable lastError = null;
-
+        Throwable error = null;
         for (Closeable closeable : closeables) {
-            if (closeable != null) {
-                try {
-                    closeable.close();
-                } catch (IOException e) {
-                    lastError = e;
-                }
+            if (closeable == null) {
+                continue;
+            }
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                error = e;
             }
         }
-
-        if (lastError != null) {
-            throw unchecked(lastError);
+        if (error != null) {
+            throw rethrow(error);
         }
     }
 
-
-    private static class ResourceStream {
+    private static class ResourceStream implements Closeable {
         final String baseUrl;
         final InputStream inputStream;
 
@@ -282,7 +259,10 @@ public class DeploymentStore {
             this.inputStream = inputStream;
             this.baseUrl = baseUrl;
         }
+
+        @Override
+        public void close() throws IOException {
+            inputStream.close();
+        }
     }
-
-
 }

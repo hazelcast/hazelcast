@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class LongStreamTest extends JetStreamTestSupport {
+public class LongStreamTest extends StreamTestSupport {
 
     private IStreamMap<String, Long> map;
     private DistributedLongStream stream;

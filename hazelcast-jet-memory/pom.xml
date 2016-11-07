@@ -32,6 +32,7 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <skipTests>true</skipTests>
     </properties>
 
     <dependencies>

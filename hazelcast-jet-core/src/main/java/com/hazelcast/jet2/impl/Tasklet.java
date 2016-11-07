@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet2.impl;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.Callable;
 
 interface Tasklet extends Callable<ProgressState> {
 
     void init();
+
+    @Override
+    @Nonnull
+    ProgressState call();
 
     default boolean isBlocking() {
         return false;

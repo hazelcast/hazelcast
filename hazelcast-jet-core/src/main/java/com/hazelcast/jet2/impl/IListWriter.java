@@ -20,9 +20,13 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
 import com.hazelcast.jet2.ProcessorSupplier;
+
 import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class IListWriter extends AbstractProcessor {
 
@@ -64,13 +68,13 @@ public class IListWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(ProcessorContext context) {
+        public void init(Context context) {
             list = context.getHazelcastInstance().getList(name);
         }
 
         @Override
-        public Processor get() {
-            return new IListWriter(list);
+        public List<Processor> get(int count) {
+            return Stream.generate(() -> new IListWriter(list)).limit(count).collect(toList());
         }
     }
 

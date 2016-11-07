@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class MinTest extends JetStreamTestSupport {
+public class MinTest extends StreamTestSupport {
 
     @Test
     public void testMin_whenSourceMap() throws Exception {

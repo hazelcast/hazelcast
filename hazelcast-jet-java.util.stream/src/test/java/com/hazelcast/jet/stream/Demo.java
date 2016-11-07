@@ -28,7 +28,7 @@ import java.util.Map;
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 @Ignore
-public class Demo extends JetStreamTestSupport {
+public class Demo extends StreamTestSupport {
 
     @Test
     public void testFilterSquares() {

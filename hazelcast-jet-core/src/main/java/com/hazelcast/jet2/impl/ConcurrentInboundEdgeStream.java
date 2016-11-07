@@ -24,10 +24,10 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     private final int ordinal;
     private final int priority;
-    private final InboundProducer[] producers;
+    private final InboundEmitter[] producers;
     private final ProgressTracker tracker;
 
-    public ConcurrentInboundEdgeStream(InboundProducer[] producers, int ordinal, int priority) {
+    ConcurrentInboundEdgeStream(InboundEmitter[] producers, int ordinal, int priority) {
         this.producers = producers;
         this.ordinal = ordinal;
         this.priority = priority;
@@ -38,13 +38,13 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     public ProgressState drainTo(CollectionWithObserver dest) {
         tracker.reset();
         for (int i = 0; i < producers.length; i++) {
-            InboundProducer producer = producers[i];
+            InboundEmitter producer = producers[i];
             if (producer != null) {
                 ProgressState result = producer.drainTo(dest);
                 if (result.isDone()) {
                     producers[i] = null;
                 }
-                tracker.update(result);
+                tracker.mergeWith(result);
             }
         }
         return tracker.toProgressState();

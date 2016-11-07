@@ -19,10 +19,15 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.collection.impl.list.ListProxyImpl;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
-import java.util.Iterator;
+import com.hazelcast.nio.Address;
+
 import javax.annotation.Nonnull;
+import java.util.Iterator;
+import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 public class IListReader extends AbstractProducer {
 
@@ -56,8 +61,40 @@ public class IListReader extends AbstractProducer {
         return true;
     }
 
-    public static ProcessorSupplier supplier(String listName) {
-        return new Supplier(listName);
+    public static ProcessorMetaSupplier supplier(String listName) {
+        return new MetaSupplier(listName);
+    }
+
+    private static class MetaSupplier implements ProcessorMetaSupplier {
+
+        static final long serialVersionUID = 1L;
+        private final String name;
+
+        private transient Address ownerAddress;
+
+        public MetaSupplier(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public void init(Context context) {
+            int partitionId = context.getPartitionServce().getPartitionId(name);
+            ownerAddress = context.getPartitionServce().getPartitionOwnerOrWait(partitionId);
+        }
+
+        @Override
+        public ProcessorSupplier get(Address address) {
+            if (address.equals(ownerAddress)) {
+                return new Supplier(name);
+            } else {
+                // nothing to read on other nodes
+                return (c) -> {
+                    assertCountIsOne(c);
+                    return singletonList(new AbstractProducer() {
+                    });
+                };
+            }
+        }
     }
 
     private static class Supplier implements ProcessorSupplier {
@@ -72,13 +109,20 @@ public class IListReader extends AbstractProducer {
         }
 
         @Override
-        public void init(ProcessorContext context) {
+        public void init(Context context) {
             list = (ListProxyImpl) context.getHazelcastInstance().getList(name);
         }
 
         @Override
-        public Processor get() {
-            return new IListReader(list);
+        public List<Processor> get(int count) {
+            assertCountIsOne(count);
+            return singletonList(new IListReader(list));
+        }
+    }
+
+    private static void assertCountIsOne(int count) {
+        if (count != 1) {
+            throw new IllegalArgumentException("count != 1");
         }
     }
 }

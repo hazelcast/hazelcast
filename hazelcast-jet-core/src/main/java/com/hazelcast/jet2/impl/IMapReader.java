@@ -16,20 +16,22 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorContext;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.partition.IPartitionService;
+
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import java.util.stream.IntStream;
+
+import static java.util.stream.Collectors.toList;
 
 public class IMapReader extends AbstractProducer {
 
@@ -43,8 +45,7 @@ public class IMapReader extends AbstractProducer {
 
     private CircularCursor<Iterator> iteratorCursor;
 
-    protected IMapReader(MapProxyImpl map,
-                         List<Integer> partitions, int fetchSize) {
+    public IMapReader(MapProxyImpl map, List<Integer> partitions, int fetchSize) {
         this.map = map;
         this.partitions = partitions;
         this.fetchSize = fetchSize;
@@ -54,8 +55,7 @@ public class IMapReader extends AbstractProducer {
     @Override
     public void init(@Nonnull Outbox outbox) {
         super.init(outbox);
-        iterators = partitions.stream().map(p -> map.iterator(fetchSize, p, true))
-                .collect(Collectors.toList());
+        iterators = partitions.stream().map(p -> map.iterator(fetchSize, p, true)).collect(toList());
         this.iteratorCursor = new CircularCursor<>(iterators);
     }
 
@@ -80,45 +80,69 @@ public class IMapReader extends AbstractProducer {
         return true;
     }
 
-    public static ProcessorSupplier supplier(String mapName) {
-        return new Supplier(mapName, DEFAULT_FETCH_SIZE);
+    public static ProcessorMetaSupplier supplier(String mapName) {
+        return new MetaSupplier(mapName, DEFAULT_FETCH_SIZE);
     }
 
-    public static ProcessorSupplier supplier(String mapName, int fetchSize) {
-        return new Supplier(mapName, fetchSize);
+    public static ProcessorMetaSupplier supplier(String mapName, int fetchSize) {
+        return new MetaSupplier(mapName, fetchSize);
+    }
+
+    private static class MetaSupplier implements ProcessorMetaSupplier {
+
+        static final long serialVersionUID = 1L;
+
+        private final String name;
+        private final int fetchSize;
+
+        private transient IPartitionService partitionService;
+
+        public MetaSupplier(String name, int fetchSize) {
+            this.name = name;
+            this.fetchSize = fetchSize;
+        }
+
+        @Override
+        public void init(Context context) {
+            partitionService = context.getPartitionServce();
+        }
+
+        @Override
+        public ProcessorSupplier get(Address address) {
+            List<Integer> ownedPartitions = partitionService.getMemberPartitionsMap().get(address);
+            return new Supplier(name, ownedPartitions, fetchSize);
+        }
     }
 
     private static class Supplier implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
-        private final String name;
+        private final String mapName;
+        private final List<Integer> ownedPartitions;
         private final int fetchSize;
-        private int index;
-        private transient MapProxyImpl map;
-        private transient Map<Integer, List<Integer>> partitionGroups;
 
-        public Supplier(String name, int fetchSize) {
-            this.name = name;
+        private transient MapProxyImpl map;
+
+        public Supplier(String mapName, List<Integer> ownedPartitions, int fetchSize) {
+            this.mapName = mapName;
+            this.ownedPartitions = ownedPartitions;
             this.fetchSize = fetchSize;
         }
 
         @Override
-        public void init(ProcessorContext context) {
-            // distribute local partitions
-            index = 0;
-            Member localMember = context.getHazelcastInstance().getCluster().getLocalMember();
-            Set<Partition> partitions = context.getHazelcastInstance().getPartitionService().getPartitions();
-            partitionGroups = partitions.stream()
-                    .filter(p -> p.getOwner().equals(localMember))
-                    .map(Partition::getPartitionId)
-                    .collect(Collectors.groupingBy(p -> p % context.parallelism()));
-            map = (MapProxyImpl) context.getHazelcastInstance().getMap(name);
+        public void init(Context context) {
+            map = (MapProxyImpl) context.getHazelcastInstance().getMap(mapName);
         }
 
         @Override
-        public Processor get() {
-            return new IMapReader(map, partitionGroups.get(index++), fetchSize);
+        public List<Processor> get(int count) {
+            return IntStream.range(0, count)
+                            .mapToObj(i -> ownedPartitions.stream().filter(f -> f % count == i).collect(toList()))
+                            .map(partitions -> partitions.size() > 0 ? new IMapReader(map, partitions, fetchSize)
+                                    : new AbstractProducer() {
+                            })
+                            .collect(toList());
         }
     }
 }
