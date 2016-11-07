@@ -36,7 +36,7 @@ class JetGroupByGate extends JetGroupingSpliceGate implements ProcessorInputSour
 
     private Map<Tuple, List<Tuple>> valueMap;
 
-    public JetGroupByGate(FlowProcess flowProcess, Splice splice) {
+    JetGroupByGate(FlowProcess flowProcess, Splice splice) {
         super(flowProcess, splice);
         this.role = IORole.source;
     }

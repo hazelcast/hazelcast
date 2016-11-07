@@ -371,7 +371,7 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
 
         private final TupleHasher hasher;
 
-        public TupleHashingStrategy(TupleHasher hasher) {
+        TupleHashingStrategy(TupleHasher hasher) {
             this.hasher = hasher;
         }
 

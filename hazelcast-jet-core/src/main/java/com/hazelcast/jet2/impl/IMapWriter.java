@@ -104,7 +104,7 @@ public class IMapWriter extends AbstractProcessor {
         private final String name;
         private transient IMap map;
 
-        public Supplier(String name) {
+        Supplier(String name) {
             this.name = name;
         }
 
@@ -124,7 +124,7 @@ public class IMapWriter extends AbstractProcessor {
         private final List<Entry> entries;
         private final ArraySet set = new ArraySet();
 
-        public ArrayMap() {
+        ArrayMap() {
             entries = new ArrayList<>();
         }
 

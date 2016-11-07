@@ -196,7 +196,7 @@ interface OutboundCollector {
         private final OutboundCollector collector;
         private int counter;
 
-        public Diagnostic(String name, OutboundCollector collector) {
+        Diagnostic(String name, OutboundCollector collector) {
             this.name = name;
             this.collector = collector;
         }

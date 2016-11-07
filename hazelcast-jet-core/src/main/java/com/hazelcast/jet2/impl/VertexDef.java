@@ -30,37 +30,37 @@ class VertexDef implements Serializable {
     private final ProcessorSupplier processorSupplier;
     private final int parallelism;
 
-    public VertexDef(int id, ProcessorSupplier processorSupplier, int parallelism) {
+    VertexDef(int id, ProcessorSupplier processorSupplier, int parallelism) {
         this.id = id;
         this.processorSupplier = processorSupplier;
         this.parallelism = parallelism;
     }
 
-    public int getId() {
+    int getId() {
         return id;
     }
 
-    public void addInputs(List<EdgeDef> inputs) {
+    void addInputs(List<EdgeDef> inputs) {
         this.inputs.addAll(inputs);
     }
 
-    public void addOutputs(List<EdgeDef> outputs) {
+    void addOutputs(List<EdgeDef> outputs) {
         this.outputs.addAll(outputs);
     }
 
-    public List<EdgeDef> getInputs() {
+    List<EdgeDef> getInputs() {
         return inputs;
     }
 
-    public List<EdgeDef> getOutputs() {
+    List<EdgeDef> getOutputs() {
         return outputs;
     }
 
-    public ProcessorSupplier getProcessorSupplier() {
+    ProcessorSupplier getProcessorSupplier() {
         return processorSupplier;
     }
 
-    public int getParallelism() {
+    int getParallelism() {
         return parallelism;
     }
 }

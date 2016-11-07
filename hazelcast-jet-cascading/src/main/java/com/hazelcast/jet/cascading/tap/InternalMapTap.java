@@ -210,7 +210,7 @@ public class InternalMapTap extends InternalJetTap {
     private static class PairIterator implements Iterator<Pair> {
         private final Iterator<Map.Entry> entryIterator;
 
-        public PairIterator(Iterator<Map.Entry> entryIterator) {
+        PairIterator(Iterator<Map.Entry> entryIterator) {
             this.entryIterator = entryIterator;
         }
 
@@ -232,7 +232,7 @@ public class InternalMapTap extends InternalJetTap {
         private final String mapName;
         private transient HazelcastInstance hazelcastInstance;
 
-        public LastModifiedTime(String mapName) {
+        LastModifiedTime(String mapName) {
             this.mapName = mapName;
         }
 
@@ -253,7 +253,7 @@ public class InternalMapTap extends InternalJetTap {
         private final String mapName;
         private transient HazelcastInstance hazelcastInstance;
 
-        public DestroyMap(String mapName) {
+        DestroyMap(String mapName) {
             this.mapName = mapName;
         }
 

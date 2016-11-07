@@ -50,7 +50,7 @@ class ExecutionService {
     private final String hzInstanceName;
     private final String name;
 
-    public ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg, ClassLoader contextClassLoader) {
+    ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg, ClassLoader contextClassLoader) {
         this.hzInstanceName = hz.getName();
         this.name = name;
         this.workers = new NonBlockingWorker[cfg.getParallelism()];
@@ -62,7 +62,7 @@ class ExecutionService {
         this(hz, name, cfg, null);
     }
 
-    public Future<Void> execute(List<? extends Tasklet> tasklets) {
+    Future<Void> execute(List<? extends Tasklet> tasklets) {
         ensureStillRunning();
         final CountDownLatch completionLatch = new CountDownLatch(tasklets.size());
         final JobFuture jobFuture = new JobFuture(completionLatch);
@@ -72,7 +72,7 @@ class ExecutionService {
         return jobFuture;
     }
 
-    public void shutdown() {
+    void shutdown() {
         blockingTaskletExecutor.shutdown();
         synchronized (this) {
             for (NonBlockingWorker worker : workers) {
@@ -207,7 +207,8 @@ class ExecutionService {
                     IDLER.idle(++idleCount);
                 }
             }
-            // Best-effort attempt to release all tasklets. A tasklet can still be added later on through work stealing.
+            // Best-effort attempt to release all tasklets. A tasklet can still be added
+            // to a dead worker through work stealing.
             trackers.clear();
         }
 

@@ -27,12 +27,13 @@ class ExecutePlanOperation extends AsyncOperation {
 
     private long planId;
 
-    public ExecutePlanOperation() {
-    }
-
-    public ExecutePlanOperation(String engineName, long planId) {
+    ExecutePlanOperation(String engineName, long planId) {
         super(engineName);
         this.planId = planId;
+    }
+
+    private ExecutePlanOperation() {
+        // for deserialization
     }
 
     @Override

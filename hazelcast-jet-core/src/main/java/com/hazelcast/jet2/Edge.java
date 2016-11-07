@@ -280,7 +280,7 @@ public class Edge implements IdentifiedDataSerializable {
     private static class Keyed extends Default {
         private KeyExtractor extractor;
 
-        public Keyed(KeyExtractor extractor) {
+        Keyed(KeyExtractor extractor) {
             this.extractor = extractor;
         }
 
@@ -297,7 +297,7 @@ public class Edge implements IdentifiedDataSerializable {
         private final String key;
         private int partition;
 
-        public Single() {
+        Single() {
             key = UuidUtil.newUnsecureUuidString();
         }
 

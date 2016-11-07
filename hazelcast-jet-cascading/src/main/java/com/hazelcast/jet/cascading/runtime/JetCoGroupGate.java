@@ -45,7 +45,7 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
 
     private MemoryCoGroupClosure closure;
 
-    public JetCoGroupGate(FlowProcess flowProcess, Splice splice) {
+    JetCoGroupGate(FlowProcess flowProcess, Splice splice) {
         super(flowProcess, splice);
         this.role = IORole.source;
     }

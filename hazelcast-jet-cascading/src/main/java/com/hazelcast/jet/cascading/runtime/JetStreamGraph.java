@@ -51,8 +51,8 @@ class JetStreamGraph extends NodeStreamGraph {
     private ProcessorInputSource streamedInputSource;
     private Map<String, ProcessorInputSource> accumulatedInputSources = new HashMap<>();
 
-    public JetStreamGraph(FlowProcess flowProcess, FlowNode node,
-                          Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder, List<Edge> inputEdges) {
+    JetStreamGraph(FlowProcess flowProcess, FlowNode node,
+                   Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder, List<Edge> inputEdges) {
         super(flowProcess, node);
         this.outputHolder = outputHolder;
         this.inputEdges = inputEdges;

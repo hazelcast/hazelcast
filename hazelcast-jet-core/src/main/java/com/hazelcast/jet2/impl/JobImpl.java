@@ -25,7 +25,7 @@ class JobImpl implements Job {
     private final JetEngineImpl jetEngine;
     private final DAG dag;
 
-    public JobImpl(JetEngineImpl jetEngine, DAG dag) {
+    JobImpl(JetEngineImpl jetEngine, DAG dag) {
         this.jetEngine = jetEngine;
         this.dag = dag;
     }

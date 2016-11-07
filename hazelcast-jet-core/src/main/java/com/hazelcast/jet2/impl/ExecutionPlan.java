@@ -24,19 +24,19 @@ class ExecutionPlan implements Serializable {
     private final List<VertexDef> vertices = new ArrayList<>();
     private final long id;
 
-    public ExecutionPlan(long id) {
+    ExecutionPlan(long id) {
         this.id = id;
     }
 
-    public List<VertexDef> getVertices() {
+    List<VertexDef> getVertices() {
         return vertices;
     }
 
-    public void addVertex(VertexDef vertex) {
+    void addVertex(VertexDef vertex) {
         vertices.add(vertex);
     }
 
-    public long getId() {
+    long getId() {
         return id;
     }
 }

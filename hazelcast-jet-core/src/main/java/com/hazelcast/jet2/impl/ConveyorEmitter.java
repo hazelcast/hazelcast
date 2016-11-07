@@ -26,7 +26,7 @@ class ConveyorEmitter implements InboundEmitter {
     private final int queueIndex;
     private final DoneDetector doneDetector;
 
-    public ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex) {
+    ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
         this.doneDetector = new DoneDetector(conveyor.submitterGoneItem());

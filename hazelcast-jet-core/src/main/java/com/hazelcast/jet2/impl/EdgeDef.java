@@ -31,7 +31,7 @@ class EdgeDef implements Serializable {
     private final Edge.ForwardingPattern forwardingPattern;
     private final Partitioner partitioner;
 
-    public EdgeDef(int otherEndId, int ordinal, int otherEndOrdinal, int priority,
+    EdgeDef(int otherEndId, int ordinal, int otherEndOrdinal, int priority,
                    boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner) {
         this.otherEndId = otherEndId;
         this.otherEndOrdinal = otherEndOrdinal;
@@ -42,31 +42,31 @@ class EdgeDef implements Serializable {
         this.partitioner = partitioner;
     }
 
-    public int getOtherEndId() {
+    int getOtherEndId() {
         return otherEndId;
     }
 
-    public int getOrdinal() {
+    int getOrdinal() {
         return ordinal;
     }
 
-    public Edge.ForwardingPattern getForwardingPattern() {
+    Edge.ForwardingPattern getForwardingPattern() {
         return forwardingPattern;
     }
 
-    public Partitioner getPartitioner() {
+    Partitioner getPartitioner() {
         return partitioner;
     }
 
-    public int getPriority() {
+    int getPriority() {
         return priority;
     }
 
-    public int getOtherEndOrdinal() {
+    int getOtherEndOrdinal() {
         return otherEndOrdinal;
     }
 
-    public boolean isDistributed() {
+    boolean isDistributed() {
         return isDistributed;
     }
 }

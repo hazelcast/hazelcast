@@ -58,14 +58,14 @@ class ExecutionContext {
 
     private final EngineContext context;
 
-    public ExecutionContext(EngineContext context, ExecutionPlan plan) {
+    ExecutionContext(EngineContext context, ExecutionPlan plan) {
         this.context = context;
         this.nodeEngine = context.getNodeEngine();
         this.plan = plan;
         initialize(plan);
     }
 
-    public ICompletableFuture<Void> execute() {
+    ICompletableFuture<Void> execute() {
         Future<Void> future = context.getExecutionService().execute(tasklets);
         ICompletableFuture<Void> completable = nodeEngine
                 .getExecutionService().asCompletableFuture(future);
@@ -78,7 +78,7 @@ class ExecutionContext {
         return completable;
     }
 
-    public void handlePacket(int vertexId, int ordinal, int partitionId,
+    void handlePacket(int vertexId, int ordinal, int partitionId,
                              byte[] buffer, int offset) {
         Map<Integer, ReceiverTasklet> ordinalMap = receiverMap.get(vertexId);
         ReceiverTasklet tasklet = ordinalMap.get(ordinal);

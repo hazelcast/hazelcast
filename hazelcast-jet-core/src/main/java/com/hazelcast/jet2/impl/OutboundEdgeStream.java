@@ -25,16 +25,16 @@ class OutboundEdgeStream {
     private final int ordinal;
     private final OutboundCollector collector;
 
-    public OutboundEdgeStream(int ordinal, OutboundCollector collector) {
+    OutboundEdgeStream(int ordinal, OutboundCollector collector) {
         this.ordinal = ordinal;
         this.collector = collector;
     }
 
-    public int ordinal() {
+    int ordinal() {
         return ordinal;
     }
 
-    public OutboundCollector getCollector() {
+    OutboundCollector getCollector() {
         return collector;
     }
 

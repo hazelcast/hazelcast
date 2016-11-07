@@ -25,12 +25,13 @@ class InitPlanOperation extends EngineOperation {
 
     private ExecutionPlan plan;
 
-    public InitPlanOperation() {
-    }
-
-    public InitPlanOperation(String engineName, ExecutionPlan plan) {
+    InitPlanOperation(String engineName, ExecutionPlan plan) {
         super(engineName);
         this.plan = plan;
+    }
+
+    private InitPlanOperation() {
+        // for deserialization
     }
 
     @Override

@@ -72,7 +72,7 @@ public class IListReader extends AbstractProducer {
 
         private transient Address ownerAddress;
 
-        public MetaSupplier(String name) {
+        MetaSupplier(String name) {
             this.name = name;
         }
 
@@ -104,7 +104,7 @@ public class IListReader extends AbstractProducer {
         private final String name;
         private transient ListProxyImpl list;
 
-        public Supplier(String name) {
+        Supplier(String name) {
             this.name = name;
         }
 

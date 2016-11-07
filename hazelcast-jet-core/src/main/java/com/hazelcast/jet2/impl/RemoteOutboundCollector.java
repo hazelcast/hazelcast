@@ -33,7 +33,7 @@ class RemoteOutboundCollector implements OutboundCollector {
     private final int[] partitions;
     private final InternalSerializationService serializationService;
 
-    public RemoteOutboundCollector(NodeEngine engine,
+    RemoteOutboundCollector(NodeEngine engine,
                                    String engineName,
                                    Address destinationAddress,
                                    long executionId,

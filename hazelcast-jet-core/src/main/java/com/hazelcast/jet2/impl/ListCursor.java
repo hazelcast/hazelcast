@@ -30,7 +30,7 @@ class ListCursor<T> implements Cursor<T> {
     protected int index;
     protected final List<T> list;
 
-    public ListCursor(List<T> list) {
+    ListCursor(List<T> list) {
         assert list instanceof RandomAccess : "Attempt to create ListCursor with non-RandomAccess list";
         this.list = list;
     }

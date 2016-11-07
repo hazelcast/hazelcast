@@ -36,12 +36,13 @@ class ExecuteJobOperation extends AsyncOperation {
 
     private DAG dag;
 
-    public ExecuteJobOperation() {
-    }
-
-    public ExecuteJobOperation(String engineName, DAG dag) {
+    ExecuteJobOperation(String engineName, DAG dag) {
         super(engineName);
         this.dag = dag;
+    }
+
+    private ExecuteJobOperation() {
+        // for deserialization
     }
 
     @Override

@@ -97,7 +97,7 @@ public class IMapReader extends AbstractProducer {
 
         private transient IPartitionService partitionService;
 
-        public MetaSupplier(String name, int fetchSize) {
+        MetaSupplier(String name, int fetchSize) {
             this.name = name;
             this.fetchSize = fetchSize;
         }
@@ -124,7 +124,7 @@ public class IMapReader extends AbstractProducer {
 
         private transient MapProxyImpl map;
 
-        public Supplier(String mapName, List<Integer> ownedPartitions, int fetchSize) {
+        Supplier(String mapName, List<Integer> ownedPartitions, int fetchSize) {
             this.mapName = mapName;
             this.ownedPartitions = ownedPartitions;
             this.fetchSize = fetchSize;

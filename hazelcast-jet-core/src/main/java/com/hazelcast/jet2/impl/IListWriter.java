@@ -30,7 +30,6 @@ import static java.util.stream.Collectors.toList;
 
 public class IListWriter extends AbstractProcessor {
 
-
     private IList list;
 
     public IListWriter(IList list) {
@@ -63,7 +62,7 @@ public class IListWriter extends AbstractProcessor {
         private final String name;
         private transient IList list;
 
-        public Supplier(String name) {
+        Supplier(String name) {
             this.name = name;
         }
 
@@ -77,5 +76,4 @@ public class IListWriter extends AbstractProcessor {
             return Stream.generate(() -> new IListWriter(list)).limit(count).collect(toList());
         }
     }
-
 }
