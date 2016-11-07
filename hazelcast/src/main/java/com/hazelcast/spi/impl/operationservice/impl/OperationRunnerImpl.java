@@ -28,11 +28,14 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BlockingOperation;
@@ -55,12 +58,12 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -75,6 +78,7 @@ import static java.util.logging.Level.WARNING;
 /**
  * Responsible for processing an Operation.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     static final int AD_HOC_PARTITION_ID = -2;
@@ -266,7 +270,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         sendResponse(op, backupAcks);
     }
 
-   private void sendResponse(Operation op, int backupAcks) {
+    private void sendResponse(Operation op, int backupAcks) {
         try {
             Object response = op.getResponse();
             if (backupAcks > 0) {
@@ -397,7 +401,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             run(op);
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
-            long callId = extractOperationCallId(packet, node.getSerializationService());
+            long callId = extractOperationCallId(packet);
             outboundResponseHandler.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
@@ -406,6 +410,18 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
                 currentTask = null;
             }
         }
+    }
+
+    /**
+     * This method has a direct dependency on how objects are serialized.
+     * If the stream format is changed, this extraction method must be changed as well.
+     * <p>
+     * It makes an assumption that the callId is the first long field in the serialized operation.
+     */
+    private long extractOperationCallId(Data data) throws IOException {
+        ObjectDataInput input = ((SerializationServiceV1) node.getSerializationService())
+                .initDataSerializableInputAndSkipTheHeader(data);
+        return input.readLong();
     }
 
     private void setOperationResponseHandler(Operation op) {

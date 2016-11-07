@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteOrder;
 
 import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
@@ -32,7 +31,7 @@ import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataInput {
+class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
 
     byte[] data;
 

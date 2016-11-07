@@ -18,7 +18,6 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.Closeable;
@@ -29,7 +28,7 @@ import java.nio.ByteOrder;
 
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
-public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable {
+public class ObjectDataInputStream extends VersionedObjectDataInput implements Closeable {
 
     private final InternalSerializationService serializationService;
     private final DataInputStream dataInput;
@@ -359,4 +358,5 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     private boolean bigEndian() {
         return byteOrder == ByteOrder.BIG_ENDIAN;
     }
+
 }

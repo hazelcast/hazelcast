@@ -25,7 +25,7 @@ import java.nio.ByteOrder;
 /**
  * Provides serialization methods for arrays by extending DataOutput
  */
-public interface ObjectDataOutput extends DataOutput {
+public interface ObjectDataOutput extends DataOutput, VersionAware {
 
     /**
      * @param bytes byte array to be written
@@ -108,4 +108,5 @@ public interface ObjectDataOutput extends DataOutput {
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
+
 }

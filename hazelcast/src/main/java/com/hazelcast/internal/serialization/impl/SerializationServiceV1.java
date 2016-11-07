@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSeriali
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -73,6 +74,10 @@ import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.J
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 
 public class SerializationServiceV1 extends AbstractSerializationService {
+
+    private static final int DATA_SERIALIZABLE_HEADER_VALUE = 0;
+    private static final int IDENTIFIED_DATA_SERIALIZABLE_HEADER_VALUE = 1;
+    private static final int FACTORY_AND_CLASS_ID_BYTE_LENGTH = 8;
 
     private final PortableContextImpl portableContext;
     private final PortableSerializer portableSerializer;
@@ -169,7 +174,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     protected void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap,
-            boolean checkClassDefErrors) {
+                                           boolean checkClassDefErrors) {
         final Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
@@ -191,4 +196,28 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     final PortableSerializer getPortableSerializer() {
         return portableSerializer;
     }
+
+    /**
+     * Init the ObjectDataInput for the given Data skipping the header-bytes,
+     * - in case of DataSerializable, it skips the first header byte, and then the class-name
+     * - in case of IdentifiedDataSerializable, it skips the first header byte, and then the factoryId and classId integer bytes
+     *
+     * @param data data to initialize the ObjectDataInput with.
+     * @return the initialized ObjectDataInput without the header.
+     * @throws IOException
+     */
+    public ObjectDataInput initDataSerializableInputAndSkipTheHeader(Data data) throws IOException {
+        ObjectDataInput input = createObjectDataInput(data);
+        byte header = input.readByte();
+        if (header == IDENTIFIED_DATA_SERIALIZABLE_HEADER_VALUE) {
+            input.skipBytes(FACTORY_AND_CLASS_ID_BYTE_LENGTH);
+        } else if (header == DATA_SERIALIZABLE_HEADER_VALUE) {
+            // read class-name of DataSerializable
+            input.readUTF();
+        } else {
+            throw new HazelcastSerializationException("Unsupported serialization format");
+        }
+        return input;
+    }
+
 }

@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.nio;
+
+import com.hazelcast.version.Version;
 
 /**
- * See ConcurrencyUtil
- *
- * @param <K> key type
- * @param <V> value type
+ * Enables getting the version from the implementing object.
+ * It may be any Version (cluster version, node version, custom version, etc.) It's up to the implementer.
  */
-public interface ConstructorFunction<K, V> {
+public interface VersionAware {
 
     /**
-     * Creates a new instance of an object given the construction argument
-     *
-     * @param arg construction argument
-     * @return a new instance of an object
+     * @return the version or Version.UNKNOWN if version is unknown to the object.
      */
-    V createNew(K arg);
+    Version getVersion();
+
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -63,28 +62,6 @@ public final class IOUtil {
         } else {
             return ByteBuffer.allocate(bufferSize);
         }
-    }
-
-    /**
-     * This method has a direct dependency on how objects are serialized in
-     * {@link com.hazelcast.internal.serialization.impl.DataSerializableSerializer}. If the stream
-     * format is changed, this extraction method must be changed as well.
-     */
-    public static long extractOperationCallId(Data data, InternalSerializationService serializationService)
-            throws IOException {
-        ObjectDataInput input = serializationService.createObjectDataInput(data);
-        boolean identified = input.readBoolean();
-        if (identified) {
-            // read factoryId
-            input.readInt();
-            // read typeId
-            input.readInt();
-        } else {
-            // read classname
-            input.readUTF();
-        }
-        // read callId
-        return input.readLong();
     }
 
     public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
