@@ -121,6 +121,14 @@ class ExecutionService {
         Arrays.stream(threads).forEach(Thread::start);
     }
 
+    private Thread createThread(Runnable r, String executorName, int seq) {
+        Thread t = new Thread(r, threadNamePrefix() + executorName + ".thread-" + seq);
+        if (contextClassLoader != null) {
+            t.setContextClassLoader(contextClassLoader);
+        }
+        return t;
+    }
+
     private String threadNamePrefix() {
         return "hz." + hzInstanceName + ".jet-engine." + name + '.';
     }
@@ -251,14 +259,6 @@ class ExecutionService {
             this.tasklet = tasklet;
             this.jobFuture = jobFuture;
         }
-    }
-
-    Thread createThread(Runnable r, String executorName, int seq) {
-        Thread t = new Thread(r, threadNamePrefix() + executorName + ".thread-" + seq);
-        if (contextClassLoader != null) {
-            t.setContextClassLoader(contextClassLoader);
-        }
-        return t;
     }
 
     private final class BlockingTaskThreadFactory implements ThreadFactory {
