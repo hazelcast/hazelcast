@@ -23,6 +23,8 @@ import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -30,6 +32,8 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -88,6 +92,33 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         instances[randNode].getLifecycleService().terminate();
     }
 
+    private void restartCluster(HazelcastInstance instance)
+            throws InterruptedException {
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch connectLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState().equals(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED)) {
+                    disconnectedLatch.countDown();
+                } else if (event.getState().equals(LifecycleEvent.LifecycleState.CLIENT_CONNECTED)) {
+                    connectLatch.countDown();
+                }
+            }
+        });
+
+        // shutdown the cluster
+        instance.shutdown();
+
+        // wait for client disconnect
+        disconnectedLatch.await(5, TimeUnit.SECONDS);
+
+        // restart the cluster
+        factory.newHazelcastInstance();
+
+        connectLatch.await(5, TimeUnit.SECONDS);
+    }
+
     @Test
     public void testListenersNonSmartRouting() {
         factory.newHazelcastInstance();
@@ -107,6 +138,67 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         ClientConfig clientConfig = createClientConfig();
         client = factory.newHazelcastClient(clientConfig);
         testListenersInternal();
+    }
+
+    @Test
+    public void testClusterReconnectNonSmartRouting()
+            throws InterruptedException {
+        HazelcastInstance instance = factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = createClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        client = factory.newHazelcastClient(clientConfig);
+
+        final AtomicInteger eventCount = new AtomicInteger();
+        // register listener
+        addListener(eventCount);
+
+        restartCluster(instance);
+
+        assertEquals("No event is expected at the start", 0, eventCount.get());
+
+        // let enough time for server side listener registration to be completed
+        sleepSeconds(1);
+
+        produceEvent();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, eventCount.get());
+            }
+        });
+    }
+
+    @Test
+    public void testClusterReconnectSmartRouting()
+            throws InterruptedException {
+        HazelcastInstance instance = factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = createClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        client = factory.newHazelcastClient(clientConfig);
+
+        final AtomicInteger eventCount = new AtomicInteger();
+        // register listener
+        addListener(eventCount);
+
+        restartCluster(instance);
+
+        // let enough time for server side listener registration to be completed
+        sleepSeconds(1);
+
+        assertEquals("No event is expected at the start", 0, eventCount.get());
+
+        produceEvent();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, eventCount.get());
+            }
+        });
     }
 
     @Test
