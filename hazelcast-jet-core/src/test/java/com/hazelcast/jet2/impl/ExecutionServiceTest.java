@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -81,7 +82,7 @@ public class ExecutionServiceTest {
         t.assertDone();
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test(expected = CompletionException.class)
     public void when_nonblockingAndInitFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().initFails();
@@ -93,7 +94,7 @@ public class ExecutionServiceTest {
         t.assertDone();
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test(expected = CompletionException.class)
     public void when_blockingAndInitFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().blocking().initFails();
@@ -102,7 +103,7 @@ public class ExecutionServiceTest {
         es.execute(singletonList(t)).toCompletableFuture().join();
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test(expected = CompletionException.class)
     public void when_nonblockingAndCallFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().callFails();
@@ -111,7 +112,7 @@ public class ExecutionServiceTest {
         es.execute(singletonList(t)).toCompletableFuture().join();
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test(expected = CompletionException.class)
     public void when_blockingAndCallFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().blocking().callFails();

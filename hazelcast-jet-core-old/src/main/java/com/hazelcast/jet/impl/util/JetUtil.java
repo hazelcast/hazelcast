@@ -17,6 +17,8 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -35,10 +37,12 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;

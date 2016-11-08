@@ -65,50 +65,76 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_exceptionInNonBlockingTasklet_thenFailJob() {
+    public void when_exceptionInProcessorSupplier_thenFailJob() {
+        // Given
         DAG dag = new DAG();
-        Exception e = new RuntimeException("fault");
-        Vertex faulty = new Vertex("faulty", () -> new FaultyProducer(e));
+        RuntimeException e = new RuntimeException("mock error");
+        final SimpleProcessorSupplier sup = () -> {
+            throw e;
+        };
+        Vertex faulty = new Vertex("faulty", sup);
         Vertex consumer = new Vertex("consumer", TestProcessors.Identity::new);
+        dag.addVertex(faulty)
+           .addVertex(consumer)
+           .addEdge(new Edge(faulty, consumer));
 
-        dag
-                .addVertex(faulty)
-                .addVertex(consumer)
-                .addEdge(new Edge(faulty, consumer));
-
+        // Then
         expectedException.expect(e.getClass());
         expectedException.expectMessage(e.getMessage());
+
+        // When
+        jetEngine.newJob(dag).execute();
+    }
+
+    @Test
+    public void when_exceptionInNonBlockingTasklet_thenFailJob() {
+        // Given
+        DAG dag = new DAG();
+        RuntimeException e = new RuntimeException("mock error");
+        Vertex faulty = new Vertex("faulty", () -> new FaultyProducer(e));
+        Vertex consumer = new Vertex("consumer", TestProcessors.Identity::new);
+        dag.addVertex(faulty)
+           .addVertex(consumer)
+           .addEdge(new Edge(faulty, consumer));
+
+        // Then
+        expectedException.expect(e.getClass());
+        expectedException.expectMessage(e.getMessage());
+
+        // When
         jetEngine.newJob(dag).execute();
     }
 
     @Test
     public void when_exceptionInBlockingTasklet_thenFailJob() {
+        // Given
         DAG dag = new DAG();
-        Exception e = new RuntimeException("fault");
+        RuntimeException e = new RuntimeException("mock error");
         Vertex faulty = new Vertex("faulty", () -> new FaultyProducer(e));
         Vertex consumer = new Vertex("consumer", TestProcessors.BlockingIdentity::new);
+        dag.addVertex(faulty)
+           .addVertex(consumer)
+           .addEdge(new Edge(faulty, consumer));
 
-        dag
-                .addVertex(faulty)
-                .addVertex(consumer)
-                .addEdge(new Edge(faulty, consumer));
-
+        // Then
         expectedException.expect(e.getClass());
         expectedException.expectMessage(e.getMessage());
+
+        // When
         jetEngine.newJob(dag).execute();
     }
 
     private static class FaultyProducer extends AbstractProcessor {
 
-        private final Exception e;
+        private final RuntimeException e;
 
-        public FaultyProducer(Exception e) {
+        public FaultyProducer(RuntimeException e) {
             this.e = e;
         }
 
         @Override
         public boolean complete() {
-            throw new RuntimeException(e);
+            throw e;
         }
     }
 

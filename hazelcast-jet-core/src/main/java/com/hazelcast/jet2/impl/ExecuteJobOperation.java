@@ -25,12 +25,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
-import static com.hazelcast.jet2.impl.BasicCompletableFuture.allOf;
+import static java.util.stream.Collectors.toList;
 
 class ExecuteJobOperation extends AsyncOperation {
 
@@ -50,21 +52,25 @@ class ExecuteJobOperation extends AsyncOperation {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
         Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(dag);
-
         invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
-                .andThen(callback(()
-                        -> invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId()))
-                        .andThen(callback(() -> sendResponse(true)))));
+            .thenCompose(x ->
+                    invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId())))
+            .exceptionally(e -> e)
+            .thenAccept(this::sendResponse);
     }
 
-    private ICompletableFuture<List<Object>> invokeForPlan(Map<Member, ExecutionPlan> planMap,
-                                                           Function<ExecutionPlan, Operation> func) {
-        List<ICompletableFuture<Object>> futures = new ArrayList<>();
-        for (Map.Entry<Member, ExecutionPlan> entry : planMap.entrySet()) {
-            futures.add(getNodeEngine().getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,
-                    func.apply(entry.getValue()), entry.getKey().getAddress()).invoke());
-        }
-        return allOf(getNodeEngine(), getLogger(), futures);
+    private CompletableFuture<Object> invokeForPlan(
+            Map<Member, ExecutionPlan> planMap, Function<ExecutionPlan, Operation> func
+    ) {
+        final Stream<ICompletableFuture> futures =
+                planMap.entrySet()
+                       .stream()
+                       .map(e -> getNodeEngine()
+                               .getOperationService()
+                               .createInvocationBuilder(
+                                       JetService.SERVICE_NAME, func.apply(e.getValue()), e.getKey().getAddress())
+                               .invoke());
+        return allOf(futures.collect(toList()));
     }
 
     @Override
@@ -79,17 +85,24 @@ class ExecuteJobOperation extends AsyncOperation {
         dag = in.readObject();
     }
 
-    private ExecutionCallback<List<Object>> callback(final Runnable r) {
-        return new ExecutionCallback<List<Object>>() {
-            @Override
-            public void onResponse(List<Object> response) {
-                r.run();
-            }
+    private static CompletableFuture<Object> allOf(Collection<ICompletableFuture> futures) {
+        final CompletableFuture<Object> compositeFuture = new CompletableFuture<>();
+        final AtomicInteger completionLatch = new AtomicInteger(futures.size());
+        for (ICompletableFuture future : futures) {
+            future.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    if (completionLatch.decrementAndGet() == 0) {
+                        compositeFuture.complete(true);
+                    }
+                }
 
-            @Override
-            public void onFailure(Throwable t) {
-                sendResponse(t);
-            }
-        };
+                @Override
+                public void onFailure(Throwable t) {
+                    compositeFuture.completeExceptionally(t);
+                }
+            });
+        }
+        return compositeFuture;
     }
 }
