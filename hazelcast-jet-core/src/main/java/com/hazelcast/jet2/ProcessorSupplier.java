@@ -24,6 +24,7 @@ import java.util.List;
 /**
  * Javadoc pending.
  */
+@FunctionalInterface
 public interface ProcessorSupplier extends Serializable {
 
     /**

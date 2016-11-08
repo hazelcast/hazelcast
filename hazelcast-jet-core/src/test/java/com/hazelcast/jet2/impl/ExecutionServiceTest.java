@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -58,66 +59,66 @@ public class ExecutionServiceTest {
     }
 
     @Test
-    public void when_blockingTask_then_executed() throws Exception {
+    public void when_blockingTask_then_executed() {
         // Given
         final MockTasklet t = new MockTasklet().blocking();
 
         // When
-        es.execute(singletonList(t)).toCompletableFuture().get();
+        es.execute(singletonList(t)).toCompletableFuture().join();
 
         // Then
         t.assertDone();
     }
 
     @Test
-    public void when_nonblockingTask_then_executed() throws Exception {
+    public void when_nonblockingTask_then_executed() {
         // Given
         final MockTasklet t = new MockTasklet();
 
         // When
-        es.execute(singletonList(t)).toCompletableFuture().get();
+        es.execute(singletonList(t)).toCompletableFuture().join();
 
         // Then
         t.assertDone();
     }
 
-    @Test(expected = ExecutionException.class)
-    public void when_nonblockingAndInitFails_then_futureFails() throws Exception {
+    @Test(expected = CompletionException.class)
+    public void when_nonblockingAndInitFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().initFails();
 
         // When
-        es.execute(singletonList(t)).toCompletableFuture().get();
+        es.execute(singletonList(t)).toCompletableFuture().join();
 
         // Then
         t.assertDone();
     }
 
-    @Test(expected = ExecutionException.class)
-    public void when_blockingAndInitFails_then_futureFails() throws Exception {
+    @Test(expected = CompletionException.class)
+    public void when_blockingAndInitFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().blocking().initFails();
 
         // When - Then
-        es.execute(singletonList(t)).toCompletableFuture().get();
+        es.execute(singletonList(t)).toCompletableFuture().join();
     }
 
-    @Test(expected = ExecutionException.class)
-    public void when_nonblockingAndCallFails_then_futureFails() throws Exception {
+    @Test(expected = CompletionException.class)
+    public void when_nonblockingAndCallFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().callFails();
 
         // When - Then
-        es.execute(singletonList(t)).toCompletableFuture().get();
+        es.execute(singletonList(t)).toCompletableFuture().join();
     }
 
-    @Test(expected = ExecutionException.class)
-    public void when_blockingAndCallFails_then_futureFails() throws Exception {
+    @Test(expected = CompletionException.class)
+    public void when_blockingAndCallFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().blocking().callFails();
 
         // When - Then
-        es.execute(singletonList(t)).toCompletableFuture().get();
+        es.execute(singletonList(t)).toCompletableFuture().join();
     }
 
     @Test
@@ -135,28 +136,28 @@ public class ExecutionServiceTest {
     }
 
     @Test
-    public void when_manyCallsWithSomeStalling_then_eventuallyDone() throws Exception {
+    public void when_manyCallsWithSomeStalling_then_eventuallyDone() {
         // Given
         final List<MockTasklet> tasklets = asList(
                 new MockTasklet().blocking().callsBeforeDone(10),
                 new MockTasklet().callsBeforeDone(10));
 
         // When
-        es.execute(tasklets).toCompletableFuture().get();
+        es.execute(tasklets).toCompletableFuture().join();
 
         // Then
         tasklets.forEach(MockTasklet::assertDone);
     }
 
     @Test
-    public void when_workStealing_then_allComplete() throws Exception {
+    public void when_workStealing_then_allComplete() {
         // Given
         final List<MockTasklet> tasklets =
                 Stream.generate(() -> new MockTasklet().callsBeforeDone(1000))
                       .limit(100).collect(toList());
 
         // When
-        es.execute(tasklets).toCompletableFuture().get();
+        es.execute(tasklets).toCompletableFuture().join();
 
         // Then
         tasklets.forEach(MockTasklet::assertDone);

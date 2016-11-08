@@ -86,13 +86,13 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
         }
     }
 
-    private void close(InputStream inputStream) throws IOException {
+    private static void close(InputStream inputStream) throws IOException {
         if (inputStream != null) {
             inputStream.close();
         }
     }
 
-    private byte[] readChunk(InputStream in, int chunkSize) throws IOException {
+    private static byte[] readChunk(InputStream in, int chunkSize) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] b = new byte[chunkSize];
             out.write(b, 0, in.read(b));
