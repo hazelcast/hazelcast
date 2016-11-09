@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.collection;
+package com.hazelcast.internal.util.concurrent;
 
 import com.hazelcast.util.concurrent.IdleStrategy;
 
