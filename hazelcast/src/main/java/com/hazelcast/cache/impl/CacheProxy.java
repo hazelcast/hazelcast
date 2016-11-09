@@ -70,7 +70,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <V> the type of value.
  */
 public class CacheProxy<K, V>
-        extends AbstractCacheProxy<K, V> {
+        extends AbstractCacheProxy<K, V>
+        implements InternalCacheEntryListenerRegisterer<K, V> {
 
     protected final ILogger logger;
 
@@ -274,6 +275,12 @@ public class CacheProxy<K, V>
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        registerCacheEntryListener(cacheEntryListenerConfiguration, true);
+    }
+
+    @Override
+    public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
+                                           boolean addToConfig) {
         ensureOpen();
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
@@ -286,9 +293,13 @@ public class CacheProxy<K, V>
         final String regId =
                 service.registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
-            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            if (addToConfig) {
+                cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            }
             addListenerLocally(regId, cacheEntryListenerConfiguration);
-            updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
+            if (addToConfig) {
+                updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
+            }
         }
     }
 
