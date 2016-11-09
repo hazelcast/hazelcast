@@ -20,6 +20,7 @@ import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
@@ -170,5 +171,14 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected void onShuttingDown() {
+    }
+
+    /**
+     * Gets the related {@link NearCacheManager} with the underlying client instance.
+     *
+     * @return the related {@link NearCacheManager} with the underlying client instance
+     */
+    public NearCacheManager getNearCacheManager() {
+        return client.getNearCacheManager();
     }
 }
