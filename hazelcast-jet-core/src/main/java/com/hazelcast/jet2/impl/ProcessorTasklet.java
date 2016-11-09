@@ -154,7 +154,6 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    @SuppressWarnings("checkstyle:innerassignment")
     private void tryFlushOutbox() {
         nextOutstream:
         for (int i = 0; i < outbox.queueCount(); i++) {

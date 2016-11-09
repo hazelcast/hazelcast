@@ -37,7 +37,6 @@ public abstract class AbstractProcessor implements Processor {
      * The default implementation delegates to the item-at-a-time {@link #process(int, Object)}.
      */
     @Override
-    @SuppressWarnings("checkstyle:innerassignment")
     public void process(int ordinal, Inbox inbox) {
         for (Object item; (item = inbox.peek()) != null; ) {
             if (!process(ordinal, item)) {

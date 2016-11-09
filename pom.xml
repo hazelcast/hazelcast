@@ -244,7 +244,7 @@
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>failedfirst</runOrder>
-                    <forkCount>1C</forkCount>
+                    <forkCount>1</forkCount>
                     <argLine>
                         -Xmx8G
                         -Dhazelcast.phone.home.enabled=false

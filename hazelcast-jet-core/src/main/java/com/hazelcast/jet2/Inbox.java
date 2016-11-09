@@ -42,7 +42,6 @@ public interface Inbox {
     /**
      * Javadoc pending
      */
-    @SuppressWarnings("checkstyle:innerassignment")
     default <E> int drainTo(Collection<E> collection) {
         int drained = 0;
         //noinspection unchecked
@@ -55,7 +54,6 @@ public interface Inbox {
     /**
      * Javadoc pending
      */
-    @SuppressWarnings("checkstyle:innerassignment")
     default <E> int drain(Consumer<E> consumer) {
         int consumed = 0;
         //noinspection unchecked

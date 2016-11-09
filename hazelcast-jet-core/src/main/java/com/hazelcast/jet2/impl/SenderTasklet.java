@@ -19,31 +19,63 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.annotation.Nonnull;
+import java.io.IOException;
+
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-class RemoteOutboundCollector implements OutboundCollector {
+public class SenderTasklet implements Tasklet {
 
+    public static final int BUFFER_SIZE = 16 * 1024;
     private final Connection connection;
     private final byte[] headerBytes;
-    private final int[] partitions;
-    private final InternalSerializationService serializationService;
+    private final ArrayDequeWithObserver inbox = new ArrayDequeWithObserver();
+    private final InboundEdgeStream inboundEdgeStream;
+    private final BufferObjectDataOutput outputBuffer;
 
-    RemoteOutboundCollector(NodeEngine engine,
-                                   String engineName,
-                                   Address destinationAddress,
-                                   long executionId,
-                                   int destinationVertexId,
-                                   int ordinal,
-                                   int[] partitions) {
-        this.serializationService = (InternalSerializationService) engine.getSerializationService();
+    public SenderTasklet(InboundEdgeStream inboundEdgeStream,
+                         NodeEngine engine, String engineName,
+                         Address destinationAddress, long executionId,
+                         int destinationVertexId) {
+        this.inboundEdgeStream = inboundEdgeStream;
         this.connection = ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(destinationAddress);
-        this.partitions = partitions;
-        this.headerBytes = getHeaderBytes(engineName, executionId, destinationVertexId, ordinal);
+        this.headerBytes = getHeaderBytes(engineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
+        this.outputBuffer = ((InternalSerializationService) engine.getSerializationService())
+                .createObjectDataOutput(BUFFER_SIZE);
+    }
+
+    @Nonnull
+    @Override
+    public ProgressState call() {
+        ProgressState progressState = inboundEdgeStream.drainTo(inbox);
+        if (progressState.isDone()) {
+            inbox.offer(new ObjectWithPartitionId(DONE_ITEM, -1));
+        }
+        if (progressState.isMadeProgress()) {
+            try {
+                outputBuffer.write(headerBytes);
+                outputBuffer.writeInt(inbox.size());
+                for (Object item; (item = inbox.poll()) != null; ) {
+                    ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
+                    outputBuffer.writeObject(itemWithpId.getItem());
+                    outputBuffer.writeInt(itemWithpId.getPartitionId());
+
+                }
+            } catch (IOException e) {
+                throw rethrow(e);
+            }
+            Packet packet = new Packet(outputBuffer.toByteArray()).setFlag(Packet.FLAG_JET);
+            connection.write(packet);
+            outputBuffer.clear();
+        }
+        return progressState;
     }
 
     private static byte[] getHeaderBytes(String name, long executionId, int destinationVertexId, int ordinal) {
@@ -63,28 +95,4 @@ class RemoteOutboundCollector implements OutboundCollector {
         Bits.writeIntB(headerBytes, offset, ordinal);
         return headerBytes;
     }
-
-    @Override
-    public ProgressState offer(Object item) {
-        return offer(item, -1);
-    }
-
-    @Override
-    public ProgressState offer(Object item, int partitionId) {
-        byte[] buffer = serializationService.toBytes(headerBytes.length, item);
-        System.arraycopy(headerBytes, 0, buffer, 0, headerBytes.length);
-        connection.write(new Packet(buffer, partitionId).setFlag(Packet.FLAG_JET));
-        return ProgressState.DONE;
-    }
-
-    @Override
-    public ProgressState close() {
-        return offer(DONE_ITEM);
-    }
-
-    @Override
-    public int[] getPartitions() {
-        return partitions;
-    }
-
 }

@@ -16,20 +16,21 @@
 
 package com.hazelcast.jet2.impl;
 
-import javax.annotation.Nonnull;
-import java.util.concurrent.Callable;
+class ObjectWithPartitionId {
 
-interface Tasklet extends Callable<ProgressState> {
+    private final Object item;
+    private final int partitionId;
 
-    default void init() {
-
+    ObjectWithPartitionId(Object item, int partitionId) {
+        this.item = item;
+        this.partitionId = partitionId;
     }
 
-    @Override
-    @Nonnull
-    ProgressState call();
+    public Object getItem() {
+        return item;
+    }
 
-    default boolean isBlocking() {
-        return false;
+    public int getPartitionId() {
+        return partitionId;
     }
 }

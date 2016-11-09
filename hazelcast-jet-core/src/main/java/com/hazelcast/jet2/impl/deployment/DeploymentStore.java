@@ -177,7 +177,6 @@ public class DeploymentStore {
         dataEntries.put(descriptor.getId(), new ClassLoaderEntry(bytes, resourceStream.baseUrl));
     }
 
-    @SuppressWarnings("checkstyle:innerassignment")
     private void loadJarStream(ResourceStream resourceStream) throws IOException {
         BufferedInputStream bis = null;
         JarInputStream jis = null;
@@ -217,7 +216,6 @@ public class DeploymentStore {
         }
     }
 
-    @SuppressWarnings("checkstyle:innerassignment")
     private static byte[] readFully(InputStream in) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -151,7 +151,6 @@ class ExecutionService {
         }
 
         @Override
-        @SuppressWarnings("checkstyle:innerassignment")
         public void run() {
             final Tasklet t = tracker.tasklet;
             try {

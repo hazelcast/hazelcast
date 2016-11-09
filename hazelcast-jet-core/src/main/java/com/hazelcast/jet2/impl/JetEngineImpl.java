@@ -41,7 +41,6 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
 
-    @SuppressWarnings("checkstyle:magicnumber")
     private final String name;
     private final ILogger logger;
     private final EngineContext engineContext;

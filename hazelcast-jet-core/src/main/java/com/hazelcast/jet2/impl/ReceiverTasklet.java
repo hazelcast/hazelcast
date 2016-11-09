@@ -16,72 +16,83 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class ReceiverTasklet implements Tasklet {
 
     //TODO: MPSCQueue does not implement peek() yet
-    private final Queue<Map.Entry<Data, Integer>> inbox = new ConcurrentLinkedQueue<>();
-    private final SerializationService serializationService;
+    private final Queue<ByteArrayInputStream> incoming = new ConcurrentLinkedQueue<>();
+    private final InternalSerializationService serializationService;
     private final OutboundCollector collector;
     private final ProgressTracker tracker = new ProgressTracker();
+    private final ArrayDeque<Object> inbox = new ArrayDeque<>();
 
     private int remainingSenders;
-    private Object currItem;
 
-    public ReceiverTasklet(SerializationService serializationService,
+    public ReceiverTasklet(InternalSerializationService serializationService,
                            OutboundCollector collector, int senderCount) {
         this.serializationService = serializationService;
         this.collector = collector;
         this.remainingSenders = senderCount;
     }
 
-    @Override
-    public void init() {
-    }
-
-    void offer(Data item, int partitionCount) {
-        inbox.offer(new SimpleImmutableEntry<>(item, partitionCount));
+    void offer(byte[] item, int offset) {
+        incoming.add(new ByteArrayInputStream(item, offset, item.length - offset));
     }
 
     @Override
-    @SuppressWarnings("checkstyle:innerassignment")
     public ProgressState call() {
         tracker.reset();
-        tracker.notDone();
-        for (Map.Entry<Data, Integer> entry; (entry = inbox.peek()) != null; ) {
-            if (currItem == null) {
-                currItem = serializationService.toObject(entry.getKey());
-            }
-            if (currItem == DONE_ITEM) {
+        tryFillInbox();
+        for (Object item; (item = inbox.peek()) != null; ) {
+            ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
+            if (itemWithpId.getItem() == DONE_ITEM) {
                 remainingSenders--;
-                tracker.madeProgress();
             } else {
-                ProgressState offered = collector.offer(currItem, entry.getValue());
-                tracker.mergeWith(offered);
+                ProgressState offered = collector.offer(itemWithpId.getItem(), itemWithpId.getPartitionId());
                 if (!offered.isDone()) {
+                    tracker.madeProgress(offered.isMadeProgress());
                     break;
                 }
             }
-            currItem = null;
+            tracker.madeProgress();
             inbox.remove();
         }
 
         if (remainingSenders == 0) {
-            ProgressState closed = collector.close();
             tracker.mergeWith(collector.close());
-            if (closed.isDone()) {
-                return ProgressState.DONE;
-            }
+        } else {
+            tracker.notDone();
         }
         return tracker.toProgressState();
+    }
+
+
+    private void tryFillInbox() {
+        try {
+            for (ByteArrayInputStream entry; (entry = incoming.poll()) != null; ) {
+                try (ObjectDataInputStream inputStream = new ObjectDataInputStream(entry, serializationService)) {
+                    int count = inputStream.readInt();
+                    for (int i = 0; i < count; i++) {
+                        Object item = inputStream.readObject();
+                        int partitionId = inputStream.readInt();
+                        inbox.add(new ObjectWithPartitionId(item, partitionId));
+                    }
+                    tracker.madeProgress();
+                }
+            }
+        } catch (IOException e) {
+            throw rethrow(e);
+        }
     }
 }
