@@ -79,11 +79,13 @@ This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
 *3.7.3 Fixes*
 
+- The scheduler in TcpIpConnectionManager is not completing after the method instance.shutdown() is called. [9187]
 - EntryView's storeTime and expirationTime are not available even though they are set. [9166]
 - NullPointerException is thrown while deleting an entry through Entry Processor by setting value to NULL. [9135]
 - There is a discrepancy between the Reference Manual and source code in the default value of hazelcast.heartbeat.interval.seconds. [9070]
 - When Hazelcast is upgraded from 3.6.5 to 3.7.1, calls to Spring cache generate exceptions. [9023]
-- Hazelcast 3.6.x client cannot obtain cache proxy from 3.7.x cluster. Configuration creation and retrieval seem to be not working on 3.6.x clients when they connect to a 3.7.x cluster. [9006]
+- Hazelcast 3.6.x client cannot obtain cache proxy from 3.7.x cluster. Configuration creation and retrieval seem to be not working on 3.6.x clients when they connect to a 3.7.x cluster. Two new system properties added, namely hazelcast.compatibility.3.6.server and hazelcast.compatibility.3.6.client. When upgrading from (assuming that you are using ICache) 3.6.x to 3.7.3 then the servers should be started with -Dhazelcast.compatibility.3.6.client=true to enable existing 3.6.x clients work properly. When upgrading from 3.7.1 and 3.7.2 to 3.7.3 this is not needed.[9006]
+- When clients lose connection to the nodes in the cluster, even after the clients reconnected to the cluster, the Entry/MessageListeners never fired again. When you register a listener, the registration to the members are invoked with a timeout value of connection-timeout. Keeping this value short can cause a timeout exception during a listener registration. Therefore, you may need to increase the default value (i.e. 5 seconds), please refer to the Setting Connection Timeout section. [8847]
 - There is an unnecessary warning about member side near cache invalidation operations. [8841]
 
 *3.7.2 Fixes*
