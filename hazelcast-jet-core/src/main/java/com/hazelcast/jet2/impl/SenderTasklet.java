@@ -18,7 +18,6 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
@@ -46,7 +45,7 @@ public class SenderTasklet implements Tasklet {
                          int destinationVertexId) {
         this.inboundEdgeStream = inboundEdgeStream;
         this.connection = ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(destinationAddress);
-        this.headerBytes = getHeaderBytes(engineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
+        this.headerBytes = JetService.createHeader(engineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
         this.outputBuffer = ((InternalSerializationService) engine.getSerializationService())
                 .createObjectDataOutput(BUFFER_SIZE);
     }
@@ -76,23 +75,5 @@ public class SenderTasklet implements Tasklet {
             outputBuffer.clear();
         }
         return progressState;
-    }
-
-    private static byte[] getHeaderBytes(String name, long executionId, int destinationVertexId, int ordinal) {
-        byte[] nameBytes = name.getBytes(JetService.CHARSET);
-        int length = Bits.INT_SIZE_IN_BYTES + nameBytes.length + Bits.LONG_SIZE_IN_BYTES + Bits.INT_SIZE_IN_BYTES
-                + Bits.INT_SIZE_IN_BYTES;
-        byte[] headerBytes = new byte[length];
-        int offset = 0;
-        Bits.writeIntB(headerBytes, offset, nameBytes.length);
-        offset += Bits.INT_SIZE_IN_BYTES;
-        System.arraycopy(nameBytes, 0, headerBytes, offset, nameBytes.length);
-        offset += nameBytes.length;
-        Bits.writeLongB(headerBytes, offset, executionId);
-        offset += Bits.LONG_SIZE_IN_BYTES;
-        Bits.writeIntB(headerBytes, offset, destinationVertexId);
-        offset += Bits.INT_SIZE_IN_BYTES;
-        Bits.writeIntB(headerBytes, offset, ordinal);
-        return headerBytes;
     }
 }

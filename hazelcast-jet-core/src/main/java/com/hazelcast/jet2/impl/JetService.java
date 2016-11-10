@@ -18,7 +18,6 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
@@ -40,17 +39,15 @@ import java.util.concurrent.ConcurrentMap;
 public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
-    public static final Charset CHARSET = Charset.forName("UTF-8");
+    public static final Charset CHARSET = Charset.forName("ISO-8859-1");
 
     private NodeEngineImpl nodeEngine;
-    private final ILogger logger;
 
     private ConcurrentMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
     private ConcurrentMap<Address, Map<Long, Boolean>> liveOperations = new ConcurrentHashMap<>();
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
-        this.logger = nodeEngine.getLogger(JetService.class);
     }
 
     @Override
@@ -82,6 +79,50 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         }
     }
 
+    @Override
+    public void populate(LiveOperations liveOperations) {
+        this.liveOperations.entrySet().forEach(entry -> entry.getValue().keySet().stream().forEach(callId ->
+                liveOperations.add(entry.getKey(), callId)));
+    }
+
+    @Override
+    public void handle(Packet packet) throws Exception {
+        byte[] bytes = packet.toByteArray();
+        int offset = 0;
+        int length = bytes[offset];
+        offset++;
+        String engineName = new String(bytes, offset, length, CHARSET);
+        offset += length;
+        long executionId = Bits.readLongL(bytes, offset);
+        offset += Bits.LONG_SIZE_IN_BYTES;
+        int vertexId = Bits.readIntL(bytes, offset);
+        offset += Bits.INT_SIZE_IN_BYTES;
+        int ordinal = Bits.readIntL(bytes, offset);
+        offset += Bits.INT_SIZE_IN_BYTES;
+        engineContexts.get(engineName)
+                      .getExecutionContext(executionId)
+                      .handlePacket(vertexId, ordinal, packet.getPartitionId(), bytes, offset);
+    }
+
+    public static byte[] createHeader(String name, long executionId, int destinationVertexId, int ordinal) {
+        byte[] nameBytes = name.getBytes(CHARSET);
+        int length = Bits.BYTE_SIZE_IN_BYTES + nameBytes.length + Bits.LONG_SIZE_IN_BYTES + Bits.INT_SIZE_IN_BYTES
+                + Bits.INT_SIZE_IN_BYTES;
+        byte[] headerBytes = new byte[length];
+        int offset = 0;
+        assert nameBytes.length <= Byte.MAX_VALUE : "Length of encoded name in header exceeds " + Byte.MAX_VALUE;
+        headerBytes[offset] = (byte) nameBytes.length;
+        offset++;
+        System.arraycopy(nameBytes, 0, headerBytes, offset, nameBytes.length);
+        offset += nameBytes.length;
+        Bits.writeLongL(headerBytes, offset, executionId);
+        offset += Bits.LONG_SIZE_IN_BYTES;
+        Bits.writeIntL(headerBytes, offset, destinationVertexId);
+        offset += Bits.INT_SIZE_IN_BYTES;
+        Bits.writeIntL(headerBytes, offset, ordinal);
+        return headerBytes;
+    }
+
     public void ensureContext(String name, JetEngineConfig config) {
         ConcurrencyUtil.getOrPutSynchronized(engineContexts, name, engineContexts,
                 (key) -> new EngineContext(name, nodeEngine, config));
@@ -103,32 +144,5 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         if (!liveOperations.get(caller).remove(callId)) {
             throw new IllegalStateException("Missing operation for caller=" + caller + " callId=" + callId);
         }
-    }
-
-    @Override
-    public void handle(Packet packet) throws Exception {
-        int offset = 0;
-        byte[] bytes = packet.toByteArray();
-        int length = Bits.readIntB(bytes, offset);
-        offset += Bits.INT_SIZE_IN_BYTES;
-        String engineName = new String(bytes, offset, length, CHARSET);
-        offset += length;
-        long executionId = Bits.readLongB(bytes, offset);
-        offset += Bits.LONG_SIZE_IN_BYTES;
-        int vertexId = Bits.readIntB(bytes, offset);
-        offset += Bits.INT_SIZE_IN_BYTES;
-        int ordinal = Bits.readIntB(bytes, offset);
-        offset += Bits.INT_SIZE_IN_BYTES;
-
-        engineContexts
-                .get(engineName)
-                .getExecutionContext(executionId)
-                .handlePacket(vertexId, ordinal, packet.getPartitionId(), bytes, offset);
-    }
-
-    @Override
-    public void populate(LiveOperations liveOperations) {
-        this.liveOperations.entrySet().forEach(entry -> entry.getValue().keySet().stream().forEach(callId ->
-                liveOperations.add(entry.getKey(), callId)));
     }
 }
