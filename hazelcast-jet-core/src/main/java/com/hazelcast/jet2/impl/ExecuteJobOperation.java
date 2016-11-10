@@ -48,7 +48,7 @@ class ExecuteJobOperation extends AsyncOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    protected void doRun() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
         Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(dag);
@@ -56,7 +56,7 @@ class ExecuteJobOperation extends AsyncOperation {
             .thenCompose(x ->
                     invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId())))
             .exceptionally(e -> e)
-            .thenAccept(this::sendResponse);
+            .thenAccept(this::doSendResponse);
     }
 
     private CompletableFuture<Object> invokeForPlan(

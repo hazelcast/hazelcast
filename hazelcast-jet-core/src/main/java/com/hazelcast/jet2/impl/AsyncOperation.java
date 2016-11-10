@@ -34,4 +34,35 @@ public abstract class AsyncOperation extends EngineOperation {
     public Object getResponse() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void beforeRun() throws Exception {
+        this.<JetService>getService().registerOperation(getCallerAddress(), getCallId());
+    }
+
+    @Override
+    public void run() throws Exception {
+        try {
+            doRun();
+        } catch (Exception e) {
+            deregisterSelf();
+            throw e;
+        }
+    }
+
+    protected abstract void doRun() throws Exception;
+
+    protected final void doSendResponse(Object value) {
+        try {
+            sendResponse(value);
+        } finally {
+            deregisterSelf();
+        }
+    }
+
+    private void deregisterSelf() {
+        this.<JetService>getService().deregisterOperation(getCallerAddress(), getCallId());
+    }
+
+
 }

@@ -35,12 +35,12 @@ class ExecutePlanOperation extends AsyncOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    protected void doRun() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
         engineContext.getExecutionContext(planId)
                      .execute()
-                     .whenComplete((r, error) -> sendResponse(error != null ? error : null));
+                     .whenComplete((r, error) -> doSendResponse(error != null ? error : null));
     }
 
     @Override
