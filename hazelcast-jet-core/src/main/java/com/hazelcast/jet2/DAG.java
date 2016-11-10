@@ -21,9 +21,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -32,10 +34,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Javadoc pending
@@ -140,7 +143,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns iterator for vertices in topological order
      */
     public Iterator<Vertex> reverseIterator() {
-        verify();
+        validate();
         return Collections.unmodifiableCollection(topologicalVertexStack).iterator();
     }
 
@@ -148,34 +151,37 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns iterator for vertices in reverse topological order
      */
     public Iterator<Vertex> iterator() {
-        verify();
+        validate();
         List<Vertex> vertices = new ArrayList<>(topologicalVertexStack);
         Collections.reverse(vertices);
         return Collections.unmodifiableCollection(vertices).iterator();
     }
 
-    void verify() throws IllegalArgumentException {
+    void validate() throws IllegalArgumentException {
         topologicalVertexStack.clear();
         checkTrue(!vertices.isEmpty(), "DAG must contain at least one vertex");
+        Map<Vertex, List<Edge>> outgoingEdgeMap = edges.stream().collect(groupingBy(Edge::getSource));
+        validateAgainstMultigraph(edges);
+        validateOutboundEdgeOrdinals(outgoingEdgeMap);
+        validateInboundEdgeOrdinals(edges.stream().collect(groupingBy(Edge::getDestination)));
+        detectCycles(outgoingEdgeMap,
+                vertices.entrySet().stream()
+                        .collect(toMap(Map.Entry::getValue, v -> new AnnotatedVertex(v.getValue()))));
+    }
 
-        //prepare for cycle detection
-        Map<Vertex, AnnotatedVertex> vertexMap = vertices.entrySet().stream().collect(Collectors.toMap(
-                Map.Entry::getValue, v -> new AnnotatedVertex(v.getValue())));
-        Map<Vertex, List<Edge>> outgoingEdgeMap = edges.stream().collect(Collectors.groupingBy(Edge::getSource));
-        Map<Vertex, List<Edge>> incomingEdgeMap = edges.stream().collect(Collectors.groupingBy(Edge::getDestination));
-
-        for (Map.Entry<Vertex, List<Edge>> entry : outgoingEdgeMap.entrySet()) {
-            Vertex vertex = entry.getKey();
-            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getOutputOrdinal).sorted().toArray();
-            for (int i = 0; i < ordinals.length; i++) {
-                if (ordinals[i] != i) {
-                    throw new IllegalArgumentException("Output ordinals for vertex " + vertex + " are not ordered. "
-                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
-                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
-                }
+    private static void validateAgainstMultigraph(Collection<Edge> edges) {
+        final Set<SimpleImmutableEntry<String, String>> distinctSrcDest = new HashSet<>();
+        for (Edge e : edges) {
+            final SimpleImmutableEntry<String, String> srcDestId =
+                    new SimpleImmutableEntry<>(e.getSource().getName(), e.getDestination().getName());
+            if (!distinctSrcDest.add(srcDestId)) {
+                throw new IllegalArgumentException(
+                        String.format("Duplicate edge: %s -> %s", srcDestId.getKey(), srcDestId.getValue()));
             }
         }
+    }
 
+    private static void validateInboundEdgeOrdinals(Map<Vertex, List<Edge>> incomingEdgeMap) {
         for (Map.Entry<Vertex, List<Edge>> entry : incomingEdgeMap.entrySet()) {
             Vertex vertex = entry.getKey();
             int[] ordinals = entry.getValue().stream().mapToInt(Edge::getInputOrdinal).sorted().toArray();
@@ -187,9 +193,20 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 }
             }
         }
+    }
 
-
-        detectCycles(outgoingEdgeMap, vertexMap);
+    private static void validateOutboundEdgeOrdinals(Map<Vertex, List<Edge>> outgoingEdgeMap) {
+        for (Map.Entry<Vertex, List<Edge>> entry : outgoingEdgeMap.entrySet()) {
+            Vertex vertex = entry.getKey();
+            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getOutputOrdinal).sorted().toArray();
+            for (int i = 0; i < ordinals.length; i++) {
+                if (ordinals[i] != i) {
+                    throw new IllegalArgumentException("Output ordinals for vertex " + vertex + " are not ordered. "
+                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
+                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
+                }
+            }
+        }
     }
 
     // Adaptation of Tarjan's algorithm for connected components.

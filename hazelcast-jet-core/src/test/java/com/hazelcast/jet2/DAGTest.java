@@ -36,131 +36,171 @@ public class DAGTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void test_iterator() {
+    public void test_iteratorOrder() {
+        // Given
         DAG dag = new DAG();
-
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
         dag.addVertex(c)
-                .addVertex(b)
-                .addVertex(a)
-                .addEdge(new Edge(a, 0, b, 0))
-                .addEdge(new Edge(b, 0, c, 0))
-                .addEdge(new Edge(a, 1, c, 1));
+           .addVertex(b)
+           .addVertex(a)
+           .addEdge(new Edge(a, 0, b, 0))
+           .addEdge(new Edge(b, 0, c, 0))
+           .addEdge(new Edge(a, 1, c, 1));
 
+        // When
         Iterator<Vertex> iterator = dag.iterator();
-        assertEquals(a, iterator.next());
-        assertEquals(b, iterator.next());
-        assertEquals(c, iterator.next());
+        Vertex v1 = iterator.next();
+        Vertex v2 = iterator.next();
+        Vertex v3 = iterator.next();
+
+        // Then
+        assertEquals(a, v1);
+        assertEquals(b, v2);
+        assertEquals(c, v3);
         assertEquals(false, iterator.hasNext());
     }
 
     @Test
-    public void test_reverseIterator() {
+    public void test_reverseIteratorOrder() {
+        // Given
         DAG dag = new DAG();
-
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
         dag.addVertex(c)
-                .addVertex(b)
-                .addVertex(a)
-                .addEdge(new Edge(a, 0, b, 0))
-                .addEdge(new Edge(b, 0, c, 0))
-                .addEdge(new Edge(a, 1, c, 1));
+           .addVertex(b)
+           .addVertex(a)
+           .addEdge(new Edge(a, 0, b, 0))
+           .addEdge(new Edge(b, 0, c, 0))
+           .addEdge(new Edge(a, 1, c, 1));
 
+        // When
         Iterator<Vertex> iterator = dag.reverseIterator();
-        assertEquals(c, iterator.next());
-        assertEquals(b, iterator.next());
-        assertEquals(a, iterator.next());
+        Vertex v1 = iterator.next();
+        Vertex v2 = iterator.next();
+        Vertex v3 = iterator.next();
+
+        // Then
+        assertEquals(c, v1);
+        assertEquals(b, v2);
+        assertEquals(a, v3);
         assertEquals(false, iterator.hasNext());
     }
 
     @Test
-    public void test_cycleDetection() {
+    public void when_cycleInGraph_then_error() {
+        // Given
         DAG dag = new DAG();
-
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-
         dag.addVertex(a)
-                .addVertex(b)
-                .addEdge(new Edge(a, b))
-                .addEdge(new Edge(b, a));
+           .addVertex(b)
+           .addEdge(new Edge(a, b))
+           .addEdge(new Edge(b, a));
 
+        // Then
         expectedException.expect(IllegalArgumentException.class);
-        dag.verify();
+
+        // When
+        dag.validate();
     }
 
     @Test
-    public void test_duplicateOutputOrdinal() {
+    public void when_duplicateOutputOrdinal_then_error() {
+        // Given
         DAG dag = new DAG();
-
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-
         dag.addVertex(a)
-                .addVertex(b)
-                .addVertex(c)
-                .addEdge(new Edge(a, 0, b, 0));
+           .addVertex(b)
+           .addVertex(c)
+           .addEdge(new Edge(a, 0, b, 0));
 
+        // Then
         expectedException.expect(IllegalArgumentException.class);
+
+        // When
         dag.addEdge(new Edge(a, 0, c, 0));
     }
 
     @Test
-    public void test_gapInOutputOrdinal() {
+    public void when_gapInOutputOrdinal_then_error() {
+        // Given
         DAG dag = new DAG();
-
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-
         dag.addVertex(a)
-                .addVertex(b)
-                .addVertex(c)
-                .addEdge(new Edge(a, 0, b, 0))
-                .addEdge(new Edge(a, 2, c, 0));
+           .addVertex(b)
+           .addVertex(c)
+           .addEdge(new Edge(a, 0, b, 0))
+           .addEdge(new Edge(a, 2, c, 0));
 
+        // Then
         expectedException.expect(IllegalArgumentException.class);
-        dag.verify();
+
+        // When
+        dag.validate();
     }
 
     @Test
-    public void test_duplicateInputOrdinal() {
+    public void when_duplicateInputOrdinal_then_error() {
+        // Given
         DAG dag = new DAG();
-
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-
         dag.addVertex(a)
-                .addVertex(b)
-                .addVertex(c)
-                .addEdge(new Edge(a, 0, c, 0));
+           .addVertex(b)
+           .addVertex(c)
+           .addEdge(new Edge(a, 0, c, 0));
 
+        // Then
         expectedException.expect(IllegalArgumentException.class);
+
+        // When
         dag.addEdge(new Edge(b, 0, c, 0));
     }
 
     @Test
-    public void test_gapInputOrdinal() {
+    public void when_gapInInputOrdinal_then_error() {
+        // Given
         DAG dag = new DAG();
-
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-
         dag.addVertex(a)
-                .addVertex(b)
-                .addVertex(c)
-                .addEdge(new Edge(a, 0, c, 0))
-                .addEdge(new Edge(b, 0, c, 2));
+           .addVertex(b)
+           .addVertex(c)
+           .addEdge(new Edge(a, 0, c, 0))
+           .addEdge(new Edge(b, 0, c, 2));
 
+        // Then
         expectedException.expect(IllegalArgumentException.class);
-        dag.verify();
+
+        // When
+        dag.validate();
+    }
+
+    @Test
+    public void when_multigraph_then_error() {
+        // Given
+        DAG dag = new DAG();
+        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+        dag.addVertex(a)
+           .addVertex(b)
+           .addEdge(new Edge(a, 0, b, 0))
+           .addEdge(new Edge(a, 1, b, 1));
+
+        // Then
+        expectedException.expect(IllegalArgumentException.class);
+
+        // When
+        dag.validate();
     }
 
     private static class TestProcessor extends AbstractProcessor {
