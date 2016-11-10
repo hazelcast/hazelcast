@@ -27,6 +27,7 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,6 +35,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -107,6 +109,16 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         if (!node.getNodeExtension().isStartCompleted()) {
             throw new IllegalStateException("Migration operation is received before startup is completed. "
                     + "Caller: " + getCallerAddress());
+        }
+    }
+
+    void setActiveMigration() {
+        InternalPartitionServiceImpl partitionService = getService();
+        MigrationManager migrationManager = partitionService.getMigrationManager();
+        MigrationInfo currentActiveMigration = migrationManager.setActiveMigration(migrationInfo);
+        if (currentActiveMigration != null) {
+            throw new RetryableHazelcastException("Cannot set active migration to " + migrationInfo
+                    + ". Current active migration is " + currentActiveMigration);
         }
     }
 

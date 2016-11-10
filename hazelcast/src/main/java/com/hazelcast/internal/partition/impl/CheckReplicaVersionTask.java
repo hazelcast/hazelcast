@@ -57,6 +57,11 @@ final class CheckReplicaVersionTask implements PartitionSpecificRunnable, Urgent
         int partitionId = getPartitionId();
         int replicaIndex = this.replicaIndex;
         InternalPartition partition = partitionService.getPartition(partitionId);
+        if (partition.isMigrating()) {
+            notifyCallback(false);
+            return;
+        }
+
         Address target = partition.getReplicaAddress(replicaIndex);
         if (target == null) {
             notifyCallback(false);
