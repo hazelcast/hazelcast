@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -36,8 +37,8 @@ public class JetEngineConfig implements Serializable {
 
     private int parallelism = Runtime.getRuntime().availableProcessors();
     private String deploymentDirectory;
-    private Set<DeploymentConfig> deploymentConfigs = new HashSet<>();
-
+    private final Set<DeploymentConfig> deploymentConfigs = new HashSet<>();
+    private final Properties properties = new Properties();
 
     /**
      * Sets the number of execution threads per node
@@ -52,6 +53,13 @@ public class JetEngineConfig implements Serializable {
      */
     public int getParallelism() {
         return parallelism;
+    }
+
+    /**
+     * @return engine specific properties
+     */
+    public Properties getProperties() {
+        return properties;
     }
 
     /**

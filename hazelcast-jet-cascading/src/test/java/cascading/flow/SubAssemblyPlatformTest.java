@@ -104,7 +104,6 @@ public class SubAssemblyPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testPipeAssemblySplit()
     {
     Pipe pipe = new TestAssembly( "test" );

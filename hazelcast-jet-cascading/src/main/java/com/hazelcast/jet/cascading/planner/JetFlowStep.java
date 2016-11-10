@@ -38,29 +38,25 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.util.TupleHasher;
 import cascading.util.Util;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.Sink;
-import com.hazelcast.jet.Source;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.cascading.JetFlow;
 import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.jet.cascading.runtime.FlowNodeProcessor;
-import com.hazelcast.jet.cascading.runtime.IdentityProcessor;
 import com.hazelcast.jet.cascading.tap.InternalJetTap;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.job.JobContext;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.SerializedHashingStrategy;
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Partitioner;
+import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
+import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet2.Vertex;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.spi.partition.IPartitionService;
 import org.slf4j.helpers.MessageFormatter;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -69,13 +65,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static com.hazelcast.jet.strategy.MemberDistributionStrategy.allMembers;
+import static java.util.stream.Collectors.toList;
 
-public class JetFlowStep extends BaseFlowStep<JobConfig> {
+public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
 
-    public static final int PARALLELISM = Runtime.getRuntime().availableProcessors();
-    //    public static final int PARALLELISM = 1;
     private static final ILogger LOGGER = Logger.getLogger(JetFlowStep.class);
 
     public JetFlowStep(ElementGraph elementStepGraph,
@@ -91,10 +86,10 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
     }
 
     @Override
-    public JobConfig createInitializedConfig(FlowProcess<JobConfig> flowProcess,
-                                             JobConfig parentConfig) {
+    public JetEngineConfig createInitializedConfig(FlowProcess<JetEngineConfig> flowProcess,
+                                                   JetEngineConfig parentConfig) {
 
-        JobConfig currentConfig = parentConfig == null ? new JobConfig() : parentConfig;
+        JetEngineConfig currentConfig = parentConfig == null ? new JetEngineConfig() : parentConfig;
 
         initTaps(flowProcess, currentConfig, getSourceTaps(), false);
         initTaps(flowProcess, currentConfig, getSinkTaps(), true);
@@ -110,7 +105,7 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
     }
 
     @Override
-    public void clean(JobConfig jetFlowConfig) {
+    public void clean(JetEngineConfig jetEngineConfig) {
     }
 
     @Override
@@ -150,8 +145,8 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
 
     @Override
     protected FlowStepJob createFlowStepJob(ClientState clientState,
-                                            FlowProcess<JobConfig> flowProcess,
-                                            JobConfig initializedStepConfig) {
+                                            FlowProcess<JetEngineConfig> flowProcess,
+                                            JetEngineConfig initializedStepConfig) {
         return new JetFlowStepJob((JetFlowProcess) flowProcess, buildDag(),
                 clientState, initializedStepConfig, this);
     }
@@ -160,151 +155,145 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
         DAG dag = new DAG();
         FlowNodeGraph nodeGraph = getFlowNodeGraph();
 
-        Map<FlowNode, Vertex> vertexMap = new HashMap<>();
+        Map<String, AnnotatedVertex> vertexMap = new HashMap<>();
         Iterator<FlowNode> nodeIterator = nodeGraph.getOrderedTopologicalIterator();
+
         while (nodeIterator.hasNext()) {
             FlowNode node = nodeIterator.next();
 
-            Map<String, Integer> processOrdinalMap = buildProcessOrdinalMap(node);
-            Vertex vertex = new Vertex(node.getID(), FlowNodeProcessor.class, node, processOrdinalMap)
-                    .parallelism(PARALLELISM);
+            Set<? extends FlowElement> accumulatedSources = node.getSourceElements(StreamMode.Accumulated);
+
+            Map<String, Map<Integer, Integer>> inputMap = new HashMap<>();
+            Map<String, Set<Integer>> outputMap = new HashMap<>();
+
+            Vertex vertex = new Vertex(node.getName(), new Supplier(getConfig(), node, inputMap, outputMap));
             dag.addVertex(vertex);
 
-            Set<? extends FlowElement> accumulatedSources = node.getSourceElements(StreamMode.Accumulated);
-            addAccumulatedTaps(dag, vertex, accumulatedSources);
-            Set<FlowElement> sources = new HashSet<>(node.getSourceTaps());
-            sources.removeAll(accumulatedSources);
+            AnnotatedVertex annotatedVertex = new AnnotatedVertex(vertex);
+            annotatedVertex.inputMap = inputMap;
+            annotatedVertex.outputMap = outputMap;
+            vertexMap.put(node.getID(), annotatedVertex);
 
-            if (node.getSinkElements().size() > 1) {
-                throw new UnsupportedOperationException("Splits are not supported currently in Jet");
-            }
+            for (FlowElement flowElement : node.getSourceElements()) {
+                if (flowElement instanceof Tap) {
+                    Tap tap = (Tap) flowElement;
+                    String tapId = FlowElements.id(tap);
+                    boolean isAccumulated = accumulatedSources.contains(flowElement);
+                    Map<String, ProcessorMetaSupplier> suppliers = sourceTapToSuppliers(tap);
+                    for (Map.Entry<String, ProcessorMetaSupplier> entry : suppliers.entrySet()) {
+                        String id = entry.getKey();
+                        AnnotatedVertex tapVertex = vertexMap.computeIfAbsent(id, k -> {
+                            AnnotatedVertex v = new AnnotatedVertex(new Vertex(id, entry.getValue()));
+                            dag.addVertex(v.vertex);
+                            return v;
+                        });
+                        Edge edge = new Edge(tapVertex.vertex, tapVertex.currOutput++, vertex, annotatedVertex.currInput);
+                        if (isAccumulated) {
+                            edge = edge.broadcast().distributed().priority(0);
+                        }
+                        dag.addEdge(edge);
 
-            for (FlowElement element : sources) {
-                if (element instanceof Tap) {
-                    Tap tap = (Tap) element;
-                    for (Source source : mapToSources(tap)) {
-                        vertex.addSource(source);
+                        Map<Integer, Integer> ordinalMap = inputMap.computeIfAbsent(tapId, k -> new HashMap<>());
+                        ordinalMap.put(annotatedVertex.currInput++, 0);
+                        inputMap.put(id, ordinalMap);
                     }
-
                 }
             }
 
+            for (FlowElement flowElement : node.getSinkElements()) {
+                if (flowElement instanceof Tap) {
+                    Tap tap = (Tap) flowElement;
+                    String id = FlowElements.id(flowElement);
+                    Map<String, ProcessorMetaSupplier> suppliers = sinkTapToSuppliers(tap);
+                    for (Map.Entry<String, ProcessorMetaSupplier> entry : suppliers.entrySet()) {
+                        Vertex tapVertex = new Vertex(entry.getKey(), entry.getValue());
+                        dag.addVertex(tapVertex);
+                        Edge edge = new Edge(vertex, annotatedVertex.currOutput, tapVertex, 0);
+                        dag.addEdge(edge);
 
-            for (Tap tap : node.getSinkTaps()) {
-                for (Sink sink : mapToSinks(tap)) {
-                    vertex.addSink(sink);
+                        Set<Integer> outputs = outputMap.computeIfAbsent(id, k -> new HashSet<>());
+                        outputs.add(annotatedVertex.currOutput++);
+                    }
                 }
             }
-
-            vertexMap.put(node, vertex);
         }
 
-        processEdges(dag, nodeGraph, vertexMap);
+        for (ProcessEdge processEdge : nodeGraph.edgeSet()) {
+            FlowNode sourceNode = nodeGraph.getEdgeSource(processEdge);
+            FlowNode targetNode = nodeGraph.getEdgeTarget(processEdge);
+
+            AnnotatedVertex sourceVertex = vertexMap.get(sourceNode.getID());
+            AnnotatedVertex targetVertex = vertexMap.get(targetNode.getID());
+
+            FlowElement element = processEdge.getFlowElement();
+            String id = FlowElements.id(element);
+            Set<? extends FlowElement> accumulatedSources = targetNode.getSourceElements(StreamMode.Accumulated);
+            boolean isAccumulated = accumulatedSources.contains(element);
+
+            Edge edge = new Edge(sourceVertex.vertex, sourceVertex.currOutput,
+                    targetVertex.vertex, targetVertex.currInput)
+                    .partitioned(getPartitioner(processEdge, targetNode, element))
+                    .distributed();
+            if (isAccumulated) {
+                edge = edge.broadcast().priority(0);
+            }
+
+            Set<Integer> outputs = sourceVertex.outputMap.computeIfAbsent(id, k -> new HashSet<>());
+            outputs.add(sourceVertex.currOutput++);
+
+            Map<Integer, Integer> ordinalMap = targetVertex.inputMap.computeIfAbsent(id, k -> new HashMap<>());
+            int ordinalAtTarget = (int) Util.getFirst(processEdge.getSourceProvidedOrdinals());
+            ordinalMap.put(targetVertex.currInput++, ordinalAtTarget);
+            dag.addEdge(edge);
+        }
         return dag;
     }
 
-    private Map<String, Integer> buildProcessOrdinalMap(FlowNode node) {
-        Set<ProcessEdge> inputs = getFlowNodeGraph().incomingEdgesOf(node);
-        Map<String, Integer> processOrdinalMap = new HashMap<>();
-        for (ProcessEdge input : inputs) {
-            Set<Integer> sourceProvidedOrdinals = input.getSourceProvidedOrdinals();
-            if (sourceProvidedOrdinals.size() != 1) {
-                throw new JetException("Source can't provide more than one path");
-            }
-            Integer ordinal = sourceProvidedOrdinals.iterator().next();
-            processOrdinalMap.put(input.getSourceProcessID(), ordinal);
-        }
-        return processOrdinalMap;
-    }
-
-    private void processEdges(DAG dag, FlowNodeGraph nodeGraph, Map<FlowNode, Vertex> vertexMap) {
-        for (ProcessEdge edge : nodeGraph.edgeSet()) {
-            FlowNode sourceNode = nodeGraph.getEdgeSource(edge);
-            FlowNode targetNode = nodeGraph.getEdgeTarget(edge);
-
-            Vertex sourceVertex = vertexMap.get(sourceNode);
-            Vertex targetVertex = vertexMap.get(targetNode);
-
-            FlowElement element = edge.getFlowElement();
-            Set<? extends FlowElement> accumulatedSources
-                    = targetNode.getSourceElements(StreamMode.Accumulated);
-
-            if (accumulatedSources.contains(element)) {
-                dag.addEdge(new Edge(edge.getFlowElementID(), sourceVertex, targetVertex)
-                        .broadcast()
-                        .distributed(allMembers())
-                );
-            } else {
-                HashingStrategy hashingStrategy = getHashingStrategy(edge, targetNode, element);
-                dag.addEdge(new Edge(edge.getID(), sourceVertex, targetVertex)
-                        .partitioned(hashingStrategy)
-                        .distributed());
-            }
-        }
-    }
-
-    private HashingStrategy getHashingStrategy(ProcessEdge edge, FlowNode targetNode, FlowElement element) {
+    private Partitioner getPartitioner(ProcessEdge edge, FlowNode targetNode, FlowElement element) {
         if (element instanceof Group && element instanceof Splice) {
             Splice splice = (Splice) element;
             Map<String, Fields> keySelectors = splice.getKeySelectors();
             List<Scope> incomingScopes = new ArrayList<>(targetNode.getPreviousScopes(splice));
             int ordinal = Util.<Integer>getFirst(edge.getSourceProvidedOrdinals());
-
             for (Scope incomingScope : incomingScopes) {
                 if (ordinal == incomingScope.getOrdinal()) {
                     Fields keyFields = keySelectors.get(incomingScope.getName());
                     Comparator[] merged = TupleHasher.merge(new Fields[]{keyFields});
                     if (!TupleHasher.isNull(merged)) {
-                        return new TupleHashingStrategy(new TupleHasher(null, merged));
+                        return new TuplePartitioner(new TupleHasher(null, merged));
                     }
                     break;
                 }
             }
         }
-        return SerializedHashingStrategy.INSTANCE;
+        return new DefaultPartitioner();
     }
 
-    private void addAccumulatedTaps(DAG dag, Vertex vertex, Set<? extends FlowElement> accumulatedSources) {
-        for (FlowElement element : accumulatedSources) {
-            if (element instanceof Tap) {
-
-                // for accumulated sources, we want everything broadcast to all the tasks
-                Tap tap = (Tap) element;
-                Vertex tapVertex = new Vertex(UuidUtil.newUnsecureUuidString(), IdentityProcessor.class)
-                        .parallelism(PARALLELISM);
-                for (Source source : mapToSources(tap)) {
-                    tapVertex.addSource(source);
-                }
-                dag.addVertex(tapVertex);
-                Edge edge = new Edge(FlowElements.id(element), tapVertex, vertex)
-                        .broadcast()
-                        .distributed(allMembers());
-                dag.addEdge(edge);
-            }
-        }
+    private static Object getKey(Object item) {
+        return item instanceof Map.Entry ? ((Map.Entry) item).getKey() : item;
     }
 
-    private Collection<Sink> mapToSinks(Tap tap) {
+    private Map<String, ProcessorMetaSupplier> sinkTapToSuppliers(Tap tap) {
         if (tap instanceof InternalJetTap) {
-            return Collections.singletonList(((InternalJetTap) tap).getSink());
+            InternalJetTap jetTap = (InternalJetTap) tap;
+            return Collections.singletonMap(tap.getIdentifier(), jetTap.getSink());
         } else if (tap instanceof MultiSinkTap) {
-            final List<Sink> sinks = new ArrayList<>();
+            final Map<String, ProcessorMetaSupplier> sinks = new HashMap<>();
             Iterator childTaps = ((MultiSinkTap) tap).getChildTaps();
-            childTaps.forEachRemaining(t -> sinks.addAll(mapToSinks((Tap) t)));
+            childTaps.forEachRemaining(t -> sinks.putAll(sinkTapToSuppliers((Tap) t)));
             return sinks;
         }
-
         throw new UnsupportedOperationException("Unsupported sink tap: " + tap);
     }
 
-    private Collection<Source> mapToSources(Tap tap) {
+    private Map<String, ProcessorMetaSupplier> sourceTapToSuppliers(Tap tap) {
         if (tap instanceof InternalJetTap) {
-            Source source = ((InternalJetTap) tap).getSource();
-            return Collections.singletonList(source);
+            InternalJetTap jetTap = (InternalJetTap) tap;
+            return Collections.singletonMap(tap.getIdentifier(), jetTap.getSource());
         } else if (tap instanceof MultiSourceTap) {
-            final List<Source> sources = new ArrayList<>();
+            final Map<String, ProcessorMetaSupplier> sources = new HashMap<>();
             Iterator childTaps = ((MultiSourceTap) tap).getChildTaps();
-            childTaps.forEachRemaining(t -> sources.addAll(mapToSources((Tap) t)));
+            childTaps.forEachRemaining(t -> sources.putAll(sourceTapToSuppliers((Tap) t)));
             return sources;
         }
 
@@ -315,7 +304,7 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
         return MessageFormatter.arrayFormat(message, arguments).getMessage();
     }
 
-    private void initTaps(FlowProcess<JobConfig> flowProcess, JobConfig config, Set<Tap> taps, boolean isSink) {
+    private void initTaps(FlowProcess<JetEngineConfig> flowProcess, JetEngineConfig config, Set<Tap> taps, boolean isSink) {
         if (!taps.isEmpty()) {
             for (Tap tap : taps) {
                 if (isSink) {
@@ -327,21 +316,21 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
         }
     }
 
-    private void initFromNodeConfigDef(final JobConfig jobConfig) {
+    private void initFromNodeConfigDef(final JetEngineConfig jetEngineConfig) {
         initConfFromNodeConfigDef(Util.getFirst(getFlowNodeGraph().vertexSet()).getElementGraph(),
-                getSetterFor(jobConfig));
+                getSetterFor(jetEngineConfig));
     }
 
-    private void initFromStepConfigDef(final JobConfig jobConfig) {
-        initConfFromStepConfigDef(getSetterFor(jobConfig));
+    private void initFromStepConfigDef(final JetEngineConfig jetEngineConfig) {
+        initConfFromStepConfigDef(getSetterFor(jetEngineConfig));
     }
 
-    private ConfigDef.Setter getSetterFor(final JobConfig jobConfig) {
+    private ConfigDef.Setter getSetterFor(final JetEngineConfig jetEngineConfig) {
         return new ConfigDef.Setter() {
             @Override
             public String set(String key, String value) {
                 String oldValue = get(key);
-                jobConfig.getProperties().setProperty(key, value);
+                jetEngineConfig.getProperties().setProperty(key, value);
                 return oldValue;
             }
 
@@ -349,16 +338,16 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
             public String update(String key, String value) {
                 String oldValue = get(key);
                 if (oldValue == null) {
-                    jobConfig.getProperties().setProperty(key, value);
+                    jetEngineConfig.getProperties().setProperty(key, value);
                 } else if (!oldValue.contains(value)) {
-                    jobConfig.getProperties().setProperty(key, oldValue + "," + value);
+                    jetEngineConfig.getProperties().setProperty(key, oldValue + "," + value);
                 }
                 return oldValue;
             }
 
             @Override
             public String get(String key) {
-                String value = (String) jobConfig.getProperties().get(key);
+                String value = (String) jetEngineConfig.getProperties().get(key);
                 if (value == null || value.isEmpty()) {
                     return null;
                 }
@@ -367,18 +356,91 @@ public class JetFlowStep extends BaseFlowStep<JobConfig> {
         };
     }
 
-    private static class TupleHashingStrategy implements HashingStrategy<Pair<Tuple, Tuple>, Tuple> {
+    private static final class AnnotatedVertex {
+        private Vertex vertex;
+        // current input ordinal
+        private int currInput;
+        // current output ordinal
+        private int currOutput;
+
+        // element id  -> jet ordinal -> cascading ordinal
+        private Map<String, Map<Integer, Integer>> inputMap;
+
+        // element id  -> jet ordinal
+        private Map<String, Set<Integer>> outputMap;
+
+        private AnnotatedVertex(Vertex vertex) {
+            this.vertex = vertex;
+        }
+
+        @Override
+        public String toString() {
+            return "VertexWithOrdinalInfo{" +
+                    "vertex=" + vertex +
+                    ", lastInputOrdinal=" + currInput +
+                    ", lastOutputOrdinal=" + currOutput +
+                    '}';
+        }
+    }
+
+    private static final class TuplePartitioner implements Partitioner {
 
         private final TupleHasher hasher;
 
-        TupleHashingStrategy(TupleHasher hasher) {
+        private TuplePartitioner(TupleHasher hasher) {
             this.hasher = hasher;
         }
 
         @Override
-        public int hash(Pair<Tuple, Tuple> tuple, Tuple partitionKey,
-                        JobContext jobContext) {
-            return hasher.hashCode(partitionKey);
+        public int getPartition(Object item, int numPartitions) {
+            return Math.abs(hasher.hashCode((Tuple) getKey(item))) % numPartitions;
+        }
+    }
+
+    private static class DefaultPartitioner implements Partitioner {
+
+        private static final long serialVersionUID = 1L;
+
+        private transient IPartitionService service;
+
+        @Override
+        public void init(IPartitionService service) {
+            this.service = service;
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return service.getPartitionId(getKey(item));
+        }
+    }
+
+    private static final class Supplier implements ProcessorSupplier {
+
+        private static final long serialVersionUID = 1L;
+
+        private final JetEngineConfig config;
+        private final FlowNode node;
+        private final Map<String, Map<Integer, Integer>> inputMap;
+        private final Map<String, Set<Integer>> outputMap;
+        private transient HazelcastInstance instance;
+
+        private Supplier(JetEngineConfig config, FlowNode node, Map<String, Map<Integer, Integer>> inputMap,
+                         Map<String, Set<Integer>> outputMap) {
+            this.config = config;
+            this.node = node;
+            this.inputMap = inputMap;
+            this.outputMap = outputMap;
+        }
+
+        @Override
+        public void init(Context context) {
+            this.instance = context.getHazelcastInstance();
+        }
+
+        @Override
+        public List<Processor> get(int count) {
+            return Stream.generate(() -> new FlowNodeProcessor(instance, config, node, inputMap, outputMap))
+                         .limit(count).collect(toList());
         }
     }
 }

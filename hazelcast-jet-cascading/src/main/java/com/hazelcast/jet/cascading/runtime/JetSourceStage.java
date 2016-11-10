@@ -23,12 +23,12 @@ import cascading.flow.StepCounters;
 import cascading.flow.stream.duct.DuctException;
 import cascading.flow.stream.element.SourceStage;
 import cascading.tap.Tap;
-import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.Inbox;
 
 import java.util.Iterator;
+import java.util.Map;
 
 public class JetSourceStage extends SourceStage implements ProcessorInputSource {
 
@@ -36,14 +36,15 @@ public class JetSourceStage extends SourceStage implements ProcessorInputSource 
         super(flowProcess, tap);
     }
 
-    public void beforeProcessing() {
+    @Override
+    public void before() {
         next.start(this);
     }
 
     @Override
-    public void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable {
+    public void process(Inbox inbox, int ordinal) throws Throwable {
         // TODO: this should not create new objects at every run()
-        TupleEntryIterator iterator = getSource().openForRead(flowProcess, input);
+        TupleEntryIterator iterator = getSource().openForRead(flowProcess, new InboxIterator(inbox));
         while (iterator.hasNext()) {
             TupleEntry tupleEntry;
             try {
@@ -62,11 +63,28 @@ public class JetSourceStage extends SourceStage implements ProcessorInputSource 
             }
             next.receive(this, tupleEntry);
         }
-
     }
 
     @Override
-    public void finalizeProcessor() {
+    public void complete() {
         complete(this);
+    }
+
+    private static final class InboxIterator implements Iterator<Map.Entry> {
+        private Inbox inbox;
+
+        private InboxIterator(Inbox inbox) {
+            this.inbox = inbox;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return inbox.peek() != null;
+        }
+
+        @Override
+        public Map.Entry next() {
+            return (Map.Entry) inbox.remove();
+        }
     }
 }

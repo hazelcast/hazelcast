@@ -25,7 +25,7 @@ import cascading.pipe.Splice;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.Tuples;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.Inbox;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,7 +78,7 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
 
     @Override
     public void start(Duct previous) {
-        // chained below in #finalizeProcessor()
+        // chained below in #complete()
     }
 
     @Override
@@ -93,42 +93,26 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
         }
     }
 
-    private Map<Tuple, List<Tuple>>[] createKeyValuesArray() {
-        @SuppressWarnings("unchecked")
-        Map<Tuple, List<Tuple>>[] valueMap = new Map[getNumDeclaredIncomingBranches()];
-
-        for (int i = 0; i < getNumDeclaredIncomingBranches(); i++) {
-            valueMap[i] = new HashMap<>();
-        }
-
-        return valueMap;
-    }
-
     @Override
-    public void beforeProcessing() {
-
-    }
-
-    @Override
-    public void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable {
+    public void process(Inbox inbox, int ordinal) throws Throwable {
         Map<Tuple, List<Tuple>> map = keyValues[ordinal];
-        while (input.hasNext()) {
-            Pair<Tuple, Tuple> pair = input.next();
+        for (Object item; (item = inbox.peek()) != null; ) {
+            Map.Entry<Tuple, Tuple> pair = (Map.Entry<Tuple, Tuple>) item;
             Tuple key = getDelegatedTuple(pair.getKey());
             Tuple value = pair.getValue();
 
             keys.add(key);
             map.computeIfAbsent(key, v -> new ArrayList<>()).add(value);
+            inbox.remove();
         }
     }
 
     @Override
-    public void finalizeProcessor() {
+    public void complete() {
         next.start(this);
-
         Collection<Tuple>[] collections = new Collection[keyValues.length];
         Set<Tuple> seenNulls = new HashSet<>();
-        for (Iterator<Tuple> keyIterator = keys.iterator(); keyIterator.hasNext();) {
+        for (Iterator<Tuple> keyIterator = keys.iterator(); keyIterator.hasNext(); ) {
             Tuple key = keyIterator.next();
             keyIterator.remove();
 
@@ -173,6 +157,17 @@ class JetCoGroupGate extends JetGroupingSpliceGate implements ProcessorInputSour
         keyValues = createKeyValuesArray();
 
         complete(this);
+    }
+
+    private Map<Tuple, List<Tuple>>[] createKeyValuesArray() {
+        @SuppressWarnings("unchecked")
+        Map<Tuple, List<Tuple>>[] valueMap = new Map[getNumDeclaredIncomingBranches()];
+
+        for (int i = 0; i < getNumDeclaredIncomingBranches(); i++) {
+            valueMap[i] = new HashMap<>();
+        }
+
+        return valueMap;
     }
 
     private void push(Collection<Tuple>[] collections, Tuple keysTuple) {

@@ -26,52 +26,31 @@ import cascading.flow.stream.element.SinkStage;
 import cascading.tap.MultiSinkTap;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet.cascading.tap.SettableTupleEntryCollector;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-
+import com.hazelcast.jet2.Outbox;
 import java.io.IOException;
 
 public class JetSinkStage extends SinkStage {
 
-    private static final OutputCollector<Pair<Tuple, Tuple>> NULL_COLLECTOR = new OutputCollector<Pair<Tuple, Tuple>>() {
-        @Override
-        public void collect(InputChunk<Pair<Tuple, Tuple>> chunk) {
-
-        }
-
-        @Override
-        public void collect(Pair[] buffer, int size) {
-
-        }
-
-        @Override
-        public void collect(Pair object) {
-
-        }
-    };
-
-    private final Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder;
+    private final Outbox outbox;
     private SettableTupleEntryCollector collector;
 
-    public JetSinkStage(FlowProcess flowProcess, Tap sink, Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder) {
+    public JetSinkStage(FlowProcess flowProcess, Tap sink, Outbox outbox) {
         super(flowProcess, sink);
-        this.outputHolder = outputHolder;
+        this.outbox = outbox;
     }
 
     @Override
     public void prepare() {
         try {
             collector = getCollector(getSink());
-
             if (getSink().getSinkFields().isAll()) {
                 Fields fields = getIncomingScopes().get(0).getIncomingTapFields();
                 collector.setFields(fields);
             }
+            collector.setOutput(outbox);
         } catch (IOException exception) {
             throw new DuctException("failed opening sink", exception);
         }
@@ -80,7 +59,6 @@ public class JetSinkStage extends SinkStage {
     @Override
     public void receive(Duct previous, TupleEntry tupleEntry) {
         try {
-            collector.setOutput(outputHolder.get());
             collector.add(tupleEntry);
             flowProcess.increment(StepCounters.Tuples_Written, 1);
             flowProcess.increment(SliceCounters.Tuples_Written, 1);
@@ -108,7 +86,7 @@ public class JetSinkStage extends SinkStage {
 
     private SettableTupleEntryCollector getCollector(Tap sink) throws IOException {
         if (sink instanceof InternalJetTap) {
-            return (SettableTupleEntryCollector) sink.openForWrite(flowProcess, NULL_COLLECTOR);
+            return (SettableTupleEntryCollector) sink.openForWrite(flowProcess, outbox);
         } else if (sink instanceof MultiSinkTap) {
             // TODO: just use the collector for the first sink for now - they will all be using the same consumer
             Tap tap = (Tap) ((MultiSinkTap) sink).getChildTaps().next();

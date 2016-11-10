@@ -16,17 +16,15 @@
 
 package com.hazelcast.jet.cascading.runtime;
 
-import cascading.tuple.Tuple;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.Inbox;
 
-import java.util.Iterator;
+interface ProcessorInputSource {
 
-public interface ProcessorInputSource {
+    default void before() {
+    }
 
-    void beforeProcessing();
+    void process(Inbox inbox, int ordinal) throws Throwable;
 
-    void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable;
-
-    void finalizeProcessor();
+    void complete();
 
 }

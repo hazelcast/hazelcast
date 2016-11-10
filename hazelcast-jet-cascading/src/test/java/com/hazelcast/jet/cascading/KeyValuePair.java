@@ -25,19 +25,19 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.io.ValueTuple;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Outbox;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.Iterator;
+import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public class KeyValuePair extends Scheme<JobConfig, Iterator<Pair>,
-        OutputCollector<Pair>, Void, Integer> {
+
+public class KeyValuePair extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
+        Outbox, Void, Integer> {
 
     public static final Fields DEFAULT_FIELDS = new Fields("key", "value");
 
@@ -58,22 +58,22 @@ public class KeyValuePair extends Scheme<JobConfig, Iterator<Pair>,
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<? extends JobConfig> flowProcess,
-                               Tap<JobConfig, Iterator<Pair>, OutputCollector<Pair>> tap,
-                               JobConfig conf) {
+    public void sourceConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
+                               Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap,
+                               JetEngineConfig conf) {
 
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<? extends JobConfig> flowProcess,
-                             Tap<JobConfig, Iterator<Pair>, OutputCollector<Pair>> tap,
-                             JobConfig conf) {
+    public void sinkConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
+                             Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap,
+                             JetEngineConfig conf) {
 
     }
 
     @Override
-    public void sourcePrepare(FlowProcess<? extends JobConfig> flowProcess,
-                              SourceCall<Void, Iterator<Pair>> sourceCall)
+    public void sourcePrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+                              SourceCall<Void, Iterator<Map.Entry>> sourceCall)
             throws IOException {
     }
 
@@ -86,13 +86,13 @@ public class KeyValuePair extends Scheme<JobConfig, Iterator<Pair>,
     }
 
     @Override
-    public boolean source(FlowProcess<? extends JobConfig> flowProcess, SourceCall<Void,
-            Iterator<Pair>> sourceCall) throws IOException {
-        Iterator<Pair> iterator = sourceCall.getInput();
+    public boolean source(FlowProcess<? extends JetEngineConfig> flowProcess, SourceCall<Void,
+            Iterator<Map.Entry>> sourceCall) throws IOException {
+        Iterator<Map.Entry> iterator = sourceCall.getInput();
         if (!iterator.hasNext()) {
             return false;
         }
-        Pair pair = iterator.next();
+        Map.Entry pair = iterator.next();
         if (getSourceFields().size() == 1) {
             sourceCall.getIncomingEntry().setObject(0, pair.getValue());
         } else {
@@ -104,18 +104,18 @@ public class KeyValuePair extends Scheme<JobConfig, Iterator<Pair>,
 
     @Override
     public void sink(FlowProcess<? extends
-            JobConfig> flowProcess, SinkCall<Integer, OutputCollector<Pair>> sinkCall) throws IOException {
-        OutputCollector<Pair> outputCollector = sinkCall.getOutput();
+            JetEngineConfig> flowProcess, SinkCall<Integer, Outbox> sinkCall) throws IOException {
+        Outbox outbox = sinkCall.getOutput();
         TupleEntry outgoing = sinkCall.getOutgoingEntry();
         try {
             Tuple tuple = outgoing.getTuple();
             if (getSinkFields().size() == 2) {
-                outputCollector.collect(new JetPair(tuple.getObject(0), tuple.getObject(1)));
+                outbox.add(new AbstractMap.SimpleImmutableEntry<>(tuple.getObject(0), tuple.getObject(1)));
             } else if (getSinkFields().size() == 1) {
-                outputCollector.collect(new JetPair(tuple.getObject(0), ValueTuple.NULL));
+                outbox.add(new AbstractMap.SimpleImmutableEntry<>(tuple.getObject(0), ValueTuple.NULL));
             }
         } catch (Exception e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
     }
 

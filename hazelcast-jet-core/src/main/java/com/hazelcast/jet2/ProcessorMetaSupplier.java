@@ -22,9 +22,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.Serializable;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Javadoc pending.
@@ -53,7 +50,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Javadoc pending.
      */
     static ProcessorMetaSupplier of(final SimpleProcessorSupplier processorSupplier) {
-        return address -> count -> Stream.generate(processorSupplier::get).limit(count).collect(toList());
+        return address -> ProcessorSupplier.of(processorSupplier);
     }
 
     /**

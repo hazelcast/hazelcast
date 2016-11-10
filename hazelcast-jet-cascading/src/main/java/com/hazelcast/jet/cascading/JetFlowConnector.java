@@ -24,14 +24,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.cascading.planner.JetFlowPlanner;
 import com.hazelcast.jet.cascading.planner.rule.tez.HashJoinHadoop2TezRuleRegistry;
 import com.hazelcast.jet.cascading.planner.rule.tez.NoHashJoinHadoop2TezRuleRegistry;
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet2.JetEngineConfig;
 
 public class JetFlowConnector extends FlowConnector {
 
     private final HazelcastInstance instance;
-    private final JobConfig config;
+    private final JetEngineConfig config;
 
-    public JetFlowConnector(HazelcastInstance instance, JobConfig config) {
+    public JetFlowConnector(HazelcastInstance instance, JetEngineConfig config) {
         super(config.getProperties());
         this.instance = instance;
         this.config = config;

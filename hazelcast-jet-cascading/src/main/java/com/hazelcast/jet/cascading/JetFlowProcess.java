@@ -21,30 +21,29 @@ import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.config.JobConfig;
-
+import com.hazelcast.jet2.JetEngineConfig;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-public class JetFlowProcess extends FlowProcess<JobConfig> {
+public class JetFlowProcess extends FlowProcess<JetEngineConfig> {
 
-    private final JobConfig config;
+    private final JetEngineConfig config;
     private final HazelcastInstance instance;
     private int sliceNum;
 
     public JetFlowProcess() {
-        this(new JobConfig(), null);
+        this(new JetEngineConfig(), null);
     }
 
-    public JetFlowProcess(JobConfig config, HazelcastInstance instance) {
+    public JetFlowProcess(JetEngineConfig config, HazelcastInstance instance) {
         this.config = config;
         this.instance = instance;
     }
 
     @Override
-    public FlowProcess<JobConfig> copyWith(JobConfig jobConfig) {
-        return new JetFlowProcess(jobConfig, instance);
+    public FlowProcess<JetEngineConfig> copyWith(JetEngineConfig jetEngineConfig) {
+        return new JetFlowProcess(jetEngineConfig, instance);
     }
 
     @Override
@@ -134,12 +133,12 @@ public class JetFlowProcess extends FlowProcess<JobConfig> {
     }
 
     @Override
-    public JobConfig getConfig() {
+    public JetEngineConfig getConfig() {
         return config;
     }
 
     @Override
-    public JobConfig getConfigCopy() {
+    public JetEngineConfig getConfigCopy() {
         return config;
     }
 
@@ -154,7 +153,7 @@ public class JetFlowProcess extends FlowProcess<JobConfig> {
     }
 
     @Override
-    public JobConfig mergeMapIntoConfig(JobConfig defaultConfig, Map<String, String> map) {
+    public JetEngineConfig mergeMapIntoConfig(JetEngineConfig defaultConfig, Map<String, String> map) {
         if (map != null) {
             defaultConfig.getProperties().putAll(map);
         }

@@ -23,7 +23,7 @@ import cascading.flow.stream.graph.StreamGraph;
 import cascading.pipe.Splice;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.Inbox;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,29 +69,18 @@ class JetGroupByGate extends JetGroupingSpliceGate implements ProcessorInputSour
         throw new UnsupportedOperationException("receive is not supported");
     }
 
-
-    private Map<Tuple, List<Tuple>> initValueMap() {
-        return new TreeMap<>(getKeyComparator());
-    }
-
     @Override
-    public void beforeProcessing() {
-    }
-
-    @Override
-    public void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable {
-        while (input.hasNext()) {
-            Pair<Tuple, Tuple> pair = input.next();
-            Tuple key = pair.getKey();
-            Tuple value = pair.getValue();
-
-            List<Tuple> values = valueMap.computeIfAbsent(key, v -> new ArrayList<>());
-            values.add(value);
+    public void process(Inbox inbox, int ordinal) throws Throwable {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            Map.Entry<Tuple, Tuple> entry = (Map.Entry) item;
+            List<Tuple> values = valueMap.computeIfAbsent(entry.getKey(), v -> new ArrayList<>());
+            values.add(entry.getValue());
+            inbox.remove();
         }
     }
 
     @Override
-    public void finalizeProcessor() {
+    public void complete() {
         next.start(this);
 
         // drain the keys and keyValues collections to preserve memory
@@ -113,4 +102,9 @@ class JetGroupByGate extends JetGroupingSpliceGate implements ProcessorInputSour
 
         valueMap = initValueMap();
     }
+
+    private Map<Tuple, List<Tuple>> initValueMap() {
+        return new TreeMap<>(getKeyComparator());
+    }
+
 }

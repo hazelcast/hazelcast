@@ -26,12 +26,12 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Outbox;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  *
@@ -43,67 +43,79 @@ public class JetConfigDefScheme extends TextLine {
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<? extends JobConfig> flowProcess, Tap<JobConfig, Iterator<Pair>,
-            OutputCollector<Pair>> tap, JobConfig conf) {
+    public void sourceConfInit(FlowProcess<? extends JetEngineConfig> flowProcess, Tap<JetEngineConfig, Iterator<Map.Entry>,
+            Outbox> tap, JetEngineConfig conf) {
         // we should not see any config def values here
-        if (flowProcess.getProperty("default") != null)
+        if (flowProcess.getProperty("default") != null) {
             throw new RuntimeException("default should be null");
+        }
 
         super.sourceConfInit(flowProcess, tap, conf);
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<? extends JobConfig> flowProcess, Tap<JobConfig, Iterator<Pair>,
-            OutputCollector<Pair>> tap, JobConfig conf) {
+    public void sinkConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
+                             Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap, JetEngineConfig conf) {
         // we should not see any config def values here
-        if (flowProcess.getProperty("default") != null)
+        if (flowProcess.getProperty("default") != null) {
             throw new RuntimeException("default should be null");
+        }
 
         super.sinkConfInit(flowProcess, tap, conf);
     }
 
     @Override
-    public void sourcePrepare(FlowProcess<? extends JobConfig> flowProcess,
-                              SourceCall<Void, Iterator<Pair>> sourceCall) throws IOException {
-        if (!(flowProcess instanceof FlowProcessWrapper))
+    public void sourcePrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+                              SourceCall<Void, Iterator<Map.Entry>> sourceCall) throws IOException {
+        if (!(flowProcess instanceof FlowProcessWrapper)) {
             throw new RuntimeException("not a flow process wrapper");
+        }
 
-        if (!"process-default".equals(flowProcess.getProperty("default")))
+        if (!"process-default".equals(flowProcess.getProperty("default"))) {
             throw new RuntimeException("not default value");
+        }
 
-        if (!"source-replace".equals(flowProcess.getProperty("replace")))
+        if (!"source-replace".equals(flowProcess.getProperty("replace"))) {
             throw new RuntimeException("not replaced value");
+        }
 
         flowProcess = ((FlowProcessWrapper) flowProcess).getDelegate();
 
-        if (!"process-default".equals(flowProcess.getProperty("default")))
+        if (!"process-default".equals(flowProcess.getProperty("default"))) {
             throw new RuntimeException("not default value");
+        }
 
-        if (!"process-replace".equals(flowProcess.getProperty("replace")))
+        if (!"process-replace".equals(flowProcess.getProperty("replace"))) {
             throw new RuntimeException("not replaced value");
+        }
 
         super.sourcePrepare(flowProcess, sourceCall);
     }
 
     @Override
-    public void sinkPrepare(FlowProcess<? extends JobConfig> flowProcess,
-                            SinkCall<Integer, OutputCollector<Pair>> sinkCall) throws IOException {
-        if (!(flowProcess instanceof FlowProcessWrapper))
+    public void sinkPrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+                            SinkCall<Integer, Outbox> sinkCall) throws IOException {
+        if (!(flowProcess instanceof FlowProcessWrapper)) {
             throw new RuntimeException("not a flow process wrapper");
+        }
 
-        if (!"process-default".equals(flowProcess.getProperty("default")))
+        if (!"process-default".equals(flowProcess.getProperty("default"))) {
             throw new RuntimeException("not default value");
+        }
 
-        if (!"sink-replace".equals(flowProcess.getProperty("replace")))
+        if (!"sink-replace".equals(flowProcess.getProperty("replace"))) {
             throw new RuntimeException("not replaced value");
+        }
 
         flowProcess = ((FlowProcessWrapper) flowProcess).getDelegate();
 
-        if (!"process-default".equals(flowProcess.getProperty("default")))
+        if (!"process-default".equals(flowProcess.getProperty("default"))) {
             throw new RuntimeException("not default value");
+        }
 
-        if (!"process-replace".equals(flowProcess.getProperty("replace")))
+        if (!"process-replace".equals(flowProcess.getProperty("replace"))) {
             throw new RuntimeException("not replaced value");
+        }
 
         super.sinkPrepare(flowProcess, sinkCall);
     }

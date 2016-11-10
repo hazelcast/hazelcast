@@ -32,7 +32,6 @@
         <cascading.version>3.1.0</cascading.version>
         <hadoop.version>2.7.2</hadoop.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <skipTests>true</skipTests>
     </properties>
 
     <repositories>
@@ -60,7 +59,7 @@
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core-old</artifactId>
+            <artifactId>hazelcast-jet-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 

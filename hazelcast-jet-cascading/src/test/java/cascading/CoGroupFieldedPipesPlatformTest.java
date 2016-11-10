@@ -1491,7 +1491,6 @@ public class CoGroupFieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testCoGroupAroundCoGroup() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
@@ -1533,14 +1532,12 @@ public class CoGroupFieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testCoGroupAroundCoGroupWithout() throws Exception
     {
     runCoGroupAroundCoGroup( null, "cogroupacogroupopt1" );
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testCoGroupAroundCoGroupWith() throws Exception
     {
     // hack to get classname
@@ -1671,7 +1668,6 @@ public class CoGroupFieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testMultiJoin() throws Exception
     {
     getPlatform().copyFromLocal( inputFileCrossX2 );
@@ -1724,7 +1720,6 @@ public class CoGroupFieldedPipesPlatformTest extends PlatformTestCase
    * path sub-graph partitioning.
    */
   @Test
-  @Ignore //TODO: Splits
   public void testMultiJoinWithSplits() throws Exception
     {
     getPlatform().copyFromLocal( inputFileCrossX2 );

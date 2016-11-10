@@ -23,17 +23,16 @@ import cascading.flow.stream.graph.StreamGraph;
 import cascading.pipe.Splice;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet2.Outbox;
+
+import java.util.AbstractMap.SimpleImmutableEntry;
 
 class JetGroupingGate extends GroupingSpliceGate {
-    private final Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder;
+    private final Outbox outbox;
 
-    JetGroupingGate(
-            FlowProcess flowProcess, Splice splice, Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder) {
+    JetGroupingGate(FlowProcess flowProcess, Splice splice, Outbox outbox) {
         super(flowProcess, splice);
-        this.outputHolder = outputHolder;
+        this.outbox = outbox;
     }
 
     @Override
@@ -53,8 +52,8 @@ class JetGroupingGate extends GroupingSpliceGate {
 
         Tuple keyTuple = keyBuilder[pos].makeResult(incomingEntry.getTuple(), null);
         Tuple valueTuple = incomingEntry.getTupleCopy();
-        JetPair<Tuple, Tuple> pair = new JetPair<>(new Tuple(keyTuple), valueTuple);
-        outputHolder.get().collect(pair);
+        SimpleImmutableEntry<Tuple, Tuple> pair = new SimpleImmutableEntry<>(new Tuple(keyTuple), valueTuple);
+        outbox.add(pair);
     }
 
     @Override

@@ -26,12 +26,12 @@ import cascading.scheme.SourceCall;
 import cascading.tap.TapException;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Outbox;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -48,8 +48,8 @@ public class JetFailScheme extends TextLine {
     }
 
     @Override
-    public boolean source(FlowProcess<? extends JobConfig> flowProcess,
-                          SourceCall<Void, Iterator<Pair>> sourceCall) throws IOException {
+    public boolean source(FlowProcess<? extends JetEngineConfig> flowProcess,
+                          SourceCall<Void, Iterator<Map.Entry>> sourceCall) throws IOException {
         if (sourceFired.compareAndSet(false, true)) {
             throw new TapException("fail", new Tuple("bad data"));
         }
@@ -58,8 +58,8 @@ public class JetFailScheme extends TextLine {
     }
 
     @Override
-    public void sink(FlowProcess<? extends JobConfig> flowProcess, SinkCall<Integer,
-            OutputCollector<Pair>> sinkCall) throws IOException {
+    public void sink(FlowProcess<? extends JetEngineConfig> flowProcess, SinkCall<Integer, Outbox> sinkCall)
+            throws IOException {
         if (sinkFired.compareAndSet(false, true)) {
             throw new TapException("fail", new Tuple("bad data"));
         }

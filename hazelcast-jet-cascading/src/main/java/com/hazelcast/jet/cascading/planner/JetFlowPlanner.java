@@ -33,23 +33,23 @@ import cascading.pipe.Boundary;
 import cascading.tap.Tap;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.cascading.JetFlow;
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet2.JetEngineConfig;
 
-public class JetFlowPlanner extends FlowPlanner<JetFlow, JobConfig> {
+public class JetFlowPlanner extends FlowPlanner<JetFlow, JetEngineConfig> {
 
     public static final String PLATFORM = "Hazelcast Jet";
     public static final String VENDOR = "Hazelcast";
     private final HazelcastInstance instance;
-    private final JobConfig config;
+    private final JetEngineConfig config;
 
-    public JetFlowPlanner(HazelcastInstance instance, JobConfig config) {
+    public JetFlowPlanner(HazelcastInstance instance, JetEngineConfig config) {
         this.instance = instance;
         this.config = config;
     }
 
 
     @Override
-    public JobConfig getDefaultConfig() {
+    public JetEngineConfig getDefaultConfig() {
         return config;
     }
 
@@ -69,10 +69,10 @@ public class JetFlowPlanner extends FlowPlanner<JetFlow, JobConfig> {
     }
 
     @Override
-    public FlowStepFactory<JobConfig> getFlowStepFactory() {
-        return new BaseFlowStepFactory<JobConfig>(getFlowNodeFactory()) {
+    public FlowStepFactory<JetEngineConfig> getFlowStepFactory() {
+        return new BaseFlowStepFactory<JetEngineConfig>(getFlowNodeFactory()) {
             @Override
-            public FlowStep<JobConfig> createFlowStep(ElementGraph stepElementGraph,
+            public FlowStep<JetEngineConfig> createFlowStep(ElementGraph stepElementGraph,
                                                       FlowNodeGraph flowNodeGraph) {
                 return new JetFlowStep(stepElementGraph, flowNodeGraph);
             }

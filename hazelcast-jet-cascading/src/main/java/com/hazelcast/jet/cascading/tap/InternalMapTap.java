@@ -30,28 +30,25 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.Sink;
-import com.hazelcast.jet.Source;
 import com.hazelcast.jet.cascading.JetFlowProcess;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.sink.MapSink;
-import com.hazelcast.jet.source.MapSource;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
+import com.hazelcast.jet2.impl.IMapReader;
+import com.hazelcast.jet2.impl.IMapWriter;
 import com.hazelcast.map.impl.MapService;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class InternalMapTap extends InternalJetTap {
 
@@ -60,12 +57,12 @@ public class InternalMapTap extends InternalJetTap {
 
     private final String mapName;
 
-    public InternalMapTap(String mapName, Scheme<JobConfig, Iterator<Pair>, OutputCollector<Pair>, ?, ?> scheme) {
+    public InternalMapTap(String mapName, Scheme<JetEngineConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme) {
         this(mapName, scheme, SinkMode.KEEP);
     }
 
     public InternalMapTap(String mapName,
-                          Scheme<JobConfig, Iterator<Pair>, OutputCollector<Pair>, ?, ?> scheme,
+                          Scheme<JetEngineConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme,
                           SinkMode sinkMode) {
         super(scheme, sinkMode);
         this.mapName = mapName;
@@ -73,8 +70,8 @@ public class InternalMapTap extends InternalJetTap {
 
     @Override
     @SuppressWarnings("unchecked")
-    public TupleEntryIterator openForRead(FlowProcess<? extends JobConfig> flowProcess,
-                                          Iterator<Pair> input) throws IOException {
+    public TupleEntryIterator openForRead(FlowProcess<? extends JetEngineConfig> flowProcess,
+                                          Iterator<Map.Entry> input) throws IOException {
 
         if (input == null) {
             HazelcastInstance instance = ((JetFlowProcess) flowProcess).getHazelcastInstance();
@@ -82,47 +79,53 @@ public class InternalMapTap extends InternalJetTap {
             if (map == null) {
                 throw new IOException("Could not find map " + mapName);
             }
-            input = new PairIterator(new TreeMap(map).entrySet().iterator());
+            input = new TreeMap(map).entrySet().iterator();
         }
-
         return new TupleEntrySchemeIterator<>(flowProcess, getScheme(),
                 new SingleCloseableInputIterator(makeCloseable(input)));
     }
 
     @Override
-    public TupleEntryCollector openForWrite(FlowProcess<? extends JobConfig> flowProcess,
-                                            OutputCollector<Pair> collector) throws IOException {
-        if (collector != null) {
-            return new SettableTupleEntryCollector<>(flowProcess, getScheme(), collector);
+    public TupleEntryCollector openForWrite(FlowProcess<? extends JetEngineConfig> flowProcess,
+                                            Outbox outbox) throws IOException {
+        if (outbox != null) {
+            return new SettableTupleEntryCollector<>(flowProcess, getScheme(), outbox);
         }
 
         HazelcastInstance instance = ((JetFlowProcess) flowProcess).getHazelcastInstance();
         final IMap map = instance.getMap(mapName);
-        return new TupleEntrySchemeCollector<>(flowProcess, getScheme(), new OutputCollector<Pair>() {
+        return new TupleEntrySchemeCollector<>(flowProcess, getScheme(), new Outbox() {
             @Override
-            public void collect(InputChunk<Pair> input) {
-                throw new UnsupportedOperationException();
+            public void add(Object item) {
+                Entry entry = (Entry) item;
+                map.put(entry.getKey(), entry.getValue());
             }
 
             @Override
-            public void collect(Pair[] chunk, int size) {
-                throw new UnsupportedOperationException();
+            public void add(int ordinal, Object item) {
+                Entry entry = (Entry) item;
+                map.put(entry.getKey(), entry.getValue());
             }
 
             @Override
-            public void collect(Pair object) {
-                map.put(object.getKey(), object.getValue());
+            public boolean isHighWater() {
+                return false;
+            }
+
+            @Override
+            public boolean isHighWater(int ordinal) {
+                return false;
             }
         });
     }
 
     @Override
-    public boolean createResource(JobConfig conf) throws IOException {
+    public boolean createResource(JetEngineConfig conf) throws IOException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean deleteResource(JobConfig conf) throws IOException {
+    public boolean deleteResource(JetEngineConfig conf) throws IOException {
         HazelcastInstance client = getHazelcastInstance();
         IMap map = findIMap(client);
         if (map == null) {
@@ -134,11 +137,10 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
-    public boolean resourceExists(JobConfig conf) throws IOException {
+    public boolean resourceExists(JetEngineConfig conf) throws IOException {
         //TODO: config should be refactored
         HazelcastInstance client = getHazelcastInstance();
-        boolean exists = findIMap(client) != null;
-        return exists;
+        return findIMap(client) != null;
     }
 
     protected HazelcastInstance getHazelcastInstance() {
@@ -152,13 +154,13 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
-    public long getModifiedTime(JobConfig conf) throws IOException {
+    public long getModifiedTime(JetEngineConfig conf) throws IOException {
         HazelcastInstance client = getHazelcastInstance();
         if (findIMap(client) == null) {
             throw new IOException("Could not find " + mapName);
         }
         Map<Member, Future<Long>> memberFutureMap = client.getExecutorService(mapName)
-                .submitToAllMembers(new LastModifiedTime(mapName));
+                                                          .submitToAllMembers(new LastModifiedTime(mapName));
 
         long lastModified = 0;
         for (Future<Long> longFuture : memberFutureMap.values()) {
@@ -167,7 +169,7 @@ public class InternalMapTap extends InternalJetTap {
                     lastModified = longFuture.get();
                 }
             } catch (InterruptedException | ExecutionException e) {
-                throw unchecked(e);
+                throw rethrow(e);
             }
         }
         return lastModified;
@@ -189,13 +191,13 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
-    public Source getSource() {
-        return new MapSource(mapName);
+    public ProcessorMetaSupplier getSource() {
+        return IMapReader.supplier(mapName);
     }
 
     @Override
-    public Sink getSink() {
-        return new MapSink(mapName);
+    public ProcessorMetaSupplier getSink() {
+        return IMapWriter.supplier(mapName);
     }
 
     private IMap findIMap(HazelcastInstance instance) {
@@ -207,32 +209,13 @@ public class InternalMapTap extends InternalJetTap {
         return null;
     }
 
-    private static class PairIterator implements Iterator<Pair> {
-        private final Iterator<Map.Entry> entryIterator;
-
-        PairIterator(Iterator<Map.Entry> entryIterator) {
-            this.entryIterator = entryIterator;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return entryIterator.hasNext();
-        }
-
-        @Override
-        public Pair next() {
-            Map.Entry entry = entryIterator.next();
-            return new JetPair(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private static class LastModifiedTime implements Callable<Long>, HazelcastInstanceAware, Serializable {
+    private static final class LastModifiedTime implements Callable<Long>, HazelcastInstanceAware, Serializable {
 
         private static final long serialVersionUID = 1L;
         private final String mapName;
         private transient HazelcastInstance hazelcastInstance;
 
-        LastModifiedTime(String mapName) {
+        private LastModifiedTime(String mapName) {
             this.mapName = mapName;
         }
 
@@ -247,13 +230,13 @@ public class InternalMapTap extends InternalJetTap {
         }
     }
 
-    private static class DestroyMap implements Runnable, HazelcastInstanceAware, Serializable {
+    private static final class DestroyMap implements Runnable, HazelcastInstanceAware, Serializable {
 
         private static final long serialVersionUID = 1L;
         private final String mapName;
         private transient HazelcastInstance hazelcastInstance;
 
-        DestroyMap(String mapName) {
+        private DestroyMap(String mapName) {
             this.mapName = mapName;
         }
 

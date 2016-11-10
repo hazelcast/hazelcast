@@ -291,7 +291,6 @@ public class FieldedPipesPlatformTest extends PlatformTestCase
    * @throws Exception
    */
   @Test
-  @Ignore //TODO: Splits
   public void testSameSourceMergeThreeChainGroup() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
@@ -545,7 +544,6 @@ public class FieldedPipesPlatformTest extends PlatformTestCase
    *
    */
   @Test
-  @Ignore //TODO: Splits
   public void testSplit() throws Exception
     {
     getPlatform().copyFromLocal( inputFileApache );
@@ -584,7 +582,6 @@ public class FieldedPipesPlatformTest extends PlatformTestCase
    * @throws Exception
    */
   @Test
-  @Ignore //TODO: Splits
   public void testSplitNonSafe() throws Exception
     {
     getPlatform().copyFromLocal( inputFileApache );
@@ -652,7 +649,6 @@ public class FieldedPipesPlatformTest extends PlatformTestCase
    * @throws Exception
    */
   @Test
-  @Ignore //TODO: Splits
   public void testSplitOut() throws Exception
     {
     getPlatform().copyFromLocal( inputFileApache );
@@ -691,7 +687,6 @@ public class FieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testSplitComplex() throws Exception
     {
     getPlatform().copyFromLocal( inputFileApache );
@@ -728,7 +723,6 @@ public class FieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testSplitMultiple() throws Exception
     {
     getPlatform().copyFromLocal( inputFileApache );
@@ -827,6 +821,8 @@ public class FieldedPipesPlatformTest extends PlatformTestCase
   @Test
   public void testReplace() throws Exception
     {
+    copyFromLocal(inputFileApache);
+
     Tap source = getPlatform().getTextFile( new Fields( "offset", "line" ), inputFileApache );
     Tap sink = getPlatform().getTextFile( new Fields( "offset", "line" ), new Fields( "offset", "line" ), getOutputPath( "replace" ), SinkMode.REPLACE );
 
@@ -849,6 +845,8 @@ public class FieldedPipesPlatformTest extends PlatformTestCase
   @Test
   public void testSwap() throws Exception
     {
+    copyFromLocal(inputFileApache);
+
     Tap source = getPlatform().getTextFile( new Fields( "offset", "line" ), inputFileApache );
     Tap sink = getPlatform().getTextFile( new Fields( "offset", "line" ), new Fields( "count", "ipaddress" ), getOutputPath( "swap" ), SinkMode.REPLACE );
 

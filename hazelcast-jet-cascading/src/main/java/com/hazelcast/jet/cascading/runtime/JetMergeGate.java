@@ -30,25 +30,23 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.io.ValueTuple;
 import cascading.util.Util;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.OutputCollector;
-
-import java.util.Iterator;
+import com.hazelcast.jet2.Inbox;
+import com.hazelcast.jet2.Outbox;
+import java.util.AbstractMap;
+import java.util.Map;
 
 public class JetMergeGate extends SpliceGate<TupleEntry, TupleEntry> implements ProcessorInputSource {
 
-    private Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder;
+    private Outbox outbox;
     private TupleEntry valueEntry;
 
     public JetMergeGate(FlowProcess flowProcess, Splice splice) {
         super(flowProcess, splice, IORole.source);
     }
 
-    public JetMergeGate(FlowProcess flowProcess, Splice splice, Holder<OutputCollector<Pair<Tuple, Tuple>>
-            > outputHolder) {
+    public JetMergeGate(FlowProcess flowProcess, Splice splice, Outbox outbox) {
         super(flowProcess, splice, IORole.sink);
-        this.outputHolder = outputHolder;
+        this.outbox = outbox;
     }
 
     @Override
@@ -79,7 +77,7 @@ public class JetMergeGate extends SpliceGate<TupleEntry, TupleEntry> implements 
     @Override
     public void receive(Duct previous, TupleEntry incomingEntry) {
         try {
-            outputHolder.get().collect(new JetPair<>(incomingEntry.getTupleCopy(), ValueTuple.NULL));
+            outbox.add(new AbstractMap.SimpleImmutableEntry<>(incomingEntry.getTupleCopy(), ValueTuple.NULL));
             flowProcess.increment(SliceCounters.Tuples_Written, 1);
         } catch (OutOfMemoryError error) {
             handleReThrowableException("out of memory, try increasing task memory allocation", error);
@@ -92,23 +90,29 @@ public class JetMergeGate extends SpliceGate<TupleEntry, TupleEntry> implements 
     }
 
     @Override
-    public void beforeProcessing() {
+    public void before() {
         Scope outgoingScope = Util.getFirst(outgoingScopes);
         valueEntry = new TupleEntry(outgoingScope.getOutValuesFields(), true);
         start(this);
     }
 
     @Override
-    public void process(Iterator<Pair<Tuple, Tuple>> input, Integer ordinal) throws Throwable {
-        while (input.hasNext()) {
-            Pair<Tuple, Tuple> pair = input.next();
-            valueEntry.setTuple(pair.getKey());
+    public void process(Inbox inbox, int ordinal) throws Throwable {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            Map.Entry pair = (Map.Entry) item;
+            Object key = pair.getKey();
+            if (key instanceof Tuple) {
+                valueEntry.setTuple((Tuple) key);
+            } else {
+                valueEntry.setTuple(new Tuple(key));
+            }
             next.receive(this, valueEntry);
+            inbox.remove();
         }
     }
 
     @Override
-    public void finalizeProcessor() {
+    public void complete() {
         complete(this);
     }
 

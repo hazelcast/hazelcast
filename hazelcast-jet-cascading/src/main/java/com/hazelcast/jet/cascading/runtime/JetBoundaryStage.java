@@ -28,27 +28,24 @@ import cascading.flow.stream.graph.StreamGraph;
 import cascading.pipe.Boundary;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import cascading.tuple.io.ValueTuple;
 import cascading.util.Util;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet2.Inbox;
+import com.hazelcast.jet2.Outbox;
 
-import java.util.Iterator;
+import java.util.Map;
 
 public class JetBoundaryStage extends BoundaryStage<TupleEntry, TupleEntry> implements ProcessorInputSource {
 
-    private Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder;
+    private Outbox outbox;
     private TupleEntry valueEntry;
 
     public JetBoundaryStage(FlowProcess flowProcess, Boundary boundary) {
         super(flowProcess, boundary, IORole.source);
     }
 
-    public JetBoundaryStage(FlowProcess flowProcess, Boundary boundary,
-                            Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder) {
+    public JetBoundaryStage(FlowProcess flowProcess, Boundary boundary, Outbox outbox) {
         super(flowProcess, boundary, IORole.sink);
-        this.outputHolder = outputHolder;
+        this.outbox = outbox;
     }
 
     @Override
@@ -79,7 +76,7 @@ public class JetBoundaryStage extends BoundaryStage<TupleEntry, TupleEntry> impl
     public void receive(Duct previous, TupleEntry incomingEntry) {
         try {
             Tuple tuple = incomingEntry.getTupleCopy();
-            outputHolder.get().collect(new JetPair<>(tuple, ValueTuple.NULL));
+            outbox.add(tuple);
             flowProcess.increment(SliceCounters.Tuples_Written, 1);
         } catch (OutOfMemoryError error) {
             handleReThrowableException("out of memory, try increasing task memory allocation", error);
@@ -91,21 +88,26 @@ public class JetBoundaryStage extends BoundaryStage<TupleEntry, TupleEntry> impl
     }
 
     @Override
-    public void beforeProcessing() {
+    public void before() {
         start(this);
     }
 
     @Override
-    public void process(Iterator<Pair<Tuple, Tuple>> iterator, Integer ordinal) throws Throwable {
-        while (iterator.hasNext()) {
-            Tuple tuple = iterator.next().getKey();
-            valueEntry.setTuple(tuple);
+    public void process(Inbox inbox, int ordinal) throws Throwable {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            if (item instanceof Tuple) {
+                valueEntry.setTuple((Tuple) item);
+            } else {
+                Map.Entry entry = (Map.Entry) item;
+                valueEntry.setTuple(new Tuple(entry.getValue()));
+            }
             next.receive(this, valueEntry);
+            inbox.remove();
         }
     }
 
     @Override
-    public void finalizeProcessor() {
+    public void complete() {
         complete(this);
     }
 

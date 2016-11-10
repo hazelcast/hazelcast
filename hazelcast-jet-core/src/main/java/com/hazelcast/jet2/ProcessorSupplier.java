@@ -20,6 +20,9 @@ import com.hazelcast.core.HazelcastInstance;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Javadoc pending.
@@ -38,6 +41,12 @@ public interface ProcessorSupplier extends Serializable {
      */
     List<Processor> get(int count);
 
+    /**
+     * Javadoc pending.
+     */
+    static ProcessorSupplier of(final SimpleProcessorSupplier processorSupplier) {
+        return count -> Stream.generate(processorSupplier::get).limit(count).collect(toList());
+    }
     /**
      * Javadoc pending.
      */

@@ -17,73 +17,69 @@
 package com.hazelcast.jet.cascading.runtime;
 
 import cascading.flow.FlowNode;
-import cascading.tuple.Tuple;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.cascading.JetFlowProcess;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.TaskContext;
+import com.hazelcast.jet2.Inbox;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet2.impl.AbstractProcessor;
 
-import java.util.List;
+import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public class FlowNodeProcessor implements Processor<Pair<Tuple, Tuple>, Pair<Tuple, Tuple>> {
+public class FlowNodeProcessor extends AbstractProcessor {
 
     private JetStreamGraph graph;
+    private final JetEngineConfig config;
     private final FlowNode node;
-    private final Map<String, Integer> sourceNameToOrdinal;
-    private final Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder = new Holder<>();
 
-    public FlowNodeProcessor(FlowNode node, Map<String, Integer> sourceNameToOrdinal) {
+    private final Map<String, Map<Integer, Integer>> inputMap;
+    private final Map<String, Set<Integer>> outputMap;
+    private final HazelcastInstance instance;
+
+    public FlowNodeProcessor(HazelcastInstance instance, JetEngineConfig config, FlowNode node,
+                             Map<String, Map<Integer, Integer>> inputMap, Map<String, Set<Integer>> outputMap) {
+        this.instance = instance;
+        this.config = config;
         this.node = node;
-        this.sourceNameToOrdinal = sourceNameToOrdinal;
+        this.inputMap = inputMap;
+        this.outputMap = outputMap;
     }
 
     @Override
-    public void before(TaskContext context) {
-        context.getSerializationOptimizer().addCustomType(TupleDataType.INSTANCE);
-        HazelcastInstance instance = context.getJobContext().getNodeEngine().getHazelcastInstance();
-        JetFlowProcess flowProcess = new JetFlowProcess(context.getJobContext().getJobConfig(), instance);
-        flowProcess.setCurrentSliceNum(context.getTaskNumber());
+    public void init(@Nonnull Outbox outbox) {
+//        HazelcastInstance hazelcastInstance = context.getHazelcastInstance();
+//        JetEngineConfig config = context.getConfig();
+//        config.getProperties().put(StreamGraph.DOT_FILE_PATH, "/tmp");
 
-        DAG dag = context.getJobContext().getDAG();
-        List<Edge> inputEdges = dag.getInputEdges(context.getVertex());
+        JetFlowProcess flowProcess = new JetFlowProcess(config, instance);
+        flowProcess.setCurrentSliceNum(System.identityHashCode(this));
 
-        graph = new JetStreamGraph(flowProcess, node, outputHolder, inputEdges);
+        graph = new JetStreamGraph(flowProcess, node, outbox, inputMap, outputMap);
         graph.prepare();
-        graph.getStreamedInputSource().beforeProcessing();
-        for (ProcessorInputSource processorInputSource : graph.getAccumulatedInputSources().values()) {
-            processorInputSource.beforeProcessing();
-        }
     }
 
     @Override
-    public boolean process(InputChunk<Pair<Tuple, Tuple>> input,
-                           OutputCollector<Pair<Tuple, Tuple>> output,
-                           String sourceName) throws Exception {
-        outputHolder.set(output);
-        ProcessorInputSource accumulatedSource = graph.getAccumulatedInputSources().get(sourceName);
-        ProcessorInputSource inputSource =
-                accumulatedSource != null ? accumulatedSource : graph.getStreamedInputSource();
+    public void process(int ordinal, Inbox inbox) {
         try {
-            Integer ordinal = sourceNameToOrdinal.get(sourceName);
-            inputSource.process(input.iterator(), ordinal);
+            // find the element for this jet ordinal
+            Entry<Integer, ProcessorInputSource> entry = graph.getForOrdinal(ordinal);
+            // process element according to cascading ordinal
+            entry.getValue().process(inbox, entry.getKey());
+            //TODO: backpressure
         } catch (Throwable e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
-        return true;
     }
 
     @Override
-    public boolean complete(OutputCollector<Pair<Tuple, Tuple>> output) throws Exception {
-        graph.getStreamedInputSource().finalizeProcessor();
-        graph.getAccumulatedInputSources().values().forEach(ProcessorInputSource::finalizeProcessor);
+    public boolean complete() {
+        graph.complete();
+        //TODO: backpressure
         return true;
     }
 }

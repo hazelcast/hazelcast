@@ -26,17 +26,17 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.util.TupleViews;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Outbox;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 
-public class TextDelimited extends Scheme<JobConfig, Iterator<Pair>,
-        OutputCollector<Pair>, Void, StringBuilder> {
+public class TextDelimited extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
+        Outbox, Void, StringBuilder> {
 
     private static final Random RANDOM = new Random();
     private static final long HEADER = 0L;
@@ -67,8 +67,9 @@ public class TextDelimited extends Scheme<JobConfig, Iterator<Pair>,
         super.setSourceFields(sinkFields);
         super.setSinkFields(sinkFields);
 
-        if (delimitedParser != null)
+        if (delimitedParser != null) {
             delimitedParser.reset(getSourceFields(), getSinkFields());
+        }
     }
 
     @Override
@@ -76,39 +77,40 @@ public class TextDelimited extends Scheme<JobConfig, Iterator<Pair>,
         super.setSourceFields(sourceFields);
         super.setSinkFields(sourceFields);
 
-        if (delimitedParser != null)
+        if (delimitedParser != null) {
             delimitedParser.reset(getSourceFields(), getSinkFields());
+        }
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<? extends JobConfig> flowProcess,
-                               Tap<JobConfig, Iterator<Pair>, OutputCollector<Pair>> tap,
-                               JobConfig conf) {
+    public void sourceConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
+                               Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap,
+                               JetEngineConfig conf) {
 
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<? extends JobConfig> flowProcess,
-                             Tap<JobConfig, Iterator<Pair>, OutputCollector<Pair>> tap,
-                             JobConfig conf) {
+    public void sinkConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
+                             Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap,
+                             JetEngineConfig conf) {
     }
 
     @Override
-    public void sourcePrepare(FlowProcess<? extends JobConfig> flowProcess,
-                              SourceCall<Void, Iterator<Pair>> sourceCall)
+    public void sourcePrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+                              SourceCall<Void, Iterator<Map.Entry>> sourceCall)
             throws IOException {
         sourceCall.getIncomingEntry().setTuple(TupleViews.createObjectArray());
         //TODO: should not create array for each call of prepare
     }
 
     @Override
-    public boolean source(FlowProcess<? extends JobConfig> flowProcess,
-                          SourceCall<Void, Iterator<Pair>> sourceCall) throws IOException {
-        Iterator<Pair> iterator = sourceCall.getInput();
+    public boolean source(FlowProcess<? extends JetEngineConfig> flowProcess,
+                          SourceCall<Void, Iterator<Map.Entry>> sourceCall) throws IOException {
+        Iterator<Map.Entry> iterator = sourceCall.getInput();
         if (!iterator.hasNext()) {
             return false;
         }
-        Pair pair = iterator.next();
+        Map.Entry pair = iterator.next();
         if (skipHeader && (Long) pair.getKey() == HEADER) {
             if (!iterator.hasNext()) {
                 return false;
@@ -127,20 +129,20 @@ public class TextDelimited extends Scheme<JobConfig, Iterator<Pair>,
     }
 
     @Override
-    public void sinkPrepare(FlowProcess<? extends JobConfig> flowProcess, SinkCall<StringBuilder,
-            OutputCollector<Pair>> sinkCall) throws IOException {
+    public void sinkPrepare(FlowProcess<? extends JetEngineConfig> flowProcess, SinkCall<StringBuilder,
+            Outbox> sinkCall) throws IOException {
         sinkCall.setContext(new StringBuilder());
     }
 
     @Override
     public void sink(FlowProcess<? extends
-            JobConfig> flowProcess, SinkCall<StringBuilder, OutputCollector<Pair>> sinkCall) throws IOException {
-        OutputCollector<Pair> outputCollector = sinkCall.getOutput();
+            JetEngineConfig> flowProcess, SinkCall<StringBuilder, Outbox> sinkCall) throws IOException {
+        Outbox outbox = sinkCall.getOutput();
         TupleEntry outgoing = sinkCall.getOutgoingEntry();
         Iterable<String> strings = outgoing.asIterableOf(String.class);
         StringBuilder stringBuilder = sinkCall.getContext();
         delimitedParser.joinLine(strings, stringBuilder);
-        outputCollector.collect(new JetPair(nextId(), stringBuilder.toString()));
+        outbox.add(new AbstractMap.SimpleImmutableEntry<>(nextId(), stringBuilder.toString()));
         stringBuilder.setLength(0);
     }
 

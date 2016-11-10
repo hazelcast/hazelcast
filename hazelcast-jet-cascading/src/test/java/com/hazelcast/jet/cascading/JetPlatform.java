@@ -29,12 +29,13 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.cascading.runtime.TupleSerializer;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet2.JetEngineConfig;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,20 +48,24 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.jet.impl.util.JetUtil.uncheckedGet;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class JetPlatform extends TestPlatform {
 
-    private static final int CLUSTER_SIZE = 1;
+    private static final int CLUSTER_SIZE = 4;
     private static HazelcastInstance instance;
 
     @Override
     public synchronized void setUp() throws IOException {
         Config config = new Config();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         SerializerConfig tupleSerializer = new SerializerConfig();
         tupleSerializer.setTypeClass(Tuple.class);
         tupleSerializer.setClass(TupleSerializer.class);
@@ -69,21 +74,7 @@ public class JetPlatform extends TestPlatform {
         if (instance == null) {
             instance = buildCluster(CLUSTER_SIZE, config);
         }
-    }
-
-    private static HazelcastInstance buildCluster(int size, Config config) {
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        HazelcastInstance instance = null;
-        List<Future<HazelcastInstance>> futures = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            Future<HazelcastInstance> future = executorService.submit(() -> Hazelcast.newHazelcastInstance(config));
-            futures.add(future);
-        }
-        for (Future<HazelcastInstance> future : futures) {
-            instance = uncheckedGet(future);
-        }
-        executorService.shutdown();
-        return instance;
+        assert instance.getCluster().getMembers().size() == CLUSTER_SIZE;
     }
 
     @Override
@@ -93,6 +84,7 @@ public class JetPlatform extends TestPlatform {
 
     @Override
     public void tearDown() {
+        instance.getDistributedObjects().forEach(DistributedObject::destroy);
     }
 
     @Override
@@ -136,12 +128,12 @@ public class JetPlatform extends TestPlatform {
 
     @Override
     public FlowProcess getFlowProcess() {
-        return new JetFlowProcess(new JobConfig(), instance);
+        return new JetFlowProcess(new JetEngineConfig(), instance);
     }
 
     @Override
     public FlowConnector getFlowConnector(Map<Object, Object> properties) {
-        JobConfig config = new JobConfig();
+        JetEngineConfig config = new JetEngineConfig();
         config.getProperties().putAll(properties);
         return new JetFlowConnector(instance, config);
     }
@@ -216,4 +208,26 @@ public class JetPlatform extends TestPlatform {
         return true;
     }
 
+    private static HazelcastInstance buildCluster(int size, Config config) {
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        HazelcastInstance instance = null;
+        List<Future<HazelcastInstance>> futures = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            Future<HazelcastInstance> future = executorService.submit(() -> Hazelcast.newHazelcastInstance(config));
+            futures.add(future);
+        }
+        for (Future<HazelcastInstance> future : futures) {
+            instance = uncheckedGet(future);
+        }
+        executorService.shutdown();
+        return instance;
+    }
+
+    private static <V> V uncheckedGet(Future<V> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw rethrow(e);
+        }
+    }
 }

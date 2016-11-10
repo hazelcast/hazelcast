@@ -197,7 +197,7 @@ public class TextDelimitedPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: MultiSinkTap
+  @Ignore //TODO: writeHeader not supported
   public void testHeaderFieldsAll() throws IOException
     {
     copyFromLocal(testDelimitedHeader);

@@ -936,7 +936,6 @@ public class AssemblyHelpersPlatformTest extends PlatformTestCase
    * @throws IOException
    */
   @Test
-  @Ignore //TODO: Splits
   public void testSameSourceMergeThreeWay() throws IOException
     {
     getPlatform().copyFromLocal( inputFileLhs );

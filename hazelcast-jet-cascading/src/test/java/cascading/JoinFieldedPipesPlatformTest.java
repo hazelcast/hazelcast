@@ -1349,7 +1349,6 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
    * @throws Exception
    */
   @Test
-  @Ignore //TODO: Splits
   public void testJoinSameSourceOverGroupByIntoJoinSimple() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
@@ -1455,7 +1454,6 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testJoinSamePipeAroundGroupBy() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
@@ -1834,7 +1832,6 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testGroupBySplitJoins() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
@@ -2002,7 +1999,6 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
    * @throws Exception
    */
   @Test
-  @Ignore //TODO: Splits
   public void testJoinSplit() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLhs );
@@ -2099,7 +2095,6 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
    * multiple nodes, one for each branch in the split.
    */
   @Test
-  @Ignore //TODO: Splits
   public void testJoinSplitBeforeJoin() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLhs );
@@ -2165,7 +2160,6 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testGroupBySplitGroupByJoin() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
@@ -2247,7 +2241,6 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testGroupBySplitAroundSplitGroupByJoin() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
@@ -2352,6 +2345,8 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
   public void testForkCoGroupThenHashJoin() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
+    getPlatform().copyFromLocal( inputFileUpper );
+
     Tap sourceLower = getPlatform().getTextFile( new Fields( "offset", "line" ), inputFileLower );
     Tap sourceUpper = getPlatform().getTextFile( new Fields( "offset", "line" ), inputFileUpper );
 
@@ -2402,7 +2397,6 @@ public class JoinFieldedPipesPlatformTest extends PlatformTestCase
    * @throws Exception
    */
   @Test
-  @Ignore //TODO: Splits
   public void testForkCoGroupThenHashJoinCoGroupAgain() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );

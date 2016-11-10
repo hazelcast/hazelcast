@@ -35,7 +35,7 @@ public class Edge implements IdentifiedDataSerializable {
     private Vertex destination;
     private int inputOrdinal;
 
-    private int priority;
+    private int priority = Integer.MAX_VALUE;
 
     private ForwardingPattern forwardingPattern = ForwardingPattern.ALTERNATING_SINGLE;
     private Partitioner partitioner;
@@ -102,7 +102,8 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Inputs with higher priority will be read to completion before others.
+     * Sets the priority number for the edge.
+     * The edges with the lower priority number will be processed before all others.
      */
     public Edge priority(int priority) {
         this.priority = priority;

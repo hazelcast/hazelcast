@@ -22,44 +22,47 @@ import cascading.flow.FlowException;
 import cascading.flow.FlowProcess;
 import cascading.flow.planner.PlatformInfo;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.slf4j.helpers.MessageFormatter;
-
 import java.io.IOException;
 import java.util.Map;
+import org.slf4j.helpers.MessageFormatter;
 
-public class JetFlow extends BaseFlow<JobConfig> {
+public class JetFlow extends BaseFlow<JetEngineConfig> {
 
     private static final ILogger LOGGER = Logger.getLogger(JetFlow.class);
     private final HazelcastInstance instance;
-    private JobConfig config;
+    private JetEngineConfig config;
 
     public JetFlow(
             HazelcastInstance instance,
             PlatformInfo platformInfo,
             Map<Object, Object> properties,
-            JobConfig config,
+            JetEngineConfig config,
             FlowDef flowDef) {
         super(platformInfo, properties, config, flowDef);
         this.instance = instance;
     }
 
+    public HazelcastInstance getHazelcastInstance() {
+        return instance;
+    }
+
     @Override
-    protected void initConfig(Map<Object, Object> properties, JobConfig parentConfig) {
+    protected void initConfig(Map<Object, Object> properties, JetEngineConfig parentConfig) {
         config = parentConfig;
         config.getProperties().putAll(properties);
     }
 
     @Override
-    protected void setConfigProperty(JobConfig jobConfig, Object key, Object value) {
+    protected void setConfigProperty(JetEngineConfig jobConfig, Object key, Object value) {
         jobConfig.getProperties().put(key, value);
     }
 
     @Override
-    protected JobConfig newConfig(JobConfig defaultConfig) {
-        return new JobConfig();
+    protected JetEngineConfig newConfig(JetEngineConfig defaultConfig) {
+        return new JetEngineConfig();
     }
 
     @Override
@@ -87,12 +90,12 @@ public class JetFlow extends BaseFlow<JobConfig> {
     }
 
     @Override
-    public JobConfig getConfig() {
+    public JetEngineConfig getConfig() {
         return config;
     }
 
     @Override
-    public JobConfig getConfigCopy() {
+    public JetEngineConfig getConfigCopy() {
         throw new UnsupportedOperationException();
     }
 
@@ -107,7 +110,7 @@ public class JetFlow extends BaseFlow<JobConfig> {
     }
 
     @Override
-    public FlowProcess<JobConfig> getFlowProcess() {
+    public FlowProcess<JetEngineConfig> getFlowProcess() {
         return new JetFlowProcess(config, instance);
     }
 

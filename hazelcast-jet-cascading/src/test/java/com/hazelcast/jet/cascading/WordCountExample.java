@@ -29,7 +29,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet2.JetEngineConfig;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -98,7 +98,7 @@ public class WordCountExample {
         wcPipe = new Every(wcPipe, Fields.ALL, new Count(), Fields.ALL);
 
 
-        JetFlowConnector flowConnector = new JetFlowConnector(instance1, new JobConfig());
+        JetFlowConnector flowConnector = new JetFlowConnector(instance1, new JetEngineConfig());
         Flow flow = flowConnector.connect(sourceTap, sinkTap, wcPipe);
         flow.complete();
 

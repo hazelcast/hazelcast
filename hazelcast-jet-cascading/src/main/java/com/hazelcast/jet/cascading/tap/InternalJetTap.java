@@ -20,26 +20,25 @@ import cascading.scheme.Scheme;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.util.CloseableIterator;
-import com.hazelcast.jet.Sink;
-import com.hazelcast.jet.Source;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 
-public abstract class InternalJetTap extends Tap<JobConfig, Iterator<Pair>, OutputCollector<Pair>> {
+public abstract class InternalJetTap extends Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> {
 
-    protected InternalJetTap(Scheme<JobConfig, Iterator<Pair>, OutputCollector<Pair>, ?, ?> scheme,
+    protected InternalJetTap(Scheme<JetEngineConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme,
                              SinkMode sinkMode) {
         super(scheme, sinkMode);
     }
 
-    public abstract Source getSource();
+    public abstract ProcessorMetaSupplier getSource();
 
-    public abstract Sink getSink();
+    public abstract ProcessorMetaSupplier getSink();
 
     protected static <V> CloseableIterator<V> makeCloseable(final Iterator<V> iterator) {
         return new CloseableIterator<V>() {

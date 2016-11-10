@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.cascading.runtime;
+package com.hazelcast.jet2.impl.client;
 
-import cascading.tuple.Tuple;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.client.spi.ClientProxy;
 
-public class IdentityProcessor implements Processor<Pair<Tuple, Tuple>, Pair<Tuple, Tuple>> {
-
-    @Override
-    public boolean process(InputChunk<Pair<Tuple, Tuple>> input,
-                           OutputCollector<Pair<Tuple, Tuple>> output,
-                           String sourceName) throws Exception {
-        output.collect(input);
-        return true;
+public class ClientJetEngineProxy extends ClientProxy {
+    public ClientJetEngineProxy(String serviceName, String name) {
+        super(serviceName, name);
     }
 }
+

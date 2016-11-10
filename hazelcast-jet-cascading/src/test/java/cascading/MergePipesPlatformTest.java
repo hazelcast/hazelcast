@@ -44,7 +44,6 @@ import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static data.InputData.*;
@@ -249,7 +248,6 @@ public class MergePipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testSameSourceMergeThreeChainGroup() throws Exception
     {
     getPlatform().copyFromLocal( inputFileLower );
@@ -508,14 +506,12 @@ public class MergePipesPlatformTest extends PlatformTestCase
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testHashJoinMergeIntoHashJoinStreamedStreamedMerge() throws Exception
     {
     runMultiHashJoinIntoMergeIntoHashJoin( true, true, true, 1 );
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testHashJoinMergeIntoHashJoinAccumulatedAccumulatedMerge() throws Exception
     {
     runMultiHashJoinIntoMergeIntoHashJoin( false, false, true, 3 );
@@ -526,14 +522,12 @@ public class MergePipesPlatformTest extends PlatformTestCase
    * a node.
    */
   @Test
-  @Ignore //TODO: Splits
   public void testHashJoinMergeIntoHashJoinStreamedAccumulatedMerge() throws Exception
     {
     runMultiHashJoinIntoMergeIntoHashJoin( true, false, true, 2 );
     }
 
   @Test
-  @Ignore //TODO: Splits
   public void testHashJoinMergeIntoHashJoinAccumulatedStreamedMerge() throws Exception
     {
     runMultiHashJoinIntoMergeIntoHashJoin( false, true, true, 3 );

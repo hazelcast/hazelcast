@@ -20,7 +20,6 @@ import cascading.flow.FlowElement;
 import cascading.flow.FlowElements;
 import cascading.flow.FlowNode;
 import cascading.flow.FlowProcess;
-import cascading.flow.stream.annotations.StreamMode;
 import cascading.flow.stream.duct.Duct;
 import cascading.flow.stream.duct.Gate;
 import cascading.flow.stream.element.SinkStage;
@@ -32,30 +31,32 @@ import cascading.pipe.GroupBy;
 import cascading.pipe.HashJoin;
 import cascading.pipe.Merge;
 import cascading.tap.Tap;
-import cascading.tuple.Tuple;
-import cascading.util.Util;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.OutputCollector;
+import com.hazelcast.jet2.Outbox;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 class JetStreamGraph extends NodeStreamGraph {
 
-    private Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder = new Holder<>();
-    private final List<Edge> inputEdges;
-    private ProcessorInputSource streamedInputSource;
-    private Map<String, ProcessorInputSource> accumulatedInputSources = new HashMap<>();
+    private final Outbox outbox;
+    // element id -> jet input ordinal -> cascading ordinal
+    private final Map<String, Map<Integer, Integer>> inputMap;
+    // element id -> jet output ordinals
+    private final Map<String, Set<Integer>> outputMap;
 
-    JetStreamGraph(FlowProcess flowProcess, FlowNode node,
-                   Holder<OutputCollector<Pair<Tuple, Tuple>>> outputHolder, List<Edge> inputEdges) {
+    // jet ordinal -->  (cascading ordinal, input source)
+    private Map<Integer, Map.Entry<Integer, ProcessorInputSource>> inputSources = new HashMap<>();
+
+    JetStreamGraph(FlowProcess flowProcess, FlowNode node, Outbox outbox,
+                          Map<String, Map<Integer, Integer>> inputMap, Map<String, Set<Integer>> outputMap) {
         super(flowProcess, node);
-        this.outputHolder = outputHolder;
-        this.inputEdges = inputEdges;
+        this.outbox = outbox;
+        this.inputMap = inputMap;
+        this.outputMap = outputMap;
 
         buildGraph();
         setTraps();
@@ -67,9 +68,16 @@ class JetStreamGraph extends NodeStreamGraph {
     }
 
     @Override
+    public void prepare() {
+        super.prepare();
+
+        inputSources.forEach((k, v) -> v.getValue().before());
+    }
+
+    @Override
     protected Gate createCoGroupGate(CoGroup element, IORole role) {
         if (role == IORole.sink) {
-            return new JetGroupingGate(flowProcess, element, outputHolder);
+            return new JetGroupingGate(flowProcess, element, getOutboxWithOrdinal(element));
         } else if (role == IORole.source) {
             return new JetCoGroupGate(flowProcess, element);
         } else {
@@ -80,7 +88,7 @@ class JetStreamGraph extends NodeStreamGraph {
     @Override
     protected Gate createGroupByGate(GroupBy element, IORole role) {
         if (role == IORole.sink) {
-            return new JetGroupingGate(flowProcess, element, outputHolder);
+            return new JetGroupingGate(flowProcess, element, getOutboxWithOrdinal(element));
         } else if (role == IORole.source) {
             return new JetGroupByGate(flowProcess, element);
         } else {
@@ -91,7 +99,7 @@ class JetStreamGraph extends NodeStreamGraph {
     @Override
     protected Duct createMergeStage(Merge merge, IORole role) {
         if (role == IORole.sink) {
-            return new JetMergeGate(flowProcess, merge, outputHolder);
+            return new JetMergeGate(flowProcess, merge, getOutboxWithOrdinal(merge));
         } else if (role == IORole.source) {
             return new JetMergeGate(flowProcess, merge);
         } else {
@@ -107,7 +115,7 @@ class JetStreamGraph extends NodeStreamGraph {
     @Override
     protected Duct createBoundaryStage(Boundary element, IORole role) {
         if (role == IORole.sink) {
-            return new JetBoundaryStage(flowProcess, element, outputHolder);
+            return new JetBoundaryStage(flowProcess, element, getOutboxWithOrdinal(element));
         } else if (role == IORole.source) {
             return new JetBoundaryStage(flowProcess, element);
         } else {
@@ -117,31 +125,29 @@ class JetStreamGraph extends NodeStreamGraph {
 
     @Override
     protected SinkStage createSinkStage(Tap element) {
-        return new JetSinkStage(flowProcess, element, outputHolder);
+        return new JetSinkStage(flowProcess, element, getOutboxWithOrdinal(element));
+    }
+
+    private Outbox getOutboxWithOrdinal(FlowElement element) {
+        Set<Integer> ordinals = outputMap.get(FlowElements.id(element));
+        return new OutboxWithOrdinals(outbox, ordinals);
     }
 
     protected void buildGraph() {
-        Set<FlowElement> sourceElements = new HashSet<>(node.getSourceElements());
-        Set<? extends FlowElement> accumulated = node.getSourceElements(StreamMode.Accumulated);
-
-        sourceElements.removeAll(accumulated);
-
-        if (sourceElements.size() != 1) {
-            throw new IllegalStateException("too many input source keys, got: " + Util.join(sourceElements, ", "));
-        }
-
-        FlowElement streamedSource = Util.getFirst(sourceElements);
-        streamedInputSource = handleHead(streamedSource);
-
-        for (FlowElement element : accumulated) {
-            for (Edge inputEdge : inputEdges) {
-                if (inputEdge.getName().equals(FlowElements.id(element))) {
-                    ProcessorInputSource accumulatedSource = handleHead(element);
-                    String id = inputEdge.getInputVertex().getName();
-                    this.accumulatedInputSources.put(id, accumulatedSource);
-                }
+        Set<FlowElement> sourceElements = node.getSourceElements();
+        for (FlowElement element : sourceElements) {
+            String id = FlowElements.id(element);
+            ProcessorInputSource inputSource = handleHead(element);
+            Map<Integer, Integer> jetToCascadingOrdinalMap = inputMap.get(id);
+            for (Entry<Integer, Integer> entry : jetToCascadingOrdinalMap.entrySet()) {
+                int cascadingOrdinal = entry.getValue();
+                inputSources.put(entry.getKey(), new SimpleImmutableEntry<>(cascadingOrdinal, inputSource));
             }
         }
+    }
+
+    public Map.Entry<Integer, ProcessorInputSource> getForOrdinal(int ordinal) {
+        return inputSources.get(ordinal);
     }
 
     private ProcessorInputSource handleHead(FlowElement element) {
@@ -166,11 +172,46 @@ class JetStreamGraph extends NodeStreamGraph {
         throw new UnsupportedOperationException(" FlowElement " + element + " can't be used as a source");
     }
 
-    public ProcessorInputSource getStreamedInputSource() {
-        return streamedInputSource;
+    public void complete() {
+        inputSources.entrySet().forEach(v -> v.getValue().getValue().complete());
     }
 
-    public Map<String, ProcessorInputSource> getAccumulatedInputSources() {
-        return accumulatedInputSources;
+    private static final class OutboxWithOrdinals implements Outbox {
+        private final Outbox outbox;
+        private final int[] ordinals;
+
+        private OutboxWithOrdinals(Outbox outbox, Collection<Integer> ordinals) {
+            this.outbox = outbox;
+            this.ordinals = ordinals.stream().mapToInt(i -> i).toArray();
+        }
+
+        @Override
+        public void add(Object item) {
+            for (int ordinal : ordinals) {
+                outbox.add(ordinal, item);
+            }
+        }
+
+        @Override
+        public void add(int ordinal, Object item) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isHighWater() {
+            for (int ordinal : ordinals) {
+                if (outbox.isHighWater(ordinal)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean isHighWater(int ordinal) {
+            throw new UnsupportedOperationException();
+        }
+
+
     }
 }
