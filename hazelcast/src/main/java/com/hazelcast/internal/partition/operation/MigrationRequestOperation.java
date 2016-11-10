@@ -23,7 +23,6 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
@@ -73,15 +72,10 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         InternalPartition partition = getPartition();
         verifySource(nodeEngine.getThisAddress(), partition);
 
+        setActiveMigration();
+
         if (!migrationInfo.startProcessing()) {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);
-            setFailed();
-            return;
-        }
-
-        InternalPartitionServiceImpl partitionService = getService();
-        MigrationManager migrationManager = partitionService.getMigrationManager();
-        if (!migrationManager.addActiveMigration(migrationInfo)) {
             setFailed();
             return;
         }
@@ -89,6 +83,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         try {
             executeBeforeMigrations();
             Collection<Operation> tasks = prepareMigrationOperations();
+            InternalPartitionServiceImpl partitionService = getService();
             long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
             invokeMigrationOperation(destination, replicaVersions, tasks);
             returnResponse = false;
