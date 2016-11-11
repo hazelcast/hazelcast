@@ -23,14 +23,15 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
 import java.util.logging.Level;
 
+import static com.hazelcast.spi.properties.GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.util.concurrent.TimeUnit.SECONDS;
+
 
 /**
  * Monitors client heartbeats.. As soon as a client has not used its connection for a certain amount of time,
@@ -58,7 +59,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private long getHeartbeatTimeout(HazelcastProperties hazelcastProperties) {
-        long configuredTimeout = hazelcastProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
+        long configuredTimeout = hazelcastProperties.getSeconds(CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
         if (configuredTimeout > 0) {
             return configuredTimeout;
         }
@@ -73,7 +74,7 @@ public class ClientHeartbeatMonitor implements Runnable {
 
     @Override
     public void run() {
-        final String memberUuid = clientEngine.getLocalMember().getUuid();
+        String memberUuid = clientEngine.getLocalMember().getUuid();
         for (ClientEndpoint ce : clientEndpointManager.getEndpoints()) {
             ClientEndpointImpl clientEndpoint = (ClientEndpointImpl) ce;
             monitor(memberUuid, clientEndpoint);
@@ -85,7 +86,11 @@ public class ClientHeartbeatMonitor implements Runnable {
             return;
         }
 
-        final Connection connection = clientEndpoint.getConnection();
+        Connection connection = clientEndpoint.getConnection();
+        if (!connection.isAlive()) {
+            return;
+        }
+
         final long lastTimePackageReceived = connection.lastReadTimeMillis();
         final long timeoutInMillis = SECONDS.toMillis(heartbeatTimeoutSeconds);
         final long currentTimeMillis = Clock.currentTimeMillis();
