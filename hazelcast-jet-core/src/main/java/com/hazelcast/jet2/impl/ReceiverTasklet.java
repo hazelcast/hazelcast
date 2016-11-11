@@ -18,20 +18,19 @@ package com.hazelcast.jet2.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
+import com.hazelcast.internal.util.concurrent.MPSCQueue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class ReceiverTasklet implements Tasklet {
 
-    //TODO: MPSCQueue does not implement peek() yet
-    private final Queue<ByteArrayInputStream> incoming = new ConcurrentLinkedQueue<>();
+    private final Queue<ByteArrayInputStream> incoming = new MPSCQueue<>(null);
     private final InternalSerializationService serializationService;
     private final OutboundCollector collector;
     private final ProgressTracker tracker = new ProgressTracker();
