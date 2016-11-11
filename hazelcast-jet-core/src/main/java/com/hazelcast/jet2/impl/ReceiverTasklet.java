@@ -46,8 +46,8 @@ public class ReceiverTasklet implements Tasklet {
         this.remainingSenders = senderCount;
     }
 
-    void offer(byte[] item, int offset) {
-        incoming.add(new ByteArrayInputStream(item, offset, item.length - offset));
+    void addPacket(byte[] packetBuf, int offset) {
+        incoming.add(new ByteArrayInputStream(packetBuf, offset, packetBuf.length - offset));
     }
 
     @Override

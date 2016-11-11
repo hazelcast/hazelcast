@@ -57,23 +57,23 @@ public class SenderTasklet implements Tasklet {
         if (progressState.isDone()) {
             inbox.offer(new ObjectWithPartitionId(DONE_ITEM, -1));
         }
-        if (progressState.isMadeProgress()) {
-            try {
-                outputBuffer.write(headerBytes);
-                outputBuffer.writeInt(inbox.size());
-                for (Object item; (item = inbox.poll()) != null; ) {
-                    ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
-                    outputBuffer.writeObject(itemWithpId.getItem());
-                    outputBuffer.writeInt(itemWithpId.getPartitionId());
-
-                }
-            } catch (IOException e) {
-                throw rethrow(e);
-            }
-            Packet packet = new Packet(outputBuffer.toByteArray()).setFlag(Packet.FLAG_JET);
-            connection.write(packet);
-            outputBuffer.clear();
+        if (!progressState.isMadeProgress()) {
+            return progressState;
         }
+        try {
+            outputBuffer.write(headerBytes);
+            outputBuffer.writeInt(inbox.size());
+            for (Object item; (item = inbox.poll()) != null; ) {
+                ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
+                outputBuffer.writeObject(itemWithpId.getItem());
+                outputBuffer.writeInt(itemWithpId.getPartitionId());
+            }
+        } catch (IOException e) {
+            throw rethrow(e);
+        }
+        Packet packet = new Packet(outputBuffer.toByteArray()).setFlag(Packet.FLAG_JET);
+        connection.write(packet);
+        outputBuffer.clear();
         return progressState;
     }
 }

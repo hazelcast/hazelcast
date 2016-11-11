@@ -44,7 +44,7 @@ import static java.util.stream.Collectors.toMap;
 
 public class EngineContext {
 
-    private static final int DEFAULT_RESOURCE_CHUNK_SIZE = 16384;
+    private static final int DEFAULT_RESOURCE_CHUNK_SIZE = 1 << 14;
 
     private final String name;
     private final IdGenerator idGenerator;
@@ -67,38 +67,36 @@ public class EngineContext {
     }
 
     public Map<Member, ExecutionPlan> newExecutionPlan(DAG dag) {
-        List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
-        int clusterSize = members.size();
-        long planId = idGenerator.newId();
-        Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(planId)));
-        Map<Vertex, Integer> vertexIdMap = assignVertexIds(dag);
+        final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
+        final int clusterSize = members.size();
+        final long planId = idGenerator.newId();
+        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(planId)));
+        final Map<Vertex, Integer> vertexIdMap = assignVertexIds(dag);
         for (Map.Entry<Vertex, Integer> entry : vertexIdMap.entrySet()) {
-            Vertex vertex = entry.getKey();
-            int vertexId = entry.getValue();
-            int perNodeParallelism = getParallelism(vertex, config);
-            int totalParallelism = perNodeParallelism * clusterSize;
-
-            List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
-            List<Edge> inboundEdges = dag.getInboundEdges(vertex);
-
-            ProcessorMetaSupplier supplier = vertex.getSupplier();
+            final Vertex vertex = entry.getKey();
+            final int vertexId = entry.getValue();
+            final int perNodeParallelism = getParallelism(vertex, config);
+            final int totalParallelism = perNodeParallelism * clusterSize;
+            final List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
+            final List<Edge> inboundEdges = dag.getInboundEdges(vertex);
+            final ProcessorMetaSupplier supplier = vertex.getSupplier();
             supplier.init(ProcessorMetaSupplier.Context.of(
                     nodeEngine, totalParallelism, perNodeParallelism));
-            List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
+            final List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getDestination());
                 return new EdgeDef(otherEndId, edge.getOutputOrdinal(), edge.getInputOrdinal(),
                         edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner());
             }).collect(toList());
 
-            List<EdgeDef> inputs = inboundEdges.stream().map(edge -> {
-                int otherEndId = vertexIdMap.get(edge.getSource());
+            final List<EdgeDef> inputs = inboundEdges.stream().map(edge -> {
+                final int otherEndId = vertexIdMap.get(edge.getSource());
                 return new EdgeDef(otherEndId, edge.getInputOrdinal(), edge.getInputOrdinal(),
                         edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner());
             }).collect(toList());
 
             for (Map.Entry<Member, ExecutionPlan> e : plans.entrySet()) {
-                ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
-                VertexDef vertexDef = new VertexDef(vertexId, processorSupplier, perNodeParallelism);
+                final ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
+                final VertexDef vertexDef = new VertexDef(vertexId, processorSupplier, perNodeParallelism);
                 vertexDef.addOutputs(outputs);
                 vertexDef.addInputs(inputs);
                 e.getValue().addVertex(vertexDef);
@@ -140,6 +138,10 @@ public class EngineContext {
         executionService.shutdown();
     }
 
+    private boolean isDistributed(Edge edge) {
+        return edge.isDistributed() && nodeEngine.getClusterService().getSize() > 1;
+    }
+
     private static Map<Vertex, Integer> assignVertexIds(DAG dag) {
         int vertexId = 0;
         Map<Vertex, Integer> vertexIdMap = new LinkedHashMap<>();
@@ -152,9 +154,4 @@ public class EngineContext {
     private static int getParallelism(Vertex vertex, JetEngineConfig config) {
         return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
     }
-
-    private boolean isDistributed(Edge edge) {
-        return edge.isDistributed() && nodeEngine.getClusterService().getSize() > 1;
-    }
-
 }

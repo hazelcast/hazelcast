@@ -101,7 +101,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         offset += Bits.INT_SIZE_IN_BYTES;
         engineContexts.get(engineName)
                       .getExecutionContext(executionId)
-                      .handlePacket(vertexId, ordinal, packet.getPartitionId(), bytes, offset);
+                      .handlePacket(vertexId, ordinal, bytes, offset);
     }
 
     public static byte[] createHeader(String name, long executionId, int destinationVertexId, int ordinal) {
