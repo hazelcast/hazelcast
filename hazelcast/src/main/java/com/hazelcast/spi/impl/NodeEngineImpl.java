@@ -219,9 +219,7 @@ public class NodeEngineImpl implements NodeEngine {
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
 
-        metricsRegistry.collectMetrics(operationService);
-        metricsRegistry.collectMetrics(proxyService);
-        metricsRegistry.collectMetrics(eventService);
+        metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
 
         serviceManager.start();
         proxyService.init();

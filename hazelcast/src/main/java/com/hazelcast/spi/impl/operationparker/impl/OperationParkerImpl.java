@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
@@ -50,7 +52,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class OperationParkerImpl implements OperationParker, LiveOperationsTracker {
+public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, MetricsProvider {
 
     private static final long FIRST_WAIT_TIME = 1000;
     private static final long TIMEOUT_UPPER_BOUND = 1500;
@@ -58,8 +60,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     private final ConcurrentMap<WaitNotifyKey, Queue<ParkedOperation>> parkQueueMap =
             new ConcurrentHashMap<WaitNotifyKey, Queue<ParkedOperation>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
-    private final ExecutorService expirationService;
-    private final Future expirationTask;
+    private final ExecutorService expirationExecutor;
+    private final Future expirationTaskFuture;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
 
@@ -73,16 +75,20 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     public OperationParkerImpl(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        final Node node = nodeEngine.getNode();
-        logger = node.getLogger(OperationParker.class.getName());
+        Node node = nodeEngine.getNode();
+        this.logger = node.getLogger(OperationParker.class.getName());
 
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-        expirationService = Executors.newSingleThreadExecutor(
+        this.expirationExecutor = Executors.newSingleThreadExecutor(
                 new SingleExecutorThreadFactory(threadGroup.getInternalThreadGroup(),
                         threadGroup.getClassLoader(),
                         threadGroup.getThreadNamePrefix("operation-parker")));
 
-        expirationTask = expirationService.submit(new ExpirationTask());
+        this.expirationTaskFuture = expirationExecutor.submit(new ExpirationTask());
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry registry) {
         nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation-parker");
     }
 
@@ -264,8 +270,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     public void shutdown() {
         logger.finest("Stopping tasks...");
-        expirationTask.cancel(true);
-        expirationService.shutdown();
+        expirationTaskFuture.cancel(true);
+        expirationExecutor.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
         final Address thisAddress = nodeEngine.getThisAddress();
         for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
