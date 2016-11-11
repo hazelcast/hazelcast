@@ -237,8 +237,10 @@
         <module name="MagicNumber">
             <property name="ignoreHashCodeMethod" value="true"/>
             <property name="ignoreAnnotation" value="true"/>
-            <property name="ignoreFieldDeclaration" value="true"/>
             <property name="ignoreNumbers" value="-1, 0, 1, 2, 3"/>
+            <property name="constantWaiverParentToken"
+                      value="ASSIGN, ARRAY_INIT, EXPR, UNARY_PLUS, UNARY_MINUS, TYPECAST, ELIST, LITERAL_NEW,
+                      METHOD_CALL, STAR, DIV, PLUS, MINUS, SL, QUESTION"/>
         </module>
         <module name="EqualsHashCode"/>
         <module name="IllegalInstantiation"/>
