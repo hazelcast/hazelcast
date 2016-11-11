@@ -61,7 +61,13 @@ public class JoinCheckOperation extends AbstractJoinOperation {
             ILogger logger = getLogger();
             try {
                 if (service.getClusterJoinManager().validateJoinMessage(request)) {
-                    response = node.createSplitBrainJoinMessage();
+                    try {
+                        // also validate other node's version is able to join our cluster
+                        node.getNodeExtension().validateJoinRequest(request);
+                        response = node.createSplitBrainJoinMessage();
+                    } catch (Exception e) {
+                        logger.info("Join check from " + getCallerAddress() + " failed validation: " + e.getMessage());
+                    }
                 }
                 if (logger.isFineEnabled()) {
                     logger.fine("Returning " + response + " to " + getCallerAddress());

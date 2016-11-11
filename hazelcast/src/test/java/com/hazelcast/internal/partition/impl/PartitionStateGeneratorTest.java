@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
@@ -35,6 +36,7 @@ import com.hazelcast.partition.membergroup.SingleMemberGroupFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,6 +62,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class PartitionStateGeneratorTest {
 
+    private static final Version VERSION = Version.of(BuildInfoProvider.BUILD_INFO.getVersion());
     private static final boolean PRINT_STATE = false;
 
     @Test
@@ -262,7 +265,7 @@ public class PartitionStateGeneratorTest {
             count++;
             port++;
             MemberImpl m = new MemberImpl(new Address(InetAddress.getByAddress(new byte[]{ip[0], ip[1], ip[2], ip[3]})
-                    , port), false);
+                    , port), VERSION, false);
             members.add(m);
             if ((0xff & ip[3]) == 255) {
                 ip[2] = ++ip[2];
@@ -293,7 +296,7 @@ public class PartitionStateGeneratorTest {
                 set.add(owner);
                 MemberGroup group = null;
                 for (MemberGroup g : groups) {
-                    if (g.hasMember(new MemberImpl(owner, true))) {
+                    if (g.hasMember(new MemberImpl(owner, VERSION, true))) {
                         group = g;
                         break;
                     }

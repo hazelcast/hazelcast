@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.version.Version;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -257,5 +258,16 @@ public interface Member extends DataSerializable, Endpoint {
      * @since 3.2
      */
     void removeAttribute(String key);
+
+    /**
+     * Returns the Hazelcast codebase version of this member; this may or may not be different from the version reported by
+     * {@link Cluster#getClusterVersion()}, for example when a node with a different codebase version is added to an
+     * existing cluster. See the documentation for {@link Cluster#getClusterVersion()} for a more thorough discussion
+     * of {@code Cluster} and {@code Member} / {@code Node} version.
+     *
+     * @return the {@link Version} of this member.
+     * @since 3.8
+     */
+    Version getVersion();
 
 }

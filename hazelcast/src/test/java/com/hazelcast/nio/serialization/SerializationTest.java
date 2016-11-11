@@ -39,6 +39,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.version.Version;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -422,7 +423,7 @@ public class SerializationTest
         String host = "127.0.0.1";
         int port = 5000;
 
-        Member member = new MemberImpl(new Address(host, port), false, uuid, null);
+        Member member = new MemberImpl(new Address(host, port), Version.of("3.8.0"), false, uuid, null);
 
         testMemberLeftException(uuid, host, port, member);
     }
@@ -433,7 +434,7 @@ public class SerializationTest
         String host = "127.0.0.1";
         int port = 5000;
 
-        Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port));
+        Member member = new SimpleMemberImpl(Version.of("3.8.0"), uuid, new InetSocketAddress(host, port));
         testMemberLeftException(uuid, host, port, member);
     }
 
@@ -443,7 +444,7 @@ public class SerializationTest
         String host = "127.0.0.1";
         int port = 5000;
 
-        Member member = new MemberImpl(new Address(host, port), false, uuid, null, null, true);
+        Member member = new MemberImpl(new Address(host, port), Version.of("3.8.0"), false, uuid, null, null, true);
 
         testMemberLeftException(uuid, host, port, member);
     }
@@ -454,7 +455,7 @@ public class SerializationTest
         String host = "127.0.0.1";
         int port = 5000;
 
-        Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port), true);
+        Member member = new SimpleMemberImpl(Version.of("3.8.0"), uuid, new InetSocketAddress(host, port), true);
         testMemberLeftException(uuid, host, port, member);
     }
 
@@ -476,6 +477,7 @@ public class SerializationTest
         assertEquals(host, member2.getAddress().getHost());
         assertEquals(port, member2.getAddress().getPort());
         assertEquals(member.isLiteMember(), member2.isLiteMember());
+        assertEquals(member.getVersion(), member2.getVersion());
     }
 
     @Test

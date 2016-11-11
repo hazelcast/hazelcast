@@ -24,6 +24,8 @@ import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
+import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -32,6 +34,7 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.version.Version;
 
 import java.util.Queue;
 import java.util.Set;
@@ -51,7 +54,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * This plugin is very useful to get an idea what is happening inside a cluster; especially when there are connection related
  * problems.
  *
- * This cluster has a low overhead and is meant to run in production.
+ * This plugin has a low overhead and is meant to run in production.
  */
 public class SystemLogPlugin extends DiagnosticsPlugin {
 
@@ -81,24 +84,35 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
     private final Address thisAddress;
     private final boolean logPartitions;
     private final boolean enabled;
+    private final NodeExtension nodeExtension;
 
     public SystemLogPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getProperties(),
                 nodeEngine.getNode().connectionManager,
                 nodeEngine.getHazelcastInstance(),
-                nodeEngine.getLogger(SystemLogPlugin.class));
+                nodeEngine.getLogger(SystemLogPlugin.class),
+                nodeEngine.getNode().getNodeExtension());
     }
 
     public SystemLogPlugin(HazelcastProperties properties,
                            ConnectionListenable connectionObservable,
                            HazelcastInstance hazelcastInstance,
                            ILogger logger) {
+        this(properties, connectionObservable, hazelcastInstance, logger, null);
+    }
+
+    public SystemLogPlugin(HazelcastProperties properties,
+                           ConnectionListenable connectionObservable,
+                           HazelcastInstance hazelcastInstance,
+                           ILogger logger,
+                           NodeExtension nodeExtension) {
         super(logger);
         this.connectionObservable = connectionObservable;
         this.hazelcastInstance = hazelcastInstance;
         this.thisAddress = getThisAddress(hazelcastInstance);
         this.logPartitions = properties.getBoolean(LOG_PARTITIONS);
         this.enabled = properties.getBoolean(ENABLED);
+        this.nodeExtension = nodeExtension;
     }
 
     private Address getThisAddress(HazelcastInstance hazelcastInstance) {
@@ -127,6 +141,9 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
             hazelcastInstance.getPartitionService().addMigrationListener(new MigrationListenerImpl());
         }
         hazelcastInstance.getLifecycleService().addLifecycleListener(new LifecycleListenerImpl());
+        if (nodeExtension != null) {
+            nodeExtension.registerListener(new ClusterVersionListenerImpl());
+        }
     }
 
     @Override
@@ -146,6 +163,8 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
             } else if (item instanceof ConnectionEvent) {
                 ConnectionEvent event = (ConnectionEvent) item;
                 render(writer, event);
+            } else if (item instanceof Version) {
+                render(writer, (Version) item);
             }
         }
     }
@@ -255,6 +274,12 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
+    private void render(DiagnosticsLogWriter writer, Version version) {
+        writer.startSection("ClusterVersionChanged");
+        writer.writeEntry(version.toString());
+        writer.endSection();
+    }
+
     private class LifecycleListenerImpl implements LifecycleListener {
         @Override
         public void stateChanged(LifecycleEvent event) {
@@ -310,6 +335,13 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         @Override
         public void migrationFailed(MigrationEvent event) {
             logQueue.add(event);
+        }
+    }
+
+    private class ClusterVersionListenerImpl implements ClusterVersionListener {
+        @Override
+        public void onClusterVersionChange(Version newVersion) {
+            logQueue.add(newVersion);
         }
     }
 }

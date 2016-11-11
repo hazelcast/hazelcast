@@ -7,6 +7,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,10 +50,10 @@ public class MemberSelectingCollectionTest {
     @Before
     public void before()
             throws Exception {
-        thisMember = new MemberImpl(new Address("localhost", 5701), true, true);
-        liteMember = new MemberImpl(new Address("localhost", 5702), false, true);
-        dataMember = new MemberImpl(new Address("localhost", 5704), false, false);
-        nonExistingMember = new MemberImpl(new Address("localhost", 5705), false, false);
+        thisMember = new MemberImpl(new Address("localhost", 5701), Version.of("3.8.0"), true, true);
+        liteMember = new MemberImpl(new Address("localhost", 5702), Version.of("3.8.0"), false, true);
+        dataMember = new MemberImpl(new Address("localhost", 5704), Version.of("3.8.0"), false, false);
+        nonExistingMember = new MemberImpl(new Address("localhost", 5705), Version.of("3.8.0"), false, false);
 
         members = createMembers();
     }
