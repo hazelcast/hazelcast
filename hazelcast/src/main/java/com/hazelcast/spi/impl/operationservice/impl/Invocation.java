@@ -570,21 +570,30 @@ public abstract class Invocation implements OperationResponseHandler {
             return NO_TIMEOUT__CALL_TIMEOUT_DISABLED;
         }
 
+        long invocationTime = op.getInvocationTime();
+
         // a call is always allowed to execute as long as its own call timeout
-        long deadlineMillis = op.getInvocationTime() + callTimeoutMillis;
-        if (deadlineMillis > context.clusterClock.getClusterTime()) {
+        if (invocationTime + callTimeoutMillis > context.clusterClock.getClusterTime()) {
             return NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
         }
 
-        // on top of its own call timeout, it is allowed to execute until there is a heartbeat timeout;
-        // so if the callTimeout is five minutes, and the heartbeatTimeout is one minute, then the operation is allowed
-        // to execute for at least six minutes before it is timing out
         long lastHeartbeatMillis = this.lastHeartbeatMillis;
-        long heartbeatExpirationTimeMillis = lastHeartbeatMillis == 0
-                ? op.getInvocationTime() + callTimeoutMillis + heartbeatTimeoutMillis
-                : lastHeartbeatMillis + heartbeatTimeoutMillis;
+        // It can happen that the lastHeartbeatMillis is from a previous retry. So instead of doing a 0 check,
+        // we check if the invocationTime is past the lastHeartbeatMillis
+        long heartbeatExpirationMillis;
+        if (invocationTime > lastHeartbeatMillis) {
+            // no sensible heartbeat was received.
 
-        if (heartbeatExpirationTimeMillis > Clock.currentTimeMillis()) {
+            // on top of its own call timeout, it is allowed to execute until there is a heartbeat timeout;
+            // so if the callTimeout is five minutes, and the heartbeatTimeout is one minute, then the operation is allowed
+            // to execute for at least six minutes before it is timing out
+            heartbeatExpirationMillis = invocationTime + callTimeoutMillis + heartbeatTimeoutMillis;
+        } else {
+            // a sensible heartbeat was received. The The expiration time is the lastHeartbeatMillis + heartbeat timeout
+            heartbeatExpirationMillis = lastHeartbeatMillis + heartbeatTimeoutMillis;
+        }
+
+        if (heartbeatExpirationMillis > Clock.currentTimeMillis()) {
             return NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
         }
 
@@ -713,23 +722,23 @@ public abstract class Invocation implements OperationResponseHandler {
 
         @SuppressWarnings("checkstyle:parameternumber")
         Context(ManagedExecutorService asyncExecutor,
-                       ClusterClock clusterClock,
-                       ClusterService clusterService,
-                       ConnectionManager connectionManager,
-                       InternalExecutionService executionService,
-                       long defaultCallTimeoutMillis,
-                       InvocationRegistry invocationRegistry,
-                       InvocationMonitor invocationMonitor,
-                       String localMemberUuid,
-                       ILogger logger,
-                       Node node,
-                       NodeEngine nodeEngine,
-                       InternalPartitionService partitionService,
-                       OperationServiceImpl operationService,
-                       OperationExecutor operationExecutor,
-                       MwCounter retryCount,
-                       InternalSerializationService serializationService,
-                       Address thisAddress) {
+                ClusterClock clusterClock,
+                ClusterService clusterService,
+                ConnectionManager connectionManager,
+                InternalExecutionService executionService,
+                long defaultCallTimeoutMillis,
+                InvocationRegistry invocationRegistry,
+                InvocationMonitor invocationMonitor,
+                String localMemberUuid,
+                ILogger logger,
+                Node node,
+                NodeEngine nodeEngine,
+                InternalPartitionService partitionService,
+                OperationServiceImpl operationService,
+                OperationExecutor operationExecutor,
+                MwCounter retryCount,
+                InternalSerializationService serializationService,
+                Address thisAddress) {
             this.asyncExecutor = asyncExecutor;
             this.clusterClock = clusterClock;
             this.clusterService = clusterService;
