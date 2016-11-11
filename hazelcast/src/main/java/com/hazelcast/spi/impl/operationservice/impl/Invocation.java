@@ -82,6 +82,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINEST;
@@ -297,15 +299,30 @@ public abstract class Invocation implements OperationResponseHandler {
             complete(CALL_TIMEOUT);
             return;
         }
+
         if (context.logger.isFinestEnabled()) {
-            context.logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: "
-                    + this);
+            context.logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
         }
 
-        // decrement wait-timeout by call-timeout
-        long waitTimeout = op.getWaitTimeout();
-        waitTimeout -= callTimeoutMillis;
-        op.setWaitTimeout(waitTimeout);
+        long oldWaitTimeout = op.getWaitTimeout();
+        long newWaitTimeout;
+        if (oldWaitTimeout < 0) {
+            // The old wait-timeout is unbound; so the new wait-timeout will remain unbound.
+            newWaitTimeout = oldWaitTimeout;
+        } else {
+            // The old wait-timeout was bound.
+            // We need to subtract the elapsed time so that the waitTimeout gets smaller on every retry.
+
+            // first we determine elapsed time. To prevent of the elapsed time being negative due to cluster-clock reset, and
+            // the call timeout increasing instead of decreasing, the elapsedTime will be at least 0.
+            // For elapsed time we rely on cluster-clock, since op.invocationTime is also based on it.
+            long elapsedTime = max(0, context.clusterClock.getClusterTime() - op.getInvocationTime());
+
+            // We need to take care of not running into a negative wait-timeout, because it will be interpreted as infinite.
+            // That why the max with 0, so that 0 is going to be the smallest remaining timeout
+            newWaitTimeout = max(0, oldWaitTimeout - elapsedTime);
+        }
+        op.setWaitTimeout(newWaitTimeout);
 
         invokeCount--;
         handleRetry("invocation timeout");
@@ -539,8 +556,8 @@ public abstract class Invocation implements OperationResponseHandler {
              * Below two lines are shortened version of above*
              * using min(max(x,y),z)=max(min(x,z),min(y,z))
              */
-            long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT_MILLIS);
-            return Math.min(max, defaultCallTimeoutMillis);
+            long max = max(waitTimeoutMillis, MIN_TIMEOUT_MILLIS);
+            return min(max, defaultCallTimeoutMillis);
         }
         return defaultCallTimeoutMillis;
     }
