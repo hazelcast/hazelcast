@@ -82,6 +82,7 @@ import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
@@ -99,7 +100,7 @@ public abstract class Invocation implements OperationResponseHandler {
     private static final AtomicIntegerFieldUpdater<Invocation> BACKUP_ACKS_RECEIVED =
             AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsAcksReceived");
 
-    private static final long MIN_TIMEOUT = 10000;
+    private static final long MIN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
     private static final int LOG_MAX_INVOCATION_COUNT = 99;
     private static final int LOG_INVOCATION_COUNT_MOD = 10;
@@ -189,7 +190,7 @@ public abstract class Invocation implements OperationResponseHandler {
         long waitTimeoutMillis = op.getWaitTimeout();
         if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
             /*
-             * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT);
+             * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT_MILLIS);
              * long callTimeoutMillis = Math.min(waitTimeoutMillis, defaultCallTimeout);
              * callTimeoutMillis = Math.max(a, minTimeout);
              * return callTimeoutMillis;
@@ -197,7 +198,7 @@ public abstract class Invocation implements OperationResponseHandler {
              * Below two lines are shortened version of above*
              * using min(max(x,y),z)=max(min(x,z),min(y,z))
              */
-            long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT);
+            long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT_MILLIS);
             return Math.min(max, defaultCallTimeoutMillis);
         }
         return defaultCallTimeoutMillis;
