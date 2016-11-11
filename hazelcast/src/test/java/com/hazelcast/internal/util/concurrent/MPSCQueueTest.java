@@ -354,9 +354,16 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
     // ============= misc ====================================
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void peek_whenCalled_thenThrowsUnsupportedOperationException() {
-        queue.peek();
+    @Test
+    public void when_peek_then_getButNotRemove() {
+        queue.offer("1");
+        assertEquals("1", queue.peek());
+        assertEquals("1", queue.peek());
+    }
+
+    @Test
+    public void when_peekEmpty_then_Null() {
+        assertNull(queue.peek());
     }
 
     @Test(expected = UnsupportedOperationException.class)

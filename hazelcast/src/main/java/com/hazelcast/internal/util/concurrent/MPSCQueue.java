@@ -132,6 +132,18 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     }
 
     @Override
+    public E peek() {
+        E item = peekNext();
+        if (item != null) {
+            return item;
+        }
+        if (!drainPutStack()) {
+            return null;
+        }
+        return peekNext();
+    }
+
+    @Override
     public E take() throws InterruptedException {
         E item = next();
         if (item != null) {
@@ -161,6 +173,14 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     }
 
     private E next() {
+        E item = peekNext();
+        if (item != null) {
+            dequeue();
+        }
+        return item;
+    }
+
+    private E peekNext() {
         if (takeStackIndex == -1) {
             return null;
         }
@@ -175,11 +195,13 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
             takeStackIndex = -1;
             return null;
         }
+        return item;
+    }
 
+    private void dequeue() {
         takeStack[takeStackIndex] = null;
         takeStackIndex++;
         takeStackSize.lazySet(takeStackSize.get() - 1);
-        return item;
     }
 
     private void takeAll() throws InterruptedException {
@@ -303,11 +325,6 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     @Override
     public Iterator<E> iterator() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public E peek() {
         throw new UnsupportedOperationException();
     }
 
