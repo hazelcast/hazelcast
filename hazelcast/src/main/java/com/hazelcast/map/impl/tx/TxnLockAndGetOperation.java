@@ -96,7 +96,6 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", timeout=").append(getWaitTimeout());
         sb.append(", thread=").append(getThreadId());
     }
 
