@@ -21,6 +21,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -56,7 +57,7 @@ public final class ExceptionUtil {
             return t;
         }
 
-        if (t instanceof ExecutionException) {
+        if (t instanceof ExecutionException || t instanceof InvocationTargetException) {
             final Throwable cause = t.getCause();
             if (cause != null) {
                 return peel(cause, allowedType);

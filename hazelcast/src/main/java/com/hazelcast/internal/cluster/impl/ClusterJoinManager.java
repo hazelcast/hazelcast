@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -31,6 +32,7 @@ import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -210,7 +212,7 @@ public class ClusterJoinManager {
             }
 
             final Address target = joinRequest.getAddress();
-            if (checkClusterStateBeforeJoin(target)) {
+            if (checkClusterStateBeforeJoin(target, joinRequest.getUuid())) {
                 return;
             }
 
@@ -233,25 +235,46 @@ public class ClusterJoinManager {
         }
     }
 
-    private boolean checkClusterStateBeforeJoin(Address target) {
+    private boolean checkClusterStateBeforeJoin(Address address, String uuid) {
         ClusterState state = clusterStateManager.getState();
         if (state == ClusterState.IN_TRANSITION) {
-            logger.warning("Cluster state is in transition process. Join is not allowed for now -> "
+            logger.warning("Cluster state is in transition process. Join is not allowed until "
+                    + "transaction is completed -> "
                     + clusterStateManager.stateToString());
             return true;
         }
 
-        if (state != ClusterState.ACTIVE) {
-            if (!clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
-                String message = "Cluster state either is locked or doesn't allow new members to join -> "
-                        + clusterStateManager.stateToString();
-                logger.warning(message);
-                OperationService operationService = nodeEngine.getOperationService();
-                operationService.send(new BeforeJoinCheckFailureOperation(message), target);
+        if (state == ClusterState.ACTIVE) {
+            return false;
+        }
+
+        if (clusterService.isMemberRemovedWhileClusterIsNotActive(address)) {
+            MemberImpl memberRemovedWhileClusterIsNotActive =
+                    clusterService.getMemberRemovedWhileClusterIsNotActive(uuid);
+
+            if (memberRemovedWhileClusterIsNotActive != null
+                    && !address.equals(memberRemovedWhileClusterIsNotActive.getAddress())) {
+
+                logger.warning("Uuid " + uuid + " was being used by " + memberRemovedWhileClusterIsNotActive
+                        + " before. " + address + " is not allowed to join with a uuid which belongs to"
+                        + " a known passive member.");
+
                 return true;
             }
+
+            return false;
         }
-        return false;
+
+        if (clusterService.isMemberRemovedWhileClusterIsNotActive(uuid)) {
+            return false;
+        }
+
+        String message = "Cluster state either is locked or doesn't allow new members to join -> "
+                + clusterStateManager.stateToString();
+        logger.warning(message);
+        OperationService operationService = nodeEngine.getOperationService();
+        operationService.send(new BeforeJoinCheckFailureOperation(message), address);
+        return true;
     }
 
     private boolean authenticate(JoinRequest joinRequest) {
@@ -435,12 +458,12 @@ public class ClusterJoinManager {
     }
 
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
-        MemberImpl member = clusterService.getMember(joinMessage.getAddress());
+        Address target = joinMessage.getAddress();
+        MemberImpl member = clusterService.getMember(target);
         if (member == null) {
-            return false;
+            return checkIfUsingAnExistingMemberUuid(joinMessage);
         }
 
-        Address target = member.getAddress();
         if (joinMessage.getUuid().equals(member.getUuid())) {
             if (node.isMaster()) {
                 if (logger.isFineEnabled()) {
@@ -485,15 +508,34 @@ public class ClusterJoinManager {
         return true;
     }
 
+    private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {
+        Member member = clusterService.getMember(joinMessage.getUuid());
+        Address target = joinMessage.getAddress();
+        if (member != null) {
+            if (node.isMaster()) {
+                String message = "There's already an existing member " + member + " with the same UUID. "
+                        + target + " is not allowed to join.";
+                logger.warning(message);
+                OperationService operationService = nodeEngine.getOperationService();
+                operationService.send(new BeforeJoinCheckFailureOperation(message), target);
+            } else {
+                sendMasterAnswer(target);
+            }
+            return true;
+        }
+        return false;
+    }
+
     private void startJoin() {
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
+            InternalPartitionService partitionService = node.getPartitionService();
             try {
                 joinInProgress = true;
 
                 // pause migrations until join, member-update and post-join operations are completed
-                node.getPartitionService().pauseMigration();
+                partitionService.pauseMigration();
                 Collection<MemberImpl> members = clusterService.getMemberImpls();
                 Collection<MemberInfo> memberInfos = createMemberInfoList(members);
                 for (MemberInfo memberJoining : joiningMembers.values()) {
@@ -511,27 +553,28 @@ public class ClusterJoinManager {
 
                 int count = members.size() - 1 + joiningMembers.size();
                 List<Future> calls = new ArrayList<Future>(count);
-                PartitionRuntimeState partitionState = node.getPartitionService().createPartitionState();
+                PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
-                    Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
+                    Operation finalizeJoinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
                             clusterService.getClusterId(), startTime,
-                            clusterStateManager.getState(), partitionState);
-                    calls.add(invokeClusterOperation(joinOperation, member.getAddress()));
+                            clusterStateManager.getState(), partitionRuntimeState);
+                    calls.add(invokeClusterOperation(finalizeJoinOperation, member.getAddress()));
                 }
                 for (MemberImpl member : members) {
                     if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
                         continue;
                     }
-                    Operation infoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time, true);
-                    calls.add(invokeClusterOperation(infoUpdateOperation, member.getAddress()));
+                    Operation memberInfoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time,
+                            partitionRuntimeState, true);
+                    calls.add(invokeClusterOperation(memberInfoUpdateOperation, member.getAddress()));
                 }
 
                 int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);
                 waitWithDeadline(calls, timeout, TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
             } finally {
                 reset();
-                node.getPartitionService().resumeMigration();
+                partitionService.resumeMigration();
             }
         } finally {
             clusterServiceLock.unlock();

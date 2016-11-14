@@ -21,7 +21,6 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
@@ -62,8 +61,10 @@ public class CacheClearTest extends CacheTestSupport {
 
     @Override
     protected void onSetup() {
-        Config config = createConfig();
-        hazelcastInstances = factory.newInstances(config, INSTANCE_COUNT);
+        hazelcastInstances = new HazelcastInstance[INSTANCE_COUNT];
+        for (int i = 0; i < hazelcastInstances.length; i++) {
+            hazelcastInstances[i] = factory.newHazelcastInstance(createConfig());
+        }
         warmUpPartitions(hazelcastInstances);
         waitAllForSafeState(hazelcastInstances);
         hazelcastInstance = hazelcastInstances[0];

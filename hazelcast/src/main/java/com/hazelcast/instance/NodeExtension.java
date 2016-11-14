@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.internal.networking.ReadHandler;
@@ -181,6 +182,11 @@ public interface NodeExtension {
     void onClusterStateChange(ClusterState newState, boolean isTransient);
 
     /**
+     * Called when partition state (partition assignments, version etc) changes
+     */
+    void onPartitionStateChange();
+
+    /**
      * Registers given register if it's a known type.
      * @param listener listener instance
      * @return true if listener is registered, false otherwise
@@ -194,4 +200,11 @@ public interface NodeExtension {
      * @return true if hot restart is enabled and this node knows the master
      */
     boolean triggerForceStart();
+
+    /**
+     * Creates a UUID for local member
+     * @param address address of local member
+     * @return new uuid
+     */
+    String createMemberUuid(Address address);
 }

@@ -6,7 +6,6 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -44,10 +43,9 @@ public class CacheDestroyTest extends CacheTestSupport {
 
     @Override
     protected void onSetup() {
-        Config config = createConfig();
         hazelcastInstances = new HazelcastInstance[INSTANCE_COUNT];
-        for (int i = 0; i < INSTANCE_COUNT; i++) {
-            hazelcastInstances[i] = factory.newHazelcastInstance(config);
+        for (int i = 0; i < hazelcastInstances.length; i++) {
+            hazelcastInstances[i] = factory.newHazelcastInstance(createConfig());
         }
         warmUpPartitions(hazelcastInstances);
         waitAllForSafeState(hazelcastInstances);

@@ -87,7 +87,6 @@ import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_W
 import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
-import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
         "checkstyle:classfanoutcomplexity"})
@@ -167,14 +166,15 @@ public class Node {
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         try {
             address = addressPicker.getPublicAddress();
+            nodeExtension = nodeContext.createNodeExtension(this);
+
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, createMemberUuid(address),
+            localMember = new MemberImpl(address, true, nodeExtension.createMemberUuid(address),
                     hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
 
-            this.nodeExtension = createNodeExtension(nodeContext);
             nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
 
@@ -284,10 +284,6 @@ public class Node {
                 logger.warning(error, t);
             }
         }
-    }
-
-    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
-        return nodeContext.createNodeExtension(this);
     }
 
     public ManagementCenterService getManagementCenterService() {

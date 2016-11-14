@@ -41,7 +41,7 @@ public class InternalPartitionImpl implements InternalPartition {
         this.thisAddress = thisAddress;
     }
 
-    InternalPartitionImpl(int partitionId, PartitionListener listener, Address thisAddress,
+    public InternalPartitionImpl(int partitionId, PartitionListener listener, Address thisAddress,
             Address[] addresses) {
         this(partitionId, listener, thisAddress);
         this.addresses = addresses;
@@ -168,6 +168,25 @@ public class InternalPartitionImpl implements InternalPartition {
 
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (address.equals(addresses[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    int replaceAddress(Address oldAddress, Address newAddress) {
+        Address[] currentAddresses = addresses;
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            Address address = currentAddresses[i];
+            if (address == null) {
+                break;
+            }
+
+            if (address.equals(oldAddress)) {
+                Address[] newAddresses = Arrays.copyOf(currentAddresses, MAX_REPLICA_COUNT);
+                newAddresses[i] = newAddress;
+                addresses = newAddresses;
+                callPartitionListener(i, oldAddress, newAddress);
                 return i;
             }
         }

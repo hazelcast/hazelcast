@@ -28,6 +28,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.membergroup.MemberGroup;
@@ -148,11 +149,11 @@ public class PartitionStateManager {
             Address[] replicas = newState[partitionId];
             partition.setReplicaAddresses(replicas);
         }
-        initialized = true;
+        setInitialized();
         return true;
     }
 
-    void setInitialState(Address[][] newState, int partitionStateVersion) {
+    void setInitialState(PartitionTableView partitionTable) {
         if (initialized) {
             throw new IllegalStateException("Partition table is already initialized!");
         }
@@ -160,7 +161,7 @@ public class PartitionStateManager {
         boolean foundReplica = false;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];
-            Address[] replicas = newState[partitionId];
+            Address[] replicas = partitionTable.getAddresses(partitionId);
             if (!foundReplica && replicas != null) {
                 for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                     foundReplica |= replicas[i] != null;
@@ -168,8 +169,10 @@ public class PartitionStateManager {
             }
             partition.setInitialReplicaAddresses(replicas);
         }
-        stateVersion.set(partitionStateVersion);
-        initialized = foundReplica;
+        stateVersion.set(partitionTable.getVersion());
+        if (foundReplica) {
+            setInitialized();
+        }
     }
 
     void updateMemberGroupsSize() {
@@ -292,8 +295,13 @@ public class PartitionStateManager {
         stateVersion.incrementAndGet();
     }
 
-    void setInitialized() {
-        initialized = true;
+    boolean setInitialized() {
+        if (!initialized) {
+            initialized = true;
+            node.getNodeExtension().onPartitionStateChange();
+            return true;
+        }
+        return false;
     }
 
     public boolean isInitialized() {
@@ -306,5 +314,30 @@ public class PartitionStateManager {
         for (InternalPartitionImpl partition : partitions) {
             partition.reset();
         }
+    }
+
+    int replaceAddress(Address oldAddress, Address newAddress) {
+        if (!initialized) {
+            return 0;
+        }
+        int count = 0;
+        for (InternalPartitionImpl partition : partitions) {
+            if (partition.replaceAddress(oldAddress, newAddress) > -1) {
+                count++;
+            }
+        }
+        if (count > 0) {
+            node.getNodeExtension().onPartitionStateChange();
+            logger.info("Replaced " + oldAddress + " with " + newAddress + " in partition table in "
+                    + count + " partitions.");
+        }
+        return count;
+    }
+
+    PartitionTableView getPartitionTable() {
+        if (!initialized) {
+            return new PartitionTableView(new Address[partitions.length][InternalPartition.MAX_REPLICA_COUNT], 0);
+        }
+        return new PartitionTableView(partitions, stateVersion.get());
     }
 }
