@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
 import static org.junit.Assert.assertEquals;
@@ -79,6 +80,15 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetAsync() throws Exception {
+        cache.put(42, "foobar");
+
+        Future<String> future = adapter.getAsync(42);
+        String result = future.get();
+        assertEquals("foobar", result);
+    }
+
+    @Test
     public void testPutAll() {
         Map<Integer, String> expectedResult = new HashMap<Integer, String>();
         expectedResult.put(23, "value-23");
@@ -117,5 +127,13 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     @Test
     public void testGetLocalMapStats() {
         assertNull(adapter.getLocalMapStats());
+    }
+
+    @Test
+    public void testContainsKey() {
+        cache.put(23, "value-23");
+
+        assertTrue(adapter.containsKey(23));
+        assertFalse(adapter.containsKey(42));
     }
 }

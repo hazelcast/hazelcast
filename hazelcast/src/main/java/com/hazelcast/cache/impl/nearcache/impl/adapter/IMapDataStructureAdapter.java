@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.adapter;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
 
@@ -51,6 +52,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public ICompletableFuture<V> getAsync(K key) {
+        return map.getAsync(key);
+    }
+
+    @Override
     public void putAll(Map<K, V> map) {
         this.map.putAll(map);
     }
@@ -68,5 +74,10 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @Override
     public LocalMapStats getLocalMapStats() {
         return map.getLocalMapStats();
+    }
+
+    @Override
+    public boolean containsKey(K key) {
+        return map.containsKey(key);
     }
 }

@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -73,6 +74,15 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     }
 
     @Test
+    public void testGetAsync() throws Exception {
+        map.put(42, "foobar");
+
+        Future<String> future = adapter.getAsync(42);
+        String result = future.get();
+        assertEquals("foobar", result);
+    }
+
+    @Test
     public void testPutAll() {
         Map<Integer, String> expectedResult = new HashMap<Integer, String>();
         expectedResult.put(23, "value-23");
@@ -111,5 +121,13 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     @Test
     public void testGetLocalMapStats() {
         assertNull(adapter.getLocalMapStats());
+    }
+
+    @Test
+    public void testContainsKey() {
+        map.put(23, "value-23");
+
+        assertTrue(adapter.containsKey(23));
+        assertFalse(adapter.containsKey(42));
     }
 }

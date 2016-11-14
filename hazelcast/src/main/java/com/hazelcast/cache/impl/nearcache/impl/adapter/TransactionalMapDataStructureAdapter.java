@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.nearcache.impl.adapter;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.transaction.TransactionContext;
@@ -71,6 +72,14 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public ICompletableFuture<V> getAsync(K key) {
+        begin();
+        V value = transactionalMap.get(key);
+        commit();
+        return new SimpleCompletedFuture<V>(value);
+    }
+
+    @Override
     public void putAll(Map<K, V> map) {
         begin();
         for (Map.Entry<K, V> entry : map.entrySet()) {
@@ -100,6 +109,14 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     @Override
     public LocalMapStats getLocalMapStats() {
         return null;
+    }
+
+    @Override
+    public boolean containsKey(K key) {
+        begin();
+        boolean result = transactionalMap.containsKey(key);
+        commit();
+        return result;
     }
 
     private void begin() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.adapter;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalMapStats;
 
@@ -52,6 +53,11 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    public ICompletableFuture<V> getAsync(K key) {
+        return new SimpleCompletedFuture<V>(map.get(key));
+    }
+
+    @Override
     public void putAll(Map<K, V> map) {
         this.map.putAll(map);
     }
@@ -73,5 +79,10 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     @Override
     public LocalMapStats getLocalMapStats() {
         return null;
+    }
+
+    @Override
+    public boolean containsKey(K key) {
+        return map.containsKey(key);
     }
 }
