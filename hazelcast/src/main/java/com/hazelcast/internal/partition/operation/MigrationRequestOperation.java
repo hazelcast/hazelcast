@@ -158,7 +158,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private void verifyGoodMaster(NodeEngine nodeEngine) {
         Address masterAddress = nodeEngine.getMasterAddress();
-        if (!masterAddress.equals(migrationInfo.getMaster())) {
+        if (!migrationInfo.getMaster().equals(masterAddress)) {
             throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
         }
         if (!masterAddress.equals(getCallerAddress())) {

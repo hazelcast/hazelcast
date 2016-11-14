@@ -291,7 +291,7 @@ public class PartitionStateManager {
         }
     }
 
-    void incrementVersion() {
+    public void incrementVersion() {
         stateVersion.incrementAndGet();
     }
 

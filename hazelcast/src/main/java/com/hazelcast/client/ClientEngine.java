@@ -57,6 +57,8 @@ public interface ClientEngine {
 
     Address getThisAddress();
 
+    String getThisUuid();
+
     MemberImpl getLocalMember();
 
     SecurityContext getSecurityContext();

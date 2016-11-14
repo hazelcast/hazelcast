@@ -73,7 +73,7 @@ public class ClientHeartbeatMonitor implements Runnable {
 
     @Override
     public void run() {
-        final String memberUuid = clientEngine.getLocalMember().getUuid();
+        final String memberUuid = clientEngine.getThisUuid();
         for (ClientEndpoint ce : clientEndpointManager.getEndpoints()) {
             ClientEndpointImpl clientEndpoint = (ClientEndpointImpl) ce;
             monitor(memberUuid, clientEndpoint);

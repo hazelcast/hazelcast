@@ -58,6 +58,8 @@ public class HotRestartPersistenceConfig {
     private int parallelism = DEFAULT_PARALLELISM;
     private int validationTimeoutSeconds = DEFAULT_VALIDATION_TIMEOUT;
     private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
+    private HotRestartClusterDataRecoveryPolicy clusterDataRecoveryPolicy
+            = HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
 
     /**
      * Returns whether hot restart enabled on this member.
@@ -75,6 +77,28 @@ public class HotRestartPersistenceConfig {
      */
     public HotRestartPersistenceConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
+    }
+
+    /**
+     * Returns the policy to be used when the cluster is started
+     *
+     * @return the policy to be used when the cluster is started
+     */
+    public HotRestartClusterDataRecoveryPolicy getClusterDataRecoveryPolicy() {
+        return clusterDataRecoveryPolicy;
+    }
+
+    /**
+     * Sets the policy to be used when the cluster is started
+     *
+     * @param clusterDataRecoveryPolicy the policy to be used when the cluster is started
+     *
+     * @return HotRestartConfig
+     */
+    public HotRestartPersistenceConfig setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy
+                                                                            clusterDataRecoveryPolicy) {
+        this.clusterDataRecoveryPolicy = clusterDataRecoveryPolicy;
         return this;
     }
 

@@ -112,9 +112,10 @@ public class Node {
     public final ConnectionManager connectionManager;
 
     public final Address address;
-    public final MemberImpl localMember;
 
     public final SecurityContext securityContext;
+
+    private volatile MemberImpl localMember;
 
     private final ILogger logger;
 
@@ -167,7 +168,6 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             nodeExtension = nodeContext.createNodeExtension(this);
-
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
             localMember = new MemberImpl(address, true, nodeExtension.createMemberUuid(address),
                     hazelcastInstance, memberAttributes, liteMember);
@@ -618,7 +618,7 @@ public class Node {
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                localMember.getAttributes());
+                localMember.getAttributes(), nodeExtension.getExcludedMemberUuids());
     }
 
     public ConfigCheck createConfigCheck() {
@@ -695,6 +695,28 @@ public class Node {
         setJoined();
         getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
         getClusterService().setClusterId(UuidUtil.createClusterUuid());
+    }
+
+    public String getThisUuid() {
+        return localMember.getUuid();
+    }
+
+    public void setNewLocalMember() {
+        if (joined()) {
+            logger.severe("Cannot set new local member when joined.");
+            return;
+        } else if (nodeExtension.isStartCompleted()) {
+            logger.severe("Cannot set new local member since start completed.");
+            return;
+        } else if (!nodeExtension.isMemberExcluded(getThisAddress(), getThisUuid())) {
+            logger.severe("Cannot set new local member since this member is not excluded.");
+            return;
+        }
+
+        String newUuid = UuidUtil.createMemberUuid(address);
+        logger.warning("Setting new local member. old uuid: " + localMember.getUuid() + " new uuid: " + newUuid);
+        Map<String, Object> memberAttributes = localMember.getAttributes();
+        localMember = new MemberImpl(address, true, newUuid, hazelcastInstance, memberAttributes, liteMember);
     }
 
     public Config getConfig() {

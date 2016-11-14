@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.Address;
@@ -30,6 +31,7 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
@@ -197,9 +199,18 @@ public interface NodeExtension {
      * Forces node to start by skipping hot-restart completely and removing all hot-restart data
      * even if node is still on validation phase or loading hot-restart data.
      *
-     * @return true if hot restart is enabled and this node knows the master
+     * @return true if force start is triggered successfully. force start cannot be triggered if hot restart is disabled or
+     * the master is not known yet
      */
     boolean triggerForceStart();
+
+    /**
+     * Triggers partial start if the cluster cannot be started with full recovery and
+     * {@link HotRestartPersistenceConfig#clusterDataRecoveryPolicy} is set accordingly.
+     *
+     * @return true if partial start is triggered.
+     */
+    boolean triggerPartialStart();
 
     /**
      * Creates a UUID for local member
@@ -207,4 +218,29 @@ public interface NodeExtension {
      * @return new uuid
      */
     String createMemberUuid(Address address);
+
+    /**
+     * Checks if the given member has been excluded during the cluster start or not.
+     * If returns true, it means that the given member is not allowed to join to the cluster.
+     *
+     * @param memberAddress address of the member to check
+     * @param memberUuid uuid of the member to check
+     * @return true if the member has been excluded on cluster start.
+     */
+    boolean isMemberExcluded(Address memberAddress, String memberUuid);
+
+    /**
+     * Returns uuids of the members that have been excluded during the cluster start.
+     *
+     * @return uuids of the members that have been excluded during the cluster start
+     */
+    Set<String> getExcludedMemberUuids();
+
+    /**
+     * Handles the uuid set of excluded members only if this member is also excluded, and triggers the member force start process.
+     *
+     * @param sender the member that has sent the excluded members set
+     * @param excludedMemberUuids uuids of the members that have been excluded during the cluster start
+     */
+    void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids);
 }

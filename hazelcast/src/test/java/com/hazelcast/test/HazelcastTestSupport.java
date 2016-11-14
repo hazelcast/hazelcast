@@ -503,7 +503,7 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected static String generateKeyForPartition(HazelcastInstance instance, int partitionId) {
+    public static String generateKeyForPartition(HazelcastInstance instance, int partitionId) {
         Cluster cluster = instance.getCluster();
         checkPartitionCountGreaterOrEqualMemberCount(instance);
 
@@ -626,6 +626,14 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             public void run() {
                assertAllInSafeState(instances);
+            }
+        }, timeoutInSeconds);
+    }
+
+    public static void waitAllForSafeState(final HazelcastInstance[] nodes, int timeoutInSeconds) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertAllInSafeState(asList(nodes));
             }
         }, timeoutInSeconds);
     }
