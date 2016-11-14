@@ -41,6 +41,7 @@ public class InternalPartitionImpl implements InternalPartition {
         this.thisAddress = thisAddress;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public InternalPartitionImpl(int partitionId, PartitionListener listener, Address thisAddress,
             Address[] addresses) {
         this(partitionId, listener, thisAddress);

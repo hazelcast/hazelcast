@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -36,6 +37,7 @@ public class PartitionTableView {
     private final Address[][] addresses;
     private final int version;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionTableView(Address[][] addresses, int version) {
         this.addresses = addresses;
         this.version = version;
