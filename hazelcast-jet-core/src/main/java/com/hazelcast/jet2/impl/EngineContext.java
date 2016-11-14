@@ -27,7 +27,6 @@ import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.jet2.impl.deployment.JetClassLoader;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ConcurrencyUtil;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -37,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;

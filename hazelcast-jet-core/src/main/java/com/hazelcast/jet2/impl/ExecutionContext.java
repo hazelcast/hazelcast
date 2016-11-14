@@ -28,6 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,7 +43,9 @@ import java.util.stream.IntStream;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet2.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet2.impl.OutboundCollector.compositeCollector;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -230,11 +233,20 @@ class ExecutionContext {
     private Map<Integer, int[]> consumerToPartitions(int localConsumerCount, boolean isEdgeDistributed) {
         Address thisAddress = nodeEngine.getThisAddress();
         IPartitionService ptionService = nodeEngine.getPartitionService();
-        int partitionCount = ptionService.getPartitionCount();
-        Map<Integer, List<Integer>> consumerToPartitions = IntStream
-                .range(0, partitionCount).boxed()
-                .filter(p -> !isEdgeDistributed || ptionService.getPartitionOwnerOrWait(p).equals(thisAddress))
-                .collect(groupingBy(p -> p % localConsumerCount));
+        final Map<Integer, List<Integer>> consumerToPartitions;
+        if (isEdgeDistributed) {
+            final List<Integer> localPartitions = ptionService.getMemberPartitions(thisAddress);
+            consumerToPartitions = IntStream
+                    .range(0, localPartitions.size()).boxed()
+                    .map(i -> new SimpleImmutableEntry<>(i, localPartitions.get(i)))
+                    .collect(groupingBy(e -> e.getKey() % localConsumerCount,
+                                        mapping(e -> e.getValue(), toList())));
+        } else {
+            consumerToPartitions = IntStream.range(0, ptionService.getPartitionCount()).boxed()
+                                            .collect(groupingBy(pId -> pId % localConsumerCount));
+        }
+        IntStream.range(0, localConsumerCount)
+                 .forEach(consumerId -> consumerToPartitions.computeIfAbsent(consumerId, x -> emptyList()));
         return toIntArrayMap(consumerToPartitions);
     }
 
