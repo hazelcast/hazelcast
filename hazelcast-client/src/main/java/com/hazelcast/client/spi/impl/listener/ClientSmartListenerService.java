@@ -96,7 +96,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                 invoke(registrationKey, member);
             } catch (Exception e) {
                 try {
-                    deregisterListener(registrationKey.getUserRegistrationId());
+                    deregister(registrationKey);
                 } catch (Exception cleanupException) {
                     logger.warning("Could not perform appropriate cleanup for " + registrationKey, cleanupException);
                 }
@@ -286,7 +286,8 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
 
             members.add(member);
 
-            for (ClientRegistrationKey registrationKey : registrations.keySet()) {
+            for (Map.Entry<ClientRegistrationKey, Map<Member, ClientEventRegistration>> entry : registrations.entrySet()) {
+                ClientRegistrationKey registrationKey = entry.getKey();
                 Map<Member, ClientEventRegistration> registrationMap = registrations.get(registrationKey);
                 // Only register if not already registered
                 if (null == registrationMap.get(member)) {
