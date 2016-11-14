@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -53,10 +54,10 @@ class ExecuteJobOperation extends AsyncOperation {
         EngineContext engineContext = service.getEngineContext(engineName);
         Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(dag);
         invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
-            .thenCompose(x ->
-                    invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId())))
-            .exceptionally(e -> e)
-            .thenAccept(this::doSendResponse);
+                .thenCompose(x ->
+                        invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId())))
+                .exceptionally(ExecuteJobOperation::peel)
+                .thenAccept(this::doSendResponse);
     }
 
     private CompletableFuture<Object> invokeForPlan(
@@ -104,5 +105,12 @@ class ExecuteJobOperation extends AsyncOperation {
             });
         }
         return compositeFuture;
+    }
+
+    private static Throwable peel(Throwable e) {
+        if (e instanceof CompletionException) {
+            return peel(e.getCause());
+        }
+        return e;
     }
 }

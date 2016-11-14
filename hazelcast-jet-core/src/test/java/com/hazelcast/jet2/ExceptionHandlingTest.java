@@ -23,8 +23,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,24 +46,16 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         factory = new TestHazelcastInstanceFactory();
     }
 
-    @AfterClass
-    public static void shutdownFactory() {
-        factory.shutdownAll();
-    }
-
-    @Before
-    public void setupEngine() {
-        instance = factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
-    }
-
     @After
     public void shutdown() {
-        instance.shutdown();
+        factory.shutdownAll();
     }
 
     @Test
     public void when_exceptionInProcessorSupplier_thenFailJob() {
+        instance = factory.newHazelcastInstance();
+        jetEngine = JetEngine.get(instance, "jetEngine");
+
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
@@ -73,10 +63,58 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
             throw e;
         };
         Vertex faulty = new Vertex("faulty", sup);
-        Vertex consumer = new Vertex("consumer", TestProcessors.Identity::new);
-        dag.addVertex(faulty)
-           .addVertex(consumer)
-           .addEdge(new Edge(faulty, consumer));
+        dag.addVertex(faulty);
+
+        // Then
+        expectedException.expect(e.getClass());
+        expectedException.expectMessage(e.getMessage());
+
+        // When
+        jetEngine.newJob(dag).execute();
+    }
+
+    @Test
+    public void when_exceptionInProcessorMetaSupplier_thenFailJob() {
+        instance = factory.newHazelcastInstance();
+        jetEngine = JetEngine.get(instance, "jetEngine");
+
+        // Given
+        DAG dag = new DAG();
+        RuntimeException e = new RuntimeException("mock error");
+        Vertex faulty = new Vertex("faulty", (ProcessorMetaSupplier) address -> {
+            throw e;
+        });
+        dag.addVertex(faulty);
+
+        // Then
+        expectedException.expect(e.getClass());
+        expectedException.expectMessage(e.getMessage());
+
+        // When
+        jetEngine.newJob(dag).execute();
+    }
+
+    @Test
+    public void when_exceptionInProcessorSupplierOnOtherNode_thenFailJob() {
+        factory.newHazelcastInstance();
+        instance = factory.newHazelcastInstance();
+        jetEngine = JetEngine.get(instance, "jetEngine");
+
+        // Given
+        DAG dag = new DAG();
+        RuntimeException e = new RuntimeException("mock error");
+        final int localPort = instance.getCluster().getLocalMember().getAddress().getPort();
+        Vertex faulty = new Vertex("faulty", (ProcessorMetaSupplier) address -> {
+            if (address.getPort() == localPort) {
+                return ProcessorSupplier.of(() -> new AbstractProcessor() {
+                });
+            } else {
+                return ProcessorSupplier.of(() -> {
+                    throw e;
+                });
+            }
+        });
+        dag.addVertex(faulty);
 
         // Then
         expectedException.expect(e.getClass());
@@ -88,6 +126,9 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
 
     @Test
     public void when_exceptionInNonBlockingTasklet_thenFailJob() {
+        instance = factory.newHazelcastInstance();
+        jetEngine = JetEngine.get(instance, "jetEngine");
+
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
@@ -107,6 +148,9 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
 
     @Test
     public void when_exceptionInBlockingTasklet_thenFailJob() {
+        instance = factory.newHazelcastInstance();
+        jetEngine = JetEngine.get(instance, "jetEngine");
+
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");

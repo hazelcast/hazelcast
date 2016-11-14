@@ -18,6 +18,8 @@ package com.hazelcast.jet2.impl;
 
 public abstract class AsyncOperation extends EngineOperation {
 
+    private long callId = -1;
+
     public AsyncOperation() {
     }
 
@@ -36,6 +38,13 @@ public abstract class AsyncOperation extends EngineOperation {
     }
 
     @Override
+    protected void onSetCallId() {
+        if (callId == -1) {
+            callId = getCallId();
+        }
+    }
+
+    @Override
     public void beforeRun() throws Exception {
         this.<JetService>getService().registerOperation(getCallerAddress(), getCallId());
     }
@@ -45,8 +54,8 @@ public abstract class AsyncOperation extends EngineOperation {
         try {
             doRun();
         } catch (Exception e) {
-            deregisterSelf();
-            throw e;
+            logError(e);
+            doSendResponse(e);
         }
     }
 
@@ -56,12 +65,8 @@ public abstract class AsyncOperation extends EngineOperation {
         try {
             sendResponse(value);
         } finally {
-            deregisterSelf();
+            this.<JetService>getService().deregisterOperation(getCallerAddress(), callId);
         }
-    }
-
-    private void deregisterSelf() {
-        this.<JetService>getService().deregisterOperation(getCallerAddress(), getCallId());
     }
 
 
