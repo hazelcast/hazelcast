@@ -28,13 +28,11 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.util.ConcurrencyUtil;
 
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker {
 
@@ -43,8 +41,10 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     private NodeEngineImpl nodeEngine;
 
-    private ConcurrentMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
-    private ConcurrentMap<Address, Map<Long, Boolean>> liveOperations = new ConcurrentHashMap<>();
+    // Type of variables is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
+    // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
+    private ConcurrentHashMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Address, Map<Long, Boolean>> liveOperations = new ConcurrentHashMap<>();
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -81,8 +81,9 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     @Override
     public void populate(LiveOperations liveOperations) {
-        this.liveOperations.entrySet().forEach(entry -> entry.getValue().keySet().stream().forEach(callId ->
-                liveOperations.add(entry.getKey(), callId)));
+        this.liveOperations.entrySet().forEach(entry ->
+                entry.getValue().keySet().stream().forEach(callId -> liveOperations.add(entry.getKey(), callId))
+        );
     }
 
     @Override
@@ -124,8 +125,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     }
 
     public void ensureContext(String name, JetEngineConfig config) {
-        ConcurrencyUtil.getOrPutSynchronized(engineContexts, name, engineContexts,
-                (key) -> new EngineContext(name, nodeEngine, config));
+        engineContexts.computeIfAbsent(name, (key) -> new EngineContext(name, nodeEngine, config));
     }
 
     public EngineContext getEngineContext(String name) {
@@ -133,8 +133,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     }
 
     void registerOperation(Address caller, long callId) {
-        Map<Long, Boolean> callIds = ConcurrencyUtil.getOrPutSynchronized(liveOperations, caller, liveOperations,
-                (key) -> new ConcurrentHashMap<>());
+        Map<Long, Boolean> callIds = liveOperations.computeIfAbsent(caller, (key) -> new ConcurrentHashMap<>());
         if (callIds.putIfAbsent(callId, true) != null) {
             throw new IllegalStateException("Duplicate operation for caller=" + caller + " callId=" + callId);
         }

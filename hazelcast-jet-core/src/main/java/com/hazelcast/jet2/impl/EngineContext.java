@@ -53,7 +53,9 @@ public class EngineContext {
     private DeploymentStore deploymentStore;
     private JetEngineConfig config;
 
-    private ConcurrentMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
+    // Type of variable is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
+    // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
+    private ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
 
     public EngineContext(String name, NodeEngine nodeEngine, JetEngineConfig config) {
         this.name = name;
@@ -80,8 +82,8 @@ public class EngineContext {
             final List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
             final List<Edge> inboundEdges = dag.getInboundEdges(vertex);
             final ProcessorMetaSupplier supplier = vertex.getSupplier();
-            supplier.init(ProcessorMetaSupplier.Context.of(
-                    nodeEngine, totalParallelism, perNodeParallelism));
+            supplier.init(ProcessorMetaSupplier.Context.of(nodeEngine, totalParallelism, perNodeParallelism));
+
             final List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getDestination());
                 return new EdgeDef(otherEndId, edge.getOutputOrdinal(), edge.getInputOrdinal(),
@@ -105,8 +107,8 @@ public class EngineContext {
         return plans;
     }
 
-    public ExecutionContext newExecutionContext(ExecutionPlan plan) {
-        return ConcurrencyUtil.getOrPutIfAbsent(executionContexts, plan.getId(), k -> new ExecutionContext(this, plan));
+    public void createAndRegisterExecutionContext(ExecutionPlan plan) {
+        executionContexts.computeIfAbsent(plan.getId(), k -> new ExecutionContext(this, plan));
     }
 
     public ExecutionContext getExecutionContext(long id) {
