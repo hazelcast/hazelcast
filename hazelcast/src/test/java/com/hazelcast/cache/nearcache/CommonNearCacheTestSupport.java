@@ -1,11 +1,11 @@
 package com.hazelcast.cache.nearcache;
 
-import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
-import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheDataRecordStore;
-import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
+import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
+import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.ExecutionService;

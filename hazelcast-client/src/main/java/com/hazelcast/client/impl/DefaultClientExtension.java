@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.cache.impl.nearcache.NearCacheManager;
-import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCacheManager;
+import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;

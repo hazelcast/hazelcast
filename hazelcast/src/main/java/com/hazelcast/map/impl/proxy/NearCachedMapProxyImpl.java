@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.proxy;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.EntryProcessor;
@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
