@@ -2858,6 +2858,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="cluster-data-recovery-policy" type="xs:string" minOccurs="0" maxOccurs="1"
+                        default="FULL_RECOVERY_ONLY">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies the policy that will be respected during hot restart cluster start.
+                        Valid values are;
+                        - FULL_RECOVERY_ONLY
+                        - PARTIAL_RECOVERY_MOST_RECENT
+                        - PARTIAL_RECOVERY_MOST_COMPLETE
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>

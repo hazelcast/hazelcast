@@ -1233,12 +1233,14 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         int parallelism = 3;
         int validationTimeout = 13131;
         int dataLoadTimeout = 45454;
+        HotRestartClusterDataRecoveryPolicy policy = HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_RECENT;
         String xml = HAZELCAST_START_TAG
                 + "<hot-restart-persistence enabled=\"true\">"
                 + "<base-dir>" + dir + "</base-dir>"
                 + "<parallelism>" + parallelism + "</parallelism>"
                 + "<validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
                 + "<data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
+                + "<cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
                 + "</hot-restart-persistence>\n" +
                 HAZELCAST_END_TAG;
 
@@ -1250,6 +1252,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(parallelism, hotRestartPersistenceConfig.getParallelism());
         assertEquals(validationTimeout, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
+        assertEquals(policy, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
     }
 
     @Test(expected = InvalidConfigurationException.class)
