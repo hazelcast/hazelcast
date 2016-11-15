@@ -207,17 +207,7 @@ public class ClusterJoinManager {
     private void executeJoinRequest(JoinRequest joinRequest, Connection connection) {
         clusterServiceLock.lock();
         try {
-            if (checkIfJoinRequestFromAnExistingMember(joinRequest, connection)) {
-                return;
-            }
-
-            final Address target = joinRequest.getAddress();
-            if (checkClusterStateBeforeJoin(target, joinRequest.getUuid())) {
-                return;
-            }
-
-            if (!node.getPartitionService().isMemberAllowedToJoin(target)) {
-                logger.warning(format("%s not allowed to join right now, it seems restarted.", target));
+            if (checkJoinRequest(joinRequest, connection)) {
                 return;
             }
 
@@ -225,7 +215,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            if (!validateJoinRequest(target)) {
+            if (!validateJoinRequest(joinRequest.getAddress())) {
                 return;
             }
 
@@ -235,7 +225,40 @@ public class ClusterJoinManager {
         }
     }
 
-    private boolean checkClusterStateBeforeJoin(Address address, String uuid) {
+    private boolean checkJoinRequest(JoinRequest joinRequest, Connection connection) {
+        if (checkIfJoinRequestFromAnExistingMember(joinRequest, connection)) {
+            return true;
+        }
+
+        Address target = joinRequest.getAddress();
+
+        if (checkClusterStateBeforeJoin(target, joinRequest.getUuid())) {
+            return true;
+        }
+
+        if (joinRequest.getExcludedMemberUuids().contains(node.getThisUuid())) {
+            logger.warning("cannot join " + target + " since this node is excluded in its list...");
+            node.getNodeExtension().handleExcludedMemberUuids(target, joinRequest.getExcludedMemberUuids());
+            return true;
+        }
+
+        if (node.getNodeExtension().getExcludedMemberUuids().contains(joinRequest.getUuid())) {
+            String msg =  target + " with uuid: " + joinRequest.getUuid() + " is excluded in partial start.";
+            OperationService operationService = nodeEngine.getOperationService();
+            BeforeJoinCheckFailureOperation op = new BeforeJoinCheckFailureOperation(msg);
+            operationService.send(op, target);
+            return true;
+        }
+
+        if (!node.getPartitionService().isMemberAllowedToJoin(target)) {
+            logger.warning(target + " not allowed to join right now, it seems restarted.");
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean checkClusterStateBeforeJoin(Address target, String uuid) {
         ClusterState state = clusterStateManager.getState();
         if (state == ClusterState.IN_TRANSITION) {
             logger.warning("Cluster state is in transition process. Join is not allowed until "
@@ -248,15 +271,15 @@ public class ClusterJoinManager {
             return false;
         }
 
-        if (clusterService.isMemberRemovedWhileClusterIsNotActive(address)) {
+        if (clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
             MemberImpl memberRemovedWhileClusterIsNotActive =
                     clusterService.getMemberRemovedWhileClusterIsNotActive(uuid);
 
             if (memberRemovedWhileClusterIsNotActive != null
-                    && !address.equals(memberRemovedWhileClusterIsNotActive.getAddress())) {
+                    && !target.equals(memberRemovedWhileClusterIsNotActive.getAddress())) {
 
                 logger.warning("Uuid " + uuid + " was being used by " + memberRemovedWhileClusterIsNotActive
-                        + " before. " + address + " is not allowed to join with a uuid which belongs to"
+                        + " before. " + target + " is not allowed to join with a uuid which belongs to"
                         + " a known passive member.");
 
                 return true;
@@ -269,11 +292,20 @@ public class ClusterJoinManager {
             return false;
         }
 
-        String message = "Cluster state either is locked or doesn't allow new members to join -> "
-                + clusterStateManager.stateToString();
-        logger.warning(message);
-        OperationService operationService = nodeEngine.getOperationService();
-        operationService.send(new BeforeJoinCheckFailureOperation(message), address);
+        if (node.getNodeExtension().isStartCompleted()) {
+            String message = "Cluster state either is locked or doesn't allow new members to join -> "
+                    + clusterStateManager.stateToString();
+            logger.warning(message);
+
+            OperationService operationService = nodeEngine.getOperationService();
+            BeforeJoinCheckFailureOperation op = new BeforeJoinCheckFailureOperation(message);
+            operationService.send(op, target);
+        } else {
+            String message = "Cluster state either is locked or doesn't allow new members to join -> "
+                    + clusterStateManager.stateToString() + ". Silently ignored join request of " + target
+                    + " because start not completed.";
+            logger.warning(message);
+        }
         return true;
     }
 
@@ -426,7 +458,7 @@ public class ClusterJoinManager {
         BuildInfo buildInfo = node.getBuildInfo();
         final Address thisAddress = node.getThisAddress();
         JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), thisAddress,
-                node.getLocalMember().getUuid(), node.isLiteMember(), node.createConfigCheck());
+                node.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
         return nodeEngine.getOperationService().send(new MasterDiscoveryOperation(joinMessage), toAddress);
     }
 
@@ -453,6 +485,14 @@ public class ClusterJoinManager {
             logger.info(format("Cannot send master answer to %s since master node is not known yet", target));
             return;
         }
+
+        if (masterAddress.equals(node.getThisAddress())
+                && node.getNodeExtension().isMemberExcluded(masterAddress, node.getThisUuid())) {
+            // I already now that I will do a force-start so I will not allow target to join me
+            logger.info("Cannot send master answer because " + target + " should not join to this master node.");
+            return;
+        }
+
         SetMasterOperation op = new SetMasterOperation(masterAddress);
         nodeEngine.getOperationService().send(op, target);
     }
@@ -465,6 +505,8 @@ public class ClusterJoinManager {
         }
 
         if (joinMessage.getUuid().equals(member.getUuid())) {
+            sendMasterAnswer(target);
+
             if (node.isMaster()) {
                 if (logger.isFineEnabled()) {
                     logger.fine(format("Ignoring join request, member already exists: %s", joinMessage));
@@ -480,8 +522,6 @@ public class ClusterJoinManager {
                         postJoinOp, clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(), partitionRuntimeState, false);
                 nodeEngine.getOperationService().send(operation, target);
-            } else {
-                sendMasterAnswer(target);
             }
             return true;
         }
@@ -511,7 +551,7 @@ public class ClusterJoinManager {
     private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {
         Member member = clusterService.getMember(joinMessage.getUuid());
         Address target = joinMessage.getAddress();
-        if (member != null) {
+        if (member != null && !member.getAddress().equals(joinMessage.getAddress())) {
             if (node.isMaster()) {
                 String message = "There's already an existing member " + member + " with the same UUID. "
                         + target + " is not allowed to join.";

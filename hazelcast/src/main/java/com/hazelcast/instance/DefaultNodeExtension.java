@@ -57,6 +57,7 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
@@ -247,7 +248,27 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public boolean triggerPartialStart() {
+        logger.warning("Partial start is available when hot restart is active!");
+        return false;
+    }
+
+    @Override
     public String createMemberUuid(Address address) {
         return UuidUtil.createMemberUuid(address);
+    }
+
+    @Override
+    public boolean isMemberExcluded(Address memberAddress, String memberUuid) {
+        return false;
+    }
+
+    @Override
+    public Set<String> getExcludedMemberUuids() {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids) {
     }
 }

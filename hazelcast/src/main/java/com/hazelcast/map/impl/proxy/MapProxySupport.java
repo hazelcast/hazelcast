@@ -200,6 +200,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapConfig.isStatisticsEnabled();
+        // it is safe to cache local member uuid here because cluster start must be already completed
         this.localMemberUuid = mapServiceContext.getNodeEngine().getLocalMember().getUuid();
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);

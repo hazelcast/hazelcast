@@ -221,6 +221,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     @Override
+    public String getThisUuid() {
+        return node.getThisUuid();
+    }
+
+    @Override
     public MemberImpl getLocalMember() {
         return node.getLocalMember();
     }
@@ -375,7 +380,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                     return;
                 }
 
-                String localMemberUuid = node.getLocalMember().getUuid();
+                String localMemberUuid = node.getThisUuid();
                 String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
                 if (localMemberUuid.equals(ownerUuid)) {
                     callDisconnectionOperation(endpoint);

@@ -147,7 +147,7 @@ public final class PhoneHome {
         Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
         parameterCreator.addParam("version", version);
-        parameterCreator.addParam("m", hazelcastNode.getLocalMember().getUuid());
+        parameterCreator.addParam("m", hazelcastNode.getThisUuid());
         parameterCreator.addParam("e", Boolean.toString(isEnterprise));
         parameterCreator.addParam("l", MD5Util.toMD5String(hazelcastNode.getConfig().getLicenseKey()));
         parameterCreator.addParam("p", downloadId);

@@ -305,10 +305,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         try {
             ClusterState clusterState = node.getClusterService().getClusterState();
             if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
+                logger.fine(address + " can join since cluster state is " + clusterState);
                 return true;
             }
 
             if (partitionStateManager.isPresentInPartitionTable(address)) {
+                logger.fine(address + " is in partition table");
                 return false;
             }
 
@@ -317,6 +319,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 final MigrationManager.MigrateTask migrateTask = (MigrationManager.MigrateTask) activeTask;
                 final MigrationInfo migrationInfo = migrateTask.migrationInfo;
                 if (address.equals(migrationInfo.getSource()) || address.equals(migrationInfo.getDestination())) {
+                    logger.fine(address + " cannot join since " + migrationInfo);
                     return false;
                 }
             }

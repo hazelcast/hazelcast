@@ -156,7 +156,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
     private ClientMessage handleAuthenticated() {
         if (isOwnerConnection()) {
             final String uuid = getUuid();
-            final String localMemberUUID = clientEngine.getLocalMember().getUuid();
+            final String localMemberUUID = clientEngine.getThisUuid();
 
             principal = new ClientPrincipal(uuid, localMemberUUID);
             reAuthLocal();
