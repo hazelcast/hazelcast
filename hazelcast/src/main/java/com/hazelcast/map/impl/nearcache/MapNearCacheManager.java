@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCacheManager;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;

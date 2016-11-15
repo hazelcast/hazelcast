@@ -1,7 +1,7 @@
 package com.hazelcast.cache.nearcache;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -15,7 +15,7 @@ import org.junit.Before;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.cache.impl.nearcache.NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS;
+import static com.hazelcast.internal.nearcache.NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

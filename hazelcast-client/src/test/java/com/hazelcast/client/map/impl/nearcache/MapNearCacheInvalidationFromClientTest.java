@@ -1,6 +1,6 @@
 package com.hazelcast.client.map.impl.nearcache;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;

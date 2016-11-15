@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;

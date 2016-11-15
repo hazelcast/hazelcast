@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.ClientExtension;

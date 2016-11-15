@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
-import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
+import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
