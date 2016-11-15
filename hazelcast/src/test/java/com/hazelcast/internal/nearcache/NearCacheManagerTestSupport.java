@@ -1,7 +1,5 @@
-package com.hazelcast.cache.nearcache;
+package com.hazelcast.internal.nearcache;
 
-import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.ExecutionService;

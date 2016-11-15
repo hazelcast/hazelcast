@@ -1,9 +1,8 @@
-package com.hazelcast.cache.nearcache;
+package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.internal.serialization.InternalSerializationService;
