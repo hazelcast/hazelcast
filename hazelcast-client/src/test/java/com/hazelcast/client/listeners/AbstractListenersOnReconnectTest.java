@@ -132,6 +132,10 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
         assertClusterSizeEventually(clusterSize, client);
 
+        // Since the connection may be disconnected from non-owner member, we need to wait enough time for any listener
+        // registration to the new member to be completed.
+        sleepSeconds(2);
+
         validateRegistrations(clusterSize, registrationId, getHazelcastClientInstanceImpl(client));
 
         validateListenerFunctionality(eventCount);
@@ -474,7 +478,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     private ClientConfig getSmartClientConfig() {
         ClientConfig clientConfig = createClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(20).setConnectionAttemptPeriod(2000);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(20).setConnectionAttemptPeriod(2000).setConnectionTimeout(5000);
         clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "4000");
         clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
         return clientConfig;

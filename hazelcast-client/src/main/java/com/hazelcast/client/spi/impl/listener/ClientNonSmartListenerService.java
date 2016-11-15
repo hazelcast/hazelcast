@@ -198,18 +198,18 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl {
             Member newOwnerMember = clientClusterService.getMember(newOwnerAddress);
             ClientEventRegistration firstRegistration = registrations.values().iterator().next();
             // Since this is non-smart client, all registrations are made against the same member
-            Address oldOwnerAddress = firstRegistration.getSubscriber().getAddress();
-            if (newOwnerAddress.equals(oldOwnerAddress)) {
+            Member oldMember = firstRegistration.getSubscriber();
+            String newOwnerMemberUuid = newOwnerMember.getUuid();
+            if (newOwnerMemberUuid.equals(oldMember.getUuid())) {
                 // connected to the same member as the owner
                 boolean ownerCleanedup = false;
                 for (Member member : clientUnregisteredMembers) {
-                    if (newOwnerMember.equals(member)) {
+                    if (newOwnerMemberUuid.equals(member.getUuid())) {
                         ownerCleanedup = true;
                         break;
                     }
                 }
                 if (!ownerCleanedup) {
-                    // TODO: what if the cleanup starts later, how do we protect it?
                     return true;
                 }
             }
