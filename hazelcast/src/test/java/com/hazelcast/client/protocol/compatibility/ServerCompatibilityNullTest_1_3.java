@@ -61,7 +61,7 @@ public class ServerCompatibilityNullTest_1_3 {
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
         }
         {
-            ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(aByte, null, null, null, aByte, aString);
+            ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(aByte, null, null, null, aByte, aString, null);
             int length = inputStream.readInt();
             byte[] bytes = new byte[length];
             inputStream.read(bytes);
@@ -82,7 +82,8 @@ public class ServerCompatibilityNullTest_1_3 {
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
         }
         {
-            ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, null, aByte, aString);
+            ClientMessage clientMessage = ClientAuthenticationCustomCodec
+                    .encodeResponse(aByte, null, null, null, aByte, aString, null);
             int length = inputStream.readInt();
             byte[] bytes = new byte[length];
             inputStream.read(bytes);

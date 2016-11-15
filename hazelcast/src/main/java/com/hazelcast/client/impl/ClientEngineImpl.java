@@ -98,7 +98,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
-    private static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
+    public static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
+
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int THREADS_PER_CORE = 20;
 
@@ -296,7 +297,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         try {
             nodeEngine.getExecutionService().schedule(new DestroyEndpointTask(deadMemberUuid),
                     ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
-
         } catch (RejectedExecutionException e) {
             if (logger.isFinestEnabled()) {
                 logger.finest(e);
@@ -311,7 +311,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public Collection<Client> getClients() {
         final HashSet<Client> clients = new HashSet<Client>();
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            clients.add((Client) endpoint);
+            clients.add(endpoint);
         }
         return clients;
     }
@@ -347,12 +347,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         ownershipMappings.clear();
     }
 
-    public void addOwnershipMapping(String clientUuid, String ownerUuid) {
-        ownershipMappings.put(clientUuid, ownerUuid);
+    public String addOwnershipMapping(String clientUuid, String ownerUuid) {
+        return ownershipMappings.put(clientUuid, ownerUuid);
     }
 
-    public void removeOwnershipMapping(String clientUuid) {
-        ownershipMappings.remove(clientUuid);
+    public boolean removeOwnershipMapping(String clientUuid, String memberUuid) {
+        return ownershipMappings.remove(clientUuid, memberUuid);
     }
 
     public TransactionManagerService getTransactionManagerService() {
@@ -371,19 +371,32 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         @Override
         public void connectionRemoved(Connection connection) {
             if (connection.isClient() && nodeEngine.isRunning()) {
-                ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
+                final ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
                 if (endpoint == null) {
+                    logger.finest("connectionRemoved: No endpoint for connection:" + connection);
                     return;
                 }
 
                 if (!endpoint.isFirstConnection()) {
+                    logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
                     return;
                 }
 
                 String localMemberUuid = node.getThisUuid();
                 String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
                 if (localMemberUuid.equals(ownerUuid)) {
-                    callDisconnectionOperation(endpoint);
+                    try {
+                        nodeEngine.getExecutionService().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                callDisconnectionOperation(endpoint);
+                            }
+                        }, ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
+                    } catch (RejectedExecutionException e) {
+                        if (logger.isFinestEnabled()) {
+                            logger.finest(e);
+                        }
+                    }
                 }
             }
         }
@@ -391,20 +404,29 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         private void callDisconnectionOperation(ClientEndpointImpl endpoint) {
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             OperationService operationService = nodeEngine.getOperationService();
-            ClientDisconnectionOperation op = createClientDisconnectionOperation(endpoint.getUuid());
+            String memberUuid = getLocalMember().getUuid();
+            String clientUuid = endpoint.getUuid();
+
+            String ownerMember = ownershipMappings.get(clientUuid);
+            if (!memberUuid.equals(ownerMember)) {
+                // do nothing if the owner already changed (double checked locking)
+                return;
+            }
+
+            ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid, memberUuid);
             operationService.run(op);
 
             for (Member member : memberList) {
                 if (!member.localMember()) {
-                    op = createClientDisconnectionOperation(endpoint.getUuid());
+                    op = createClientDisconnectionOperation(clientUuid, memberUuid);
                     operationService.send(op, member.getAddress());
                 }
             }
         }
     }
 
-    private ClientDisconnectionOperation createClientDisconnectionOperation(String clientUuid) {
-        ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid);
+    private ClientDisconnectionOperation createClientDisconnectionOperation(String clientUuid, String memberUuid) {
+        ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid, memberUuid);
         op.setNodeEngine(nodeEngine)
                 .setServiceName(SERVICE_NAME)
                 .setService(this)
@@ -433,7 +455,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 String memberUuid = entry.getValue();
                 if (deadMemberUuid.equals(memberUuid)) {
                     iterator.remove();
-                    ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid);
+                    ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid, deadMemberUuid);
                     nodeEngine.getOperationService().run(op);
                 }
             }

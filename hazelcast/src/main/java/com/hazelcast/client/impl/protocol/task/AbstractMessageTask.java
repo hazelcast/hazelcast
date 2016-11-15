@@ -45,7 +45,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected final ClientMessage clientMessage;
 
     protected final Connection connection;
-    protected final ClientEndpoint endpoint;
+    protected ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
     protected final InternalSerializationService serializationService;
     protected final ILogger logger;
@@ -53,6 +53,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected final ClientEngineImpl clientEngine;
     protected P parameters;
 
+    protected String clientUuid;
     private final Node node;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -65,6 +66,9 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = getEndpoint();
+        if (null != endpoint) {
+            this.clientUuid = endpoint.getUuid();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -73,6 +77,13 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     }
 
     protected ClientEndpoint getEndpoint() {
+        if (null != clientUuid) {
+            ClientEndpoint endpoint = endpointManager.getEndpoint(clientUuid);
+            if (null != endpoint) {
+                return endpoint;
+            }
+        }
+
         return endpointManager.getEndpoint(connection);
     }
 
@@ -92,14 +103,17 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     @Override
     public void run() {
         try {
-            if (endpoint == null) {
-                handleMissingEndpoint();
-            } else if (isAuthenticationMessage()) {
+            if (isAuthenticationMessage()) {
                 initializeAndProcessMessage();
-            } else if (!endpoint.isAuthenticated()) {
-                handleAuthenticationFailure();
             } else {
-                initializeAndProcessMessage();
+                ClientEndpoint endpoint = getEndpoint();
+                if (endpoint == null) {
+                    handleMissingEndpoint();
+                } else if (!endpoint.isAuthenticated()) {
+                    handleAuthenticationFailure();
+                } else {
+                    initializeAndProcessMessage();
+                }
             }
         } catch (Throwable e) {
             handleProcessingFailure(e);
@@ -157,9 +171,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected void handleProcessingFailure(Throwable throwable) {
         logProcessingFailure(throwable);
-        if (endpoint != null) {
-            sendClientMessage(throwable);
-        }
+        sendClientMessage(throwable);
     }
 
     private void interceptBefore(Credentials credentials) {
@@ -203,9 +215,16 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
         resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
-        final Connection connection = endpoint.getConnection();
-        // TODO: framing not implemented yet, should be split into frames before writing to connection
-        connection.write(resultClientMessage);
+        Connection endpointConnection = null;
+        ClientEndpoint endpoint = getEndpoint();
+        if (null != endpoint) {
+            endpointConnection = endpoint.getConnection();
+        }
+        if (null == endpointConnection) {
+            endpointConnection = connection;
+        }
+        //TODO framing not implemented yet, should be split into frames before writing to connection
+        endpointConnection.write(resultClientMessage);
     }
 
     protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {

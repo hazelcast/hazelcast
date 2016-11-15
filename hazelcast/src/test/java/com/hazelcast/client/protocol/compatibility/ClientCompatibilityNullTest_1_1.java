@@ -1,51 +1,39 @@
 package com.hazelcast.client.protocol.compatibility;
 
-import com.hazelcast.cache.impl.CacheEventData;
-import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.cache.impl.CacheEventType;
-import com.hazelcast.client.impl.MemberImpl;
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.*;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
-import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
-import com.hazelcast.mapreduce.JobPartitionState;
-import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.transaction.impl.xa.SerializableXID;
-
-import java.io.IOException;
-
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
-import java.io.IOException;
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.net.UnknownHostException;
-import javax.transaction.xa.Xid;
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.Arrays;
 
-import static org.junit.Assert.assertTrue;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aBoolean;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByte;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfEntry;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMember;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPartitionTable;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aQueryCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anAddress;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anInt;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anXid;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.cacheEventDatas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.datas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.distributedObjectInfos;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.jobPartitionStates;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheEventDatas;
 import static org.junit.Assert.assertFalse;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -83,6 +71,7 @@ public class ClientCompatibilityNullTest_1_1 {
             assertTrue(isEqual(null, params.ownerUuid));
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertFalse(params.serverHazelcastVersionExist);
+            assertFalse(params.clientUnregisteredMembersExist);
         }
 
         {
@@ -110,6 +99,7 @@ public class ClientCompatibilityNullTest_1_1 {
             assertTrue(isEqual(null, params.ownerUuid));
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertFalse(params.serverHazelcastVersionExist);
+            assertFalse(params.clientUnregisteredMembersExist);
         }
 
         {
@@ -127,30 +117,28 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ClientAddMembershipListenerCodecHandler
-                extends ClientAddMembershipListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.core.Member member, int eventType) {
-                assertTrue(isEqual(aMember, member));
-                assertTrue(isEqual(anInt, eventType));
-            }
-
-            @Override
-            public void handle(java.util.Collection<com.hazelcast.core.Member> members) {
-                assertTrue(isEqual(members, members));
-            }
-
-            @Override
-            public void handle(java.lang.String uuid, java.lang.String key, int operationType, java.lang.String value) {
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(aString, key));
-                assertTrue(isEqual(anInt, operationType));
-                assertTrue(isEqual(null, value));
-            }
-        }
         {
+            class ClientAddMembershipListenerCodecHandler
+                    extends ClientAddMembershipListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.core.Member member, int eventType) {
+                    assertTrue(isEqual(aMember, member));
+                    assertTrue(isEqual(anInt, eventType));
+                }
+
+                @Override
+                public void handle(java.util.Collection<com.hazelcast.core.Member> members) {
+                    assertTrue(isEqual(members, members));
+                }
+
+                @Override
+                public void handle(java.lang.String uuid, java.lang.String key, int operationType, java.lang.String value) {
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(aString, key));
+                    assertTrue(isEqual(anInt, operationType));
+                    assertTrue(isEqual(null, value));
+                }
+            }
             ClientAddMembershipListenerCodecHandler handler = new ClientAddMembershipListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -248,18 +236,16 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ClientAddPartitionLostListenerCodecHandler
-                extends ClientAddPartitionLostListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(int partitionId, int lostBackupCount, com.hazelcast.nio.Address source) {
-                assertTrue(isEqual(anInt, partitionId));
-                assertTrue(isEqual(anInt, lostBackupCount));
-                assertTrue(isEqual(null, source));
-            }
-        }
         {
+            class ClientAddPartitionLostListenerCodecHandler
+                    extends ClientAddPartitionLostListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(int partitionId, int lostBackupCount, com.hazelcast.nio.Address source) {
+                    assertTrue(isEqual(anInt, partitionId));
+                    assertTrue(isEqual(anInt, lostBackupCount));
+                    assertTrue(isEqual(null, source));
+                }
+            }
             ClientAddPartitionLostListenerCodecHandler handler = new ClientAddPartitionLostListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -316,18 +302,16 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ClientAddDistributedObjectListenerCodecHandler
-                extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(java.lang.String name, java.lang.String serviceName, java.lang.String eventType) {
-                assertTrue(isEqual(aString, name));
-                assertTrue(isEqual(aString, serviceName));
-                assertTrue(isEqual(aString, eventType));
-            }
-        }
         {
+            class ClientAddDistributedObjectListenerCodecHandler
+                    extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(java.lang.String name, java.lang.String serviceName, java.lang.String eventType) {
+                    assertTrue(isEqual(aString, name));
+                    assertTrue(isEqual(aString, serviceName));
+                    assertTrue(isEqual(aString, eventType));
+                }
+            }
             ClientAddDistributedObjectListenerCodecHandler handler = new ClientAddDistributedObjectListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -729,24 +713,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class MapAddEntryListenerToKeyWithPredicateCodecHandler
-                extends MapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class MapAddEntryListenerToKeyWithPredicateCodecHandler
+                    extends MapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             MapAddEntryListenerToKeyWithPredicateCodecHandler handler = new MapAddEntryListenerToKeyWithPredicateCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -772,24 +755,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class MapAddEntryListenerWithPredicateCodecHandler
-                extends MapAddEntryListenerWithPredicateCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class MapAddEntryListenerWithPredicateCodecHandler
+                    extends MapAddEntryListenerWithPredicateCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             MapAddEntryListenerWithPredicateCodecHandler handler = new MapAddEntryListenerWithPredicateCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -814,24 +796,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class MapAddEntryListenerToKeyCodecHandler
-                extends MapAddEntryListenerToKeyCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class MapAddEntryListenerToKeyCodecHandler
+                    extends MapAddEntryListenerToKeyCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             MapAddEntryListenerToKeyCodecHandler handler = new MapAddEntryListenerToKeyCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -856,24 +837,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class MapAddEntryListenerCodecHandler
-                extends MapAddEntryListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class MapAddEntryListenerCodecHandler
+                    extends MapAddEntryListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             MapAddEntryListenerCodecHandler handler = new MapAddEntryListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -898,21 +878,19 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class MapAddNearCacheEntryListenerCodecHandler
-                extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key) {
-                assertTrue(isEqual(null, key));
-            }
-
-            @Override
-            public void handle(java.util.Collection<com.hazelcast.nio.serialization.Data> keys) {
-                assertTrue(isEqual(datas, keys));
-            }
-        }
         {
+            class MapAddNearCacheEntryListenerCodecHandler
+                    extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key) {
+                    assertTrue(isEqual(null, key));
+                }
+
+                @Override
+                public void handle(java.util.Collection<com.hazelcast.nio.serialization.Data> keys) {
+                    assertTrue(isEqual(datas, keys));
+                }
+            }
             MapAddNearCacheEntryListenerCodecHandler handler = new MapAddNearCacheEntryListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -959,17 +937,15 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class MapAddPartitionLostListenerCodecHandler
-                extends MapAddPartitionLostListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(int partitionId, java.lang.String uuid) {
-                assertTrue(isEqual(anInt, partitionId));
-                assertTrue(isEqual(aString, uuid));
-            }
-        }
         {
+            class MapAddPartitionLostListenerCodecHandler
+                    extends MapAddPartitionLostListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(int partitionId, java.lang.String uuid) {
+                    assertTrue(isEqual(anInt, partitionId));
+                    assertTrue(isEqual(aString, uuid));
+                }
+            }
             MapAddPartitionLostListenerCodecHandler handler = new MapAddPartitionLostListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -1664,24 +1640,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class MultiMapAddEntryListenerToKeyCodecHandler
-                extends MultiMapAddEntryListenerToKeyCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class MultiMapAddEntryListenerToKeyCodecHandler
+                    extends MultiMapAddEntryListenerToKeyCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             MultiMapAddEntryListenerToKeyCodecHandler handler = new MultiMapAddEntryListenerToKeyCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -1706,24 +1681,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class MultiMapAddEntryListenerCodecHandler
-                extends MultiMapAddEntryListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class MultiMapAddEntryListenerCodecHandler
+                    extends MultiMapAddEntryListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             MultiMapAddEntryListenerCodecHandler handler = new MultiMapAddEntryListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -2131,18 +2105,16 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class QueueAddListenerCodecHandler
-                extends QueueAddListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType) {
-                assertTrue(isEqual(null, item));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, eventType));
-            }
-        }
         {
+            class QueueAddListenerCodecHandler
+                    extends QueueAddListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType) {
+                    assertTrue(isEqual(null, item));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, eventType));
+                }
+            }
             QueueAddListenerCodecHandler handler = new QueueAddListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -2230,18 +2202,16 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class TopicAddMessageListenerCodecHandler
-                extends TopicAddMessageListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data item, long publishTime, java.lang.String uuid) {
-                assertTrue(isEqual(aData, item));
-                assertTrue(isEqual(aLong, publishTime));
-                assertTrue(isEqual(aString, uuid));
-            }
-        }
         {
+            class TopicAddMessageListenerCodecHandler
+                    extends TopicAddMessageListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data item, long publishTime, java.lang.String uuid) {
+                    assertTrue(isEqual(aData, item));
+                    assertTrue(isEqual(aLong, publishTime));
+                    assertTrue(isEqual(aString, uuid));
+                }
+            }
             TopicAddMessageListenerCodecHandler handler = new TopicAddMessageListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -2441,18 +2411,16 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ListAddListenerCodecHandler
-                extends ListAddListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType) {
-                assertTrue(isEqual(null, item));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, eventType));
-            }
-        }
         {
+            class ListAddListenerCodecHandler
+                    extends ListAddListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType) {
+                    assertTrue(isEqual(null, item));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, eventType));
+                }
+            }
             ListAddListenerCodecHandler handler = new ListAddListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -2827,18 +2795,16 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class SetAddListenerCodecHandler
-                extends SetAddListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType) {
-                assertTrue(isEqual(null, item));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, eventType));
-            }
-        }
         {
+            class SetAddListenerCodecHandler
+                    extends SetAddListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType) {
+                    assertTrue(isEqual(null, item));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, eventType));
+                }
+            }
             SetAddListenerCodecHandler handler = new SetAddListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -3916,24 +3882,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ReplicatedMapAddEntryListenerToKeyWithPredicateCodecHandler
-                extends ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class ReplicatedMapAddEntryListenerToKeyWithPredicateCodecHandler
+                    extends ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             ReplicatedMapAddEntryListenerToKeyWithPredicateCodecHandler handler = new ReplicatedMapAddEntryListenerToKeyWithPredicateCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -3958,24 +3923,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ReplicatedMapAddEntryListenerWithPredicateCodecHandler
-                extends ReplicatedMapAddEntryListenerWithPredicateCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class ReplicatedMapAddEntryListenerWithPredicateCodecHandler
+                    extends ReplicatedMapAddEntryListenerWithPredicateCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             ReplicatedMapAddEntryListenerWithPredicateCodecHandler handler = new ReplicatedMapAddEntryListenerWithPredicateCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -4000,24 +3964,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ReplicatedMapAddEntryListenerToKeyCodecHandler
-                extends ReplicatedMapAddEntryListenerToKeyCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class ReplicatedMapAddEntryListenerToKeyCodecHandler
+                    extends ReplicatedMapAddEntryListenerToKeyCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             ReplicatedMapAddEntryListenerToKeyCodecHandler handler = new ReplicatedMapAddEntryListenerToKeyCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -4042,24 +4005,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ReplicatedMapAddEntryListenerCodecHandler
-                extends ReplicatedMapAddEntryListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class ReplicatedMapAddEntryListenerCodecHandler
+                    extends ReplicatedMapAddEntryListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             ReplicatedMapAddEntryListenerCodecHandler handler = new ReplicatedMapAddEntryListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -4148,24 +4110,23 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class ReplicatedMapAddNearCacheEntryListenerCodecHandler
-                extends ReplicatedMapAddNearCacheEntryListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
-                               com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data mergingValue,
-                               int eventType, java.lang.String uuid, int numberOfAffectedEntries) {
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, value));
-                assertTrue(isEqual(null, oldValue));
-                assertTrue(isEqual(null, mergingValue));
-                assertTrue(isEqual(anInt, eventType));
-                assertTrue(isEqual(aString, uuid));
-                assertTrue(isEqual(anInt, numberOfAffectedEntries));
-            }
-        }
         {
+            class ReplicatedMapAddNearCacheEntryListenerCodecHandler
+                    extends ReplicatedMapAddNearCacheEntryListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value,
+                                   com.hazelcast.nio.serialization.Data oldValue,
+                                   com.hazelcast.nio.serialization.Data mergingValue, int eventType, java.lang.String uuid,
+                                   int numberOfAffectedEntries) {
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, value));
+                    assertTrue(isEqual(null, oldValue));
+                    assertTrue(isEqual(null, mergingValue));
+                    assertTrue(isEqual(anInt, eventType));
+                    assertTrue(isEqual(aString, uuid));
+                    assertTrue(isEqual(anInt, numberOfAffectedEntries));
+                }
+            }
             ReplicatedMapAddNearCacheEntryListenerCodecHandler handler = new ReplicatedMapAddNearCacheEntryListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -4852,18 +4813,17 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class CacheAddEntryListenerCodecHandler
-                extends CacheAddEntryListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(int type, java.util.Collection<com.hazelcast.cache.impl.CacheEventData> keys, int completionId) {
-                assertTrue(isEqual(anInt, type));
-                assertTrue(isEqual(cacheEventDatas, keys));
-                assertTrue(isEqual(anInt, completionId));
-            }
-        }
         {
+            class CacheAddEntryListenerCodecHandler
+                    extends CacheAddEntryListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(int type, java.util.Collection<com.hazelcast.cache.impl.CacheEventData> keys,
+                                   int completionId) {
+                    assertTrue(isEqual(anInt, type));
+                    assertTrue(isEqual(cacheEventDatas, keys));
+                    assertTrue(isEqual(anInt, completionId));
+                }
+            }
             CacheAddEntryListenerCodecHandler handler = new CacheAddEntryListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -4888,26 +4848,24 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class CacheAddInvalidationListenerCodecHandler
-                extends CacheAddInvalidationListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(java.lang.String name, com.hazelcast.nio.serialization.Data key, java.lang.String sourceUuid) {
-                assertTrue(isEqual(aString, name));
-                assertTrue(isEqual(null, key));
-                assertTrue(isEqual(null, sourceUuid));
-            }
-
-            @Override
-            public void handle(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys,
-                               java.util.Collection<java.lang.String> sourceUuids) {
-                assertTrue(isEqual(aString, name));
-                assertTrue(isEqual(datas, keys));
-                assertTrue(isEqual(null, sourceUuids));
-            }
-        }
         {
+            class CacheAddInvalidationListenerCodecHandler
+                    extends CacheAddInvalidationListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(java.lang.String name, com.hazelcast.nio.serialization.Data key, java.lang.String sourceUuid) {
+                    assertTrue(isEqual(aString, name));
+                    assertTrue(isEqual(null, key));
+                    assertTrue(isEqual(null, sourceUuid));
+                }
+
+                @Override
+                public void handle(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys,
+                                   java.util.Collection<java.lang.String> sourceUuids) {
+                    assertTrue(isEqual(aString, name));
+                    assertTrue(isEqual(datas, keys));
+                    assertTrue(isEqual(null, sourceUuids));
+                }
+            }
             CacheAddInvalidationListenerCodecHandler handler = new CacheAddInvalidationListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -5300,17 +5258,15 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class CacheAddPartitionLostListenerCodecHandler
-                extends CacheAddPartitionLostListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(int partitionId, java.lang.String uuid) {
-                assertTrue(isEqual(anInt, partitionId));
-                assertTrue(isEqual(aString, uuid));
-            }
-        }
         {
+            class CacheAddPartitionLostListenerCodecHandler
+                    extends CacheAddPartitionLostListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(int partitionId, java.lang.String uuid) {
+                    assertTrue(isEqual(anInt, partitionId));
+                    assertTrue(isEqual(aString, uuid));
+                }
+            }
             CacheAddPartitionLostListenerCodecHandler handler = new CacheAddPartitionLostListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -5586,24 +5542,22 @@ public class ClientCompatibilityNullTest_1_1 {
                     .decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.response));
         }
-
-        class EnterpriseMapAddListenerCodecHandler
-                extends EnterpriseMapAddListenerCodec.AbstractEventHandler {
-
-            @Override
-            public void handle(com.hazelcast.map.impl.querycache.event.QueryCacheEventData data) {
-                assertTrue(isEqual(aQueryCacheEventData, data));
-            }
-
-            @Override
-            public void handle(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events,
-                               java.lang.String source, int partitionId) {
-                assertTrue(isEqual(queryCacheEventDatas, events));
-                assertTrue(isEqual(aString, source));
-                assertTrue(isEqual(anInt, partitionId));
-            }
-        }
         {
+            class EnterpriseMapAddListenerCodecHandler
+                    extends EnterpriseMapAddListenerCodec.AbstractEventHandler {
+                @Override
+                public void handle(com.hazelcast.map.impl.querycache.event.QueryCacheEventData data) {
+                    assertTrue(isEqual(aQueryCacheEventData, data));
+                }
+
+                @Override
+                public void handle(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events,
+                                   java.lang.String source, int partitionId) {
+                    assertTrue(isEqual(queryCacheEventDatas, events));
+                    assertTrue(isEqual(aString, source));
+                    assertTrue(isEqual(anInt, partitionId));
+                }
+            }
             EnterpriseMapAddListenerCodecHandler handler = new EnterpriseMapAddListenerCodecHandler();
             {
                 int length = inputStream.readInt();
@@ -5895,4 +5849,7 @@ public class ClientCompatibilityNullTest_1_1 {
 
     }
 }
+
+
+
 
