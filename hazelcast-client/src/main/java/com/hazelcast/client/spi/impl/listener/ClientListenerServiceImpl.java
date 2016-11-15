@@ -149,6 +149,11 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         }
     }
 
+    //called from ee.
+    public StripedExecutor getEventExecutor() {
+        return eventExecutor;
+    }
+
     //For Testing
     public abstract Collection<ClientEventRegistration> getActiveRegistrations(String uuid);
 
