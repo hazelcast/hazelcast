@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet2.DeploymentConfig;
+import com.hazelcast.jet2.ResourceConfig;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
@@ -27,25 +26,25 @@ import java.util.Set;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public final class ChunkIterator implements Iterator<ResourceChunk> {
-    private final int chunkSize;
-    private final Iterator<DeploymentConfig> configIterator;
+public final class ResourceIterator implements Iterator<ResourcePart> {
+    private final int partSize;
+    private final Iterator<ResourceConfig> configIterator;
     private InputStream inputStream;
-    private DeploymentConfig deploymentConfig;
-    private int sequence;
+    private ResourceConfig resourceConfig;
+    private int offset;
 
-    public ChunkIterator(Set<DeploymentConfig> deploymentConfigs, int chunkSize) {
-        this.configIterator = deploymentConfigs.iterator();
-        this.chunkSize = chunkSize;
+    public ResourceIterator(Set<ResourceConfig> resourceConfigs, int partSize) {
+        this.configIterator = resourceConfigs.iterator();
+        this.partSize = partSize;
     }
 
     private void switchFile() throws IOException {
         if (!configIterator.hasNext()) {
             throw new NoSuchElementException();
         }
-        deploymentConfig = configIterator.next();
-        inputStream = deploymentConfig.getUrl().openStream();
-        sequence = 0;
+        resourceConfig = configIterator.next();
+        inputStream = resourceConfig.getUrl().openStream();
+        offset = 0;
     }
 
     @Override
@@ -63,21 +62,22 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
     }
 
     @Override
-    public ResourceChunk next() {
+    public ResourcePart next() {
         try {
             if (inputStream == null) {
                 switchFile();
             }
 
-            byte[] bytes = readChunk(inputStream, chunkSize);
+            byte[] bytes = Util.read(inputStream, partSize);
 
             if (inputStream.available() <= 0) {
                 close(inputStream);
                 inputStream = null;
             }
-
             if (bytes.length > 0) {
-                return new ResourceChunk(bytes, deploymentConfig.getDescriptor(), sequence++);
+                ResourcePart part = new ResourcePart(resourceConfig.getDescriptor(), bytes, offset);
+                offset += bytes.length;
+                return part;
             } else {
                 throw new NoSuchElementException();
             }
@@ -89,14 +89,6 @@ public final class ChunkIterator implements Iterator<ResourceChunk> {
     private static void close(InputStream inputStream) throws IOException {
         if (inputStream != null) {
             inputStream.close();
-        }
-    }
-
-    private static byte[] readChunk(InputStream in, int chunkSize) throws IOException {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] b = new byte[chunkSize];
-            out.write(b, 0, in.read(b));
-            return out.toByteArray();
         }
     }
 

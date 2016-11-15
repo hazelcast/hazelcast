@@ -16,11 +16,37 @@
 
 package com.hazelcast.jet2.impl.client;
 
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.jet2.DAG;
+import com.hazelcast.jet2.JetEngine;
+import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.Job;
+import com.hazelcast.jet2.impl.JetEngineProxy;
+import com.hazelcast.jet2.impl.JobImpl;
 
-public class ClientJetEngineProxy extends ClientProxy {
+public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy {
     public ClientJetEngineProxy(String serviceName, String name) {
         super(serviceName, name);
+    }
+
+    @Override
+    public Job newJob(DAG dag) {
+        return new JobImpl(this, dag);
+    }
+
+    @Override
+    public void deployResources() {
+
+    }
+
+    @Override
+    public void execute(JobImpl job) {
+
+    }
+
+    public static JetEngine createEngine(String name, JetEngineConfig config, HazelcastClientProxy instance) {
+        throw new UnsupportedOperationException();
     }
 }
 

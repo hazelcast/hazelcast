@@ -16,26 +16,10 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.jet2.JetEngine;
 
-import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.Job;
+public interface JetEngineProxy extends JetEngine {
+    void deployResources();
 
-public class JobImpl implements Job {
-
-    private final JetEngineProxy jetEngine;
-    private final DAG dag;
-
-    public JobImpl(JetEngineProxy jetEngine, DAG dag) {
-        this.jetEngine = jetEngine;
-        this.dag = dag;
-    }
-
-    @Override
-    public void execute() {
-        jetEngine.execute(this);
-    }
-
-    public DAG getDag() {
-        return dag;
-    }
+    void execute(JobImpl job);
 }

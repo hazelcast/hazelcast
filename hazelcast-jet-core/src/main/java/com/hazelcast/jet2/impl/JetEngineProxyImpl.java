@@ -17,19 +17,25 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.DeploymentConfig;
 import com.hazelcast.jet2.JetEngine;
+import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Job;
-import com.hazelcast.jet2.impl.deployment.ChunkIterator;
-import com.hazelcast.jet2.impl.deployment.DeployChunkOperation;
-import com.hazelcast.jet2.impl.deployment.UpdateDeploymentCatalogOperation;
+import com.hazelcast.jet2.ResourceConfig;
+import com.hazelcast.jet2.impl.deployment.ResourceCompleteOperation;
+import com.hazelcast.jet2.impl.deployment.ResourceIterator;
+import com.hazelcast.jet2.impl.deployment.ResourceUpdateOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -39,21 +45,17 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public class JetEngineImpl extends AbstractDistributedObject<JetService> implements JetEngine {
+public class JetEngineProxyImpl extends AbstractDistributedObject<JetService> implements JetEngineProxy {
 
     private final String name;
     private final ILogger logger;
     private final EngineContext engineContext;
 
-    JetEngineImpl(String name, NodeEngine nodeEngine, JetService service) {
+    JetEngineProxyImpl(String name, NodeEngine nodeEngine, JetService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(JetEngine.class);
         engineContext = service.getEngineContext(name);
-    }
-
-    public void initializeDeployment() {
-        invokeDeployment(engineContext.getConfig().getDeploymentConfigs());
     }
 
     @Override
@@ -71,6 +73,16 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         return new JobImpl(this, dag);
     }
 
+    @Override
+    public void deployResources() {
+        final Set<ResourceConfig> resources = engineContext.getConfig().getResourceConfigs();
+        new ResourceIterator(resources, engineContext.getConfig().getResourcePartSize()).forEachRemaining(part ->
+                invokeOnCluster(() -> new ResourceUpdateOperation(name, part)));
+        resources.forEach(r ->
+                invokeOnCluster(() -> new ResourceCompleteOperation(name, r.getDescriptor())));
+    }
+
+    @Override
     public void execute(JobImpl job) {
         try {
             invokeLocal(new ExecuteJobOperation(getName(), job.getDag())).get();
@@ -92,13 +104,7 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
                       .map(member -> operationService
                               .createInvocationBuilder(JetService.SERVICE_NAME, supplier.get(), member.getAddress())
                               .<T>invoke())
-                      .map(JetEngineImpl::uncheckedGet).collect(Collectors.toList());
-    }
-
-    private void invokeDeployment(final Set<DeploymentConfig> resources) {
-        new ChunkIterator(resources, engineContext.getDeploymentStore().getChunkSize())
-                .forEachRemaining(chunk -> invokeOnCluster(() -> new DeployChunkOperation(name, chunk)));
-        resources.forEach(r -> invokeOnCluster(() -> new UpdateDeploymentCatalogOperation(name, r.getDescriptor())));
+                      .map(JetEngineProxyImpl::uncheckedGet).collect(Collectors.toList());
     }
 
     private static <T> T uncheckedGet(Future<T> f) {
@@ -107,6 +113,25 @@ public class JetEngineImpl extends AbstractDistributedObject<JetService> impleme
         } catch (InterruptedException | ExecutionException e) {
             throw rethrow(e);
         }
+    }
+
+    public static JetEngineProxy createEngine(String name, JetEngineConfig config, HazelcastInstanceImpl instanceImpl) {
+        NodeEngineImpl nodeEngine = instanceImpl.node.getNodeEngine();
+        InternalOperationService operationService = nodeEngine.getOperationService();
+        Set<Member> members = nodeEngine.getClusterService().getMembers();
+        ArrayList<InternalCompletableFuture> futures = new ArrayList<>();
+        for (Member member : members) {
+            EnsureExecutionContextOperation createExecutionContextOperation =
+                    new EnsureExecutionContextOperation(name, config);
+            futures.add(operationService.invokeOnTarget(JetService.SERVICE_NAME,
+                    createExecutionContextOperation, member.getAddress()));
+        }
+        for (InternalCompletableFuture future : futures) {
+            future.join();
+        }
+        JetEngineProxy jetEngine = instanceImpl.getDistributedObject(JetService.SERVICE_NAME, name);
+        jetEngine.deployResources();
+        return jetEngine;
     }
 }
 

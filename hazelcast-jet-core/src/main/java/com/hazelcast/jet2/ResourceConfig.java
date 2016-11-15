@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet2.impl.deployment.DeploymentDescriptor;
-import com.hazelcast.jet2.impl.deployment.DeploymentType;
+import com.hazelcast.jet2.impl.deployment.ResourceDescriptor;
+import com.hazelcast.jet2.impl.deployment.ResourceType;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,18 +28,18 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Represents deployment configuration
  */
-public class DeploymentConfig implements Serializable {
-    private DeploymentDescriptor descriptor;
+public class ResourceConfig implements Serializable {
+    private ResourceDescriptor descriptor;
     private URL url;
 
     /**
-     * @param url  url of the deployment
-     * @param id   id of the deployment
-     * @param type type of the deployment
+     * @param url  url of the resource
+     * @param id   id of the resource
+     * @param type type of the resource
      * @throws IOException if IO error happens
      */
-    public DeploymentConfig(URL url, String id, DeploymentType type) throws IOException {
-        this.descriptor = new DeploymentDescriptor(id, type);
+    public ResourceConfig(URL url, String id, ResourceType type) throws IOException {
+        this.descriptor = new ResourceDescriptor(id, type);
         this.url = url;
     }
 
@@ -47,11 +47,11 @@ public class DeploymentConfig implements Serializable {
      * @param clazz class file to deploy
      * @throws IOException if IO error happens
      */
-    public DeploymentConfig(Class clazz) throws IOException {
+    public ResourceConfig(Class clazz) throws IOException {
         String classAsPath = clazz.getName().replace('.', '/') + ".class";
         this.url = clazz.getClassLoader().getResource(classAsPath);
         checkNotNull(this.url, "URL is null");
-        this.descriptor = new DeploymentDescriptor(clazz.getName(), DeploymentType.CLASS);
+        this.descriptor = new ResourceDescriptor(clazz.getName(), ResourceType.CLASS);
     }
 
     /**
@@ -64,11 +64,11 @@ public class DeploymentConfig implements Serializable {
     }
 
     /**
-     * Returns the {@link DeploymentDescriptor} for the deployment
+     * Returns the {@link ResourceDescriptor} for the resource
      *
      * @return DeploymentDescriptor
      */
-    public DeploymentDescriptor getDescriptor() {
+    public ResourceDescriptor getDescriptor() {
         return descriptor;
     }
 

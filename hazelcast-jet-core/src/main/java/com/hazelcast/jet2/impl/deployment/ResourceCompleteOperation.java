@@ -17,41 +17,44 @@
 package com.hazelcast.jet2.impl.deployment;
 
 import com.hazelcast.jet2.impl.EngineOperation;
+import com.hazelcast.jet2.impl.EngineContext;
 import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class DeployChunkOperation extends EngineOperation {
-    private ResourceChunk chunk;
+public class ResourceCompleteOperation extends EngineOperation {
+    private ResourceDescriptor descriptor;
 
     @SuppressWarnings("unused")
-    public DeployChunkOperation() {
+    private ResourceCompleteOperation() {
+
     }
 
-    public DeployChunkOperation(String engineName, ResourceChunk chunk) {
+    public ResourceCompleteOperation(String engineName, ResourceDescriptor descriptor) {
         super(engineName);
-        this.chunk = chunk;
+
+        this.descriptor = descriptor;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.getEngineContext(engineName).getDeploymentStore().receiveChunk(chunk);
+        EngineContext engineContext = service.getEngineContext(engineName);
+        ResourceStore store = engineContext.getResourceStore();
+        store.completeResource(descriptor);
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
-        out.writeObject(chunk);
+        out.writeObject(descriptor);
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
-        chunk = in.readObject();
+        descriptor = in.readObject();
     }
 }

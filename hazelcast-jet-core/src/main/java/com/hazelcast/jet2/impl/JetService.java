@@ -67,7 +67,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        return new JetEngineImpl(objectName, nodeEngine, this);
+        return new JetEngineProxyImpl(objectName, nodeEngine, this);
 
     }
 
@@ -124,7 +124,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         return headerBytes;
     }
 
-    public void ensureContext(String name, JetEngineConfig config) {
+    void ensureContext(String name, JetEngineConfig config) {
         engineContexts.computeIfAbsent(name, (key) -> new EngineContext(name, nodeEngine, config));
     }
 

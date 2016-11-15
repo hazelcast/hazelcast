@@ -24,8 +24,8 @@ import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
-import com.hazelcast.jet2.impl.deployment.DeploymentStore;
 import com.hazelcast.jet2.impl.deployment.JetClassLoader;
+import com.hazelcast.jet2.impl.deployment.ResourceStore;
 import com.hazelcast.spi.NodeEngine;
 
 import java.security.AccessController;
@@ -42,13 +42,12 @@ import static java.util.stream.Collectors.toMap;
 
 public class EngineContext {
 
-    private static final int DEFAULT_RESOURCE_CHUNK_SIZE = 1 << 14;
 
     private final String name;
     private final IdGenerator idGenerator;
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
-    private DeploymentStore deploymentStore;
+    private ResourceStore resourceStore;
     private JetEngineConfig config;
 
     // Type of variable is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
@@ -60,9 +59,9 @@ public class EngineContext {
         this.nodeEngine = nodeEngine;
         this.config = config;
         this.idGenerator = nodeEngine.getHazelcastInstance().getIdGenerator("__jetIdGenerator" + name);
-        this.deploymentStore = new DeploymentStore(config.getDeploymentDirectory(), DEFAULT_RESOURCE_CHUNK_SIZE);
+        this.resourceStore = new ResourceStore(config.getResourceDirectory());
         final ClassLoader cl = AccessController.doPrivileged(
-                (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(deploymentStore));
+                (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(resourceStore));
         this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config, cl);
     }
 
@@ -125,8 +124,8 @@ public class EngineContext {
         return executionService;
     }
 
-    public DeploymentStore getDeploymentStore() {
-        return deploymentStore;
+    public ResourceStore getResourceStore() {
+        return resourceStore;
     }
 
     public JetEngineConfig getConfig() {
@@ -134,7 +133,7 @@ public class EngineContext {
     }
 
     public void destroy() {
-        deploymentStore.destroy();
+        resourceStore.destroy();
         executionService.shutdown();
     }
 

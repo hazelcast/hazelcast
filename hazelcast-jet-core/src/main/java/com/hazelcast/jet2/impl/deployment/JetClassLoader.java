@@ -32,12 +32,12 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 public class JetClassLoader extends ClassLoader {
     private final List<ClassLoaderDelegate> loaders = new ArrayList<>();
 
-    public JetClassLoader(DeploymentStore deploymentStore) {
+    public JetClassLoader(ResourceStore resourceStore) {
         loaders.add(new SystemLoader());
         loaders.add(new ParentLoader());
         loaders.add(new CurrentLoader());
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            loaders.add(new UserClassLoader(deploymentStore));
+            loaders.add(new UserClassLoader(resourceStore));
             return null;
         });
 
@@ -164,10 +164,10 @@ public class JetClassLoader extends ClassLoader {
     private class UserClassLoader implements ClassLoaderDelegate {
         private final Map<String, Class> classes = new HashMap<>();
 
-        private DeploymentStore store;
+        private ResourceStore store;
 
-        UserClassLoader(DeploymentStore deploymentStore) {
-            this.store = deploymentStore;
+        UserClassLoader(ResourceStore resourceStore) {
+            this.store = resourceStore;
         }
 
         @Override

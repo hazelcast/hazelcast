@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet2.impl.deployment.DeploymentType;
+import com.hazelcast.jet2.impl.deployment.ResourceType;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,9 +35,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class JetEngineConfig implements Serializable {
 
+    private static final int DEFAULT_RESOURCE_PART_SIZE = 1 << 14;
     private int parallelism = Runtime.getRuntime().availableProcessors();
-    private String deploymentDirectory;
-    private final Set<DeploymentConfig> deploymentConfigs = new HashSet<>();
+    private String resourceDirectory;
+    private final Set<ResourceConfig> resourceConfigs = new HashSet<>();
     private final Properties properties = new Properties();
 
     /**
@@ -65,15 +66,22 @@ public class JetEngineConfig implements Serializable {
     /**
      * @return the deployment directory used for storing deployed resources
      */
-    public String getDeploymentDirectory() {
-        return deploymentDirectory;
+    public String getResourceDirectory() {
+        return resourceDirectory;
     }
 
     /**
      * Sets the deployment directory used for storing deployed resources
      */
-    public void setDeploymentDirectory(String deploymentDirectory) {
-        this.deploymentDirectory = deploymentDirectory;
+    public void setResourceDirectory(String resourceDirectory) {
+        this.resourceDirectory = resourceDirectory;
+    }
+
+    /**
+     * Javadoc pending
+     */
+    public int getResourcePartSize() {
+        return DEFAULT_RESOURCE_PART_SIZE;
     }
 
     /**
@@ -86,7 +94,7 @@ public class JetEngineConfig implements Serializable {
 
         for (Class clazz : classes) {
             try {
-                deploymentConfigs.add(new DeploymentConfig(clazz));
+                resourceConfigs.add(new ResourceConfig(clazz));
             } catch (IOException e) {
                 throw rethrow(e);
             }
@@ -109,7 +117,7 @@ public class JetEngineConfig implements Serializable {
      * @param id  identifier for the JAR file
      */
     public void addJar(URL url, String id) {
-        add(url, id, DeploymentType.JAR);
+        add(url, id, ResourceType.JAR);
     }
 
     /**
@@ -185,7 +193,7 @@ public class JetEngineConfig implements Serializable {
      * @param id  identifier for the resource
      */
     public void addResource(URL url, String id) {
-        add(url, id, DeploymentType.DATA);
+        add(url, id, ResourceType.DATA);
     }
 
     /**
@@ -210,7 +218,7 @@ public class JetEngineConfig implements Serializable {
      */
     public void addResource(File file, String id) {
         try {
-            add(file.toURI().toURL(), id, DeploymentType.DATA);
+            add(file.toURI().toURL(), id, ResourceType.DATA);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -250,13 +258,13 @@ public class JetEngineConfig implements Serializable {
      *
      * @return deployment configuration set
      */
-    public Set<DeploymentConfig> getDeploymentConfigs() {
-        return deploymentConfigs;
+    public Set<ResourceConfig> getResourceConfigs() {
+        return resourceConfigs;
     }
 
-    private void add(URL url, String id, DeploymentType type) {
+    private void add(URL url, String id, ResourceType type) {
         try {
-            deploymentConfigs.add(new DeploymentConfig(url, id, type));
+            resourceConfigs.add(new ResourceConfig(url, id, type));
         } catch (IOException e) {
             throw rethrow(e);
         }

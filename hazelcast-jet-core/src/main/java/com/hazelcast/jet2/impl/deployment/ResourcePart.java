@@ -25,19 +25,19 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 
 
-public class ResourceChunk implements IdentifiedDataSerializable {
+public class ResourcePart implements IdentifiedDataSerializable {
     private byte[] bytes;
-    private DeploymentDescriptor descriptor;
-    private int sequence;
+    private ResourceDescriptor descriptor;
+    private int offset;
 
-    public ResourceChunk() {
+    public ResourcePart() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public ResourceChunk(byte[] bytes, DeploymentDescriptor descriptor, int sequence) {
+    public ResourcePart(ResourceDescriptor descriptor, byte[] bytes, int offset) {
         this.bytes = bytes;
         this.descriptor = descriptor;
-        this.sequence = sequence;
+        this.offset = offset;
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -45,26 +45,26 @@ public class ResourceChunk implements IdentifiedDataSerializable {
         return bytes;
     }
 
-    public DeploymentDescriptor getDescriptor() {
+    public ResourceDescriptor getDescriptor() {
         return descriptor;
     }
 
-    public int getSequence() {
-        return sequence;
+    public int getOffset() {
+        return offset;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeByteArray(bytes);
         out.writeObject(this.descriptor);
-        out.writeInt(sequence);
+        out.writeByteArray(bytes);
+        out.writeInt(offset);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        bytes = in.readByteArray();
         descriptor = in.readObject();
-        sequence = in.readInt();
+        bytes = in.readByteArray();
+        offset = in.readInt();
     }
 
     @Override
@@ -74,7 +74,7 @@ public class ResourceChunk implements IdentifiedDataSerializable {
 
     @Override
     public int getId() {
-        return JetDataSerializerHook.RESOURCE_CHUNK;
+        return JetDataSerializerHook.RESOURCE_PART;
     }
 
     @Override
@@ -82,7 +82,7 @@ public class ResourceChunk implements IdentifiedDataSerializable {
         return "Chunk{"
                 + "length=" + bytes.length
                 + ", descriptor=" + descriptor
-                + ", seq=" + sequence
+                + ", offset=" + offset
                 + '}';
     }
 

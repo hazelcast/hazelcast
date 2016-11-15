@@ -14,47 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl.deployment;
+package com.hazelcast.jet2.impl;
 
-import com.hazelcast.jet2.impl.EngineOperation;
-import com.hazelcast.jet2.impl.EngineContext;
-import com.hazelcast.jet2.impl.JetService;
+import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class UpdateDeploymentCatalogOperation extends EngineOperation {
-    private DeploymentDescriptor descriptor;
+public class EnsureExecutionContextOperation extends EngineOperation {
+
+    private JetEngineConfig config;
 
     @SuppressWarnings("unused")
-    public UpdateDeploymentCatalogOperation() {
-
+    public EnsureExecutionContextOperation() {
     }
 
-    public UpdateDeploymentCatalogOperation(String engineName, DeploymentDescriptor descriptor) {
+    public EnsureExecutionContextOperation(String engineName, JetEngineConfig config) {
         super(engineName);
-
-        this.descriptor = descriptor;
+        this.config = config;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext(engineName);
-        DeploymentStore deploymentStore = engineContext.getDeploymentStore();
-        deploymentStore.updateCatalog(descriptor);
+        service.ensureContext(engineName, config);
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(descriptor);
+
+        out.writeObject(config);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        descriptor = in.readObject();
+
+        config = in.readObject();
     }
 }

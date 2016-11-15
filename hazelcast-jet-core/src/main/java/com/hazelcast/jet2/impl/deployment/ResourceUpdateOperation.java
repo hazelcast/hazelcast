@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet2.impl.deployment;
 
-import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.impl.EngineOperation;
 import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,36 +23,35 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class EnsureExecutionContextOperation extends EngineOperation {
-
-    private JetEngineConfig config;
+public class ResourceUpdateOperation extends EngineOperation {
+    private ResourcePart part;
 
     @SuppressWarnings("unused")
-    public EnsureExecutionContextOperation() {
+    private ResourceUpdateOperation() {
     }
 
-    public EnsureExecutionContextOperation(String engineName, JetEngineConfig config) {
+    public ResourceUpdateOperation(String engineName, ResourcePart part) {
         super(engineName);
-        this.config = config;
+        this.part = part;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.ensureContext(engineName, config);
+        service.getEngineContext(engineName).getResourceStore().updateResource(part);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeObject(config);
+        out.writeObject(part);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        config = in.readObject();
+        part = in.readObject();
     }
 }

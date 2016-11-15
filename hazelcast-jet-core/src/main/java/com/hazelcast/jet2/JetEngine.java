@@ -19,17 +19,10 @@ package com.hazelcast.jet2;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.jet2.impl.JetEngineImpl;
-import com.hazelcast.jet2.impl.JetService;
-import com.hazelcast.jet2.impl.deployment.EnsureExecutionContextOperation;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import java.util.ArrayList;
-import java.util.Set;
+import com.hazelcast.jet2.impl.JetEngineProxyImpl;
+import com.hazelcast.jet2.impl.client.ClientJetEngineProxy;
 
 /**
  * Javadoc pending
@@ -44,39 +37,20 @@ public interface JetEngine extends DistributedObject {
     /**
      * @return the {@code JetEngine} with the given name
      */
-    static JetEngine get(HazelcastInstance instance, String name, JetEngineConfig config) {
-        HazelcastInstanceImpl instanceImpl = null;
-        if (instance instanceof HazelcastInstanceProxy) {
-            instanceImpl = ((HazelcastInstanceProxy) instance).getOriginal();
-        } else if (instance instanceof HazelcastInstanceImpl) {
-            instanceImpl = ((HazelcastInstanceImpl) instance);
-        } else if (instance instanceof HazelcastClientProxy) {
-            throw new UnsupportedOperationException();
-        }
-        if (instanceImpl != null) {
-            NodeEngineImpl nodeEngine = instanceImpl.node.getNodeEngine();
-            InternalOperationService operationService = nodeEngine.getOperationService();
-            Set<Member> members = nodeEngine.getClusterService().getMembers();
-            ArrayList<InternalCompletableFuture> futures = new ArrayList<>();
-            for (Member member : members) {
-                EnsureExecutionContextOperation createExecutionContextOperation =
-                        new EnsureExecutionContextOperation(name, config);
-                futures.add(operationService.invokeOnTarget(JetService.SERVICE_NAME,
-                        createExecutionContextOperation, member.getAddress()));
-            }
-            for (InternalCompletableFuture future : futures) {
-                future.join();
-            }
-        }
-        JetEngineImpl jetEngine = instance.getDistributedObject(JetService.SERVICE_NAME, name);
-        jetEngine.initializeDeployment();
-        return jetEngine;
+    static JetEngine get(HazelcastInstance instance, String name) {
+        return get(instance, name, new JetEngineConfig());
     }
 
     /**
      * @return the {@code JetEngine} with the given name
      */
-    static JetEngine get(HazelcastInstance instance, String name) {
-        return get(instance, name, new JetEngineConfig());
+    static JetEngine get(HazelcastInstance instance, String name, JetEngineConfig config) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return JetEngineProxyImpl.createEngine(name, config, (HazelcastInstanceImpl) instance);
+        }
+        if (instance instanceof HazelcastInstanceProxy) {
+            return JetEngineProxyImpl.createEngine(name, config, ((HazelcastInstanceProxy) instance).getOriginal());
+        }
+        return ClientJetEngineProxy.createEngine(name, config, (HazelcastClientProxy) instance);
     }
 }
