@@ -16,10 +16,6 @@
 
 package com.hazelcast.internal.nearcache.impl.store;
 
-import com.hazelcast.internal.eviction.MaxSizeChecker;
-import com.hazelcast.internal.nearcache.NearCacheRecord;
-import com.hazelcast.internal.nearcache.NearCacheRecordStore;
-import com.hazelcast.internal.nearcache.impl.NearCacheRecordMap;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.eviction.EvictionChecker;
@@ -27,6 +23,10 @@ import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.EvictionStrategy;
+import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
+import com.hazelcast.internal.nearcache.impl.NearCacheRecordMap;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -38,7 +38,6 @@ import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.ge
 import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
-
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>

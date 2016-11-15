@@ -1,7 +1,7 @@
 package com.hazelcast.internal.nearcache;
 
-import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

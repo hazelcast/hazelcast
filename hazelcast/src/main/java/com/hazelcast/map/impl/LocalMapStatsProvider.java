@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;

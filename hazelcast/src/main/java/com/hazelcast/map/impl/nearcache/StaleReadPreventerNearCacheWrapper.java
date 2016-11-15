@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.monitor.NearCacheStats;
 
 /**

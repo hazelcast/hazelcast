@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.nearcache.impl.store;
 
-import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheMaxSizeChecker;
 import com.hazelcast.spi.serialization.SerializationService;

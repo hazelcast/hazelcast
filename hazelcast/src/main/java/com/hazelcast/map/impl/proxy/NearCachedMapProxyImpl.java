@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.proxy;
 
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;

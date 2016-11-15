@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.eviction;
 
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
