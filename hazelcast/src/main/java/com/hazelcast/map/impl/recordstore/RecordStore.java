@@ -287,7 +287,7 @@ public interface RecordStore<R extends Record> {
      *
      * @param keys keys to be loaded.
      */
-    void loadAllFromStore(List<Data> keys);
+    void loadAllFromStore(List<Data> keys, boolean withUserSuppliedKeys);
 
     void updateLoadStatus(boolean lastBatch, Throwable exception);
 
