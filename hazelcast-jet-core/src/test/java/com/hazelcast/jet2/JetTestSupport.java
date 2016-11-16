@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.junit.After;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +38,17 @@ import java.util.stream.IntStream;
 public class JetTestSupport extends HazelcastTestSupport {
 
     protected static final ExecutorService executor = Executors.newCachedThreadPool();
+    protected TestHazelcastFactory factory;
+
+    @After
+    public void after() {
+        if (factory != null) {
+            factory.shutdownAll();
+        }
+    }
 
     protected HazelcastInstance createCluster(int nodeCount) throws ExecutionException, InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        factory = new TestHazelcastFactory();
         List<Future<HazelcastInstance>> futures = new ArrayList<>();
         for (int i = 0; i < nodeCount; i++) {
             futures.add(executor.submit((Callable<HazelcastInstance>) factory::newHazelcastInstance));

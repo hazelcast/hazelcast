@@ -62,7 +62,6 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-@Ignore
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int NODE_COUNT = 2;
@@ -146,16 +145,20 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
         Vertex generator = new Vertex("generator", Generator::new);
+        Vertex accumulator = new Vertex("accumulator", Combiner::new);
         Vertex combiner = new Vertex("combiner", Combiner::new);
         Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"));
 
         dag
                 .addVertex(producer)
                 .addVertex(generator)
+                .addVertex(accumulator)
                 .addVertex(combiner)
                 .addVertex(consumer)
                 .addEdge(new Edge(producer, generator))
-                .addEdge(new Edge(generator, combiner)
+                .addEdge(new Edge(generator, accumulator)
+                        .partitioned(item -> ((Entry) item).getKey()))
+                .addEdge(new Edge(accumulator, combiner)
                         .distributed()
                         .partitioned(item -> ((Entry) item).getKey()))
                 .addEdge(new Edge(combiner, consumer));

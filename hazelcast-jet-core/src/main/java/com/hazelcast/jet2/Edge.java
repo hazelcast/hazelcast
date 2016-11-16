@@ -30,9 +30,9 @@ import java.io.Serializable;
  */
 public class Edge implements IdentifiedDataSerializable {
 
-    private Vertex source;
+    private String source;
     private int outputOrdinal;
-    private Vertex destination;
+    private String destination;
     private int inputOrdinal;
 
     private int priority = Integer.MAX_VALUE;
@@ -66,17 +66,17 @@ public class Edge implements IdentifiedDataSerializable {
      */
     public Edge(Vertex source, int outputOrdinal,
                 Vertex destination, int inputOrdinal) {
-        this.source = source;
+        this.source = source.getName();
         this.outputOrdinal = outputOrdinal;
 
-        this.destination = destination;
+        this.destination = destination.getName();
         this.inputOrdinal = inputOrdinal;
     }
 
     /**
      * @return Javadoc pending
      */
-    public Vertex getSource() {
+    public String getSource() {
         return source;
     }
 
@@ -90,7 +90,7 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * @return Javadoc pending
      */
-    public Vertex getDestination() {
+    public String getDestination() {
         return destination;
     }
 
@@ -200,10 +200,10 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(source);
+        out.writeUTF(source);
         out.writeInt(outputOrdinal);
 
-        out.writeObject(destination);
+        out.writeUTF(destination);
         out.writeInt(inputOrdinal);
 
         out.writeInt(priority);
@@ -215,10 +215,10 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        source = in.readObject();
+        source = in.readUTF();
         outputOrdinal = in.readInt();
 
-        destination = in.readObject();
+        destination = in.readUTF();
         inputOrdinal = in.readInt();
 
         priority = in.readInt();

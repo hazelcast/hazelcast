@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import static com.hazelcast.jet2.impl.Util.read;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public final class ResourceIterator implements Iterator<ResourcePart> {
@@ -68,7 +69,7 @@ public final class ResourceIterator implements Iterator<ResourcePart> {
                 switchFile();
             }
 
-            byte[] bytes = Util.read(inputStream, partSize);
+            byte[] bytes = read(inputStream, partSize);
 
             if (inputStream.available() <= 0) {
                 close(inputStream);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -51,6 +52,9 @@ public interface JetEngine extends DistributedObject {
         if (instance instanceof HazelcastInstanceProxy) {
             return JetEngineProxyImpl.createEngine(name, config, ((HazelcastInstanceProxy) instance).getOriginal());
         }
-        return ClientJetEngineProxy.createEngine(name, config, (HazelcastClientProxy) instance);
+        if (instance instanceof HazelcastClientInstanceImpl) {
+            return ClientJetEngineProxy.createEngine(name, config, (HazelcastClientInstanceImpl) instance);
+        }
+        return ClientJetEngineProxy.createEngine(name, config, ((HazelcastClientProxy) instance).client);
     }
 }

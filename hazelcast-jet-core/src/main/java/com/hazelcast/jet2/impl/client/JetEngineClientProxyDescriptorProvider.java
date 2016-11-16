@@ -28,9 +28,7 @@ public class JetEngineClientProxyDescriptorProvider implements ClientProxyDescri
 
     @Override
     public ClientProxyDescriptor[] createClientProxyDescriptors() {
-        return new ClientProxyDescriptor[]{
-                new JetEngineClientProxyDescriptor()
-        };
+        return new ClientProxyDescriptor[]{new JetEngineClientProxyDescriptor()};
     }
 
     private static class JetEngineClientProxyDescriptor implements ClientProxyDescriptor {

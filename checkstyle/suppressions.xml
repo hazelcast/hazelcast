@@ -50,4 +50,9 @@
 
     <!-- Stream -->
     <suppress checks="FileLength" files="com/hazelcast/jet/stream/Distributed.java"/>
+
+    <!-- Client Protocol Templates -->
+    <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"
+              files="com/hazelcast/client/impl/protocol/template/.*Template\.java$"/>
+
 </suppressions>

@@ -31,7 +31,6 @@ import com.hazelcast.spi.NodeEngine;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public class EngineContext {
-
 
     private final String name;
     private final IdGenerator idGenerator;
@@ -70,14 +68,14 @@ public class EngineContext {
         final int clusterSize = members.size();
         final long planId = idGenerator.newId();
         final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(planId)));
-        final Map<Vertex, Integer> vertexIdMap = assignVertexIds(dag);
-        for (Map.Entry<Vertex, Integer> entry : vertexIdMap.entrySet()) {
-            final Vertex vertex = entry.getKey();
+        final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
+        for (Map.Entry<String, Integer> entry : vertexIdMap.entrySet()) {
+            final Vertex vertex = dag.getVertex(entry.getKey());
             final int vertexId = entry.getValue();
             final int perNodeParallelism = getParallelism(vertex, config);
             final int totalParallelism = perNodeParallelism * clusterSize;
-            final List<Edge> outboundEdges = dag.getOutboundEdges(vertex);
-            final List<Edge> inboundEdges = dag.getInboundEdges(vertex);
+            final List<Edge> outboundEdges = dag.getOutboundEdges(vertex.getName());
+            final List<Edge> inboundEdges = dag.getInboundEdges(vertex.getName());
             final ProcessorMetaSupplier supplier = vertex.getSupplier();
             supplier.init(ProcessorMetaSupplier.Context.of(nodeEngine, totalParallelism, perNodeParallelism));
 
@@ -141,12 +139,10 @@ public class EngineContext {
         return edge.isDistributed() && nodeEngine.getClusterService().getSize() > 1;
     }
 
-    private static Map<Vertex, Integer> assignVertexIds(DAG dag) {
-        int vertexId = 0;
-        Map<Vertex, Integer> vertexIdMap = new LinkedHashMap<>();
-        for (Iterator<Vertex> iterator = dag.iterator(); iterator.hasNext(); vertexId++) {
-            vertexIdMap.put(iterator.next(), vertexId);
-        }
+    private static Map<String, Integer> assignVertexIds(DAG dag) {
+        Map<String, Integer> vertexIdMap = new LinkedHashMap<>();
+        final int[] vertexId = {0};
+        dag.forEach(v -> vertexIdMap.put(v.getName(), vertexId[0]++));
         return vertexIdMap;
     }
 

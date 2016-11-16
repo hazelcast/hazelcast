@@ -16,15 +16,11 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,25 +31,12 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-@Ignore
 public class ClientTest extends StreamTestSupport {
 
-    private TestHazelcastFactory testHazelcastFactory;
-
-    @Before
-    public void setUp() throws Exception {
-        testHazelcastFactory = new TestHazelcastFactory();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        testHazelcastFactory.shutdownAll();
-
-    }
 
     @Test
     public void testStreamMapFromClient() throws Exception {
-        HazelcastInstance client = testHazelcastFactory.newHazelcastClient();
+        HazelcastInstance client = factory.newHazelcastClient();
 
         IMap<String, Integer> map = client.getMap(randomName());
         IStreamMap<String, Integer> streamMap = IStreamMap.streamMap(map);
@@ -70,7 +53,7 @@ public class ClientTest extends StreamTestSupport {
 
     @Test
     public void testStreamListFromClient() throws Exception {
-        HazelcastInstance client = testHazelcastFactory.newHazelcastClient();
+        HazelcastInstance client = factory.newHazelcastClient();
 
         IList<Integer> list = client.getList(randomName());
         IStreamList<Integer> streamList = IStreamList.streamList(list);

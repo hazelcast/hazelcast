@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -66,19 +67,16 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Adds the given edge
      */
     public DAG addEdge(Edge edge) {
-        if (!vertices.containsValue(edge.getSource())) {
-            throw new IllegalArgumentException(
-                    "Input vertex " + edge.getSource() + " doesn't exist!");
+        if (!containsVertex(edge.getSource())) {
+            throw new IllegalArgumentException("Source vertex " + edge.getSource() + " doesn't exist!");
         }
 
-        if (!vertices.containsValue(edge.getDestination())) {
-            throw new IllegalArgumentException(
-                    "Output vertex " + edge.getDestination() + " doesn't exist!");
+        if (!containsVertex(edge.getDestination())) {
+            throw new IllegalArgumentException("Destination vertex " + edge.getDestination() + " doesn't exist!");
         }
 
         if (edges.contains(edge)) {
-            throw new IllegalArgumentException(
-                    "Edge " + edge + " already defined!");
+            throw new IllegalArgumentException("Edge " + edge + " already defined!");
         }
 
         if (getInboundEdges(edge.getDestination())
@@ -93,22 +91,21 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                     + edge.getOutputOrdinal() + " exists");
         }
 
-
         edges.add(edge);
         return this;
     }
 
     /**
-     * Returns the input edges for a given vertex
+     * Returns the input edges for a given vertexId
      */
-    public List<Edge> getInboundEdges(Vertex vertex) {
-        if (!vertex.equals(getVertex(vertex.getName()))) {
-            throw new IllegalArgumentException("Given vertex " + vertex + " could not be found in this DAG");
+    public List<Edge> getInboundEdges(String vertexId) {
+        if (!containsVertex(vertexId)) {
+            throw new IllegalArgumentException("Given vertexId " + vertexId + " could not be found in this DAG");
         }
 
         List<Edge> inputEdges = new ArrayList<>();
         for (Edge edge : edges) {
-            if (edge.getDestination().equals(vertex)) {
+            if (edge.getDestination().equals(vertexId)) {
                 inputEdges.add(edge);
             }
         }
@@ -116,16 +113,16 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     /**
-     * Returns the output edges for a given vertex
+     * Returns the output edges for a given vertexId
      */
-    public List<Edge> getOutboundEdges(Vertex vertex) {
-        if (!vertex.equals(getVertex(vertex.getName()))) {
-            throw new IllegalArgumentException("Given vertex " + vertex + " could not be found in this DAG");
+    public List<Edge> getOutboundEdges(String vertexId) {
+        if (!containsVertex(vertexId)) {
+            throw new IllegalArgumentException("Given vertexId " + vertexId + " could not be found in this DAG");
         }
 
         List<Edge> inputEdges = new ArrayList<>();
         for (Edge edge : edges) {
-            if (edge.getSource().equals(vertex)) {
+            if (edge.getSource().equals(vertexId)) {
                 inputEdges.add(edge);
             }
         }
@@ -160,44 +157,23 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     void validate() throws IllegalArgumentException {
         topologicalVertexStack.clear();
         checkTrue(!vertices.isEmpty(), "DAG must contain at least one vertex");
-        Map<Vertex, List<Edge>> outgoingEdgeMap = edges.stream().collect(groupingBy(Edge::getSource));
+        Map<String, List<Edge>> outgoingEdgeMap = edges.stream().collect(groupingBy(Edge::getSource));
         validateAgainstMultigraph(edges);
         validateOutboundEdgeOrdinals(outgoingEdgeMap);
         validateInboundEdgeOrdinals(edges.stream().collect(groupingBy(Edge::getDestination)));
         detectCycles(outgoingEdgeMap,
                 vertices.entrySet().stream()
-                        .collect(toMap(Map.Entry::getValue, v -> new AnnotatedVertex(v.getValue()))));
+                        .collect(toMap(Entry::getKey, v -> new AnnotatedVertex(v.getValue()))));
     }
 
-    private static void validateAgainstMultigraph(Collection<Edge> edges) {
-        final Set<SimpleImmutableEntry<String, String>> distinctSrcDest = new HashSet<>();
-        for (Edge e : edges) {
-            final SimpleImmutableEntry<String, String> srcDestId =
-                    new SimpleImmutableEntry<>(e.getSource().getName(), e.getDestination().getName());
-            if (!distinctSrcDest.add(srcDestId)) {
-                throw new IllegalArgumentException(
-                        String.format("Duplicate edge: %s -> %s", srcDestId.getKey(), srcDestId.getValue()));
-            }
-        }
+    private boolean containsVertex(String vertexName) {
+        return vertices.containsKey(vertexName);
     }
 
-    private static void validateInboundEdgeOrdinals(Map<Vertex, List<Edge>> incomingEdgeMap) {
-        for (Map.Entry<Vertex, List<Edge>> entry : incomingEdgeMap.entrySet()) {
-            Vertex vertex = entry.getKey();
-            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getInputOrdinal).sorted().toArray();
-            for (int i = 0; i < ordinals.length; i++) {
-                if (ordinals[i] != i) {
-                    throw new IllegalArgumentException("Input ordinals for vertex " + vertex + " are not ordered. "
-                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
-                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
-                }
-            }
-        }
-    }
 
-    private static void validateOutboundEdgeOrdinals(Map<Vertex, List<Edge>> outgoingEdgeMap) {
-        for (Map.Entry<Vertex, List<Edge>> entry : outgoingEdgeMap.entrySet()) {
-            Vertex vertex = entry.getKey();
+    private static void validateOutboundEdgeOrdinals(Map<String, List<Edge>> outgoingEdgeMap) {
+        for (Map.Entry<String, List<Edge>> entry : outgoingEdgeMap.entrySet()) {
+            String vertex = entry.getKey();
             int[] ordinals = entry.getValue().stream().mapToInt(Edge::getOutputOrdinal).sorted().toArray();
             for (int i = 0; i < ordinals.length; i++) {
                 if (ordinals[i] != i) {
@@ -211,7 +187,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     // Adaptation of Tarjan's algorithm for connected components.
     // http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
-    private void detectCycles(Map<Vertex, List<Edge>> edgeMap, Map<Vertex, AnnotatedVertex> vertexMap)
+    private void detectCycles(Map<String, List<Edge>> edgeMap, Map<String, AnnotatedVertex> vertexMap)
             throws IllegalArgumentException {
         // boxed integer so it is passed by reference.
         Integer nextIndex = 0;
@@ -228,8 +204,8 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     // http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
     private void strongConnect(
             AnnotatedVertex av,
-            Map<Vertex, AnnotatedVertex> vertexMap,
-            Map<Vertex, List<Edge>> edgeMap,
+            Map<String, AnnotatedVertex> vertexMap,
+            Map<String, List<Edge>> edgeMap,
             Deque<AnnotatedVertex> stack, Integer nextIndex) throws IllegalArgumentException {
         av.index = nextIndex;
         av.lowlink = nextIndex;
@@ -237,10 +213,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         stack.addLast(av);
         av.onstack = true;
 
-        List<Edge> edges = edgeMap.get(av.v);
+        List<Edge> edges = edgeMap.get(av.v.getName());
 
         if (edges != null) {
-            for (Edge e : edgeMap.get(av.v)) {
+            for (Edge e : edgeMap.get(av.v.getName())) {
                 AnnotatedVertex outVertex = vertexMap.get(e.getDestination());
 
                 if (outVertex.index == -1) {
@@ -270,9 +246,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 throw new IllegalArgumentException("DAG contains a cycle: " + message);
             } else {
                 // detect self-cycle
-                if (edgeMap.containsKey(pop.v)) {
-                    for (Edge edge : edgeMap.get(pop.v)) {
-                        if (edge.getDestination().equals(pop.v)) {
+                if (edgeMap.containsKey(pop.v.getName())) {
+                    for (Edge edge : edgeMap.get(pop.v.getName())) {
+                        if (edge.getDestination().equals(pop.v.getName())) {
                             throw new IllegalArgumentException("DAG contains a self-cycle on vertex:" + pop.v.getName());
                         }
                     }
@@ -324,6 +300,32 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     @Override
     public int getId() {
         return JetDataSerializerHook.DAG;
+    }
+
+    private static void validateAgainstMultigraph(Collection<Edge> edges) {
+        final Set<SimpleImmutableEntry<String, String>> distinctSrcDest = new HashSet<>();
+        for (Edge e : edges) {
+            final SimpleImmutableEntry<String, String> srcDestId =
+                    new SimpleImmutableEntry<>(e.getSource(), e.getDestination());
+            if (!distinctSrcDest.add(srcDestId)) {
+                throw new IllegalArgumentException(
+                        String.format("Duplicate edge: %s -> %s", srcDestId.getKey(), srcDestId.getValue()));
+            }
+        }
+    }
+
+    private static void validateInboundEdgeOrdinals(Map<String, List<Edge>> incomingEdgeMap) {
+        for (Map.Entry<String, List<Edge>> entry : incomingEdgeMap.entrySet()) {
+            String vertex = entry.getKey();
+            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getInputOrdinal).sorted().toArray();
+            for (int i = 0; i < ordinals.length; i++) {
+                if (ordinals[i] != i) {
+                    throw new IllegalArgumentException("Input ordinals for vertex " + vertex + " are not ordered. "
+                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
+                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
+                }
+            }
+        }
     }
 
     private static final class AnnotatedVertex {

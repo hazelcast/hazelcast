@@ -50,7 +50,7 @@ public abstract class AsyncOperation extends EngineOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public final void run() throws Exception {
         try {
             doRun();
         } catch (Exception e) {

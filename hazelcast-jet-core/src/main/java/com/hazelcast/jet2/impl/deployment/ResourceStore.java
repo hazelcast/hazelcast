@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import static com.hazelcast.jet2.impl.Util.read;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class ResourceStore {
@@ -87,10 +88,10 @@ public class ResourceStore {
                     loadJarStream(stream, resourceUri);
                     return;
                 case CLASS:
-                    classEntries.put(descriptor.getId(), new ClassLoaderEntry(Util.read(stream), resourceUri));
+                    classEntries.put(descriptor.getId(), new ClassLoaderEntry(read(stream), resourceUri));
                     return;
                 case DATA:
-                    dataEntries.put(descriptor.getId(), new ClassLoaderEntry(Util.read(stream), resourceUri));
+                    dataEntries.put(descriptor.getId(), new ClassLoaderEntry(read(stream), resourceUri));
                     return;
                 default:
                     throw new AssertionError("Unhandled resource type " + descriptor.getResourceType());

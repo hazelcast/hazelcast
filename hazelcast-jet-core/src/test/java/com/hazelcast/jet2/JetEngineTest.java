@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.impl.AbstractProcessor;
@@ -25,7 +26,6 @@ import com.hazelcast.jet2.impl.ListConsumer;
 import com.hazelcast.jet2.impl.ListProducer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -46,17 +46,17 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 public class JetEngineTest extends HazelcastTestSupport {
 
-    private static TestHazelcastInstanceFactory factory;
+    private static TestHazelcastFactory factory;
     private JetEngine jetEngine;
     private HazelcastInstance instance;
 
     @BeforeClass
     public static void setupFactory() {
-        factory = new TestHazelcastInstanceFactory();
+        factory = new TestHazelcastFactory();
     }
 
-    @AfterClass
-    public static void shutdownFactory() {
+    @After
+    public void shutdownFactory() {
         factory.shutdownAll();
     }
 
@@ -66,10 +66,18 @@ public class JetEngineTest extends HazelcastTestSupport {
         jetEngine = JetEngine.get(instance, "jetEngine");
     }
 
-    @After
-    public void shutdown() {
-        instance.shutdown();
+    @Test
+    public void testExecuteFromClient() {
+        HazelcastInstance client = factory.newHazelcastClient();
+        JetEngine clientEngine = JetEngine.get(client, "clientEngine");
+        producerConsumerTest(clientEngine);
     }
+
+    @Test
+    public void testExecuteFromMember() {
+        producerConsumerTest(jetEngine);
+    }
+
 
     @Test
     public void test() {
@@ -77,7 +85,7 @@ public class JetEngineTest extends HazelcastTestSupport {
         List<Integer> evens = IntStream.range(0, 10).filter(f -> f % 2 == 0).
                 boxed().collect(Collectors.toList());
         List<Integer> odds = IntStream.range(0, 10).filter(f -> f % 2 != 0)
-                .boxed().collect(Collectors.toList());
+                                      .boxed().collect(Collectors.toList());
 
         DAG dag = new DAG();
         Vertex evensVertex = new Vertex("evens", () -> new ListProducer(evens, 4))
@@ -117,8 +125,8 @@ public class JetEngineTest extends HazelcastTestSupport {
         System.out.println(rhsConsumer.getList());
     }
 
-    @Test
-    public void testMapProducerConsumer() {
+
+    private void producerConsumerTest(JetEngine engine) {
         IMap<Object, Object> map = instance.getMap("numbers");
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
@@ -132,11 +140,10 @@ public class JetEngineTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        jetEngine.newJob(dag).execute();
-        jetEngine.newJob(dag).execute();
+        engine.newJob(dag).execute();
 
         IMap<Object, Object> consumerMap = instance.getMap("consumer");
         assertEquals(map.entrySet(), consumerMap.entrySet());

@@ -22,15 +22,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class EnsureExecutionContextOperation extends EngineOperation {
+public class CreateEngineIfAbsentOperation extends EngineOperation {
 
     private JetEngineConfig config;
 
     @SuppressWarnings("unused")
-    public EnsureExecutionContextOperation() {
+    public CreateEngineIfAbsentOperation() {
     }
 
-    public EnsureExecutionContextOperation(String engineName, JetEngineConfig config) {
+    public CreateEngineIfAbsentOperation(String engineName, JetEngineConfig config) {
         super(engineName);
         this.config = config;
     }

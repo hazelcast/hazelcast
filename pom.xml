@@ -30,6 +30,7 @@
     <modules>
         <module>hazelcast-jet-all</module>
         <module>hazelcast-jet-cascading</module>
+        <module>hazelcast-jet-client-protocol</module>
         <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-core-old</module>
         <module>hazelcast-jet-java.util.stream</module>

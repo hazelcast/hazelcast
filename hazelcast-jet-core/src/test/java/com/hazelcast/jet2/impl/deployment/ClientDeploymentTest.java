@@ -11,7 +11,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @Category(QuickTest.class)
-@Ignore
 @RunWith(HazelcastParallelClassRunner.class)
 public class ClientDeploymentTest extends AbstractDeploymentTest {
 

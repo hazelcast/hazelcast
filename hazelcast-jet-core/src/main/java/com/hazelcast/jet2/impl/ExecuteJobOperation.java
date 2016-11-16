@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet2.DAG;
@@ -25,21 +24,19 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet2.impl.Util.allOf;
 import static java.util.stream.Collectors.toList;
 
-class ExecuteJobOperation extends AsyncOperation {
+public class ExecuteJobOperation extends AsyncOperation {
 
     private DAG dag;
 
-    ExecuteJobOperation(String engineName, DAG dag) {
+    public ExecuteJobOperation(String engineName, DAG dag) {
         super(engineName);
         this.dag = dag;
     }
@@ -56,7 +53,7 @@ class ExecuteJobOperation extends AsyncOperation {
         invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
                 .thenCompose(x ->
                         invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId())))
-                .exceptionally(ExecuteJobOperation::peel)
+                .exceptionally(Util::peel)
                 .thenAccept(this::doSendResponse);
     }
 
@@ -84,33 +81,5 @@ class ExecuteJobOperation extends AsyncOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         dag = in.readObject();
-    }
-
-    private static CompletableFuture<Object> allOf(Collection<ICompletableFuture> futures) {
-        final CompletableFuture<Object> compositeFuture = new CompletableFuture<>();
-        final AtomicInteger completionLatch = new AtomicInteger(futures.size());
-        for (ICompletableFuture future : futures) {
-            future.andThen(new ExecutionCallback() {
-                @Override
-                public void onResponse(Object response) {
-                    if (completionLatch.decrementAndGet() == 0) {
-                        compositeFuture.complete(true);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    compositeFuture.completeExceptionally(t);
-                }
-            });
-        }
-        return compositeFuture;
-    }
-
-    private static Throwable peel(Throwable e) {
-        if (e instanceof CompletionException) {
-            return peel(e.getCause());
-        }
-        return e;
     }
 }

@@ -19,7 +19,5 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.JetEngine;
 
 public interface JetEngineProxy extends JetEngine {
-    void deployResources();
-
     void execute(JobImpl job);
 }
