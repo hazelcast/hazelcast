@@ -52,7 +52,7 @@ abstract class AbstractJetMessageTask<P> extends AbstractInvocationMessageTask<P
     }
 
     @Override
-    protected final ClientMessage encodeResponse(Object o) {
+    protected ClientMessage encodeResponse(Object o) {
         return encoder.apply(o);
     }
 

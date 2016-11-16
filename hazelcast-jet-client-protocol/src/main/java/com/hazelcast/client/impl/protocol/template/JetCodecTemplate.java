@@ -24,8 +24,8 @@ import com.hazelcast.nio.serialization.Data;
 @GenerateCodec(id = TemplateConstants.JET_TEMPLATE_ID, name = "Jet", ns = "Jet")
 public interface JetCodecTemplate {
 
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
-    void createEngineIfAbsent(String engineName, Data config);
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    Object createEngineIfAbsent(String engineName, Data config);
 
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void executeJob(String engineName, Data dag);

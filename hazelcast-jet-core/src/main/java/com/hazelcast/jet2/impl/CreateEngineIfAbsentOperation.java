@@ -25,6 +25,7 @@ import java.io.IOException;
 public class CreateEngineIfAbsentOperation extends EngineOperation {
 
     private JetEngineConfig config;
+    private boolean response;
 
     @SuppressWarnings("unused")
     public CreateEngineIfAbsentOperation() {
@@ -38,7 +39,12 @@ public class CreateEngineIfAbsentOperation extends EngineOperation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.ensureContext(engineName, config);
+        response = service.createContextIfAbsent(engineName, config);
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override

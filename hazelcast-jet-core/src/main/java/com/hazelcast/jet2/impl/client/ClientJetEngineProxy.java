@@ -71,10 +71,16 @@ public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy 
 
     public static JetEngine createEngine(String name, JetEngineConfig config, HazelcastClientInstanceImpl client) {
         final Data data = client.getSerializationService().toData(config);
-        invokeOnCluster(client, () -> JetCreateEngineIfAbsentCodec.encodeRequest(name, data));
+        boolean engineCreated =
+                invokeOnCluster(client, () -> JetCreateEngineIfAbsentCodec.encodeRequest(name, data))
+                        .stream()
+                        .map(m -> JetCreateEngineIfAbsentCodec.decodeResponse(m).response)
+                        .anyMatch(p -> p);
         ClientJetEngineProxy proxy = client.getDistributedObject(JetService.SERVICE_NAME, name);
-        //TODO:  check if engine already exists or not to avoid deploying resources each time
-        proxy.deployResources(config);
+
+        if (engineCreated) {
+            proxy.deployResources(config);
+        }
         return proxy;
     }
 

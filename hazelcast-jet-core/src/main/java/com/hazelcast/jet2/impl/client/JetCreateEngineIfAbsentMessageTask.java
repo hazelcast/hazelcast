@@ -27,7 +27,8 @@ public class JetCreateEngineIfAbsentMessageTask
         extends AbstractJetMessageTask<JetCreateEngineIfAbsentCodec.RequestParameters> {
     protected JetCreateEngineIfAbsentMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
-                JetCreateEngineIfAbsentCodec::decodeRequest, o -> JetCreateEngineIfAbsentCodec.encodeResponse());
+                JetCreateEngineIfAbsentCodec::decodeRequest,
+                o -> JetCreateEngineIfAbsentCodec.encodeResponse((boolean) o));
     }
 
     @Override

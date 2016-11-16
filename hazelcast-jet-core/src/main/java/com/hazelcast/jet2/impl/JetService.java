@@ -124,8 +124,13 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         return headerBytes;
     }
 
-    void ensureContext(String name, JetEngineConfig config) {
-        engineContexts.computeIfAbsent(name, (key) -> new EngineContext(name, nodeEngine, config));
+    boolean createContextIfAbsent(String name, JetEngineConfig config) {
+        boolean[] isNewContext = new boolean[1];
+        engineContexts.computeIfAbsent(name, (key) -> {
+            isNewContext[0] = true;
+            return new EngineContext(name, nodeEngine, config);
+        });
+        return isNewContext[0];
     }
 
     public EngineContext getEngineContext(String name) {

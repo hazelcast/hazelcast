@@ -95,10 +95,11 @@ public class JetEngineProxyImpl extends AbstractDistributedObject<JetService> im
 
     public static JetEngineProxy createEngine(String name, JetEngineConfig config, HazelcastInstanceImpl instanceImpl) {
         NodeEngineImpl nodeEngine = instanceImpl.node.getNodeEngine();
-        invokeOnCluster(nodeEngine, () -> new CreateEngineIfAbsentOperation(name, config));
+        List<Boolean> engineCreated = invokeOnCluster(nodeEngine, () -> new CreateEngineIfAbsentOperation(name, config));
         JetEngineProxyImpl jetEngine = instanceImpl.getDistributedObject(JetService.SERVICE_NAME, name);
-        //TODO:  check if engine already exists or not to avoid deploying resources each time
-        jetEngine.deployResources();
+        if (engineCreated.stream().anyMatch(b -> b)) {
+            jetEngine.deployResources();
+        }
         return jetEngine;
     }
 
