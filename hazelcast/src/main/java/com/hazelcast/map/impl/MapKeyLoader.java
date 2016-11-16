@@ -335,7 +335,7 @@ public class MapKeyLoader {
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
 
-            MapOperation op = operationProvider.createLoadAllOperation(mapName, keys, replaceExistingValues);
+            MapOperation op = operationProvider.createLoadAllOperation(mapName, keys, replaceExistingValues, false);
 
             InternalCompletableFuture<Object> future = opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
             futures.add(future);

@@ -68,7 +68,8 @@ public interface MapOperationProvider {
 
     MapOperation createGetOperation(String name, Data dataKey);
 
-    MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues);
+    MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues,
+                                        boolean withUserSuppliedKeys);
 
     MapOperation createPutAllOperation(String name, MapEntries mapEntries);
 
