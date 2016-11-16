@@ -56,6 +56,13 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
+    //CHECKSTYLE:OFF
+    // this belongs to com.hazelcast.map.impl.operation.LoadAllOperation,
+    // but we cannot add a new field into the maintenance branch due backward compatibility.
+    // the flag is defined in this case to indicate this particular bit is already occupied
+    // and cannot be used for other purposes.
+    protected static final int BITMASK_LOAD_ALL_WITH_USER_SUPPLIED_KEYS = 1 << 7;
+    //CHECKSTYLE:ON
 
     // serialized
     private String serviceName;
@@ -369,7 +376,7 @@ public abstract class Operation implements DataSerializable {
         return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass());
     }
 
-    void setFlag(boolean value, int bitmask) {
+    protected void setFlag(boolean value, int bitmask) {
         if (value) {
             flags |= bitmask;
         } else {
@@ -377,7 +384,7 @@ public abstract class Operation implements DataSerializable {
         }
     }
 
-    boolean isFlagSet(int bitmask) {
+    protected boolean isFlagSet(int bitmask) {
         return (flags & bitmask) != 0;
     }
 
