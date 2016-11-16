@@ -37,4 +37,12 @@ public class TestCollectionUtils {
         List<T> list = Arrays.asList(items);
         return new HashSet<T>(list);
     }
+
+    public static Set<Integer> setOfValuesBetween(int from, int to) {
+        HashSet<Integer> set = new HashSet<Integer>();
+        for (int i = from; i < to; i++) {
+            set.add(i);
+        }
+        return set;
+    }
 }

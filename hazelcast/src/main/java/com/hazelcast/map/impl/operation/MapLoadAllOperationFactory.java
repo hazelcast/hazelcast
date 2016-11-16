@@ -48,7 +48,7 @@ public class MapLoadAllOperationFactory implements OperationFactory {
 
     @Override
     public Operation createOperation() {
-        return new LoadAllOperation(name, keys, replaceExistingValues);
+        return new LoadAllOperation(name, keys, replaceExistingValues, true);
     }
 
     @Override
