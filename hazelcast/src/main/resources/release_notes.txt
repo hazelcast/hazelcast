@@ -79,6 +79,7 @@ This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
 *3.7.3 Fixes*
 
+- MapLoader.loadAll(true) does not reload after reloading with given keys. [9263]
 - The scheduler in TcpIpConnectionManager is not completing after the method instance.shutdown() is called. [9187]
 - EntryView's storeTime and expirationTime are not available even though they are set. [9166]
 - NullPointerException is thrown while deleting an entry through Entry Processor by setting value to NULL. [9135]
