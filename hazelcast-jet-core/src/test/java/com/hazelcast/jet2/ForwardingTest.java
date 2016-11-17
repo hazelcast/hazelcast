@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet2.Util.executeAndPeel;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -62,7 +63,7 @@ public class ForwardingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_single() {
+    public void when_single() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
 
@@ -84,7 +85,7 @@ public class ForwardingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_broadcast() {
+    public void when_broadcast() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
 
@@ -104,7 +105,7 @@ public class ForwardingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_partitioned() {
+    public void when_partitioned() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
 
@@ -125,8 +126,8 @@ public class ForwardingTest extends HazelcastTestSupport {
 
     }
 
-    private void execute(DAG dag) {
-        jetEngine.newJob(dag).execute();
+    private void execute(DAG dag) throws Throwable {
+        executeAndPeel(jetEngine.newJob(dag));
     }
 
     private static class ProcSupplier implements ProcessorSupplier {

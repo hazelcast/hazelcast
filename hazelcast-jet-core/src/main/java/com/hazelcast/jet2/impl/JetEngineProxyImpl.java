@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet2.DAG;
@@ -35,24 +36,27 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-
 public class JetEngineProxyImpl extends AbstractDistributedObject<JetService> implements JetEngineProxy {
+
+    public static final String ID_GENERATOR_PREFIX = "__jet_";
 
     private final String name;
     private final ILogger logger;
     private final EngineContext engineContext;
+    private final IdGenerator idGenerator;
 
     JetEngineProxyImpl(String name, NodeEngine nodeEngine, JetService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(JetEngine.class);
         engineContext = service.getEngineContext(name);
+
+        idGenerator = nodeEngine.getHazelcastInstance().getIdGenerator(ID_GENERATOR_PREFIX + name);
+
     }
 
     @Override
@@ -71,12 +75,8 @@ public class JetEngineProxyImpl extends AbstractDistributedObject<JetService> im
     }
 
     @Override
-    public void execute(JobImpl job) {
-        try {
-            invokeLocal(new ExecuteJobOperation(getName(), job.getDag())).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw rethrow(e);
-        }
+    public Future<Void> execute(JobImpl job) {
+        return invokeLocal(new ExecuteJobOperation(getName(), idGenerator.newId(), job.getDag()));
     }
 
     private void deployResources() {

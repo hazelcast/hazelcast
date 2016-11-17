@@ -35,9 +35,11 @@ import static java.util.stream.Collectors.toList;
 public class ExecuteJobOperation extends AsyncOperation {
 
     private DAG dag;
+    private long executionId;
 
-    public ExecuteJobOperation(String engineName, DAG dag) {
+    public ExecuteJobOperation(String engineName, long executionId, DAG dag) {
         super(engineName);
+        this.executionId = executionId;
         this.dag = dag;
     }
 
@@ -49,7 +51,7 @@ public class ExecuteJobOperation extends AsyncOperation {
     protected void doRun() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(dag);
+        Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(executionId, dag);
         invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
                 .thenCompose(x ->
                         invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId())))
@@ -74,12 +76,14 @@ public class ExecuteJobOperation extends AsyncOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeLong(executionId);
         out.writeObject(dag);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        executionId = in.readLong();
         dag = in.readObject();
     }
 }

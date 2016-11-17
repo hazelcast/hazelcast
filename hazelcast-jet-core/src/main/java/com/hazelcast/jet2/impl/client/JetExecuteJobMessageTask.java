@@ -32,7 +32,7 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
 
     @Override
     protected Operation prepareOperation() {
-        return new ExecuteJobOperation(parameters.engineName, toObject(parameters.dag));
+        return new ExecuteJobOperation(parameters.engineName, parameters.executionId, toObject(parameters.dag));
     }
 
     @Override

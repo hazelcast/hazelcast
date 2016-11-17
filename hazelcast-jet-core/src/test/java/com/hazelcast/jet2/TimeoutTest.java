@@ -32,6 +32,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet2.Util.executeAndPeel;
+
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class TimeoutTest extends HazelcastTestSupport {
@@ -53,7 +55,7 @@ public class TimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_slowRunningOperationOnSingleNode_then_shouldNotTimeout() {
+    public void when_slowRunningOperationOnSingleNode_then_shouldNotTimeout() throws Throwable {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
@@ -63,11 +65,11 @@ public class TimeoutTest extends HazelcastTestSupport {
         dag.addVertex(slow);
 
         // When
-        jetEngine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
     }
 
     @Test
-    public void when_slowRunningOperationOnMultipleNodes_thenShouldNotTimeout() {
+    public void when_slowRunningOperationOnMultipleNodes_thenShouldNotTimeout() throws Throwable {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
@@ -79,7 +81,7 @@ public class TimeoutTest extends HazelcastTestSupport {
         dag.addVertex(slow);
 
         // When
-        jetEngine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
     }
 
     private static class SlowProcessor extends AbstractProducer {

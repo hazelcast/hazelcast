@@ -40,6 +40,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet2.Util.executeAndPeel;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -67,20 +68,20 @@ public class JetEngineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecuteFromClient() {
+    public void testExecuteFromClient() throws Throwable {
         HazelcastInstance client = factory.newHazelcastClient();
         JetEngine clientEngine = JetEngine.get(client, "clientEngine");
         producerConsumerTest(clientEngine);
     }
 
     @Test
-    public void testExecuteFromMember() {
+    public void testExecuteFromMember() throws Throwable {
         producerConsumerTest(jetEngine);
     }
 
 
     @Test
-    public void test() {
+    public void test() throws Throwable {
 
         List<Integer> evens = IntStream.range(0, 10).filter(f -> f % 2 == 0).
                 boxed().collect(Collectors.toList());
@@ -119,14 +120,14 @@ public class JetEngineTest extends HazelcastTestSupport {
                 .addEdge(new Edge(processor, 0, lhs, 0))
                 .addEdge(new Edge(processor, 1, rhs, 0));
 
-        jetEngine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
 
         System.out.println(lhsConsumer.getList());
         System.out.println(rhsConsumer.getList());
     }
 
 
-    private void producerConsumerTest(JetEngine engine) {
+    private void producerConsumerTest(JetEngine engine) throws Throwable {
         IMap<Object, Object> map = instance.getMap("numbers");
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
@@ -143,7 +144,7 @@ public class JetEngineTest extends HazelcastTestSupport {
            .addVertex(consumer)
            .addEdge(new Edge(producer, consumer));
 
-        engine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
 
         IMap<Object, Object> consumerMap = instance.getMap("consumer");
         assertEquals(map.entrySet(), consumerMap.entrySet());

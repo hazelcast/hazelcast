@@ -57,6 +57,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.jet2.Util.executeAndPeel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -142,7 +143,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
 
     @Test
-    public void test() {
+    public void test() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
         Vertex generator = new Vertex("generator", Generator::new);
@@ -173,7 +174,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         logger.info("Warming up...");
         while (true) {
             long start = System.currentTimeMillis();
-            jetEngine.newJob(dag).execute();
+            executeAndPeel(jetEngine.newJob(dag));
             long end = System.currentTimeMillis();
             long time = end - start;
             times.add(time);

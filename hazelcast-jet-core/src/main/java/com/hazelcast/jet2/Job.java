@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet2;
 
+import java.util.concurrent.Future;
+
 /**
  * Javadoc pending
  */
@@ -24,6 +26,6 @@ public interface Job {
     /**
      * Executes the job
      */
-    void execute();
+    Future<Void> execute();
 
 }

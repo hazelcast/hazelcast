@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet2.impl;
+package com.hazelcast.jet2;
 
-import com.hazelcast.jet2.JetEngine;
+import java.util.concurrent.ExecutionException;
 
-import java.util.concurrent.Future;
+import static com.hazelcast.jet2.impl.Util.peel;
 
-public interface JetEngineProxy extends JetEngine {
+public final class Util {
 
-    Future<Void> execute(JobImpl job);
+    private Util() {
+
+    }
+
+    public static void executeAndPeel(Job job) throws Throwable {
+        try {
+            job.execute().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw peel(e);
+        }
+    }
 }

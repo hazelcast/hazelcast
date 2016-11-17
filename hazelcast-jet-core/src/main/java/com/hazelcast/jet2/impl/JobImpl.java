@@ -20,6 +20,8 @@ package com.hazelcast.jet2.impl;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Job;
 
+import java.util.concurrent.Future;
+
 public class JobImpl implements Job {
 
     private final JetEngineProxy jetEngine;
@@ -31,8 +33,8 @@ public class JobImpl implements Job {
     }
 
     @Override
-    public void execute() {
-        jetEngine.execute(this);
+    public Future<Void> execute() {
+        return jetEngine.execute(this);
     }
 
     public DAG getDag() {

@@ -30,6 +30,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.ExecutionException;
+
+import static com.hazelcast.jet2.Util.executeAndPeel;
+
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class ExceptionHandlingTest extends HazelcastTestSupport {
@@ -52,7 +56,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_exceptionInProcessorSupplier_thenFailJob() {
+    public void when_exceptionInProcessorSupplier_thenFailJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
 
@@ -70,11 +74,11 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        jetEngine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
     }
 
     @Test
-    public void when_exceptionInProcessorMetaSupplier_thenFailJob() {
+    public void when_exceptionInProcessorMetaSupplier_thenFailJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
 
@@ -91,11 +95,11 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        jetEngine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
     }
 
     @Test
-    public void when_exceptionInProcessorSupplierOnOtherNode_thenFailJob() {
+    public void when_exceptionInProcessorSupplierOnOtherNode_thenFailJob() throws Throwable {
         factory.newHazelcastInstance();
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
@@ -121,11 +125,11 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        jetEngine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
     }
 
     @Test
-    public void when_exceptionInNonBlockingTasklet_thenFailJob() {
+    public void when_exceptionInNonBlockingTasklet_thenFailJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
 
@@ -143,11 +147,11 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        jetEngine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
     }
 
     @Test
-    public void when_exceptionInBlockingTasklet_thenFailJob() {
+    public void when_exceptionInBlockingTasklet_thenFailJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
 
@@ -165,7 +169,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        jetEngine.newJob(dag).execute();
+        executeAndPeel(jetEngine.newJob(dag));
     }
 
     private static class FaultyProducer extends AbstractProcessor {

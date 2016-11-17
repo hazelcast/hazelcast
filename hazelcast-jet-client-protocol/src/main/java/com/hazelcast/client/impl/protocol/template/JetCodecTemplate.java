@@ -28,7 +28,7 @@ public interface JetCodecTemplate {
     Object createEngineIfAbsent(String engineName, Data config);
 
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
-    void executeJob(String engineName, Data dag);
+    void executeJob(String engineName, long executionId, Data dag);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
     void updateResource(String engineName, Data resourcePart);

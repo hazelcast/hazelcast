@@ -30,7 +30,9 @@ import com.hazelcast.util.UuidUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.jet2.impl.Util.unchecked;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public final class StreamUtil {
@@ -57,7 +59,11 @@ public final class StreamUtil {
         String engineName = System.getProperty(ENGINE_NAME_PROPERTY.getName(), ENGINE_NAME_PROPERTY.getDefaultValue());
         JetEngine jetEngine = JetEngine.get(context.getHazelcastInstance(), engineName);
         Job job = jetEngine.newJob(dag);
-        job.execute();
+        try {
+            job.execute().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw unchecked(e);
+        }
         context.getStreamListeners().forEach(Runnable::run);
     }
 

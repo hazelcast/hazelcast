@@ -28,6 +28,8 @@ import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Job;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class JetFlowStepJob extends FlowStepJob<JetEngineConfig> {
     public static final int POLLING_INTERVAL = 100;
@@ -36,6 +38,7 @@ public class JetFlowStepJob extends FlowStepJob<JetEngineConfig> {
     public static final String CASCADING_ENGINE_NAME = "cascading";
     private final JetFlowProcess process;
     private final DAG dag;
+    private Future<Void> future;
 
     public JetFlowStepJob(JetFlowProcess process, DAG dag, ClientState clientState,
                           JetEngineConfig config,
@@ -67,21 +70,24 @@ public class JetFlowStepJob extends FlowStepJob<JetEngineConfig> {
 
     @Override
     protected boolean internalNonBlockingIsSuccessful() throws IOException {
-        return true;
-
+        try {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throwable = e.getCause();
+        }
+        return throwable == null;
     }
 
     @Override
     protected Throwable getThrowable() {
-        return null;
+        return throwable;
     }
 
     @Override
     protected void internalNonBlockingStart() throws IOException {
         JetEngine jetEngine = JetEngine.get(process.getHazelcastInstance(), CASCADING_ENGINE_NAME, getConfig());
         Job job = jetEngine.newJob(dag);
-        job.execute();
-        //TODO: nonblocking start
+        future = job.execute();
     }
 
     @Override
@@ -91,7 +97,7 @@ public class JetFlowStepJob extends FlowStepJob<JetEngineConfig> {
 
     @Override
     protected boolean internalNonBlockingIsComplete() throws IOException {
-        return true;
+        return future.isDone();
     }
 
     @Override

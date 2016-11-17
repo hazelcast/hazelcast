@@ -17,6 +17,7 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 
 import java.io.ByteArrayOutputStream;
@@ -46,8 +47,17 @@ public final class Util {
         }
     }
 
+    public static RuntimeException unchecked(Throwable e) {
+        Throwable peeled = peel(e);
+        if (peeled instanceof RuntimeException) {
+            return (RuntimeException) peeled;
+        } else {
+            return new HazelcastException(peeled);
+        }
+    }
+
     public static Throwable peel(Throwable e) {
-        if (e instanceof CompletionException) {
+        if (e instanceof CompletionException || e instanceof ExecutionException) {
             return peel(e.getCause());
         }
         return e;

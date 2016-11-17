@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet2.impl;
 
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
+import com.hazelcast.jet2.ProcessorMetaSupplier.Context;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.JetClassLoader;
@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.stream.Collectors.toList;
@@ -42,7 +43,6 @@ import static java.util.stream.Collectors.toMap;
 public class EngineContext {
 
     private final String name;
-    private final IdGenerator idGenerator;
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
     private ResourceStore resourceStore;
@@ -56,20 +56,19 @@ public class EngineContext {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.config = config;
-        this.idGenerator = nodeEngine.getHazelcastInstance().getIdGenerator("__jetIdGenerator" + name);
         this.resourceStore = new ResourceStore(config.getResourceDirectory());
         final ClassLoader cl = AccessController.doPrivileged(
                 (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(resourceStore));
         this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config, cl);
     }
 
-    public Map<Member, ExecutionPlan> newExecutionPlan(DAG dag) {
+    public Map<Member, ExecutionPlan> newExecutionPlan(long executionId, DAG dag) {
         final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         final int clusterSize = members.size();
-        final long planId = idGenerator.newId();
-        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(planId)));
+        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m ->
+                new ExecutionPlan(executionId)));
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
-        for (Map.Entry<String, Integer> entry : vertexIdMap.entrySet()) {
+        for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
             final int vertexId = entry.getValue();
             final int perNodeParallelism = getParallelism(vertex, config);
@@ -77,7 +76,7 @@ public class EngineContext {
             final List<Edge> outboundEdges = dag.getOutboundEdges(vertex.getName());
             final List<Edge> inboundEdges = dag.getInboundEdges(vertex.getName());
             final ProcessorMetaSupplier supplier = vertex.getSupplier();
-            supplier.init(ProcessorMetaSupplier.Context.of(nodeEngine, totalParallelism, perNodeParallelism));
+            supplier.init(Context.of(nodeEngine, totalParallelism, perNodeParallelism));
 
             final List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int otherEndId = vertexIdMap.get(edge.getDestination());
@@ -91,7 +90,7 @@ public class EngineContext {
                         edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner());
             }).collect(toList());
 
-            for (Map.Entry<Member, ExecutionPlan> e : plans.entrySet()) {
+            for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
                 final VertexDef vertexDef = new VertexDef(vertexId, processorSupplier, perNodeParallelism);
                 vertexDef.addOutputs(outputs);

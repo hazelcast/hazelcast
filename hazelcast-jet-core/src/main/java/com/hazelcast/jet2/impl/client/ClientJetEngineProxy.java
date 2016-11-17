@@ -24,6 +24,8 @@ import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetUpdateResourceCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.core.IdGenerator;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
@@ -38,12 +40,26 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet2.impl.JetEngineProxyImpl.ID_GENERATOR_PREFIX;
+
 public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy {
+    private IdGenerator idGenerator;
+
     public ClientJetEngineProxy(String serviceName, String name) {
         super(serviceName, name);
+    }
+
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+        idGenerator = getClient().getIdGenerator(ID_GENERATOR_PREFIX + name);
     }
 
     @Override
@@ -52,9 +68,11 @@ public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy 
     }
 
     @Override
-    public void execute(JobImpl job) {
+    public Future<Void> execute(JobImpl job) {
         Data dag = toData(job.getDag());
-        invoke(JetExecuteJobCodec.encodeRequest(name, dag));
+        ClientInvocation invocation =
+                new ClientInvocation(getClient(), JetExecuteJobCodec.encodeRequest(name, idGenerator.newId(), dag));
+        return new JobExecutionFuture(invocation.invoke());
     }
 
     private void deployResources(JetEngineConfig config) {
@@ -89,6 +107,42 @@ public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy 
         return client.getCluster().getMembers().stream()
                      .map(m -> new ClientInvocation(client, messageSupplier.get(), m.getAddress()).invoke())
                      .map(Util::uncheckedGet).collect(Collectors.toList());
+    }
+
+    private static final class JobExecutionFuture implements Future<Void> {
+
+        private final ClientInvocationFuture future;
+
+        private JobExecutionFuture(ClientInvocationFuture future) {
+            this.future = future;
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return future.isDone();
+        }
+
+        @Override
+        public Void get() throws InterruptedException, ExecutionException {
+            future.get();
+            return null;
+        }
+
+        @Override
+        public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            future.get(timeout, unit);
+            return null;
+        }
     }
 }
 
