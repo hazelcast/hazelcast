@@ -16,7 +16,7 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.test.annotation.TestProperties;
+import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -46,7 +46,7 @@ import static java.lang.Runtime.getRuntime;
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     private static final boolean SPAWN_MULTIPLE_THREADS = TestEnvironment.isMockNetwork() && !Boolean.getBoolean("multipleJVM");
-    private static final int MAX_THREADS = max(getRuntime().availableProcessors(), 8);
+    private static final int DEFAULT_MAX_THREADS = max(getRuntime().availableProcessors(), 8);
 
     private final AtomicInteger numThreads = new AtomicInteger(0);
     private final int maxThreads;
@@ -61,24 +61,23 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         maxThreads = getMaxThreads(clazz);
     }
 
-    private int getMaxThreads(Class<?> clazz) {
+    private int getMaxThreads(Class<?> clazz) throws InitializationError {
         if (!SPAWN_MULTIPLE_THREADS) {
             return 1;
         }
 
-        TestProperties properties = clazz.getAnnotation(TestProperties.class);
-        if (properties != null) {
-            Class<? extends MaxThreadsAware> maxThreadsAwareClazz = properties.maxThreadsCalculatorClass();
-
+        ConfigureParallelRunnerWith annotation = clazz.getAnnotation(ConfigureParallelRunnerWith.class);
+        if (annotation != null) {
             try {
-                Constructor constructor = maxThreadsAwareClazz.getConstructor();
-                MaxThreadsAware maxThreadsAware = (MaxThreadsAware) constructor.newInstance();
-                return maxThreadsAware.maxThreads();
-            } catch (Throwable e) {
-                return MAX_THREADS;
+                Class<? extends ParallelRunnerOptions> optionsClass = annotation.value();
+                Constructor constructor = optionsClass.getConstructor();
+                ParallelRunnerOptions parallelRunnerOptions = (ParallelRunnerOptions) constructor.newInstance();
+                return parallelRunnerOptions.maxParallelTests();
+            } catch (Exception e) {
+                throw new InitializationError(e);
             }
         } else {
-            return MAX_THREADS;
+            return DEFAULT_MAX_THREADS;
         }
     }
 
