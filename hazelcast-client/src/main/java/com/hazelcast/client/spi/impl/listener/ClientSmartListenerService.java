@@ -414,6 +414,10 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         }
 
         Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
+        if (null == ownerConnectionAddress) {
+            return;
+        }
+
         for (Member member : members) {
             try {
                 getOrConnect(member, ownerConnectionAddress);
