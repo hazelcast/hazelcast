@@ -78,12 +78,14 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
 
     private void checkExistingEndpoint() {
         if (null != principal) {
-            endpoint = endpointManager.getEndpoint(principal.getUuid());
+            clientUuid = principal.getUuid();
+            endpoint = endpointManager.getEndpoint(clientUuid);
             if (null != endpoint) {
                 Connection previousConnection = endpoint.getConnection();
                 if (null != previousConnection && !connection.equals(previousConnection)) {
                     previousConnection.close("A new authentication request from the same client with uuid " + clientUuid
-                            + " is received. Closing the existing connection for this endpoint.", null);
+                            + " is received. Closing the existing connection " + previousConnection + " for this endpoint.",
+                            null);
                 }
                 endpoint.setConnection(connection);
             }
