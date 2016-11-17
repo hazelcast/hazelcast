@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,16 +36,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class IntStreamTest extends StreamTestSupport {
+public class IntStreamTest extends AbstractStreamTest {
 
     private IStreamMap<String, Integer> map;
     private DistributedIntStream stream;
 
     @Before
     public void setupMap() {
-        map = getStreamMap(instance);
+        map = getStreamMap();
         fillMap(map);
         stream = map.stream().mapToInt(Map.Entry::getValue);
     }
@@ -58,9 +53,9 @@ public class IntStreamTest extends StreamTestSupport {
         int[] values = map.stream().flatMapToInt(e -> IntStream.of(e.getValue(), e.getValue())).toArray();
         Arrays.sort(values);
 
-        for (int i = 0; i < COUNT*2; i += 2) {
-            assertEquals(i/2, values[i]);
-            assertEquals(i/2, values[i+1]);
+        for (int i = 0; i < COUNT * 2; i += 2) {
+            assertEquals(i / 2, values[i]);
+            assertEquals(i / 2, values[i + 1]);
         }
     }
 

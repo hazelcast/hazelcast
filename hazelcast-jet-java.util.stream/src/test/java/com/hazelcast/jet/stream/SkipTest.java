@@ -13,32 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class SkipTest extends StreamTestSupport {
+public class SkipTest extends AbstractStreamTest {
 
     @Test
     public void testSkip_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int skip = 10;
         IList list = map.stream()
-                .skip(skip)
-                .collect(DistributedCollectors.toIList());
+                        .skip(skip)
+                        .collect(DistributedCollectors.toIList());
 
 
         assertEquals(COUNT - skip, list.size());
@@ -46,32 +41,33 @@ public class SkipTest extends StreamTestSupport {
 
     @Test
     public void testSkip_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int skip = 10;
         IList list = map.stream()
-                .map(Map.Entry::getValue)
-                .skip(skip)
-                .collect(DistributedCollectors.toIList());
+                        .map(Map.Entry::getValue)
+                        .skip(skip)
+                        .collect(DistributedCollectors.toIList());
 
 
         assertEquals(COUNT - skip, list.size());
     }
+
     @Test
     public void testSkip_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         int skip = 1024;
         IList<Integer> result = list.stream()
-                .skip(skip)
-                .collect(DistributedCollectors.toIList());
+                                    .skip(skip)
+                                    .collect(DistributedCollectors.toIList());
 
         assertEquals(COUNT - skip, result.size());
 
         for (int i = 0; i < COUNT - skip; i++) {
-            assertEquals(i + skip, (int)result.get(i));
+            assertEquals(i + skip, (int) result.get(i));
         }
     }
 }

@@ -17,24 +17,18 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class UnorderedTest extends StreamTestSupport {
+public class UnorderedTest extends AbstractStreamTest {
 
     @Test
     public void testUnordered_whenOrderedSource() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         IList<Integer> collected = list.stream()
@@ -55,7 +49,7 @@ public class UnorderedTest extends StreamTestSupport {
 
     @Test
     public void testUnordered_whenOrderedSource_asIntermediateOperation() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         IList<Integer> collected = list.stream()
@@ -78,7 +72,7 @@ public class UnorderedTest extends StreamTestSupport {
 
     @Test
     public void testUnordered_whenUnorderedSource() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IList<Integer> collected = map.stream()

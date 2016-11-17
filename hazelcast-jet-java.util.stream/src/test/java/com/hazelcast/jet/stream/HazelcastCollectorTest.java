@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -33,13 +30,11 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class HazelcastCollectorTest extends StreamTestSupport {
+public class HazelcastCollectorTest extends AbstractStreamTest {
 
     @Test
     public void testIMapCollect_whenNoIntermediaries() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IMap<String, Integer> collected = map.stream().collect(DistributedCollectors.toIMap());
@@ -47,13 +42,13 @@ public class HazelcastCollectorTest extends StreamTestSupport {
         assertEquals(COUNT, collected.size());
         for (int i = 0; i < COUNT; i++) {
             Integer val = collected.get("key-" + i);
-            assertEquals(i, (int)val);
+            assertEquals(i, (int) val);
         }
     }
 
     @Test
     public void testIMapCollectWithMerge() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IMap<Integer, Integer> collected = map.stream()
@@ -71,7 +66,7 @@ public class HazelcastCollectorTest extends StreamTestSupport {
 
     @Test
     public void testGrouping_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int mod = 10;
@@ -94,7 +89,7 @@ public class HazelcastCollectorTest extends StreamTestSupport {
 
     @Test
     public void testTwoLevelGrouping_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int mod = 10;
@@ -103,7 +98,7 @@ public class HazelcastCollectorTest extends StreamTestSupport {
                 .stream()
                 .map(Map.Entry::getValue)
                 .collect(DistributedCollectors.groupingByToIMap(
-                        m -> m < COUNT/2 ? 0 : 1,
+                        m -> m < COUNT / 2 ? 0 : 1,
                         DistributedCollectors.groupingBy(m -> m % mod)));
 
         assertEquals(2, collected.size());
@@ -124,7 +119,7 @@ public class HazelcastCollectorTest extends StreamTestSupport {
 
     @Test
     public void testGrouping_whenSourceList() throws Exception {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         int mod = 10;
@@ -146,7 +141,7 @@ public class HazelcastCollectorTest extends StreamTestSupport {
 
     @Test
     public void testWordCount() throws Exception {
-        IStreamMap<String, String> map = getStreamMap(instance);
+        IStreamMap<String, String> map = getStreamMap();
         String words = "0 1 2 3 4 5 6 7 8 9";
         for (int i = 0; i < COUNT; i++) {
             map.put("key-" + i, words);
@@ -165,15 +160,15 @@ public class HazelcastCollectorTest extends StreamTestSupport {
 
     @Test
     public void testIMapCollectWithMerge_whenSourceList() throws Exception {
-        IStreamList<String> list = getStreamList(instance);
+        IStreamList<String> list = getStreamList();
         String words = "0 1 2 3 4 5 6 7 8 9";
         for (int i = 0; i < COUNT; i++) {
             list.add(words);
         }
 
         IMap<String, Integer> collected = list.stream()
-                .flatMap(m -> Stream.of(m.split("\\s")))
-                .collect(DistributedCollectors.toIMap(v -> v, v -> 1, (l, r) -> l + r));
+                                              .flatMap(m -> Stream.of(m.split("\\s")))
+                                              .collect(DistributedCollectors.toIMap(v -> v, v -> 1, (l, r) -> l + r));
 
         assertEquals(10, collected.size());
 
@@ -184,7 +179,7 @@ public class HazelcastCollectorTest extends StreamTestSupport {
 
     @Test
     public void testIListCollect_whenNoIntermediaries() throws Exception {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         IList<Integer> collected = list.stream().collect(DistributedCollectors.toIList());
@@ -194,7 +189,7 @@ public class HazelcastCollectorTest extends StreamTestSupport {
 
     @Test
     public void testIListCollect_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IList<Map.Entry<String, Integer>> collected = map.stream().collect(DistributedCollectors.toIList());

@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class SortTest extends StreamTestSupport {
+public class SortTest extends AbstractStreamTest {
 
     @Test
     public void testSort_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list, IntStream.range(0, COUNT).map(i -> COUNT - i - 1).limit(COUNT).iterator());
 
         IList<Integer> result = list
@@ -51,12 +47,12 @@ public class SortTest extends StreamTestSupport {
 
     @Test
     public void testSort_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IList<Integer> result = map
                 .stream()
-                .map(f -> f.getValue())
+                .map(Entry::getValue)
                 .sorted()
                 .collect(DistributedCollectors.toIList());
 
@@ -70,12 +66,12 @@ public class SortTest extends StreamTestSupport {
 
     @Test
     public void testSortWithComparator_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IList<Integer> result = map
                 .stream()
-                .map(f -> f.getValue())
+                .map(Entry::getValue)
                 .sorted((left, right) -> right.compareTo(left))
                 .collect(DistributedCollectors.toIList());
 
@@ -89,19 +85,19 @@ public class SortTest extends StreamTestSupport {
 
     @Test
     public void testOperationsAfterSort() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IList<Integer> result = map
                 .stream()
                 .map(Map.Entry::getValue)
-                .sorted((left, right) -> left.compareTo(right))
+                .sorted(Integer::compareTo)
                 .map(i -> i * i)
                 .collect(DistributedCollectors.toIList());
 
         assertEquals(COUNT, result.size());
         for (int i = 0; i < COUNT; i++) {
-            assertEquals(i * i, (int)result.get(i));
+            assertEquals(i * i, (int) result.get(i));
         }
     }
 
