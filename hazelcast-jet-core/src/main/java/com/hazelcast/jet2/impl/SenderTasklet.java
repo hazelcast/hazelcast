@@ -32,7 +32,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class SenderTasklet implements Tasklet {
 
-    public static final int BUFFER_SIZE = 16 * 1024;
+    public static final int BUFFER_SIZE = 1 << 15;
+    public static final int PACKET_SIZE_LIMIT = 1 << 14;
     private final Connection connection;
     private final byte[] headerBytes;
     private final ArrayDequeWithObserver inbox = new ArrayDequeWithObserver();
@@ -60,20 +61,31 @@ public class SenderTasklet implements Tasklet {
         if (!progressState.isMadeProgress()) {
             return progressState;
         }
+        do {
+            fillBuffer();
+            Packet packet = new Packet(outputBuffer.toByteArray()).setFlag(Packet.FLAG_JET);
+            connection.write(packet);
+            outputBuffer.clear();
+        } while (!inbox.isEmpty());
+
+        return progressState;
+    }
+
+    private void fillBuffer() {
         try {
             outputBuffer.write(headerBytes);
-            outputBuffer.writeInt(inbox.size());
-            for (Object item; (item = inbox.poll()) != null; ) {
+            // length will be filled in later
+            outputBuffer.writeInt(0);
+            int writtenCount = 0;
+            for (Object item; outputBuffer.position() < PACKET_SIZE_LIMIT
+                    && (item = inbox.poll()) != null; writtenCount++) {
                 ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
                 outputBuffer.writeObject(itemWithpId.getItem());
                 outputBuffer.writeInt(itemWithpId.getPartitionId());
             }
+            outputBuffer.writeInt(headerBytes.length, writtenCount);
         } catch (IOException e) {
             throw rethrow(e);
         }
-        Packet packet = new Packet(outputBuffer.toByteArray()).setFlag(Packet.FLAG_JET);
-        connection.write(packet);
-        outputBuffer.clear();
-        return progressState;
     }
 }
