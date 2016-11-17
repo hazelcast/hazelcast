@@ -29,6 +29,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -40,6 +42,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
@@ -163,6 +166,60 @@ public class ExecutionServiceTest {
         tasklets.forEach(MockTasklet::assertDone);
     }
 
+    @Test
+    public void when_nonBlockingTaskletIsCancelled_thenCompleteEarly() throws ExecutionException, InterruptedException {
+        // Given
+        final List<MockTasklet> tasklets =
+                Stream.generate(() -> new MockTasklet().callsBeforeDone(Integer.MAX_VALUE))
+                      .limit(100).collect(toList());
+
+        // When
+        CompletableFuture<Void> future = es.execute(tasklets).toCompletableFuture();
+        future.cancel(true);
+
+        // Then
+        tasklets.forEach(MockTasklet::assertNotDone);
+
+        exceptionRule.expect(CancellationException.class);
+        future.get();
+    }
+
+    @Test
+    public void when_blockingTaskletIsCancelled_thenCompleteEarly() throws ExecutionException, InterruptedException {
+        // Given
+        final List<MockTasklet> tasklets =
+                Stream.generate(() -> new MockTasklet().blocking().callsBeforeDone(Integer.MAX_VALUE))
+                      .limit(100).collect(toList());
+
+        // When
+        CompletableFuture<Void> future = es.execute(tasklets).toCompletableFuture();
+        future.cancel(true);
+
+        // Then
+        tasklets.forEach(MockTasklet::assertNotDone);
+
+        exceptionRule.expect(CancellationException.class);
+        future.get();
+    }
+
+    @Test
+    public void when_blockingSleepingTaskletIsCancelled_thenCompleteEarly() throws ExecutionException, InterruptedException {
+        // Given
+        final List<MockTasklet> tasklets =
+                Stream.generate(() -> new MockTasklet().sleeping().callsBeforeDone(Integer.MAX_VALUE))
+                      .limit(100).collect(toList());
+
+        // When
+        CompletableFuture<Void> future = es.execute(tasklets).toCompletableFuture();
+        future.cancel(true);
+
+        // Then
+        tasklets.forEach(MockTasklet::assertNotDone);
+        exceptionRule.expect(CancellationException.class);
+        future.get();
+
+    }
+
     static class MockTasklet implements Tasklet {
 
         boolean isBlocking;
@@ -171,6 +228,7 @@ public class ExecutionServiceTest {
         int callsBeforeDone;
 
         private boolean willMakeProgress = true;
+        private boolean isSleeping;
 
         @Override
         public boolean isBlocking() {
@@ -181,6 +239,13 @@ public class ExecutionServiceTest {
         public ProgressState call() {
             if (callFails) {
                 throw new RuntimeException("mock call failure");
+            }
+            if (isSleeping) {
+                try {
+                    Thread.currentThread().join();
+                } catch (InterruptedException e) {
+                    return DONE;
+                }
             }
             willMakeProgress = !willMakeProgress;
             return callsBeforeDone-- == 0 ? DONE
@@ -196,6 +261,12 @@ public class ExecutionServiceTest {
         }
 
         MockTasklet blocking() {
+            isBlocking = true;
+            return this;
+        }
+
+        MockTasklet sleeping() {
+            isSleeping = true;
             isBlocking = true;
             return this;
         }
@@ -217,6 +288,10 @@ public class ExecutionServiceTest {
 
         void assertDone() {
             assertEquals("Tasklet wasn't done", -1, callsBeforeDone);
+        }
+
+        void assertNotDone() {
+            assertNotEquals("Tasklet was done", -1, callsBeforeDone);
         }
     }
 }

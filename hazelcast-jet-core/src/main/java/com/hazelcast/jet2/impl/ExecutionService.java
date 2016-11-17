@@ -20,18 +20,22 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
+import java.util.stream.Collectors;
 
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -91,9 +95,10 @@ class ExecutionService {
     }
 
     private void submitBlockingTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
-        for (Tasklet t : tasklets) {
-            blockingTaskletExecutor.execute(new BlockingWorker(new TaskletTracker(t, jobFuture)));
-        }
+        jobFuture.blockingFutures = tasklets.stream()
+                                            .map(t -> new BlockingWorker(new TaskletTracker(t, jobFuture)))
+                                            .map(blockingTaskletExecutor::submit)
+                                            .collect(Collectors.toList());
     }
 
     private void submitNonblockingTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
@@ -158,7 +163,7 @@ class ExecutionService {
                 long idleCount = 0;
                 for (ProgressState result;
                      !(result = t.call()).isDone() && !tracker.jobFuture.isCompletedExceptionally();
-                ) {
+                        ) {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
@@ -268,4 +273,31 @@ class ExecutionService {
             return createThread(r, "blocking-executor", seq.getAndIncrement());
         }
     }
+
+    private static final class JobFuture extends CompletableFuture<Void> {
+
+        private final AtomicInteger completionLatch;
+        private List<Future> blockingFutures;
+
+        private JobFuture(int taskletCount) {
+            this.completionLatch = new AtomicInteger(taskletCount);
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            boolean cancelled = super.cancel(mayInterruptIfRunning);
+            if (cancelled) {
+                blockingFutures.forEach(f -> f.cancel(true)); // CompletableFuture.cancel ignores the flag
+            }
+            return cancelled;
+        }
+
+        @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "CompletableFuture<Void>")
+        private void taskletDone() {
+            if (completionLatch.decrementAndGet() == 0) {
+                complete(null);
+            }
+        }
+    }
+
 }

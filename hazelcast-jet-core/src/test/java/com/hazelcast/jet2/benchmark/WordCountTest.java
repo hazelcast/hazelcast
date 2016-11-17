@@ -62,6 +62,7 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int NODE_COUNT = 2;
