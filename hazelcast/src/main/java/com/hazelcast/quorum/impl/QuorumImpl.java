@@ -62,6 +62,12 @@ public class QuorumImpl implements Quorum {
         initializeQuorumFunction();
     }
 
+    /**
+     * Determines if the quorum is present for the given member collection, caches the result and publishes an event under
+     * the {@link #quorumName} topic if there was a change in presence.
+     *
+     * @param members the members for which the presence is determined
+     */
     public void update(Collection<Member> members) {
         boolean presence = quorumFunction.apply(members);
         setLocalResult(presence);
@@ -89,6 +95,11 @@ public class QuorumImpl implements Quorum {
         return isPresent.get();
     }
 
+    /**
+     * Sets the current quorum presence to the given {@code presence} and marks the instance as initialized.
+     *
+     * @param presence the quorum presence to be set
+     */
     public void setLocalResult(boolean presence) {
         setLocalResultInternal(presence);
     }
@@ -98,6 +109,14 @@ public class QuorumImpl implements Quorum {
         this.isPresent.set(presence);
     }
 
+    /**
+     * Returns if quorum is needed for this operation. This is determined by the {@link QuorumConfig#type} and by the type
+     * of the operation - {@link ReadonlyOperation} or {@link MutatingOperation}.
+     *
+     * @param op the operation which is to be executed
+     * @return if this quorum should be consulted for this operation
+     * @throws IllegalArgumentException if the quorum configuration type is not handled
+     */
     private boolean isQuorumNeeded(Operation op) {
         QuorumType type = config.getType();
         switch (type) {
@@ -120,6 +139,14 @@ public class QuorumImpl implements Quorum {
         return op instanceof MutatingOperation;
     }
 
+    /**
+     * Ensures that the quorum is present for the given operation. First checks if the quorum type defined by the configuration
+     * covers this operation and checks if the quorum is present. Dispatches an event under the {@link #quorumName} topic
+     * if membership changed after determining the quorum presence.
+     *
+     * @param op the operation for which the quorum should be present
+     * @throws QuorumException if the operation requires a quorum and the quorum is not present
+     */
     public void ensureQuorumPresent(Operation op) {
         if (!isQuorumNeeded(op)) {
             return;
@@ -196,6 +223,4 @@ public class QuorumImpl implements Quorum {
                 + ", initialized=" + initialized
                 + '}';
     }
-
-
 }

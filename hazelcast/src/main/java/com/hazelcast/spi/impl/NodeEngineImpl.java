@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -48,6 +49,7 @@ import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
@@ -193,6 +195,14 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
+    public LoggingService getLoggingService() {
+        return loggingService;
+    }
+
+    public HazelcastThreadGroup getHazelcastThreadGroup() {
+        return node.getHazelcastThreadGroup();
+    }
+
     public MetricsRegistry getMetricsRegistry() {
         return metricsRegistry;
     }
@@ -209,9 +219,7 @@ public class NodeEngineImpl implements NodeEngine {
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
 
-        metricsRegistry.collectMetrics(operationService);
-        metricsRegistry.collectMetrics(proxyService);
-        metricsRegistry.collectMetrics(eventService);
+        metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
 
         serviceManager.start();
         proxyService.init();

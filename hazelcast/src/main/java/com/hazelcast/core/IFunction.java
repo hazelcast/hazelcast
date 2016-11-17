@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.io.Serializable;
 
 /**
@@ -23,10 +25,15 @@ import java.io.Serializable;
  *
  * This class is called IFunction instead of Function to prevent clashes with the one in Java 8.
  *
+ * Serialized instances of this interface are used in client-member communication, so changing an implementation's binary format
+ * will render it incompatible with its previous versions.
+ *
  * @param <T> an argument
  * @param <R> a result
  * @since 3.2
  */
+
+@BinaryInterface
 public interface IFunction<T, R> extends Serializable {
 
     R apply(T input);

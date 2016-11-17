@@ -420,7 +420,8 @@ public class ClusterHeartbeatManager {
         }
         Collection<MemberImpl> members = clusterService.getMemberImpls();
         MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(
-                createMemberInfoList(members), clusterClock.getClusterTime(), false);
+                createMemberInfoList(members), clusterClock.getClusterTime(), null, false);
+
         for (MemberImpl member : members) {
             if (member.localMember()) {
                 continue;

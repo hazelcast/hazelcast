@@ -35,6 +35,15 @@ public class GetResultOperationFactory implements OperationFactory {
     private final String name;
     private final String jobId;
 
+    /**
+     * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
+     * coding conventions.
+     */
+    public GetResultOperationFactory() {
+        name = "";
+        jobId = "";
+    }
+
     public GetResultOperationFactory(String name, String jobId) {
         this.name = name;
         this.jobId = jobId;

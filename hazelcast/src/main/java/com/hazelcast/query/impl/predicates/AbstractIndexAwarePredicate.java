@@ -16,10 +16,12 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 
+@BinaryInterface
 public abstract class AbstractIndexAwarePredicate<K, V> extends AbstractPredicate<K, V> implements IndexAwarePredicate<K, V> {
 
     protected AbstractIndexAwarePredicate() {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;

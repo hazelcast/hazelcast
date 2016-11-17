@@ -20,7 +20,7 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.collection.MPSCQueue;
+import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -44,7 +44,8 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * The AsyncResponsePacketHandler is a PacketHandler that asynchronously process operation-response packets.
+ * The {@link AsyncInboundResponseHandler} is a PacketHandler that asynchronously process operation-response packets. The
+ * actual processing is done by the {@link InboundResponseHandler}.
  *
  * So when a response is received from a remote system, it is put in the responseQueue of the ResponseThread.
  * Then the ResponseThread takes it from this responseQueue and calls the {@link PacketHandler} for the
@@ -67,7 +68,9 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
     final ResponseThread responseThread;
     private final ILogger logger;
 
-    AsyncInboundResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler,
+    AsyncInboundResponseHandler(HazelcastThreadGroup threadGroup,
+                                ILogger logger,
+                                PacketHandler responsePacketHandler,
                                 HazelcastProperties properties) {
         this.logger = logger;
         this.responseThread = new ResponseThread(threadGroup, responsePacketHandler, properties);
@@ -117,7 +120,7 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
      * The ResponseThread needs to implement the OperationHostileThread interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
-    final class ResponseThread extends Thread implements OperationHostileThread {
+    private final class ResponseThread extends Thread implements OperationHostileThread {
 
         private final BlockingQueue<Packet> responseQueue;
         private final PacketHandler responsePacketHandler;

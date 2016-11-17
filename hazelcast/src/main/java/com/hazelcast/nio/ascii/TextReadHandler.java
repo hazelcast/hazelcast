@@ -34,7 +34,7 @@ import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.StringUtil;
@@ -104,7 +104,7 @@ public class TextReadHandler implements ReadHandler {
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
-        this.logger = ioService.getLogger(this.getClass().getName());
+        this.logger = ioService.getLoggingService().getLogger(getClass());
     }
 
     public void sendResponse(TextCommand command) {

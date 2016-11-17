@@ -22,13 +22,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 /**
  * Backup items during pool operation.
  */
-public final class PollBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
+public final class PollBackupOperation extends QueueOperation
+        implements BackupOperation, IdentifiedDataSerializable, MutatingOperation {
 
     private long itemId;
 

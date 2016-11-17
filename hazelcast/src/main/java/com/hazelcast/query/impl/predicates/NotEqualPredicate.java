@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -26,6 +27,7 @@ import java.util.Set;
 /**
  * Not Equal Predicate
  */
+@BinaryInterface
 public final class NotEqualPredicate extends EqualPredicate {
     public NotEqualPredicate() {
     }

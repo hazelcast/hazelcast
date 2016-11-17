@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -28,6 +29,7 @@ import java.util.List;
 /**
  * Configuration for Wan target replication reference
  */
+@BinaryInterface
 public class WanReplicationRef implements DataSerializable, Serializable {
 
     private String name;

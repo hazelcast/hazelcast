@@ -19,6 +19,7 @@ package com.hazelcast.query;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <K> type of the entry key
  * @param <V> type of the entry value
  */
+@BinaryInterface
 public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedDataSerializable {
 
     private Object partitionKey;

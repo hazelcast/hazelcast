@@ -16,13 +16,14 @@
 
 package com.hazelcast.map.impl.eviction;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.Address;
@@ -231,7 +232,8 @@ public class EvictionChecker {
             return heapCost;
         }
 
-        NearCache nearCache = mapServiceContext.getNearCacheProvider().getOrCreateNearCache(mapName);
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        NearCache nearCache = mapNearCacheManager.getOrCreateNearCache(mapName);
         NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
         return heapCost + nearCacheStats.getOwnedEntryMemoryCost();
     }

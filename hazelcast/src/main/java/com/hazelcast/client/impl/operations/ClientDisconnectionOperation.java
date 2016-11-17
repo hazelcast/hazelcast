@@ -17,9 +17,10 @@
 package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
+import com.hazelcast.client.impl.ClientEndpointManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ClientAwareService;
@@ -33,29 +34,35 @@ import java.util.Set;
 public class ClientDisconnectionOperation extends AbstractClientOperation implements UrgentSystemOperation {
 
     private String clientUuid;
+    private String memberUuid;
 
     public ClientDisconnectionOperation() {
     }
 
-    public ClientDisconnectionOperation(String clientUuid) {
+    public ClientDisconnectionOperation(String clientUuid, String memberUuid) {
         this.clientUuid = clientUuid;
+        this.memberUuid = memberUuid;
     }
 
     @Override
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
-        final ClientEndpointManager endpointManager = engine.getEndpointManager();
-        Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
-        for (ClientEndpoint endpoint : endpoints) {
-            endpointManager.removeEndpoint(endpoint, true);
-        }
-        engine.removeOwnershipMapping(clientUuid);
+        final ClientEndpointManagerImpl endpointManager = (ClientEndpointManagerImpl) engine.getEndpointManager();
+        ClientEndpoint clientEndpoint = endpointManager.getEndpoint(clientUuid);
+        Connection clientEndpointConnection = (null != clientEndpoint ? clientEndpoint.getConnection() : null);
+        if (null != clientEndpointConnection && !clientEndpointConnection.isAlive()
+                && engine.removeOwnershipMapping(clientUuid, memberUuid)) {
+            Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
+            for (ClientEndpoint endpoint : endpoints) {
+                endpointManager.removeEndpoint(endpoint, true);
+            }
 
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        nodeEngine.onClientDisconnected(clientUuid);
-        Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
-        for (ClientAwareService service : services) {
-            service.clientDisconnected(clientUuid);
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            nodeEngine.onClientDisconnected(clientUuid);
+            Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
+            for (ClientAwareService service : services) {
+                service.clientDisconnected(clientUuid);
+            }
         }
     }
 
@@ -68,12 +75,14 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(clientUuid);
+        out.writeUTF(memberUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         clientUuid = in.readUTF();
+        memberUuid = in.readUTF();
     }
 
     @Override

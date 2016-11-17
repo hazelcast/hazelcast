@@ -24,6 +24,7 @@ import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumListener;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.spi.EventPublishingService;
@@ -106,6 +107,14 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         eventService.registerLocalListener(SERVICE_NAME, name, listener);
     }
 
+    /**
+     * Ensures that the quorum for the given operation is present. This requires that there is a quorum configured under the
+     * name which is returned by the operation service.
+     * This in turn requires that the operation is named and that the operation service is a {@link QuorumAwareService}.
+     *
+     * @param op the operation for which the quorum should be present
+     * @throws QuorumException if the operation requires a quorum and the quorum is not present
+     */
     public void ensureQuorumPresent(Operation op) {
         if (inactive) {
             return;
@@ -118,6 +127,14 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         quorum.ensureQuorumPresent(op);
     }
 
+    /**
+     * Returns a {@link QuorumImpl} for the given operation. The operation should be named and the operation service should
+     * be a {@link QuorumAwareService}. This service will then return the quorum configured under the name returned by the
+     * operation service.
+     *
+     * @param op the operation for which the Quorum should be returned
+     * @return the quorum
+     */
     private QuorumImpl findQuorum(Operation op) {
         if (!isNamedOperation(op) || !isQuorumAware(op)) {
             return null;
@@ -161,6 +178,11 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         // They cannot change quorum state
     }
 
+    /**
+     * Updates the quorum presences if there was a change in data members that own partitions (ignores changes in lite members).
+     *
+     * @param event the membership change event
+     */
     private void updateQuorums(MembershipEvent event) {
         final Collection<Member> members = new MemberSelectingCollection<Member>(event.getMembers(), DATA_MEMBER_SELECTOR);
         for (QuorumImpl quorum : quorums.values()) {

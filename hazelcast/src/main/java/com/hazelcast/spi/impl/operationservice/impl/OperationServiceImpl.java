@@ -99,9 +99,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class OperationServiceImpl implements InternalOperationService, MetricsProvider, LiveOperationsTracker {
 
-    private static final int CORE_SIZE_CHECK = 8;
-    private static final int CORE_SIZE_FACTOR = 4;
-    private static final int CONCURRENCY_LEVEL = 16;
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
@@ -154,16 +151,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.backpressureRegulator = new BackpressureRegulator(
                 node.getProperties(), node.getLogger(BackpressureRegulator.class));
 
-        int coreSize = Runtime.getRuntime().availableProcessors();
-        boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
-        int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
-
         this.outboundResponseHandler = new OutboundResponseHandler(
                 thisAddress, serializationService, node, node.getLogger(OutboundResponseHandler.class));
 
         this.invocationRegistry = new InvocationRegistry(
-                node.getLogger(OperationServiceImpl.class),
-                backpressureRegulator.newCallIdSequence(), concurrencyLevel);
+                node.getLogger(OperationServiceImpl.class), backpressureRegulator.newCallIdSequence());
 
         this.invocationMonitor = new InvocationMonitor(
                 nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(), invocationRegistry,
@@ -427,8 +419,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         return connectionManager.transmit(packet, connection);
     }
 
-
-
     public void onMemberLeft(MemberImpl member) {
         invocationMonitor.onMemberLeft(member);
     }
@@ -447,9 +437,27 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public void start() {
         logger.finest("Starting OperationService");
 
-        ManagedExecutorService asyncExecutor = nodeEngine.getExecutionService().register(
-                ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
-                ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+        initInvocationContext();
+
+        invocationMonitor.start();
+        operationExecutor.start();
+        asyncInboundResponseHandler.start();
+        slowOperationDetector.start();
+    }
+
+    /**
+     * Initializes the invocation context to use most recent uuid of the local member. We have this method because the local
+     * member can change its uuid when the cluster has performed partial start and invocations should be done with the new uuid.
+     */
+    public void initInvocationContext() {
+        ManagedExecutorService asyncExecutor;
+        if (this.invocationContext != null) {
+            asyncExecutor = this.invocationContext.asyncExecutor;
+        } else {
+            asyncExecutor = nodeEngine.getExecutionService().register(
+                    ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
+                    ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+        }
 
         this.invocationContext = new Invocation.Context(
                 asyncExecutor,
@@ -460,7 +468,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 nodeEngine.getProperties().getMillis(OPERATION_CALL_TIMEOUT_MILLIS),
                 invocationRegistry,
                 invocationMonitor,
-                nodeEngine.getLocalMember().getUuid(),
+                node.getThisUuid(),
                 nodeEngine.getLogger(Invocation.class),
                 node,
                 nodeEngine,
@@ -470,11 +478,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 retryCount,
                 serializationService,
                 nodeEngine.getThisAddress());
-
-        invocationMonitor.start();
-        operationExecutor.start();
-        asyncInboundResponseHandler.start();
-        slowOperationDetector.start();
     }
 
     /**

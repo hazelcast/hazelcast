@@ -16,8 +16,7 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
@@ -35,11 +34,11 @@ public final class ClientContext {
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
     private final ClientListenerService listenerService;
-    private final NearCacheContext nearCacheContext;
     private final ClientTransactionManagerService transactionManager;
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
     private final LoggingService loggingService;
+    private final NearCacheManager nearCacheManager;
 
     ClientContext(HazelcastClientInstanceImpl client, ProxyManager proxyManager) {
         this.serializationService = client.getSerializationService();
@@ -48,11 +47,11 @@ public final class ClientContext {
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
         this.listenerService = client.getListenerService();
-        this.nearCacheContext = client.getNearCacheContext();
         this.proxyManager = proxyManager;
         this.clientConfig = client.getClientConfig();
         this.transactionManager = client.getTransactionManager();
         this.loggingService = client.getLoggingService();
+        this.nearCacheManager = client.getNearCacheManager();
     }
 
     public HazelcastInstance getHazelcastInstance() {
@@ -71,10 +70,6 @@ public final class ClientContext {
         return partitionService;
     }
 
-    public ClientInvocationService getInvocationService() {
-        return invocationService;
-    }
-
     public ClientTransactionManagerService getTransactionManager() {
         return transactionManager;
     }
@@ -88,11 +83,7 @@ public final class ClientContext {
     }
 
     public NearCacheManager getNearCacheManager() {
-        return nearCacheContext.getNearCacheManager();
-    }
-
-    public NearCacheContext getNearCacheContext() {
-        return nearCacheContext;
+        return nearCacheManager;
     }
 
     public LoggingService getLoggingService() {

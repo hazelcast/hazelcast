@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyCodec;
@@ -48,6 +46,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
@@ -66,9 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.sort;
 
@@ -85,7 +83,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private volatile NearCache nearCache;
     private volatile String invalidationListenerId;
-    private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
     private int targetPartitionId;
 
@@ -97,6 +94,20 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     protected void onInitialize() {
         int partitionCount = getContext().getPartitionService().getPartitionCount();
         targetPartitionId = ThreadLocalRandom.current().nextInt(partitionCount);
+
+        initNearCache();
+    }
+
+    private void initNearCache() {
+        ClientContext context = getContext();
+        NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
+        if (nearCacheConfig == null) {
+            return;
+        }
+        nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
+        if (nearCache.isInvalidatedOnChange()) {
+            addNearCacheInvalidateListener();
+        }
     }
 
     @Override
@@ -159,7 +170,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public V get(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        initNearCache();
         if (nearCache != null) {
             Object cached = nearCache.get(key);
             if (cached != null) {
@@ -397,22 +407,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private EventHandler<ClientMessage> createHandler(final EntryListener<K, V> listener) {
         return new ReplicatedMapEventHandler(listener);
-    }
-
-    private void initNearCache() {
-        if (nearCacheInitialized.compareAndSet(false, true)) {
-            ClientContext context = getContext();
-            NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
-            if (nearCacheConfig == null) {
-                return;
-            }
-            NearCacheContext nearCacheContext = context.getNearCacheContext();
-
-            nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig, nearCacheContext);
-            if (nearCache.isInvalidatedOnChange()) {
-                addNearCacheInvalidateListener();
-            }
-        }
     }
 
     private void addNearCacheInvalidateListener() {

@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -44,6 +45,7 @@ import java.util.Map;
  *
  * @param <V> type of the values inside the ISet
  */
+@BinaryInterface
 public class SetKeyValueSource<V>
         extends KeyValueSource<String, V>
         implements IdentifiedDataSerializable {

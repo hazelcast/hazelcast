@@ -45,16 +45,15 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.tcp.IOOutOfMemoryHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -117,15 +116,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private final Set<ConnectionHeartbeatListener> heartbeatListeners =
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
-    private final LoggingService loggingService;
     private final Credentials credentials;
-    private NonBlockingIOThreadingModel ioThreadModel;
+    private NonBlockingIOThreadingModel ioThreadingModel;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator) {
         this.client = client;
         this.addressTranslator = addressTranslator;
-        this.loggingService = client.getLoggingService();
-        this.logger = loggingService.getLogger(ClientConnectionManager.class);
+        this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
 
         ClientConfig config = client.getClientConfig();
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
@@ -143,7 +140,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.socketOptions = networkConfig.getSocketOptions();
 
-        initializeSelectors(client);
+        initIOThreads(client);
 
         ClientExtension clientExtension = client.getClientExtension();
         this.socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
@@ -152,11 +149,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.credentials = client.getCredentials();
     }
 
-    protected void initializeSelectors(HazelcastClientInstanceImpl client) {
+    protected void initIOThreads(HazelcastClientInstanceImpl client) {
         boolean directBuffer = client.getProperties().getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
-        ioThreadModel = new NonBlockingIOThreadingModel(
-                loggingService,
+        ioThreadingModel = new NonBlockingIOThreadingModel(
+                client.getLoggingService(),
                 client.getMetricsRegistry(),
                 new HazelcastThreadGroup(client.getName(), logger, client.getClientConfig().getClassLoader()),
                 outOfMemoryHandler,
@@ -186,13 +183,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return;
         }
         alive = true;
-        startSelectors();
+        startIOThreads();
         Heartbeat heartbeat = new Heartbeat();
         executionService.scheduleWithRepetition(heartbeat, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
     }
 
-    protected void startSelectors() {
-        ioThreadModel.start();
+    protected void startIOThreads() {
+        ioThreadingModel.start();
     }
 
     @Override
@@ -204,13 +201,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         for (ClientConnection connection : connections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
-        shutdownSelectors();
+        shutdownIOThreads();
         connectionListeners.clear();
         heartbeatListeners.clear();
     }
 
-    protected void shutdownSelectors() {
-        ioThreadModel.shutdown();
+    protected void shutdownIOThreads() {
+        ioThreadingModel.shutdown();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -346,12 +343,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
 
             final ClientConnection clientConnection = new ClientConnection(
-                    client, ioThreadModel, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+                    client, ioThreadingModel, connectionIdGen.incrementAndGet(), socketChannelWrapper);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
-            socketChannel.configureBlocking(ioThreadModel.isBlocking());
+            socketChannel.configureBlocking(ioThreadingModel.isBlocking());
             socket.setSoTimeout(0);
             clientConnection.start();
             return clientConnection;
@@ -406,6 +403,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             final long now = Clock.currentTimeMillis();
             for (final ClientConnection connection : connections.values()) {
+                if (!connection.isAlive()) {
+                    continue;
+                }
+
                 if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
                     if (connection.isHeartBeating()) {
                         logger.warning("Heartbeat failed to connection : " + connection);
@@ -415,18 +416,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 }
                 if (now - connection.lastReadTimeMillis() > heartbeatInterval) {
                     ClientMessage request = ClientPingCodec.encodeRequest();
-                    ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
+                    final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
                     clientInvocation.setBypassHeartbeatCheck(true);
                     connection.onHeartbeatRequested();
                     clientInvocation.invokeUrgent().andThen(new ExecutionCallback<ClientMessage>() {
                         @Override
                         public void onResponse(ClientMessage response) {
-                            connection.onHeartbeatReceived();
+                            if (connection.isAlive()) {
+                                connection.onHeartbeatReceived();
+                            }
                         }
 
                         @Override
                         public void onFailure(Throwable t) {
-                            logger.warning("Error receiving heartbeat for connection: " + connection, t);
+                            if (connection.isAlive()) {
+                                logger.warning("Error receiving heartbeat for connection: " + connection, t);
+                            }
                         }
                     });
                 } else {
@@ -478,17 +483,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             ownerUuid = principal.getOwnerUuid();
         }
 
-        ClientMessage clientMessage;
-        if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
-            UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-            clientMessage = ClientAuthenticationCodec
-                    .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
-                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
-        } else {
-            Data data = ss.toData(credentials);
-            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
-                    asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
-        }
+        ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, ss, serializationVersion, uuid, ownerUuid);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
         ClientInvocationFuture future = clientInvocation.invokeUrgent();
         future.andThen(new ExecutionCallback<ClientMessage>() {
@@ -504,6 +499,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                             clusterService.setPrincipal(new ClientPrincipal(result.uuid, result.ownerUuid));
                         }
                         connection.setConnectedServerVersion(result.serverHazelcastVersion);
+                        connection.setClientUnregisteredMembers(result.clientUnregisteredMembers);
                         authenticated(target, connection);
                         callback.onSuccess(connection, asOwner);
                         break;
@@ -527,6 +523,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 callback.onFailure(t);
             }
         }, executionService.getInternalExecutor());
+    }
+
+    private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, byte serializationVersion,
+                                                      String uuid, String ownerUuid) {
+        ClientMessage clientMessage;
+        if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
+            UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
+            clientMessage = ClientAuthenticationCodec
+                    .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
+                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
+        } else {
+            Data data = ss.toData(credentials);
+            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
+                    asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
+        }
+        return clientMessage;
     }
 
     private class InitConnectionTask implements Runnable {

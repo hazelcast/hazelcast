@@ -48,6 +48,9 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
  */
 public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider {
+    private static final int CORE_SIZE_CHECK = 8;
+    private static final int CORE_SIZE_FACTOR = 4;
+    private static final int CONCURRENCY_LEVEL = 16;
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -60,9 +63,14 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
 
     private volatile boolean alive = true;
 
-    public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence, int concurrencyLevel) {
+    public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence) {
         this.logger = logger;
         this.callIdSequence = callIdSequence;
+
+        int coreSize = Runtime.getRuntime().availableProcessors();
+        boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
+        int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
+
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
     }
 

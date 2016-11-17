@@ -770,6 +770,9 @@ public class ConfigXmlGenerator {
         xml.append("<data-load-timeout-seconds>")
                 .append(hrCfg.getDataLoadTimeoutSeconds())
                 .append("</data-load-timeout-seconds>");
+        xml.append("<cluster-data-recovery-policy>")
+                .append(hrCfg.getClusterDataRecoveryPolicy())
+                .append("</cluster-data-recovery-policy>");
         xml.append("</hot-restart-persistence>");
     }
 

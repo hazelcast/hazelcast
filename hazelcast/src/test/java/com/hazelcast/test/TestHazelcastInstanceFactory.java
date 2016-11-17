@@ -104,23 +104,10 @@ public class TestHazelcastInstanceFactory {
         String instanceName = config != null ? config.getInstanceName() : null;
         if (mockNetwork) {
             config = initOrCreateConfig(config);
-            NodeContext nodeContext = registry.createNodeContext(pickAddress());
+            NodeContext nodeContext = registry.createNodeContext(nextAddress());
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         }
         return HazelcastInstanceFactory.newHazelcastInstance(config);
-    }
-
-    private Address pickAddress() {
-        int id = nodeIndex.getAndIncrement();
-
-        Address currentAddress = addressMap.get(id);
-        if (currentAddress != null) {
-            return currentAddress;
-        }
-
-        Address newAddress = createAddress("127.0.0.1", PORTS.incrementAndGet());
-        addressMap.put(id, newAddress);
-        return newAddress;
     }
 
     /**
@@ -146,6 +133,19 @@ public class TestHazelcastInstanceFactory {
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
+    }
+
+    public Address nextAddress() {
+        int id = nodeIndex.getAndIncrement();
+
+        Address currentAddress = addressMap.get(id);
+        if (currentAddress != null) {
+            return currentAddress;
+        }
+
+        Address newAddress = createAddress("127.0.0.1", PORTS.incrementAndGet());
+        addressMap.put(id, newAddress);
+        return newAddress;
     }
 
     public HazelcastInstance[] newInstances() {

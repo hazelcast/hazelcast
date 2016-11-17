@@ -73,7 +73,7 @@ public class ClientHeartbeatMonitor implements Runnable {
 
     @Override
     public void run() {
-        final String memberUuid = clientEngine.getLocalMember().getUuid();
+        final String memberUuid = clientEngine.getThisUuid();
         for (ClientEndpoint ce : clientEndpointManager.getEndpoints()) {
             ClientEndpointImpl clientEndpoint = (ClientEndpointImpl) ce;
             monitor(memberUuid, clientEndpoint);
@@ -86,14 +86,14 @@ public class ClientHeartbeatMonitor implements Runnable {
         }
 
         final Connection connection = clientEndpoint.getConnection();
-        final long lastTimePackageReceived = connection.lastReadTimeMillis();
+        final long lastTimePacketReceived = connection.lastReadTimeMillis();
         final long timeoutInMillis = SECONDS.toMillis(heartbeatTimeoutSeconds);
         final long currentTimeMillis = Clock.currentTimeMillis();
-        if (lastTimePackageReceived + timeoutInMillis < currentTimeMillis) {
+        if (lastTimePacketReceived + timeoutInMillis < currentTimeMillis) {
             if (memberUuid.equals(clientEndpoint.getPrincipal().getOwnerUuid())) {
                 String message = "Client heartbeat is timed out, closing connection to " + connection
-                        + ". Now: " + timeToString(lastTimePackageReceived)
-                        + ". LastTimePacketReceived: " + timeToString(lastTimePackageReceived);
+                        + ". Now: " + timeToString(currentTimeMillis)
+                        + ". LastTimePacketReceived: " + timeToString(lastTimePacketReceived);
                 logger.log(Level.WARNING, message);
                 connection.close(message, null);
             }

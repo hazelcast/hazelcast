@@ -87,7 +87,6 @@ import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_W
 import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
-import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
         "checkstyle:classfanoutcomplexity"})
@@ -113,9 +112,10 @@ public class Node {
     public final ConnectionManager connectionManager;
 
     public final Address address;
-    public final MemberImpl localMember;
 
     public final SecurityContext securityContext;
+
+    private volatile MemberImpl localMember;
 
     private final ILogger logger;
 
@@ -167,14 +167,14 @@ public class Node {
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         try {
             address = addressPicker.getPublicAddress();
+            nodeExtension = nodeContext.createNodeExtension(this);
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, createMemberUuid(address),
+            localMember = new MemberImpl(address, true, nodeExtension.createMemberUuid(address),
                     hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
 
-            this.nodeExtension = createNodeExtension(nodeContext);
             nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
 
@@ -284,10 +284,6 @@ public class Node {
                 logger.warning(error, t);
             }
         }
-    }
-
-    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
-        return nodeContext.createNodeExtension(this);
     }
 
     public ManagementCenterService getManagementCenterService() {
@@ -622,7 +618,7 @@ public class Node {
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                localMember.getAttributes());
+                localMember.getAttributes(), nodeExtension.getExcludedMemberUuids());
     }
 
     public ConfigCheck createConfigCheck() {
@@ -699,6 +695,28 @@ public class Node {
         setJoined();
         getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
         getClusterService().setClusterId(UuidUtil.createClusterUuid());
+    }
+
+    public String getThisUuid() {
+        return localMember.getUuid();
+    }
+
+    public void setNewLocalMember() {
+        if (joined()) {
+            logger.severe("Cannot set new local member when joined.");
+            return;
+        } else if (nodeExtension.isStartCompleted()) {
+            logger.severe("Cannot set new local member since start completed.");
+            return;
+        } else if (!nodeExtension.isMemberExcluded(getThisAddress(), getThisUuid())) {
+            logger.severe("Cannot set new local member since this member is not excluded.");
+            return;
+        }
+
+        String newUuid = UuidUtil.createMemberUuid(address);
+        logger.warning("Setting new local member. old uuid: " + localMember.getUuid() + " new uuid: " + newUuid);
+        Map<String, Object> memberAttributes = localMember.getAttributes();
+        localMember = new MemberImpl(address, true, newUuid, hazelcastInstance, memberAttributes, liteMember);
     }
 
     public Config getConfig() {

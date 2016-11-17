@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.util.List;
 
 /**
@@ -23,6 +25,7 @@ import java.util.List;
  *
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
+@BinaryInterface
 public class WanReplicationRefReadOnly extends WanReplicationRef {
 
     public WanReplicationRefReadOnly(WanReplicationRef ref) {

@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -55,7 +55,7 @@ public class LocalMapStatsProvider {
     };
 
     protected final MapServiceContext mapServiceContext;
-    protected final NearCacheProvider nearCacheProvider;
+    protected final MapNearCacheManager mapNearCacheManager;
     protected final ClusterService clusterService;
     protected final IPartitionService partitionService;
     protected final ILogger logger;
@@ -64,7 +64,7 @@ public class LocalMapStatsProvider {
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
-        this.nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        this.mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         this.clusterService = nodeEngine.getClusterService();
         this.partitionService = nodeEngine.getPartitionService();
     }
@@ -237,10 +237,17 @@ public class LocalMapStatsProvider {
     protected void addNearCacheStats(LocalMapStatsImpl stats,
                                      LocalMapOnDemandCalculatedStats onDemandStats,
                                      MapContainer mapContainer) {
+        assert mapContainer != null;
+
         if (!mapContainer.getMapConfig().isNearCacheEnabled()) {
             return;
         }
-        NearCache nearCache = nearCacheProvider.getOrCreateNearCache(mapContainer.getName());
+        String name = mapContainer.getName();
+        NearCache nearCache = mapNearCacheManager.getNearCache(name);
+        if (nearCache == null) {
+            return;
+        }
+
         NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
         stats.setNearCacheStats(nearCacheStats);

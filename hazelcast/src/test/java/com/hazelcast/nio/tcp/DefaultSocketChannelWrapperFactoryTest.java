@@ -1,5 +1,6 @@
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

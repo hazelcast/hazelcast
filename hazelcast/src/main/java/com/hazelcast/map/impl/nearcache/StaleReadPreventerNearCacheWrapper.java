@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.monitor.NearCacheStats;
 
 /**
@@ -35,9 +35,14 @@ public final class StaleReadPreventerNearCacheWrapper<K, V> implements NearCache
         this.keyStateMarker = new KeyStateMarkerImpl(markerCount);
     }
 
-    public static <KEY, VALUE> NearCache<KEY, VALUE> wrapAsStaleReadPreventerNearCache(NearCache<KEY, VALUE> nearCache,
-                                                                                       int markerCount) {
+    public static <KEY, VALUE> NearCache<KEY, VALUE> asStaleReadPreventerNearCache(NearCache<KEY, VALUE> nearCache,
+                                                                                   int markerCount) {
         return new StaleReadPreventerNearCacheWrapper<KEY, VALUE>(nearCache, markerCount);
+    }
+
+    @Override
+    public void initialize() {
+        nearCache.initialize();
     }
 
     @Override

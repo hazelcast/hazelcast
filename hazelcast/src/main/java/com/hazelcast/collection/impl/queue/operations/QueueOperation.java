@@ -23,28 +23,24 @@ import com.hazelcast.collection.impl.queue.QueueEventFilter;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-import java.io.IOException;
 import java.util.Collection;
 
 /**
  * This class contains methods for Queue operations
  * such as {@link com.hazelcast.collection.impl.queue.operations.AddAllOperation}.
  */
-public abstract class QueueOperation extends Operation
-        implements PartitionAwareOperation, IdentifiedDataSerializable {
-
-    protected String name;
+public abstract class QueueOperation extends AbstractNamedOperation
+        implements PartitionAwareOperation, IdentifiedDataSerializable, NamedOperation {
 
     protected transient Object response;
 
@@ -54,11 +50,11 @@ public abstract class QueueOperation extends Operation
     }
 
     protected QueueOperation(String name) {
-        this.name = name;
+        super(name);
     }
 
     protected QueueOperation(String name, long timeoutMillis) {
-        this.name = name;
+        this(name);
         setWaitTimeout(timeoutMillis);
     }
 
@@ -83,10 +79,6 @@ public abstract class QueueOperation extends Operation
     @Override
     public final String getServiceName() {
         return QueueService.SERVICE_NAME;
-    }
-
-    public final String getName() {
-        return name;
     }
 
     @Override
@@ -122,15 +114,5 @@ public abstract class QueueOperation extends Operation
     @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
     }
 }

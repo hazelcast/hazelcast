@@ -19,11 +19,12 @@ package com.hazelcast.collection.impl.queue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.spi.ReadonlyOperation;
 
 /**
  * check if queue is empty
  */
-public class IsEmptyOperation extends QueueOperation {
+public class IsEmptyOperation extends QueueOperation implements ReadonlyOperation {
 
     public IsEmptyOperation() {
     }

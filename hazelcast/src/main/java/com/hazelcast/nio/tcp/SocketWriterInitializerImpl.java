@@ -16,13 +16,16 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.SocketWriter;
+import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextWriteHandler;
 
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.newByteBuffer;
@@ -40,7 +43,7 @@ public class SocketWriterInitializerImpl implements SocketWriterInitializer<TcpI
 
     @Override
     public void init(TcpIpConnection connection, SocketWriter writer, String protocol) {
-        logger.log(Level.WARNING, "SocketWriter is not set, creating WriteHandler with CLUSTER protocol!");
+        logger.info("Initializing SocketWriter WriteHandler with " + Protocols.toUserFriendlyString(protocol));
 
         initHandler(connection, writer, protocol);
         initOutputBuffer(connection, writer, protocol);
@@ -63,7 +66,7 @@ public class SocketWriterInitializerImpl implements SocketWriterInitializer<TcpI
         IOService ioService = connection.getConnectionManager().getIoService();
         int sizeKb = CLUSTER.equals(protocol)
                 ? ioService.getSocketSendBufferSize()
-                : ioService.getSocketClientReceiveBufferSize();
+                : ioService.getSocketClientSendBufferSize();
         int size = KILO_BYTE * sizeKb;
 
         ByteBuffer outputBuffer = newByteBuffer(size, ioService.isSocketBufferDirect());

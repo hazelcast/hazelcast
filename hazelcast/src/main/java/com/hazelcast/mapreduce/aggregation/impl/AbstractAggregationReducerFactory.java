@@ -20,6 +20,7 @@ import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 
@@ -31,6 +32,7 @@ import java.io.IOException;
  * @param <ValueIn>  the input value type
  * @param <ValueOut> the output value type
  */
+@BinaryInterface
 abstract class AbstractAggregationReducerFactory<KeyIn, ValueIn, ValueOut>
         implements ReducerFactory<KeyIn, ValueIn, ValueOut>, IdentifiedDataSerializable {
 

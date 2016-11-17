@@ -104,7 +104,7 @@ public class RawProtocolAuthenticationTest {
         assertEquals(resultParameters.serializationVersion, 1);
         assertEquals(resultParameters.ownerUuid, server.getCluster().getLocalMember().getUuid());
         assertNotNull(UUID.fromString(resultParameters.uuid));
-        assertEquals(new Address("127.0.0.1", 5701), resultParameters.address);
+        assertEquals(server.getCluster().getLocalMember().getAddress(), resultParameters.address);
     }
 
     @Test

@@ -359,6 +359,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         final String parallelismName = "parallelism";
         final String validationTimeoutName = "validation-timeout-seconds";
         final String dataLoadTimeoutName = "data-load-timeout-seconds";
+        final String clusterDataRecoveryPolicyName = "cluster-data-recovery-policy";
 
         for (Node n : childElements(hrRoot)) {
             String name = cleanNodeName(n);
@@ -370,6 +371,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, getTextContent(n)));
             } else if (dataLoadTimeoutName.equals(name)) {
                 hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
+            } else if (clusterDataRecoveryPolicyName.equals(name)) {
+                hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy
+                        .valueOf(upperCaseInternal(getTextContent(n))));
             }
         }
         config.setHotRestartPersistenceConfig(hrConfig);
@@ -901,6 +905,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("queue-store".equals(nodeName)) {
                 QueueStoreConfig queueStoreConfig = createQueueStoreConfig(n);
                 qConfig.setQueueStoreConfig(queueStoreConfig);
+            } else if ("quorum-ref".equals(nodeName)) {
+                qConfig.setQuorumName(value);
             } else if ("empty-queue-ttl".equals(nodeName)) {
                 qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value));
             }

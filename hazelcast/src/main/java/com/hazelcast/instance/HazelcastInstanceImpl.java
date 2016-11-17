@@ -320,7 +320,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public Member getLocalEndpoint() {
-        return node.clusterService.getLocalMember();
+        return node.getLocalMember();
     }
 
     @Override

@@ -23,10 +23,11 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class InvalidationEventQueueTest {
 
+    private static final int WORKER_COUNT = 10;
+    private static final int ITEM_COUNT_PER_WORKER = 100;
+
     @Test
     public void itemsShouldBeOfferedCorrectly() throws InterruptedException, ExecutionException, TimeoutException {
-        final int WORKER_COUNT = 10;
-        final int ITEM_COUNT_PER_WORKER = 100;
         final InvalidationEventQueue queue = new InvalidationEventQueue();
         List<Future> futureList = new ArrayList<Future>(WORKER_COUNT);
 
@@ -51,8 +52,6 @@ public class InvalidationEventQueueTest {
 
     @Test
     public void itemsShouldBePolledCorrectly() throws InterruptedException, ExecutionException, TimeoutException {
-        final int WORKER_COUNT = 10;
-        final int ITEM_COUNT_PER_WORKER = 100;
         final InvalidationEventQueue queue = new InvalidationEventQueue();
         List<Future> futureList = new ArrayList<Future>(WORKER_COUNT);
 
@@ -113,5 +112,4 @@ public class InvalidationEventQueueTest {
     public void clearOperationIsNotSupported() {
         new InvalidationEventQueue().clear();
     }
-
 }

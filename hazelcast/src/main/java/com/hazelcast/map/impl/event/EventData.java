@@ -16,12 +16,14 @@
 
 package com.hazelcast.map.impl.event;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
  * General contract for map event data.
  */
+@BinaryInterface
 public interface EventData extends DataSerializable {
 
     String getSource();

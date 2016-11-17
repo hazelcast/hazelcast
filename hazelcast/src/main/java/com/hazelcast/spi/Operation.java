@@ -335,10 +335,33 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
+    /**
+     * Returns the wait timeout in millis. -1 means infinite wait, and 0 means no waiting at all.
+     *
+     * The wait timeout is the amount of time a {@link BlockingOperation} is allowed to parked in the
+     * {@link com.hazelcast.spi.impl.operationparker.OperationParker}.
+     *
+     * Examples:
+     * <ol>
+     *     <li>in case of ILock.tryLock(10, ms), the wait timeout is 10 ms</li>
+     *     <li>in case of ILock.lock(), the wait timeout is -1</li>
+     *     <li>in case of ILock.tryLock(), the wait timeout is 0.</li>
+     * </ol>
+     *
+     * The waitTimeout only has meaning for blocking operations. For non blocking operations the value is undefined.
+     *
+     * @return the wait timeout.
+     */
     public final long getWaitTimeout() {
         return waitTimeout;
     }
 
+    /**
+     * Sets the wait timeout in millis.
+     *
+     * @param timeout the wait timeout.
+     * @see #getWaitTimeout() for more detail.
+     */
     public final void setWaitTimeout(long timeout) {
         this.waitTimeout = timeout;
         setFlag(timeout != -1, BITMASK_WAIT_TIMEOUT_SET);

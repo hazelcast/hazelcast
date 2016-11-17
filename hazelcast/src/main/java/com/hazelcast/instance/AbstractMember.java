@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @PrivateApi
+@BinaryInterface
 public abstract class AbstractMember implements Member {
 
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();

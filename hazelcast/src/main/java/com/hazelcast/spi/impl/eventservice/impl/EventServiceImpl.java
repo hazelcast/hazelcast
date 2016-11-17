@@ -58,8 +58,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -93,6 +93,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     private final MwCounter totalFailures = newMwCounter();
     @Probe(name = "rejectedCount")
     private final MwCounter rejectedCount = newMwCounter();
+    @Probe(name = "syncDeliveryFailureCount")
+    private final MwCounter syncDeliveryFailureCount = newMwCounter();
+
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
 
@@ -160,10 +163,15 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         return eventQueueCapacity;
     }
 
-    @Probe(name = "eventQueueSize")
+    @Probe(name = "eventQueueSize", level = MANDATORY)
     @Override
     public int getEventQueueSize() {
         return eventExecutor.getWorkQueueSize();
+    }
+
+    @Probe(level = MANDATORY)
+    private long eventsProcessed() {
+        return eventExecutor.processedCount();
     }
 
     @Override
@@ -394,8 +402,11 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
                     .setTryCount(SEND_RETRY_COUNT).invoke();
             try {
                 f.get(SEND_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            } catch (Exception ignored) {
-                ignore(ignored);
+            } catch (Exception e) {
+                syncDeliveryFailureCount.inc();
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Sync event delivery failed. Event: " + eventEnvelope, e);
+                }
             }
         } else {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey);

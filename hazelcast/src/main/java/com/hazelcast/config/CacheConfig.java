@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
@@ -52,6 +53,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * @param <K> the key type.
  * @param <V> the value type.
  */
+@BinaryInterface
 public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     private String name;

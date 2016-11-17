@@ -20,6 +20,11 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.IOThreadingModel;
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.internal.networking.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -30,8 +35,6 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
-import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -479,8 +482,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
 
         acceptorThread = new SocketAcceptorThread(
-                ioService.getThreadGroup(),
-                ioService.getThreadPrefix() + "Acceptor",
+                ioService.getHazelcastThreadGroup().getInternalThreadGroup(),
+                ioService.getHazelcastThreadGroup().getThreadPoolNamePrefix("IO") + "Acceptor",
                 serverSocketChannel,
                 this);
         acceptorThread.start();
@@ -531,6 +534,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         shutdownAcceptorThread();
         closeServerSocket();
         stop();
+        scheduler.shutdownNow();
         connectionListeners.clear();
     }
 

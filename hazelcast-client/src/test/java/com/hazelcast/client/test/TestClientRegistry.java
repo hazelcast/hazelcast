@@ -121,15 +121,15 @@ public class TestClientRegistry {
         }
 
         @Override
-        protected void initializeSelectors(HazelcastClientInstanceImpl client) {
+        protected void initIOThreads(HazelcastClientInstanceImpl client) {
         }
 
         @Override
-        protected void startSelectors() {
+        protected void startIOThreads() {
         }
 
         @Override
-        protected void shutdownSelectors() {
+        protected void shutdownIOThreads() {
         }
 
         @Override
@@ -159,6 +159,7 @@ public class TestClientRegistry {
          */
         public void block(Address address) {
             stateMap.put(address, State.BLOCKING);
+            LOGGER.info("Blocked messages from " + address);
         }
 
         /**
@@ -167,6 +168,7 @@ public class TestClientRegistry {
          */
         public void unblock(Address address) {
             stateMap.remove(address);
+            LOGGER.info("Unblocked messages from " + address);
         }
 
         /**
@@ -174,6 +176,7 @@ public class TestClientRegistry {
          */
         public void drop(Address address) {
             stateMap.put(address, State.DROPPING);
+            LOGGER.info("Dropping messages from " + address);
         }
     }
 

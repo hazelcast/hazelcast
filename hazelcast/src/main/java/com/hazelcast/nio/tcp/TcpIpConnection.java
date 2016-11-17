@@ -20,9 +20,15 @@ import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.IOThreadingModel;
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.SocketConnection;
+import com.hazelcast.internal.networking.SocketReader;
+import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.OutboundFrame;
 
 import java.io.EOFException;
@@ -61,6 +67,8 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
 
     private final int connectionId;
 
+    private final IOService ioService;
+
     private Address endPoint;
 
     private TcpIpConnectionMonitor monitor;
@@ -76,8 +84,9 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
                            SocketChannelWrapper socketChannel,
                            IOThreadingModel ioThreadingModel) {
         this.connectionId = connectionId;
-        this.logger = connectionManager.getIoService().getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
+        this.ioService = connectionManager.getIoService();
+        this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
         this.socketChannel = socketChannel;
         this.socketWriter = ioThreadingModel.newSocketWriter(this);
         this.socketReader = ioThreadingModel.newSocketReader(this);
@@ -261,7 +270,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
         }
 
         connectionManager.onClose(this);
-        connectionManager.getIoService().onDisconnect(endPoint, cause);
+        ioService.onDisconnect(endPoint, cause);
         if (cause != null && monitor != null) {
             monitor.onError(cause);
         }
@@ -277,7 +286,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
             message += "Socket explicitly closed";
         }
 
-        if (connectionManager.getIoService().isActive()) {
+        if (ioService.isActive()) {
             if (closeCause == null || closeCause instanceof EOFException) {
                 logger.info(message);
             } else {

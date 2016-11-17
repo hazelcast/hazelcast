@@ -41,4 +41,20 @@ public final class Protocols {
 
     private Protocols() {
     }
+
+    public static String toUserFriendlyString(String protocol) {
+        if (CLUSTER.equals(protocol)) {
+            return "Cluster Protocol";
+        }
+
+        if (CLIENT_BINARY_NEW.equals(protocol)) {
+            return "Client Open Binary Protocol";
+        }
+
+        if (TEXT.equals(protocol)) {
+            return "Test Protocol";
+        }
+
+        return "Unknown Protocol";
+    }
 }

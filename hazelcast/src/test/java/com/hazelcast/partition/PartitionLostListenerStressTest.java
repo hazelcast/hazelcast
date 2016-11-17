@@ -40,6 +40,10 @@ public class PartitionLostListenerStressTest
         public synchronized List<PartitionLostEvent> getEvents() {
             return new ArrayList<PartitionLostEvent>(lostPartitions);
         }
+
+        public synchronized void clear() {
+            lostPartitions.clear();
+        }
     }
 
     @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")

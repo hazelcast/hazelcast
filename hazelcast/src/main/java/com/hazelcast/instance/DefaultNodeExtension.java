@@ -30,16 +30,17 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.memory.DefaultMemoryStats;
 import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.MemberReadHandler;
 import com.hazelcast.nio.tcp.MemberWriteHandler;
-import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.NodeEngine;
@@ -49,12 +50,14 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.wan.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
@@ -230,6 +233,10 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void onPartitionStateChange() {
+    }
+
+    @Override
     public boolean registerListener(Object listener) {
         return false;
     }
@@ -238,5 +245,30 @@ public class DefaultNodeExtension implements NodeExtension {
     public boolean triggerForceStart() {
         logger.warning("Force start is available when hot restart is active!");
         return false;
+    }
+
+    @Override
+    public boolean triggerPartialStart() {
+        logger.warning("Partial start is available when hot restart is active!");
+        return false;
+    }
+
+    @Override
+    public String createMemberUuid(Address address) {
+        return UuidUtil.createMemberUuid(address);
+    }
+
+    @Override
+    public boolean isMemberExcluded(Address memberAddress, String memberUuid) {
+        return false;
+    }
+
+    @Override
+    public Set<String> getExcludedMemberUuids() {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids) {
     }
 }

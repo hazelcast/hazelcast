@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -26,6 +27,7 @@ import com.hazelcast.spi.annotation.Beta;
  * @since 3.2
  */
 @Beta
+@BinaryInterface
 public interface JobPartitionState {
 
     /**

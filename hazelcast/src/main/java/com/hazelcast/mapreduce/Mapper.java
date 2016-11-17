@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.io.Serializable;
@@ -52,6 +53,7 @@ import java.io.Serializable;
  * @since 3.2
  */
 @Beta
+@BinaryInterface
 public interface Mapper<KeyIn, ValueIn, KeyOut, ValueOut>
         extends Serializable {
 

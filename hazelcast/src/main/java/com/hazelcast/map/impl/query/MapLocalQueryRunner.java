@@ -56,10 +56,10 @@ import static com.hazelcast.util.SortingUtil.compareAnchor;
 import static com.hazelcast.util.SortingUtil.getSortedSubList;
 
 /**
- * Runs query operations in the calling thread (thus blucking it)
+ * Runs query operations in the calling thread (thus blocking it)
  * Query evaluation per partition is run in a sequential fashion.
- * <p>
- * Used by query operations only: QueryOperation & QueryPartitionOperation
+ *
+ * Used by {@link QueryOperation} and {@link QueryPartitionOperation} only.
  * Should not be used by proxies or any other query related objects.
  */
 public class MapLocalQueryRunner {
@@ -100,8 +100,8 @@ public class MapLocalQueryRunner {
         predicate = queryOptimizer.optimize(predicate, mapContainer.getIndexes());
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
-        // This would be the point where a query-plan should be added. It should determine if a full table scan
-        // or an index should be used.
+        // (this would be the point where a query-plan should be added
+        // to determine if a full table scan or an index should be used)
         Collection<QueryableEntry> entries = runUsingIndexSafely(predicate, mapContainer, initialPartitionStateVersion);
         if (entries == null) {
             entries = runUsingPartitionScanSafely(mapName, predicate, initialPartitions, initialPartitionStateVersion);
@@ -109,28 +109,23 @@ public class MapLocalQueryRunner {
 
         QueryResult result = newQueryResult(initialPartitions.size(), iterationType, queryResultSizeLimiter);
 
-
         if (hasPartitionVersion(initialPartitionStateVersion, predicate)) {
             // if results have been returned and partition state version has not changed, set the partition IDs
-            // so that caller is aware of partitions from which results were obtained.
+            // so that caller is aware of partitions from which results were obtained
             result.addAll(entries);
             result.setPartitionIds(initialPartitions);
         }
         // else: if fallback to full table scan also failed to return any results due to migrations,
-        // then return empty result set without any partition IDs set (so that it is ignored by callers).
+        // then return empty result set without any partition IDs set (so that it is ignored by callers)
 
         updateStatistics(mapContainer);
 
         return result;
     }
 
-    protected Collection<QueryableEntry> runUsingIndexSafely(
-            Predicate predicate, MapContainer mapContainer, int initialPartitionStateVersion) {
-        // if a migration is in progress, do not attempt to use an index as they may have not been created yet.
-        // MapService.getMigrationsInFlight() returns the number of currently executing migrations (for which
-        // beforeMigration has been executed but commit/rollback is not yet executed).
-        // This is a temporary fix for 3.7, the actual issue will be addressed with an additional migration hook in 3.8.
-        // see https://github.com/hazelcast/hazelcast/issues/6471 & https://github.com/hazelcast/hazelcast/issues/8046
+    protected Collection<QueryableEntry> runUsingIndexSafely(Predicate predicate, MapContainer mapContainer,
+                                                             int initialPartitionStateVersion) {
+        // if a migration is in progress, do not attempt to use an index as they may have not been created yet
         if (hasOwnerMigrationsInFlight()) {
             return null;
         }
@@ -166,10 +161,9 @@ public class MapLocalQueryRunner {
 
         entries = runUsingPartitionScan(name, predicate, partitions);
 
-        // If partition state version has changed in the meanwhile, this means migrations were executed and we may
-        // return stale data, so we should rather return null.
-        // Also make sure there are no long migrations in flight which may have started after starting the query
-        // but not completed yet.
+        // if partition state version has changed in the meanwhile, this means migrations were executed and we may
+        // return stale data, so we should rather return null (also make sure there are no long migrations in flight
+        // which may have started after starting the query but not completed yet)
         if (isResultSafe(initialPartitionStateVersion)) {
             return entries;
         } else {
@@ -185,9 +179,9 @@ public class MapLocalQueryRunner {
             try {
                 result.addAll(runUsingPartitionScanOnSinglePartition(mapName, predicate, partitionId));
             } catch (RetryableHazelcastException e) {
-                // RetryableHazelcastException are stored and re-thrown later. this is to ensure all partitions
-                // are touched as when the parallel execution was used.
-                // see discussion at https://github.com/hazelcast/hazelcast/pull/5049#discussion_r28773099 for details.
+                // RetryableHazelcastException are stored and re-thrown later, to ensure all partitions
+                // are touched as when the parallel execution was used (see discussion at
+                // https://github.com/hazelcast/hazelcast/pull/5049#discussion_r28773099 for details)
                 if (storedException == null) {
                     storedException = e;
                 }
@@ -208,8 +202,8 @@ public class MapLocalQueryRunner {
     }
 
     @SuppressWarnings("unchecked")
-    protected Collection<QueryableEntry> runUsingPartitionScanOnSinglePartition(
-            String mapName, Predicate predicate, int partitionId) {
+    protected Collection<QueryableEntry> runUsingPartitionScanOnSinglePartition(String mapName, Predicate predicate,
+                                                                                int partitionId) {
         PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
 
@@ -227,7 +221,7 @@ public class MapLocalQueryRunner {
             if (value == null) {
                 continue;
             }
-            //we want to always use CachedQueryEntry as these are short-living objects anyway
+            // we want to always use CachedQueryEntry as these are short-living objects anyway
             QueryableEntry queryEntry = new CachedQueryEntry(serializationService, key, value, extractors);
 
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
@@ -249,7 +243,7 @@ public class MapLocalQueryRunner {
             case ALWAYS:
                 return true;
             default:
-                //if index exists then cached value is already set -> let's use it
+                // if index exists then cached value is already set -> let's use it
                 return mapContainer.getIndexes().hasIndex();
         }
     }
@@ -260,9 +254,11 @@ public class MapLocalQueryRunner {
 
     /**
      * Check whether migrations of owner partition are currently executed.
+     *
      * If a migration is in progress, do not attempt to use an index as they may have not been created yet.
-     * MapService.getMigrationsInFlight() returns the number of currently executing migrations (for which
-     * beforeMigration has been executed but commit/rollback is not yet executed).
+     * {@link com.hazelcast.map.impl.MapService#getOwnerMigrationsInFlight} returns the number of currently
+     * executing migrations (for which beforeMigration has been executed but commit/rollback is not yet executed).
+     *
      * This check is a temporary fix for 3.7, the actual issue will be addressed with an additional migration hook in 3.8.
      * see https://github.com/hazelcast/hazelcast/issues/6471 & https://github.com/hazelcast/hazelcast/issues/8046
      *
@@ -292,7 +288,7 @@ public class MapLocalQueryRunner {
      * meanwhile, so results are again considered flawed</li>
      * </ul>
      *
-     * @param initialPartitionStateVersion
+     * @param initialPartitionStateVersion the initial version of the partition state
      * @return {@code true} if no owner migrations are currently executing and {@code initialPartitionStateVersion} is
      * the same as the current partition state version, otherwise {@code false}.
      */
@@ -314,5 +310,4 @@ public class MapLocalQueryRunner {
             localStats.incrementOtherOperations();
         }
     }
-
 }

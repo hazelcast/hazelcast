@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
@@ -53,7 +54,7 @@ public class InitConnectionTask implements Runnable {
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.address = address;
-        this.logger = ioService.getLogger(this.getClass().getName());
+        this.logger = ioService.getLoggingService().getLogger(getClass());
         this.silent = silent;
     }
 

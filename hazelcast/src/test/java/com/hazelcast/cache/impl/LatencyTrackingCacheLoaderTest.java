@@ -26,16 +26,16 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class LatencyTrackingCacheLoaderTest extends HazelcastTestSupport {
 
-    private static final String NAME = "somecache";
+    private static final String NAME = "someCache";
 
-    private HazelcastInstance hz;
     private StoreLatencyPlugin plugin;
     private CacheLoader<String, String> delegate;
     private LatencyTrackingCacheLoader<String, String> cacheLoader;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setup() {
-        hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(CacheLoader.class);
         cacheLoader = new LatencyTrackingCacheLoader<String, String>(delegate, plugin, NAME);

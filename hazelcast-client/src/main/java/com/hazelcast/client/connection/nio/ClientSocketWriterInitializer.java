@@ -17,10 +17,12 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.networking.SocketWriter;
+import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.WriteHandler;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.tcp.SocketWriter;
-import com.hazelcast.nio.tcp.SocketWriterInitializer;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.Protocols;
 
 import java.nio.ByteBuffer;
 
@@ -36,6 +38,9 @@ class ClientSocketWriterInitializer implements SocketWriterInitializer<ClientCon
 
     @Override
     public void init(ClientConnection connection, SocketWriter writer, String protocol) {
+        Logger.getLogger(getClass())
+              .info("Initializing ClientSocketWriter WriteHandler with " + Protocols.toUserFriendlyString(protocol));
+
         writer.initOutputBuffer(IOUtil.newByteBuffer(bufferSize, direct));
 
         writer.initWriteHandler(new WriteHandler<ClientMessage>() {

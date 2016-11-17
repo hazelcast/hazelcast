@@ -118,6 +118,7 @@
                                                           type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size" use="optional" type="xs:string">

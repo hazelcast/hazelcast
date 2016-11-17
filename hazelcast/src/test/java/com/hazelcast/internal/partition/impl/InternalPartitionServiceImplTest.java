@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.partition.PartitionListener;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -92,7 +93,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
             addresses[i][0] = thisAddress;
         }
 
-        partitionService.setInitialState(addresses, partitionCount);
+        partitionService.setInitialState(new PartitionTableView(addresses, partitionCount));
         for (int i = 0; i < partitionCount; i++) {
             assertTrue(partitionService.isPartitionOwner(i));
         }
@@ -106,8 +107,8 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
             addresses[i][0] = thisAddress;
         }
 
-        partitionService.setInitialState(addresses, 0);
-        partitionService.setInitialState(addresses, 0);
+        partitionService.setInitialState(new PartitionTableView(addresses, 0));
+        partitionService.setInitialState(new PartitionTableView(addresses, 0));
     }
 
     @Test
@@ -120,7 +121,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
         TestPartitionListener listener = new TestPartitionListener();
         partitionService.addPartitionListener(listener);
 
-        partitionService.setInitialState(addresses, 0);
+        partitionService.setInitialState(new PartitionTableView(addresses, 0));
         assertEquals(0, listener.eventCount);
     }
 

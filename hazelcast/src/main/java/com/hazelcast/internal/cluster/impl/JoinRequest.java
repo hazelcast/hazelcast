@@ -23,23 +23,32 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
+import static java.util.Collections.unmodifiableSet;
 
 public class JoinRequest extends JoinMessage {
 
     private Credentials credentials;
     private int tryCount;
     private Map<String, Object> attributes;
+    private Set<String> excludedMemberUuids = Collections.emptySet();
 
     public JoinRequest() {
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, boolean liteMember, ConfigCheck config,
-                       Credentials credentials, Map<String, Object> attributes) {
+                       Credentials credentials, Map<String, Object> attributes, Set<String> excludedMemberUuids) {
         super(packetVersion, buildNumber, address, uuid, liteMember, config);
         this.credentials = credentials;
         this.attributes = attributes;
+        if (excludedMemberUuids != null) {
+            this.excludedMemberUuids = unmodifiableSet(new HashSet<String>(excludedMemberUuids));
+        }
     }
 
     public Credentials getCredentials() {
@@ -56,6 +65,10 @@ public class JoinRequest extends JoinMessage {
 
     public Map<String, Object> getAttributes() {
         return attributes;
+    }
+
+    public Set<String> getExcludedMemberUuids() {
+        return excludedMemberUuids;
     }
 
     public MemberInfo toMemberInfo() {
@@ -77,6 +90,13 @@ public class JoinRequest extends JoinMessage {
             Object value = in.readObject();
             attributes.put(key, value);
         }
+        size = in.readInt();
+        Set<String> excludedMemberUuids = new HashSet<String>();
+        for (int i = 0; i < size; i++) {
+            excludedMemberUuids.add(in.readUTF());
+        }
+
+        this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
     }
 
     @Override
@@ -88,6 +108,10 @@ public class JoinRequest extends JoinMessage {
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
             out.writeObject(entry.getValue());
+        }
+        out.writeInt(excludedMemberUuids.size());
+        for (String uuid : excludedMemberUuids) {
+            out.writeUTF(uuid);
         }
     }
 
@@ -102,6 +126,7 @@ public class JoinRequest extends JoinMessage {
                 + ", credentials=" + credentials
                 + ", memberCount=" + getMemberCount()
                 + ", tryCount=" + tryCount
+                + (excludedMemberUuids.size() > 0 ? ", excludedMemberUuids=" + excludedMemberUuids : "")
                 + '}';
     }
 

@@ -73,4 +73,12 @@ public final class OperationFactoryWrapper implements OperationFactory {
     public int getId() {
         return ClientDataSerializerHook.OP_FACTORY_WRAPPER;
     }
+
+    @Override
+    public String toString() {
+        return "OperationFactoryWrapper{"
+                + "opFactory=" + opFactory
+                + ", uuid='" + uuid + '\''
+                + '}';
+    }
 }

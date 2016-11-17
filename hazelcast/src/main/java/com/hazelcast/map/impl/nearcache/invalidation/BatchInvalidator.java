@@ -44,6 +44,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAG
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.min;
+import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyList;
 
 /**
@@ -223,7 +224,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
         @Override
         public void run() {
             for (Map.Entry<String, InvalidationQueue> entry : invalidationQueues.entrySet()) {
-                if (Thread.currentThread().isInterrupted()) {
+                if (currentThread().isInterrupted()) {
                     break;
                 }
                 String mapName = entry.getKey();

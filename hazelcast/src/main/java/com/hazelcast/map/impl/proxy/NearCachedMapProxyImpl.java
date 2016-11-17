@@ -16,14 +16,14 @@
 
 package com.hazelcast.map.impl.proxy;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.KeyStateMarker;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper;
 import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.ClearNearCacheInvalidation;
@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -78,8 +78,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     private void initNearCache() {
-        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        nearCache = nearCacheProvider.getOrCreateNearCache(name);
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        nearCache = mapNearCacheManager.getOrCreateNearCache(name);
         keyStateMarker = getKeyStateMarker();
         cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
 

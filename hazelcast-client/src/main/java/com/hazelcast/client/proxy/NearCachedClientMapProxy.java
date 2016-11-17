@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
@@ -29,6 +28,8 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.nearcache.KeyStateMarker;
@@ -48,9 +49,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
-import static com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper.wrapAsStaleReadPreventerNearCache;
+import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper.asStaleReadPreventerNearCache;
 import static java.util.Collections.EMPTY_MAP;
 import static java.util.Collections.emptyMap;
 
@@ -62,12 +63,11 @@ import static java.util.Collections.emptyMap;
  */
 public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
-    protected NearCache<Data, Object> nearCache;
-    protected KeyStateMarker keyStateMarker;
-
-    protected volatile String invalidationListenerId;
-
+    private NearCache<Data, Object> nearCache;
+    private KeyStateMarker keyStateMarker;
     private boolean invalidateOnChange;
+
+    private volatile String invalidationListenerId;
 
     public NearCachedClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -80,16 +80,14 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         initNearCache();
     }
 
-    protected void initNearCache() {
+    private void initNearCache() {
         ClientContext context = getContext();
-
         NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
-
-        NearCache<Data, Object> clientNearCache = context.getNearCacheManager()
-                .getOrCreateNearCache(name, nearCacheConfig, context.getNearCacheContext());
+        NearCacheManager nearCacheManager = context.getNearCacheManager();
+        NearCache<Data, Object> clientNearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
 
         int partitionCount = context.getPartitionService().getPartitionCount();
-        nearCache = wrapAsStaleReadPreventerNearCache(clientNearCache, partitionCount);
+        nearCache = asStaleReadPreventerNearCache(clientNearCache, partitionCount);
         keyStateMarker = getKeyStateMarker();
 
         invalidateOnChange = nearCache.isInvalidatedOnChange();
@@ -415,11 +413,11 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return nearCache;
     }
 
-    protected void invalidateNearCache(Data key) {
+    private void invalidateNearCache(Data key) {
         nearCache.remove(key);
     }
 
-    protected void invalidateNearCache(Collection<Data> keys) {
+    private void invalidateNearCache(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }
@@ -428,7 +426,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
-    protected void addNearCacheInvalidateListener() {
+    private void addNearCacheInvalidateListener() {
         EventHandler handler = new ClientMapAddNearCacheEventHandler();
         addNearCacheInvalidateListener(handler);
     }
@@ -467,7 +465,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         };
     }
 
-    protected void removeNearCacheInvalidationListener() {
+    private void removeNearCacheInvalidationListener() {
         String invalidationListenerId = this.invalidationListenerId;
         if (invalidationListenerId == null) {
             return;
@@ -511,7 +509,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
-    public KeyStateMarker getKeyStateMarker() {
+    private KeyStateMarker getKeyStateMarker() {
         return ((StaleReadPreventerNearCacheWrapper) nearCache).getKeyStateMarker();
     }
 }

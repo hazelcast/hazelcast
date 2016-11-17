@@ -40,7 +40,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.nearcache.invalidation.NearCacheInvalidator;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
@@ -200,6 +200,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapConfig.isStatisticsEnabled();
+        // it is safe to cache local member uuid here because cluster start must be already completed
         this.localMemberUuid = mapServiceContext.getNodeEngine().getLocalMember().getUuid();
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
@@ -908,8 +909,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected void sendNearCacheClearEvent() {
-        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        NearCacheInvalidator nearCacheInvalidator = mapNearCacheManager.getNearCacheInvalidator();
         nearCacheInvalidator.clear(name, localMemberUuid);
     }
 

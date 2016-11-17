@@ -21,6 +21,10 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
         logWriter.init(new PrintWriter(out));
     }
 
+    protected void reset(){
+        out.reset();
+    }
+
     protected String getContent() {
         return out.toString();
     }
@@ -32,6 +36,6 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 
     protected void assertNotContains(String expected) {
         String message = getContent();
-        assertFalse("'" + message + "' doesn't contains '" + expected + "'", message.contains(expected));
+        assertFalse("'" + message + "' does contains '" + expected + "'", message.contains(expected));
     }
 }

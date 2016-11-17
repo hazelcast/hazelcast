@@ -7,9 +7,14 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
+import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -29,6 +34,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.logging.Logger.getLogger;
 
 public class MockIOService implements IOService {
 
@@ -64,8 +71,13 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public ILogger getLogger(String name) {
-        return loggingService.getLogger(name);
+    public HazelcastThreadGroup getHazelcastThreadGroup() {
+        return hazelcastThreadGroup;
+    }
+
+    @Override
+    public LoggingService getLoggingService() {
+        return loggingService;
     }
 
     @Override
@@ -84,7 +96,6 @@ public class MockIOService implements IOService {
 
     @Override
     public void onFatalError(Exception e) {
-
     }
 
     @Override
@@ -104,7 +115,6 @@ public class MockIOService implements IOService {
 
     @Override
     public void handleClientMessage(ClientMessage cm, Connection connection) {
-
     }
 
     @Override
@@ -124,27 +134,14 @@ public class MockIOService implements IOService {
 
     @Override
     public void removeEndpoint(Address endpoint) {
-
-    }
-
-    @Override
-    public String getThreadPrefix() {
-        return hazelcastThreadGroup.getThreadPoolNamePrefix("IO");
-    }
-
-    @Override
-    public ThreadGroup getThreadGroup() {
-        return hazelcastThreadGroup.getInternalThreadGroup();
     }
 
     @Override
     public void onSuccessfulConnection(Address address) {
-
     }
 
     @Override
     public void onFailedConnection(Address address) {
-
     }
 
     @Override
@@ -236,7 +233,6 @@ public class MockIOService implements IOService {
 
     @Override
     public void onDisconnect(Address endpoint, Throwable cause) {
-
     }
 
     @Override
@@ -302,7 +298,6 @@ public class MockIOService implements IOService {
 
             @Override
             public void deregisterAllListeners(String serviceName, String topic) {
-
             }
 
             @Override
@@ -322,22 +317,18 @@ public class MockIOService implements IOService {
 
             @Override
             public void publishEvent(String serviceName, String topic, Object event, int orderKey) {
-
             }
 
             @Override
             public void publishEvent(String serviceName, EventRegistration registration, Object event, int orderKey) {
-
             }
 
             @Override
             public void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey) {
-
             }
 
             @Override
             public void publishRemoteEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey) {
-
             }
 
             @Override
@@ -350,16 +341,6 @@ public class MockIOService implements IOService {
     @Override
     public Collection<Integer> getOutboundPorts() {
         return Collections.emptyList();
-    }
-
-    @Override
-    public Data toData(Object obj) {
-        return serializationService.toData(obj);
-    }
-
-    @Override
-    public Object toObject(Data data) {
-        return serializationService.toObject(data);
     }
 
     @Override
@@ -380,7 +361,7 @@ public class MockIOService implements IOService {
     @Override
     public ReadHandler createReadHandler(final TcpIpConnection connection) {
         return new MemberReadHandler(connection, new PacketDispatcher() {
-            private ILogger logger = getLogger("MockIOService");
+            private ILogger logger = loggingService.getLogger("MockIOService");
 
             @Override
             public void dispatch(Packet packet) {

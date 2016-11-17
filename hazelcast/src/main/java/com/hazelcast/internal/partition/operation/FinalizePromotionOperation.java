@@ -40,6 +40,15 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
     private final boolean success;
     private ILogger logger;
 
+    /**
+     * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
+     * coding conventions.
+     */
+    public FinalizePromotionOperation() {
+        super(-1);
+        success = false;
+    }
+
     FinalizePromotionOperation(int currentReplicaIndex, boolean success) {
         super(currentReplicaIndex);
         this.success = success;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -31,6 +32,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * @param <K>
  * @param <P>
  */
+@BinaryInterface
 public final class PartitionAwareKey<K, P> implements PartitionAware<Object>, DataSerializable {
 
     private K key;

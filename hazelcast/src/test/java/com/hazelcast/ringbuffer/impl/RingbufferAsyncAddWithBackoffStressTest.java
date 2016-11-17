@@ -8,6 +8,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,6 +50,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
         test(ringbufferConfig);
     }
 
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/7193
     @Test
     public void whenShortTTLAndBigBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")

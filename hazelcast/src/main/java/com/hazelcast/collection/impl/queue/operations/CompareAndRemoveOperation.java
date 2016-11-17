@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import java.util.Map;
 /**
  * This class triggers iterator and if find same item in the Queue, remove this item.
  */
-public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier {
+public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier, MutatingOperation {
 
     private Collection<Data> dataList;
     private Map<Long, Data> dataMap;
