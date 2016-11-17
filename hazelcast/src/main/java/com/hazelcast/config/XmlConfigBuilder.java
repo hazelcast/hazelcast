@@ -359,6 +359,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         final String parallelismName = "parallelism";
         final String validationTimeoutName = "validation-timeout-seconds";
         final String dataLoadTimeoutName = "data-load-timeout-seconds";
+        final String clusterDataRecoveryPolicyName = "cluster-data-recovery-policy";
 
         for (Node n : childElements(hrRoot)) {
             String name = cleanNodeName(n);
@@ -370,6 +371,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, getTextContent(n)));
             } else if (dataLoadTimeoutName.equals(name)) {
                 hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
+            } else if (clusterDataRecoveryPolicyName.equals(name)) {
+                hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy
+                        .valueOf(upperCaseInternal(getTextContent(n))));
             }
         }
         config.setHotRestartPersistenceConfig(hrConfig);
