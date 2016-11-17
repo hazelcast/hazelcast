@@ -31,29 +31,26 @@ import java.io.IOException;
 public class ScheduleTaskOperation
         extends AbstractBackupAwareSchedulerOperation {
 
-    private TaskDefinition definition;
-
-    private Data definitionData;
+    private Object definition;
 
     public ScheduleTaskOperation() {
     }
 
     public ScheduleTaskOperation(String schedulerName, Data definitionData) {
         super(schedulerName);
-        this.definitionData = definitionData;
+        this.definition = definitionData;
     }
 
     public ScheduleTaskOperation(String schedulerName, TaskDefinition definition) {
         super(schedulerName);
-        this.definitionData = getNodeEngine().getSerializationService().toData(definition);
+        this.definition = definition;
     }
 
     @Override
     public void run()
             throws Exception {
         System.err.println("Run: " + toString());
-        definition = getNodeEngine().getSerializationService().toObject(definitionData);
-        getContainer().schedule(definition);
+        getContainer().schedule((TaskDefinition) definition);
     }
 
     @Override
@@ -68,20 +65,20 @@ public class ScheduleTaskOperation
             return null;
         }
 
-        return new ScheduleTaskBackupOperation(schedulerName, definition);
+        return new ScheduleTaskBackupOperation(schedulerName, (TaskDefinition) definition);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeData(definitionData);
+        out.writeObject(definition);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.definitionData = in.readData();
+        this.definition = in.readObject();
     }
 }

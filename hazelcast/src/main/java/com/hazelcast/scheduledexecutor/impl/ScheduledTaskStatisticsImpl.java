@@ -169,4 +169,11 @@ public class ScheduledTaskStatisticsImpl
         this.totalRunTime += lastRunTime;
 
     }
+
+    @Override
+    public String toString() {
+        return "ScheduledTaskStatisticsImpl{" + "createdAtMonotonic=" + createdAtMonotonic + ", runs=" + runs + ", createdAt="
+                + createdAt + ", firstRunStart=" + firstRunStart + ", lastRunStart=" + lastRunStart + ", lastRunEnd=" + lastRunEnd
+                + ", lastIdleTime=" + lastIdleTime + ", totalRunTime=" + totalRunTime + ", totalIdleTime=" + totalIdleTime + '}';
+    }
 }
