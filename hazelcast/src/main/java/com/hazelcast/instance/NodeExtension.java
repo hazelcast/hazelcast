@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.Address;
@@ -243,4 +244,10 @@ public interface NodeExtension {
      * @param excludedMemberUuids uuids of the members that have been excluded during the cluster start
      */
     void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids);
+
+    /**
+     * Returns latest Hot Restart status as Management Center DTO. An empty status object will
+     * be returned if Hot Restart is not available (not EE) or not enabled.
+     */
+    ClusterHotRestartStatusDTO getCurrentClusterHotRestartStatus();
 }
