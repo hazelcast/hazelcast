@@ -109,12 +109,6 @@ public interface ClientEndpoint extends Client {
     void setClientVersion(String version);
 
     /**
-     * Sets the connection and updates the connected address to the address of the socket.
-     * @param connection The connection of the endpoint
-     */
-    void setConnection(Connection connection);
-
-    /**
      *
      * @return true if any listeners are registered or transactions exist for the endpoint
      */

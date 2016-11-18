@@ -65,41 +65,14 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
         super(clientMessage, node, connection);
     }
 
-    protected void setEndpoint() {
-        if (connection.isAlive()) {
-            checkExistingEndpoint();
-            if (null == endpoint) {
-                endpoint = new ClientEndpointImpl(clientEngine, this.connection);
-            }
-        } else {
-            handleEndpointNotCreatedConnectionNotAlive();
-        }
-    }
-
-    private void checkExistingEndpoint() {
-        if (null != principal) {
-            clientUuid = principal.getUuid();
-            endpoint = endpointManager.getEndpoint(clientUuid);
-            if (null != endpoint) {
-                Connection previousConnection = endpoint.getConnection();
-                if (null != previousConnection && !connection.equals(previousConnection)) {
-                    previousConnection.close("A new authentication request from the same client with uuid " + clientUuid
-                            + " is received. Closing the existing connection " + previousConnection + " for this endpoint.",
-                            null);
-                }
-                endpoint.setConnection(connection);
-            }
-        }
-    }
-
     @Override
-    protected ClientEndpoint getEndpoint() {
+    protected ClientEndpointImpl getEndpoint() {
         if (connection.isAlive()) {
-            return endpoint;
+            return new ClientEndpointImpl(clientEngine, connection);
         } else {
             handleEndpointNotCreatedConnectionNotAlive();
-            return null;
         }
+        return null;
     }
 
     @Override

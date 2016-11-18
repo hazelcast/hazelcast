@@ -47,13 +47,6 @@ public interface ClientEndpointManager {
     ClientEndpoint getEndpoint(Connection connection);
 
     /**
-     * Gets the endpoint of a client with a provided client uuid.
-     * @param clientUuid The uuid of the client for which you want the endpoint.
-     * @return The found endpoint or null of no endpoint was found.
-     */
-     ClientEndpoint getEndpoint(String clientUuid);
-
-    /**
      * Gets all the endpoints for a given client.
      *
      * @param clientUuid the uuid of the client
@@ -93,10 +86,11 @@ public interface ClientEndpointManager {
      * todo: what happens when the endpoint was never registered
      *
      * @param endpoint the endpoint to remove.
+     * @param reason The reason why the endpoint is being removed
      * @throws java.lang.NullPointerException if endpoint is null.
-     * @see #removeEndpoint(ClientEndpoint, boolean)
+     * @see #removeEndpoint(ClientEndpoint, boolean, String)
      */
-    void removeEndpoint(ClientEndpoint endpoint);
+    void removeEndpoint(ClientEndpoint endpoint, String reason);
 
     /**
      * Removes an endpoint and optionally closes it immediately.
@@ -104,10 +98,18 @@ public interface ClientEndpointManager {
      * todo: what happens when the endpoint already is removed
      * todo: what happens when the endpoint was never registered
      *
-     * @param endpoint the endpoint to remove.
+     * @param ce the endpoint to remove.
      * @param closeImmediately if the endpoint is immediately closed.
+     * @param reason The reason why the endpoint is being removed.
      * @throws java.lang.NullPointerException if endpoint is null.
-     * @see #removeEndpoint(ClientEndpoint)
+     * @see #removeEndpoint(ClientEndpoint, String)
      */
-    void removeEndpoint(ClientEndpoint endpoint, boolean closeImmediately);
+    void removeEndpoint(ClientEndpoint ce, boolean closeImmediately, String reason);
+
+    /**
+     *
+     * @param clientUuid The uuid of the desired client conection
+     * @return Any connection with the provided client uuid which is live
+     */
+    Connection findLiveConnectionFor(String clientUuid);
 }
