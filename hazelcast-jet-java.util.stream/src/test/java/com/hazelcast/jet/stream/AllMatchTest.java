@@ -13,29 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class AllMatchTest extends StreamTestSupport {
+public class AllMatchTest extends AbstractStreamTest {
 
     @Test
     public void testAllMatchTrue_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         boolean found = map.stream()
-                .allMatch(m -> m.getValue() < COUNT);
+                           .allMatch(m -> m.getValue() < COUNT);
 
 
         assertEquals(true, found);
@@ -43,11 +38,11 @@ public class AllMatchTest extends StreamTestSupport {
 
     @Test
     public void testAllMatchFalse_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         boolean found = map.stream()
-                .allMatch(m -> m.getValue() > COUNT / 2);
+                           .allMatch(m -> m.getValue() > COUNT / 2);
 
 
         assertEquals(false, found);
@@ -55,12 +50,12 @@ public class AllMatchTest extends StreamTestSupport {
 
     @Test
     public void testAllMatchTrue_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         boolean found = map.stream()
-                .map(Map.Entry::getValue)
-                .allMatch(m -> m < COUNT);
+                           .map(Map.Entry::getValue)
+                           .allMatch(m -> m < COUNT);
 
 
         assertEquals(true, found);
@@ -68,12 +63,12 @@ public class AllMatchTest extends StreamTestSupport {
 
     @Test
     public void testAllMatchFalse_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         boolean found = map.stream()
-                .map(Map.Entry::getValue)
-                .allMatch(m -> m > COUNT / 2);
+                           .map(Map.Entry::getValue)
+                           .allMatch(m -> m > COUNT / 2);
 
 
         assertEquals(false, found);
@@ -81,11 +76,11 @@ public class AllMatchTest extends StreamTestSupport {
 
     @Test
     public void testAllMatch_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         boolean found = list.stream()
-                .allMatch(l -> l < COUNT);
+                            .allMatch(l -> l < COUNT);
 
         assertEquals(true, found);
     }

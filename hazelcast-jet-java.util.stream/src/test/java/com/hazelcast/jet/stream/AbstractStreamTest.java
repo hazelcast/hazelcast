@@ -19,13 +19,25 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.stream.AbstractStreamTest.Options;
 import com.hazelcast.jet.stream.impl.StreamUtil;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.JetTestSupport;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.ParallelRunnerOptions;
+import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.log4j.Level;
 import org.junit.Before;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -34,12 +46,30 @@ import java.util.function.Function;
 
 import static org.junit.Assert.fail;
 
-public abstract class StreamTestSupport extends JetTestSupport {
+@RunWith(Parameterized.class)
+@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@ConfigureParallelRunnerWith(Options.class)
+public abstract class AbstractStreamTest extends JetTestSupport {
 
     public static final int COUNT = 10000;
     public static final int NODE_COUNT = 2;
 
+    public static final TestMode MEMBER_TEST_MODE = new TestMode("member", t -> t.instance);
+    public static final TestMode CLIENT_TEST_MODE = new TestMode("client", t -> t.client);
+
     protected HazelcastInstance instance;
+    protected HazelcastInstance client;
+
+    @Parameter
+    public TestMode testMode;
+
+    // each entry is Object[] with
+    // {URI, ClassLoader, expected prefix, expected prefixed cache name, expected distributed object name}
+    @Parameters(name = "{index}: mode={0}")
+    public static Iterable<? extends Object> parameters() throws URISyntaxException {
+        return Arrays.asList(MEMBER_TEST_MODE, CLIENT_TEST_MODE);
+    }
 
     @Before
     public void setupCluster() throws InterruptedException, ExecutionException {
@@ -47,17 +77,22 @@ public abstract class StreamTestSupport extends JetTestSupport {
         String engineName = "stream-test";
         System.setProperty(StreamUtil.ENGINE_NAME_PROPERTY.getName(), engineName);
         instance = createCluster(NODE_COUNT);
+
+        // configure the engine to have a sane thread count
         JetEngineConfig config = new JetEngineConfig()
                 .setParallelism(Runtime.getRuntime().availableProcessors() / NODE_COUNT);
         JetEngine.get(instance, engineName, config);
+        if (testMode == CLIENT_TEST_MODE) {
+            client = factory.newHazelcastClient();
+        }
     }
 
-    protected static <K, V> IStreamMap<K, V> getStreamMap(HazelcastInstance instance) {
-        return IStreamMap.streamMap(getMap(instance));
+    protected <K, V> IStreamMap<K, V> getStreamMap() {
+        return IStreamMap.streamMap(getMap(testMode.getInstance(this)));
     }
 
-    protected static <E> IStreamList<E> getStreamList(HazelcastInstance instance) {
-        return IStreamList.streamList(getList(instance));
+    protected <E> IStreamList<E> getStreamList() {
+        return IStreamList.streamList(getList(testMode.getInstance(this)));
     }
 
     protected static int fillMap(IMap<String, Integer> map) {
@@ -101,5 +136,33 @@ public abstract class StreamTestSupport extends JetTestSupport {
             }
         }
         fail("Items in array " + Arrays.toString(array) + " were sorted.");
+    }
+
+    protected static final class TestMode {
+
+        private final String name;
+        private final Function<AbstractStreamTest, HazelcastInstance> func;
+
+        protected TestMode(String name, Function<AbstractStreamTest, HazelcastInstance> func) {
+            this.name = name;
+            this.func = func;
+        }
+
+        protected HazelcastInstance getInstance(AbstractStreamTest test) {
+            return func.apply(test);
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    public static class Options implements ParallelRunnerOptions {
+
+        @Override
+        public int maxParallelTests() {
+            return Runtime.getRuntime().availableProcessors() / 2;
+        }
     }
 }

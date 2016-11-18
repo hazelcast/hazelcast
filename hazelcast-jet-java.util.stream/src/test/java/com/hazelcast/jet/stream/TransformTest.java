@@ -17,33 +17,27 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Arrays;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class TransformTest extends StreamTestSupport {
+public class TransformTest extends AbstractStreamTest {
 
     @Test
     public void testMultipleTransforms_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int count = 10;
         IList<Integer> list = map.stream()
-                .map(e -> e.getValue())
-                .filter(e -> e <  count)
-                .flatMap(e -> Stream.of(e))
-                .collect(DistributedCollectors.toIList());
+                                 .map(Entry::getValue)
+                                 .filter(e -> e < count)
+                                 .flatMap(Stream::of)
+                                 .collect(DistributedCollectors.toIList());
 
         assertEquals(count, list.size());
         Integer[] result = list.toArray(new Integer[count]);
@@ -56,15 +50,15 @@ public class TransformTest extends StreamTestSupport {
 
     @Test
     public void testMultipleTransforms_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         int count = 10;
         IList<Integer> result = list.stream()
-                .filter(e -> e < count)
-                .map(e -> e * e)
-                .flatMap(e -> Stream.of(e))
-                .collect(DistributedCollectors.toIList());
+                                    .filter(e -> e < count)
+                                    .map(e -> e * e)
+                                    .flatMap(Stream::of)
+                                    .collect(DistributedCollectors.toIList());
 
         assertEquals(count, result.size());
 
@@ -76,16 +70,16 @@ public class TransformTest extends StreamTestSupport {
 
     @Test
     public void testMultipleTransform_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int count = 10;
         IList<Integer> list = map.stream()
-                .sorted((Distributed.Comparator<Map.Entry<String, Integer>>) (o1, o2) -> o1.getValue().compareTo(o2.getValue()))
-                .map(e -> e.getValue())
-                .filter(e -> e <  count)
-                .flatMap(e -> Stream.of(e))
-                .collect(DistributedCollectors.toIList());
+                                 .sorted((o1, o2) -> o1.getValue().compareTo(o2.getValue()))
+                                 .map(Entry::getValue)
+                                 .filter(e -> e < count)
+                                 .flatMap(Stream::of)
+                                 .collect(DistributedCollectors.toIList());
 
         assertEquals(count, list.size());
         Integer[] result = list.toArray(new Integer[count]);

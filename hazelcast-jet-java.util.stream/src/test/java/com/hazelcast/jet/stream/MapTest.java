@@ -17,28 +17,22 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class MapTest extends StreamTestSupport {
+public class MapTest extends AbstractStreamTest {
 
     @Test
     public void testSimpleMap_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IList<Integer> list = map.stream()
-                .map(e -> e.getValue() * e.getValue())
-                .collect(DistributedCollectors.toIList());
+                                 .map(e -> e.getValue() * e.getValue())
+                                 .collect(DistributedCollectors.toIList());
 
 
         assertEquals(COUNT, list.size());
@@ -53,12 +47,12 @@ public class MapTest extends StreamTestSupport {
 
     @Test
     public void testSimpleMap_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         IList<Integer> result = list.stream()
-                .map(i -> i * i)
-                .collect(DistributedCollectors.toIList());
+                                    .map(i -> i * i)
+                                    .collect(DistributedCollectors.toIList());
 
         assertEquals(COUNT, result.size());
 

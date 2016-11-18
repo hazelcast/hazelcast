@@ -13,30 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class FilterTest extends StreamTestSupport {
+public class FilterTest extends AbstractStreamTest {
 
     @Test
     public void testSimpleFilter_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IMap<String, Integer> result = map.stream()
-                .filter(f -> f.getValue() < 10)
-                .collect(DistributedCollectors.toIMap());
+                                          .filter(f -> f.getValue() < 10)
+                                          .collect(DistributedCollectors.toIMap());
 
         assertEquals(10, result.size());
 
@@ -48,7 +43,7 @@ public class FilterTest extends StreamTestSupport {
 
     @Test
     public void testSimpleFilter_whenSourceList() throws InterruptedException {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         IList<Integer> result = list

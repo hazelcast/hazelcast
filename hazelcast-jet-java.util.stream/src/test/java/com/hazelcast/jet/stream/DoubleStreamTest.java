@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,16 +34,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class DoubleStreamTest extends StreamTestSupport {
+public class DoubleStreamTest extends AbstractStreamTest {
 
     private IStreamMap<String, Double> map;
     private DistributedDoubleStream stream;
 
     @Before
     public void setupMap() {
-        map = getStreamMap(instance);
+        map = getStreamMap();
         fillMapDoubles(map);
         stream = map.stream().mapToDouble(Map.Entry::getValue);
     }

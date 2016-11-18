@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -27,13 +24,11 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class IteratorTest extends StreamTestSupport {
+public class IteratorTest extends AbstractStreamTest {
 
     @Test
     public void testIterator_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Iterator<Map.Entry<String, Integer>> iterator = map.stream().iterator();
@@ -49,14 +44,14 @@ public class IteratorTest extends StreamTestSupport {
 
     @Test
     public void testIterator_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         Iterator<Integer> iterator = list.stream().iterator();
 
         int count = 0;
         while (iterator.hasNext()) {
-            assertEquals(count, (int)iterator.next());
+            assertEquals(count, (int) iterator.next());
             count++;
         }
         assertEquals(COUNT, count);

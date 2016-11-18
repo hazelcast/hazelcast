@@ -19,7 +19,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.stream.StreamTestSupport;
+import com.hazelcast.jet.stream.AbstractStreamTest;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobTracker;
@@ -27,14 +27,9 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -46,9 +41,8 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class WordCountTest extends StreamTestSupport implements Serializable {
+@Ignore
+public class WordCountTest extends AbstractStreamTest implements Serializable {
 
     private static final int COUNT = 1_000_000;
     private static final int DISTINCT = 100_000;
@@ -57,7 +51,7 @@ public class WordCountTest extends StreamTestSupport implements Serializable {
 
     @Before
     public void setUp() {
-        map = getStreamMap(instance);
+        map = getStreamMap();
 
         int row = 0;
         StringBuilder sb = new StringBuilder();
@@ -74,7 +68,6 @@ public class WordCountTest extends StreamTestSupport implements Serializable {
     }
 
     @Test
-    @Ignore
     public void testMapReduce() throws Exception {
         long start = System.currentTimeMillis();
 
@@ -94,7 +87,6 @@ public class WordCountTest extends StreamTestSupport implements Serializable {
     }
 
     @Test
-    @Ignore
     public void testWordCount() throws Exception {
         final Pattern space = Pattern.compile("\\s+");
         IMap<String, Long> wordCounts = null;

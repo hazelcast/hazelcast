@@ -17,32 +17,26 @@
 package com.hazelcast.jet.stream.benchmark;
 
 import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.stream.StreamTestSupport;
+import com.hazelcast.jet.stream.AbstractStreamTest;
 import com.hazelcast.mapreduce.aggregation.Aggregations;
 import com.hazelcast.mapreduce.aggregation.PropertyExtractor;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Map;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
 @Ignore
-public class AggregatorTest extends StreamTestSupport implements Serializable {
+public class AggregatorTest extends AbstractStreamTest implements Serializable {
 
     private static final int COUNT = 100_000;
     private IStreamMap<String, Integer> map;
 
     @Before
     public void setUp() {
-        map = getStreamMap(instance);
+        map = getStreamMap();
         fillMap(map, COUNT);
     }
 

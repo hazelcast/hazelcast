@@ -16,24 +16,18 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.stream.DoubleStream;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class DoubleStreamCastingTest extends StreamTestSupport {
+public class DoubleStreamCastingTest extends AbstractStreamTest {
 
     private DoubleStream stream;
 
     @Before
     public void setUp() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         stream = list.stream().mapToDouble(m -> m);
     }
 

@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.function.IntUnaryOperator;
@@ -28,22 +25,20 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class FlatMapTest extends StreamTestSupport {
+public class FlatMapTest extends AbstractStreamTest {
 
     @Test
     public void testFlatMap_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int repetitions = 10;
 
         IList<Integer> result = map.stream()
-                .flatMap(e -> IntStream.iterate(e.getValue(), IntUnaryOperator.identity())
-                        .limit(repetitions)
-                        .boxed())
-                .collect(DistributedCollectors.toIList());
+                                   .flatMap(e -> IntStream.iterate(e.getValue(), IntUnaryOperator.identity())
+                                                          .limit(repetitions)
+                                                          .boxed())
+                                   .collect(DistributedCollectors.toIList());
 
         assertEquals(COUNT * repetitions, result.size());
 
@@ -58,16 +53,16 @@ public class FlatMapTest extends StreamTestSupport {
 
     @Test
     public void testFlatMap_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         int repetitions = 10;
 
         IList<Integer> result = list.stream()
-                .flatMap(i -> IntStream.iterate(i, IntUnaryOperator.identity())
-                                .limit(repetitions)
-                                .boxed())
-                .collect(DistributedCollectors.toIList());
+                                    .flatMap(i -> IntStream.iterate(i, IntUnaryOperator.identity())
+                                                           .limit(repetitions)
+                                                           .boxed())
+                                    .collect(DistributedCollectors.toIList());
 
         assertEquals(COUNT * repetitions, result.size());
 

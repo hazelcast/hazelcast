@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Comparator;
 import java.util.DoubleSummaryStatistics;
@@ -36,18 +33,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class CollectorsTest extends StreamTestSupport {
+public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void testToCollection_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Set<Integer> collection = map.stream()
-                .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.toCollection(TreeSet::new));
+                                     .map(Map.Entry::getValue)
+                                     .collect(DistributedCollectors.toCollection(TreeSet::new));
 
         assertEquals(COUNT, collection.size());
 
@@ -59,7 +54,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testToCollection_whenSourceList() {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         Set<Integer> collection = list
@@ -76,12 +71,12 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testToList_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         List<Integer> list = map.stream()
-                .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.toList());
+                                .map(Map.Entry::getValue)
+                                .collect(DistributedCollectors.toList());
 
         assertEquals(COUNT, list.size());
 
@@ -94,7 +89,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testToList_whenSourceList() {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         List<Integer> collected = list
@@ -110,12 +105,12 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testToSet_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Set<Integer> collection = map.stream()
-                .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.toSet());
+                                     .map(Map.Entry::getValue)
+                                     .collect(DistributedCollectors.toSet());
 
         assertEquals(COUNT, collection.size());
 
@@ -127,7 +122,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testToSet_whenSourceList() {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         Set<Integer> collection = list
@@ -144,7 +139,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testJoining() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         String result = list
@@ -163,7 +158,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testJoiningWithDelimiter() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         String delimiter = ", ";
@@ -183,7 +178,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testJoiningWithDelimiterPrefixSuffix() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         String delimiter = ", ";
@@ -206,11 +201,11 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testMapping_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         List<Integer> collected = map.stream()
-                .collect(DistributedCollectors.mapping(Map.Entry::getValue, DistributedCollectors.toList()));
+                                     .collect(DistributedCollectors.mapping(Map.Entry::getValue, DistributedCollectors.toList()));
 
         assertEquals(COUNT, collected.size());
 
@@ -222,11 +217,11 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testMapping_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         List<Integer> collected = list.stream()
-                .collect(DistributedCollectors.mapping(i -> i * i, DistributedCollectors.toList()));
+                                      .collect(DistributedCollectors.mapping(i -> i * i, DistributedCollectors.toList()));
 
         assertEquals(COUNT, collected.size());
 
@@ -237,31 +232,31 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testCollectingAndThen_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         int count = list.stream()
-                .collect(DistributedCollectors
-                        .collectingAndThen(DistributedCollectors.toList(), List::size));
+                        .collect(DistributedCollectors
+                                .collectingAndThen(DistributedCollectors.toList(), List::size));
 
         assertEquals(COUNT, count);
     }
 
     @Test
     public void testCollectingAndThen_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int count = map.stream()
-                .collect(DistributedCollectors
-                        .collectingAndThen(DistributedCollectors.toList(), List::size));
+                       .collect(DistributedCollectors
+                               .collectingAndThen(DistributedCollectors.toList(), List::size));
 
         assertEquals(COUNT, count);
     }
 
     @Test
     public void testCounting_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         long count = map.stream().collect(DistributedCollectors.counting());
@@ -271,7 +266,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testCounting_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         long count = list.stream().collect(DistributedCollectors.counting());
@@ -281,7 +276,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testMinBy_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         Distributed.Optional<Integer> min = list
@@ -294,7 +289,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testMinBy_whenSourceEmpty() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
 
         Distributed.Optional<Integer> min = list
                 .stream()
@@ -305,7 +300,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testMaxBy_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         Distributed.Optional<Integer> max = list
@@ -318,7 +313,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testMaxBy_whenSourceEmpty() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
 
         Distributed.Optional<Integer> max = list
                 .stream()
@@ -329,7 +324,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testSummingInt_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         int sum = list.stream().collect(DistributedCollectors.summingInt(m -> m));
@@ -339,7 +334,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testSummingLong_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         long sum = list.stream().collect(DistributedCollectors.summingLong(m -> (long) m));
@@ -349,7 +344,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testSummingDouble_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         double sum = list.stream().collect(DistributedCollectors.summingDouble(m -> (double) m));
@@ -359,7 +354,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testAveragingInt_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         double avg = list.stream().collect(DistributedCollectors.averagingInt(m -> m));
@@ -369,7 +364,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testAveragingLong_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         double avg = list.stream().collect(DistributedCollectors.averagingLong(m -> (long) m));
@@ -379,7 +374,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testAveragingDouble_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         double avg = list.stream().collect(DistributedCollectors.averagingDouble(m -> (double) m));
@@ -389,12 +384,12 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testReducingCollector_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Distributed.Optional<Integer> sum = map.stream()
-                .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.reducing((a, b) -> a + b));
+                                               .map(Map.Entry::getValue)
+                                               .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
         assertTrue(sum.isPresent());
         assertEquals((COUNT - 1) * (COUNT) / 2, (int) sum.get());
@@ -402,42 +397,42 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testReducingCollector_whenSourceEmpty() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
 
         Distributed.Optional<Integer> sum = map.stream()
-                .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.reducing((a, b) -> a + b));
+                                               .map(Map.Entry::getValue)
+                                               .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
         assertFalse(sum.isPresent());
     }
 
     @Test
     public void testReducingCollectorWithIdentity_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int sum = map.stream()
-                .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.reducing(0, (a, b) -> a + b));
+                     .map(Map.Entry::getValue)
+                     .collect(DistributedCollectors.reducing(0, (a, b) -> a + b));
 
         assertEquals((COUNT - 1) * (COUNT) / 2, sum);
     }
 
     @Test
     public void testReducingCollectorWithMappingAndIdentity_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         long sum = map.stream()
-                .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.reducing(0L, n -> (long) n, (a, b) -> a + b));
+                      .map(Map.Entry::getValue)
+                      .collect(DistributedCollectors.reducing(0L, n -> (long) n, (a, b) -> a + b));
 
         assertEquals((COUNT - 1) * (COUNT) / 2, sum);
     }
 
     @Test
     public void testGroupingBy_whenSourceList() {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         int mod = 10;
@@ -459,7 +454,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testGroupingByWithDownstream_whenSourceList() {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         int mod = 10;
@@ -477,7 +472,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testPartitioningBy_whenSourceList() {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         Map<Boolean, List<Integer>> partitioned = list
@@ -495,7 +490,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testPartitioningByWithDownstream_whenSourceList() {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         Map<Boolean, Long> partitioned = list
@@ -513,7 +508,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testSummarizingInt_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         IntSummaryStatistics summary
@@ -528,11 +523,11 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testSummarizingLong_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         LongSummaryStatistics summary
-                = list.stream().collect(DistributedCollectors.summarizingLong(m -> (long)m));
+                = list.stream().collect(DistributedCollectors.summarizingLong(m -> (long) m));
 
         assertEquals(COUNT, summary.getCount());
         assertEquals(COUNT - 1, summary.getMax());
@@ -543,11 +538,11 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testSummarizingDouble_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         DoubleSummaryStatistics summary
-                = list.stream().collect(DistributedCollectors.summarizingDouble(m -> (double)m));
+                = list.stream().collect(DistributedCollectors.summarizingDouble(m -> (double) m));
 
         assertEquals(COUNT, summary.getCount());
         assertEquals(COUNT - 1, summary.getMax(), 0d);
@@ -558,11 +553,11 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testToMap_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Map<String, Integer> collected = map.stream()
-                .collect(DistributedCollectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                                            .collect(DistributedCollectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         assertEquals(COUNT, collected.size());
 
@@ -573,7 +568,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testToMap_whenSourceList() {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         Map<Integer, Integer> collected = list.stream().collect(DistributedCollectors.toMap(v -> v, v -> v));
@@ -587,7 +582,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testCollect_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Integer[] collected = map.stream().collect(
@@ -601,7 +596,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testCustomCollector_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int sum = map.stream().collect(
@@ -621,7 +616,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testCollect_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         Integer[] collected = list.stream().collect(
@@ -635,7 +630,7 @@ public class CollectorsTest extends StreamTestSupport {
 
     @Test
     public void testCustomCollector_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         Integer[] collected = list.stream().collect(

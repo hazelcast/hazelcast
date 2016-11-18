@@ -13,35 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class PeekTest extends StreamTestSupport {
+public class PeekTest extends AbstractStreamTest {
 
     @Test
     public void testPeek_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         final AtomicInteger runningTotal = new AtomicInteger(0);
         IMap<String, Integer> collected = map.stream()
-                .peek(e -> runningTotal.addAndGet(e.getValue()))
-                .collect(DistributedCollectors.toIMap());
+                                             .peek(e -> runningTotal.addAndGet(e.getValue()))
+                                             .collect(DistributedCollectors.toIMap());
 
         assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
         assertEquals(COUNT, collected.size());
@@ -49,32 +45,32 @@ public class PeekTest extends StreamTestSupport {
 
     @Test
     public void testPeek_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         final List<Integer> result = new ArrayList<>();
         IList<Integer> collected = list.stream()
-                .peek(result::add)
-                .collect(DistributedCollectors.toIList());
+                                       .peek(result::add)
+                                       .collect(DistributedCollectors.toIList());
 
         assertEquals(COUNT, result.size());
         assertEquals(COUNT, collected.size());
 
         for (int i = 0; i < COUNT; i++) {
-            assertEquals(i, (int)result.get(i));
+            assertEquals(i, (int) result.get(i));
         }
     }
 
     @Test
     public void testPeek_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         final AtomicInteger runningTotal = new AtomicInteger(0);
         IList<Integer> collected = map.stream()
-                .map(e -> e.getValue())
-                .peek(e -> runningTotal.addAndGet(e))
-                .collect(DistributedCollectors.toIList());
+                                      .map(Entry::getValue)
+                                      .peek(runningTotal::addAndGet)
+                                      .collect(DistributedCollectors.toIList());
 
         assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
         assertEquals(COUNT, collected.size());

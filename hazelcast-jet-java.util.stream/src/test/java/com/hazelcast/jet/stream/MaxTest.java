@@ -13,44 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import java.util.Map.Entry;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class MaxTest extends StreamTestSupport {
+public class MaxTest extends AbstractStreamTest {
 
     @Test
     public void testMax_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int result = map.stream()
-                .map(e -> e.getValue())
-                .max((o1, o2) -> o1.compareTo(o2))
-                .get();
+                        .map(Entry::getValue)
+                        .max(Integer::compareTo)
+                        .get();
 
-        assertEquals(COUNT-1, result);
+        assertEquals(COUNT - 1, result);
     }
 
     @Test
     public void testMax_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         long result = list
                 .stream()
-                .max((o1, o2) -> o1.compareTo(o2))
+                .max(Integer::compareTo)
                 .get();
 
-        assertEquals(COUNT-1, result);
+        assertEquals(COUNT - 1, result);
     }
 
 

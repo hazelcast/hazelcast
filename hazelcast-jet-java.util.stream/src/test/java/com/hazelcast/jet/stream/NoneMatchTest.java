@@ -13,29 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class NoneMatchTest extends StreamTestSupport {
+public class NoneMatchTest extends AbstractStreamTest {
 
     @Test
     public void testNoneMatchTrue_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         boolean found = map.stream()
-                .noneMatch(m -> m.getValue() > COUNT);
+                           .noneMatch(m -> m.getValue() > COUNT);
 
 
         assertEquals(true, found);
@@ -43,11 +38,11 @@ public class NoneMatchTest extends StreamTestSupport {
 
     @Test
     public void testNoneMatchFalse_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         boolean found = map.stream()
-                .noneMatch(m -> m.getValue() > COUNT / 2);
+                           .noneMatch(m -> m.getValue() > COUNT / 2);
 
 
         assertEquals(false, found);
@@ -55,12 +50,12 @@ public class NoneMatchTest extends StreamTestSupport {
 
     @Test
     public void testNoneMatchTrue_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         boolean found = map.stream()
-                .map(Map.Entry::getValue)
-                .noneMatch(m -> m > COUNT);
+                           .map(Map.Entry::getValue)
+                           .noneMatch(m -> m > COUNT);
 
 
         assertEquals(true, found);
@@ -68,12 +63,12 @@ public class NoneMatchTest extends StreamTestSupport {
 
     @Test
     public void testNoneMatchFalse_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         boolean found = map.stream()
-                .map(Map.Entry::getValue)
-                .noneMatch(m -> m > COUNT / 2);
+                           .map(Map.Entry::getValue)
+                           .noneMatch(m -> m > COUNT / 2);
 
 
         assertEquals(false, found);
@@ -81,11 +76,11 @@ public class NoneMatchTest extends StreamTestSupport {
 
     @Test
     public void testNoneMatch_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         boolean found = list.stream()
-                .noneMatch(l -> l > COUNT);
+                            .noneMatch(l -> l > COUNT);
 
         assertEquals(true, found);
     }
