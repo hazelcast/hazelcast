@@ -34,6 +34,20 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Running cascading tests in parallel is not supported -->
+                    <forkCount>1</forkCount>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
     <repositories>
         <repository>
             <id>conjars.org</id>

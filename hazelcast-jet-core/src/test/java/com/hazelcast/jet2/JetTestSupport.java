@@ -37,7 +37,6 @@ import java.util.stream.IntStream;
 
 public class JetTestSupport extends HazelcastTestSupport {
 
-    protected static final ExecutorService executor = Executors.newCachedThreadPool();
     protected TestHazelcastFactory factory;
 
     @After
@@ -45,19 +44,6 @@ public class JetTestSupport extends HazelcastTestSupport {
         if (factory != null) {
             factory.shutdownAll();
         }
-    }
-
-    protected HazelcastInstance createCluster(int nodeCount) throws ExecutionException, InterruptedException {
-        factory = new TestHazelcastFactory();
-        List<Future<HazelcastInstance>> futures = new ArrayList<>();
-        for (int i = 0; i < nodeCount; i++) {
-            futures.add(executor.submit((Callable<HazelcastInstance>) factory::newHazelcastInstance));
-        }
-        HazelcastInstance instance = null;
-        for (Future<HazelcastInstance> future : futures) {
-            instance = future.get();
-        }
-        return instance;
     }
 
     protected static <K, V> IMap<K, V> getMap(HazelcastInstance instance) {

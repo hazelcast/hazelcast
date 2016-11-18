@@ -16,21 +16,20 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.stream.AbstractStreamTest.Options;
 import com.hazelcast.jet.stream.impl.StreamUtil;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.JetTestSupport;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.ParallelRunnerOptions;
-import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.log4j.Level;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -38,28 +37,35 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@ConfigureParallelRunnerWith(Options.class)
 public abstract class AbstractStreamTest extends JetTestSupport {
 
     public static final int COUNT = 10000;
     public static final int NODE_COUNT = 2;
 
-    public static final TestMode MEMBER_TEST_MODE = new TestMode("member", t -> t.instance);
-    public static final TestMode CLIENT_TEST_MODE = new TestMode("client", t -> t.client);
+    protected static HazelcastInstance client;
+    protected static HazelcastInstance instance;
+    private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> instance);
+    private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
 
-    protected HazelcastInstance instance;
-    protected HazelcastInstance client;
+    private static TestHazelcastFactory factory = new TestHazelcastFactory();
+    private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Parameter
     public TestMode testMode;
@@ -71,28 +77,45 @@ public abstract class AbstractStreamTest extends JetTestSupport {
         return Arrays.asList(MEMBER_TEST_MODE, CLIENT_TEST_MODE);
     }
 
-    @Before
-    public void setupCluster() throws InterruptedException, ExecutionException {
+    @BeforeClass
+    public static void setupCluster() throws InterruptedException, ExecutionException {
         setLogLevel(Level.INFO);
         String engineName = "stream-test";
         System.setProperty(StreamUtil.ENGINE_NAME_PROPERTY.getName(), engineName);
         instance = createCluster(NODE_COUNT);
 
         // configure the engine to have a sane thread count
+        int parallelism = Runtime.getRuntime().availableProcessors() / NODE_COUNT / 2;
         JetEngineConfig config = new JetEngineConfig()
-                .setParallelism(Runtime.getRuntime().availableProcessors() / NODE_COUNT);
+                .setParallelism(parallelism <= 2 ? 2 : parallelism);
         JetEngine.get(instance, engineName, config);
-        if (testMode == CLIENT_TEST_MODE) {
-            client = factory.newHazelcastClient();
+        client = factory.newHazelcastClient();
+    }
+
+    private static HazelcastInstance createCluster(int nodeCount) throws ExecutionException, InterruptedException {
+        factory = new TestHazelcastFactory();
+        List<Future<HazelcastInstance>> futures = new ArrayList<>();
+        for (int i = 0; i < nodeCount; i++) {
+            futures.add(executor.submit((Callable<HazelcastInstance>) factory::newHazelcastInstance));
         }
+        HazelcastInstance instance = null;
+        for (Future<HazelcastInstance> future : futures) {
+            instance = future.get();
+        }
+        return instance;
+    }
+
+    @AfterClass
+    public static void shutdown() {
+        factory.shutdownAll();
     }
 
     protected <K, V> IStreamMap<K, V> getStreamMap() {
-        return IStreamMap.streamMap(getMap(testMode.getInstance(this)));
+        return IStreamMap.streamMap(getMap(testMode.getInstance()));
     }
 
     protected <E> IStreamList<E> getStreamList() {
-        return IStreamList.streamList(getList(testMode.getInstance(this)));
+        return IStreamList.streamList(getList(testMode.getInstance()));
     }
 
     protected static int fillMap(IMap<String, Integer> map) {
@@ -141,28 +164,20 @@ public abstract class AbstractStreamTest extends JetTestSupport {
     protected static final class TestMode {
 
         private final String name;
-        private final Function<AbstractStreamTest, HazelcastInstance> func;
+        private final Supplier<HazelcastInstance> supplier;
 
-        protected TestMode(String name, Function<AbstractStreamTest, HazelcastInstance> func) {
+        protected TestMode(String name, Supplier<HazelcastInstance> func) {
             this.name = name;
-            this.func = func;
+            this.supplier = func;
         }
 
-        protected HazelcastInstance getInstance(AbstractStreamTest test) {
-            return func.apply(test);
+        protected HazelcastInstance getInstance() {
+            return supplier.get();
         }
 
         @Override
         public String toString() {
             return name;
-        }
-    }
-
-    public static class Options implements ParallelRunnerOptions {
-
-        @Override
-        public int maxParallelTests() {
-            return Runtime.getRuntime().availableProcessors() / 2;
         }
     }
 }
