@@ -106,7 +106,7 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
 
         long oldSequence = sequence.getLastCallId();
 
-        sequence.complete(invocation);
+        sequence.complete();
         assertEquals(oldSequence, sequence.getLastCallId());
     }
 

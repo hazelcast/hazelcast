@@ -462,15 +462,14 @@ public abstract class Invocation implements OperationResponseHandler {
             return;
         }
 
-        // we are the lucky ones since we just managed to complete the last backup for this invocation and since the
+        // we are the lucky one since we just managed to complete the last backup for this invocation and since the
         // pendingResponse is set, we can set it on the future
         complete(pendingResponse);
     }
 
     private void complete(Object value) {
-        if (future.complete(value)) {
-            context.invocationRegistry.deregister(this);
-        }
+        context.invocationRegistry.deregister(this);
+        future.complete(value);
     }
 
     private void handleRetry(Object cause) {

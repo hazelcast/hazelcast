@@ -268,10 +268,11 @@ final class OperationBackupHandler {
             throw new IllegalArgumentException("Only 'Data' or 'Operation' typed backup operation is supported!");
         }
 
-        backup.setPartitionId(op.getPartitionId())
-                .setReplicaIndex(replicaIndex);
-        setCallId(backup, op.getCallId());
-
+        backup.setPartitionId(op.getPartitionId()).setReplicaIndex(replicaIndex);
+        final long callId = op.getCallId();
+        if (callId != 0) {
+            setCallId(backup, callId);
+        }
         return backup;
     }
 

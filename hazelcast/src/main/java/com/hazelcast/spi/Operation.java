@@ -31,6 +31,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
@@ -44,9 +45,7 @@ import static com.hazelcast.util.StringUtil.timeToString;
  */
 public abstract class Operation implements DataSerializable {
 
-    /**
-     * Marks an {@link Operation} as non partition specific.
-     */
+    /** Marks an {@link Operation} as non-partition-specific. */
     public static final int GENERIC_PARTITION_ID = -1;
 
     static final int BITMASK_VALIDATE_TARGET = 1;
@@ -57,11 +56,14 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
 
+    private static final AtomicLongFieldUpdater<Operation> CALL_ID =
+            AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
+
     // serialized
+    private volatile long callId;
     private String serviceName;
     private int partitionId = GENERIC_PARTITION_ID;
     private int replicaIndex;
-    private long callId;
     private short flags;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
@@ -189,26 +191,47 @@ public abstract class Operation implements DataSerializable {
         return callId;
     }
 
-    // Accessed using OperationAccessor
-    final Operation setCallId(long callId) {
-        this.callId = callId;
-        onSetCallId();
-        return this;
+    /**
+     * Atomically resets the call ID to zero and returns the previous call ID.
+     * @return the old call ID
+     */
+    final long resetCallId() {
+        return CALL_ID.getAndSet(this, 0);
     }
 
     /**
-     * This method is called every time a new <tt>callId</tt> is set to the operation.
-     * A new <tt>callId</tt> is set to an operation before initial invocation
-     * and before every invocation retry.
-     * <p/>
-     * By default this is a no-op method. Operation implementations which are willing to
-     * get notified on <tt>callId</tt> changes can override this method. New <tt>callId</tt>
-     * can be accessed by calling {@link #getCallId()}.
-     * <p/>
+     * Atomically compares the call ID with zero and, if so, sets to the supplied value. If the call ID
+     * was not zero, fails with an {@code IllegalStateException}.
+     * @param callId the requested call ID, must be non-zero
+     * @throws IllegalArgumentException if the supplied call ID is zero
+     * @throws IllegalStateException if the operation's current call ID is not zero
+     */
+    // Accessed using OperationAccessor
+    final void setCallId(long callId) {
+        if (callId == 0) {
+            throw new IllegalArgumentException("Attempted to set zero call ID");
+        }
+        if (!CALL_ID.compareAndSet(this, 0, callId)) {
+            throw new IllegalStateException(String.format(
+                    "Attempt to overwrite existing call ID %d. Requested new call ID: %d",
+                    this.callId, callId));
+        }
+        this.callId = callId;
+        onSetCallId(callId);
+    }
+
+    /**
+     * Called every time a new <tt>callId</tt> is set on the operation.
+     * A new <tt>callId</tt> is set before initial invocation and before every invocation retry.
+     * <p>
+     * By default this is a no-op method. Operation implementations which want to
+     * get notified on <tt>callId</tt> changes can override it.
+     * <p>
      * For example an operation can distinguish the first invocation and invocation retries by keeping
      * the initial <tt>callId</tt>.
+     * @param callId the new call ID that was set on the operation
      */
-    protected void onSetCallId() {
+    protected void onSetCallId(long callId) {
     }
 
     public boolean validatesTarget() {

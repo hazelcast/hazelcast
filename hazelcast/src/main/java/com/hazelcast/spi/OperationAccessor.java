@@ -40,13 +40,22 @@ public final class OperationAccessor {
     /**
      * Sets the callId for the Operation.
      *
-     * @param op the Operator that is updated for its callId.
+     * @param op the Operatior that is updated for its callId.
      * @param callId the callId.
      * @see Operation#setCallId(long)
      * @see Operation#getCallId()
      */
     public static void setCallId(Operation op, long callId) {
         op.setCallId(callId);
+    }
+
+    /**
+     * Resets the callId for the Operation to zero. For details see {@link Operation#resetCallId()}
+     *
+     * @param op the Operation on which to reset the callId
+     */
+    public static long resetCallId(Operation op) {
+        return op.resetCallId();
     }
 
     /**

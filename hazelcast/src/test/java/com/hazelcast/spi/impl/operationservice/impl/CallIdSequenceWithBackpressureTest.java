@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.spi.OperationAccessor.resetCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure.MAX_DELAY_MS;
 import static org.junit.Assert.assertEquals;
@@ -111,7 +112,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
                 sleepSeconds(3);
 
-                sequence.complete(invocation);
+                sequence.complete();
             }
         });
 
@@ -172,25 +173,10 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
         long oldSequence = sequence.getLastCallId();
         long oldTail = sequence.getTail();
-        sequence.complete(invocation);
+        sequence.complete();
 
         assertEquals(oldSequence, sequence.getLastCallId());
         assertEquals(oldTail + 1, sequence.getTail());
-    }
-
-    @Test
-    public void completeLocalCall() {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
-
-        Invocation invocation = newInvocation(new DummyOperation());
-        setCallId(invocation.op, 0);
-
-        long oldSequence = sequence.getLastCallId();
-        long oldTail = sequence.getTail();
-        sequence.complete(invocation);
-
-        assertEquals(oldSequence, sequence.getLastCallId());
-        assertEquals(oldTail, sequence.getTail());
     }
 
     @Test(expected = AssertionError.class)
@@ -201,9 +187,9 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
         Invocation invocation = newInvocation(new DummyBackupAwareOperation());
         setCallId(invocation.op, sequence.next(invocation));
 
-        sequence.complete(invocation);
+        sequence.complete();
 
-        sequence.complete(invocation);
+        sequence.complete();
     }
 
     @Test
