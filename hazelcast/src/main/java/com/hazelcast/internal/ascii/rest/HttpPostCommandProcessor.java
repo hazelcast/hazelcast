@@ -40,6 +40,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
     public void handle(HttpPostCommand command) {
         try {
             String uri = command.getURI();
@@ -58,6 +59,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 return;
             } else if (uri.startsWith(URI_FORCESTART_CLUSTER_URL)) {
                 handleForceStart(command);
+            } else if (uri.startsWith(URI_PARTIALSTART_CLUSTER_URL)) {
+                handlePartialStart(command);
             } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
                 handleListNodes(command);
             } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
@@ -151,6 +154,28 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 res = res.replace("${STATUS}", "forbidden");
             } else {
                 boolean success = node.getNodeExtension().triggerForceStart();
+                res = res.replace("${STATUS}", success ? "success" : "fail");
+            }
+        } catch (Throwable throwable) {
+            res = res.replace("${STATUS}", "fail");
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+        textCommandService.sendResponse(command);
+    }
+
+    private void handlePartialStart(HttpPostCommand command) throws UnsupportedEncodingException {
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        String groupName = URLDecoder.decode(strList[0], "UTF-8");
+        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
+        String res = "{\"status\":\"${STATUS}\"}";
+        try {
+            Node node = textCommandService.getNode();
+            GroupConfig groupConfig = node.getConfig().getGroupConfig();
+            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+                res = res.replace("${STATUS}", "forbidden");
+            } else {
+                boolean success = node.getNodeExtension().triggerPartialStart();
                 res = res.replace("${STATUS}", success ? "success" : "fail");
             }
         } catch (Throwable throwable) {

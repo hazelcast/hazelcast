@@ -23,6 +23,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.cluster.ClusterStateListener;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -62,6 +63,7 @@ import java.util.Set;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @PrivateApi
+@SuppressWarnings({"checkstyle:methodcount"})
 public class DefaultNodeExtension implements NodeExtension {
 
     protected final Node node;
@@ -270,5 +272,10 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids) {
+    }
+
+    @Override
+    public ClusterHotRestartStatusDTO getCurrentClusterHotRestartStatus() {
+        return new ClusterHotRestartStatusDTO();
     }
 }

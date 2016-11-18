@@ -71,8 +71,8 @@ fi
 
 command -v curl >/dev/null 2>&1 || { echo >&2 "Cluster state script requires curl but it's not installed. Aborting."; exit -1; }
 
-if [ "$OPERATION" != "get-state" ] && [ "$OPERATION" != "change-state" ] && [ "$OPERATION" != "shutdown" ] &&  [ "$OPERATION" != "force-start" ]; then
-    echo "Not a valid cluster operation, valid operations  are 'get-state' || 'change-state' || 'shutdown' || 'force-start'"
+if [ "$OPERATION" != "get-state" ] && [ "$OPERATION" != "change-state" ] && [ "$OPERATION" != "shutdown" ] &&  [ "$OPERATION" != "force-start" ] &&  [ "$OPERATION" != "partial-start" ]; then
+    echo "Not a valid cluster operation, valid operations  are 'get-state' || 'change-state' || 'shutdown' || 'force-start' || 'partial-start'"
     exit 0
 fi
 
@@ -149,7 +149,7 @@ if [ "$OPERATION" = "force-start" ]; then
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 
     if [ "$STATUS" = "fail" ];then
-       echo "An error occured while force starting the cluster!";
+       echo "An error occurred while force starting the cluster!";
        exit 0
     fi
 
@@ -160,6 +160,33 @@ if [ "$OPERATION" = "force-start" ]; then
 
     if [ "$STATUS" = "success" ];then
         echo "Cluster force-start completed!"
+        exit 0
+    fi
+
+    echo "No hazelcast cluster is running on ip ${ADDRESS} on port ${PORT}."
+    exit 0
+fi
+
+if [ "$OPERATION" = "partial-start" ]; then
+    echo "Partial-start makes cluster operational by starting only a portion of available members if cluster start is blocked by problematic members. Please make sure you provide valid user/pass."
+    echo "Starting cluster from member on ip ${ADDRESS} on port ${PORT}"
+
+    request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/partialStart"
+    response=$(curl --data "${GROUPNAME}&${PASSWORD}" --silent "${request}");
+    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+
+    if [ "$STATUS" = "fail" ];then
+       echo "An error occurred while partially starting the cluster!";
+       exit 0
+    fi
+
+    if [ "$STATUS" = "forbidden" ];then
+        echo "Please make sure you provide valid user/pass.";
+        exit 0
+    fi
+
+    if [ "$STATUS" = "success" ];then
+        echo "Cluster partial-start completed!"
         exit 0
     fi
 
