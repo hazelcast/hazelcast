@@ -1,5 +1,6 @@
 package com.hazelcast.aggregation;
 
+import com.hazelcast.aggregation.impl.DoubleAverageAggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -67,7 +68,7 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             System.err.println("Executing aggregation");
             long start = System.currentTimeMillis();
-            Double avg = map.aggregate(new TestDoubleAverageAggregator<Long, Double>());
+            Double avg = map.aggregate(new DoubleAverageAggregator<Long, Double>());
             long stop = System.currentTimeMillis();
             System.err.println("\nFinished avg in " + (stop - start) + " millis avg=" + avg);
             System.err.println("------------------------------------------");
@@ -117,7 +118,7 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             System.err.println("Executing aggregation");
             long start = System.currentTimeMillis();
-            Double avg = map.aggregate(new TestDoubleAverageAggregator<Long, Person>("age"));
+            Double avg = map.aggregate(new DoubleAverageAggregator<Long, Person>("age"));
             long stop = System.currentTimeMillis();
             System.err.println("\nFinished avg in " + (stop - start) + " millis avg=" + avg);
             System.err.println("------------------------------------------");

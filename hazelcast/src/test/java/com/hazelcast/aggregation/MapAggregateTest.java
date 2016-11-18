@@ -2,6 +2,7 @@ package com.hazelcast.aggregation;
 
 
 import com.hazelcast.aggregation.impl.AbstractAggregator;
+import com.hazelcast.aggregation.impl.DoubleAverageAggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -44,7 +45,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void null_predicate() {
-        getMapWithNodeCount(1).aggregate(new TestDoubleAverageAggregator(), null);
+        getMapWithNodeCount(1).aggregate(new DoubleAverageAggregator(), null);
     }
 
     @Test(expected = NullPointerException.class)
@@ -57,7 +58,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
         IMap<String, Double> map = getMapWithNodeCount(1);
         populateMap(map);
 
-        Double avg = map.aggregate(new TestDoubleAverageAggregator<String, Double>());
+        Double avg = map.aggregate(new DoubleAverageAggregator<String, Double>());
         assertEquals(Double.valueOf(4.0d), avg);
     }
 
@@ -65,7 +66,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
     public void doubleAvg_3Nodes_primitiveValue() {
         IMap<String, Double> map = populateMap(getMapWithNodeCount(3));
 
-        Double avg = map.aggregate(new TestDoubleAverageAggregator<String, Double>());
+        Double avg = map.aggregate(new DoubleAverageAggregator<String, Double>());
         assertEquals(Double.valueOf(4.0d), avg);
     }
 
@@ -111,7 +112,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
         IMap<String, Person> map = getMapWithNodeCount(1);
         populateMapWithPersons(map);
 
-        Double avg = map.aggregate(new TestDoubleAverageAggregator<String, Person>("age"));
+        Double avg = map.aggregate(new DoubleAverageAggregator<String, Person>("age"));
         assertEquals(Double.valueOf(4.0d), avg);
     }
 
@@ -120,7 +121,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
         IMap<String, Person> map = getMapWithNodeCount(3);
         populateMapWithPersons(map);
 
-        Double avg = map.aggregate(new TestDoubleAverageAggregator<String, Person>("age"));
+        Double avg = map.aggregate(new DoubleAverageAggregator<String, Person>("age"));
         assertEquals(Double.valueOf(4.0d), avg);
     }
 
@@ -129,7 +130,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
         IMap<String, Person> map = getMapWithNodeCount(1);
         populateMapWithPersons(map);
 
-        Double avg = map.aggregate(new TestDoubleAverageAggregator<String, Person>("age"), Predicates.greaterThan("age", 2.0d));
+        Double avg = map.aggregate(new DoubleAverageAggregator<String, Person>("age"), Predicates.greaterThan("age", 2.0d));
         assertEquals(Double.valueOf(5.5d), avg);
     }
 
@@ -138,7 +139,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
         IMap<String, Person> map = getMapWithNodeCount(3);
         populateMapWithPersons(map);
 
-        Double avg = map.aggregate(new TestDoubleAverageAggregator<String, Person>("age"), Predicates.greaterThan("age", 2.0d));
+        Double avg = map.aggregate(new DoubleAverageAggregator<String, Person>("age"), Predicates.greaterThan("age", 2.0d));
         assertEquals(Double.valueOf(5.5d), avg);
     }
 
@@ -215,7 +216,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
 
         System.err.println("Executing");
         long start = System.currentTimeMillis();
-        Double avg = map.aggregate(new TestDoubleAverageAggregator<Long, Double>());
+        Double avg = map.aggregate(new DoubleAverageAggregator<Long, Double>());
         long stop = System.currentTimeMillis();
         System.err.println("Finished avg in " + (stop - start) + " millis avg=" + avg);
         System.err.flush();
