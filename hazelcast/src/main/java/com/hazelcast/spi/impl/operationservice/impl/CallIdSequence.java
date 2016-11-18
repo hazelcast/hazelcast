@@ -17,35 +17,40 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastOverloadException;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Responsible for generating callIds.
+ * Responsible for generating invocation callIds.
+ * <p>
+ * It is very important that for each {@link #next(Invocation)}, there is a matching {@link #complete()}.
+ * If they don't match, the number of concurrent invocations will grow/shrink without bound over time.
+ * This can lead to OOME or deadlock.
+ * <p>
+ * When backpressure is enabled and there are too many concurrent invocations, calls of {@link #next(Invocation)}
+ * will block using a spin-loop with exponential backoff.
  * <p/>
- * It is very important that for each {@link #next(Invocation)}, there is a matching {@link #complete(Invocation)}.
- * If this doesn't match, than either the number of concurrent invocations can grow or shrink over time. This can lead
- * to OOME or deadlock.
+ * Currently a single CallIdSequence is used for all partitions, so there is contention. Also one partition
+ * can cause problems in other partition if a lot of invocations are created for that partition. Then other
+ * partitions can't make as many invocations because a single callIdSequence is being used.
  * <p/>
- * The CallIdSequence provides back pressure if enabled and there are too many concurrent invocations. When this happens,
- * an exponential backoff policy is applied.
- * <p/>
- * Currently a single CallIdSequence is used for all partitions; so there is contention. Also one partition can cause problems
- * in other partition if a lot of invocations are created for that partition. Then other partitions can't make as many invocations
- * because a single callIdSequence is being used.
- * <p/>
- * In the future we could add a CallIdSequence per partition or using some 'concurrency level' and do a mod based on the
- * partition-id. The advantage is that you reduce contention and improved isolation, at the expensive of:
+ * In the future we could add a CallIdSequence per partition or using some 'concurrency level'
+ * and do a mod based on the partition-id. The advantage is that you reduce contention and improve isolation,
+ * at the expense of:
  * <ol>
  * <li>increased complexity</li>
  * <li>not always being able to fully utilize the number of invocations.</li>
  * </ol>
  */
-public abstract class CallIdSequence {
+abstract class CallIdSequence {
 
     // just for testing purposes.
     abstract long getLastCallId();
@@ -66,7 +71,8 @@ public abstract class CallIdSequence {
      */
     public abstract long next(Invocation invocation);
 
-    public abstract void complete(Invocation invocation);
+    /** Not idempotent: must be called exactly once per invocation. */
+    public abstract void complete();
 
     static final class CallIdSequenceWithoutBackpressure extends CallIdSequence {
 
@@ -93,25 +99,28 @@ public abstract class CallIdSequence {
         }
 
         @Override
-        public void complete(Invocation invocation) {
+        public void complete() {
             //no-op
         }
     }
 
     /**
-     * A {@link com.hazelcast.spi.impl.operationservice.impl.CallIdSequence} that provided backpressure by taking
-     * the number in flight operations into account when a call-id needs to be determined.
-     *
-     * It is possible to temporary exceed the capacity:
-     * - due to system operations
-     * - due to racy nature of checking if space is available and getting the next sequence.
-     *
-     * The last cause is not a problem since the capacity is exceeded temporary and it isn't sustainable. So perhaps
-     * there are a few threads that at the same time see that the there is space and do a next. But any following
-     * invocation needs to wait till there is is capacity.
+     * A {@link com.hazelcast.spi.impl.operationservice.impl.CallIdSequence} that provides backpressure by taking
+     * the number of in-flight operations into account when before creating a new call-id.
+     * <p>
+     * It is possible to temporarily create more concurrent invocations than the declared capacity due to:
+     * <ul>
+     *     <li>system operations</li>
+     *     <li>the racy nature of checking if space is available and getting the next sequence. </li>
+     * </ul>
+     * The latter cause is not a problem since the capacity is exceeded temporarily and it isn't sustainable.
+     * So perhaps there are a few threads that at the same time see that the there is space and do a next.
+     * But any following invocation needs to wait till there is is capacity.
      */
     static final class CallIdSequenceWithBackpressure extends CallIdSequence {
         static final int MAX_DELAY_MS = 500;
+        private static final IdleStrategy IDLER = new BackoffIdleStrategy(
+                0, 0, MILLISECONDS.toNanos(1), MILLISECONDS.toNanos(MAX_DELAY_MS));
         private static final int INDEX_HEAD = 7;
         private static final int INDEX_TAIL = 15;
 
@@ -131,10 +140,6 @@ public abstract class CallIdSequence {
             return longs.get(INDEX_HEAD);
         }
 
-        long getTail() {
-            return longs.get(INDEX_TAIL);
-        }
-
         @Override
         public int getMaxConcurrentInvocations() {
             return maxConcurrentInvocations;
@@ -142,19 +147,25 @@ public abstract class CallIdSequence {
 
         @Override
         public long next(Invocation invocation) {
-            assert invocation.op.getCallId() == 0 : "callId should be null:" + invocation;
+            final Operation op = invocation.op;
+            assert op.getCallId() == 0 : "callId should be zero:" + invocation;
 
-            if (!invocation.op.isUrgent()) {
-                if (!hasSpace()) {
-                    waitForSpace(invocation);
-                }
+            if (!op.isUrgent() && !hasSpace()) {
+                waitForSpace(invocation);
             }
+            // must generate a sequence even if the invocation is going to skip registration
+            // because this information is used to determine the number of in-flight invocations
+            return next();
+        }
 
-            // we need to generate a sequence, no matter if the invocation is going to skip registration.
-            // because this information is used to determine the number of in flight invocations
-            long callId = next();
+        @Override
+        public void complete() {
+            long newTail = longs.incrementAndGet(INDEX_TAIL);
+            assert newTail <= longs.get(INDEX_HEAD);
+        }
 
-            return callId;
+        long getTail() {
+            return longs.get(INDEX_TAIL);
         }
 
         private long next() {
@@ -166,30 +177,16 @@ public abstract class CallIdSequence {
         }
 
         private void waitForSpace(Invocation invocation) {
-            long remainingTimeoutMs = backoffTimeoutMs;
-            boolean restoreInterrupt = false;
-            try {
-                long delayMs = 1;
-                for (; ; ) {
-                    long startMs = System.currentTimeMillis();
-                    restoreInterrupt = sleep(delayMs);
-                    long durationMs = System.currentTimeMillis() - startMs;
-                    remainingTimeoutMs -= durationMs;
+            long deadline = System.currentTimeMillis() + backoffTimeoutMs;
+            for (long idleCount = 0; ; idleCount++) {
+                IDLER.idle(idleCount);
 
-                    if (hasSpace()) {
-                        return;
-                    }
-
-                    if (remainingTimeoutMs <= 0) {
-                        throw new HazelcastOverloadException("Failed to get a callId for invocation: " + invocation);
-                    }
-
-                    delayMs = nextDelay(remainingTimeoutMs, delayMs);
-                    remainingTimeoutMs -= delayMs;
+                if (hasSpace()) {
+                    return;
                 }
-            } finally {
-                if (restoreInterrupt) {
-                    Thread.currentThread().interrupt();
+
+                if (System.currentTimeMillis() >= deadline) {
+                    throw new HazelcastOverloadException("Failed to get a callId for invocation: " + invocation);
                 }
             }
         }
@@ -219,16 +216,6 @@ public abstract class CallIdSequence {
             }
 
             return delayMs;
-        }
-
-        @Override
-        public void complete(Invocation invocation) {
-            if (invocation.op.getCallId() == 0) {
-                return;
-            }
-
-            long newTail = longs.incrementAndGet(INDEX_TAIL);
-            assert newTail <= longs.get(INDEX_HEAD);
         }
     }
 }

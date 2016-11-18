@@ -28,19 +28,23 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 public abstract class AbstractLockOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     public static final int ANY_THREAD = 0;
 
+    private static final AtomicLongFieldUpdater<AbstractLockOperation> REFERENCE_CALL_ID =
+            AtomicLongFieldUpdater.newUpdater(AbstractLockOperation.class, "referenceCallId");
+
     protected ObjectNamespace namespace;
     protected Data key;
     protected long threadId;
     protected long leaseTime = -1L;
     protected transient Object response;
+    private volatile long referenceCallId;
     private transient boolean asyncBackup;
-    private long referenceCallId;
 
     public AbstractLockOperation() {
     }
@@ -98,10 +102,8 @@ public abstract class AbstractLockOperation extends Operation
     }
 
     @Override
-    protected void onSetCallId() {
-        if (referenceCallId == 0L) {
-            referenceCallId = getCallId();
-        }
+    protected void onSetCallId(long callId) {
+        REFERENCE_CALL_ID.compareAndSet(this, 0, callId);
     }
 
     protected final long getReferenceCallId() {
