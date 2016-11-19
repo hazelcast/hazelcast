@@ -73,9 +73,10 @@ public abstract class DefaultMapAggregateMessageTask<P>
                 }
             }
         } finally {
-            combinedResult.onCombineFinished();
+            if (combinedResult != null) {
+                combinedResult.onCombineFinished();
+            }
         }
         return combinedResult;
     }
-
 }
