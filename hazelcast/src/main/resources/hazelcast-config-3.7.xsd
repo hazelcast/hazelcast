@@ -2880,6 +2880,7 @@
         <xs:restriction base="non-space-string">
             <xs:enumeration value="DISCARD_AFTER_MUTATION"/>
             <xs:enumeration value="THROW_EXCEPTION"/>
+            <xs:enumeration value="THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE"/>
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>

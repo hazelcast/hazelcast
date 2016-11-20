@@ -65,6 +65,7 @@
                     </hz:properties>
                 </hz:wan-publisher>
                 <hz:wan-publisher group-name="istanbul" class-name="com.hazelcast.wan.custom.CustomPublisher">
+                    <hz:queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</hz:queue-full-behavior>
                     <hz:properties>
                         <hz:property name="custom.prop.publisher">prop.publisher</hz:property>
                     </hz:properties>

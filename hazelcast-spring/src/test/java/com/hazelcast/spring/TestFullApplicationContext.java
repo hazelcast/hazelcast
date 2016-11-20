@@ -630,6 +630,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         WanPublisherConfig customPublisher = wcfg.getWanPublisherConfigs().get(1);
         assertEquals("istanbul", customPublisher.getGroupName());
         assertEquals("com.hazelcast.wan.custom.CustomPublisher", customPublisher.getClassName());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, customPublisher.getQueueFullBehavior());
         Map<String, Comparable> customPublisherProps = customPublisher.getProperties();
         assertEquals("prop.publisher", customPublisherProps.get("custom.prop.publisher"));
 

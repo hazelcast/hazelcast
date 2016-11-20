@@ -868,6 +868,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "           <property name=\"custom.prop.publisher\">prop.publisher</property>\n"
                 + "       </properties>\n"
                 + "    </wan-publisher>\n"
+                + "    <wan-publisher group-name=\"ankara\">\n"
+                + "       <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
+                + "       <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n"
+                + "    </wan-publisher>\n"
                 + "    <wan-consumer>\n"
                 + "       <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n"
                 + "       <properties>\n"
@@ -882,14 +886,18 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertNotNull(wanConfig);
 
         List<WanPublisherConfig> publisherConfigs = wanConfig.getWanPublisherConfigs();
-        assertEquals(1, publisherConfigs.size());
-        WanPublisherConfig publisherConfig = publisherConfigs.get(0);
-        assertEquals("istanbul", publisherConfig.getGroupName());
-        assertEquals("com.hazelcast.wan.custom.WanPublisher", publisherConfig.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
-        assertEquals(21, publisherConfig.getQueueCapacity());
-        Map<String, Comparable> pubProperties = publisherConfig.getProperties();
+        assertEquals(2, publisherConfigs.size());
+        WanPublisherConfig publisherConfig1 = publisherConfigs.get(0);
+        assertEquals("istanbul", publisherConfig1.getGroupName());
+        assertEquals("com.hazelcast.wan.custom.WanPublisher", publisherConfig1.getClassName());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig1.getQueueFullBehavior());
+        assertEquals(21, publisherConfig1.getQueueCapacity());
+        Map<String, Comparable> pubProperties = publisherConfig1.getProperties();
         assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
+
+        WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
+        assertEquals("ankara", publisherConfig2.getGroupName());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, publisherConfig2.getQueueFullBehavior());
 
         WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
