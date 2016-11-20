@@ -180,44 +180,70 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the callId of this Operation.
-     *
-     * The callId is used to associate the invocation of an Operation on a remote system, with the response from the execution
-     * of that operation.
-     *
-     * @return the callId.
+     * Gets the call ID of this operation. The call ID is used to associate the invocation of an operation
+     * on a remote system with the response from the execution of that operation.
+     * <ul>
+     *     <li>Initially the call ID is zero.</li>
+     *     <li>When an Invocation of the operation is created, call ID is assigned a positive value.</li>
+     *     <li>When the invocation ends, the operation is {@link #deactivate()}d, but the call ID is preserved.</li>
+     *     <li>The same operation may be involved in a further invocation (retrying); this will assign a
+     *     new call ID and reactivate the operation.</li>
+     * </ul>
+     * @return the call ID
      */
     public final long getCallId() {
-        return callId;
+        return Math.abs(callId);
     }
 
     /**
-     * Atomically resets the call ID to zero and returns the previous call ID.
-     * @return the old call ID
+     * Tells whether this operation is involved in an ongoing invocation. Such an operation always has a
+     * positive call ID.
+     * @return {@code true} if the operation's invocation is active; {@code false} otherwise
      */
-    final long resetCallId() {
-        return CALL_ID.getAndSet(this, 0);
+    final boolean hasActiveInvocation() {
+        return callId > 0;
     }
 
     /**
-     * Atomically compares the call ID with zero and, if so, sets to the supplied value. If the call ID
-     * was not zero, fails with an {@code IllegalStateException}.
-     * @param callId the requested call ID, must be non-zero
-     * @throws IllegalArgumentException if the supplied call ID is zero
-     * @throws IllegalStateException if the operation's current call ID is not zero
+     * Marks this operation as "not involved in an ongoing invocation".
+     * @return {@code true} if this call deactivated the operation; {@code false} if it was already inactive
+     */
+    final boolean deactivate() {
+        long c = callId;
+        if (c <= 0) {
+            return false;
+        }
+        if (CALL_ID.compareAndSet(this, c, -c)) {
+            return true;
+        }
+        if (callId > 0) {
+            throw new IllegalStateException("Operation concurrently re-activated while executing deactivate()");
+        }
+        return false;
+    }
+
+    /**
+     * Atomically ensures that the operation is not already involved in an invocation and sets the supplied call ID.
+     * @param newId the requested call ID, must be positive
+     * @throws IllegalArgumentException if the supplied call ID is non-positive
+     * @throws IllegalStateException if the operation already has an ongoing invocation
      */
     // Accessed using OperationAccessor
-    final void setCallId(long callId) {
-        if (callId == 0) {
-            throw new IllegalArgumentException("Attempted to set zero call ID");
+    final void setCallId(long newId) {
+        if (newId <= 0) {
+            throw new IllegalArgumentException("Attempted to set non-positive call ID " + newId);
         }
-        if (!CALL_ID.compareAndSet(this, 0, callId)) {
+        final long c = this.callId;
+        if (c > 0) {
             throw new IllegalStateException(String.format(
-                    "Attempt to overwrite existing call ID %d. Requested new call ID: %d",
-                    this.callId, callId));
+                    "Attempt to overwrite the call ID of an active operation: current %d, requested %d",
+                    this.callId, newId));
         }
-        this.callId = callId;
-        onSetCallId(callId);
+        if (!CALL_ID.compareAndSet(this, c, newId)) {
+            throw new IllegalStateException(String.format("Concurrent modification of call ID. Initially observed %d,"
+                    + " then attempted to set %d, then observed %d", c, newId, callId));
+        }
+        onSetCallId(newId);
     }
 
     /**

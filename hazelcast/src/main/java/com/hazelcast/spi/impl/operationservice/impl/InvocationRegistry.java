@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.OperationAccessor.resetCallId;
+import static com.hazelcast.spi.OperationAccessor.deactivate;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
@@ -102,13 +102,10 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      * @return false when InvocationRegistry is not alive and registration is not successful, true otherwise
      */
     public boolean register(Invocation invocation) {
-        assert invocation.op.getCallId() == 0 : "can't register twice: " + invocation;
-
         long callId = callIdSequence.next(invocation);
+        // Fails if the operation is already active
         setCallId(invocation.op, callId);
-
         invocations.put(callId, invocation);
-
         if (!alive) {
             invocation.notifyError(new HazelcastInstanceNotActiveException());
             return false;
@@ -117,16 +114,15 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     }
 
     /**
-     * Deregisters an invocation. If the invocation's associated call ID is zero, the call is ignored.
+     * Deregisters an invocation. If the associated operation is inactive, the call is ignored.
      * This ensures the idempotence of deregistration.
      * @param invocation The Invocation to deregister.
      */
     public void deregister(Invocation invocation) {
-        long oldCallId = resetCallId(invocation.op);
-        if (oldCallId == 0) {
+        if (!deactivate(invocation.op)) {
             return;
         }
-        invocations.remove(oldCallId);
+        invocations.remove(invocation.op.getCallId());
         callIdSequence.complete();
     }
 

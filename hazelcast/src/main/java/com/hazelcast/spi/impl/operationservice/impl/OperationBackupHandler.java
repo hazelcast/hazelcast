@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static java.lang.Math.min;
 
@@ -256,8 +257,8 @@ final class OperationBackupHandler {
         return backupOp;
     }
 
-    private Backup newBackup(BackupAwareOperation backupAwareOp, Object backupOp, long[] replicaVersions,
-            int replicaIndex, boolean respondBack) {
+    private static Backup newBackup(BackupAwareOperation backupAwareOp, Object backupOp, long[] replicaVersions,
+                                    int replicaIndex, boolean respondBack) {
         Operation op = (Operation) backupAwareOp;
         Backup backup;
         if (backupOp instanceof Operation) {
@@ -269,9 +270,8 @@ final class OperationBackupHandler {
         }
 
         backup.setPartitionId(op.getPartitionId()).setReplicaIndex(replicaIndex);
-        final long callId = op.getCallId();
-        if (callId != 0) {
-            setCallId(backup, callId);
+        if (hasActiveInvocation(op)) {
+            setCallId(backup, op.getCallId());
         }
         return backup;
     }
