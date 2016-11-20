@@ -17,7 +17,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.spi.OperationAccessor.resetCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure.MAX_DELAY_MS;
 import static org.junit.Assert.assertEquals;

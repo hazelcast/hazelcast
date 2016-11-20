@@ -413,7 +413,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         if (op.getCallId() == 0) {
             if (op.returnsResponse()) {
                 throw new HazelcastException(
-                        "Op: " + op + " can not return response without call-id!");
+                        "Operation " + op + " wants to return a response, but doesn't have a call ID");
             }
             handler = createEmptyResponseHandler();
         }
