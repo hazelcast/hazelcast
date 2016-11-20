@@ -206,6 +206,10 @@ public abstract class Invocation implements OperationResponseHandler {
 
     abstract ExceptionAction onException(Throwable t);
 
+    boolean isActive() {
+        return hasActiveInvocation(op);
+    }
+
     /**
      * Initializes the invocation target.
      *
@@ -446,7 +450,7 @@ public abstract class Invocation implements OperationResponseHandler {
     private void invoke0(boolean isAsync) {
         if (invokeCount > 0) {
             throw new IllegalStateException("This invocation is already in progress");
-        } else if (hasActiveInvocation(op)) {
+        } else if (isActive()) {
             throw new IllegalStateException(
                     "Attempt to reuse the same operation in multiple invocations. Operation is " + op);
         }
