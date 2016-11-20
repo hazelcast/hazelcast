@@ -110,7 +110,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
         invocationRegistry.deregister(invocation);
 
-        assertFalse(hasActiveInvocation(invocation.op));
+        assertFalse(invocation.isActive());
     }
 
     @Test

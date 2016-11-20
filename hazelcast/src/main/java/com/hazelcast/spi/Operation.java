@@ -77,7 +77,7 @@ public abstract class Operation implements DataSerializable {
     private transient Connection connection;
     private transient OperationResponseHandler responseHandler;
 
-    public Operation() {
+    protected Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
     }
