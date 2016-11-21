@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.stream.impl;
 
+import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -34,8 +35,8 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -437,6 +438,26 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         return map.executeOnEntries(entryProcessor, predicate);
+    }
+
+    @Override
+    public <R> R aggregate(Aggregator<R, K, V> aggregator) {
+        return map.aggregate(aggregator);
+    }
+
+    @Override
+    public <R> R aggregate(Aggregator<R, K, V> aggregator, Predicate<K, V> predicate) {
+        return map.aggregate(aggregator, predicate);
+    }
+
+    @Override
+    public <R> Collection<R> project(Projection<Entry<K, V>, R> projection) {
+        return map.project(projection);
+    }
+
+    @Override
+    public <R> Collection<R> project(Projection<Entry<K, V>, R> projection, Predicate<K, V> predicate) {
+        return map.project(projection, predicate);
     }
 
     @Override
