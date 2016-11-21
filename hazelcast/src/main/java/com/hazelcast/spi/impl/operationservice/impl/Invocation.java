@@ -580,9 +580,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
         if (future.interrupted) {
             complete(INTERRUPTED);
-        } else {
-            context.invocationRegistry.deregister(this);
-
+        } else if (op.getCallId() == 0 || context.invocationRegistry.deregister(this)) {
             try {
                 if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                     // fast retry for the first few invocations
