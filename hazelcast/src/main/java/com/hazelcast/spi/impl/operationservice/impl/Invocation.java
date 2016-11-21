@@ -174,7 +174,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
     @Override
     public void sendResponse(Operation op, Object response) {
-        if (RESPONSE_RECEIVED.getAndSet(this, TRUE)) {
+        if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
                     + ", current-response: : " + response);
         }
@@ -510,7 +510,6 @@ public abstract class Invocation implements OperationResponseHandler {
 
     private void doInvokeRemote() {
         if (!context.operationService.send(op, invTarget)) {
-            context.invocationRegistry.deregister(this);
             notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
@@ -580,9 +579,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
         if (future.interrupted) {
             complete(INTERRUPTED);
-        } else {
-            context.invocationRegistry.deregister(this);
-
+        } else if (op.getCallId() == 0 || context.invocationRegistry.deregister(this)) {
             try {
                 if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                     // fast retry for the first few invocations
@@ -604,7 +601,10 @@ public abstract class Invocation implements OperationResponseHandler {
     }
 
     private void resetAndReInvoke() {
-        context.invocationRegistry.deregister(this);
+        if (!context.invocationRegistry.deregister(this)) {
+            // another thread already did something else with this invocation
+            return;
+        }
         invokeCount = 0;
         pendingResponse = VOID;
         pendingResponseReceivedMillis = -1;

@@ -114,16 +114,18 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     }
 
     /**
-     * Deregisters an invocation. If the associated operation is inactive, the call is ignored.
+     * Deregisters an invocation. If the associated operation is inactive, takes no action and returns {@code false}.
      * This ensures the idempotence of deregistration.
      * @param invocation The Invocation to deregister.
+     * @return {@code true} if this call deregistered the invocation; {@code false} if the invocation wasn't registered
      */
-    public void deregister(Invocation invocation) {
+    public boolean deregister(Invocation invocation) {
         if (!deactivate(invocation.op)) {
-            return;
+            return false;
         }
         invocations.remove(invocation.op.getCallId());
         callIdSequence.complete();
+        return true;
     }
 
     /**
