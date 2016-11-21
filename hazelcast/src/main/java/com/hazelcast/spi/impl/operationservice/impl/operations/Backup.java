@@ -17,12 +17,10 @@
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
@@ -38,25 +36,16 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
-import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
-
-    private final AtomicReferenceFieldUpdater<Backup, Operation> backupOpUpdater =
-            newUpdater(Backup.class, Operation.class, "backupOp");
 
     private Address originalCaller;
     private long[] replicaVersions;
     private boolean sync;
-
-    // is volatile so the diagnostics can see inside the Backup what is happening.
-    private volatile Operation backupOp;
-    private Data backupOpData;
-
+    private Operation backupOp;
     private transient boolean valid = true;
 
     public Backup() {
@@ -64,25 +53,13 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
-        backupOpUpdater.lazySet(this, backupOp);
+        this.backupOp = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
         this.replicaVersions = replicaVersions;
         if (sync && originalCaller == null) {
             throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation: "
                     + backupOp);
-        }
-    }
-
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync) {
-        this.backupOpData = backupOpData;
-        this.originalCaller = originalCaller;
-        this.sync = sync;
-        this.replicaVersions = replicaVersions;
-        if (sync && originalCaller == null) {
-            throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation data: "
-                    + backupOpData);
         }
     }
 
@@ -114,6 +91,24 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         }
     }
 
+    @Override
+    public void run() throws Exception {
+        if (!valid) {
+            onExecutionFailure(new IllegalStateException("Wrong target! " + toString() + " cannot be processed!"));
+            return;
+        }
+
+        ensureBackupOperationInitialized();
+
+        backupOp.beforeRun();
+        backupOp.run();
+        backupOp.afterRun();
+
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
+    }
+
     private void ensureBackupOperationInitialized() {
         if (backupOp.getNodeEngine() == null) {
             backupOp.setNodeEngine(getNodeEngine());
@@ -127,41 +122,16 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     }
 
     @Override
-    public void run() throws Exception {
-        if (!valid) {
-            onExecutionFailure(
-                    new IllegalStateException("Wrong target! " + toString() + " cannot be processed!"));
-            return;
-        }
-
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-
-        if (backupOp == null && backupOpData != null) {
-            backupOpUpdater.lazySet(this, (Operation) nodeEngine.getSerializationService().toObject(backupOpData));
-        }
-
-        if (backupOp != null) {
-            ensureBackupOperationInitialized();
-
-            backupOp.beforeRun();
-            backupOp.run();
-            backupOp.afterRun();
-        }
-
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
-    }
-
-    @Override
     public void afterRun() throws Exception {
-        if (!valid || !sync || getCallId() == 0 || originalCaller == null) {
+         if (!valid || !sync || backupOp.getCallId() == 0 || originalCaller == null) {
+             System.out.println("Not valid");
             return;
         }
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        long callId = getCallId();
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
+        long callId = backupOp.getCallId();
         if (nodeEngine.getThisAddress().equals(originalCaller)) {
             operationService.getInboundResponseHandler().notifyBackupComplete(callId);
         } else {
@@ -182,30 +152,22 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (backupOp != null) {
-            try {
-                // Be sure that backup operation is initialized.
-                // If there is an exception before `run` (for example caller is not valid anymore),
-                // backup operation is initialized. So, we are initializing it here ourselves.
-                ensureBackupOperationInitialized();
-                backupOp.onExecutionFailure(e);
-            } catch (Throwable t) {
-                getLogger().warning("While calling operation.onFailure(). op: " + backupOp, t);
-            }
+        try {
+            // If there is an exception before `run` (for example caller is not valid anymore),
+            // backup operation is initialized. So, we are initializing it here ourselves.
+            ensureBackupOperationInitialized();
+            backupOp.onExecutionFailure(e);
+        } catch (Throwable t) {
+            getLogger().warning("While calling operation.onFailure(). op: " + backupOp, t);
         }
     }
 
     @Override
     public void logError(Throwable e) {
-        if (backupOp != null) {
-            // Be sure that backup operation is initialized.
-            // If there is an exception before `run` (for example caller is not valid anymore),
-            // backup operation is initialized. So, we are initializing it here ourselves.
-            ensureBackupOperationInitialized();
-            backupOp.logError(e);
-        } else {
-            ReplicaErrorLogger.log(e, getLogger());
-        }
+        // If there is an exception before `run` (for example caller is not valid anymore),
+        // backup operation is initialized. So, we are initializing it here ourselves.
+        ensureBackupOperationInitialized();
+        backupOp.logError(e);
     }
 
     @Override
@@ -220,13 +182,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (backupOpData != null) {
-            out.writeBoolean(true);
-            out.writeData(backupOpData);
-        } else {
-            out.writeBoolean(false);
-            out.writeObject(backupOp);
-        }
+        out.writeObject(backupOp);
 
         if (originalCaller != null) {
             out.writeBoolean(true);
@@ -252,17 +208,11 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.readBoolean()) {
-            backupOpData = in.readData();
-        } else {
-            backupOpUpdater.lazySet(this, (Operation) in.readObject());
-        }
-
+        backupOp = in.readObject();
         if (in.readBoolean()) {
             originalCaller = new Address();
             originalCaller.readData(in);
         }
-
         replicaVersions = new long[MAX_BACKUP_COUNT];
         byte replicaVersionCount = in.readByte();
         for (int k = 0; k < replicaVersionCount; k++) {
@@ -277,7 +227,6 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         super.toString(sb);
 
         sb.append(", backupOp=").append(backupOp);
-        sb.append(", backupOpData=").append(backupOpData);
         sb.append(", originalCaller=").append(originalCaller);
         sb.append(", version=").append(Arrays.toString(replicaVersions));
         sb.append(", sync=").append(sync);
