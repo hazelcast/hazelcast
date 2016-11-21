@@ -11,22 +11,19 @@ import static com.hazelcast.version.Version.MAJOR_MINOR_VERSION_COMPARATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/**
- *
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class VersionTest {
 
-    static final String VERSION_3_8_SNAPSHOT_STRING = "3.8-SNAPSHOT";
-    static final String VERSION_3_8_1_RC1_STRING = "3.8.1-RC1";
-    static final String VERSION_3_8_2_STRING = "3.8.2";
-    static final String VERSION_3_9_0_STRING = "3.9.0";
+    private static final String VERSION_3_8_SNAPSHOT_STRING = "3.8-SNAPSHOT";
+    private static final String VERSION_3_8_1_RC1_STRING = "3.8.1-RC1";
+    private static final String VERSION_3_8_2_STRING = "3.8.2";
+    private static final String VERSION_3_9_0_STRING = "3.9.0";
 
-    static final Version VERSION_3_8 = Version.of(VERSION_3_8_SNAPSHOT_STRING);
-    static final Version VERSION_3_8_1 = Version.of(VERSION_3_8_1_RC1_STRING);
-    static final Version VERSION_3_8_2 = Version.of(VERSION_3_8_2_STRING);
-    static final Version VERSION_3_9 = Version.of(VERSION_3_9_0_STRING);
+    private static final Version VERSION_3_8 = Version.of(VERSION_3_8_SNAPSHOT_STRING);
+    private static final Version VERSION_3_8_1 = Version.of(VERSION_3_8_1_RC1_STRING);
+    private static final Version VERSION_3_8_2 = Version.of(VERSION_3_8_2_STRING);
+    private static final Version VERSION_3_9 = Version.of(VERSION_3_9_0_STRING);
 
     @Test
     public void test_versionOf_whenVersionStringIsSnapshot() {
@@ -67,5 +64,4 @@ public class VersionTest {
         assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_9, VERSION_3_8_1) > 0);
         assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_8_1, VERSION_3_9) < 0);
     }
-
 }
