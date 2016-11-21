@@ -20,6 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -30,16 +31,18 @@ public class SimpleMemberImpl implements Member {
     private String uuid;
     private InetSocketAddress address;
     private boolean liteMember;
+    private Version version;
 
     @SuppressWarnings("unused")
     public SimpleMemberImpl() {
     }
 
-    public SimpleMemberImpl(String uuid, InetSocketAddress address) {
-        this(uuid, address, false);
+    public SimpleMemberImpl(Version version, String uuid, InetSocketAddress address) {
+        this(version, uuid, address, false);
     }
 
-    public SimpleMemberImpl(String uuid, InetSocketAddress address, boolean liteMember) {
+    public SimpleMemberImpl(Version version, String uuid, InetSocketAddress address, boolean liteMember) {
+        this.version = version;
         this.uuid = uuid;
         this.address = address;
         this.liteMember = liteMember;
@@ -157,7 +160,13 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
+    public Version getVersion() {
+        return null;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(version);
         out.writeUTF(uuid);
         out.writeObject(address);
         out.writeBoolean(liteMember);
@@ -165,6 +174,7 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        version = in.readObject();
         uuid = in.readUTF();
         address = in.readObject();
         liteMember = in.readBoolean();

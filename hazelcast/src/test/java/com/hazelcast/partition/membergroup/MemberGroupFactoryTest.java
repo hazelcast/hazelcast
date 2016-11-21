@@ -2,11 +2,13 @@ package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -21,6 +23,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MemberGroupFactoryTest {
+
+    private static final Version VERSION = Version.of(BuildInfoProvider.BUILD_INFO.getVersion());
 
     @Test
     public void testHostAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
@@ -98,35 +102,35 @@ public class MemberGroupFactoryTest {
     private Collection<Member> createMembers() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
         InetAddress fakeAddress = InetAddress.getLocalHost();
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), VERSION, false));
         return members;
     }
 
     private Collection<Member> createMembersWithZoneAwareMetadata() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
         InetAddress fakeAddress = InetAddress.getLocalHost();
-        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), true);
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
         member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-east-1");
 
-        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), true);
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
         member2.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-west-1");
 
-        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), true);
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
         member3.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "eu-central-1");
 
         members.add(member1);
@@ -138,13 +142,13 @@ public class MemberGroupFactoryTest {
     private Collection<Member> createMembersWithRackAwareMetadata() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
         InetAddress fakeAddress = InetAddress.getLocalHost();
-        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), true);
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
         member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-1");
 
-        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), true);
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
         member2.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-2");
 
-        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), true);
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
         member3.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-3");
 
         members.add(member1);
@@ -156,13 +160,13 @@ public class MemberGroupFactoryTest {
     private Collection<Member> createMembersWithHostAwareMetadata() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
         InetAddress fakeAddress = InetAddress.getLocalHost();
-        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), true);
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
         member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-1");
 
-        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), true);
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
         member2.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-2");
 
-        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), true);
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
         member3.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-3");
 
         members.add(member1);
@@ -174,9 +178,9 @@ public class MemberGroupFactoryTest {
     private Collection<Member> createMembersWithNoMetadata() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
         InetAddress fakeAddress = InetAddress.getLocalHost();
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), false));
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), false));
-        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
         return members;
     }
 

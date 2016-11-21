@@ -80,6 +80,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
@@ -397,6 +398,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public <T extends SharedService> T getSharedService(String serviceName) {
         return serviceManager.getSharedService(serviceName);
+    }
+
+    @Override
+    public Version getVersion() {
+        return node.getVersion();
     }
 
     /**

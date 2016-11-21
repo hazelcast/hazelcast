@@ -136,7 +136,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         long timeoutInMillis = TimeUnit.SECONDS.toMillis(60);
         ClusterStateManager clusterStateManager = node.clusterService.getClusterStateManager();
-        clusterStateManager.lockClusterState(ClusterState.FROZEN, node.getThisAddress(), "fakeTxn", timeoutInMillis, partitionStateVersion);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(ClusterState.FROZEN), node.getThisAddress(), "fakeTxn", timeoutInMillis, partitionStateVersion);
     }
 
     @Test
@@ -638,13 +638,15 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     private void changeClusterState(HazelcastInstance instance, ClusterState newState, Collection<Member> members) {
         int partitionStateVersion = getNode(instance).getPartitionService().getPartitionStateVersion();
         ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(instance);
-        clusterService.getClusterStateManager().changeClusterState(newState, members, partitionStateVersion, false);
+        clusterService.getClusterStateManager().changeClusterState(ClusterStateChange.from(newState), members,
+                partitionStateVersion, false);
     }
 
     private void changeClusterState(HazelcastInstance instance, ClusterState newState, int partitionStateVersion) {
         ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(instance);
         Set<Member> members = clusterService.getMembers();
-        clusterService.getClusterStateManager().changeClusterState(newState, members, partitionStateVersion, false);
+        clusterService.getClusterStateManager().changeClusterState(ClusterStateChange.from(newState), members,
+                partitionStateVersion, false);
     }
 
     private static TransactionManagerServiceImpl spyTransactionManagerService(HazelcastInstance hz) throws Exception {

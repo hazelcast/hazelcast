@@ -6,11 +6,13 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +45,8 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.createService(ICacheService.class)).thenReturn(mock(ICacheService.class));
         when(nodeExtension.createService(WanReplicationService.class)).thenReturn(mock(WanReplicationService.class));
         when(nodeExtension.createSerializationService()).thenReturn(new DefaultSerializationServiceBuilder().build());
+        when(nodeExtension.isStartCompleted()).thenReturn(true);
+        when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
         return nodeExtension;
     }
 

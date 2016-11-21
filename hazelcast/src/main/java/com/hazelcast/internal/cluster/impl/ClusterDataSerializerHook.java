@@ -48,6 +48,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.version.Version;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {
 
@@ -86,8 +87,10 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int JOIN_MESSAGE = 29;
     public static final int JOIN_REQUEST = 30;
     public static final int MIGRATION_INFO = 31;
+    public static final int VERSION = 32;
+    public static final int CLUSTER_STATE_CHANGE = 33;
 
-    private static final int LEN = MIGRATION_INFO + 1;
+    private static final int LEN = CLUSTER_STATE_CHANGE + 1;
 
     @Override
     public int getFactoryId() {
@@ -256,6 +259,16 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[MIGRATION_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MigrationInfo();
+            }
+        };
+        constructors[VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new Version();
+            }
+        };
+        constructors[CLUSTER_STATE_CHANGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClusterStateChange();
             }
         };
 

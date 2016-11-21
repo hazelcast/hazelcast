@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.impl.ClientServiceProxy;
 import com.hazelcast.collection.impl.list.ListService;
@@ -28,7 +29,6 @@ import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
-import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
@@ -133,7 +133,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
             node.start();
             if (!node.isRunning()) {
-                throw new IllegalStateException("Node failed to start!");
+                    throw new IllegalStateException("Node failed to start!");
             }
 
             managementService = new ManagementService(this);

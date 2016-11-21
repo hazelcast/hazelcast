@@ -638,6 +638,15 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.serialization.version",
             BuildInfoProvider.getBuildInfo().getSerializationVersion());
 
+    /**
+     * Override cluster version to use while node is not yet member of a cluster. The cluster version assumed before joining
+     * a cluster may affect the serialization format of cluster discovery & join operations and its compatibility with members
+     * of a cluster running on different Hazelcast codebase versions. The default is to use the node's codebase version. You may
+     * need to override it for your node to join a cluster running on a previous cluster version.
+     */
+    public static final HazelcastProperty INIT_CLUSTER_VERSION
+            = new HazelcastProperty("hazelcast.init.cluster.version");
+
     private GroupProperty() {
     }
 }

@@ -70,6 +70,7 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.version.Version;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
@@ -144,6 +145,13 @@ public class Node {
 
     private volatile NodeState state;
 
+    /**
+     * Codebase version of Hazelcast being executed at this Node, as resolved by {@link BuildInfoProvider}.
+     * For example, when running on hazelcast-3.8.jar, this would resolve to {@code Version.of(3,8,0)}.
+     * A node's codebase version may be different than cluster version.
+     */
+    private final Version version;
+
     private volatile Address masterAddress;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -154,6 +162,7 @@ public class Node {
         this.configClassLoader = config.getClassLoader();
         this.properties = new HazelcastProperties(config);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
+        this.version = Version.of(buildInfo.getVersion());
 
         String loggingType = properties.getString(LOGGING_TYPE);
         loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
@@ -169,7 +178,7 @@ public class Node {
             address = addressPicker.getPublicAddress();
             nodeExtension = nodeContext.createNodeExtension(this);
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, nodeExtension.createMemberUuid(address),
+            localMember = new MemberImpl(address, version, true, nodeExtension.createMemberUuid(address),
                     hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
@@ -607,7 +616,7 @@ public class Node {
     }
 
     public JoinMessage createSplitBrainJoinMessage() {
-        return new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), address, localMember.getUuid(),
+        return new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), version, address, localMember.getUuid(),
                 localMember.isLiteMember(), createConfigCheck(), clusterService.getMemberAddresses(),
                 clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR));
     }
@@ -616,7 +625,7 @@ public class Node {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
 
-        return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
+        return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
                 localMember.getAttributes(), nodeExtension.getExcludedMemberUuids());
     }
@@ -692,6 +701,9 @@ public class Node {
     public void setAsMaster() {
         logger.finest("This node is being set as the master");
         masterAddress = address;
+        if (getClusterService().getClusterVersion() == null) {
+            getClusterService().getClusterStateManager().setClusterVersion(version);
+        }
         setJoined();
         getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
         getClusterService().setClusterId(UuidUtil.createClusterUuid());
@@ -716,7 +728,7 @@ public class Node {
         String newUuid = UuidUtil.createMemberUuid(address);
         logger.warning("Setting new local member. old uuid: " + localMember.getUuid() + " new uuid: " + newUuid);
         Map<String, Object> memberAttributes = localMember.getAttributes();
-        localMember = new MemberImpl(address, true, newUuid, hazelcastInstance, memberAttributes, liteMember);
+        localMember = new MemberImpl(address, version, true, newUuid, hazelcastInstance, memberAttributes, liteMember);
     }
 
     public Config getConfig() {
@@ -730,6 +742,15 @@ public class Node {
      */
     public NodeState getState() {
         return state;
+    }
+
+    /**
+     * Returns the codebase version of the node.
+     *
+     * @return codebase version of the node
+     */
+    public Version getVersion() {
+        return version;
     }
 
     public boolean isLiteMember() {
