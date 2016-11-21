@@ -198,6 +198,7 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/internal/ascii/TextCommandServiceImpl"/>
     <suppress checks="MagicNumber" files="com/hazelcast/internal/ascii/memcache/MemcacheCommandProcessor"/>
     <suppress checks="MethodCount" files="com/hazelcast/internal/ascii/memcache/Stats"/>
+    <suppress checks="CyclomaticComplexity" files="com/hazelcast/internal/ascii/rest/HttpPostCommandProcessor"/>
 
     <!-- Executor -->
     <suppress checks="ClassFanOutComplexity|MethodCount" files="com/hazelcast/executor/impl/ExecutorServiceProxy"/>

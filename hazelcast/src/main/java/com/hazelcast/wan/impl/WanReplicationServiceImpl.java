@@ -123,12 +123,17 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         throw new UnsupportedOperationException("WAN sync for map is not supported.");
     }
 
-    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
-        return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
-    }
-
     @Override
     public Map<String, LocalWanStats> getStats() {
         return null;
+    }
+
+    @Override
+    public void clearQueues(String wanReplicationName, String targetGroupName) {
+        throw new UnsupportedOperationException("Clearing WAN replication queues is not supported.");
+    }
+
+    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
+        return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
     }
 }

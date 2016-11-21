@@ -32,6 +32,7 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_CLUSTER_NODES_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/nodes";
     public static final String URI_MANCENTER_CHANGE_URL = "/hazelcast/rest/mancenter/changeurl";
     public static final String URI_WAN_SYNC_MAP = "/hazelcast/rest/wan/sync/map";
+    public static final String URI_MANCENTER_WAN_CLEAR_QUEUES = "/hazelcast/rest/mancenter/clearWanQueues";
 
     protected HttpCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);

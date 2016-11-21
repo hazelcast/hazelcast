@@ -41,6 +41,7 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_CHANGE_CLUSTER_STATE = 35;
     public static final int REQUEST_TYPE_CLUSTER_SHUTDOWN = 36;
     public static final int REQUEST_TYPE_FORCE_START_NODE = 37;
+    public static final int REQUEST_TYPE_CLEAR_WAN_QUEUES = 38;
 
     private ConsoleRequestConstants() {
     }

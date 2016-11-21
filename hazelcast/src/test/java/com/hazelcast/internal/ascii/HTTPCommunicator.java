@@ -17,6 +17,7 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -205,6 +206,11 @@ public class HTTPCommunicator {
     public String syncMapOverWAN(String wanRepName, String targetGroupName, String mapName) throws IOException {
         String url = address + "wan/sync/map";
         return doPost(url, wanRepName, targetGroupName, mapName);
+    }
+
+    public String wanClearQueues(String wanRepName, String targetGroupName) throws IOException {
+        String url = address + "mancenter/clearWanQueues";
+        return doPost(url, wanRepName, targetGroupName);
     }
 
     private String doGet(final String url) throws IOException {

@@ -34,6 +34,7 @@ import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOper
 import com.hazelcast.internal.management.request.AsyncConsoleRequest;
 import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
+import com.hazelcast.internal.management.request.ClearWanQueuesRequest;
 import com.hazelcast.internal.management.request.ClusterPropsRequest;
 import com.hazelcast.internal.management.request.ConsoleCommandRequest;
 import com.hazelcast.internal.management.request.ConsoleRequest;
@@ -444,6 +445,7 @@ public class ManagementCenterService {
             register(new ChangeClusterStateRequest());
             register(new ShutdownClusterRequest());
             register(new ForceStartNodeRequest());
+            register(new ClearWanQueuesRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
