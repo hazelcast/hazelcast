@@ -20,7 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,17 +29,22 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class JoinCheckOperation extends AbstractJoinOperation {
+import static com.hazelcast.version.Version.MAJOR_MINOR_VERSION_COMPARATOR;
 
-    private JoinMessage request;
-    private JoinMessage response;
+/**
+ * Validate whether clusters may merge to recover from a split brain, based on configuration & cluster version.
+ */
+public class SplitBrainMergeValidationOperation extends AbstractJoinOperation {
+
+    private SplitBrainJoinMessage request;
+    private SplitBrainJoinMessage response;
 
     private transient boolean removeCaller;
 
-    public JoinCheckOperation() {
+    public SplitBrainMergeValidationOperation() {
     }
 
-    public JoinCheckOperation(JoinMessage request) {
+    public SplitBrainMergeValidationOperation(SplitBrainJoinMessage request) {
         this.request = request;
     }
 
@@ -61,12 +66,25 @@ public class JoinCheckOperation extends AbstractJoinOperation {
             ILogger logger = getLogger();
             try {
                 if (service.getClusterJoinManager().validateJoinMessage(request)) {
-                    try {
-                        // also validate other node's version is able to join our cluster
-                        node.getNodeExtension().validateJoinRequest(request);
+                    // Validate other cluster's major.minor version is same as this cluster.
+                    // This way we ensure that all nodes of both clusters will be able to operate normally
+                    // in the unified cluster which will be at the same cluster version as the current subclusters.
+                    // If we only validated node codebase versions of master nodes, then we might end up with a
+                    // unified cluster but some members might be kicked out due to incompatibility. For example
+                    // assuming a 3.8.0 cluster with 2 nodes at codebase versions 3.8.0 & 3.9.0 (master) and another
+                    // cluster with 3x3.9.0 nodes at cluster version 3.9.0: if we only validated on master nodes' codebase
+                    // version, we would find them to be compatible and let the smaller cluster merge towards the bigger one.
+                    // However we would end up with a cluster at cluster version 3.9.0 (including 4x3.9.0 nodes) and the
+                    // 3.8.0-codebase node would be kicked out of the cluster. To enable the kicked-out node to join again
+                    // the cluster, the user would be forced to upgrade the member to 3.9.0 codebase version.
+                    // The implicit change of cluster version ("sneaky upgrade") and the change in membership would be a
+                    // surprise to users and may cause unexpected issues.
+                    if (MAJOR_MINOR_VERSION_COMPARATOR.compare(service.getClusterVersion(), request.getClusterVersion()) == 0) {
                         response = node.createSplitBrainJoinMessage();
-                    } catch (Exception e) {
-                        logger.info("Join check from " + getCallerAddress() + " failed validation: " + e.getMessage());
+                    } else {
+                        logger.info("Join check from " + getCallerAddress() + " failed validation due to incompatible version,"
+                                + "remote cluster version is " + request.getClusterVersion() + ", this cluster is "
+                                + service.getClusterVersion());
                     }
                 }
                 if (logger.isFineEnabled()) {
@@ -141,7 +159,7 @@ public class JoinCheckOperation extends AbstractJoinOperation {
 
     @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
-        request = new JoinMessage();
+        request = new SplitBrainJoinMessage();
         request.readData(in);
     }
 
@@ -152,7 +170,7 @@ public class JoinCheckOperation extends AbstractJoinOperation {
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.JOIN_CHECK;
+        return ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
     }
 }
 

@@ -2,7 +2,11 @@ package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import org.junit.Before;
@@ -26,6 +30,8 @@ import java.util.Arrays;
  *
  */
 public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
+
+    protected TestHazelcastInstanceFactory factory;
 
     private static final int[] DEFAULT_BRAINS = new int[]{1, 2};
     private static final int DEFAULT_ITERATION_COUNT = 1;
@@ -53,10 +59,9 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         }
     };
 
-
-
     @Before
     public final void setUpInternals() {
+        onBeforeSetup();
         final Config config = config();
 
         brains = brains();
@@ -98,6 +103,14 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     /**
+     * Override this method to execute initialization that may be required before instantiating the cluster. This is the
+     * first method executed by {@code @Before SplitBrainTestSupport.setupInternals}.
+     */
+    protected void onBeforeSetup() {
+
+    }
+
+    /**
      * Called when a cluster is fully formed. You can use this method for test initialization, data load, etc.
      *
      * @param instances all Hazelcast instances in your cluster
@@ -123,6 +136,19 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     }
 
+    /**
+     * Indicates whether test should fail when cluster does not include all original members after communications are unblocked.
+     *
+     * Override this method when it is expected that after communications are unblocked some members will not rejoin the cluster.
+     * When overriding this method, it may be desirable to add some wait time to allow the split brain handler to execute.
+     *
+     * @return {@code true} if the test should fail when not all original members rejoin after split brain is
+     *         healed, otherwise {@code false}.
+     */
+    protected boolean shouldAssertAllNodesRejoined() {
+        return true;
+    }
+
     @Test
     public void testSplitBrain() throws Exception {
         for (int i = 0; i < iterations(); i++) {
@@ -141,7 +167,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         onAfterSplitBrainHealed(instances);
     }
 
-    private HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
+    protected HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
         HazelcastInstance[] hazelcastInstances = new HazelcastInstance[clusterSize];
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         for (int i = 0; i < clusterSize; i++) {
@@ -194,8 +220,10 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     private void healSplitBrain() {
         unblockCommunication();
-        for (HazelcastInstance hz : instances) {
-            assertClusterSizeEventually(instances.length, hz);
+        if (shouldAssertAllNodesRejoined()) {
+            for (HazelcastInstance hz : instances) {
+                assertClusterSizeEventually(instances.length, hz);
+            }
         }
         waitAllForSafeState(instances);
     }
@@ -208,7 +236,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         return (FirewallingMockConnectionManager) getNode(hz).getConnectionManager();
     }
 
-    private Brains getBrains() {
+    protected Brains getBrains() {
         int firstHalfSize = brains[0];
         int secondHalfSize = brains[1];
         HazelcastInstance[] firstHalf = new HazelcastInstance[firstHalfSize];
@@ -227,10 +255,33 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         int firstHalfSize = brains[0];
         for (int isolatedIndex = 0; isolatedIndex < firstHalfSize; isolatedIndex++) {
             HazelcastInstance isolatedInstance = instances[isolatedIndex];
+            // do not take into account instances which have been shutdown
+            if (!isInstanceActive(isolatedInstance)) {
+                continue;
+            }
             for (int i = firstHalfSize; i < instances.length; i++) {
                 HazelcastInstance currentInstance = instances[i];
+                if (!isInstanceActive(currentInstance)) {
+                    continue;
+                }
                 action.apply(isolatedInstance, currentInstance);
             }
+        }
+    }
+
+    private static boolean isInstanceActive(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceProxy) {
+            try {
+                ((HazelcastInstanceProxy) instance).getOriginal();
+                return true;
+            }
+            catch (HazelcastInstanceNotActiveException exception) {
+                return false;
+            }
+        } else if (instance instanceof HazelcastInstanceImpl) {
+            return getNode(instance).getState() == NodeState.ACTIVE;
+        } else {
+            throw new AssertionError("Unsupported HazelcastInstance type");
         }
     }
 
@@ -256,7 +307,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         void apply(HazelcastInstance h1, HazelcastInstance h2);
     }
 
-    private class Brains {
+    protected class Brains {
         private final HazelcastInstance[] firstHalf;
         private final HazelcastInstance[] secondHalf;
 

@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.version.Version;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 import static org.junit.Assert.assertEquals;
 
@@ -45,6 +46,11 @@ public class TestClusterUpgradeUtils {
     // shutdown and replace each member in membersToUpgrade with a new HazelcastInstance at given version
     public static void upgradeClusterMembers(TestHazelcastInstanceFactory factory, final HazelcastInstance[] membersToUpgrade,
                                              Version version, Config config) {
+        upgradeClusterMembers(factory, membersToUpgrade, version, config, true);
+    }
+
+    public static void upgradeClusterMembers(TestHazelcastInstanceFactory factory, final HazelcastInstance[] membersToUpgrade,
+                                             Version version, Config config, boolean assertClusterSize) {
         try {
             System.setProperty("hazelcast.version", version.toString());
             // upgrade one by one each member of the cluster to the next version
@@ -54,15 +60,16 @@ public class TestClusterUpgradeUtils {
                 // if new node's version is incompatible, then node startup will fail with IllegalStateException
                 membersToUpgrade[i] = factory.newHazelcastInstance(config);
                 waitAllForSafeState(membersToUpgrade);
-                // assert all members are in the cluster
-                assertTrueEventually(new AssertTask() {
-                    @Override
-                    public void run()
-                            throws Exception {
-                        assertEquals(membersToUpgrade.length,
-                                membersToUpgrade[0].getCluster().getMembers().size());
-                    }
-                }, 15);
+                if (assertClusterSize) {
+                    // assert all members are in the cluster
+                    assertTrueEventually(new AssertTask() {
+                        @Override
+                        public void run()
+                                throws Exception {
+                            assertEquals(membersToUpgrade.length, membersToUpgrade[0].getCluster().getMembers().size());
+                        }
+                    }, 30);
+                }
             }
         }
         finally {
@@ -71,9 +78,16 @@ public class TestClusterUpgradeUtils {
     }
 
     // assert all members' clusterService reports the given version
-    public static void assertClusterVersion(HazelcastInstance[] clusterMembers, Version version) {
-        for (int i=0; i < clusterMembers.length; i++) {
-            assertEquals(version, clusterMembers[i].getCluster().getClusterVersion());
+    public static void assertClusterVersion(HazelcastInstance[] instances, Version version) {
+        for (int i=0; i < instances.length; i++) {
+            assertEquals(version, instances[i].getCluster().getClusterVersion());
+        }
+    }
+
+    // assert all nodes in the cluster have the given codebase version
+    public static void assertNodesVersion(HazelcastInstance[] instances, Version version) {
+        for (int i=0; i < instances.length; i++) {
+            assertEquals(version, getNode(instances[i]).getVersion());
         }
     }
 }

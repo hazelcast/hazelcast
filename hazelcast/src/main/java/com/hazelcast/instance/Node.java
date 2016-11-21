@@ -37,10 +37,10 @@ import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
-import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
@@ -615,10 +615,10 @@ public class Node {
         joined.set(true);
     }
 
-    public JoinMessage createSplitBrainJoinMessage() {
-        return new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), version, address, localMember.getUuid(),
+    public SplitBrainJoinMessage createSplitBrainJoinMessage() {
+        return new SplitBrainJoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), version, address, localMember.getUuid(),
                 localMember.isLiteMember(), createConfigCheck(), clusterService.getMemberAddresses(),
-                clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR));
+                clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR), clusterService.getClusterVersion());
     }
 
     public JoinRequest createJoinRequest(boolean withCredentials) {
