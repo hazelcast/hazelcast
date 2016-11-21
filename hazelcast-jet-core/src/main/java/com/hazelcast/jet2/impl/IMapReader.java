@@ -23,14 +23,17 @@ import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partition.IPartitionService;
-
-import javax.annotation.Nonnull;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
 
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
 public class IMapReader extends AbstractProducer {
@@ -137,12 +140,19 @@ public class IMapReader extends AbstractProducer {
 
         @Override
         public List<Processor> get(int count) {
-            return IntStream.range(0, count)
-                            .mapToObj(i -> ownedPartitions.stream().filter(f -> f % count == i).collect(toList()))
-                            .map(partitions -> partitions.size() > 0 ? new IMapReader(map, partitions, fetchSize)
-                                    : new AbstractProducer() {
-                            })
-                            .collect(toList());
+            Map<Integer, List<Integer>> processorToPartitions = IntStream.range(0, ownedPartitions.size()).boxed()
+                    .map(i -> new AbstractMap.SimpleImmutableEntry<>(i, ownedPartitions.get(i)))
+                    .collect(groupingBy(e -> e.getKey() % count,
+                            mapping(e -> e.getValue(), toList())));
+            IntStream.range(0, count)
+                    .forEach(processor -> processorToPartitions.computeIfAbsent(processor, x -> emptyList()));
+            return processorToPartitions
+                    .values().stream()
+                    .map(partitions -> !partitions.isEmpty()
+                            ? new IMapReader(map, partitions, fetchSize)
+                            : new AbstractProducer() { }
+                    )
+                    .collect(toList());
         }
     }
 }

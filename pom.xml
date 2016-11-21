@@ -36,6 +36,7 @@
         <module>hazelcast-jet-java.util.stream</module>
         <module>hazelcast-jet-memory</module>
         <module>hazelcast-jet-io</module>
+        <module>hazelcast-jet-kafka</module>
     </modules>
 
     <repositories>
