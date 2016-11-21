@@ -46,7 +46,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
@@ -58,7 +57,6 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -74,6 +72,13 @@ public class NearCacheTest extends NearCacheTestSupport {
     @Parameterized.Parameters(name = "batchInvalidationEnabled:{0}")
     public static Iterable<Object[]> parameters() {
         return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
+    }
+
+    @Override
+    protected Config getConfig() {
+        Config config = super.getConfig();
+        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(batchInvalidationEnabled));
+        return config;
     }
 
     @Test
@@ -128,69 +133,6 @@ public class NearCacheTest extends NearCacheTestSupport {
         });
     }
 
-    @Override
-    protected Config getConfig() {
-        Config config = super.getConfig();
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(batchInvalidationEnabled));
-        return config;
-    }
-
-    @Test
-    public void test_whenEmptyMap_thenPopulatedNearCacheShouldReturnNull_neverNULL_OBJECT() {
-        int size = 10;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig());
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-
-        // populate map
-        IMap<Integer, Integer> map = instance.getMap(mapName);
-        for (int i = 0; i < size; i++) {
-            // populate Near Cache
-            assertNull(map.get(i));
-            // fetch value from Near Cache
-            assertNull(map.get(i));
-        }
-    }
-
-    @Test
-    public void test_whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE() {
-        int size = 10;
-        int maxSize = 5;
-        IMap<Integer, Integer> map = getMapConfiguredWithMaxSizeAndPolicy(EvictionPolicy.NONE, maxSize);
-
-        populateMap(map, size);
-        populateNearCache(map, size);
-
-        assertEquals(maxSize, getNearCacheSize(map));
-        assertEquals(1, map.get(1).intValue());
-
-        map.put(1, 1502);
-
-        assertEquals(1502, map.get(1).intValue());
-        assertEquals(1502, map.get(1).intValue());
-    }
-
-    @Test
-    public void testNearCacheEviction() {
-        String mapName = "testNearCacheEviction";
-
-        NearCacheConfig nearCacheConfig = newNearCacheConfigWithEntryCountEviction(EvictionPolicy.LRU, MAX_CACHE_SIZE);
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
-
-        IMap<Integer, Integer> map = hazelcastInstance.getMap(mapName);
-
-        testNearCacheEviction(map, MAX_CACHE_SIZE);
-    }
-
     @Test
     public void testNearCacheEviction_withMapClear() {
         final int size = 10;
@@ -230,128 +172,6 @@ public class NearCacheTest extends NearCacheTestSupport {
                 assertEquals(0, getNearCacheStats(map2).getEvictions());
             }
         });
-    }
-
-    @Test
-    public void testNearCacheStats() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] instances = factory.newInstances(config);
-
-        // populate map
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        populateMap(map, mapSize);
-
-        // populate Near Cache
-        populateNearCache(map, mapSize);
-
-        NearCacheStats stats = getNearCacheStats(map);
-        long ownedEntryCount = stats.getOwnedEntryCount();
-        long misses = stats.getMisses();
-        assertTrue(format("Near Cache entry count should be > %d but were %d", 400, ownedEntryCount), ownedEntryCount > 400);
-        assertEquals(format("Near Cache misses should be %d but were %d", mapSize, misses), mapSize, misses);
-
-        // make some hits
-        populateNearCache(map, mapSize);
-
-        stats = getNearCacheStats(map);
-        long hits = stats.getHits();
-        misses = stats.getMisses();
-        long hitsAndMisses = hits + misses;
-        assertTrue(format("Near Cache hits should be > %d but were %d", 400, hits), hits > 400);
-        assertTrue(format("Near Cache misses should be > %d but were %d", 400, misses), misses > 400);
-        assertEquals(format("Near Cache hits + misses should be %s but were %d", mapSize * 2, hitsAndMisses), mapSize * 2,
-                hitsAndMisses);
-    }
-
-    @Test
-    public void testNearCacheMemoryCostCalculation() {
-        testNearCacheMemoryCostCalculation(1);
-    }
-
-    @Test
-    public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses() {
-        testNearCacheMemoryCostCalculation(10);
-    }
-
-    private void testNearCacheMemoryCostCalculation(int threadCount) {
-        String mapName = randomName();
-
-        Config config = getConfig();
-        NearCacheConfig nearCacheConfig = newNearCacheConfig().setCacheLocalEntries(true);
-        config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig.setInvalidateOnChange(false));
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
-
-        IMap<Integer, Integer> map = hazelcastInstance.getMap(mapName);
-        testNearCacheMemoryCostCalculation(map, true, threadCount);
-    }
-
-    @Test
-    public void testNearCacheInvalidationByUsingMapPutAll() {
-        int clusterSize = 3;
-        int mapSize = 5000;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
-
-        HazelcastInstance[] instances = factory.newInstances(config);
-        final IMap<Integer, Integer> map = instances[0].getMap(mapName);
-
-        populateMap(map, mapSize);
-        populateNearCache(map, mapSize);
-
-        // more-or-less (count / no_of_nodes) should be in the Near Cache now
-        assertTrue(getNearCacheSize(map) > (mapSize / clusterSize - mapSize * 0.1));
-
-        Map<Integer, Integer> invalidationMap = new HashMap<Integer, Integer>(mapSize);
-        populateMap(invalidationMap, mapSize);
-
-        // this should invalidate the Near Cache
-        map.putAll(invalidationMap);
-
-        assertTrueEventually(
-                new AssertTask() {
-                    @Override
-                    public void run() {
-                        assertEquals("Invalidation is not working on putAll()", 0, getNearCacheSize(map));
-                    }
-                }
-        );
-    }
-
-    @Test
-    public void testMapContainsKey_withNearCache() {
-        int clusterSize = 3;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
-        HazelcastInstance instance = createHazelcastInstanceFactory(clusterSize).newInstances(config)[0];
-
-        IMap<String, String> map = instance.getMap(mapName);
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
-
-        map.get("key1");
-        map.get("key2");
-        map.get("key3");
-        assertTrue(map.containsKey("key1"));
-        assertFalse(map.containsKey("key5"));
-
-        map.remove("key1");
-        assertFalse(map.containsKey("key5"));
-        assertTrue(map.containsKey("key2"));
-        assertFalse(map.containsKey("key1"));
     }
 
     @Test
@@ -509,33 +329,6 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         long hits = getNearCacheStats(map).getHits();
         assertTrue(format("Near Cache hits should be > %d but were %d", expectedHits, hits), hits > expectedHits);
-    }
-
-    @Test
-    public void testGetAsyncPopulatesNearCache() throws Exception {
-        int mapSize = 1000;
-        String mapName = "testGetAsyncPopulatesNearCache";
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
-
-        TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz = hazelcastInstanceFactory.newHazelcastInstance(config);
-        hazelcastInstanceFactory.newHazelcastInstance(config);
-
-        IMap<Integer, Integer> map = hz.getMap(mapName);
-        populateMap(map, mapSize);
-
-        // populate Near Cache
-        for (int i = 0; i < mapSize; i++) {
-            Future future = map.getAsync(i);
-            future.get();
-        }
-        // generate Near Cache hits
-        populateNearCache(map, mapSize);
-
-        long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-        assertTrue(format("Near Cache should be populated but current size is %d", ownedEntryCount), ownedEntryCount > 0);
     }
 
     @Test
