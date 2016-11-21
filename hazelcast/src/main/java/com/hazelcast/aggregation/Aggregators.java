@@ -53,6 +53,8 @@ import java.util.Set;
  * The attributePath given in the factory method allows the aggregator to operate on the value extracted by navigating
  * to the given attributePath on each object that has been returned from a query.
  * The atribute path may be simple, e.g. "name", or nested "address.city".
+ *
+ * @since 3.8
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling"})
 public final class Aggregators {
