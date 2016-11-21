@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.OperationAccessor.deactivate;
@@ -102,8 +104,13 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      * @return false when InvocationRegistry is not alive and registration is not successful, true otherwise
      */
     public boolean register(Invocation invocation) {
-        long callId = callIdSequence.next(invocation);
-        // Fails if the operation is already active
+        final long callId;
+        try {
+            callId = callIdSequence.next(invocation.op.isUrgent());
+        } catch (TimeoutException e) {
+            throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation);
+        }
+        // Fails with exception if the operation is already active
         setCallId(invocation.op, callId);
         invocations.put(callId, invocation);
         if (!alive) {

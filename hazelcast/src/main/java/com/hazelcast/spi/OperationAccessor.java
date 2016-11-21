@@ -46,17 +46,15 @@ public final class OperationAccessor {
     }
 
     /**
-     * Marks the supplied operation as "not active".
-     *
-     * @param op the Operation to deactivate
-     * @see Operation#deactivate()
+     * Marks the supplied operation as "not active". Refer to {@link Operation#deactivate()) for
+     * detailed semantics.
      */
     public static boolean deactivate(Operation op) {
         return op.deactivate();
     }
 
     public static boolean hasActiveInvocation(Operation op) {
-        return op.hasActiveInvocation();
+        return op.isActive();
     }
 
     /**
