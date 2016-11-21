@@ -334,6 +334,13 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return serializationService.readObject(this);
     }
 
+    // a future optimization would be to skip the construction of the Data object.
+    @Override
+    public <T> T readDataAsObject() throws IOException {
+        Data data = readData();
+        return data == null ? null : (T) serializationService.toObject(data);
+    }
+
     @Override
     public Object readObject(Class aClass) throws IOException {
         return serializationService.readObject(this, aClass);
@@ -342,8 +349,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public Data readData() throws IOException {
         byte[] bytes = readByteArray();
-        Data data = bytes != null ? new HeapData(bytes) : null;
-        return data;
+        return bytes == null ? null : new HeapData(bytes);
     }
 
     @Override
