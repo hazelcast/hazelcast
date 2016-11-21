@@ -101,13 +101,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void loadAllFromStore(List<Data> keys) {
+    public void loadAllFromStore(List<Data> keys, boolean withUserSuppliedKeys) {
         if (!keys.isEmpty()) {
             Future f = recordStoreLoader.loadValues(keys);
             loadingFutures.add(f);
         }
-
-        keyLoader.trackLoading(false, null);
+        if (!withUserSuppliedKeys) {
+            keyLoader.trackLoading(false, null);
+        }
     }
 
     @Override

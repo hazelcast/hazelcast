@@ -453,7 +453,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private Operation createLoadAllOperation(final List<Data> keys, boolean replaceExistingValues) {
-        return operationProvider.createLoadAllOperation(name, keys, replaceExistingValues);
+        return operationProvider.createLoadAllOperation(name, keys, replaceExistingValues, true);
     }
 
     protected Data removeInternal(Data key) {
