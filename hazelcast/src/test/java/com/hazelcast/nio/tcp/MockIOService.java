@@ -133,6 +133,11 @@ public class MockIOService implements IOService {
     }
 
     @Override
+    public boolean isHealthcheckEnabled() {
+        return false;
+    }
+
+    @Override
     public void removeEndpoint(Address endpoint) {
     }
 

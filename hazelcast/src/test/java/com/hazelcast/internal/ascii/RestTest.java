@@ -69,6 +69,7 @@ public class RestTest extends HazelcastTestSupport {
     @Before
     public void setup() throws IOException {
         config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
+        config.setProperty(GroupProperty.HTTP_HEALTHCHECK_ENABLED.getName(), "true");
     }
 
     @After
@@ -330,5 +331,25 @@ public class RestTest extends HazelcastTestSupport {
         WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
         String result = communicator.addWanConfig(dto.toJson().asString());
         assertEquals("{\"status\":\"fail\",\"message\":\"Clearing WAN replication queues is not supported.\"}", result);
+    }
+
+    @Test
+    public void simpleHealthCheck() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        String result = communicator.getClusterHealth();
+        assertEquals("Hazelcast::NodeState=ACTIVE\n" +
+                "Hazelcast::ClusterState=ACTIVE\n" +
+                "Hazelcast::ClusterSafe=TRUE\n" +
+                "Hazelcast::MigrationQueueSize=0\n" +
+                "Hazelcast::ClusterSize=1\n", result);
+    }
+
+    @Test(expected = SocketException.class)
+    public void fail_with_deactivatedHealthCheck() throws IOException {
+        // Heathcheck REST URL is deactivated by default - no passed config on purpose
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        communicator.getClusterHealth();
     }
 }

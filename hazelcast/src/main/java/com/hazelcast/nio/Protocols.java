@@ -52,7 +52,7 @@ public final class Protocols {
         }
 
         if (TEXT.equals(protocol)) {
-            return "Test Protocol";
+            return "Text Protocol";
         }
 
         return "Unknown Protocol";

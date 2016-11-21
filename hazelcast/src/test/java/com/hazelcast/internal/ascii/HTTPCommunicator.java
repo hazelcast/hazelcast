@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,6 +82,13 @@ public class HTTPCommunicator {
 
     public String getClusterInfo() throws IOException {
         String url = address + "cluster";
+        return doGet(url);
+
+    }
+
+    public String getClusterHealth() throws IOException {
+        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
+        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL;
         return doGet(url);
 
     }

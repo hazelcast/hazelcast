@@ -134,6 +134,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public boolean isHealthcheckEnabled() {
+        return node.getProperties().getBoolean(GroupProperty.HTTP_HEALTHCHECK_ENABLED);
+    }
+
+    @Override
     public void removeEndpoint(final Address endPoint) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
             @Override
