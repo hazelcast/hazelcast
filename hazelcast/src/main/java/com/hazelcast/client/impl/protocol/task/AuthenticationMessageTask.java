@@ -50,7 +50,6 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
         if (parameters.clientHazelcastVersionExist) {
             clientVersion = parameters.clientHazelcastVersion;
         }
-        setEndpoint();
         return parameters;
     }
 
