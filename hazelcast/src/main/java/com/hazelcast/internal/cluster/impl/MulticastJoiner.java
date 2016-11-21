@@ -51,8 +51,7 @@ public class MulticastJoiner extends AbstractJoiner {
         long maxJoinMillis = getMaxJoinMillis();
         Address thisAddress = node.getThisAddress();
 
-        while (node.isRunning() && !node.joined()
-                && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+        while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
 
             // clear master node
             node.setMasterAddress(null);
@@ -77,8 +76,7 @@ public class MulticastJoiner extends AbstractJoiner {
         long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
         long start = Clock.currentTimeMillis();
 
-        while (node.isRunning() && !node.joined()
-                && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+        while (shouldRetry() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
 
             Address master = node.getMasterAddress();
             if (master != null) {

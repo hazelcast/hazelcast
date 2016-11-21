@@ -201,9 +201,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         if (thisAddress.equals(target)) {
             return;
         }
+        MemberImpl member = getMember(target);
+        String memberUuid = member != null ? member.getUuid() : null;
         Collection<MemberImpl> members = getMemberImpls();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(
-                createMemberInfoList(members), clusterClock.getClusterTime(), null, false);
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(memberUuid, createMemberInfoList(members),
+                                                                     clusterClock.getClusterTime(), null, false);
         nodeEngine.getOperationService().send(op, target);
     }
 

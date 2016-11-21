@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
@@ -134,7 +135,23 @@ public abstract class AbstractJoiner implements Joiner {
     public final void join() {
         blacklistedAddresses.clear();
         doJoin();
+        if (!node.joined() && shouldResetHotRestartData()) {
+            logger.warning("Could not join to the cluster because hot restart data must be reset.");
+            NodeExtension nodeExtension = node.getNodeExtension();
+            nodeExtension.resetHotRestartData();
+            reset();
+            doJoin();
+        }
         postJoin();
+    }
+
+    protected final boolean shouldRetry() {
+        return node.isRunning() && !node.joined() && !shouldResetHotRestartData();
+    }
+
+    private boolean shouldResetHotRestartData() {
+        NodeExtension nodeExtension = node.getNodeExtension();
+        return !nodeExtension.isStartCompleted() && nodeExtension.isMemberExcluded(node.getThisAddress(), node.getThisUuid());
     }
 
     private void postJoin() {

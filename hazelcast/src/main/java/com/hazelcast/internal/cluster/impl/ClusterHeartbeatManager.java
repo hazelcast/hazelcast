@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
 import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
@@ -35,6 +36,7 @@ import com.hazelcast.util.EmptyStatement;
 
 import java.net.ConnectException;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -418,14 +420,17 @@ public class ClusterHeartbeatManager {
         if (!node.isMaster()) {
             return;
         }
+
         Collection<MemberImpl> members = clusterService.getMemberImpls();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(
-                createMemberInfoList(members), clusterClock.getClusterTime(), null, false);
+        List<MemberInfo> memberInfos = createMemberInfoList(members);
 
         for (MemberImpl member : members) {
             if (member.localMember()) {
                 continue;
             }
+
+            MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(member.getUuid(), memberInfos,
+                    clusterClock.getClusterTime(), null, false);
             nodeEngine.getOperationService().send(op, member.getAddress());
         }
     }

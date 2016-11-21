@@ -49,7 +49,7 @@ class MockJoiner extends AbstractJoiner {
 
             Address previousJoinAddress = null;
             long joinAddressTimeout = 0;
-            while (node.isRunning() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+            while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 try {
                     Address joinAddress = getJoinAddress();
                     verifyInvariant(joinAddress != null, "joinAddress should not be null");
@@ -85,12 +85,6 @@ class MockJoiner extends AbstractJoiner {
                 }
             }
         }
-
-        final boolean joined = node.joined();
-        if (!joined) {
-            node.shutdown(true);
-        }
-        verifyInvariant(joined, node.getThisAddress() + " should have been joined to " + node.getMasterAddress());
     }
 
     private Address getJoinAddress() {

@@ -36,6 +36,7 @@ import java.util.Collection;
 
 public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation, IdentifiedDataSerializable {
 
+    protected String targetUuid;
     protected Collection<MemberInfo> memberInfos;
     protected long masterTime = Clock.currentTimeMillis();
     protected PartitionRuntimeState partitionRuntimeState;
@@ -45,8 +46,9 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         memberInfos = new ArrayList<MemberInfo>();
     }
 
-    public MemberInfoUpdateOperation(Collection<MemberInfo> memberInfos, long masterTime,
-            PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
+    public MemberInfoUpdateOperation(String targetUuid, Collection<MemberInfo> memberInfos, long masterTime,
+                                     PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
+        this.targetUuid = targetUuid;
         this.masterTime = masterTime;
         this.memberInfos = memberInfos;
         this.sendResponse = sendResponse;
@@ -55,16 +57,20 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     @Override
     public void run() throws Exception {
-        final ClusterServiceImpl clusterService = getService();
-        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+        ClusterServiceImpl clusterService = getService();
+        NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+        Node node = nodeEngine.getNode();
 
-        if (!nodeEngine.getNode().joined()) {
+        if (!node.joined()) {
             ILogger logger = getLogger();
             if (logger.isFineEnabled()) {
                 logger.fine("Ignoring member info update since not joined yet...");
             }
 
             return;
+        } else if (!node.getThisUuid().equals(targetUuid)) {
+            String msg = "targetUuid: " + targetUuid + " is different than this node's uuid: " + node.getThisUuid();
+            throw new IllegalStateException(msg);
         }
 
         processMemberUpdate();
@@ -106,6 +112,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+        targetUuid = in.readUTF();
         masterTime = in.readLong();
         int size = in.readInt();
         memberInfos = new ArrayList<MemberInfo>(size);
@@ -121,6 +128,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeUTF(targetUuid);
         out.writeLong(masterTime);
         out.writeInt(memberInfos.size());
         for (MemberInfo memberInfo : memberInfos) {
@@ -134,6 +142,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
+        sb.append(", targetUuid=").append(targetUuid);
         sb.append(", members=");
         for (MemberInfo address : memberInfos) {
             sb.append(address).append(' ');

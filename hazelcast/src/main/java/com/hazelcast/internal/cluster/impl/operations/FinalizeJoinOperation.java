@@ -54,10 +54,10 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     public FinalizeJoinOperation() {
     }
 
-    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
+    public FinalizeJoinOperation(String targetUuid, Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
                                  String clusterId, long clusterStartTime, ClusterState clusterState, Version clusterVersion,
                                  PartitionRuntimeState partitionRuntimeState) {
-        super(members, masterTime, partitionRuntimeState, true);
+        super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
         this.clusterStartTime = clusterStartTime;
@@ -65,10 +65,10 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         this.clusterVersion = clusterVersion;
     }
 
-    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
+    public FinalizeJoinOperation(String targetUuid, Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
                                  String clusterId, long clusterStartTime, ClusterState clusterState, Version clusterVersion,
                                  PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
-        super(members, masterTime, partitionRuntimeState, sendResponse);
+        super(targetUuid, members, masterTime, partitionRuntimeState, sendResponse);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
         this.clusterStartTime = clusterStartTime;
