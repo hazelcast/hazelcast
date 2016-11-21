@@ -566,6 +566,8 @@ public abstract class Invocation implements OperationResponseHandler {
         }
     }
 
+    // This is an idempotent operation
+    // because both invocationRegistry.deregister() and future.complete() are idempotent.
     private void complete(Object value) {
         context.invocationRegistry.deregister(this);
         future.complete(value);

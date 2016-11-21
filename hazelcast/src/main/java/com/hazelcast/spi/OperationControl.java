@@ -32,6 +32,8 @@ import java.io.IOException;
  * </ol>
  * Operations are identified by their Call ID.
  */
+@SuppressFBWarnings(value = "EI", justification =
+        "The priority is minimizing garbage. The caller guarantees not to mutate the long[] arrays.")
 public final class OperationControl implements IdentifiedDataSerializable {
 
     private long[] runningOperations;
