@@ -108,7 +108,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         try {
             callId = callIdSequence.next(invocation.op.isUrgent());
         } catch (TimeoutException e) {
-            throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation);
+            throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation, e);
         }
         // Fails with exception if the operation is already active
         setCallId(invocation.op, callId);

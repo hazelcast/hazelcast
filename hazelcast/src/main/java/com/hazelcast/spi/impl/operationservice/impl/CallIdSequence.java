@@ -181,7 +181,8 @@ abstract class CallIdSequence {
                     return;
                 }
                 if (System.currentTimeMillis() >= deadline) {
-                    throw new TimeoutException("Timed out trying to acquire another call ID");
+                    throw new TimeoutException(String.format("Timed out trying to acquire another call ID."
+                        + " maxConcurrentInvocations = %d, backoffTimeout = %d", maxConcurrentInvocations, backoffTimeoutMs));
                 }
             }
         }
