@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 
 class DummyBackupAwareOperation extends Operation implements BackupAwareOperation {
 
-    public final static ConcurrentMap<String, Integer> backupCompletedMap = new ConcurrentHashMap<String, Integer>();
+    public static final ConcurrentMap<String, Integer> backupCompletedMap = new ConcurrentHashMap<String, Integer>();
 
     public int syncBackupCount;
     public int asyncBackupCount;

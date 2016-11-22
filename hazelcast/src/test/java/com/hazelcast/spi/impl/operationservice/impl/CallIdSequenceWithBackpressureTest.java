@@ -1,21 +1,18 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure.MAX_DELAY_MS;
@@ -28,147 +25,93 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
-    private static boolean LOCAL = false;
-    private static boolean REMOTE = true;
-
-    private HazelcastInstance hz;
-    private NodeEngineImpl nodeEngine;
-
-    @Before
-    public void setup() {
-        hz = createHazelcastInstance();
-        nodeEngine = getNode(hz).nodeEngine;
-    }
+    CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
 
     @Test
     public void test() {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
         assertEquals(0, sequence.getLastCallId());
         assertEquals(100, sequence.getMaxConcurrentInvocations());
     }
 
     @Test
-    @RequireAssertEnabled
-    public void next_whenNot_0() {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
-        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-        setCallId(invocation.op, 10);
-
-        long lastCallId = sequence.getLastCallId();
-        try {
-            sequence.next(invocation);
-            fail();
-        } catch (AssertionError e) {
-        }
-
-        assertEquals(lastCallId, sequence.getLastCallId());
-    }
-
-    @Test
-    public void next() {
+    public void whenNext_thenSequenceIncrements() {
         // regular operation
-        next(new DummyOperation(), REMOTE);
-        next(new DummyOperation(), LOCAL);
+        testNext(new DummyOperation());
 
         // backup-aware operation
-        next(new DummyBackupAwareOperation(), LOCAL);
-        next(new DummyBackupAwareOperation(), REMOTE);
+        testNext(new DummyBackupAwareOperation());
 
-        //urgent operation
-        next(new DummyPriorityOperation(), LOCAL);
-        next(new DummyPriorityOperation(), REMOTE);
+        // urgent operation
+        testNext(new DummyPriorityOperation());
     }
 
-    public void next(Operation operation, boolean remote) {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
-
-        Invocation invocation = newInvocation(operation);
-        invocation.remote = remote;
+    private void testNext(Operation operation) {
         long oldSequence = sequence.getLastCallId();
-
-        long result = sequence.next(invocation);
-
+        long result = nextCallId(sequence, operation.isUrgent());
         assertEquals(oldSequence + 1, result);
-
-        // the sequence always needs to increase because we need to know how many invocations are done
         assertEquals(oldSequence + 1, sequence.getLastCallId());
     }
 
     @Test
     public void next_whenNoCapacity_thenBlockTillCapacity() throws InterruptedException {
-        final CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(1, 60000);
-        long oldLastCallId = sequence.getLastCallId();
+        sequence = new CallIdSequenceWithBackpressure(1, 60000);
+        final long oldLastCallId = sequence.getLastCallId();
 
         final CountDownLatch nextCalledLatch = new CountDownLatch(1);
         spawn(new Runnable() {
             @Override
             public void run() {
-                Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-
-                long callId = sequence.next(invocation);
-                setCallId(invocation.op, callId);
+                DummyBackupAwareOperation op = new DummyBackupAwareOperation();
+                long callId = nextCallId(sequence, op.isUrgent());
+                setCallId(op, callId);
                 nextCalledLatch.countDown();
-
                 sleepSeconds(3);
-
                 sequence.complete();
             }
         });
 
         nextCalledLatch.await();
 
-        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-
-        long result = sequence.next(invocation);
-
+        long result = nextCallId(sequence, false);
         assertEquals(oldLastCallId + 2, result);
         assertEquals(oldLastCallId + 2, sequence.getLastCallId());
     }
 
     @Test
     public void next_whenNoCapacity_thenBlockTillTimeout() {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(1, 2000);
+        sequence = new CallIdSequenceWithBackpressure(1, 2000);
 
-        // first invocation consumes the invocation
-        Invocation firstInvocation = newInvocation(new DummyBackupAwareOperation());
-        sequence.next(firstInvocation);
+        // first invocation consumes the available call ID
+        nextCallId(sequence, false);
 
         long oldLastCallId = sequence.getLastCallId();
-
-        Invocation secondInvocation = newInvocation(new DummyBackupAwareOperation());
         try {
-            sequence.next(secondInvocation);
+            sequence.next(false);
             fail();
-        } catch (HazelcastOverloadException expected) {
-
+        } catch (TimeoutException e) {
+            // expected
         }
 
         assertEquals(oldLastCallId, sequence.getLastCallId());
     }
 
     @Test
-    public void next_whenNoCapacity_andPriorityItem_thenNoBackPressure() {
+    public void when_overCapacityButPriorityItem_then_noBackpressure() {
         final CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(1, 60000);
 
-        //first we consume all invocations
-        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-        sequence.next(invocation);
+        // occupy the single call ID slot
+        nextCallId(sequence, true);
 
         long oldLastCallId = sequence.getLastCallId();
 
-        Invocation priorityInvocation = newInvocation(new DummyPriorityOperation());
-        long result = sequence.next(priorityInvocation);
+        long result = nextCallId(sequence, true);
         assertEquals(oldLastCallId + 1, result);
         assertEquals(oldLastCallId + 1, sequence.getLastCallId());
     }
 
     @Test
-    public void complete() {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
-
-        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-        long callId = sequence.next(invocation);
-        setCallId(invocation.op, callId);
+    public void whenComplete_thenTailIncrements() {
+        nextCallId(sequence, false);
 
         long oldSequence = sequence.getLastCallId();
         long oldTail = sequence.getTail();
@@ -181,38 +124,16 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void complete_whenNoMatchingNext() {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
-
-        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-        setCallId(invocation.op, sequence.next(invocation));
-
+        nextCallId(sequence, false);
         sequence.complete();
-
         sequence.complete();
     }
 
-    @Test
-    public void sleep_whenInterrupted() {
-        Thread.currentThread().interrupt();
-        assertTrue(CallIdSequence.CallIdSequenceWithBackpressure.sleep(10));
-    }
-
-    @Test
-    public void sleep_whenNotInterrupted() {
-        Thread.interrupted();//clears the flag
-        assertFalse(CallIdSequence.CallIdSequenceWithBackpressure.sleep(10));
-    }
-
-    @Test
-    public void nextDelay() {
-        assertEquals(MAX_DELAY_MS, CallIdSequenceWithBackpressure.nextDelay(10000, MAX_DELAY_MS / 2));
-        assertEquals(MAX_DELAY_MS, CallIdSequenceWithBackpressure.nextDelay(10000, MAX_DELAY_MS));
-        assertEquals(10, CallIdSequenceWithBackpressure.nextDelay(10, MAX_DELAY_MS));
-    }
-
-    private Invocation newInvocation(Operation op) {
-        Invocation.Context context = new Invocation.Context(null, null, null, null, null, 0, null, null, null, null, null, null,
-                null, null, null, null, null, null);
-        return new PartitionInvocation(context, op, 0, 0, 0, false);
+    static long nextCallId(CallIdSequence seq, boolean isUrgent) {
+        try {
+            return seq.next(isUrgent);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

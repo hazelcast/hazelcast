@@ -1,118 +1,64 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
+import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.impl.operationservice.impl.CallIdSequenceWithBackpressureTest.nextCallId;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport {
 
-    private static boolean LOCAL = false;
-    private static boolean REMOTE = true;
-
-    private HazelcastInstance hz;
-    private NodeEngineImpl nodeEngine;
-    private OperationServiceImpl operationService;
-
-    @Before
-    public void setup() {
-        hz = createHazelcastInstance();
-        nodeEngine = getNode(hz).nodeEngine;
-        operationService = getOperationServiceImpl(hz);
-    }
+    CallIdSequenceWithoutBackpressure sequence = new CallIdSequenceWithoutBackpressure();
 
     @Test
     public void test() {
-        CallIdSequence.CallIdSequenceWithoutBackpressure sequence = new CallIdSequence.CallIdSequenceWithoutBackpressure();
         assertEquals(0, sequence.getLastCallId());
         assertEquals(Integer.MAX_VALUE, sequence.getMaxConcurrentInvocations());
     }
 
     @Test
-    public void nextRepeatedly() {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
-        for (long k = 1; k < 100; k++) {
-            Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-            assertEquals(k, sequence.next(invocation));
-        }
-    }
-
-    @Test
-    @RequireAssertEnabled
-    public void next_whenNot_0() {
-        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
-        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-        setCallId(invocation.op, 10);
-
-        long lastCallId = sequence.getLastCallId();
-        try {
-            sequence.next(invocation);
-            fail();
-        } catch (AssertionError e) {
-        }
-
-        assertEquals(lastCallId, sequence.getLastCallId());
-    }
-
-    @Test
-    public void next() {
+    public void testNext() {
         // regular operation
-        next(new DummyOperation(), REMOTE);
-        next(new DummyOperation(), LOCAL);
+        next(new DummyOperation());
+        next(new DummyOperation());
 
         // backup-aware operation
-        next(new DummyBackupAwareOperation(), LOCAL);
-        next(new DummyBackupAwareOperation(), REMOTE);
+        next(new DummyBackupAwareOperation());
+        next(new DummyBackupAwareOperation());
 
         //urgent operation
-        next(new DummyPriorityOperation(), LOCAL);
-        next(new DummyPriorityOperation(), REMOTE);
+        next(new DummyPriorityOperation());
+        next(new DummyPriorityOperation());
     }
 
-    public void next(Operation operation, boolean remote) {
-        CallIdSequence.CallIdSequenceWithoutBackpressure sequence = new CallIdSequence.CallIdSequenceWithoutBackpressure();
-
-        Invocation invocation = newInvocation(operation);
-        invocation.remote = remote;
+    private void next(Operation operation) {
         long oldSequence = sequence.getLastCallId();
-
-        long result = sequence.next(invocation);
-
+        long result = nextCallId(sequence, operation.isUrgent());
         assertEquals(oldSequence + 1, result);
         assertEquals(oldSequence + 1, sequence.getLastCallId());
     }
 
     @Test
-    public void complete() {
-        CallIdSequence.CallIdSequenceWithoutBackpressure sequence = new CallIdSequence.CallIdSequenceWithoutBackpressure();
-        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
-        long id = sequence.next(invocation);
-        setCallId(invocation.op, id);
-
-        long oldSequence = sequence.getLastCallId();
-
-        sequence.complete();
-        assertEquals(oldSequence, sequence.getLastCallId());
+    public void whenNextRepeated_thenKeepSucceeding() {
+        for (long k = 1; k < 10000; k++) {
+            assertEquals(k, nextCallId(sequence, false));
+        }
     }
 
-    private Invocation newInvocation(Operation op) {
-        Invocation.Context context = new Invocation.Context(null, null, null, null, null, 0, null, null, null, null, null, null,
-                null, null, null, null, null, null);
-        return new PartitionInvocation(context, op, 0, 0, 0, false);
+    @Test
+    public void complete() {
+        nextCallId(sequence, false);
+        long oldSequence = sequence.getLastCallId();
+        sequence.complete();
+        assertEquals(oldSequence, sequence.getLastCallId());
     }
 }
