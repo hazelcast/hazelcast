@@ -2,7 +2,9 @@
 
   * [Supported Hazelcast Versions](#supported-hazelcast-versions)
   * [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
-  * [Policy for IAM User](#policy-for-iam-user)
+  * [IAM Roles](#iam-roles)
+    * [IAM Roles in ECS Environment](#iam-roles-in-ecs-environment)
+    * [Policy for IAM User](#policy-for-iam-user)
   * [AWSClient Configuration](#awsclient-configuration)
   * [Debugging](#debugging)
   * [Hazelcast Performance on AWS](#hazelcast-performance-on-aws)
@@ -66,7 +68,15 @@ Here are the definitions of `aws` element's attributes and sub-elements:
 * `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast members, you can set these parameters as the ones you specified in the EC2 console. They are optional.
 * `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 
-## Policy for IAM User
+## IAM Roles
+
+hazelcast-aws strongly recommends to use IAM Roles. access key and secret key should not be defined in the configuration although hazelcast-aws supports them. When `iam-role` tag defined in hazelcast configuration, hazelcast-aws fetches your credentials by using defined iam-role name. If you want to use iam-role assigned to your machine, you don't have to define anything. hazelcast-aws will automatically retrieve credentials using default iam-role. 
+
+### IAM Roles in ECS Environment
+
+hazelcast-aws supports ECS and will fetch default credentials if hazelcast is deployed into ECS environment. You don't have to configure `iam-role` tag. However, if you have a specific IAM Role to use, you can still use it via `iam-role` tag.
+
+### Policy for IAM User
 
 If you are using IAM role configuration (`iam-role`) for EC2 discovery, you need to give the following policy to your IAM user at the least:
 
