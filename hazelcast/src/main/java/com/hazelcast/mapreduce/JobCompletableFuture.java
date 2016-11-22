@@ -17,7 +17,6 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This is a special version of ICompletableFuture to return the assigned job
@@ -25,8 +24,9 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @param <V> type of the resulting value
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public interface JobCompletableFuture<V>
         extends ICompletableFuture<V> {
 

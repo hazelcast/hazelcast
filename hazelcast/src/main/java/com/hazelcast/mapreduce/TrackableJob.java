@@ -17,7 +17,6 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This interface describes a trackable job. In the default implementation,
@@ -35,8 +34,9 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @param <V> type of the returning value
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public interface TrackableJob<V> {
 
     /**

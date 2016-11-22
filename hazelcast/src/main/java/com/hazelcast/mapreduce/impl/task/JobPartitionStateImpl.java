@@ -16,12 +16,12 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 

@@ -17,7 +17,6 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * <p>
@@ -45,8 +44,9 @@ import com.hazelcast.spi.annotation.Beta;
  * </p>
  *
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public interface JobTracker
         extends DistributedObject {
 

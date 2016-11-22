@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Map;
 
@@ -54,7 +53,6 @@ import java.util.Map;
  * @since 3.3
  * @deprecated Use new fast-aggregations {@link IMap#aggregate(Aggregator)} or {@link IMap#aggregate(Aggregator, Predicate)}.
  */
-@Beta
 @Deprecated
 public interface Aggregation<Key, Supplied, Result> {
 

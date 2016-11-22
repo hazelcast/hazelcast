@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * This interface can be implemented to define a Collator which is executed after calculation
  * of the MapReduce algorithm on remote cluster nodes but before returning the final result.<br>
@@ -26,8 +24,9 @@ import com.hazelcast.spi.annotation.Beta;
  * @param <ValueIn>  value type of the resulting values
  * @param <ValueOut> type for the collated result
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public interface Collator<ValueIn, ValueOut> {
 
     /**

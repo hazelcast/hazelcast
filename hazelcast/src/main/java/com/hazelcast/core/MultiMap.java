@@ -495,7 +495,10 @@ public interface MultiMap<K, V>
      * @param <SuppliedValue> the final type emitted from the supplier
      * @param <Result>        the resulting aggregation value type
      * @return Returns the aggregated value for the multimaps data set
+     * @deprecated The old Aggregations API is superseded by Fast Aggregations ({@link com.hazelcast.aggregation})
+     * which does not yet support MultiMap. Hazelcast Jet can be used in the future to replace this functionality.
      */
+    @Deprecated
     <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                              Aggregation<K, SuppliedValue, Result> aggregation);
 
@@ -510,7 +513,10 @@ public interface MultiMap<K, V>
      * @param <SuppliedValue> the final type emitted from the supplier
      * @param <Result>        the resulting aggregation value type
      * @return Returns the aggregated value
+     * @deprecated The old Aggregations API is superseded by Fast Aggregations ({@link com.hazelcast.aggregation})
+     * which does not yet support MultiMap. Hazelcast Jet can be used in the future to replace this functionality.
      */
+    @Deprecated
     <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                              Aggregation<K, SuppliedValue, Result> aggregation,
                                              JobTracker jobTracker);
