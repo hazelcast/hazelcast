@@ -16,57 +16,67 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.HazelcastOverloadException;
+import com.hazelcast.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.util.concurrent.IdleStrategy;
 
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Responsible for generating callIds.
+ * Responsible for generating invocation callIds.
+ * <p>
+ * It is very important that for each {@link #next(boolean)} there is a matching {@link #complete()}.
+ * If they don't match, the number of concurrent invocations will grow/shrink without bound over time.
+ * This can lead to OOME or deadlock.
+ * <p>
+ * When backpressure is enabled and there are too many concurrent invocations, calls of {@link #next(boolean)}
+ * will block using a spin-loop with exponential backoff.
  * <p/>
- * It is very important that for each {@link #next(Invocation)}, there is a matching {@link #complete(Invocation)}.
- * If this doesn't match, than either the number of concurrent invocations can grow or shrink over time. This can lead
- * to OOME or deadlock.
+ * Currently a single CallIdSequence is used for all partitions, so there is contention. Also one partition
+ * can cause problems in other partition if a lot of invocations are created for that partition. Then other
+ * partitions can't make as many invocations because a single callIdSequence is being used.
  * <p/>
- * The CallIdSequence provides back pressure if enabled and there are too many concurrent invocations. When this happens,
- * an exponential backoff policy is applied.
- * <p/>
- * Currently a single CallIdSequence is used for all partitions; so there is contention. Also one partition can cause problems
- * in other partition if a lot of invocations are created for that partition. Then other partitions can't make as many invocations
- * because a single callIdSequence is being used.
- * <p/>
- * In the future we could add a CallIdSequence per partition or using some 'concurrency level' and do a mod based on the
- * partition-id. The advantage is that you reduce contention and improved isolation, at the expensive of:
+ * In the future we could add a CallIdSequence per partition or using some 'concurrency level'
+ * and do a mod based on the partition-id. The advantage is that you reduce contention and improve isolation,
+ * at the expense of:
  * <ol>
  * <li>increased complexity</li>
  * <li>not always being able to fully utilize the number of invocations.</li>
  * </ol>
  */
-public abstract class CallIdSequence {
-
-    // just for testing purposes.
-    abstract long getLastCallId();
+abstract class CallIdSequence {
 
     /**
      * Returns the maximum concurrent invocations supported. Integer.MAX_VALUE means there is no max.
      *
      * @return the maximum concurrent invocation.
      */
-    public abstract int getMaxConcurrentInvocations();
+    abstract int getMaxConcurrentInvocations();
 
     /**
-     * Creates the next call-id.
+     * Generates the next unique call ID. If called with {@code isUrgent == false} and the implementation
+     * supports backpressure, it will not return unless the number of outstanding invocations is within the
+     * configured limit. Instead it will block until the condition is met and eventually throw a timeout exception.
      *
-     * @param invocation the Invocation to create a call-id for.
-     * @return the generated callId.
-     * @throws AssertionError if invocation.op.callId not equals 0
+     * @param isUrgent {@code true} means we're need a call ID for an urgent operation
+     * @return the generated call ID
+     * @throws TimeoutException if the outstanding invocation count hasn't dropped below the configured limit
+     * within the configured timeout
      */
-    public abstract long next(Invocation invocation);
+    abstract long next(boolean isUrgent) throws TimeoutException;
 
-    public abstract void complete(Invocation invocation);
+    /** Not idempotent: must be called exactly once per invocation. */
+    abstract void complete();
+
+    /** Returns the last issued call ID.
+     * <strong>ONLY FOR TESTING. Must not be used for production code.</strong>
+     */
+    abstract long getLastCallId();
 
     static final class CallIdSequenceWithoutBackpressure extends CallIdSequence {
 
@@ -86,32 +96,33 @@ public abstract class CallIdSequence {
         }
 
         @Override
-        public long next(Invocation invocation) {
-            assert invocation.op.getCallId() == 0 : "callId should be null:" + invocation;
-
+        public long next(boolean isUrgent) {
             return HEAD.incrementAndGet(this);
         }
 
         @Override
-        public void complete(Invocation invocation) {
+        public void complete() {
             //no-op
         }
     }
 
     /**
-     * A {@link com.hazelcast.spi.impl.operationservice.impl.CallIdSequence} that provided backpressure by taking
-     * the number in flight operations into account when a call-id needs to be determined.
-     *
-     * It is possible to temporary exceed the capacity:
-     * - due to system operations
-     * - due to racy nature of checking if space is available and getting the next sequence.
-     *
-     * The last cause is not a problem since the capacity is exceeded temporary and it isn't sustainable. So perhaps
-     * there are a few threads that at the same time see that the there is space and do a next. But any following
-     * invocation needs to wait till there is is capacity.
+     * A {@link com.hazelcast.spi.impl.operationservice.impl.CallIdSequence} that provides backpressure by taking
+     * the number of in-flight operations into account when before creating a new call-id.
+     * <p>
+     * It is possible to temporarily create more concurrent invocations than the declared capacity due to:
+     * <ul>
+     *     <li>system operations</li>
+     *     <li>the racy nature of checking if space is available and getting the next sequence. </li>
+     * </ul>
+     * The latter cause is not a problem since the capacity is exceeded temporarily and it isn't sustainable.
+     * So perhaps there are a few threads that at the same time see that the there is space and do a next.
+     * But any following invocation needs to wait till there is is capacity.
      */
     static final class CallIdSequenceWithBackpressure extends CallIdSequence {
         static final int MAX_DELAY_MS = 500;
+        private static final IdleStrategy IDLER = new BackoffIdleStrategy(
+                0, 0, MILLISECONDS.toNanos(1), MILLISECONDS.toNanos(MAX_DELAY_MS));
         private static final int INDEX_HEAD = 7;
         private static final int INDEX_TAIL = 15;
 
@@ -131,30 +142,27 @@ public abstract class CallIdSequence {
             return longs.get(INDEX_HEAD);
         }
 
-        long getTail() {
-            return longs.get(INDEX_TAIL);
-        }
-
         @Override
         public int getMaxConcurrentInvocations() {
             return maxConcurrentInvocations;
         }
 
         @Override
-        public long next(Invocation invocation) {
-            assert invocation.op.getCallId() == 0 : "callId should be null:" + invocation;
-
-            if (!invocation.op.isUrgent()) {
-                if (!hasSpace()) {
-                    waitForSpace(invocation);
-                }
+        public long next(boolean isUrgent) throws TimeoutException {
+            if (!isUrgent && !hasSpace()) {
+                waitForSpace();
             }
+            return next();
+        }
 
-            // we need to generate a sequence, no matter if the invocation is going to skip registration.
-            // because this information is used to determine the number of in flight invocations
-            long callId = next();
+        @Override
+        public void complete() {
+            long newTail = longs.incrementAndGet(INDEX_TAIL);
+            assert newTail <= longs.get(INDEX_HEAD);
+        }
 
-            return callId;
+        long getTail() {
+            return longs.get(INDEX_TAIL);
         }
 
         private long next() {
@@ -165,70 +173,17 @@ public abstract class CallIdSequence {
             return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL) < maxConcurrentInvocations;
         }
 
-        private void waitForSpace(Invocation invocation) {
-            long remainingTimeoutMs = backoffTimeoutMs;
-            boolean restoreInterrupt = false;
-            try {
-                long delayMs = 1;
-                for (; ; ) {
-                    long startMs = System.currentTimeMillis();
-                    restoreInterrupt = sleep(delayMs);
-                    long durationMs = System.currentTimeMillis() - startMs;
-                    remainingTimeoutMs -= durationMs;
-
-                    if (hasSpace()) {
-                        return;
-                    }
-
-                    if (remainingTimeoutMs <= 0) {
-                        throw new HazelcastOverloadException("Failed to get a callId for invocation: " + invocation);
-                    }
-
-                    delayMs = nextDelay(remainingTimeoutMs, delayMs);
-                    remainingTimeoutMs -= delayMs;
+        private void waitForSpace() throws TimeoutException {
+            long deadline = System.currentTimeMillis() + backoffTimeoutMs;
+            for (long idleCount = 0; ; idleCount++) {
+                IDLER.idle(idleCount);
+                if (hasSpace()) {
+                    return;
                 }
-            } finally {
-                if (restoreInterrupt) {
-                    Thread.currentThread().interrupt();
+                if (System.currentTimeMillis() >= deadline) {
+                    throw new TimeoutException("Timed out trying to acquire another call ID");
                 }
             }
-        }
-
-        static boolean sleep(long delayMs) {
-            try {
-                Thread.sleep(delayMs);
-                return false;
-            } catch (InterruptedException e) {
-               return true;
-            }
-        }
-
-        /**
-         * Calculates the next delay using an exponential increase in time until either the MAX_DELAY_MS is reached or
-         * till the remainingTimeoutMs is reached.
-         */
-        static long nextDelay(long remainingTimeoutMs, long delayMs) {
-            delayMs *= 2;
-
-            if (delayMs > MAX_DELAY_MS) {
-                delayMs = MAX_DELAY_MS;
-            }
-
-            if (delayMs > remainingTimeoutMs) {
-                delayMs = remainingTimeoutMs;
-            }
-
-            return delayMs;
-        }
-
-        @Override
-        public void complete(Invocation invocation) {
-            if (invocation.op.getCallId() == 0) {
-                return;
-            }
-
-            long newTail = longs.incrementAndGet(INDEX_TAIL);
-            assert newTail <= longs.get(INDEX_HEAD);
         }
     }
 }

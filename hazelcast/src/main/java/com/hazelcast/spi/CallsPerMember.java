@@ -66,7 +66,7 @@ public final class CallsPerMember implements LiveOperations {
     public OperationControl toOpControl(Address address) {
         CategorizedCallIds callIds = callIdsByMember.get(address);
         if (callIds == null) {
-            throw new IllegalArgumentException("unknown address");
+            throw new IllegalArgumentException("Address not recognized as a member of this cluster: " + address);
         }
         return new OperationControl(toArray(callIds.liveOps), toArray(callIds.opsToCancel));
     }
@@ -103,7 +103,7 @@ public final class CallsPerMember implements LiveOperations {
         return array;
     }
 
-    static final class CategorizedCallIds {
+    private static final class CategorizedCallIds {
         final List<Long> liveOps = new ArrayList<Long>();
         final List<Long> opsToCancel = new ArrayList<Long>();
     }

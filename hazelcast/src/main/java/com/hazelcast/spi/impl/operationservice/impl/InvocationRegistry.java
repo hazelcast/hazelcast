@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -28,8 +29,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.spi.OperationAccessor.deactivate;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
@@ -101,13 +104,15 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      * @return false when InvocationRegistry is not alive and registration is not successful, true otherwise
      */
     public boolean register(Invocation invocation) {
-        assert invocation.op.getCallId() == 0 : "can't register twice: " + invocation;
-
-        long callId = callIdSequence.next(invocation);
+        final long callId;
+        try {
+            callId = callIdSequence.next(invocation.op.isUrgent());
+        } catch (TimeoutException e) {
+            throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation);
+        }
+        // Fails with exception if the operation is already active
         setCallId(invocation.op, callId);
-
         invocations.put(callId, invocation);
-
         if (!alive) {
             invocation.notifyError(new HazelcastInstanceNotActiveException());
             return false;
@@ -116,27 +121,18 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     }
 
     /**
-     * Deregisters an invocation.
-     * <p/>
-     * If the invocation registration was skipped, the call is ignored.
-     *
+     * Deregisters an invocation. If the associated operation is inactive, takes no action and returns {@code false}.
+     * This ensures the idempotence of deregistration.
      * @param invocation The Invocation to deregister.
+     * @return {@code true} if this call deregistered the invocation; {@code false} if the invocation wasn't registered
      */
-    public void deregister(Invocation invocation) {
-        long callId = invocation.op.getCallId();
-
-        callIdSequence.complete(invocation);
-
-        setCallId(invocation.op, 0);
-
-        if (callId == 0) {
-            return;
+    public boolean deregister(Invocation invocation) {
+        if (!deactivate(invocation.op)) {
+            return false;
         }
-
-        boolean deleted = invocations.remove(callId) != null;
-        if (!deleted && logger.isFinestEnabled()) {
-            logger.finest("failed to deregister callId: " + callId + " " + invocation);
-        }
+        invocations.remove(invocation.op.getCallId());
+        callIdSequence.complete();
+        return true;
     }
 
     /**

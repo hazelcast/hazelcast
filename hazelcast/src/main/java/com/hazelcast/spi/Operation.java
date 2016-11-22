@@ -31,6 +31,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
@@ -44,9 +45,7 @@ import static com.hazelcast.util.StringUtil.timeToString;
  */
 public abstract class Operation implements DataSerializable {
 
-    /**
-     * Marks an {@link Operation} as non partition specific.
-     */
+    /** Marks an {@link Operation} as non-partition-specific. */
     public static final int GENERIC_PARTITION_ID = -1;
 
     static final int BITMASK_VALIDATE_TARGET = 1;
@@ -57,11 +56,14 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
 
+    private static final AtomicLongFieldUpdater<Operation> CALL_ID =
+            AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
+
     // serialized
+    private volatile long callId;
     private String serviceName;
     private int partitionId = GENERIC_PARTITION_ID;
     private int replicaIndex;
-    private long callId;
     private short flags;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
@@ -75,7 +77,7 @@ public abstract class Operation implements DataSerializable {
     private transient Connection connection;
     private transient OperationResponseHandler responseHandler;
 
-    public Operation() {
+    protected Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
     }
@@ -178,37 +180,85 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the callId of this Operation.
-     *
-     * The callId is used to associate the invocation of an Operation on a remote system, with the response from the execution
-     * of that operation.
-     *
-     * @return the callId.
+     * Gets the call ID of this operation. The call ID is used to associate the invocation of an operation
+     * on a remote system with the response from the execution of that operation.
+     * <ul>
+     *     <li>Initially the call ID is zero.</li>
+     *     <li>When an Invocation of the operation is created, call ID is assigned a positive value.</li>
+     *     <li>When the invocation ends, the operation is {@link #deactivate()}d, but the call ID is preserved.</li>
+     *     <li>The same operation may be involved in a further invocation (retrying); this will assign a
+     *     new call ID and reactivate the operation.</li>
+     * </ul>
+     * @return the call ID
      */
     public final long getCallId() {
-        return callId;
-    }
-
-    // Accessed using OperationAccessor
-    final Operation setCallId(long callId) {
-        this.callId = callId;
-        onSetCallId();
-        return this;
+        return Math.abs(callId);
     }
 
     /**
-     * This method is called every time a new <tt>callId</tt> is set to the operation.
-     * A new <tt>callId</tt> is set to an operation before initial invocation
-     * and before every invocation retry.
-     * <p/>
-     * By default this is a no-op method. Operation implementations which are willing to
-     * get notified on <tt>callId</tt> changes can override this method. New <tt>callId</tt>
-     * can be accessed by calling {@link #getCallId()}.
-     * <p/>
+     * Tells whether this operation is involved in an ongoing invocation. Such an operation always has a
+     * positive call ID.
+     * @return {@code true} if the operation's invocation is active; {@code false} otherwise
+     */
+    final boolean isActive() {
+        return callId > 0;
+    }
+
+    /**
+     * Marks this operation as "not involved in an ongoing invocation".
+     * @return {@code true} if this call deactivated the operation; {@code false} if it was already inactive
+     */
+    final boolean deactivate() {
+        long c = callId;
+        if (c <= 0) {
+            return false;
+        }
+        if (CALL_ID.compareAndSet(this, c, -c)) {
+            return true;
+        }
+        if (callId > 0) {
+            throw new IllegalStateException("Operation concurrently re-activated while executing deactivate(). " + this);
+        }
+        return false;
+    }
+
+    /**
+     * Atomically ensures that the operation is not already involved in an invocation and sets the supplied call ID.
+     * @param newId the requested call ID, must be positive
+     * @throws IllegalArgumentException if the supplied call ID is non-positive
+     * @throws IllegalStateException if the operation already has an ongoing invocation
+     */
+    // Accessed using OperationAccessor
+    final void setCallId(long newId) {
+        if (newId <= 0) {
+            throw new IllegalArgumentException(String.format("Attempted to set non-positive call ID %d on %s",
+                    newId, this));
+        }
+        final long c = callId;
+        if (c > 0) {
+            throw new IllegalStateException(String.format(
+                    "Attempt to overwrite the call ID of an active operation: current %d, requested %d. %s",
+                    callId, newId, this));
+        }
+        if (!CALL_ID.compareAndSet(this, c, newId)) {
+            throw new IllegalStateException(String.format("Concurrent modification of call ID. Initially observed %d,"
+                    + " then attempted to set %d, then observed %d. %s", c, newId, callId, this));
+        }
+        onSetCallId(newId);
+    }
+
+    /**
+     * Called every time a new <tt>callId</tt> is set on the operation.
+     * A new <tt>callId</tt> is set before initial invocation and before every invocation retry.
+     * <p>
+     * By default this is a no-op method. Operation implementations which want to
+     * get notified on <tt>callId</tt> changes can override it.
+     * <p>
      * For example an operation can distinguish the first invocation and invocation retries by keeping
      * the initial <tt>callId</tt>.
+     * @param callId the new call ID that was set on the operation
      */
-    protected void onSetCallId() {
+    protected void onSetCallId(long callId) {
     }
 
     public boolean validatesTarget() {

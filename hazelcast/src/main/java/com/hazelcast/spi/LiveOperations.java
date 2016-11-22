@@ -19,11 +19,18 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.Address;
 
 /**
- * Collects per member the callIds of all live operations.
+ * {@link InvocationMonitor} passes instances of this type to each {@link LiveOperationsTracker}
+ * so it can contribute the call IDs of invocations it is responsible for.
  * The object is not thread-safe and is recycled.
  */
 public interface LiveOperations {
 
+    /**
+     * Registers an invocation with this object.
+     *
+     * @param address address of the sender of the operation
+     * @param callId call ID of the operation
+     */
     void add(Address address, long callId);
 
 }
