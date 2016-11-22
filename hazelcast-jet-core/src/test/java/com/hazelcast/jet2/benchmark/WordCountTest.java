@@ -17,7 +17,6 @@
 package com.hazelcast.jet2.benchmark;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -30,9 +29,6 @@ import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.jet2.impl.IMapReader;
 import com.hazelcast.jet2.impl.IMapWriter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -45,7 +41,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -63,7 +58,6 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-@Ignore
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int NODE_COUNT = 2;
@@ -93,33 +87,6 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         hazelcastConfig.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         hazelcastConfig.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         hazelcastConfig.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
-        SerializerConfig serializerConfig = new SerializerConfig();
-        serializerConfig.setImplementation(new StreamSerializer<Map.Entry>() {
-            @Override
-            public int getTypeId() {
-                return 60000;
-            }
-
-            @Override
-            public void destroy() {
-
-            }
-
-            @Override
-            public void write(ObjectDataOutput out, Entry object) throws IOException {
-                out.writeObject(object.getKey());
-                out.writeObject(object.getValue());
-            }
-
-            @Override
-            public Entry read(ObjectDataInput in) throws IOException {
-                Object key = in.readObject();
-                Object value = in.readObject();
-                return new SimpleImmutableEntry(key, value);
-            }
-        }).setTypeClass(Map.Entry.class);
-
-        hazelcastConfig.getSerializationConfig().addSerializerConfig(serializerConfig);
         for (int i = 0; i < NODE_COUNT; i++) {
             instance = Hazelcast.newHazelcastInstance(hazelcastConfig);
         }
@@ -159,7 +126,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addVertex(consumer)
                 .addEdge(new Edge(producer, generator))
                 .addEdge(new Edge(generator, accumulator)
-                        .partitioned(item -> ((Entry) item).getKey()))
+                        .partitioned((item, n) -> ((Entry) item).getKey().hashCode() % n))
                 .addEdge(new Edge(accumulator, combiner)
                         .distributed()
                         .partitioned(item -> ((Entry) item).getKey()))
