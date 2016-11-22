@@ -205,7 +205,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
             try {
                 return new MBeanAttributeInfo(name, description, method, null);
             } catch (IntrospectionException e) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(e);
             }
         }
 
