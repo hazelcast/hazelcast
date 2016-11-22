@@ -527,6 +527,12 @@ public abstract class Invocation implements OperationResponseHandler {
                 }
                 return;
             }
+
+            // we need to reset the lastHeartbeat. If this isn't done, a invocation could be running with an old heartbeat.
+            // when the invocationmonitor checks the lastheartbeat, it would fail to understand the invocation is being retried
+            // but instead assume the invocation has not received a heartbeat for a too long period.
+            lastHeartbeatMillis = 0;
+
             doInvoke(false);
         }
     }
