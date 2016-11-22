@@ -78,6 +78,11 @@ public final class MemoryDataInput implements ObjectDataInput {
         return service.readObject(this);
     }
 
+    public <T> T readDataAsObject() throws IOException {
+        Data data = readData();
+        return data == null ? null : (T) service.toObject(data);
+    }
+
     @Override
     public <T> T readObject(Class aClass) throws IOException {
         throw new UnsupportedOperationException();
