@@ -603,7 +603,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void authenticated(Address target, ClientConnection connection) {
-        ClientConnection oldConnection = connections.put(connection.getRemoteEndpoint(), connection);
+        ClientConnection oldConnection = connections.put(addressTranslator.translate(connection.getRemoteEndpoint()), connection);
         if (oldConnection == null) {
             fireConnectionAddedEvent(connection);
         }
