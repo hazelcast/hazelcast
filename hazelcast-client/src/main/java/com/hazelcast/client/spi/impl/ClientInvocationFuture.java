@@ -68,7 +68,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
-    public ClientMessage resolveAndThrow(Object response) throws ExecutionException, InterruptedException {
+    public ClientMessage resolveAndThrowIfException(Object response) throws ExecutionException, InterruptedException {
         if (response instanceof Throwable) {
             fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {

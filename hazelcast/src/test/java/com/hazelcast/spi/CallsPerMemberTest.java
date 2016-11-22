@@ -31,52 +31,52 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class LiveOperationsTest {
+public class CallsPerMemberTest {
 
     private Address address;
     private Address anotherAddress;
 
-    private LiveOperations liveOperations;
+    private CallsPerMember callsPerMember;
 
     @Before
     public void setUp() throws Exception {
         address = new Address("127.0.0.1", 5701);
         anotherAddress = new Address("127.0.0.1", 5702);
 
-        liveOperations = new LiveOperations(address);
+        callsPerMember = new CallsPerMember(address);
     }
 
     @Test
     public void testAdd() {
-        liveOperations.add(anotherAddress, 23);
+        callsPerMember.add(anotherAddress, 23);
 
-        Set<Address> addresses = liveOperations.addresses();
+        Set<Address> addresses = callsPerMember.addresses();
         assertEquals(1, addresses.size());
         assertEquals(anotherAddress, addresses.iterator().next());
     }
 
     @Test
     public void testAdd_whenAddressIsNull_thenAddsLocalAddress() {
-        liveOperations.add(null, 42);
+        callsPerMember.add(null, 42);
 
-        Set<Address> addresses = liveOperations.addresses();
+        Set<Address> addresses = callsPerMember.addresses();
         assertEquals(1, addresses.size());
         assertEquals(address, addresses.iterator().next());
     }
 
     @Test
     public void testAdd_whenCallIdIsZero_thenNoAddressIsAdded() {
-        liveOperations.add(anotherAddress, 0);
+        callsPerMember.add(anotherAddress, 0);
 
-        Set<Address> addresses = liveOperations.addresses();
+        Set<Address> addresses = callsPerMember.addresses();
         assertEquals(0, addresses.size());
     }
 
     @Test
     public void testCallIds() {
-        liveOperations.add(anotherAddress, 23);
+        callsPerMember.add(anotherAddress, 23);
 
-        long[] callIds = liveOperations.callIds(anotherAddress);
+        long[] callIds = callsPerMember.toOpControl(anotherAddress).runningOperations();
 
         assertEquals(1, callIds.length);
         assertEquals(23, callIds[0]);
@@ -84,18 +84,18 @@ public class LiveOperationsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCallIds_whenAddressIsUnknown_thenThrowException() {
-        liveOperations.callIds(address);
+        callsPerMember.toOpControl(address);
     }
 
     @Test
     public void testClearAndInitMember() {
-        liveOperations.add(address, 23);
+        callsPerMember.add(address, 23);
 
-        liveOperations.clear();
+        callsPerMember.clear();
 
-        liveOperations.initMember(anotherAddress);
+        callsPerMember.getOrCreateCallIdsForMember(anotherAddress);
 
-        long[] callIds = liveOperations.callIds(anotherAddress);
+        long[] callIds = callsPerMember.toOpControl(anotherAddress).runningOperations();
         assertEquals(0, callIds.length);
     }
 }

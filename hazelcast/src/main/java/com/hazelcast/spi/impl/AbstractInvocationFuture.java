@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -68,27 +69,26 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     protected final ILogger logger;
 
     /**
-     * This field contain the state of the future. Either the future is not complete and the state is:
+     * This field contain the state of the future. If the future is not complete, the state can be:
      * <ol>
-     * <li>VOID: no response is available.</li>
+     * <li>{@link #VOID}: no response is available.</li>
      * <li>Thread instance: no response is available and a thread has blocked on completion (e.g. future.get)</li>
      * <li>{@link ExecutionCallback} instance: no response is available and 1 {@link #andThen(ExecutionCallback)}
      * was done using the default executor</li>
-     * <li>{@link WaitNode} instance: in case of multiple andThen registrations or future.gets or andThen with custom Executor
-     * </li>
+     * <li>{@link WaitNode} instance: in case of multiple andThen registrations or
+     * future.gets or andThen with custom Executor. </li>
      * </ol>
-     *
      * If the state is anything else, it is completed.
-     *
-     * The reason why a single future.get or registered ExecutionCallback doesn't create a WaitNode is that we don't want to cause
-     * additional litter since most of our API calls are a get or a single ExecutionCallback.
-     *
-     * The state field is replaced using a cas, so registration or setting a response is an atomic operation and therefor not
-     * prone to data-races. There is no need to use synchronized blocks.
+     * <p>
+     * The reason why a single future.get or registered ExecutionCallback doesn't create a WaitNode is that we don't
+     * want to cause additional litter since most of our API calls are a get or a single ExecutionCallback.
+     * <p>
+     * The state field is replaced using a cas, so registration or setting a response is an atomic operation and
+     * therefore not prone to data-races. There is no need to use synchronized blocks.
      */
     private volatile Object state = VOID;
 
-    public AbstractInvocationFuture(Executor defaultExecutor, ILogger logger) {
+    protected AbstractInvocationFuture(Executor defaultExecutor, ILogger logger) {
         this.defaultExecutor = defaultExecutor;
         this.logger = logger;
     }
@@ -106,13 +106,13 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
         return isDone(state);
     }
 
-    private boolean isDone(final Object state) {
+    private static boolean isDone(final Object state) {
         if (state == null) {
             return true;
         }
 
         return !(state == VOID
-                || state.getClass() == WaitNode.class
+                || state instanceof WaitNode
                 || state instanceof Thread
                 || state instanceof ExecutionCallback);
     }
@@ -121,20 +121,18 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     @Override
-    public final boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        return complete(new CancellationException());
     }
 
     @Override
-    public final boolean isCancelled() {
-        return false;
+    public boolean isCancelled() {
+        return state instanceof CancellationException;
     }
 
     @Override
     public final V join() {
         try {
-            // this method is quite inefficient when there is unchecked exception, because it will be wrapped
-            // in a ExecutionException, and then it is unwrapped again.
             return get();
         } catch (Throwable throwable) {
             throw rethrow(throwable);
@@ -146,7 +144,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
         Object response = registerWaiter(Thread.currentThread(), null);
         if (response != VOID) {
             // no registration was done since a value is available.
-            return resolveAndThrow(response);
+            return resolveAndThrowIfException(response);
         }
 
         boolean interrupted = false;
@@ -154,7 +152,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
             for (; ; ) {
                 park();
                 if (isDone()) {
-                    return resolveAndThrow(state);
+                    return resolveAndThrowIfException(state);
                 } else if (Thread.interrupted()) {
                     interrupted = true;
                     onInterruptDetected();
@@ -170,7 +168,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
             throws InterruptedException, ExecutionException, TimeoutException {
         Object response = registerWaiter(Thread.currentThread(), null);
         if (response != VOID) {
-            return resolveAndThrow(response);
+            return resolveAndThrowIfException(response);
         }
 
         long deadlineNanos = System.nanoTime() + unit.toNanos(timeout);
@@ -182,7 +180,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
                 timeoutNanos = deadlineNanos - System.nanoTime();
 
                 if (isDone()) {
-                    return resolveAndThrow(state);
+                    return resolveAndThrowIfException(state);
                 } else if (Thread.interrupted()) {
                     interrupted = true;
                     onInterruptDetected();
@@ -196,7 +194,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
         throw newTimeoutException(timeout, unit);
     }
 
-    private void restoreInterrupt(boolean interrupted) {
+    private static void restoreInterrupt(boolean interrupted) {
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
@@ -275,7 +273,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
         return value;
     }
 
-    protected abstract V resolveAndThrow(Object state) throws ExecutionException, InterruptedException;
+    protected abstract V resolveAndThrowIfException(Object state) throws ExecutionException, InterruptedException;
 
     protected abstract TimeoutException newTimeoutException(long timeout, TimeUnit unit);
 
@@ -360,8 +358,9 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
                 if (oldState != value) {
                     // it can be that this future already completed, e.g. when an invocation already
                     // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException
-                    logger.warning("Future.complete(Object value) can only be called once. Request: " + invocationToString()
-                            + ", current value: " + oldState + ", offered value: " + value);
+                    logger.warning(String.format("Future.complete(Object) on completed future. "
+                            + "Request: %s, current value: %s, offered value: %s",
+                            invocationToString(), oldState, value));
                 }
                 return false;
             }
