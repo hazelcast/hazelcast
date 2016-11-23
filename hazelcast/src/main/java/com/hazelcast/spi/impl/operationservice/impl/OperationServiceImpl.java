@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -70,7 +69,6 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.util.CollectionUtil.toIntegerList;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
@@ -341,31 +339,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     // =============================== processing operation  ===============================
 
     @Override
-    public boolean isCallTimedOut(Operation op) {
-        // Join operations should not be checked for timeout because caller is not member of this cluster
-        // and can have a different clock.
-        if (isJoinOperation(op)) {
-            return false;
-        }
-
-        long callTimeout = op.getCallTimeout();
-        long invocationTime = op.getInvocationTime();
-        long expireTime = invocationTime + callTimeout;
-
-        if (expireTime <= 0 || expireTime == Long.MAX_VALUE) {
-            return false;
-        }
-
-        ClusterClock clusterClock = nodeEngine.getClusterService().getClusterClock();
-        long now = clusterClock.getClusterTime();
-        if (expireTime < now) {
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory) throws Exception {
         Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
@@ -461,7 +434,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         this.invocationContext = new Invocation.Context(
                 asyncExecutor,
-                nodeEngine.getClusterService().getClusterClock(),
                 nodeEngine.getClusterService(),
                 node.connectionManager,
                 node.nodeEngine.getExecutionService(),

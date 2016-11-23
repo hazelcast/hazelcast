@@ -67,6 +67,8 @@ public final class Packet extends HeapData implements OutboundFrame {
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
     private boolean headerComplete;
 
+    private long receivedTime;
+
     public Packet() {
     }
 
@@ -77,6 +79,14 @@ public final class Packet extends HeapData implements OutboundFrame {
     public Packet(byte[] payload, int partitionId) {
         super(payload);
         this.partitionId = partitionId;
+    }
+
+    public void initReceivedTime() {
+        receivedTime = System.currentTimeMillis();
+    }
+
+    public long getReceivedTime() {
+        return receivedTime;
     }
 
     /**

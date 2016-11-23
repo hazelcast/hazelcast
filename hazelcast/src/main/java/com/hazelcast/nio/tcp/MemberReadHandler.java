@@ -54,6 +54,7 @@ public class MemberReadHandler implements ReadHandler {
         while (src.hasRemaining()) {
             if (packet == null) {
                 packet = new Packet();
+                packet.initReceivedTime();
             }
             boolean complete = packet.readFrom(src);
             if (complete) {
