@@ -210,7 +210,9 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         ObjectDataInput input = createObjectDataInput(data);
         byte header = input.readByte();
         if (header == IDENTIFIED_DATA_SERIALIZABLE_HEADER_VALUE) {
-            input.skipBytes(FACTORY_AND_CLASS_ID_BYTE_LENGTH);
+            if (input.skipBytes(FACTORY_AND_CLASS_ID_BYTE_LENGTH) != FACTORY_AND_CLASS_ID_BYTE_LENGTH) {
+                throw new HazelcastSerializationException("Malformed serialization format");
+            }
         } else if (header == DATA_SERIALIZABLE_HEADER_VALUE) {
             // read class-name of DataSerializable
             input.readUTF();
