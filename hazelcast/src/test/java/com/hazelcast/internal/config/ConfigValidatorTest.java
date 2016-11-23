@@ -253,6 +253,29 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkEvictionConfig(null, null, null, true);
     }
 
+    @Test
+    public void test_checkNearCacheConfig_withPreLoaderConfig_onClients() {
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(BINARY)
+                .setCacheLocalEntries(false);
+        nearCacheConfig.getPreloaderConfig()
+                .setEnabled(true)
+                .setStoreInitialDelaySeconds(1)
+                .setStoreInitialDelaySeconds(1);
+
+        checkNearCacheConfig(nearCacheConfig, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_checkNearCacheConfig_withPreloader_onMembers() {
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(BINARY);
+        nearCacheConfig.getPreloaderConfig()
+                .setEnabled(true)
+                .setStoreInitialDelaySeconds(1)
+                .setStoreInitialDelaySeconds(1);
+
+        checkNearCacheConfig(nearCacheConfig, false);
+    }
+
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
         return new MapConfig()
                 .setInMemoryFormat(inMemoryFormat);

@@ -28,6 +28,7 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.logging.ILogger;
@@ -84,7 +85,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         ClientContext context = getContext();
         NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
         NearCacheManager nearCacheManager = context.getNearCacheManager();
-        NearCache<Data, Object> clientNearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
+        NearCache<Data, Object> clientNearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig,
+                new IMapDataStructureAdapter<K, V>(this));
 
         int partitionCount = context.getPartitionService().getPartitionCount();
         nearCache = asStaleReadPreventerNearCache(clientNearCache, partitionCount);

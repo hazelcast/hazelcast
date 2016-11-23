@@ -48,6 +48,7 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.nio.serialization.Data;
@@ -191,7 +192,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         NearCacheConfig nearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
-            nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig);
+            nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig,
+                    new ICacheDataStructureAdapter<K, V>(this));
             registerInvalidationListener();
         }
     }

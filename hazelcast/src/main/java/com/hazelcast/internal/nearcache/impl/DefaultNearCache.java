@@ -18,11 +18,14 @@ package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -44,6 +47,8 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     protected NearCacheRecordStore<K, V> nearCacheRecordStore;
     protected ScheduledFuture expirationTaskFuture;
 
+    private volatile boolean preloadDone;
+
     public DefaultNearCache(String name, NearCacheConfig nearCacheConfig,
                             SerializationService serializationService, ExecutionService executionService,
                             ClassLoader classLoader) {
@@ -52,8 +57,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     public DefaultNearCache(String name, NearCacheConfig nearCacheConfig, NearCacheRecordStore<K, V> nearCacheRecordStore,
                             SerializationService serializationService, ExecutionService executionService,
-                            ClassLoader classLoader
-    ) {
+                            ClassLoader classLoader) {
         this.name = name;
         this.nearCacheConfig = nearCacheConfig;
         this.serializationService = serializationService;
@@ -66,23 +70,23 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public void initialize() {
         if (nearCacheRecordStore == null) {
-            nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig);
+            nearCacheRecordStore = createNearCacheRecordStore(name, nearCacheConfig);
             nearCacheRecordStore.initialize();
         }
 
         expirationTaskFuture = createAndScheduleExpirationTask();
     }
 
-    protected NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig) {
+    protected NearCacheRecordStore<K, V> createNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig) {
         InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         if (inMemoryFormat == null) {
             inMemoryFormat = DEFAULT_MEMORY_FORMAT;
         }
         switch (inMemoryFormat) {
             case BINARY:
-                return new NearCacheDataRecordStore<K, V>(nearCacheConfig, serializationService, classLoader);
+                return new NearCacheDataRecordStore<K, V>(name, nearCacheConfig, serializationService, classLoader);
             case OBJECT:
-                return new NearCacheObjectRecordStore<K, V>(nearCacheConfig, serializationService, classLoader);
+                return new NearCacheObjectRecordStore<K, V>(name, nearCacheConfig, serializationService, classLoader);
             default:
                 throw new IllegalArgumentException("Invalid in memory format: " + inMemoryFormat);
         }
@@ -148,6 +152,11 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
+    public NearCachePreloaderConfig getPreloaderConfig() {
+        return nearCacheConfig.getPreloaderConfig();
+    }
+
+    @Override
     public NearCacheStats getNearCacheStats() {
         return nearCacheRecordStore.getNearCacheStats();
     }
@@ -160,6 +169,25 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public int size() {
         return nearCacheRecordStore.size();
+    }
+
+    @Override
+    public void preload(DataStructureAdapter<Data, ?> adapter) {
+        nearCacheRecordStore.loadKeys(adapter);
+        preloadDone = true;
+    }
+
+    @Override
+    public void storeKeys() {
+        // we don't store new keys, until the pre-loader is done
+        if (preloadDone) {
+            nearCacheRecordStore.storeKeys();
+        }
+    }
+
+    @Override
+    public boolean isPreloadDone() {
+        return preloadDone;
     }
 
     private class ExpirationTask implements Runnable {

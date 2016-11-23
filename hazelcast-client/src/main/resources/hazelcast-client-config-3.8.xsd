@@ -376,6 +376,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="preloader" type="preloader" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
 
@@ -401,6 +402,13 @@
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="preloader">
+        <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
+        <xs:attribute name="file-name" type="xs:string" use="optional"/>
+        <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600" use="optional"/>
+        <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600" use="optional"/>
     </xs:complexType>
 
     <xs:simpleType name="in-memory-format">

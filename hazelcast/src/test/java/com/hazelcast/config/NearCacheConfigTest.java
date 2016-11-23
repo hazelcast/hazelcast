@@ -100,4 +100,18 @@ public class NearCacheConfigTest {
         assertNotEquals(15125, config.getMaxSize());
         assertNotEquals("LFU", config.getEvictionPolicy());
     }
+
+    @Test
+    public void testSetNearCachePreloaderConfig() {
+        NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
+
+        config.setPreloaderConfig(preloaderConfig);
+
+        assertEquals(preloaderConfig, config.getPreloaderConfig());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetNearCachePreloaderConfig_whenNull_thenThrowException() {
+        config.setPreloaderConfig(null);
+    }
 }

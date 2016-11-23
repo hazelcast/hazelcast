@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.monitor.NearCacheStats;
 
@@ -89,6 +91,11 @@ public final class StaleReadPreventerNearCacheWrapper<K, V> implements NearCache
     }
 
     @Override
+    public NearCachePreloaderConfig getPreloaderConfig() {
+        return nearCache.getPreloaderConfig();
+    }
+
+    @Override
     public NearCacheStats getNearCacheStats() {
         return nearCache.getNearCacheStats();
     }
@@ -101,6 +108,21 @@ public final class StaleReadPreventerNearCacheWrapper<K, V> implements NearCache
     @Override
     public int size() {
         return nearCache.size();
+    }
+
+    @Override
+    public void preload(DataStructureAdapter adapter) {
+        nearCache.preload(adapter);
+    }
+
+    @Override
+    public void storeKeys() {
+        nearCache.storeKeys();
+    }
+
+    @Override
+    public boolean isPreloadDone() {
+        return nearCache.isPreloadDone();
     }
 
     public KeyStateMarker getKeyStateMarker() {
