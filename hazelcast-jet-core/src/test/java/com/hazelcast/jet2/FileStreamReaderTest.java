@@ -61,8 +61,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
         sleepAtLeastSeconds(3);
 
         File file = new File(directory, randomName());
-        writeNewLine(file, "hello");
-        writeNewLine(file, "world");
+        writeNewLine(file, "hello", "world");
         IList<Object> list = instance.getList("consumer");
         assertTrueEventually(new AssertTask() {
             @Override
@@ -93,8 +92,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
         sleepAtLeastSeconds(3);
 
         File file = new File(directory, randomName());
-        writeNewLine(file, "hello");
-        writeNewLine(file, "world");
+        writeNewLine(file, "hello", "world");
         IList<Object> list = instance.getList("consumer");
         assertTrueEventually(new AssertTask() {
             @Override
@@ -134,8 +132,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
         jetEngine.newJob(dag).execute();
         sleepAtLeastSeconds(3);
 
-        writeNewLine(file, "hello");
-        writeNewLine(file, "world");
+        writeNewLine(file, "hello", "world");
         IList<Object> list = instance.getList("consumer");
         assertTrueEventually(new AssertTask() {
             @Override
@@ -143,8 +140,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
                 assertEquals(3, list.size());
             }
         });
-        writeNewLine(file, "append");
-        writeNewLine(file, "only");
+        writeNewLine(file, "append", "only");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -153,10 +149,12 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
         });
     }
 
-    public void writeNewLine(File file, String payload) throws IOException {
+    public void writeNewLine(File file, String... payloads) throws IOException {
         FileOutputStream outputStream = new FileOutputStream(file, true);
         PrintWriter writer = new PrintWriter(outputStream);
-        writer.write(payload + "\n");
+        for (String payload : payloads) {
+            writer.write(payload + "\n");
+        }
         writer.flush();
         writer.close();
         outputStream.close();
