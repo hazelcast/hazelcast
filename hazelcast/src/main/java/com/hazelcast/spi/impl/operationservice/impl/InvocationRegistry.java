@@ -110,8 +110,13 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         } catch (TimeoutException e) {
             throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation, e);
         }
-        // Fails with exception if the operation is already active
-        setCallId(invocation.op, callId);
+        try {
+            // Fails with IllegalStateException if the operation is already active
+            setCallId(invocation.op, callId);
+        } catch (IllegalStateException e) {
+            callIdSequence.complete();
+            throw e;
+        }
         invocations.put(callId, invocation);
         if (!alive) {
             invocation.notifyError(new HazelcastInstanceNotActiveException());
