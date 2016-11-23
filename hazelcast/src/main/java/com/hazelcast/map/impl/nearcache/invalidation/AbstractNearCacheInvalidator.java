@@ -25,9 +25,8 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 
-
 /**
- * Contains common functionality of a {@code NearCacheInvalidator}
+ * Contains common functionality of a {@link NearCacheInvalidator}.
  */
 abstract class AbstractNearCacheInvalidator implements NearCacheInvalidator {
 
@@ -83,17 +82,16 @@ abstract class AbstractNearCacheInvalidator implements NearCacheInvalidator {
 
     @Override
     public void destroy(String mapName, String sourceUuid) {
-        // nop.
+        // NOP
     }
 
     @Override
     public void reset() {
-        // nop.
+        // NOP
     }
 
     @Override
     public void shutdown() {
-        // nop.
+        // NOP
     }
-
 }
