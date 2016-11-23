@@ -62,6 +62,7 @@ import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
@@ -117,7 +118,6 @@ public abstract class Invocation implements OperationResponseHandler {
      */
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
-    final Context context;
 
     /**
      * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
@@ -150,18 +150,17 @@ public abstract class Invocation implements OperationResponseHandler {
      * The value 0 indicates that no heartbeat was received at all.
      */
     volatile long lastHeartbeatMillis;
-
-    final InvocationFuture future;
-    final int tryCount;
-    final long tryPauseMillis;
-    final long callTimeoutMillis;
+    volatile int invokeCount;
 
     boolean remote;
     Address invTarget;
     MemberImpl targetMember;
 
-    // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
-    volatile int invokeCount;
+    final Context context;
+    final InvocationFuture future;
+    final int tryCount;
+    final long tryPauseMillis;
+    final long callTimeoutMillis;
 
     Invocation(Context context, Operation op, int tryCount, long tryPauseMillis,
                long callTimeoutMillis, boolean deserialize) {
@@ -216,9 +215,10 @@ public abstract class Invocation implements OperationResponseHandler {
 
     private void invoke0(boolean isAsync) {
         if (invokeCount > 0) {
-            throw new IllegalStateException("An invocation can not be invoked more than once!");
-        } else if (op.getCallId() != 0) {
-            throw new IllegalStateException("An operation[" + op + "] can not be used for multiple invocations!");
+            throw new IllegalStateException("This invocation is already in progress");
+        } else if (hasActiveInvocation(op)) {
+            throw new IllegalStateException(
+                    "Attempt to reuse the same operation in multiple invocations. Operation is " + op);
         }
 
         try {
@@ -346,7 +346,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
     @Override
     public void sendResponse(Operation op, Object response) {
-        if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
+        if (RESPONSE_RECEIVED.getAndSet(this, TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
                     + ", current-response: : " + response);
         }

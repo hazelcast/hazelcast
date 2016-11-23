@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -93,8 +94,7 @@ abstract class CallIdSequence {
 
         @Override
         public long next(Invocation invocation) {
-            assert invocation.op.getCallId() == 0 : "callId should be null:" + invocation;
-
+            assert !hasActiveInvocation(invocation.op) : "Invocation is already in progress:" + invocation;
             return HEAD.incrementAndGet(this);
         }
 
@@ -148,7 +148,7 @@ abstract class CallIdSequence {
         @Override
         public long next(Invocation invocation) {
             final Operation op = invocation.op;
-            assert op.getCallId() == 0 : "callId should be zero:" + invocation;
+            assert !hasActiveInvocation(invocation.op) : "Invocation is already in progress:" + invocation;
 
             if (!op.isUrgent() && !hasSpace()) {
                 waitForSpace(invocation);

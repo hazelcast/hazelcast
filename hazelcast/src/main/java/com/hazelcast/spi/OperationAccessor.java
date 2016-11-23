@@ -38,24 +38,25 @@ public final class OperationAccessor {
     }
 
     /**
-     * Sets the callId for the Operation.
-     *
-     * @param op the Operatior that is updated for its callId.
-     * @param callId the callId.
-     * @see Operation#setCallId(long)
-     * @see Operation#getCallId()
+     * Assigns the supplied call ID to the supplied operation, thereby activating it.
+     * Refer to Operation#setCallId(long) and Operation#getCallId() for detailed semantics.
      */
     public static void setCallId(Operation op, long callId) {
         op.setCallId(callId);
     }
 
     /**
-     * Resets the callId for the Operation to zero. For details see {@link Operation#resetCallId()}
+     * Marks the supplied operation as "not active".
      *
-     * @param op the Operation on which to reset the callId
+     * @param op the Operation to deactivate
+     * @see Operation#deactivate()
      */
-    public static long resetCallId(Operation op) {
-        return op.resetCallId();
+    public static boolean deactivate(Operation op) {
+        return op.deactivate();
+    }
+
+    public static boolean hasActiveInvocation(Operation op) {
+        return op.hasActiveInvocation();
     }
 
     /**
