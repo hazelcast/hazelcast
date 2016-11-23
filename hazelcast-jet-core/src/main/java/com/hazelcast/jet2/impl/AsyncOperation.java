@@ -18,9 +18,7 @@ package com.hazelcast.jet2.impl;
 
 public abstract class AsyncOperation extends EngineOperation {
 
-    private long callId = -1;
-
-    public AsyncOperation() {
+    protected AsyncOperation() {
     }
 
     public AsyncOperation(String engineName) {
@@ -35,13 +33,6 @@ public abstract class AsyncOperation extends EngineOperation {
     @Override
     public Object getResponse() {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected void onSetCallId() {
-        if (callId == -1) {
-            callId = getCallId();
-        }
     }
 
     @Override
@@ -65,9 +56,7 @@ public abstract class AsyncOperation extends EngineOperation {
         try {
             sendResponse(value);
         } finally {
-            this.<JetService>getService().deregisterOperation(getCallerAddress(), callId);
+            this.<JetService>getService().deregisterOperation(getCallerAddress(), getCallId());
         }
     }
-
-
 }
