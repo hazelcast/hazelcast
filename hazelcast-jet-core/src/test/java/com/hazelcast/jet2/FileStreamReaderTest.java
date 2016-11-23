@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -72,6 +74,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testFileStreamReader_reprocess() throws IOException, InterruptedException {
         HazelcastInstance instance = createHazelcastInstance();
         JetEngine jetEngine = JetEngine.get(instance, randomName());
