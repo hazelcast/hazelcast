@@ -1,7 +1,7 @@
-package com.hazelcast.internal.nearcache.impl.adapter;
+package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -23,20 +23,18 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSupport {
+public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport {
 
-    private IMap<Integer, String> map;
-    private TransactionalMapDataStructureAdapter<Integer, String> adapter;
+    private ReplicatedMap<Integer, String> map;
+    private ReplicatedMapDataStructureAdapter<Integer, String> adapter;
 
     @Before
     public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
 
-        map = hazelcastInstance.getMap("TransactionalMapDataStructureAdapterTest");
-
-        adapter = new TransactionalMapDataStructureAdapter<Integer, String>(hazelcastInstance,
-                "TransactionalMapDataStructureAdapterTest");
+        map = hazelcastInstance.getReplicatedMap("ReplicatedMapDataStructureAdapterTest");
+        adapter = new ReplicatedMapDataStructureAdapter<Integer, String>(map);
     }
 
     @Test

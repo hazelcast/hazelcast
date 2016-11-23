@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache.impl.adapter;
+package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
+public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
-    private final ReplicatedMap<K, V> map;
+    private final IMap<K, V> map;
 
-    public ReplicatedMapDataStructureAdapter(ReplicatedMap<K, V> map) {
+    public IMapDataStructureAdapter(IMap<K, V> map) {
         this.map = map;
     }
 
@@ -39,7 +38,7 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     public void set(K key, V value) {
-        map.put(key, value);
+        map.set(key, value);
     }
 
     @Override
@@ -54,7 +53,7 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     public ICompletableFuture<V> getAsync(K key) {
-        return new SimpleCompletedFuture<V>(map.get(key));
+        return map.getAsync(key);
     }
 
     @Override
@@ -64,11 +63,7 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
-        Map<K, V> result = new HashMap<K, V>(keys.size());
-        for (K key : keys) {
-            result.put(key, map.get(key));
-        }
-        return result;
+        return map.getAll(keys);
     }
 
     @Override
@@ -78,7 +73,7 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     public LocalMapStats getLocalMapStats() {
-        return null;
+        return map.getLocalMapStats();
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.hazelcast.internal.nearcache.impl.adapter;
+package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -18,23 +18,25 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
+public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSupport {
 
     private IMap<Integer, String> map;
-    private IMapDataStructureAdapter<Integer, String> adapter;
+    private TransactionalMapDataStructureAdapter<Integer, String> adapter;
 
     @Before
     public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
 
-        map = hazelcastInstance.getMap("IMapDataStructureAdapterTest");
-        adapter = new IMapDataStructureAdapter<Integer, String>(map);
+        map = hazelcastInstance.getMap("TransactionalMapDataStructureAdapterTest");
+
+        adapter = new TransactionalMapDataStructureAdapter<Integer, String>(hazelcastInstance,
+                "TransactionalMapDataStructureAdapterTest");
     }
 
     @Test
@@ -118,12 +120,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test
     public void testGetLocalMapStats() {
-        assertNotNull(adapter.getLocalMapStats());
-
-        assertEquals(0, adapter.getLocalMapStats().getOwnedEntryCount());
-
-        adapter.put(23, "value-23");
-        assertEquals(1, adapter.getLocalMapStats().getOwnedEntryCount());
+        assertNull(adapter.getLocalMapStats());
     }
 
     @Test

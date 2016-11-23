@@ -17,4 +17,4 @@
 /**
  * Data structure adapters for Near Cache.
  */
-package com.hazelcast.internal.nearcache.impl.adapter;
+package com.hazelcast.internal.adapter;

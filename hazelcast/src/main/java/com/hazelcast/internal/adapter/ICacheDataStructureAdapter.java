@@ -14,70 +14,70 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache.impl.adapter;
+package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
 
+import javax.cache.Cache;
 import java.util.Map;
 import java.util.Set;
 
-public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
+public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
-    private final IMap<K, V> map;
+    private final Cache<K, V> cache;
 
-    public IMapDataStructureAdapter(IMap<K, V> map) {
-        this.map = map;
+    public ICacheDataStructureAdapter(Cache<K, V> cache) {
+        this.cache = cache;
     }
 
     @Override
     public void clear() {
-        map.clear();
+        cache.clear();
     }
 
     @Override
     public void set(K key, V value) {
-        map.set(key, value);
+        cache.put(key, value);
     }
 
     @Override
     public V put(K key, V value) {
-        return map.put(key, value);
+        return cache.getAndPut(key, value);
     }
 
     @Override
     public V get(K key) {
-        return map.get(key);
+        return cache.get(key);
     }
 
     @Override
     public ICompletableFuture<V> getAsync(K key) {
-        return map.getAsync(key);
+        return new SimpleCompletedFuture<V>(cache.get(key));
     }
 
     @Override
     public void putAll(Map<K, V> map) {
-        this.map.putAll(map);
+        cache.putAll(map);
     }
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
-        return map.getAll(keys);
+        return cache.getAll(keys);
     }
 
     @Override
     public void remove(K key) {
-        map.remove(key);
+        cache.remove(key);
     }
 
     @Override
     public LocalMapStats getLocalMapStats() {
-        return map.getLocalMapStats();
+        return null;
     }
 
     @Override
     public boolean containsKey(K key) {
-        return map.containsKey(key);
+        return cache.containsKey(key);
     }
 }

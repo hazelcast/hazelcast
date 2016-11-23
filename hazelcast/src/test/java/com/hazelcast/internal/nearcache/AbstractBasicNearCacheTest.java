@@ -1,7 +1,7 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.internal.nearcache.impl.adapter.DataStructureAdapter;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;

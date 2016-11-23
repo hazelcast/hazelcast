@@ -14,61 +14,66 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache.impl.adapter;
+package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalMapStats;
 
-import javax.cache.Cache;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
+public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
-    private final Cache<K, V> cache;
+    private final ReplicatedMap<K, V> map;
 
-    public ICacheDataStructureAdapter(Cache<K, V> cache) {
-        this.cache = cache;
+    public ReplicatedMapDataStructureAdapter(ReplicatedMap<K, V> map) {
+        this.map = map;
     }
 
     @Override
     public void clear() {
-        cache.clear();
+        map.clear();
     }
 
     @Override
     public void set(K key, V value) {
-        cache.put(key, value);
+        map.put(key, value);
     }
 
     @Override
     public V put(K key, V value) {
-        return cache.getAndPut(key, value);
+        return map.put(key, value);
     }
 
     @Override
     public V get(K key) {
-        return cache.get(key);
+        return map.get(key);
     }
 
     @Override
     public ICompletableFuture<V> getAsync(K key) {
-        return new SimpleCompletedFuture<V>(cache.get(key));
+        return new SimpleCompletedFuture<V>(map.get(key));
     }
 
     @Override
     public void putAll(Map<K, V> map) {
-        cache.putAll(map);
+        this.map.putAll(map);
     }
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
-        return cache.getAll(keys);
+        Map<K, V> result = new HashMap<K, V>(keys.size());
+        for (K key : keys) {
+            result.put(key, map.get(key));
+        }
+        return result;
     }
 
     @Override
     public void remove(K key) {
-        cache.remove(key);
+        map.remove(key);
     }
 
     @Override
@@ -78,6 +83,6 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
 
     @Override
     public boolean containsKey(K key) {
-        return cache.containsKey(key);
+        return map.containsKey(key);
     }
 }

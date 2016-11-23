@@ -1,4 +1,4 @@
-package com.hazelcast.internal.nearcache.impl.adapter;
+package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ExecutionCallback;
 import org.junit.Before;
