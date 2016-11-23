@@ -14,21 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.nio.serialization.impl;
 
 /**
- * See ConcurrencyUtil
- *
- * @param <K> key type
- * @param <V> value type
+ * Marker interface that enables marking a DataSerializable or IdentifiedDataSerializable class for versioning.
+ * If the serializer supports versioning it will act accordingly to its implementation.
  */
-public interface ConstructorFunction<K, V> {
-
-    /**
-     * Creates a new instance of an object given the construction argument
-     *
-     * @param arg construction argument
-     * @return a new instance of an object
-     */
-    V createNew(K arg);
+public interface Versioned {
 }

@@ -94,4 +94,5 @@ public class ClientClusterProxy implements Cluster {
     public void shutdown(TransactionOptions transactionOptions) {
         throw new UnsupportedOperationException();
     }
+
 }

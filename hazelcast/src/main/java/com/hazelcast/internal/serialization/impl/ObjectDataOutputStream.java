@@ -30,7 +30,7 @@ import java.nio.ByteOrder;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable {
+public class ObjectDataOutputStream extends VersionedObjectDataOutput implements ObjectDataOutput, Closeable {
 
     private final InternalSerializationService serializationService;
     private final DataOutputStream dataOut;
@@ -259,7 +259,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public byte[] toByteArray() {
-       return toByteArray(0);
+        return toByteArray(0);
     }
 
     @Override
@@ -285,4 +285,5 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     private boolean bigEndian() {
         return byteOrder == ByteOrder.BIG_ENDIAN;
     }
+
 }

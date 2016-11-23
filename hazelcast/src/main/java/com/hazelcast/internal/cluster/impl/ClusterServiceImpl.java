@@ -387,7 +387,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void repairPartitionTableIfReturningMember(MemberImpl member) {
         if (!isMaster()) {
-             return;
+            return;
         }
 
         if (getClusterState() == ClusterState.ACTIVE) {
@@ -395,7 +395,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
 
         if (!node.getNodeExtension().isStartCompleted()) {
-             return;
+            return;
         }
 
         Address address = member.getAddress();
@@ -406,7 +406,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 assert !isMemberRemovedWhileClusterIsNotActive(address);
 
                 logger.warning(member + " is returning with a new address. Old one was: " + oldAddress
-                    + ". Will update partition table with the new address.");
+                        + ". Will update partition table with the new address.");
                 InternalPartitionServiceImpl partitionService = node.partitionService;
                 partitionService.replaceAddress(oldAddress, address);
             }

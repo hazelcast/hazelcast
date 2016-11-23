@@ -6,6 +6,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.VersionAwareConstructorFunction;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -13,6 +15,11 @@ import org.junit.runner.RunWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -34,6 +41,33 @@ public class ArrayDataSerializableFactoryTest {
         assertNull(factory.create(-1));
         assertNull(factory.create(1));
         assertThat(factory.create(0), instanceOf(SampleIdentifiedDataSerializable.class));
+    }
+
+    @Test
+    public void testCreateWithoutVersion() throws Exception {
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructorFunctions = new ConstructorFunction[1];
+        VersionAwareConstructorFunction function = mock(VersionAwareConstructorFunction.class);
+        constructorFunctions[0] = function;
+
+        ArrayDataSerializableFactory factory = new ArrayDataSerializableFactory(constructorFunctions);
+        factory.create(0);
+
+        verify(function, times(1)).createNew(0);
+        verify(function, times(0)).createNew(eq(0), any(Version.class));
+    }
+
+    @Test
+    public void testCreateWithVersion() throws Exception {
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructorFunctions = new ConstructorFunction[1];
+        VersionAwareConstructorFunction function = mock(VersionAwareConstructorFunction.class);
+        constructorFunctions[0] = function;
+
+        ArrayDataSerializableFactory factory = new ArrayDataSerializableFactory(constructorFunctions);
+        Version version = Version.of(3, 6, 0);
+        factory.create(0, version);
+
+        verify(function, times(0)).createNew(0);
+        verify(function, times(1)).createNew(0, version);
     }
 
     @Test(expected = IllegalArgumentException.class)

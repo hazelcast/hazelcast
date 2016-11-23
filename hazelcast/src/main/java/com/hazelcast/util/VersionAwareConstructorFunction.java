@@ -16,19 +16,26 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.version.Version;
+
 /**
- * See ConcurrencyUtil
+ * VersionAware version of the ConstructorFunction.
+ * It is also able to create "default" objects when the version is unknown or not-specified. In this case
+ * use the createNew method with out the version.
  *
  * @param <K> key type
  * @param <V> value type
  */
-public interface ConstructorFunction<K, V> {
+public interface VersionAwareConstructorFunction<K, V> extends ConstructorFunction<K, V> {
 
     /**
-     * Creates a new instance of an object given the construction argument
+     * Creates a new instance of an object given the construction argument and the version of the object
      *
-     * @param arg construction argument
+     * @param arg     construction argument
+     * @param version version of the object it should create - it's cluster version bound, since objects change
+     *                between release only
      * @return a new instance of an object
      */
-    V createNew(K arg);
+    V createNew(K arg, Version version);
+
 }

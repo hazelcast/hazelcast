@@ -22,7 +22,8 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-final class EmptyObjectDataOutput implements ObjectDataOutput {
+@SuppressWarnings("checkstyle:methodcount")
+final class EmptyObjectDataOutput extends VersionedObjectDataOutput implements ObjectDataOutput {
 
     @Override
     public void writeObject(Object object) throws IOException {
@@ -141,4 +142,5 @@ final class EmptyObjectDataOutput implements ObjectDataOutput {
     public ByteOrder getByteOrder() {
         return ByteOrder.BIG_ENDIAN;
     }
+
 }

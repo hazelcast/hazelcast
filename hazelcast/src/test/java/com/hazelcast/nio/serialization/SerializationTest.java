@@ -22,10 +22,8 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers;
@@ -33,7 +31,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -178,19 +175,6 @@ public class SerializationTest
         Assert.assertEquals(value, o1);
         Assert.assertNotNull(o2);
         assertEquals(1, readCounter.get());
-    }
-
-    @Test
-    public void test_callid_on_correct_stream_position() throws Exception {
-        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
-        operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
-        OperationAccessor.setCallId(operation, 12345);
-
-        Data data = serializationService.toData(operation);
-        long callId = IOUtil.extractOperationCallId(data, serializationService);
-
-        assertEquals(12345, callId);
     }
 
     private static class DummyValue {
@@ -514,14 +498,14 @@ public class SerializationTest
         ClassLoader current = getClass().getClassLoader();
         DynamicProxyTestClassLoader cl = new DynamicProxyTestClassLoader(current);
         SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl).build();
-        IObjectA oa = (IObjectA) Proxy.newProxyInstance(current, new Class[] { IObjectA.class }, DummyInvocationHandler.INSTANCE);
+        IObjectA oa = (IObjectA) Proxy.newProxyInstance(current, new Class[]{IObjectA.class}, DummyInvocationHandler.INSTANCE);
         Data data = ss.toData(oa);
         Object o = ss.toObject(data);
         Assert.assertSame("configured classloader is not used", cl, o.getClass().getClassLoader());
         try {
             IObjectA.class.cast(o);
             Assert.fail("the serialized object should not be castable");
-        } catch(ClassCastException e) {
+        } catch (ClassCastException e) {
             // expected
         }
     }
@@ -534,14 +518,14 @@ public class SerializationTest
             DynamicProxyTestClassLoader cl = new DynamicProxyTestClassLoader(current);
             Thread.currentThread().setContextClassLoader(cl);
             SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl).build();
-            IObjectA oa = (IObjectA) Proxy.newProxyInstance(current, new Class[] { IObjectA.class }, DummyInvocationHandler.INSTANCE);
+            IObjectA oa = (IObjectA) Proxy.newProxyInstance(current, new Class[]{IObjectA.class}, DummyInvocationHandler.INSTANCE);
             Data data = ss.toData(oa);
             Object o = ss.toObject(data);
             Assert.assertSame("context classloader is not used", cl, o.getClass().getClassLoader());
             try {
                 IObjectA.class.cast(o);
                 Assert.fail("the serialized object should not be castable");
-            } catch(ClassCastException e) {
+            } catch (ClassCastException e) {
                 // expected
             }
         } finally {
@@ -555,7 +539,7 @@ public class SerializationTest
         DynamicProxyTestClassLoader cl1 = new DynamicProxyTestClassLoader(current, IPrivateObjectB.class.getName());
         DynamicProxyTestClassLoader cl2 = new DynamicProxyTestClassLoader(cl1, IPrivateObjectC.class.getName());
         SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl2).build();
-        Object ocd = Proxy.newProxyInstance(current, new Class[] { IPrivateObjectB.class, IPrivateObjectC.class }, DummyInvocationHandler.INSTANCE);
+        Object ocd = Proxy.newProxyInstance(current, new Class[]{IPrivateObjectB.class, IPrivateObjectC.class}, DummyInvocationHandler.INSTANCE);
         Data data = ss.toData(ocd);
         try {
             ss.toObject(data);
