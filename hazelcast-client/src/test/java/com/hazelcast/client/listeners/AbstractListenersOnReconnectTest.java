@@ -34,6 +34,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.test.AssertTask;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -460,6 +461,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     @Test
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/8244")
     public void testClusterReconnectDueToHeartbeatNonSmartRouting()
             throws InterruptedException {
         factory.newHazelcastInstance();
