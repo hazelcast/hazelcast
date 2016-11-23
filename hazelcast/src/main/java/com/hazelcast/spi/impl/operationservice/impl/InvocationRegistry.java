@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.spi.OperationAccessor.resetCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
@@ -116,27 +117,17 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     }
 
     /**
-     * Deregisters an invocation.
-     * <p/>
-     * If the invocation registration was skipped, the call is ignored.
-     *
+     * Deregisters an invocation. If the invocation's associated call ID is zero, the call is ignored.
+     * This ensures the idempotence of deregistration.
      * @param invocation The Invocation to deregister.
      */
     public void deregister(Invocation invocation) {
-        long callId = invocation.op.getCallId();
-
-        callIdSequence.complete(invocation);
-
-        setCallId(invocation.op, 0);
-
-        if (callId == 0) {
+        long oldCallId = resetCallId(invocation.op);
+        if (oldCallId == 0) {
             return;
         }
-
-        boolean deleted = invocations.remove(callId) != null;
-        if (!deleted && logger.isFinestEnabled()) {
-            logger.finest("failed to deregister callId: " + callId + " " + invocation);
-        }
+        invocations.remove(oldCallId);
+        callIdSequence.complete();
     }
 
     /**
