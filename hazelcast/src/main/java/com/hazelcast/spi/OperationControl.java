@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -32,25 +33,28 @@ import java.io.IOException;
  * Operations are identified by their Call ID.
  */
 public final class OperationControl implements IdentifiedDataSerializable {
+
     private long[] runningOperations;
     private long[] operationsToCancel;
 
     public OperationControl() {
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public OperationControl(long[] runningOperations, long[] operationsToCancel) {
         this.runningOperations = runningOperations;
         this.operationsToCancel = operationsToCancel;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public long[] runningOperations() {
         return runningOperations;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public long[] operationsToCancel() {
         return operationsToCancel;
     }
-
 
     // IdentifiedDataSerializable contract
 
