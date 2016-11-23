@@ -10,7 +10,6 @@
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
     <suppress checks=".*" files="/hazelcast-jet-core-old/" />
-    <suppress checks=".*" files="/hazelcast-jet-memory/" />
 
     <!-- Exclude implementation packages from JavaDoc checks -->
     <suppress checks="JavadocPackage" files="(/impl|/internal)"/>
