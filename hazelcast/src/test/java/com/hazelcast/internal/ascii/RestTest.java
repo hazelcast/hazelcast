@@ -305,4 +305,20 @@ public class RestTest extends HazelcastTestSupport {
         String result = communicator.syncMapOverWAN("atob", "b", "default");
         assertEquals("{\"status\":\"fail\",\"message\":\"WAN sync for map is not supported.\"}", result);
     }
+
+    @Test
+    public void syncAllMapsOverWAN() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        String result = communicator.syncMapsOverWAN("atob", "b");
+        assertEquals("{\"status\":\"fail\",\"message\":\"WAN sync is not supported.\"}", result);
+    }
+
+    @Test
+    public void wanClearQueues() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        String result = communicator.wanClearQueues("atob", "b");
+        assertEquals("{\"status\":\"fail\",\"message\":\"Clearing WAN replication queues is not supported.\"}", result);
+    }
 }

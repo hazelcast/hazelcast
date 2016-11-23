@@ -120,12 +120,22 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         throw new UnsupportedOperationException("WAN sync for map is not supported.");
     }
 
-    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
-        return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
+    @Override
+    public void syncAllMaps(String wanReplicationName, String targetGroupName) {
+        throw new UnsupportedOperationException("WAN sync is not supported.");
+    }
+
+    @Override
+    public void clearQueues(String wanReplicationName, String targetGroupName) {
+        throw new UnsupportedOperationException("Clearing WAN replication queues is not supported.");
     }
 
     @Override
     public Map<String, LocalWanStats> getStats() {
         return null;
+    }
+
+    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
+        return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
     }
 }

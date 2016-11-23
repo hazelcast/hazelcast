@@ -66,4 +66,14 @@ public interface WanReplicationService
     void checkWanReplicationQueues(String name);
 
     void syncMap(String wanReplicationName, String targetGroupName, String mapName);
+
+    void syncAllMaps(String wanReplicationName, String targetGroupName);
+
+    /**
+     * Clears WAN replication queues of the given wanReplicationName for the given target.
+     *
+     * @param wanReplicationName
+     * @param targetGroupName
+     */
+    void clearQueues(String wanReplicationName, String targetGroupName);
 }
