@@ -16,10 +16,23 @@
 
 package com.hazelcast.console;
 
-/**
- * Reads a line of input.
- */
-public interface LineReader {
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 
-    String readLine() throws Exception;
+/**
+ * A {@link LineReader} implemetation.
+ */
+class DefaultLineReader implements LineReader {
+
+    private BufferedReader in;
+
+    DefaultLineReader() throws UnsupportedEncodingException {
+        in = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
+    }
+
+    @Override
+    public String readLine() throws Exception {
+        return in.readLine();
+    }
 }

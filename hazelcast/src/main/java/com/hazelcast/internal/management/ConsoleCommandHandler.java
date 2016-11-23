@@ -80,8 +80,8 @@ public class ConsoleCommandHandler {
         }
 
         @Override
-        protected void handleCommand(String command) {
-            super.handleCommand(command);
+        protected void handleCommand(String inputCommand) {
+            super.handleCommand(inputCommand);
         }
 
         @Override
