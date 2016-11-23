@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.runtime.InputChunk;
@@ -54,8 +56,8 @@ import static org.junit.Assert.assertEquals;
 @Ignore
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
-    private static final int COUNT = 100_000;
-    private static final int DISTINCT = 10_000;
+    private static final int COUNT = 2_000_000;
+    private static final int DISTINCT = 1_000_000;
 
     private static IMap<Integer, String> map;
 
@@ -74,7 +76,10 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Before
     public void setUp() {
-        instance = factory.newHazelcastInstance();
+        JetConfig config = new JetConfig();
+        config.setProcessingThreadCount(Runtime.getRuntime().availableProcessors()/2);
+        instance = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
         map = instance.getMap("words");
         int row = 0;
         StringBuilder sb = new StringBuilder();
@@ -95,15 +100,19 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     public void test() throws ExecutionException, InterruptedException {
         DAG dag = new DAG();
         Vertex generator = new Vertex("generator", Generator.class)
-                .parallelism(Runtime.getRuntime().availableProcessors());
+                .parallelism(Runtime.getRuntime().availableProcessors() / 2);
         generator.addSource(new MapSource("words"));
+        Vertex accumulator = new Vertex("accumulator", Combiner.class)
+                .parallelism(Runtime.getRuntime().availableProcessors() / 2);
         Vertex combiner = new Vertex("combiner", Combiner.class)
-                .parallelism(Runtime.getRuntime().availableProcessors());
+                .parallelism(Runtime.getRuntime().availableProcessors() / 2);
         combiner.addSink(new MapSink("counts"));
         dag
                 .addVertex(generator)
+                .addVertex(accumulator)
                 .addVertex(combiner)
-                .addEdge(new Edge("edge", generator, combiner).partitioned());
+                .addEdge(new Edge("edge", generator, accumulator).partitioned())
+                .addEdge(new Edge("edge", generator, combiner).distributed().partitioned());
 
         List<Long> times = new ArrayList<>();
         final int warmupCount = 10;
