@@ -111,6 +111,10 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
         return patch == that.patch;
     }
 
+    public String asString() {
+        return major + "." + minor + "." + patch;
+    }
+
     @Override
     public int hashCode() {
         int result = (int) major;

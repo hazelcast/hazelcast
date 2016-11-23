@@ -24,6 +24,7 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.version.Version;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -54,6 +55,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleGetClusterState(command);
             } else if (uri.startsWith(URI_CHANGE_CLUSTER_STATE_URL)) {
                 handleChangeClusterState(command);
+            } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
+                handleGetClusterVersion(command);
+            } else if (uri.startsWith(URI_CHANGE_CLUSTER_VERSION_URL)) {
+                handleChangeClusterVersion(command);
             } else if (uri.startsWith(URI_SHUTDOWN_CLUSTER_URL)) {
                 handleClusterShutdown(command);
                 return;
@@ -140,6 +145,64 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
+
+    private void handleChangeClusterVersion(HttpPostCommand command) throws UnsupportedEncodingException {
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        String groupName = URLDecoder.decode(strList[0], "UTF-8");
+        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
+        String versionParam = URLDecoder.decode(strList[2], "UTF-8");
+        String res = "{\"status\":\"${STATUS}\",\"version\":\"${VERSION}\"}";
+        try {
+            Node node = textCommandService.getNode();
+            ClusterService clusterService = node.getClusterService();
+            GroupConfig groupConfig = node.getConfig().getGroupConfig();
+            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+                res = res.replace("${STATUS}", "forbidden");
+                res = res.replace("${VERSION}", "null");
+            } else {
+                Version version;
+                try {
+                    version = Version.of(versionParam);
+                    clusterService.changeClusterVersion(version);
+                    res = res.replace("${STATUS}", "success");
+                    res = res.replace("${VERSION}", clusterService.getClusterVersion().asString());
+                } catch (Exception ex) {
+                    res = res.replace("${STATUS}", "fail");
+                    res = res.replace("${VERSION}", clusterService.getClusterVersion().asString());
+                }
+            }
+        } catch (Throwable throwable) {
+            res = res.replace("${STATUS}", "fail");
+            res = res.replace("${VERSION}", "null");
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+    }
+
+    private void handleGetClusterVersion(HttpPostCommand command) throws UnsupportedEncodingException {
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        String groupName = URLDecoder.decode(strList[0], "UTF-8");
+        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
+        String res = "{\"status\":\"${STATUS}\",\"version\":\"${VERSION}\"}";
+        try {
+            Node node = textCommandService.getNode();
+            ClusterService clusterService = node.getClusterService();
+            GroupConfig groupConfig = node.getConfig().getGroupConfig();
+            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+                res = res.replace("${STATUS}", "forbidden");
+                res = res.replace("${VERSION}", "null");
+            } else {
+                res = res.replace("${STATUS}", "success");
+                res = res.replace("${VERSION}", clusterService.getClusterVersion().asString());
+            }
+        } catch (Throwable throwable) {
+            res = res.replace("${STATUS}", "fail");
+            res = res.replace("${VERSION}", "null");
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+    }
+
 
     private void handleForceStart(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
