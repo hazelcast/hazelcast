@@ -226,8 +226,8 @@ public abstract class Invocation implements OperationResponseHandler {
 
         targetMember = context.clusterService.getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
-            notifyError(
-                    new TargetNotMemberException(invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
+            notifyError(new TargetNotMemberException(
+                    invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
             return false;
         }
 
@@ -480,13 +480,13 @@ public abstract class Invocation implements OperationResponseHandler {
 
         invokeCount++;
 
-        // register method assumes this method has run before it is being called so that remote is set correctly
-        if (!initInvocationTarget()) {
+        setInvocationTime(op, context.clusterClock.getClusterTime());
+
+        if (!context.invocationRegistry.register(this)) {
             return;
         }
 
-        setInvocationTime(op, context.clusterClock.getClusterTime());
-        if (!context.invocationRegistry.register(this)) {
+        if (!initInvocationTarget()) {
             return;
         }
 
@@ -585,7 +585,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
         if (future.interrupted) {
             complete(INTERRUPTED);
-        } else if (op.getCallId() == 0 || context.invocationRegistry.deregister(this)) {
+        } else if (context.invocationRegistry.deregister(this)) {
             try {
                 if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                     // fast retry for the first few invocations
