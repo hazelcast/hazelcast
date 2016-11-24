@@ -26,14 +26,13 @@ import java.io.Serializable;
 import java.util.Comparator;
 
 /**
- * Determines Hazelcast version.
+ * Determines the Hazelcast version.
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public final class Version implements IdentifiedDataSerializable, Comparable<Version>, Serializable {
 
-
     /**
-     * UNKNOWN version
+     * UNKNOWN version.
      */
     public static final Version UNKNOWN = new Version(0, 0, 0);
 
@@ -182,5 +181,4 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
             return thisVersion == thatVersion ? 0 : -1;
         }
     }
-
 }
