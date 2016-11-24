@@ -62,7 +62,6 @@ public class AuthenticationCustomCredentialsMessageTask
         if (parameters.clientHazelcastVersionExist) {
             clientVersion = parameters.clientHazelcastVersion;
         }
-        setEndpoint();
         return parameters;
     }
 

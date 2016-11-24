@@ -353,7 +353,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
-            endpointManager.removeEndpoint(endpoint, true);
+            endpointManager.removeEndpoint(endpoint, true, "Resources are being cleaned up for client " + clientUuid);
         }
 
         NodeEngineImpl nodeEngine = node.getNodeEngine();

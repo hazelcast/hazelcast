@@ -26,6 +26,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
+import java.util.Set;
 
 public class ClientDisconnectionOperation extends AbstractOperation
         implements UrgentSystemOperation {
@@ -43,13 +44,15 @@ public class ClientDisconnectionOperation extends AbstractOperation
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
         final ClientEndpointManagerImpl endpointManager = (ClientEndpointManagerImpl) engine.getEndpointManager();
-        ClientEndpoint clientEndpoint = endpointManager.getEndpoint(clientUuid);
-        Connection clientEndpointConnection = (null != clientEndpoint ? clientEndpoint.getConnection() : null);
+        Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
+        for (ClientEndpoint clientEndpoint : endpoints) {
+            Connection clientEndpointConnection = (null != clientEndpoint ? clientEndpoint.getConnection() : null);
 
-        if (null != clientEndpointConnection && clientEndpointConnection.isAlive()) {
-            getLogger().finest("Will not do the cleanup for client " + clientUuid + " since there exists a live connection from "
-                    + "this client");
-            return;
+            if (null != clientEndpointConnection && clientEndpointConnection.isAlive()) {
+                getLogger().finest("Will not do the cleanup for client " + clientUuid + " since there exists a live connection "
+                        + clientEndpointConnection + " from " + "this client");
+                return;
+            }
         }
 
         engine.removeClient(clientUuid);

@@ -55,8 +55,6 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     @Probe(name = "count", level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
-    private final ConcurrentMap<String, ClientEndpoint> clientEndpoints =
-            new ConcurrentHashMap<String, ClientEndpoint>();
 
     @Probe(name = "totalRegistrations", level = MANDATORY)
     private MwCounter totalRegistrations = newMwCounter();
@@ -91,43 +89,29 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public ClientEndpoint getEndpoint(String clientUuid) {
-        return clientEndpoints.get(clientUuid);
-    }
-
-    @Override
     public void registerEndpoint(ClientEndpoint endpoint) {
         checkNotNull(endpoint, "endpoint can't be null");
 
         final Connection conn = endpoint.getConnection();
-        ClientEndpoint existingEndpoint = endpoints.put(conn, endpoint);
-        clientEndpoints.put(endpoint.getUuid(), endpoint);
-        if (existingEndpoint != null && endpoint != existingEndpoint) {
-            if (existingEndpoint.isFirstConnection()) {
-                logger.severe("An endpoint (first connection) already exists for connection:" + conn);
-            } else {
-                logger.info("Changed " + conn + " as the first connection for " + endpoint);
-            }
+        if (endpoints.putIfAbsent(conn, endpoint) != null) {
+            logger.severe("An endpoint already exists for connection:" + conn);
         } else {
-            if (endpoint != existingEndpoint) {
-                totalRegistrations.inc();
-            }
+            totalRegistrations.inc();
         }
     }
 
     @Override
-    public void removeEndpoint(ClientEndpoint endpoint) {
-        removeEndpoint(endpoint, false);
+    public void removeEndpoint(ClientEndpoint endpoint, String reason) {
+        removeEndpoint(endpoint, false, reason);
     }
 
     @Override
-    public void removeEndpoint(final ClientEndpoint ce, boolean closeImmediately) {
-        checkNotNull(ce, "endpoint can't be null");
+    public void removeEndpoint(final ClientEndpoint clientEndpoint, boolean closeImmediately, final String reason) {
+        checkNotNull(clientEndpoint, "endpoint can't be null");
 
-        ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
+        ClientEndpointImpl endpoint = (ClientEndpointImpl) clientEndpoint;
 
         endpoints.remove(endpoint.getConnection());
-        clientEndpoints.remove(endpoint.getUuid());
         logger.info("Destroying " + endpoint);
         try {
             endpoint.destroy();
@@ -138,7 +122,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         final Connection connection = endpoint.getConnection();
         if (closeImmediately) {
             try {
-                connection.close(null, null);
+                connection.close(reason, null);
             } catch (Throwable e) {
                 logger.warning("While closing client connection: " + connection, e);
             }
@@ -147,7 +131,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                 public void run() {
                     if (connection.isAlive()) {
                         try {
-                            connection.close(null, null);
+                            connection.close(reason, null);
                         } catch (Throwable e) {
                             logger.warning("While closing client connection: " + e.toString());
                         }
@@ -169,7 +153,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
             if (memberUuid.equals(ownerUuid)) {
                 iterator.remove();
-                removeEndpoint(endpoint, true);
+                removeEndpoint(endpoint, true, "Cleanup of disconnected client resources");
             }
         }
     }
@@ -187,5 +171,18 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     @Override
     public int size() {
         return endpoints.size();
+    }
+
+    @Override
+    public Connection findLiveConnectionFor(String clientUuid) {
+        for (ClientEndpoint endpoint : endpoints.values()) {
+            if (clientUuid.equals(endpoint.getUuid())) {
+                Connection connection = endpoint.getConnection();
+                if (connection.isAlive()) {
+                    return connection;
+                }
+            }
+        }
+        return null;
     }
 }
