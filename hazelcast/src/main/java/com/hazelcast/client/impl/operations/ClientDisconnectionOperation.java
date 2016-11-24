@@ -20,7 +20,6 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEndpointManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ClientAwareService;
@@ -48,13 +47,11 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
         final ClientEndpointManagerImpl endpointManager = (ClientEndpointManagerImpl) engine.getEndpointManager();
-        ClientEndpoint clientEndpoint = endpointManager.getEndpoint(clientUuid);
-        Connection clientEndpointConnection = (null != clientEndpoint ? clientEndpoint.getConnection() : null);
-        if (null != clientEndpointConnection && !clientEndpointConnection.isAlive()
-                && engine.removeOwnershipMapping(clientUuid, memberUuid)) {
+        if (engine.removeOwnershipMapping(clientUuid, memberUuid)) {
             Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
             for (ClientEndpoint endpoint : endpoints) {
-                endpointManager.removeEndpoint(endpoint, true);
+                endpointManager
+                        .removeEndpoint(endpoint, true, "ClientDisconnectionOperation: Cleanup of disconnected client resources");
             }
 
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
