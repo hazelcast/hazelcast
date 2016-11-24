@@ -238,7 +238,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     return connection;
                 }
 
-                AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
+                AuthenticationFuture firstCallback = triggerConnect(addressTranslator.translate(address), asOwner);
                 connection = firstCallback.get(connectionTimeout);
                 if (!asOwner) {
                     return connection;
@@ -596,7 +596,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void authenticated(Address target, ClientConnection connection) {
-        ClientConnection oldConnection = connections.put(connection.getRemoteEndpoint(), connection);
+        ClientConnection oldConnection = connections.put(addressTranslator.translate(connection.getRemoteEndpoint()), connection);
         if (oldConnection == null) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Authentication succeeded for " + connection
