@@ -55,7 +55,8 @@ public class KafkaWriterTest extends HazelcastTestSupport {
     @ClassRule
     public static KafkaJunitRule kafkaRule = new KafkaJunitRule(EphemeralKafkaBroker.create(-1, -1,
             new Properties() {{
-                put("num.partitions", "100");
+                put("num.partitions", "10");
+                put("session.timeout.ms", "5000");
             }}));
     private static String zkConnStr;
     private static int brokerPort;
@@ -92,7 +93,9 @@ public class KafkaWriterTest extends HazelcastTestSupport {
         Future<Void> future = jetEngine.newJob(dag).execute();
         assertCompletesEventually(future);
 
-        KafkaConsumer<byte[], byte[]> byteConsumer = kafkaRule.helper().createByteConsumer();
+        KafkaConsumer<byte[], byte[]> byteConsumer = kafkaRule.helper().createByteConsumer(new Properties() {{
+            put("session.timeout.ms", "5000");
+        }});
         ListenableFuture<List<ConsumerRecord<byte[], byte[]>>> f = kafkaRule.helper().consume(topic, byteConsumer, messageCount);
         List<ConsumerRecord<byte[], byte[]>> consumerRecords = f.get();
         for (ConsumerRecord<byte[], byte[]> record : consumerRecords) {
