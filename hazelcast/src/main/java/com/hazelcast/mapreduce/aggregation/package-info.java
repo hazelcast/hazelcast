@@ -17,5 +17,6 @@
 /**
  * This package contains the aggregation API and the convenience helper classes
  * to retrieve predefined aggregation implementations.
+ * @deprecated Use fast-aggregations {@link com.hazelcast.aggregation}
  */
 package com.hazelcast.mapreduce.aggregation;

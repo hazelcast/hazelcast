@@ -45,7 +45,6 @@ import com.hazelcast.mapreduce.aggregation.impl.LongAvgAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.LongMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.LongMinAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.LongSumAggregation;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -56,8 +55,9 @@ import java.util.Set;
  * This class is used to access the Hazelcast predefined set of aggregations in a type-safe
  * way.
  * @since 3.3
+ * @deprecated Use fast-aggregations {@link com.hazelcast.aggregation.Aggregators}
  */
-@Beta
+@Deprecated
 public final class Aggregations {
 
     private Aggregations() {

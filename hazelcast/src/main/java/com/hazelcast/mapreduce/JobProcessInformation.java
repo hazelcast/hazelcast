@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * This interface holds basic information about a running map reduce job, such as the
  * state of the different partitions and the number of currently processed
@@ -26,8 +24,9 @@ import com.hazelcast.spi.annotation.Beta;
  * on a regular basis (after 1000 processed elements per node).
  *
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public interface JobProcessInformation {
 
     /**

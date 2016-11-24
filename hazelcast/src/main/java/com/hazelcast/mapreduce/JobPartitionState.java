@@ -16,17 +16,17 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 /**
  * An implementation of this interface contains current information about
  * the status of an process piece while operation is executing.
  *
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 @BinaryInterface
 public interface JobPartitionState {
 

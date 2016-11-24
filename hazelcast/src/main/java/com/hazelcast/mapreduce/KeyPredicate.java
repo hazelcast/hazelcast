@@ -17,7 +17,6 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.Serializable;
 
@@ -27,8 +26,9 @@ import java.io.Serializable;
  *
  * @param <Key> key type
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 @BinaryInterface
 public interface KeyPredicate<Key>
         extends Serializable {

@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * The Context interface is used for emitting keys and values to the intermediate working space of
  * the MapReduce algorithm.
@@ -25,8 +23,9 @@ import com.hazelcast.spi.annotation.Beta;
  * @param <K> key type of the resulting keys
  * @param <V> value type of the resulting values
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public interface Context<K, V> {
 
     /**
