@@ -222,6 +222,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (null != clientUuid) {
             Connection conn = endpointManager.findLiveConnectionFor(clientUuid);
             if (null != conn) {
+                // update the connection for this task so that the new messages will use this new live connection
+                connection = conn;
                 return conn;
             }
         }

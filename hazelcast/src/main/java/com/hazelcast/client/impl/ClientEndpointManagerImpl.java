@@ -106,10 +106,10 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public void removeEndpoint(final ClientEndpoint ce, boolean closeImmediately, final String reason) {
-        checkNotNull(ce, "endpoint can't be null");
+    public void removeEndpoint(final ClientEndpoint clientEndpoint, boolean closeImmediately, final String reason) {
+        checkNotNull(clientEndpoint, "endpoint can't be null");
 
-        ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
+        ClientEndpointImpl endpoint = (ClientEndpointImpl) clientEndpoint;
 
         endpoints.remove(endpoint.getConnection());
         logger.info("Destroying " + endpoint);
