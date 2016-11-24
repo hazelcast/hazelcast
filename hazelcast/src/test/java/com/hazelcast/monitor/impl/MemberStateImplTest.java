@@ -1,15 +1,18 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,6 +56,13 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         Map<String, Long> runtimeProps = new HashMap<String, Long>();
         runtimeProps.put("prop1", 598123L);
 
+        ClusterState clusterState = ClusterState.ACTIVE;
+        com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
+        Version clusterVersion = Version.of("3.8.0");
+        Version nodeVersion = Version.of("3.9.0");
+        Boolean rollingUpgradeEnabled = true;
+        NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, nodeVersion, rollingUpgradeEnabled);
+
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
 
@@ -69,6 +79,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setLocalMemoryStats(new LocalMemoryStatsImpl());
         memberState.setOperationStats(new LocalOperationStatsImpl());
         memberState.setClients(clients);
+        memberState.setNodeState(state);
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -93,5 +104,12 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals("abc123456", client.uuid);
         assertEquals("localhost", client.address);
         assertEquals("undefined", client.clientType);
+
+        NodeState deserializedState = deserialized.getNodeState();
+        assertEquals(clusterState, deserializedState.getClusterState());
+        assertEquals(nodeState, deserializedState.getNodeState());
+        assertEquals(clusterVersion, deserializedState.getClusterVersion());
+        assertEquals(nodeVersion, deserializedState.getNodeVersion());
+        assertEquals(rollingUpgradeEnabled, deserializedState.isRollingUpgradeEnabled());
     }
 }

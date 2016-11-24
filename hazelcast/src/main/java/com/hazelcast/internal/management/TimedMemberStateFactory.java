@@ -29,6 +29,7 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.MapService;
@@ -47,6 +48,7 @@ import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
 import com.hazelcast.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
+import com.hazelcast.monitor.impl.NodeStateImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -164,6 +166,16 @@ public class TimedMemberStateFactory {
         memberState.setOperationStats(getOperationStats());
         TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
         createMemState(timedMemberState, memberState, services);
+
+        createNodeState(memberState);
+    }
+
+    private void createNodeState(MemberStateImpl memberState) {
+        Node node = instance.node;
+        ClusterService cluster = instance.node.clusterService;
+        NodeStateImpl nodeState = new NodeStateImpl(cluster.getClusterState(), node.getState(),
+                cluster.getClusterVersion(), node.getVersion(), node.isRollingUpgradeEnabled());
+        memberState.setNodeState(nodeState);
     }
 
     private void createMemState(TimedMemberState timedMemberState, MemberStateImpl memberState,

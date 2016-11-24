@@ -60,4 +60,6 @@ public interface MemberState extends JsonSerializable {
 
     MemberPartitionState getMemberPartitionState();
 
+    NodeState getNodeState();
+
 }
