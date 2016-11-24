@@ -24,14 +24,13 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -74,11 +73,11 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void testFileStreamReader_reprocess() throws IOException, InterruptedException {
         HazelcastInstance instance = createHazelcastInstance();
         JetEngine jetEngine = JetEngine.get(instance, randomName());
         File directory = createTempFileDirectory();
+        File file = new File(directory, randomName());
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
                 FileStreamReader.WatchType.REPROCESS))
@@ -94,7 +93,6 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
         jetEngine.newJob(dag).execute();
         sleepAtLeastSeconds(3);
 
-        File file = new File(directory, randomName());
         writeNewLine(file, "hello", "world");
         IList<Object> list = instance.getList("consumer");
         assertTrueEventually(new AssertTask() {
