@@ -234,6 +234,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         removeListenerActions.clear();
     }
 
+    @Override
+    public boolean resourcesExist() {
+        return !removeListenerActions.isEmpty() || !transactionContextMap.isEmpty();
+    }
+
     public void destroy() throws LoginException {
         clearAllListeners();
 
