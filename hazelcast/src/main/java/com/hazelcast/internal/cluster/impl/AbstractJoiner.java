@@ -24,9 +24,9 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.impl.operations.JoinCheckOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
+import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -52,6 +52,7 @@ import java.util.logging.Level;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.version.Version.MAJOR_MINOR_VERSION_COMPARATOR;
 
 public abstract class AbstractJoiner implements Joiner {
 
@@ -203,7 +204,7 @@ public abstract class AbstractJoiner implements Joiner {
 
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:returncount",
             "checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-    protected boolean shouldMerge(JoinMessage joinMessage) {
+    protected boolean shouldMerge(SplitBrainJoinMessage joinMessage) {
         if (joinMessage == null) {
             return false;
         }
@@ -217,6 +218,15 @@ public abstract class AbstractJoiner implements Joiner {
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "failure during validating join message", e);
+            return false;
+        }
+
+        if (MAJOR_MINOR_VERSION_COMPARATOR.compare(clusterService.getClusterVersion(), joinMessage.getClusterVersion()) != 0) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Should not merge to " + joinMessage.getAddress() + " because other cluster version is "
+                        + joinMessage.getClusterVersion() + " while this cluster version is "
+                        + clusterService.getClusterVersion());
+            }
             return false;
         }
 
@@ -295,7 +305,7 @@ public abstract class AbstractJoiner implements Joiner {
         return false;
     }
 
-    protected JoinMessage sendSplitBrainJoinMessage(Address target) {
+    protected SplitBrainJoinMessage sendSplitBrainJoinMessage(Address target) {
         if (logger.isFineEnabled()) {
             logger.fine(node.getThisAddress() + " is connecting to " + target);
         }
@@ -319,10 +329,10 @@ public abstract class AbstractJoiner implements Joiner {
 
         NodeEngine nodeEngine = node.nodeEngine;
         Future future = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                new JoinCheckOperation(node.createSplitBrainJoinMessage()), target)
+                new SplitBrainMergeValidationOperation(node.createSplitBrainJoinMessage()), target)
                 .setTryCount(1).invoke();
         try {
-            return (JoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            return (SplitBrainJoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             logger.log(Level.FINE, "Timeout during join check!", e);
         } catch (Exception e) {

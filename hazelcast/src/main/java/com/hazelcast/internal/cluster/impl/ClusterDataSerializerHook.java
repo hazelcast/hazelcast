@@ -26,7 +26,6 @@ import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOperation;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOperation;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
-import com.hazelcast.internal.cluster.impl.operations.JoinCheckOperation;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOperation;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOperation;
 import com.hazelcast.internal.cluster.impl.operations.MasterClaimOperation;
@@ -40,6 +39,7 @@ import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOperation;
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOperation;
+import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOperation;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.DataSerializerHook;
@@ -68,7 +68,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int CHANGE_CLUSTER_STATE = 10;
     public static final int CONFIG_MISMATCH = 11;
     public static final int GROUP_MISMATCH = 12;
-    public static final int JOIN_CHECK = 13;
+    public static final int SPLIT_BRAIN_MERGE_VALIDATION = 13;
     public static final int JOIN_REQUEST_OP = 14;
     public static final int LOCK_CLUSTER_STATE = 15;
     public static final int MASTER_CLAIM = 16;
@@ -89,8 +89,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int MIGRATION_INFO = 31;
     public static final int VERSION = 32;
     public static final int CLUSTER_STATE_CHANGE = 33;
+    public static final int SPLIT_BRAIN_JOIN_MESSAGE = 34;
 
-    private static final int LEN = CLUSTER_STATE_CHANGE + 1;
+    private static final int LEN = SPLIT_BRAIN_JOIN_MESSAGE + 1;
 
     @Override
     public int getFactoryId() {
@@ -166,9 +167,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new GroupMismatchOperation();
             }
         };
-        constructors[JOIN_CHECK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[SPLIT_BRAIN_MERGE_VALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new JoinCheckOperation();
+                return new SplitBrainMergeValidationOperation();
             }
         };
         constructors[JOIN_REQUEST_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -269,6 +270,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[CLUSTER_STATE_CHANGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClusterStateChange();
+            }
+        };
+        constructors[SPLIT_BRAIN_JOIN_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SplitBrainJoinMessage();
             }
         };
 
