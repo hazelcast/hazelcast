@@ -25,6 +25,7 @@ import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.internal.networking.nonblocking.iobalancer.IOBalancer;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -129,7 +130,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     @Probe
     private final MwCounter closedCount = newMwCounter();
 
-    private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
+    private final ScheduledExecutorService scheduler
+            = new ScheduledThreadPoolExecutor(4, new ThreadFactoryImpl("TcpIpConnectionManager-thread-"));
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
