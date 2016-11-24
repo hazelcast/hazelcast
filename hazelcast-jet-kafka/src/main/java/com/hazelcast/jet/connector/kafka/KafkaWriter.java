@@ -17,24 +17,25 @@
 package com.hazelcast.jet.connector.kafka;
 
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.jet2.AbstractProcessor;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
-import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -145,8 +146,8 @@ public class KafkaWriter extends AbstractProcessor {
             HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) context.getHazelcastInstance();
             SerializationService serializationService = hazelcastInstance.node.nodeEngine.getSerializationService();
             return Stream.generate(() -> new KafkaWriter(serializationService, topicId, properties))
-                    .limit(count)
-                    .collect(toList());
+                         .limit(count)
+                         .collect(toList());
         }
     }
 }
