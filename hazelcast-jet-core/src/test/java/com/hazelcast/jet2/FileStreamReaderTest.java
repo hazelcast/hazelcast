@@ -24,7 +24,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -36,6 +35,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -78,6 +78,12 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
         JetEngine jetEngine = JetEngine.get(instance, randomName());
         File directory = createTempFileDirectory();
         File file = new File(directory, randomName());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(file.createNewFile());
+            }
+        });
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
                 FileStreamReader.WatchType.REPROCESS))
