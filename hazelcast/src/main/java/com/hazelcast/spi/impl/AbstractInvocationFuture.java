@@ -355,20 +355,23 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
         for (; ; ) {
             final Object oldState = state;
             if (isDone(oldState)) {
-                if (oldState != value) {
-                    // it can be that this future already completed, e.g. when an invocation already
-                    // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException
-                    logger.warning(String.format("Future.complete(Object) on completed future. "
-                            + "Request: %s, current value: %s, offered value: %s",
-                            invocationToString(), oldState, value));
-                }
+                warnIfSuspiciousDoubleCompletion(oldState, value);
                 return false;
             }
-
             if (compareAndSetState(oldState, value)) {
                 unblockAll(oldState, defaultExecutor);
                 return true;
             }
+        }
+    }
+
+    // it can be that this future is already completed, e.g. when an invocation already
+    // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException
+    private void warnIfSuspiciousDoubleCompletion(Object s0, Object s1) {
+        if (s0 != s1 && !(s0 instanceof CancellationException) && !(s1 instanceof CancellationException)) {
+            logger.warning(String.format("Future.complete(Object) on completed future. "
+                    + "Request: %s, current value: %s, offered value: %s",
+                    invocationToString(), s0, s1));
         }
     }
 

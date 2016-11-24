@@ -77,7 +77,7 @@ public abstract class Operation implements DataSerializable {
     private transient Connection connection;
     private transient OperationResponseHandler responseHandler;
 
-    public Operation() {
+    protected Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
     }
@@ -200,7 +200,7 @@ public abstract class Operation implements DataSerializable {
      * positive call ID.
      * @return {@code true} if the operation's invocation is active; {@code false} otherwise
      */
-    final boolean hasActiveInvocation() {
+    final boolean isActive() {
         return callId > 0;
     }
 
@@ -217,7 +217,7 @@ public abstract class Operation implements DataSerializable {
             return true;
         }
         if (callId > 0) {
-            throw new IllegalStateException("Operation concurrently re-activated while executing deactivate()");
+            throw new IllegalStateException("Operation concurrently re-activated while executing deactivate(). " + this);
         }
         return false;
     }
@@ -231,17 +231,18 @@ public abstract class Operation implements DataSerializable {
     // Accessed using OperationAccessor
     final void setCallId(long newId) {
         if (newId <= 0) {
-            throw new IllegalArgumentException("Attempted to set non-positive call ID " + newId);
+            throw new IllegalArgumentException(String.format("Attempted to set non-positive call ID %d on %s",
+                    newId, this));
         }
-        final long c = this.callId;
+        final long c = callId;
         if (c > 0) {
             throw new IllegalStateException(String.format(
-                    "Attempt to overwrite the call ID of an active operation: current %d, requested %d",
-                    this.callId, newId));
+                    "Attempt to overwrite the call ID of an active operation: current %d, requested %d. %s",
+                    callId, newId, this));
         }
         if (!CALL_ID.compareAndSet(this, c, newId)) {
             throw new IllegalStateException(String.format("Concurrent modification of call ID. Initially observed %d,"
-                    + " then attempted to set %d, then observed %d", c, newId, callId));
+                    + " then attempted to set %d, then observed %d. %s", c, newId, callId, this));
         }
         onSetCallId(newId);
     }

@@ -16,27 +16,25 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Responsible for generating invocation callIds.
  * <p>
- * It is very important that for each {@link #next(Invocation)}, there is a matching {@link #complete()}.
+ * It is very important that for each {@link #next(boolean)} there is a matching {@link #complete()}.
  * If they don't match, the number of concurrent invocations will grow/shrink without bound over time.
  * This can lead to OOME or deadlock.
  * <p>
- * When backpressure is enabled and there are too many concurrent invocations, calls of {@link #next(Invocation)}
+ * When backpressure is enabled and there are too many concurrent invocations, calls of {@link #next(boolean)}
  * will block using a spin-loop with exponential backoff.
  * <p/>
  * Currently a single CallIdSequence is used for all partitions, so there is contention. Also one partition
@@ -53,27 +51,32 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 abstract class CallIdSequence {
 
-    // just for testing purposes.
-    abstract long getLastCallId();
-
     /**
      * Returns the maximum concurrent invocations supported. Integer.MAX_VALUE means there is no max.
      *
      * @return the maximum concurrent invocation.
      */
-    public abstract int getMaxConcurrentInvocations();
+    abstract int getMaxConcurrentInvocations();
 
     /**
-     * Creates the next call-id.
+     * Generates the next unique call ID. If called with {@code isUrgent == false} and the implementation
+     * supports backpressure, it will not return unless the number of outstanding invocations is within the
+     * configured limit. Instead it will block until the condition is met and eventually throw a timeout exception.
      *
-     * @param invocation the Invocation to create a call-id for.
-     * @return the generated callId.
-     * @throws AssertionError if invocation.op.callId not equals 0
+     * @param isUrgent {@code true} means we're need a call ID for an urgent operation
+     * @return the generated call ID
+     * @throws TimeoutException if the outstanding invocation count hasn't dropped below the configured limit
+     * within the configured timeout
      */
-    public abstract long next(Invocation invocation);
+    abstract long next(boolean isUrgent) throws TimeoutException;
 
     /** Not idempotent: must be called exactly once per invocation. */
-    public abstract void complete();
+    abstract void complete();
+
+    /** Returns the last issued call ID.
+     * <strong>ONLY FOR TESTING. Must not be used for production code.</strong>
+     */
+    abstract long getLastCallId();
 
     static final class CallIdSequenceWithoutBackpressure extends CallIdSequence {
 
@@ -93,8 +96,7 @@ abstract class CallIdSequence {
         }
 
         @Override
-        public long next(Invocation invocation) {
-            assert !hasActiveInvocation(invocation.op) : "Invocation is already in progress:" + invocation;
+        public long next(boolean isUrgent) {
             return HEAD.incrementAndGet(this);
         }
 
@@ -146,15 +148,10 @@ abstract class CallIdSequence {
         }
 
         @Override
-        public long next(Invocation invocation) {
-            final Operation op = invocation.op;
-            assert !hasActiveInvocation(invocation.op) : "Invocation is already in progress:" + invocation;
-
-            if (!op.isUrgent() && !hasSpace()) {
-                waitForSpace(invocation);
+        public long next(boolean isUrgent) throws TimeoutException {
+            if (!isUrgent && !hasSpace()) {
+                waitForSpace();
             }
-            // must generate a sequence even if the invocation is going to skip registration
-            // because this information is used to determine the number of in-flight invocations
             return next();
         }
 
@@ -176,46 +173,18 @@ abstract class CallIdSequence {
             return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL) < maxConcurrentInvocations;
         }
 
-        private void waitForSpace(Invocation invocation) {
+        private void waitForSpace() throws TimeoutException {
             long deadline = System.currentTimeMillis() + backoffTimeoutMs;
             for (long idleCount = 0; ; idleCount++) {
                 IDLER.idle(idleCount);
-
                 if (hasSpace()) {
                     return;
                 }
-
                 if (System.currentTimeMillis() >= deadline) {
-                    throw new HazelcastOverloadException("Failed to get a callId for invocation: " + invocation);
+                    throw new TimeoutException(String.format("Timed out trying to acquire another call ID."
+                        + " maxConcurrentInvocations = %d, backoffTimeout = %d", maxConcurrentInvocations, backoffTimeoutMs));
                 }
             }
-        }
-
-        static boolean sleep(long delayMs) {
-            try {
-                Thread.sleep(delayMs);
-                return false;
-            } catch (InterruptedException e) {
-               return true;
-            }
-        }
-
-        /**
-         * Calculates the next delay using an exponential increase in time until either the MAX_DELAY_MS is reached or
-         * till the remainingTimeoutMs is reached.
-         */
-        static long nextDelay(long remainingTimeoutMs, long delayMs) {
-            delayMs *= 2;
-
-            if (delayMs > MAX_DELAY_MS) {
-                delayMs = MAX_DELAY_MS;
-            }
-
-            if (delayMs > remainingTimeoutMs) {
-                delayMs = remainingTimeoutMs;
-            }
-
-            return delayMs;
         }
     }
 }

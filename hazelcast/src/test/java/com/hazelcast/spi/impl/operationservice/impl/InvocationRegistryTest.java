@@ -4,8 +4,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
+import com.hazelcast.spi.impl.operationservice.impl.Invocation.Context;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -14,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import java.util.concurrent.ExecutionException;
 
@@ -30,18 +34,13 @@ import static org.junit.Assert.fail;
 public class InvocationRegistryTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
-    private OperationServiceImpl operationService;
-    private HazelcastInstance local;
+    private ILogger logger;
 
     @Before
     public void setup() {
-        Config config = new Config();
-        config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
-        local = createHazelcastInstance(config);
-        warmUpPartitions(local);
-
-        operationService = (OperationServiceImpl) getOperationService(local);
-        invocationRegistry = operationService.invocationRegistry;
+        logger = Mockito.mock(ILogger.class);
+        final int capacity = 2;
+        invocationRegistry = new InvocationRegistry(logger, new CallIdSequenceWithBackpressure(capacity, 1000));
     }
 
     private Invocation newInvocation() {
@@ -49,7 +48,8 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        Invocation.Context context = operationService.invocationContext;
+        Invocation.Context context = new Context(null, null, null, null, null,
+                1000, invocationRegistry, null, "", logger, null, null, null, null, null, null, null, null);
         return new PartitionInvocation(context, op, 0, 0, 0, false);
     }
 
@@ -68,23 +68,21 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     @Test
-    @RequireAssertEnabled
-    public void register_whenAlreadyRegistered_thenAssertionError() {
+    public void register_whenAlreadyRegistered_thenException() {
         Operation op = new DummyBackupAwareOperation();
         Invocation invocation = newInvocation(op);
         invocationRegistry.register(invocation);
-        long oldCallId = invocationRegistry.getLastCallId();
-
-        try {
-            invocationRegistry.register(invocation);
-            fail();
-        } catch (AssertionError expected) {
-
+        final long originalCallId = invocationRegistry.getLastCallId();
+        for (int i = 0; i < 10; i++) {
+            try {
+                invocationRegistry.register(invocation);
+                fail();
+            } catch (IllegalStateException e) {
+                // expected
+            }
+            assertSame(invocation, invocationRegistry.get(originalCallId));
+            assertEquals(originalCallId, invocation.op.getCallId());
         }
-
-        assertSame(invocation, invocationRegistry.get(oldCallId));
-        assertEquals(oldCallId, invocationRegistry.getLastCallId());
-        assertEquals(oldCallId, invocation.op.getCallId());
     }
 
     // ====================== deregister ===============================
@@ -110,7 +108,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
         invocationRegistry.deregister(invocation);
 
-        assertFalse(hasActiveInvocation(invocation.op));
+        assertFalse(invocation.isActive());
     }
 
     @Test
@@ -141,7 +139,6 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         assertEquals(2, invocationRegistry.size());
     }
 
-    // ===================== onMemberLeft ============================
 
     // ===================== reset ============================
 
