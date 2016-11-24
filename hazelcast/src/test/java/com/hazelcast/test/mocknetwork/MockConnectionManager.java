@@ -30,7 +30,6 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -125,23 +124,15 @@ public class MockConnectionManager implements ConnectionManager {
                 continue;
             }
 
-            final Node otherNode = registry.getNode(address);
+            Node otherNode = registry.getNode(address);
             if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
-                final ClusterServiceImpl clusterService = otherNode.getClusterService();
-                if (clusterService.getMember(thisAddress) == null) {
-                    continue;
-                }
-
                 logger.fine(otherNode.getThisAddress() + " is instructed to remove us.");
-                otherNode.getNodeEngine().getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-                    public void run() {
-                        ILogger otherLogger = otherNode.getLogger(MockConnectionManager.class);
-                        otherLogger.fine(localMember + " will be removed from the cluster if present, "
-                                + "because it has requested to leave.");
-                        clusterService.removeAddress(localMember.getAddress(), localMember.getUuid(),
-                                "Connection manager is stopped on " + localMember);
-                    }
-                });
+                ILogger otherLogger = otherNode.getLogger(MockConnectionManager.class);
+                otherLogger.fine(localMember + " will be removed from the cluster if present, "
+                        + "because it has requested to leave.");
+                ClusterServiceImpl clusterService = otherNode.getClusterService();
+                clusterService.removeAddress(localMember.getAddress(), localMember.getUuid(),
+                        "Connection manager is stopped on " + localMember);
             }
         }
         for (Connection connection : mapConnections.values()) {
