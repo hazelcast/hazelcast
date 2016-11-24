@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;

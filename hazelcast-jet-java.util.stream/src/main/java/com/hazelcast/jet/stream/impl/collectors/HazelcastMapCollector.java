@@ -19,7 +19,8 @@ package com.hazelcast.jet.stream.impl.collectors;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.impl.IMapWriter;
+import com.hazelcast.jet2.Processors;
+
 import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
@@ -51,7 +52,7 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
 
     @Override
     protected ProcessorMetaSupplier getConsumer() {
-        return IMapWriter.supplier(mapName);
+        return Processors.mapWriter(mapName);
     }
 
     @Override

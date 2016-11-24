@@ -2,12 +2,12 @@ package com.hazelcast.jet2.impl.deployment;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet2.AbstractProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.JetEngine;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Job;
 import com.hazelcast.jet2.Vertex;
-import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;

@@ -24,9 +24,10 @@ import com.hazelcast.jet.stream.impl.processor.AccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.CombinerProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Processors;
 import com.hazelcast.jet2.SimpleProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
-import com.hazelcast.jet2.impl.IListWriter;
+
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -80,7 +81,7 @@ public class Reducer {
 
     private <T> Optional<T> execute(DAG dag, Vertex combiner) {
         String listName = randomName(LIST_PREFIX);
-        Vertex writer = new Vertex(randomName(), IListWriter.supplier(listName));
+        Vertex writer = new Vertex(randomName(), Processors.listWriter(listName));
         dag.addVertex(writer).addEdge(new Edge(combiner, writer));
         IList<T> list = context.getHazelcastInstance().getList(listName);
         executeJob(context, dag);

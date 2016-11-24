@@ -46,6 +46,7 @@ import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
 import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet2.PartitionLookup;
 import com.hazelcast.jet2.Partitioner;
 import com.hazelcast.jet2.Processor;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
@@ -53,7 +54,6 @@ import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.partition.IPartitionService;
 import org.slf4j.helpers.MessageFormatter;
 
 import java.util.ArrayList;
@@ -401,16 +401,16 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
 
         private static final long serialVersionUID = 1L;
 
-        private transient IPartitionService service;
+        private transient PartitionLookup lookup;
 
         @Override
-        public void init(IPartitionService service) {
-            this.service = service;
+        public void init(PartitionLookup lookup) {
+            this.lookup = lookup;
         }
 
         @Override
         public int getPartition(Object item, int numPartitions) {
-            return service.getPartitionId(getKey(item));
+            return lookup.getPartition(getKey(item));
         }
     }
 

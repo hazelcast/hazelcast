@@ -22,8 +22,8 @@ import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Processors;
 import com.hazelcast.jet2.Vertex;
-import com.hazelcast.jet2.impl.IListWriter;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
@@ -41,7 +41,7 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         String listName = randomName();
         IList<T> list = context.getHazelcastInstance().getList(listName);
         Vertex previous = upstream.buildDAG(dag);
-        Vertex writer = new Vertex(listName, IListWriter.supplier(listName));
+        Vertex writer = new Vertex(listName, Processors.listWriter(listName));
         if (upstream.isOrdered()) {
             writer.parallelism(1);
         }

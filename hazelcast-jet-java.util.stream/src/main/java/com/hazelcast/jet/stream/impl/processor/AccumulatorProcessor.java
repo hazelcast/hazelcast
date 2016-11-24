@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
+import com.hazelcast.jet2.AbstractProcessor;
 import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.impl.AbstractProcessor;
-import java.util.function.BiFunction;
+
 import javax.annotation.Nonnull;
+import java.util.function.BiFunction;
 
 public class AccumulatorProcessor<IN, OUT> extends AbstractProcessor {
 

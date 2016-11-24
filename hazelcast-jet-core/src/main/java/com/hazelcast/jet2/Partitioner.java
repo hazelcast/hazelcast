@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.spi.partition.IPartitionService;
-
 import java.io.Serializable;
 
 /**
@@ -29,10 +27,12 @@ public interface Partitioner extends Serializable {
     /**
      * Initialize the partitioner state
      */
-    default void init(IPartitionService service) {
+    default void init(PartitionLookup lookup) {
     }
 
     /**
+     * @param numPartitions total number of partitions,
+     *                      which is always equal to the total number of Hazelcast partitions
      * @return the partition for the given object
      */
     int getPartition(Object item, int numPartitions);

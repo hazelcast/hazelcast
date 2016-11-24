@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.jet2.AbstractProcessor;
+
 import java.util.ArrayList;
 import java.util.List;
 

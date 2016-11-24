@@ -29,13 +29,12 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 
-public class IListReader extends AbstractProducer {
+public final class IListReader extends AbstractProducer {
 
     private final ListProxyImpl list;
     private Iterator iterator;
 
-
-    protected IListReader(ListProxyImpl list) {
+    private IListReader(ListProxyImpl list) {
         this.list = list;
     }
 

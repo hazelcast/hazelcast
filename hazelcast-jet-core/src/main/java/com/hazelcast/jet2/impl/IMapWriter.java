@@ -17,10 +17,11 @@
 package com.hazelcast.jet2.impl;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet2.AbstractProcessor;
 import com.hazelcast.jet2.Inbox;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.Processor;
+import com.hazelcast.jet2.ProcessorMetaSupplier;
 import com.hazelcast.jet2.ProcessorSupplier;
 import com.hazelcast.nio.Address;
 
@@ -36,12 +37,12 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-public class IMapWriter extends AbstractProcessor {
+public final class IMapWriter extends AbstractProcessor {
 
     private final IMap map;
     private final ArrayMap buffer = new ArrayMap();
 
-    public IMapWriter(IMap map) {
+    private IMapWriter(IMap map) {
         this.map = map;
     }
 

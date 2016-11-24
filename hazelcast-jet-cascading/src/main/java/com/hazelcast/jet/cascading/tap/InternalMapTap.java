@@ -34,8 +34,7 @@ import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.impl.IMapReader;
-import com.hazelcast.jet2.impl.IMapWriter;
+import com.hazelcast.jet2.Processors;
 import com.hazelcast.map.impl.MapService;
 
 import java.io.IOException;
@@ -192,12 +191,12 @@ public class InternalMapTap extends InternalJetTap {
 
     @Override
     public ProcessorMetaSupplier getSource() {
-        return IMapReader.supplier(mapName);
+        return Processors.mapReader(mapName);
     }
 
     @Override
     public ProcessorMetaSupplier getSink() {
-        return IMapWriter.supplier(mapName);
+        return Processors.mapWriter(mapName);
     }
 
     private IMap findIMap(HazelcastInstance instance) {

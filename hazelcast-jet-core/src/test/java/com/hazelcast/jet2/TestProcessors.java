@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet2;
 
-import com.hazelcast.jet2.impl.AbstractProcessor;
-
 public class TestProcessors {
 
     public static class Identity extends AbstractProcessor {

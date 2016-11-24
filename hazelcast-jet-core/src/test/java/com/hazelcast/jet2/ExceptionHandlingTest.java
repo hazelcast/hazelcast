@@ -17,7 +17,6 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.impl.AbstractProcessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,8 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet2.Util.executeAndPeel;
 

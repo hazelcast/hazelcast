@@ -19,10 +19,10 @@ package com.hazelcast.jet.cascading.runtime;
 import cascading.flow.FlowNode;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.cascading.JetFlowProcess;
+import com.hazelcast.jet2.AbstractProcessor;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.impl.AbstractProcessor;
 
 import javax.annotation.Nonnull;
 import java.util.Map;

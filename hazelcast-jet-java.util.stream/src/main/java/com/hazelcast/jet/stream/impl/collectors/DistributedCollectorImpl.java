@@ -25,9 +25,9 @@ import com.hazelcast.jet.stream.impl.processor.CollectorCombinerProcessor;
 import com.hazelcast.jet.stream.impl.processor.CombinerProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Processors;
 import com.hazelcast.jet2.SimpleProcessorSupplier;
 import com.hazelcast.jet2.Vertex;
-import com.hazelcast.jet2.impl.IListWriter;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -71,7 +71,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
         String name = randomName(LIST_PREFIX);
-        Vertex writer = new Vertex("writer-" + randomName(), IListWriter.supplier(name));
+        Vertex writer = new Vertex("writer-" + randomName(), Processors.listWriter(name));
         dag.addVertex(writer).addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         IList<R> list = context.getHazelcastInstance().getList(name);

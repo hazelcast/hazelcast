@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.jet2.AbstractProcessor;
 import com.hazelcast.jet2.Inbox;
 import com.hazelcast.jet2.Outbox;
 import com.hazelcast.test.annotation.QuickTest;

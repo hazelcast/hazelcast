@@ -24,8 +24,9 @@ import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.GroupingCombinerProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Processors;
 import com.hazelcast.jet2.Vertex;
-import com.hazelcast.jet2.impl.IMapWriter;
+
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -62,14 +63,14 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
                 () -> new GroupingAccumulatorProcessor<>(classifier, collector));
         Vertex combiner = new Vertex("grouping-combiner-" + randomName(),
                 () -> new GroupingCombinerProcessor<>(collector));
-        Vertex writer = new Vertex("map-writer-" + mapName, IMapWriter.supplier(mapName));
+        Vertex writer = new Vertex("map-writer-" + mapName, Processors.mapWriter(mapName));
 
         dag.addVertex(merger)
-                .addVertex(combiner)
-                .addVertex(writer)
-                .addEdge(new Edge(previous, merger).partitioned(item -> classifier.apply((T) item)))
-                .addEdge(new Edge(merger, combiner).distributed().partitioned(item -> ((Map.Entry) item).getKey()))
-                .addEdge(new Edge(combiner, writer));
+           .addVertex(combiner)
+           .addVertex(writer)
+           .addEdge(new Edge(previous, merger).partitioned(item -> classifier.apply((T) item)))
+           .addEdge(new Edge(merger, combiner).distributed().partitioned(item -> ((Map.Entry) item).getKey()))
+           .addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         return target;
     }

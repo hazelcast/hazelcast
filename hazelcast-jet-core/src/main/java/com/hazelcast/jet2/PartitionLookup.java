@@ -14,27 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.processor;
+package com.hazelcast.jet2;
 
-import com.hazelcast.jet2.AbstractProcessor;
+/**
+ * Provides partition information about an object
+ */
+@FunctionalInterface
+public interface PartitionLookup {
 
-public class LimitProcessor extends AbstractProcessor {
-
-    private final long limit;
-    private long index;
-
-    public LimitProcessor(Long limit) {
-        this.limit = limit;
-    }
-
-    @Override
-    protected boolean process(int ordinal, Object item) {
-        if (index >= limit) {
-            return true;
-        }
-        index++;
-        emit(item);
-        return true;
-    }
+    /**
+     * @return the Hazelcast partition for the given object
+     */
+    int getPartition(Object object);
 }
-

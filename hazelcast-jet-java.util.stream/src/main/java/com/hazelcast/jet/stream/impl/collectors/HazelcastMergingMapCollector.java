@@ -22,8 +22,9 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
+import com.hazelcast.jet2.Processors;
 import com.hazelcast.jet2.Vertex;
-import com.hazelcast.jet2.impl.IMapWriter;
+
 import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -60,14 +61,14 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         Vertex combiner = new Vertex("merging-combiner-" + randomName(),
                 () -> new MergeProcessor<T, K, V>(null, null,
                         mergeFunction));
-        Vertex writer = new Vertex("map-writer-" + randomName(), IMapWriter.supplier(mapName));
+        Vertex writer = new Vertex("map-writer-" + randomName(), Processors.mapWriter(mapName));
 
         dag.addVertex(merger)
-                .addVertex(combiner)
-                .addVertex(writer)
-                .addEdge(new Edge(previous, merger).partitioned(item -> keyMapper.apply((T) item)))
-                .addEdge(new Edge(merger, combiner).distributed().partitioned(item -> ((Map.Entry) item).getKey()))
-                .addEdge(new Edge(combiner, writer));
+           .addVertex(combiner)
+           .addVertex(writer)
+           .addEdge(new Edge(previous, merger).partitioned(item -> keyMapper.apply((T) item)))
+           .addEdge(new Edge(merger, combiner).distributed().partitioned(item -> ((Map.Entry) item).getKey()))
+           .addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         return target;
     }

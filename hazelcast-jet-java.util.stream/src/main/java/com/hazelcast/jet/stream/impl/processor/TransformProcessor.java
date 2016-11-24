@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
-import com.hazelcast.jet2.impl.AbstractProcessor;
+import com.hazelcast.jet2.AbstractProcessor;
 
 import java.util.Iterator;
 import java.util.List;

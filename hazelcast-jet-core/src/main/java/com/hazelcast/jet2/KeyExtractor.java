@@ -20,15 +20,12 @@ import java.io.Serializable;
 
 /**
  * Javadoc pending.
- *
- * @param <E>
- * @param <K>
  */
 @FunctionalInterface
-public interface KeyExtractor<E, K> extends Serializable {
+public interface KeyExtractor extends Serializable {
 
     /**
      * @return Return the key for the specified item
      */
-    K extract(E item);
+    Object extract(Object item);
 }

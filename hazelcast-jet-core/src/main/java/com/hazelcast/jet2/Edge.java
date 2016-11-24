@@ -19,7 +19,6 @@ package com.hazelcast.jet2;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
@@ -265,16 +264,16 @@ public class Edge implements IdentifiedDataSerializable {
     private static class Default implements Partitioner {
         private static final long serialVersionUID = 1L;
 
-        protected transient IPartitionService service;
+        protected transient PartitionLookup lookup;
 
         @Override
-        public void init(IPartitionService service) {
-            this.service = service;
+        public void init(PartitionLookup lookup) {
+            this.lookup = lookup;
         }
 
         @Override
         public int getPartition(Object item, int numPartitions) {
-            return service.getPartitionId(item) % numPartitions;
+            return lookup.getPartition(item);
         }
     }
 
@@ -287,7 +286,7 @@ public class Edge implements IdentifiedDataSerializable {
 
         @Override
         public int getPartition(Object item, int numPartitions) {
-            return service.getPartitionId(extractor.extract(item)) % numPartitions;
+            return lookup.getPartition(extractor.extract(item));
         }
     }
 
@@ -304,8 +303,8 @@ public class Edge implements IdentifiedDataSerializable {
 
 
         @Override
-        public void init(IPartitionService service) {
-            partition = service.getPartitionId(key);
+        public void init(PartitionLookup service) {
+            partition = service.getPartition(key);
         }
 
         @Override

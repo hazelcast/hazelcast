@@ -206,7 +206,7 @@ class ExecutionContext {
     private void initializePartitioner(VertexDef vertex) {
         for (EdgeDef output : vertex.getOutputs()) {
             if (output.getPartitioner() != null) {
-                output.getPartitioner().init(nodeEngine.getPartitionService());
+                output.getPartitioner().init((o) -> nodeEngine.getPartitionService().getPartitionId(o));
             }
         }
     }
@@ -240,7 +240,7 @@ class ExecutionContext {
                     .range(0, localPartitions.size()).boxed()
                     .map(i -> new SimpleImmutableEntry<>(i, localPartitions.get(i)))
                     .collect(groupingBy(e -> e.getKey() % localConsumerCount,
-                                        mapping(e -> e.getValue(), toList())));
+                            mapping(e -> e.getValue(), toList())));
         } else {
             consumerToPartitions = IntStream.range(0, ptionService.getPartitionCount()).boxed()
                                             .collect(groupingBy(pId -> pId % localConsumerCount));
