@@ -31,7 +31,6 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int VERTEX = 1;
     public static final int EDGE = 2;
     public static final int RESOURCE_PART = 3;
-    public static final int PAYLOAD = 4;
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
 
 

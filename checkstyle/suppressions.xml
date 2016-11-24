@@ -3,13 +3,10 @@
 <!DOCTYPE suppressions PUBLIC
         "-//Puppy Crawl//DTD Suppressions 1.1//EN"
         "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
-
 <suppressions>
 
     <!-- Suppress strict duplicate code checking -->
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
-
-    <suppress checks=".*" files="/hazelcast-jet-core-old/" />
 
     <!-- Exclude implementation packages from JavaDoc checks -->
     <suppress checks="JavadocPackage" files="(/impl|/internal)"/>
@@ -17,41 +14,16 @@
     <suppress checks="JavadocType" files="(/impl|/internal)"/>
     <suppress checks="JavadocVariable" files="(/impl|/internal)"/>
 
-    <!-- Serializer Hook -->
+    <!-- Serializer Hooks -->
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
 
-    <!-- Temp, remove when merged into main Hazelcast repo -->
-    <suppress checks="OuterTypeNumber"
-              files="java/com/hazelcast/internal/util/concurrent/AbstractConcurrentArrayQueue"/>
-
-    <!-- Client Protocol (auto-generated) -->
-    <suppress checks="VisibilityModifier|HideUtilityClassConstructor|LocalVariableName|WhitespaceAround"
-              files="com/hazelcast/client/impl/protocol/codec/"/>
-    <suppress checks="UnusedImports|ClassDataAbstractionCoupling|MethodLength|LineLength"
-              files="com/hazelcast/client/impl/protocol/JetMessageTaskFactoryProvider"/>
-
-
-    <!-- Hazelcast Jet Memory -->
-    <suppress checks="Javadoc(Package|Method|Variable)" files="/jet/memory/"/>
-    <suppress checks="IllegalImport" files="/jet/memory/memoryblock/UnsafeUtil"/>
-
-    <!-- Hazelcast Jet IO -->
-    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="/jet/io/"/>
-
-    <!-- Cascading -->
+    <!-- Cascading Javadocs -->
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="/jet/cascading/"/>
 
-    <!-- RingBuffer -->
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/ringbuffer/RingbufferWithValueStrategy"/>
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/ringbuffer/RingbufferWithReferenceStrategy"/>
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/ringbuffer/RingbufferIO"/>
-    <suppress checks="IllegalImport" files="com/hazelcast/jet/impl/ringbuffer/UnsafeUtil"/>
-
-    <!-- Stream -->
+    <!-- j.u.stream -->
     <suppress checks="FileLength" files="com/hazelcast/jet/stream/Distributed.java"/>
 
     <!-- Client Protocol Templates -->
     <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"
               files="com/hazelcast/client/impl/protocol/template/.*Template\.java$"/>
-
 </suppressions>
