@@ -113,4 +113,10 @@ public interface ClientEndpoint extends Client {
      * @param connection The connection of the endpoint
      */
     void setConnection(Connection connection);
+
+    /**
+     *
+     * @return true if any listeners are registered or transactions exist for the endpoint
+     */
+    boolean resourcesExist();
 }
