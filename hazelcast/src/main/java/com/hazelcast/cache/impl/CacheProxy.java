@@ -70,8 +70,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <V> the type of value.
  */
 public class CacheProxy<K, V>
-        extends AbstractCacheProxy<K, V>
-        implements InternalCacheEntryListenerRegisterer<K, V> {
+        extends AbstractCacheProxy<K, V> {
 
     protected final ILogger logger;
 
