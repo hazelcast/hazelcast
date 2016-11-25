@@ -6,9 +6,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -19,7 +16,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -143,27 +139,5 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = factory.newInstances(config)[0];
         return instance.getMap("aggr");
-    }
-
-    public static class Person implements DataSerializable {
-
-        public double age;
-
-        public Person() {
-        }
-
-        public Person(double age) {
-            this.age = age;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeDouble(age);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            age = in.readDouble();
-        }
     }
 }

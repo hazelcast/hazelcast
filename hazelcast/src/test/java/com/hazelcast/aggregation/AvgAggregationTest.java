@@ -40,7 +40,7 @@ public class AvgAggregationTest {
     public static final double ERROR = 1e-8;
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testBigDecimalAvg() throws Exception {
+    public void testBigDecimalAvg() {
         List<BigDecimal> values = TestDoubles.sampleBigDecimals();
         BigDecimal expectation = Sums.sumBigDecimals(values);
         expectation = expectation.divide(BigDecimal.valueOf(values.size()));
@@ -55,7 +55,7 @@ public class AvgAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testBigIntegerAvg() throws Exception {
+    public void testBigIntegerAvg() {
         List<BigInteger> values = TestDoubles.sampleBigIntegers();
 
         BigDecimal expectation = new BigDecimal(Sums.sumBigIntegers(values))
@@ -71,7 +71,7 @@ public class AvgAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testDoubleAvg() throws Exception {
+    public void testDoubleAvg() {
         List<Double> values = TestDoubles.sampleDoubles();
 
         double expectation = Sums.sumDoubles(values) / (double) values.size();
@@ -86,7 +86,7 @@ public class AvgAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testIntegerAvg() throws Exception {
+    public void testIntegerAvg() {
         List<Integer> values = TestDoubles.sampleIntegers();
 
         double expectation = (double) Sums.sumIntegers(values) / (double) values.size();
@@ -101,7 +101,7 @@ public class AvgAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testLongAvg() throws Exception {
+    public void testLongAvg() {
         List<Long> values = TestDoubles.sampleLongs();
 
         double expectation = (double) Sums.sumLongs(values) / (double) values.size();
@@ -116,7 +116,7 @@ public class AvgAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testGenericAvg() throws Exception {
+    public void testGenericAvg() {
         List<Number> values = new ArrayList<Number>();
         values.addAll(TestDoubles.sampleLongs());
         values.addAll(TestDoubles.sampleDoubles());

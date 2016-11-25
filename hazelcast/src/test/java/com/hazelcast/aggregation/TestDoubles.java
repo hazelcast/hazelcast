@@ -5,10 +5,11 @@ import com.hazelcast.map.impl.MapEntrySimple;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 final class TestDoubles {
 
@@ -76,7 +77,7 @@ final class TestDoubles {
 
     static List<String> sampleStrings() {
         String loremIpsum = "Lorem ipsum dolor sit amet consectetur adipiscing elit";
-        return Arrays.asList(loremIpsum.split(" "));
+        return asList(loremIpsum.split(" "));
     }
 
     static Collection<Float> sampleFloats() {

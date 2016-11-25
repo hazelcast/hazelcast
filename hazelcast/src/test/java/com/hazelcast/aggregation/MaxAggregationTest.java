@@ -40,7 +40,7 @@ public class MaxAggregationTest {
     public static final double ERROR = 1e-8;
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testBigDecimalMax() throws Exception {
+    public void testBigDecimalMax() {
         List<BigDecimal> values = TestDoubles.sampleBigDecimals();
         Collections.sort(values);
 
@@ -56,7 +56,7 @@ public class MaxAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testBigIntegerMax() throws Exception {
+    public void testBigIntegerMax() {
         List<BigInteger> values = TestDoubles.sampleBigIntegers();
         Collections.sort(values);
 
@@ -72,7 +72,7 @@ public class MaxAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testDoubleMax() throws Exception {
+    public void testDoubleMax() {
         List<Double> values = TestDoubles.sampleDoubles();
         Collections.sort(values);
 
@@ -88,7 +88,7 @@ public class MaxAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testIntegerMax() throws Exception {
+    public void testIntegerMax() {
         List<Integer> values = TestDoubles.sampleIntegers();
         Collections.sort(values);
 
@@ -104,7 +104,7 @@ public class MaxAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testLongMax() throws Exception {
+    public void testLongMax() {
         List<Long> values = TestDoubles.sampleLongs();
         Collections.sort(values);
 
@@ -120,7 +120,7 @@ public class MaxAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testComparableMax() throws Exception {
+    public void testComparableMax() {
         List<String> values = TestDoubles.sampleStrings();
         Collections.sort(values);
 

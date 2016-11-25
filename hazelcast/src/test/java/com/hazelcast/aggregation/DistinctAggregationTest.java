@@ -37,7 +37,7 @@ import static org.junit.Assert.assertThat;
 public class DistinctAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testCountAggregator() throws Exception {
+    public void testCountAggregator() {
         List<String> values = repeatTimes(3, TestDoubles.sampleStrings());
         Set<String> expectation = new HashSet<String>(values);
 

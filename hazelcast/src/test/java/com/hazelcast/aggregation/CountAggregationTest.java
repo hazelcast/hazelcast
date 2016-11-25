@@ -35,7 +35,7 @@ import static org.junit.Assert.assertThat;
 public class CountAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
-    public void testCountAggregator() throws Exception {
+    public void testCountAggregator() {
         List<BigDecimal> values = TestDoubles.sampleBigDecimals();
         long expectation = values.size();
 
