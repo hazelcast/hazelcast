@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 final class TestSamples {
 
     private static final int NUMBER_OF_SAMPLE_VALUES = 10000;
+    private static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet consectetur adipiscing elit";
 
     private TestSamples() {
     }
@@ -87,8 +88,7 @@ final class TestSamples {
     }
 
     static List<String> sampleStrings() {
-        String loremIpsum = "Lorem ipsum dolor sit amet consectetur adipiscing elit";
-        return asList(loremIpsum.split(" "));
+        return asList(LOREM_IPSUM.split(" "));
     }
 
     static List<Person> samplePersons() {
@@ -99,41 +99,41 @@ final class TestSamples {
         return personList;
     }
 
-    static List<NumberContainer> sampleNumberContainers(NumberContainer.ValueType valueType) {
-        List<NumberContainer> containerList = new ArrayList<NumberContainer>(NUMBER_OF_SAMPLE_VALUES);
+    static List<ValueContainer> sampleValueContainers(ValueContainer.ValueType valueType) {
+        List<ValueContainer> containerList = new ArrayList<ValueContainer>(NUMBER_OF_SAMPLE_VALUES);
         switch (valueType) {
             case INTEGER:
                 for (int intValue : sampleIntegers()) {
-                    containerList.add(new NumberContainer(intValue));
+                    containerList.add(new ValueContainer(intValue));
                 }
                 break;
             case LONG:
                 for (long longValue : sampleLongs()) {
-                    containerList.add(new NumberContainer(longValue));
+                    containerList.add(new ValueContainer(longValue));
                 }
                 break;
             case FLOAT:
                 for (float floatValue : sampleFloats()) {
-                    containerList.add(new NumberContainer(floatValue));
+                    containerList.add(new ValueContainer(floatValue));
                 }
                 break;
             case DOUBLE:
                 for (double doubleValue : sampleDoubles()) {
-                    containerList.add(new NumberContainer(doubleValue));
+                    containerList.add(new ValueContainer(doubleValue));
                 }
                 break;
             case BIG_DECIMAL:
                 for (BigDecimal bigDecimal : sampleBigDecimals()) {
-                    containerList.add(new NumberContainer(bigDecimal));
+                    containerList.add(new ValueContainer(bigDecimal));
                 }
                 break;
             case BIG_INTEGER:
                 for (BigInteger bigInteger : sampleBigIntegers()) {
-                    containerList.add(new NumberContainer(bigInteger));
+                    containerList.add(new ValueContainer(bigInteger));
                 }
                 break;
             case NUMBER:
-                new ArrayList<NumberContainer>();
+                new ArrayList<ValueContainer>();
                 for (Long longValue : sampleLongs()) {
                     createNumberContainer(containerList, longValue);
                 }
@@ -142,6 +142,11 @@ final class TestSamples {
                 }
                 for (Integer intValue : sampleIntegers()) {
                     createNumberContainer(containerList, intValue);
+                }
+                break;
+            case STRING:
+                for (String string : sampleStrings()) {
+                    containerList.add(new ValueContainer(string));
                 }
                 break;
         }
@@ -156,8 +161,8 @@ final class TestSamples {
         return numbers;
     }
 
-    private static void createNumberContainer(List<NumberContainer> values, Number value) {
-        NumberContainer container = new NumberContainer();
+    private static void createNumberContainer(List<ValueContainer> values, Number value) {
+        ValueContainer container = new ValueContainer();
         container.numberValue = value;
         values.add(container);
     }

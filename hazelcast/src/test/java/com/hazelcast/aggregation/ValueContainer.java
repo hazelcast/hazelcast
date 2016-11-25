@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class NumberContainer implements DataSerializable {
+public class ValueContainer implements DataSerializable, Comparable<ValueContainer> {
 
     enum ValueType {
         INTEGER,
@@ -33,8 +33,11 @@ public class NumberContainer implements DataSerializable {
         DOUBLE,
         BIG_DECIMAL,
         BIG_INTEGER,
-        NUMBER
+        NUMBER,
+        STRING
     }
+
+    public ValueType valueType;
 
     public int intValue;
     public long longValue;
@@ -46,32 +49,45 @@ public class NumberContainer implements DataSerializable {
     public BigInteger bigInteger;
 
     public Number numberValue;
+    public String stringValue;
 
-    public NumberContainer() {
+    public ValueContainer() {
+        this.valueType = ValueType.NUMBER;
     }
 
-    public NumberContainer(int intValue) {
+    public ValueContainer(int intValue) {
+        this.valueType = ValueType.INTEGER;
         this.intValue = intValue;
     }
 
-    public NumberContainer(long longValue) {
+    public ValueContainer(long longValue) {
+        this.valueType = ValueType.LONG;
         this.longValue = longValue;
     }
 
-    public NumberContainer(float floatValue) {
+    public ValueContainer(float floatValue) {
+        this.valueType = ValueType.FLOAT;
         this.floatValue = floatValue;
     }
 
-    public NumberContainer(double doubleValue) {
+    public ValueContainer(double doubleValue) {
+        this.valueType = ValueType.DOUBLE;
         this.doubleValue = doubleValue;
     }
 
-    public NumberContainer(BigDecimal bigDecimal) {
+    public ValueContainer(BigDecimal bigDecimal) {
+        this.valueType = ValueType.BIG_DECIMAL;
         this.bigDecimal = bigDecimal;
     }
 
-    public NumberContainer(BigInteger bigInteger) {
+    public ValueContainer(BigInteger bigInteger) {
+        this.valueType = ValueType.BIG_INTEGER;
         this.bigInteger = bigInteger;
+    }
+
+    public ValueContainer(String stringValue) {
+        this.valueType = ValueType.STRING;
+        this.stringValue = stringValue;
     }
 
     @Override
@@ -83,6 +99,7 @@ public class NumberContainer implements DataSerializable {
         out.writeObject(bigDecimal);
         out.writeObject(bigInteger);
         out.writeObject(numberValue);
+        out.writeUTF(stringValue);
     }
 
     @Override
@@ -94,5 +111,27 @@ public class NumberContainer implements DataSerializable {
         bigDecimal = in.readObject(BigDecimal.class);
         bigInteger = in.readObject(BigInteger.class);
         numberValue = in.readObject(Number.class);
+        stringValue = in.readUTF();
+    }
+
+    @Override
+    public int compareTo(ValueContainer o) {
+        switch (valueType) {
+            case INTEGER:
+                return (intValue < o.intValue) ? -1 : ((intValue == o.intValue) ? 0 : 1);
+            case LONG:
+                return (longValue < o.longValue) ? -1 : ((longValue == o.longValue) ? 0 : 1);
+            case FLOAT:
+                return Float.compare(floatValue, o.floatValue);
+            case DOUBLE:
+                return Double.compare(doubleValue, o.doubleValue);
+            case BIG_DECIMAL:
+                return bigDecimal.compareTo(o.bigDecimal);
+            case BIG_INTEGER:
+                return bigInteger.compareTo(o.bigInteger);
+            case STRING:
+                return stringValue.compareTo(o.stringValue);
+        }
+        return 0;
     }
 }

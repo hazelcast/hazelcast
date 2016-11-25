@@ -28,12 +28,12 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.aggregation.NumberContainer.ValueType.BIG_DECIMAL;
-import static com.hazelcast.aggregation.NumberContainer.ValueType.BIG_INTEGER;
-import static com.hazelcast.aggregation.NumberContainer.ValueType.DOUBLE;
-import static com.hazelcast.aggregation.NumberContainer.ValueType.INTEGER;
-import static com.hazelcast.aggregation.NumberContainer.ValueType.LONG;
-import static com.hazelcast.aggregation.NumberContainer.ValueType.NUMBER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_DECIMAL;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_INTEGER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.NUMBER;
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.sampleBigDecimals;
@@ -41,7 +41,7 @@ import static com.hazelcast.aggregation.TestSamples.sampleBigIntegers;
 import static com.hazelcast.aggregation.TestSamples.sampleDoubles;
 import static com.hazelcast.aggregation.TestSamples.sampleIntegers;
 import static com.hazelcast.aggregation.TestSamples.sampleLongs;
-import static com.hazelcast.aggregation.TestSamples.sampleNumberContainers;
+import static com.hazelcast.aggregation.TestSamples.sampleValueContainers;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -71,12 +71,12 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigDecimalAvg_withAttributePath() {
-        List<NumberContainer> values = sampleNumberContainers(BIG_DECIMAL);
-        BigDecimal sum = Sums.sumNumberContainer(values, BIG_DECIMAL);
+        List<ValueContainer> values = sampleValueContainers(BIG_DECIMAL);
+        BigDecimal sum = Sums.sumValueContainer(values, BIG_DECIMAL);
         BigDecimal expectation = sum.divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<BigDecimal, NumberContainer, NumberContainer> aggregation = Aggregators.bigDecimalAvg("bigDecimal");
-        for (NumberContainer value : values) {
+        Aggregator<BigDecimal, ValueContainer, ValueContainer> aggregation = Aggregators.bigDecimalAvg("bigDecimal");
+        for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         BigDecimal result = aggregation.aggregate();
@@ -101,13 +101,13 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerAvg_withAttributePath() {
-        List<NumberContainer> values = sampleNumberContainers(BIG_INTEGER);
-        BigInteger sum = Sums.sumNumberContainer(values, BIG_INTEGER);
+        List<ValueContainer> values = sampleValueContainers(BIG_INTEGER);
+        BigInteger sum = Sums.sumValueContainer(values, BIG_INTEGER);
         BigDecimal expectation = new BigDecimal(sum)
                 .divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<BigDecimal, NumberContainer, NumberContainer> aggregation = Aggregators.bigIntegerAvg("bigInteger");
-        for (NumberContainer value : values) {
+        Aggregator<BigDecimal, ValueContainer, ValueContainer> aggregation = Aggregators.bigIntegerAvg("bigInteger");
+        for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         BigDecimal result = aggregation.aggregate();
@@ -131,11 +131,11 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testDoubleAvg_withAttributePath() {
-        List<NumberContainer> values = sampleNumberContainers(DOUBLE);
-        double expectation = (Double) Sums.sumNumberContainer(values, DOUBLE) / (double) values.size();
+        List<ValueContainer> values = sampleValueContainers(DOUBLE);
+        double expectation = (Double) Sums.sumValueContainer(values, DOUBLE) / (double) values.size();
 
-        Aggregator<Double, NumberContainer, NumberContainer> aggregation = Aggregators.doubleAvg("doubleValue");
-        for (NumberContainer value : values) {
+        Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.doubleAvg("doubleValue");
+        for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         double result = aggregation.aggregate();
@@ -159,11 +159,11 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerAvg_withAttributePath() {
-        List<NumberContainer> values = sampleNumberContainers(INTEGER);
-        double expectation = (Long) Sums.sumNumberContainer(values, INTEGER) / (double) values.size();
+        List<ValueContainer> values = sampleValueContainers(INTEGER);
+        double expectation = (Long) Sums.sumValueContainer(values, INTEGER) / (double) values.size();
 
-        Aggregator<Double, NumberContainer, NumberContainer> aggregation = Aggregators.integerAvg("intValue");
-        for (NumberContainer value : values) {
+        Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.integerAvg("intValue");
+        for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         double result = aggregation.aggregate();
@@ -187,11 +187,11 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongAvg_withAttributePath() {
-        List<NumberContainer> values = sampleNumberContainers(LONG);
-        double expectation = (Long) Sums.sumNumberContainer(values, LONG) / (double) values.size();
+        List<ValueContainer> values = sampleValueContainers(LONG);
+        double expectation = (Long) Sums.sumValueContainer(values, LONG) / (double) values.size();
 
-        Aggregator<Double, NumberContainer, NumberContainer> aggregation = Aggregators.longAvg("longValue");
-        for (NumberContainer value : values) {
+        Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.longAvg("longValue");
+        for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         double result = aggregation.aggregate();
@@ -218,11 +218,11 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testGenericAvg_withAttributePath() {
-        List<NumberContainer> values = sampleNumberContainers(NUMBER);
-        double expectation = (Double) Sums.sumNumberContainer(values, NUMBER) / (double) values.size();
+        List<ValueContainer> values = sampleValueContainers(NUMBER);
+        double expectation = (Double) Sums.sumValueContainer(values, NUMBER) / (double) values.size();
 
-        Aggregator<Double, NumberContainer, NumberContainer> aggregation = Aggregators.numberAvg("numberValue");
-        for (NumberContainer value : values) {
+        Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.numberAvg("numberValue");
+        for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         double result = aggregation.aggregate();
